@@ -4,13 +4,16 @@ const initialState = {
   happiness: 100,
   energy: 100,
   age: 0,
+  x: 96,
+  y: 96,
+  direction: "down",
   tricksLearned: [],
   pottyTrained: false,
   soundEnabled: true,
 };
 
 const dogSlice = createSlice({
-  name: 'dog',
+  name: "dog",
   initialState,
   reducers: {
     feed: (state) => {
@@ -23,19 +26,38 @@ const dogSlice = createSlice({
     learnTrick: (state, action) => {
       if (!state.tricksLearned.includes(action.payload)) {
         state.tricksLearned.push(action.payload);
+      }
+    },
+    ageUp: (state) => {
+      state.age += 1;
+    },
+    pottyTrain: (state) => {
+      state.pottyTrained = true;
+    },
+    toggleSound: (state) => {
+      state.soundEnabled = !state.soundEnabled;
+    },
+    move: (state, action) => {
+      const { x, y, direction } = action.payload;
+      state.x = x;
+      state.y = y;
+      state.direction = direction;
+    },
+    loadState: (state, action) => {
+      return { ...state, ...action.payload };
     }
-  },
-  ageUp: (state) => {
-    state.age+=1;
-  },
-  pottyTrain:(state) => {
-    state.pottyTrained = true;
-  },
-  toggleSound: (state) => {
-    state.soundEnabled = !state.soundEnabled;
-  },
   },
 });
 
-export const { feed, play, learnTrick, ageUp, pottyTrain, toggleSound } = dogSlice.actions;
+export const {
+  feed,
+  play,
+  learnTrick,
+  ageUp,
+  pottyTrain,
+  toggleSound,
+  move,
+  loadState
+} = dogSlice.actions;
+
 export default dogSlice.reducer;

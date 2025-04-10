@@ -1,9 +1,14 @@
 import React, { useRef, useEffect, useState } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { move } from "../redux/dogSlice";
 
 const Dog = () => {
   const canvasRef = useRef(null);
   const sprite = new Image();
+  const background = new Image();
+
   sprite.src = "/assets/sprites/jack_russell_directions.png";
+  background.src = "/assets/backgrounds/yard.png";
 
   const frameWidth = 64;
   const frameHeight = 64;
@@ -12,10 +17,8 @@ const Dog = () => {
   const canvasWidth = 256;
   const canvasHeight = 256;
 
-  const [frame, setFrame] = useState(0);
-  const [direction, setDirection] = useState("down");
-  const [x, setX] = useState(96); // center start
-  const [y, setY] = useState(96);
+  const dispatch = useDispatch();
+  const { x, y, direction } = useSelector((state) => state.dog);
 
   const directionMap = {
     down: 0,
@@ -24,6 +27,8 @@ const Dog = () => {
     up: 3,
   };
 
+  const [frame, setFrame] = useState(0);
+
   const getRandomDirection = () => {
     const directions = ["up", "down", "left", "right"];
     return directions[Math.floor(Math.random() * directions.length)];
@@ -31,17 +36,15 @@ const Dog = () => {
 
   const moveDog = (dir) => {
     const speed = 2;
-    setDirection(dir);
-    setX((prevX) => {
-      if (dir === "left") return Math.max(0, prevX - speed);
-      if (dir === "right") return Math.min(canvasWidth - frameWidth, prevX + speed);
-      return prevX;
-    });
-    setY((prevY) => {
-      if (dir === "up") return Math.max(0, prevY - speed);
-      if (dir === "down") return Math.min(canvasHeight - frameHeight, prevY + speed);
-      return prevY;
-    });
+    let newX = x;
+    let newY = y;
+
+    if (dir === "left") newX = Math.max(0, x - speed);
+    if (dir === "right") newX = Math.min(canvasWidth - frameWidth, x + speed);
+    if (dir === "up") newY = Math.max(0, y - speed);
+    if (dir === "down") newY = Math.min(canvasHeight - frameHeight, y + speed);
+
+    dispatch(move({ x: newX, y: newY, direction: dir }));
   };
 
   // Animate sprite
@@ -51,13 +54,23 @@ const Dog = () => {
     const animate = () => {
       const row = directionMap[direction];
       ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+      // Draw background
+      ctx.drawImage(background, 0, 0, canvasWidth, canvasHeight);
+
+      // Draw dog sprite
       ctx.drawImage(
         sprite,
-        frame * frameWidth, row * frameHeight,
-        frameWidth, frameHeight,
-        x, y,
-        frameWidth, frameHeight
+        frame * frameWidth,
+        row * frameHeight,
+        frameWidth,
+        frameHeight,
+        x,
+        y,
+        frameWidth,
+        frameHeight
       );
+
       setFrame((prev) => (prev + 1) % totalFrames);
     };
 
@@ -65,7 +78,7 @@ const Dog = () => {
     return () => clearInterval(interval);
   }, [frame, direction, x, y]);
 
-  // Idle walking AI
+  // Idle walking loop
   useEffect(() => {
     let isWalking = false;
     let walkInterval;
@@ -75,7 +88,6 @@ const Dog = () => {
       const loop = () => {
         if (!isWalking) {
           const dir = getRandomDirection();
-          setDirection(dir);
           isWalking = true;
 
           walkInterval = setInterval(() => moveDog(dir), 100);
@@ -96,7 +108,7 @@ const Dog = () => {
       clearInterval(walkInterval);
       clearTimeout(pauseTimeout);
     };
-  }, []);
+  }, [x, y]);
 
   return (
     <div className="flex justify-center">
@@ -104,7 +116,7 @@ const Dog = () => {
         ref={canvasRef}
         width={canvasWidth}
         height={canvasHeight}
-        className="rounded border border-gray-700 bg-green-100"
+        className="rounded border border-gray-700"
       />
     </div>
   );

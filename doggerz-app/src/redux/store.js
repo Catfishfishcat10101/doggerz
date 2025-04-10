@@ -24,7 +24,7 @@ const store = configureStore({
 });
 
 store.subscribe(() => {
-  saveState(store.getState());
+  saveState(store.getState().dog); // only save the dog slice
 });
 
 export default store;
