@@ -13,9 +13,12 @@ const initialState = {
 };
 
 const dogSlice = createSlice({
-  name: "dog",
+  name: "Doggo",
   initialState,
   reducers: {
+    setDogName: (state, action) => {
+      state.name = action.payload;
+    },
     feed: (state) => {
       state.energy = Math.min(state.energy + 20, 100);
     },
