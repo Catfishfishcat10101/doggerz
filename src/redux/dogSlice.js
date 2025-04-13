@@ -60,7 +60,8 @@ export const {
   pottyTrain,
   toggleSound,
   move,
-  loadState
+  loadState,
+  setDogName
 } = dogSlice.actions;
 
 export default dogSlice.reducer;
