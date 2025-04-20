@@ -1,16 +1,20 @@
 import React, { useState } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../../firebase/firebase";
-import { useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate, Link, Navigate } from "react-router-dom";
 import { setUser } from "../../redux/userSlice";
 
 const Login = () => {
-  const navigate = useNavigate();
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const currentUser = useSelector((state) => state.user.currentUser);
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+
+  if (currentUser) return <Navigate to="/" />;
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -19,52 +23,41 @@ const Login = () => {
       dispatch(setUser(userCred.user));
       navigate("/");
     } catch (err) {
-      setError("⚠️ Invalid login credentials.");
+      setError("Login failed. Please check your credentials.");
     }
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-green-400 to-blue-500 text-white">
-      <div className="bg-white p-6 rounded-lg shadow-md max-w-sm w-full text-black">
-        <h2 className="text-3xl font-bold text-center mb-2 text-blue-700">🐶 Doggerz</h2>
-        <p className="text-sm text-center mb-4 text-gray-700">Log in to train your pup</p>
-        {error && <p className="text-red-600 mb-2 text-center text-sm">{error}</p>}
-
-        <form onSubmit={handleLogin}>
-          <input
-            className="w-full p-2 border border-gray-300 rounded mb-2"
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          <input
-            className="w-full p-2 border border-gray-300 rounded mb-4"
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-          <button
-            type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded font-bold"
-          >
-            Login
-          </button>
-        </form>
-
-        <p className="mt-4 text-center text-sm">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-600 to-purple-600 p-4 text-white">
+      <h1 className="text-4xl font-bold mb-4">🐶 Log In to Doggerz</h1>
+      <form onSubmit={handleLogin} className="bg-white text-black p-6 rounded shadow w-full max-w-sm">
+        {error && <p className="text-red-500">{error}</p>}
+        <label>Email</label>
+        <input
+          type="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="w-full p-2 mb-4 border rounded"
+        />
+        <label>Password</label>
+        <input
+          type="password"
+          required
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="w-full p-2 mb-4 border rounded"
+        />
+        <button type="submit" className="bg-blue-600 text-white px-4 py-2 w-full rounded hover:bg-blue-700">
+          Log In
+        </button>
+        <p className="text-sm text-center mt-4">
           Don't have an account?{" "}
-          <span
-            className="text-blue-600 hover:underline cursor-pointer"
-            onClick={() => navigate("/signup")}
-          >
+          <Link to="/signup" className="text-blue-700 hover:underline">
             Sign up
-          </span>
+          </Link>
         </p>
-      </div>
+      </form>
     </div>
   );
 };

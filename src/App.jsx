@@ -13,6 +13,7 @@ import PoopScoop from "./components/PoopScoop";
 import StatsBar from "./components/StatsBar";
 import Signup from "./components/Auth/Signup";
 import Login from "./components/Auth/Login";
+import LogoutButton from "./components/Auth/LogoutButton";
 import "./styles/App.css";
 
 const MainApp = () => {
@@ -32,6 +33,7 @@ const MainApp = () => {
       <Status />
       <Tricks />
       <ResetGame />
+      <LogoutButton />
     </div>
   );
 };
@@ -40,8 +42,8 @@ const App = () => (
   <Router>
     <Routes>
       <Route path="/" element={<MainApp />} />
-      <Route path="/signup" element={<Signup />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
     </Routes>
   </Router>
 );
