@@ -1,0 +1,23 @@
+/* Controls: feed play bathe train*/
+.controls-container {
+  display: flex;
+  justify-content: space-evenly;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.control-button {
+  padding: 0.6rem 1.2rem;
+  font-weight: bold;
+  background-color: #2196f3;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.control-button:hover {
+  background-color: #1976d2;
+}

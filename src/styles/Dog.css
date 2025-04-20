@@ -1,0 +1,14 @@
+/* Dog Sprite styling */
+.dog-container {
+  width: 160px;
+  height: 160px;
+  overflow: hidden;
+  position: relative;
+}
+
+.dog-canvas {
+  width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+}
+
