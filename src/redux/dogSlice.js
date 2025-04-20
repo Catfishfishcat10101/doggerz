@@ -8,6 +8,7 @@ const initialState = {
   x: 96,
   y: 96,
   direction: "down",
+  xp: 0,
   tricksLearned: [],
   pottyTrained: false,
   soundEnabled: true,
@@ -23,9 +24,10 @@ const dogSlice = createSlice({
     feed: (state) => {
       state.energy = Math.min(state.energy + 20, 100);
     },
-    play: (state) => {
+    play: (state, action) => {
+      const bonus = action.payload?.bonus || 15;
       state.energy = Math.max(state.energy - 10, 0);
-      state.happiness = Math.min(state.happiness + 15, 100);
+      state.happiness = Math.min(state.happiness + bonus, 100);
       state.xp = Math.min(state.xp + 5, 100);
     },
     learnTrick: (state, action) => {
@@ -50,6 +52,31 @@ const dogSlice = createSlice({
     },
     loadState: (state, action) => {
       return { ...state, ...action.payload };
+    },
+    gainXP: (state, action) => {
+      state.xp += action.payload;
+      if (state.xp >= 50 && !state.tricksLearned.includes("sit")) {
+        state.tricksLearned.push("sit");
+      }
+      if (state.xp >= 100 && !state.tricksLearned.includes("roll")) {
+        state.tricksLearned.push("roll");
+      }
+      // ADD MORE MILESTONES HERE
+    },
+    resetGame: (state, action) => {
+      return {
+        happiness: 100,
+        energy: 100,
+        age: 0,
+        xp: 0,
+        tricksLearned: [],
+        pottyTrained: false,
+        soundEnabled: true,
+        name: "",
+        x: 96,
+        y: 96,
+        direction: "down",
+      };
     }
   },
 });

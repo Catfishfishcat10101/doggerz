@@ -1,5 +1,6 @@
 import { configureStore } from "@reduxjs/toolkit";
 import dogReducer from "./dogSlice";
+import userReducer from "./userSlice";
 
 // Load from localStorage
 const loadState = () => {
@@ -17,13 +18,13 @@ const saveState = (state) => {
   try {
     localStorage.setItem("dogState", JSON.stringify(state));
   } catch (err) {
-    console.error("Failed to save state:", err);
-  }
-};
+    console.error("Failed to save state");
+  }};
 
 const store = configureStore({
   reducer: {
     dog: dogReducer,
+    user: userReducer,
   },
   preloadedState: loadState(),
 });

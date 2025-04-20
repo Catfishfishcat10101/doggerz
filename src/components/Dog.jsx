@@ -7,13 +7,13 @@ import dayBg from "../assets/backgrounds/yard_day.png";
 import nightBg from "../assets/backgrounds/yard_night.png";
 import dogSprite from "../assets/sprites/jack_russell_directions.png";
 
-const Dog = () => {
+const Dog = ({ poops, setPoops }) => {
   const canvasRef = useRef(null);
   const frameWidth = 64;
   const frameHeight = 64;
-  const totalFrames = 4;
   const canvasWidth = 256;
   const canvasHeight = 256;
+  const totalFrames = 4;
 
   const dispatch = useDispatch();
   const { x, y, direction, pottyTrained, soundEnabled } = useSelector((state) => state.dog);
@@ -24,10 +24,8 @@ const Dog = () => {
   const [bgLoaded, setBgLoaded] = useState(false);
   const [background, setBackground] = useState(new Image());
   const [sprite, setSprite] = useState(new Image());
-  const [poops, setPoops] = useState([]);
   const barkAudio = useRef(new Audio(barkSoundSrc));
 
-  // Load sprite and background
   useEffect(() => {
     const s = new Image();
     s.src = dogSprite;
@@ -81,7 +79,7 @@ const Dog = () => {
     }, 3000);
 
     return () => clearInterval(loop);
-  }, [x, y, pottyTrained, soundEnabled]);
+  }, [x, y, pottyTrained, soundEnabled, setPoops]);
 
   // Clear old poops
   useEffect(() => {
@@ -89,9 +87,9 @@ const Dog = () => {
       setPoops((prev) => prev.filter((p) => Date.now() - p.timestamp < 8000));
     }, 2000);
     return () => clearInterval(cleanup);
-  }, []);
+  }, [setPoops]);
 
-  // Animation frame draw
+  // Draw everything on canvas
   useEffect(() => {
     if (!spriteLoaded || !bgLoaded) return;
     const ctx = canvasRef.current.getContext("2d");
@@ -111,14 +109,15 @@ const Dog = () => {
         frameWidth,
         frameHeight
       );
-      // Draw poops
+
+      // Draw poop sprites
       poops.forEach(({ x, y }) => {
         const poopImg = new Image();
         poopImg.src = poopSprite;
         ctx.drawImage(poopImg, x + 10, y + 10, 24, 24);
       });
 
-      setFrame((f) => (f + 1) % totalFrames);
+      setFrame((prev) => (prev + 1) % totalFrames);
     };
 
     const interval = setInterval(draw, 200);

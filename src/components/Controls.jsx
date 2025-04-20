@@ -1,22 +1,26 @@
 import React from "react";
 import { useDispatch } from "react-redux";
-import { feed, play } from "../redux/dogSlice";
+import { feed, play, gainXP } from "../redux/dogSlice";
 
 const Controls = () => {
   const dispatch = useDispatch();
 
+  const handleFeed = () => {
+    dispatch(feed());
+    dispatch(gainXP(5)); // XP for feeding
+  };
+
+  const handlePlay = () => {
+    dispatch(play());
+    dispatch(gainXP(10)); // XP for playing
+  };
+
   return (
     <div className="flex gap-4 my-4">
-      <button
-        onClick={() => dispatch(feed())}
-        className="bg-lime-500 px-4 py-2 rounded hover:bg-lime-600 transition font-bold"
-      >
-        🥩 Feed
+      <button onClick={handleFeed} className="px-4 py-2 bg-pink-500 rounded shadow hover:bg-pink-600">
+        🍖 Feed
       </button>
-      <button
-        onClick={() => dispatch(play())}
-        className="bg-sky-500 px-4 py-2 rounded hover:bg-sky-600 transition font-bold"
-      >
+      <button onClick={handlePlay} className="px-4 py-2 bg-orange-500 rounded shadow hover:bg-orange-600">
         🎾 Play
       </button>
     </div>
@@ -24,5 +28,3 @@ const Controls = () => {
 };
 
 export default Controls;
-// This component is responsible for rendering the controls for feeding and playing with the dog. It uses Redux to dispatch actions when the buttons are clicked. The buttons have Tailwind CSS classes for styling and hover effects.
-// The `feed` and `play` actions are imported from the Redux slice, which handles the state of the dog. The component is functional and uses React hooks to manage the dispatching of actions. The buttons are styled with Tailwind CSS for a modern look and feel.
