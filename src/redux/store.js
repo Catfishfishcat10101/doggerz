@@ -2,20 +2,20 @@ import { configureStore } from "@reduxjs/toolkit";
 import dogReducer from "./dogSlice";
 import userReducer from "./userSlice";
 
-const loadState = () => {
+const loadDogState = () => {
   try {
-    const serialized = localStorage.getItem("dogState");
-    return serialized ? JSON.parse(serialized) : undefined;
-  } catch {
+    const serializedState = localStorage.getItem("dogState");
+    return serializedState ? JSON.parse(serializedState) : undefined;
+  } catch (err) {
     return undefined;
   }
 };
 
-const saveState = (state) => {
+const saveDogState = (state) => {
   try {
     localStorage.setItem("dogState", JSON.stringify(state));
   } catch (err) {
-    console.error("Save error", err);
+    console.error("Failed to save dog state", err);
   }
 };
 
@@ -24,11 +24,13 @@ const store = configureStore({
     dog: dogReducer,
     user: userReducer,
   },
-  preloadedState: loadState(),
+  preloadedState: {
+    dog: loadDogState(),
+  },
 });
 
 store.subscribe(() => {
-  saveState(store.getState());
+  saveDogState(store.getState().dog);
 });
 
 export default store;

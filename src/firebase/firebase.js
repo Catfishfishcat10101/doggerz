@@ -1,23 +1,19 @@
-// Import core Firebase modules
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getAuth, setPersistence, browserLocalPersistence } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
-import { auth, db } from "../../firebase/firebase";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBh4DTNape9A_Y_VLYKWwCJnycHtHP8hFY",
-  authDomain: "doggerz-21b98.firebaseapp.com",
-  projectId: "doggerz-21b98",
-  storageBucket: "doggerz-21b98.firebasestorage.app",
-  messagingSenderId: "1059201199223",
-  appId: "1:1059201199223:web:60f5c0687656c26d502a72",
+  apiKey: "YOUR-KEY",
+  authDomain: "YOUR-APP.firebaseapp.com",
+  projectId: "YOUR-PROJECT-ID",
+  storageBucket: "YOUR.appspot.com",
+  messagingSenderId: "YOUR-ID",
+  appId: "YOUR-APP-ID",
 };
 
-// Initialize Firebase
-const firebaseApp = initializeApp(firebaseConfig);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+setPersistence(auth, browserLocalPersistence); // This line enables session persistence
+const db = getFirestore(app);
 
-// Firebase services
-const auth = getAuth(firebaseApp);
-const db = getFirestore(firebaseApp);
-
-export { firebaseApp, auth, db };
+export { auth, db };
