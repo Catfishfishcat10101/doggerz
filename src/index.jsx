@@ -4,7 +4,7 @@ import App from './App';
 import './styles/App.css';
 import { Provider } from 'react-redux';
 import store from './redux/store';
-import { GameStateProvider } from './components/context/GameStateContext';
+import { GameStateContext } from './context/GameStateContext';
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>

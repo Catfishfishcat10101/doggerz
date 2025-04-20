@@ -53,16 +53,15 @@ const dogSlice = createSlice({
     loadState: (state, action) => {
       return { ...state, ...action.payload };
     },
-    gainXP: (state, action) => {
-      state.xp += action.payload;
-      if (state.xp >= 50 && !state.tricksLearned.includes("sit")) {
-        state.tricksLearned.push("sit");
-      }
-      if (state.xp >= 100 && !state.tricksLearned.includes("roll")) {
+    gainXP: (state) => {
+  state.xp = (state.xp || 0) + 10;
+}
+
+      if (state.xp >= 100 && !state.tricksLearned.includes("roll")} {
         state.tricksLearned.push("roll");
       }
       // ADD MORE MILESTONES HERE
-    },
+    }
     resetGame: (state, action) => {
       return {
         happiness: 100,
@@ -82,15 +81,18 @@ const dogSlice = createSlice({
 });
 
 export const {
-  setDogName,
+  ageUp,
   feed,
   play,
   learnTrick,
-  ageUp,
   pottyTrain,
   toggleSound,
   move,
+  resetGame,
+  setDogName,
   loadState,
+  gainXP // 👈 add this
 } = dogSlice.actions;
+
 
 export default dogSlice.reducer;

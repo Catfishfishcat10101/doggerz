@@ -4,10 +4,9 @@ import userReducer from "./userSlice";
 
 const loadState = () => {
   try {
-    const state = localStorage.getItem("dogState");
-    return state ? JSON.parse(state) : undefined;
-  } catch (err) {
-    console.error("Could not load state", err);
+    const serialized = localStorage.getItem("dogState");
+    return serialized ? JSON.parse(serialized) : undefined;
+  } catch {
     return undefined;
   }
 };
@@ -16,7 +15,7 @@ const saveState = (state) => {
   try {
     localStorage.setItem("dogState", JSON.stringify(state));
   } catch (err) {
-    console.error("Could not save state", err);
+    console.error("Save error", err);
   }
 };
 
