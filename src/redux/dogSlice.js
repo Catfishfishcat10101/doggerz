@@ -1,9 +1,10 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
+  name: "",
+  age: 0,
   happiness: 100,
   energy: 100,
-  age: 0,
   x: 96,
   y: 96,
   direction: "down",
@@ -13,7 +14,7 @@ const initialState = {
 };
 
 const dogSlice = createSlice({
-  name: "Doggo",
+  name: "dog",
   initialState,
   reducers: {
     setDogName: (state, action) => {
@@ -25,6 +26,7 @@ const dogSlice = createSlice({
     play: (state) => {
       state.energy = Math.max(state.energy - 10, 0);
       state.happiness = Math.min(state.happiness + 15, 100);
+      state.xp = Math.min(state.xp + 5, 100);
     },
     learnTrick: (state, action) => {
       if (!state.tricksLearned.includes(action.payload)) {
@@ -53,6 +55,7 @@ const dogSlice = createSlice({
 });
 
 export const {
+  setDogName,
   feed,
   play,
   learnTrick,
@@ -61,7 +64,6 @@ export const {
   toggleSound,
   move,
   loadState,
-  setDogName
 } = dogSlice.actions;
 
 export default dogSlice.reducer;

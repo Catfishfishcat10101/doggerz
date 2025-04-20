@@ -5,25 +5,38 @@ import { setDogName } from "../redux/dogSlice";
 const DogName = () => {
   const dispatch = useDispatch();
   const currentName = useSelector((state) => state.dog.name);
-  const [name, setName] = useState(currentName);
+  const [input, setInput] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleNameSubmit = (e) => {
     e.preventDefault();
-    dispatch(setDogName(name));
+    if (input.trim()) {
+      dispatch(setDogName(input.trim()));
+      setInput("");
+    }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="text-center my-4">
-      <label className="block text-white mb-1">Name Your Dog:</label>
-      <input
-        className="px-3 py-2 rounded text-black"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-      />
-      <button type="submit" className="ml-2 bg-blue-500 text-white px-3 py-2 rounded">
-        Save
-      </button>
-    </form>
+    <div className="mb-4 text-center">
+      {currentName ? (
+        <h2 className="text-2xl font-semibold">🐶 Meet {currentName}!</h2>
+      ) : (
+        <form onSubmit={handleNameSubmit} className="flex flex-col items-center gap-2">
+          <input
+            className="text-black px-4 py-1 rounded shadow"
+            type="text"
+            placeholder="Name your dog..."
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+          />
+          <button
+            type="submit"
+            className="bg-yellow-400 text-black px-4 py-1 rounded font-bold hover:bg-yellow-500 transition"
+          >
+            Confirm Name
+          </button>
+        </form>
+      )}
+    </div>
   );
 };
 
