@@ -86,7 +86,6 @@ input[type="text"] {
   width: 240px;
   font-size: 1rem;
 }
-
 /* Responsive Fixes */
 @media screen and (max-width: 768px) {
   h1 {

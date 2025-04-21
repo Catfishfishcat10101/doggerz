@@ -1,10 +1,15 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import './index.css';
 import './styles/App.css';
 import { Provider } from 'react-redux';
 import store from './redux/store';
-import { GameStateContext } from './context/GameStateContext';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from './firebase/firebase';
+import { useDispatch } from 'react-redux';
+import { setUser } from './redux/userSlice';
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>

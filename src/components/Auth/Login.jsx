@@ -1,14 +1,16 @@
 import React, { useState } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../../firebase/firebase";
-import { useNavigate, Link, Navigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { setUser } from "../../redux/userSlice";
+import { Navigate } from "react-router-dom";
 
 const Login = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const currentUser = useSelector((state) => state.user.currentUser);
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -23,7 +25,8 @@ const Login = () => {
       dispatch(setUser(userCred.user));
       navigate("/");
     } catch (err) {
-      setError("Login failed. Check your credentials.");
+      console.error("Login error", err);
+      setError("Login failed. Check your email and password.");
     }
   };
 
@@ -33,12 +36,31 @@ const Login = () => {
       <form onSubmit={handleLogin} className="bg-white text-black p-6 rounded shadow-md w-full max-w-sm">
         {error && <p className="text-red-500 mb-2">{error}</p>}
         <label>Email</label>
-        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="border p-2 w-full mb-4 rounded" required />
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="border p-2 w-full mb-4 rounded"
+          required
+        />
+
         <label>Password</label>
-        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="border p-2 w-full mb-4 rounded" required />
-        <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded w-full hover:bg-blue-700">Log In</button>
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="border p-2 w-full mb-4 rounded"
+          required
+        />
+
+        <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded w-full hover:bg-blue-700">
+          Log In
+        </button>
         <p className="text-sm text-center mt-4">
-          Don’t have an account? <Link to="/signup" className="text-blue-600 hover:underline">Sign up here</Link>
+          Don’t have an account?{" "}
+          <Link to="/signup" className="text-blue-600 hover:underline">
+            Sign up here
+          </Link>
         </p>
       </form>
     </div>
