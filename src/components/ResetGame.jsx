@@ -1,28 +1,12 @@
-import React from "react";
+// src/components/ResetGame.jsx
 import { useDispatch } from "react-redux";
-import { resetGame } from "../redux/dogSlice";
+import { resetDog } from "../redux/dogSlice";   // not resetGame
 
-const ResetGame = () => {
+export default function ResetGame() {
   const dispatch = useDispatch();
-
-  const confirmReset = () => {
-    if (window.confirm("Reset your dog and all progress?")) {
-      localStorage.clear();
-      dispatch(resetGame());
-      window.location.reload();
-    }
-  };
-
   return (
-    <div className="text-center mt-4">
-      <button
-        onClick={confirmReset}
-        className="bg-red-600 hover:bg-red-700 px-6 py-2 text-white font-bold rounded"
-      >
-        🔄 Reset Game
-      </button>
-    </div>
+    <button onClick={() => dispatch(resetDog())}>
+      Reset
+    </button>
   );
-};
-
-export default ResetGame;
+}

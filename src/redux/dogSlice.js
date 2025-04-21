@@ -1,14 +1,11 @@
+// src/redux/dogSlice.js
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
-  name: "",
   happiness: 100,
   energy: 100,
   age: 0,
-  xp: 0,
-  x: 96,
-  y: 96,
-  direction: "down",
+  xp: 0,               // make sure you have an xp field
   tricksLearned: [],
   pottyTrained: false,
   soundEnabled: true,
@@ -18,57 +15,32 @@ const dogSlice = createSlice({
   name: "dog",
   initialState,
   reducers: {
-    setDogName: (state, action) => {
-      state.name = action.payload;
-    },
-    feed: (state) => {
-      state.energy = Math.min(state.energy + 20, 100);
-    },
-    play: (state) => {
-      state.energy = Math.max(state.energy - 10, 0);
-      state.happiness = Math.min(state.happiness + 15, 100);
-      state.xp += 5;
-    },
-    learnTrick: (state, action) => {
-      const trick = action.payload;
-      if (!state.tricksLearned.includes(trick)) {
-        state.tricksLearned.push(trick);
-        state.xp += 20;
-      }
-    },
-    pottyTrain: (state) => {
-      state.pottyTrained = true;
-    },
-    ageUp: (state) => {
-      state.age += 1;
-    },
-    toggleSound: (state) => {
-      state.soundEnabled = !state.soundEnabled;
-    },
-    move: (state, action) => {
-      const { x, y, direction } = action.payload;
-      state.x = x;
-      state.y = y;
-      state.direction = direction;
-    },
-    loadState: (state, action) => {
-      return { ...state, ...action.payload };
-    },
-    resetDog: () => initialState,
+    feed: (state) => { /* … */ },
+    play: (state) => { /* … */ },
+    ageUp: (state) => { state.age++; },
+    gainXP: (state, action) => { state.xp += action.payload; },   // <-- new
+    learnTrick: (state, action) => { /* … */ },
+    pottyTrain: (state) => { /* … */ },
+    resetDog: () => initialState,                                  // <-- use this
+    setDogName: (state, action) => { /* … */ },
+    toggleSound: (state) => { /* … */ },
+    loadState: (state, action) => ({ ...state, ...action.payload }),
+    move: (state, action) => { /* … */ },
   },
 });
 
 export const {
-  setDogName,
   feed,
   play,
-  learnTrick,
   ageUp,
+  gainXP,            // <-- export it here
+  learnTrick,
   pottyTrain,
+  resetDog,          // <-- this replaces resetGame
+  setDogName,
   toggleSound,
-  move,
   loadState,
-  resetDog,
+  move,
 } = dogSlice.actions;
 
 export default dogSlice.reducer;

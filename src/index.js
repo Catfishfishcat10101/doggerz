@@ -1,21 +1,32 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import App from './App';
-import './index.css';
-import './styles/App.css';
-import { Provider } from 'react-redux';
-import store from './redux/store';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from './firebase/firebase';
-import { useDispatch } from 'react-redux';
-import { setUser } from './redux/userSlice';
+// src/index.js
+import React, { useEffect } from "react";
+import ReactDOM from "react-dom/client";
+import "./index.css";
+import App from "./App";
+import { Provider, useDispatch } from "react-redux";
+import store from "./redux/store";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "./firebase";
+import { setUser } from "./redux/userSlice";
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
+function AuthListener({ children }) {
+  const dispatch = useDispatch();
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, user => {
+      // push a minimal user object (or null) into your Redux slice
+      dispatch(setUser(user ? { uid: user.uid, email: user.email } : null));
+    });
+    return unsubscribe; // clean up listener on unmount
+  }, [dispatch]);
+
+  return children;
+}
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
-  <React.StrictMode>
-    <Provider store={store}>
+  <Provider store={store}>
+    <AuthListener>
       <App />
-    </Provider>
-  </React.StrictMode>
+    </AuthListener>
+  </Provider>
 );
-// If you have a service worker, you can register it here

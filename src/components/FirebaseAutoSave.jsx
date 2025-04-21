@@ -1,8 +1,8 @@
 import { useEffect } from "react";
 import { useSelector } from "react-redux";
 import { doc, setDoc, getDoc } from "firebase/firestore";
-import { db } from "../firebase/firebase";
-import { auth } from "../firebase/firebase";
+import { db } from "../firebase";
+import { auth } from "../firebase";
 import { loadState } from "../redux/dogSlice";
 import { useDispatch } from "react-redux";
 
