@@ -1,7 +1,7 @@
 // src/firebase.js
-import { initializeApp }   from "firebase/app";
-import { getAuth }          from "firebase/auth";
-import { getFirestore }     from "firebase/firestore";
+import { initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 // if you need analytics, import + export it; otherwise drop these two lines:
 // import { getAnalytics }     from "firebase/analytics";
 // const analytics = getAnalytics(app);

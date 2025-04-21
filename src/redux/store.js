@@ -1,6 +1,6 @@
 import { configureStore } from "@reduxjs/toolkit";
-import dogReducer from "./dogSlice";
-import userReducer from "./userSlice";
+import dogReducer from "./dogSlice.js";
+import userReducer from "./userSlice.js";
 
 // Persistent state load/save
 const loadState = () => {

@@ -2,12 +2,12 @@
 import React, { useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import "./index.css";
-import App from "./App";
+import App from "./App.jsx";
 import { Provider, useDispatch } from "react-redux";
-import store from "./redux/store";
+import store from "./redux/store.js";
 import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "./firebase";
-import { setUser } from "./redux/userSlice";
+import { auth } from "./firebase.js";
+import { setUser } from "./redux/userSlice.js";
 
 function AuthListener({ children }) {
   const dispatch = useDispatch();

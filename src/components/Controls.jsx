@@ -1,6 +1,6 @@
 // src/components/Controls.jsx
 import { useDispatch } from "react-redux";
-import { play, feed, gainXP } from "../redux/dogSlice";  // gainXP now exists
+import { play, feed, gainXP } from "../redux/dogSlice.js";  // gainXP now exists
 
 export default function Controls() {
   const dispatch = useDispatch();

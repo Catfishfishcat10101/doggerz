@@ -1,6 +1,6 @@
 import React from "react";
 import { useDispatch } from "react-redux";
-import { play } from "../redux/dogSlice";
+import { play } from "../redux/dogSlice.js";
 
 const ToyBox = () => {
   const dispatch = useDispatch();

@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { move } from "../redux/dogSlice";
+import { move } from "../redux/dogSlice.js";
 import barkSoundSrc from "../assets/audio/bark.mp3";
 import poopSprite from "../assets/sprites/poop.png";
 import dayBg from "../assets/backgrounds/yard_day.png";

@@ -1,15 +1,26 @@
-/* Status meters */
+/* Status bars for energy, happiness, xp */
+.status-container {
+  margin-top: 1rem;
+}
+.status-item {
+  margin-bottom: 0.75rem;
+}
+.status-label {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
 .status-bar {
-  height: 10px;
   width: 100%;
-  background-color: rgba(255, 255, 255, 0.2);
-  border-radius: 6px;
-  margin-bottom: 0.5rem;
+  height: 1rem;
+  background-color: #ddd;
+  border-radius: 0.5rem;
+  overflow: hidden;
 }
-
-.status-bar-fill {
+.status-fill {
   height: 100%;
-  border-radius: 6px;
-  background-color: #00c853;
-  transition: width 0.3s ease-in-out;
+  background: var(--primary);
+  transition: width 0.4s ease;
 }
+.status-fill.energy   { background: #fbc02d; } /* yellow */
+.status-fill.happiness { background: #ff5722; } /* orange */
+.status-fill.xp        { background: #4caf50; } /* green */

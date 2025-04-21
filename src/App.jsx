@@ -3,20 +3,19 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { useSelector } from "react-redux";
 
 // Components
-import Dog from "./components/Dog";
-import DogName from "./components/DogName";
-import Controls from "./components/Controls";
-import Status from "./components/Status";
-import Tricks from "./components/Tricks";
-import FirebaseAutoSave from "./components/FirebaseAutoSave";
-import ToyBox from "./components/ToyBox";
-import ResetGame from "./components/ResetGame";
-import PoopScoop from "./components/PoopScoop";
-import StatsBar from "./components/StatsBar";
-import Signup from "./components/Auth/Signup";
-import Login from "./components/Auth/Login";
-import LogoutButton from "./components/Auth/LogoutButton";
-
+import Dog from "./components/Dog.jsx";
+import DogName from "./components/DogName.jsx";
+import Controls from "./components/Controls.jsx";
+import Status from "./components/Status.jsx";
+import Tricks from "./components/Tricks.jsx";
+import FirebaseAutoSave from "./components/FirebaseAutoSave.jsx";
+import ToyBox from "./components/ToyBox.jsx";
+import ResetGame from "./components/ResetGame.jsx";
+import PoopScoop from "./components/PoopScoop.jsx";
+import StatsBar from "./components/StatsBar.jsx";
+import Signup from "./components/Auth/Signup.jsx";
+import Login from "./components/Auth/Login.jsx";
+import LogoutButton from "./components/Auth/LogoutButton.jsx";
 import "./styles/App.css";
 
 const MainApp = () => {

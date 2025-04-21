@@ -1,14 +1,42 @@
-/* Dog Sprite styling */
+/* Dog component wrapper */
 .dog-container {
-  width: 160px;
-  height: 160px;
-  overflow: hidden;
   position: relative;
+  width: 200px;
+  height: 200px;
+  margin: 0 auto;
+  overflow: hidden;
 }
 
-.dog-canvas {
+/* Background scenes */
+.dog-bg {
+  position: absolute;
   width: 100%;
-  height: auto;
-  image-rendering: pixelated;
+  height: 100%;
+  object-fit: cover;
+  top: 0; left: 0;
+  transition: opacity 0.5s ease;
+}
+.dog-bg.night {
+  opacity: 0;
+}
+.dog-container[data-time="night"] .dog-bg.day {
+  opacity: 0;
+}
+.dog-container[data-time="night"] .dog-bg.night {
+  opacity: 1;
 }
 
+/* Dog sprite */
+.dog-sprite {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100px;
+  height: 100px;
+  background: url('../assets/sprites/jack_russell_directions.png') 0 0 no-repeat;
+  background-size: contain;
+  will-change: transform;
+}
+.walking .dog-sprite {
+  animation: dogWalk var(--walk-duration) infinite var(--walk-ease);
+}
