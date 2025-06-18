@@ -4,8 +4,8 @@ import { move } from "../redux/dogSlice.js";
 import barkSoundSrc from "../assets/audio/bark.mp3";
 import poopSprite from "../assets/sprites/poop.png";
 import dayBg from "../assets/backgrounds/yard_day.png";
-import nightBg from "../assets/backgrounds/yard_night.png";
 import dogSprite from "../assets/sprites/jack_russell_directions.png";
+import DogSpriteCanvas from "./DogSpriteCanvas";
 
 const Dog = ({ poops, setPoops }) => {
   const canvasRef = useRef(null);
