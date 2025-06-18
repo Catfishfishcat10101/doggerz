@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 .App {
   text-align: center;
   min-height: 100vh;
@@ -43,4 +44,22 @@
   to {
     transform: rotate(360deg);
   }
+=======
+/* App-wide layout */
+.app-container {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 1rem;
+  background: rgba(255,255,255,0.9);
+  border-radius: 0.75rem;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+}
+header, footer {
+  text-align: center;
+  margin: 1rem 0;
+}
+h1 {
+  font-size: 2rem;
+  margin: 0.5rem 0;
+>>>>>>> 3b2685a460845831f4c51ffea0278b9ada898d58
 }

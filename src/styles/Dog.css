@@ -40,7 +40,10 @@
 .walking .dog-sprite {
   animation: dogWalk var(--walk-duration) infinite var(--walk-ease);
 }
+<<<<<<< HEAD
 
 .dog-sprite:walking {
   animation: dogWalk var(--walk-duration) var(--walk-ease) infinite;
 }
+=======
+>>>>>>> 3b2685a460845831f4c51ffea0278b9ada898d58

@@ -1,5 +1,10 @@
 import React, { useState } from "react";
+<<<<<<< HEAD
 import { auth, signInWithEmailAndPassword } from "../../firebase";
+=======
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../../firebase.js";
+>>>>>>> 3b2685a460845831f4c51ffea0278b9ada898d58
 import { useNavigate, Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { setUser } from "../../redux/userSlice";
