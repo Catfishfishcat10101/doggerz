@@ -1,8 +1,3 @@
-# Getting Started with Create React App
-``` bash
-git clone https://github.com/Catfishfishcat10101/doggerz.git
-cd doggerz
-
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts

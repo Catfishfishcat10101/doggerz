@@ -1,12 +1,7 @@
-<<<<<<< HEAD
-=======
-/* Import Tailwind foundations */
->>>>>>> 3b2685a460845831f4c51ffea0278b9ada898d58
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-<<<<<<< HEAD
 /*custom global styles */
 :root {
   --primary: #2196f3;
@@ -19,62 +14,4 @@
   --walk-direction: 1s;
   --walk-ease: cubic-bezier(0.4, 0, 0.2, 1);
   --ripple-color: rgba(225, 225, 225, 0.5);
-}
-
-html, body {
-  @apply m-0 p-0 h-full text-gray-500 font-sans bg-gradient-to-br from-font-[var(--bg-start)] to-[var(--bg-end)];
-}
-=======
-/* Global CSS variables for theming & animation */
-:root {
-  /* Colors */
-  --primary:   #2196f3;
-  --primary-d: #1976d2;
-  --accent:    #21cbf3;
-  --bg-start:  #4caf50;
-  --bg-end:    #2196f3;
-
-  /* Animation defaults */
-  --walk-distance: 10px;
-  --walk-duration: 1s;
-  --walk-ease: cubic-bezier(0.4, 0, 0.2, 1);
-  --ripple-color: rgba(255,255,255,0.5);
-}
-
-/* Global resets & base */
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-html, body {
-  margin: 0;
-  padding: 0;
-  font-family: 'Inter', sans-serif;
-  background: linear-gradient(to bottom right, var(--bg-start), var(--bg-end));
-  color: #333;
-  height: 100%;
-}
-#root {
-  min-height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Utility: ripple container */
-.ripple-container {
-  position: relative;
-  overflow: hidden;
-}
-
-/* Utility: visually hidden (for accessibility) */
-.sr-only {
-  position: absolute;
-  width: 1px; height: 1px;
-  padding: 0; margin: -1px;
-  overflow: hidden;
-  clip: rect(0,0,0,0);
-  white-space: nowrap;
-  border: 0;
-}
->>>>>>> 3b2685a460845831f4c51ffea0278b9ada898d58
+};
