@@ -1,0 +1,38 @@
+/* Tricks list */
+.tricks-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+.trick-button {
+  position: relative;
+  padding: 0.5rem 1rem;
+  background-color: #eee;
+  border: 2px solid #ccc;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+  overflow: hidden;
+}
+.trick-button.locked {
+  filter: grayscale(80%);
+  cursor: not-allowed;
+}
+.trick-button.unlocked {
+  background-color: var(--accent);
+  border-color: var(--primary);
+  color: #fff;
+}
+.trick-button.unlocked:hover {
+  transform: translateY(-3px);
+}
+
+/* Unlock animation */
+@keyframes unlockFlash {
+  0%,100% { background-color: var(--accent); }
+  50%     { background-color: #fff; }
+}
+.trick-button.unlocked.flash {
+  animation: unlockFlash 0.8s ease-in-out;
+}

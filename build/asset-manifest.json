@@ -1,0 +1,14 @@
+{
+  "files": {
+    "main.css": "/static/css/main.d4b79763.css",
+    "main.js": "/static/js/main.43644137.js",
+    "static/media/jack_russell_directions.png": "/static/media/jack_russell_directions.a7e3d1200460e758d82c.png",
+    "index.html": "/index.html",
+    "main.d4b79763.css.map": "/static/css/main.d4b79763.css.map",
+    "main.43644137.js.map": "/static/js/main.43644137.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.d4b79763.css",
+    "static/js/main.43644137.js"
+  ]
+}

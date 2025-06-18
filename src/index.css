@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*custom global styles */
+:root {
+  --primary: #2196f3;
+  --primary-d: #1976d2;
+  --accent: #21cbf5;
+  --bg-start: #4caf50;
+  --bg-end: #2196f3;
+
+  --walk-distance: 10px;
+  --walk-direction: 1s;
+  --walk-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --ripple-color: rgba(225, 225, 225, 0.5);
+}
+
+html, body {
+  @apply m-0 p-0 h-full text-gray-500 font-sans bg-gradient-to-br from-font-[var(--bg-start)] to-[var(--bg-end)];
+}
