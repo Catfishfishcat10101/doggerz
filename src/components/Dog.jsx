@@ -4,27 +4,27 @@ import { move } from "../redux/dogSlice.js";
 import barkSoundSrc from "../assets/audio/bark.mp3";
 import poopSprite from "../assets/sprites/poop.png";
 import dayBg from "../assets/backgrounds/yard_day.png";
+import nightBg from "../assets/backgrounds/yard_night.png";
 import dogSprite from "../assets/sprites/jack_russell_directions.png";
-import DogSpriteCanvas from "./DogSpriteCanvas";
 
 const Dog = ({ poops, setPoops }) => {
   const canvasRef = useRef(null);
-  const frameWidth = 64;
-  const frameHeight = 64;
-  const canvasWidth = 256;
-  const canvasHeight = 256;
-  const totalFrames = 4;
+  const poopImg = useRef(new Image());
+  const barkAudio = useRef(new Audio(barkSoundSrc));
+  const [spriteLoaded, setSpriteLoaded] = useState(false);
+  const [sprite, setSprite] = useState(new Image());
+  const [background, setBackground] = useState(new Image());
+  const [frame, setFrame] = useState(0);
 
   const dispatch = useDispatch();
   const { x, y, direction, pottyTrained, soundEnabled } = useSelector((state) => state.dog);
   const directionMap = { down: 0, left: 1, right: 2, up: 3 };
 
-  const [frame, setFrame] = useState(0);
-  const [spriteLoaded, setSpriteLoaded] = useState(false);
-  const [bgLoaded, setBgLoaded] = useState(false);
-  const [background, setBackground] = useState(new Image());
-  const [sprite, setSprite] = useState(new Image());
-  const barkAudio = useRef(new Audio(barkSoundSrc));
+  const frameWidth = 64;
+  const frameHeight = 64;
+  const canvasWidth = 256;
+  const canvasHeight = 256;
+  const totalFrames = 4;
 
   useEffect(() => {
     const s = new Image();
@@ -41,10 +41,12 @@ const Dog = ({ poops, setPoops }) => {
       setBackground(bg);
       setBgLoaded(true);
     };
+
+    poopImg.current.src = poopSprite;
   }, []);
 
   const getRandomDirection = () => {
-    const directions = ["up", "down", "left", "right"];
+    const directions = ["left", "right", "up", "down"];
     return directions[Math.floor(Math.random() * directions.length)];
   };
 
@@ -52,10 +54,12 @@ const Dog = ({ poops, setPoops }) => {
     const speed = 2;
     let newX = x;
     let newY = y;
+
     if (dir === "left") newX = Math.max(0, x - speed);
     if (dir === "right") newX = Math.min(canvasWidth - frameWidth, x + speed);
     if (dir === "up") newY = Math.max(0, y - speed);
     if (dir === "down") newY = Math.min(canvasHeight - frameHeight, y + speed);
+
     dispatch(move({ x: newX, y: newY, direction: dir }));
   };
 
@@ -92,10 +96,12 @@ const Dog = ({ poops, setPoops }) => {
   // Draw everything on canvas
   useEffect(() => {
     if (!spriteLoaded || !bgLoaded) return;
+
     const ctx = canvasRef.current.getContext("2d");
 
     const draw = () => {
       const row = directionMap[direction];
+
       ctx.clearRect(0, 0, canvasWidth, canvasHeight);
       ctx.drawImage(background, 0, 0, canvasWidth, canvasHeight);
       ctx.drawImage(
@@ -112,8 +118,6 @@ const Dog = ({ poops, setPoops }) => {
 
       // Draw poop sprites
       poops.forEach(({ x, y }) => {
-        const poopImg = new Image();
-        poopImg.src = poopSprite;
         ctx.drawImage(poopImg, x + 10, y + 10, 24, 24);
       });
 

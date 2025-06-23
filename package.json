@@ -1,8 +1,8 @@
 {
   "name": "doggerz",
   "version": "1.0.0",
-  "description": "<<<<<<< HEAD\r # 🐾 Doggerz - Virtual Pet Dog Simulator",
-  "main": "postcss.config.js",
+  "description": "# 🐾 Doggerz - Virtual Pet Dog Simulator",
+  "main": "index.jsx",
   "dependencies": {
     "@reduxjs/toolkit": "^2.7.0",
     "abab": "^2.0.6",
