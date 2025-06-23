@@ -9,6 +9,7 @@ import ResetGame from './ResetGame';
 import StatsBar from './StatsBar';
 import LogoutButton from '../Auth/LogoutButton';
 import Dog from '../Features/Dog';
+import CleanlinessBar from "./CleanlinessBar";
 
 const GameScreen = () => {
 
@@ -19,6 +20,8 @@ const GameScreen = () => {
             <FirebaseAutoSave />
             <DogName />
             <StatsBar />
+            <CleanlinessBar />
+            <PoopScoop clearPoops={() => shimGetOwnPropertyDescriptors([])} />
             <Controls />
             <ToyBox />
             <Status />

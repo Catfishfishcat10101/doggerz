@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { useSelector } from 'react-redux';
 
 // Components
-import Splash from "./components/Splash.jsx";
+import Splash from "./components/UI/Splash.jsx";
 import Dog from "./components/Dog.jsx";
 import DogName from "./components/DogName.jsx";
 import Controls from "./components/UI/Controls.jsx";

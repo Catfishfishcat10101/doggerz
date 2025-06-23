@@ -1,6 +1,6 @@
 import React from "react";
 import { useDispatch } from "react-redux";
-import { play } from "../redux/dogSlice.js";
+import { playWithDog } from "../redux/dogSlice.js";
 
 const ToyBox = () => {
   const dispatch = useDispatch();
@@ -12,7 +12,7 @@ const ToyBox = () => {
   ];
 
   const handlePlay = (bonus) => {
-    dispatch(play({ bonus }));
+    dispatch(playWithDog({ bonus }));
   };
 
   return (
