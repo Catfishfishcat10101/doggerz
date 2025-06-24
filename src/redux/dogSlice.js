@@ -11,6 +11,8 @@ const initialState = {
   pottyLevel: 0,
   isPottyTrained: false,
   tricksLearned: [],
+  toylist: [],
+  modalOpen: false,
   x: 96,
   y: 96,
   direction: "down",
@@ -32,12 +34,29 @@ const dogSlice = createSlice({
   name: "dog",
   initialState,
   reducers: {
+    addToy: (state, action) => {
+      if (!state.toylist.includes(action.payload)) {
+        state.toylist.push(action.payload);
+      }
+      
+    },
+
+    removeToy: (state, action) => {
+      state.toylist = state.toylist.filter(toy => toy.id !== action.payload.id);
+    },
+
+    toggleToyModal: (state, action) => {
+      state.modalOpen = action.payload;
+    },
+
     feedDog: (state) => {
       state.hunger = Math.min(100, state.hunger + 20);
       state.energy = Math.min(100, state.energy + 10);
     },
+
     playWithDog: (state) => {
-      state.happiness = Math.min(100, state.happiness + 15);
+      s
+      tate.happiness = Math.min(100, state.happiness + 15);
       state.energy = Math.max(0, state.energy - 10);
     },
     teachTrick: (state, action) => {
@@ -46,6 +65,7 @@ const dogSlice = createSlice({
         state.xp += 10;
       }
     },
+
     gainXP: (state, action) => {
       state.xp += action.payload || 5;
       if (state.xp >= state.level * 100) {
@@ -53,21 +73,25 @@ const dogSlice = createSlice({
         state.level += 1;
       }
     },
+
     move: (state, action) => {
       state.x = action.payload.x;
       state.y = action.payload.y;
       state.direction = action.payload.direction;
     },
+
     increasePottyLevel: (state, action) => {
       state.pottyLevel = Math.min(100, state.pottyLevel + (action.payload || 5));
       if (state.pottyLevel >= 100) {
         state.isPottyTrained = true;
       }
     },
+
     resetPottyLevel: (state) => {
       state.pottyLevel = 0;
       state.isPottyTrained = false;
     },
+
     setDogName: (state, action) => { state.name = action.payload; },
     setDogGender: (state, action) => { state.gender = action.payload; },
     resetDogState: () => initialState,
@@ -80,6 +104,7 @@ const dogSlice = createSlice({
       state.hasMange = false;
       state.lastBathed = Date.now();
     },
+
     updateCleanliness: (state) => {
       const days = (Date.now() - state.lastBathed) / (1000 * 60 * 60 * 24);
       if (days >= 3 && !state.isDirty) state.isDirty = true;
@@ -111,6 +136,7 @@ export const {
   startBarking, stopBarking, startPooping, stopPooping,
   loadState,
   batheDog, updateCleanliness,
+  addToy, removeToy, toggleToyModal,
 } = dogSlice.actions;
 
 export default dogSlice.reducer;

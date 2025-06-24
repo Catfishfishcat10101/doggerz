@@ -13,7 +13,8 @@ function AuthListener({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, user => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      console.log("🔥 Firebase user:", user);
       dispatch(setUser(user ? { uid: user.uid, email: user.email } : null));
       setLoading(false);
     });

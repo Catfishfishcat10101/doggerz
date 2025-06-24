@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import React, { useState, useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 
 // Components
 import Splash from "./components/UI/Splash.jsx";
@@ -14,9 +14,11 @@ import ToyBox from "./components/ToyBox.jsx";
 import ResetGame from "./components/ResetGame.jsx";
 import PoopScoop from "./components/PoopScoop.jsx";
 import StatsBar from "./components/StatsBar.jsx";
+import CleanlinessBar from "./components/CleanlinessBar.jsx";
 import Signup from "./components/Auth/Signup.jsx";
 import Login from "./components/Auth/Login.jsx";
 import LogoutButton from "./components/Auth/LogoutButton.jsx";
+import DogAIEngine from "./components/DogAIEngine.jsx";
 
 import "./styles/App.css";
 
@@ -38,12 +40,15 @@ const MainApp = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-500 to-blue-600 flex flex-col items-center justify-center p-4 text-white relative">
+      <DogAIEngine />
       <h1 className="text-4xl md:text-5xl font-bold mb-4 drop-shadow">🐾 Doggerz</h1>
       <FirebaseAutoSave />
+      <Splash />
       <DogName />
       <Dog poops={poops} setPoops={setPoops} />
       <PoopScoop clearPoops={() => setPoops([])} />
       <StatsBar xp={xp} />
+      <CleanlinessBar />
       <Controls />
       <ToyBox />
       <Status />
@@ -58,14 +63,14 @@ const App = () => {
   const user = useSelector((state) => state.user.user);
 
   return (
-  <Router>
-    <Routes>
-      <Route path="/" element={user ? <MainApp /> : <Navigate to="/login" replace />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<Signup />} />
-    </Routes>
-  </Router>
- );
+    <Router>
+      <Routes>
+        <Route path="/" element={user ? <MainApp /> : <Navigate to="/login" replace />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+      </Routes>
+    </Router>
+  );
 };
 
 export default App;

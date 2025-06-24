@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import { auth, signInWithEmailAndPassword } from "../../firebase";
-import { useNavigate, Link } from "react-router-dom";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../firebase";
+import { useNavigate, Link, Navigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { setUser } from "../../redux/userSlice";
-import { Navigate } from "react-router-dom";
 
 const Login = () => {
   const dispatch = useDispatch();
