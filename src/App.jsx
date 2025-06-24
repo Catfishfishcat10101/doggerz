@@ -1,75 +1,44 @@
-import React, { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Signup from "./components/Auth/Signup";
+import Login from "./components/Auth/Login";
+import LogoutButton from "./components/Auth/LogoutButton";
+import Dog from "./components/Dog";
+import StatusBar from "./components/UI/StatsBar";
+import CleanlinessBar from "./components/UI/CleanlinessBar";
+import PoopScoop from "./components/UI/PoopScoop";
+import Controls from "./components/UI/Controls";
 import { useSelector } from "react-redux";
 
-// Components
-import Splash from "./components/UI/Splash.jsx";
-import Dog from "./components/Dog.jsx";
-import DogName from "./components/DogName.jsx";
-import Controls from "./components/UI/Controls.jsx";
-import Status from "./components/Status.jsx";
-import Tricks from "./components/Tricks.jsx";
-import FirebaseAutoSave from "./components/FirebaseAutoSave.jsx";
-import ToyBox from "./components/ToyBox.jsx";
-import ResetGame from "./components/ResetGame.jsx";
-import PoopScoop from "./components/PoopScoop.jsx";
-import StatsBar from "./components/StatsBar.jsx";
-import CleanlinessBar from "./components/CleanlinessBar.jsx";
-import Signup from "./components/Auth/Signup.jsx";
-import Login from "./components/Auth/Login.jsx";
-import LogoutButton from "./components/Auth/LogoutButton.jsx";
-import DogAIEngine from "./components/DogAIEngine.jsx";
-
-import "./styles/App.css";
-
-const MainApp = () => {
-  const [showSplash, setShowSplash] = useState(true);
-  const [poops, setPoops] = useState([]);
-  const { xp } = useSelector((state) => state.dog);
-  const user = useSelector((state) => state.user.user);
-
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      setShowSplash(false);
-    }, 3000);
-    return () => clearTimeout(timeout);
-  }, []);
-
-  if (showSplash) return <Splash />;
-  if (!user) return <Navigate to="/login" replace />;
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-green-500 to-blue-600 flex flex-col items-center justify-center p-4 text-white relative">
-      <DogAIEngine />
-      <h1 className="text-4xl md:text-5xl font-bold mb-4 drop-shadow">🐾 Doggerz</h1>
-      <FirebaseAutoSave />
-      <Splash />
-      <DogName />
-      <Dog poops={poops} setPoops={setPoops} />
-      <PoopScoop clearPoops={() => setPoops([])} />
-      <StatsBar xp={xp} />
-      <CleanlinessBar />
-      <Controls />
-      <ToyBox />
-      <Status />
-      <Tricks />
-      <ResetGame />
-      <LogoutButton />
-    </div>
-  );
-};
-
 const App = () => {
-  const user = useSelector((state) => state.user.user);
+  const user = useSelector((state) => state.user.currentUser);
 
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={user ? <MainApp /> : <Navigate to="/login" replace />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-      </Routes>
-    </Router>
+    <div className="min-h-screen flex flex-col items-center justify-center text-center px-4 py-10 bg-gradient-to-br from-green-500 to-blue-500 font-sans">
+      <Router>
+        {user && <LogoutButton />}
+        <Routes>
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/login" element={<Login />} />
+          <Route
+            path="/"
+            element={
+              user ? (
+                <div className="w-full max-w-4xl flex flex-col items-center gap-4">
+                  <Dog />
+                  <StatusBar />
+                  <CleanlinessBar />
+                  <Controls />
+                  <PoopScoop />
+                </div>
+              ) : (
+                <Login />
+              )
+            }
+          />
+        </Routes>
+      </Router>
+    </div>
   );
 };
 

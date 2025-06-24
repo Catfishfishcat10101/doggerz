@@ -1,6 +1,6 @@
 import React  from "react";
 import { signOut } from "firebase/auth";
-import { auth } from "../firebase";
+import { auth } from "../../firebase";
 import { useDispatch } from "react-redux";
 import { clearUser } from "../../redux/userSlice.js";
 import { useNavigate } from "react-router-dom";

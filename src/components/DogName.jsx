@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { setDogName } from "../redux/dogSlice.js";
 
@@ -6,27 +6,37 @@ const DogName = () => {
   const dispatch = useDispatch();
   const currentName = useSelector((state) => state.dog.name);
   const [input, setInput] = useState("");
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    if (!currentName && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [currentName]);
 
   const handleNameSubmit = (e) => {
     e.preventDefault();
-    if (input.trim()) {
-      dispatch(setDogName(input.trim()));
+    const trimmed = input.trim();
+    if (trimmed.length > 0) {
+      dispatch(setDogName(trimmed));
       setInput("");
     }
   };
 
   return (
-    <div className="mb-4 text-center">
+    <div className="mb-4 text-center animate-fadeIn">
       {currentName ? (
-        <h2 className="text-2xl font-semibold">🐶 Meet {currentName}!</h2>
+        <h2 className="text-2xl font-semibold drop-shadow-sm">🐶 Meet {currentName}!</h2>
       ) : (
         <form onSubmit={handleNameSubmit} className="flex flex-col items-center gap-2">
           <input
-            className="text-black px-4 py-1 rounded shadow"
+            ref={inputRef}
+            className="text-black px-4 py-1 rounded shadow w-60"
             type="text"
             placeholder="Name your dog..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
+            maxLength={20}
           />
           <button
             type="submit"

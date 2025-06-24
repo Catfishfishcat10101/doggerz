@@ -14,28 +14,34 @@ const DogAIEngine = () => {
   const dispatch = useDispatch();
   const dog = useSelector((state) => state.dog);
 
-  // Handle random walk, bark, poop
+  // 🧠 Behavior timing constants
+  const WALK_INTERVAL = 8000;
+  const BARK_INTERVAL = 12000;
+  const POOP_INTERVAL = 20000;
+  const CLEANLINESS_INTERVAL = 15000;
+
+  // 🐾 Random behaviors (idle walking, barking, pooping)
   useEffect(() => {
     const walkTimer = setInterval(() => {
       if (Math.random() < 0.1) {
         dispatch(startWalking());
         setTimeout(() => dispatch(stopWalking()), 3000);
       }
-    }, 8000);
+    }, WALK_INTERVAL);
 
     const barkTimer = setInterval(() => {
       if (Math.random() < 0.2) {
         dispatch(startBarking());
         setTimeout(() => dispatch(stopBarking()), 2000);
       }
-    }, 12000);
+    }, BARK_INTERVAL);
 
     const poopTimer = setInterval(() => {
       if (Math.random() < 0.15) {
         dispatch(startPooping());
         setTimeout(() => dispatch(stopPooping()), 2500);
       }
-    }, 20000);
+    }, POOP_INTERVAL);
 
     return () => {
       clearInterval(walkTimer);
@@ -44,13 +50,13 @@ const DogAIEngine = () => {
     };
   }, [dispatch]);
 
-  // Handle passive cleanliness decay
+  // 🧼 Passive cleanliness decay
   useEffect(() => {
-    const interval = setInterval(() => {
+    const decayInterval = setInterval(() => {
       dispatch(updateCleanliness());
-    }, 15000); // 🔁 Simulated check every 15 seconds (adjust for real-time)
+    }, CLEANLINESS_INTERVAL);
 
-    return () => clearInterval(interval);
+    return () => clearInterval(decayInterval);
   }, [dispatch]);
 
   return null;

@@ -1,49 +1,49 @@
-/* Dog component wrapper */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 🌅 Container */
 .dog-container {
-  position: relative;
-  width: 200px;
-  height: 200px;
-  margin: 0 auto;
-  overflow: hidden;
+  @apply relative w-[200px] h-[200px] mx-auto overflow-hidden;
 }
 
-/* Background scenes */
+/* 🌇 Background layers */
 .dog-bg {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  top: 0; left: 0;
-  transition: opacity 0.5s ease;
+  @apply absolute w-full h-full object-cover top-0 left-0 transition-opacity duration-500;
 }
 .dog-bg.night {
-  opacity: 0;
+  @apply opacity-0;
 }
 .dog-container[data-time="night"] .dog-bg.day {
-  opacity: 0;
+  @apply opacity-0;
 }
 .dog-container[data-time="night"] .dog-bg.night {
-  opacity: 1;
+  @apply opacity-100;
 }
 
-/* Dog sprite */
+/* 🐶 Sprite setup */
 .dog-sprite {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100px;
-  height: 100px;
-  background: url('../assets/sprites/jack_russell_directions.png') 0 0 no-repeat;
+  @apply absolute bottom-0 left-0 w-[100px] h-[100px];
+  background: url('../assets/sprites/jack_russell_directions.png') no-repeat 0 0;
   background-size: contain;
   will-change: transform;
 }
-.walking .dog-sprite {
-  animation: dogWalk var(--walk-duration) infinite var(--walk-ease);
-}
-<<<<<<< HEAD
 
-.dog-sprite:walking {
-  animation: dogWalk var(--walk-duration) var(--walk-ease) infinite;
+/* 🚶 Walk animation (triggered dynamically) */
+.walking .dog-sprite {
+  animation: dogWalk var(--walk-duration, 1s) infinite var(--walk-ease, linear);
 }
-=======
->>>>>>> 3b2685a460845831f4c51ffea0278b9ada898d58
+
+/* Optional fallback selector (won’t do anything unless polyfilled) */
+.dog-sprite:walking {
+  animation: dogWalk var(--walk-duration, 1s) var(--walk-ease, linear) infinite;
+}
+
+/* You can define this keyframe in tailwind.config.js or inline for extra polish */
+@keyframes dogWalk {
+  0%   { transform: translateX(0) scaleY(1); }
+  25%  { transform: translateX(calc(var(--walk-distance) / 2)) scaleY(1.05); }
+  50%  { transform: translateX(var(--walk-distance)) scaleY(1); }
+  75%  { transform: translateX(calc(var(--walk-distance) / 2)) scaleY(0.95); }
+  100% { transform: translateX(0) scaleY(1); }
+}

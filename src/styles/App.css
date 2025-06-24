@@ -1,46 +1,28 @@
-.App {
-  text-align: center;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(to bottom right, #4caf50, #2196f3);
-  padding: 2rem;
-  font-family: 'Segoe UI', sans-serif;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Global CSS variables */
+:root {
+  --primary: #2196f3;
+  --primary-d: #1976d2;
+  --accent: #21cbf5;
+  --bg-start: #4caf50;
+  --bg-end: #2196f3;
+  --walk-distance: 10px;
+  --walk-direction: 1s;
+  --walk-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --ripple-color: rgba(225, 225, 225, 0.5);
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+/* Level-up animation */
+@keyframes floatUp {
+  0% { transform: translateY(0); opacity: 0; }
+  30% { opacity: 1; }
+  100% { transform: translateY(-40px); opacity: 0; }
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
-}
-
-.App-link {
-  color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.level-up {
+  @apply text-yellow-300 font-bold text-lg;
+  animation: floatUp 1.8s ease-in-out;
 }

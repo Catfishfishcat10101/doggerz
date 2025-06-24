@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Custom global styles */
+/* 🌈 Global variables */
 :root {
   --primary: #2196f3;
   --primary-d: #1976d2;
@@ -16,7 +16,7 @@
   --ripple-color: rgba(225, 225, 225, 0.5);
 }
 
-/* Level-up animation */
+/* 🎉 Level up animation */
 @keyframes floatUp {
   0% {
     transform: translateY(0);
@@ -32,5 +32,6 @@
 }
 
 .level-up {
+  @apply text-yellow-300 font-bold text-lg;
   animation: floatUp 1.8s ease-in-out;
 }

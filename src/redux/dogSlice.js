@@ -23,7 +23,7 @@ const initialState = {
   hasMange: false,
   lastBathed: Date.now(),
 
-  // AI state
+  // AI states
   isWalking: false,
   isRunning: false,
   isBarking: false,
@@ -34,38 +34,18 @@ const dogSlice = createSlice({
   name: "dog",
   initialState,
   reducers: {
-    addToy: (state, action) => {
-      if (!state.toylist.includes(action.payload)) {
-        state.toylist.push(action.payload);
-      }
-      
+    // Name & Gender
+    setDogName: (state, action) => { state.name = action.payload; },
+    setDogGender: (state, action) => { state.gender = action.payload; },
+
+    // Movement
+    move: (state, action) => {
+      state.x = action.payload.x;
+      state.y = action.payload.y;
+      state.direction = action.payload.direction;
     },
 
-    removeToy: (state, action) => {
-      state.toylist = state.toylist.filter(toy => toy.id !== action.payload.id);
-    },
-
-    toggleToyModal: (state, action) => {
-      state.modalOpen = action.payload;
-    },
-
-    feedDog: (state) => {
-      state.hunger = Math.min(100, state.hunger + 20);
-      state.energy = Math.min(100, state.energy + 10);
-    },
-
-    playWithDog: (state) => {
-      s
-      tate.happiness = Math.min(100, state.happiness + 15);
-      state.energy = Math.max(0, state.energy - 10);
-    },
-    teachTrick: (state, action) => {
-      if (!state.tricksLearned.includes(action.payload)) {
-        state.tricksLearned.push(action.payload);
-        state.xp += 10;
-      }
-    },
-
+    // XP + Tricks
     gainXP: (state, action) => {
       state.xp += action.payload || 5;
       if (state.xp >= state.level * 100) {
@@ -74,12 +54,33 @@ const dogSlice = createSlice({
       }
     },
 
-    move: (state, action) => {
-      state.x = action.payload.x;
-      state.y = action.payload.y;
-      state.direction = action.payload.direction;
+    scoopPoopReward: (state) => {
+      state.xp += 5;
+      if (state.xp >= state.level * 100) {
+        state.xp = 0;
+        state.level += 1;
+      }
     },
 
+    teachTrick: (state, action) => {
+      if (!state.tricksLearned.includes(action.payload)) {
+        state.tricksLearned.push(action.payload);
+        state.xp += 10;
+      }
+    },
+
+    // Hunger / Play
+    feedDog: (state) => {
+      state.hunger = Math.min(100, state.hunger + 20);
+      state.energy = Math.min(100, state.energy + 10);
+    },
+
+    playWithDog: (state) => {
+      state.happiness = Math.min(100, state.happiness + 15);
+      state.energy = Math.max(0, state.energy - 10);
+    },
+
+    // Potty
     increasePottyLevel: (state, action) => {
       state.pottyLevel = Math.min(100, state.pottyLevel + (action.payload || 5));
       if (state.pottyLevel >= 100) {
@@ -92,10 +93,20 @@ const dogSlice = createSlice({
       state.isPottyTrained = false;
     },
 
-    setDogName: (state, action) => { state.name = action.payload; },
-    setDogGender: (state, action) => { state.gender = action.payload; },
-    resetDogState: () => initialState,
-    resetDog: () => initialState,
+    // Toys
+    addToy: (state, action) => {
+      if (!state.toylist.includes(action.payload)) {
+        state.toylist.push(action.payload);
+      }
+    },
+
+    removeToy: (state, action) => {
+      state.toylist = state.toylist.filter(toy => toy.id !== action.payload.id);
+    },
+
+    toggleToyModal: (state, action) => {
+      state.modalOpen = action.payload;
+    },
 
     // Cleanliness
     batheDog: (state) => {
@@ -103,6 +114,14 @@ const dogSlice = createSlice({
       state.hasFleas = false;
       state.hasMange = false;
       state.lastBathed = Date.now();
+    },
+
+    groomDog: (state) => {
+      state.isDirty = false;
+    },
+
+    treatFleas: (state) => {
+      state.hasFleas = false;
     },
 
     updateCleanliness: (state) => {
@@ -122,6 +141,10 @@ const dogSlice = createSlice({
     startPooping: (state) => { state.isPooping = true; },
     stopPooping: (state) => { state.isPooping = false; },
 
+    // State persistence
+    resetDogState: () => initialState,
+    resetDog: () => initialState,
+
     loadState: (state, action) => {
       return { ...state, ...action.payload };
     },
@@ -129,14 +152,34 @@ const dogSlice = createSlice({
 });
 
 export const {
-  feedDog, playWithDog, teachTrick, gainXP,
-  move, increasePottyLevel, resetPottyLevel,
-  setDogName, setDogGender, resetDogState, resetDog,
-  startWalking, stopWalking, startRunning, stopRunning,
-  startBarking, stopBarking, startPooping, stopPooping,
+  setDogName,
+  setDogGender,
+  move,
+  gainXP,
+  scoopPoopReward,
+  teachTrick,
+  feedDog,
+  playWithDog,
+  increasePottyLevel,
+  resetPottyLevel,
+  addToy,
+  removeToy,
+  toggleToyModal,
+  batheDog,
+  groomDog,
+  treatFleas,
+  updateCleanliness,
+  startWalking,
+  stopWalking,
+  startRunning,
+  stopRunning,
+  startBarking,
+  stopBarking,
+  startPooping,
+  stopPooping,
+  resetDogState,
+  resetDog,
   loadState,
-  batheDog, updateCleanliness,
-  addToy, removeToy, toggleToyModal,
 } = dogSlice.actions;
 
 export default dogSlice.reducer;
