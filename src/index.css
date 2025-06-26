@@ -1,8 +1,7 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Remove @tailwind directives if not using Tailwind/PostCSS build process */
+/* Or ensure your build tool supports Tailwind CSS */
 
-/* 🌈 Global variables */
+/* 🌈 Global Variables */
 :root {
   --primary: #2196f3;
   --primary-d: #1976d2;
@@ -16,7 +15,7 @@
   --ripple-color: rgba(225, 225, 225, 0.5);
 }
 
-/* 🎉 Level up animation */
+/* 🎉 Level-Up Animation */
 @keyframes floatUp {
   0% {
     transform: translateY(0);
@@ -34,4 +33,10 @@
 .level-up {
   @apply text-yellow-300 font-bold text-lg;
   animation: floatUp 1.8s ease-in-out;
+  pointer-events: none;
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
 }
