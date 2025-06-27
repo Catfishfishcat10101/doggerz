@@ -1,28 +1,25 @@
+// src/store/userSlice.js
 import { createSlice } from "@reduxjs/toolkit";
 
-// Initial state with `user` key (needed for App.jsx)
 const initialState = {
-  user: null,
+  uid:        null,
+  email:      null,
+  displayName: "",
+  photoURL:   "",
+  loggedIn:   false,
 };
 
 const userSlice = createSlice({
   name: "user",
   initialState,
   reducers: {
-    // Set user on Firebase auth login
-    setUser: (state, action) => {
-      state.user = action.payload;
+    loginSuccess: (s, a) => {
+      Object.assign(s, a.payload, { loggedIn: true });
     },
-
-    // Clear user on logout
-    clearUser: (state) => {
-      state.user = null;
-    },
+    logout: () => initialState,
+    updateProfile: (s, a) => Object.assign(s, a.payload),
   },
 });
 
-// Export actions
-export const { setUser, clearUser } = userSlice.actions;
-
-// Export reducer
+export const { loginSuccess, logout, updateProfile } = userSlice.actions;
 export default userSlice.reducer;

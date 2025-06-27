@@ -1,13 +1,18 @@
 // src/components/Features/BackgroundScene.jsx
-import React from "react";
-import yardDay from "../../../assets/backgrounds/yard_day.png";
+import React, { Children } from "react";
+import yardDay from "../../assets/backgrounds/yard_day.png";
+import yardNight from "../../assets/backgrounds/yard_night.png";
 
-const BackgroundScene = ({ children }) => {
+const BackgroundScene = ({ isNight = false, Children }) => {
+  const bg = isNight ? yardNight : yardDay;
+
   return (
     <div
       className="w-screen h-screen bg-cover bg-no-repeat relative overflow-hidden"
       style={{
-        backgroundImage: `url(${yardDay})`,
+        backgroundImage: `URL(${bg})`,
+        backgroundPosition: "center",
+        backgroundSize: "cover",
       }}
     >
       {children}

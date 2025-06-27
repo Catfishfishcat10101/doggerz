@@ -1,85 +1,60 @@
-import React, { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
-import jackRussellSprite from '../../assets/sprites/jack_russell_directions.png';
-import '../..//styles/Dog.css';
+// src/components/Features/Dog.jsx
+/* Div-based sprite that walks with CSS transitions */
+import React, { useEffect, useRef, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { dropPoop, playBark, move } from "../../store/dogSlice";
+import jackRussellSprite from "../../assets/sprites/jack_russell_directions.png";
 
-const FRAME_WIDTH = 256; // each frame is 256px wide
-const FRAME_HEIGHT = 256; // each row is 256px tall
-const TOTAL_FRAMES = 4; // 4 frames per direction
-const directions = ['right', 'left', 'down', 'up'];
-
-const getDirectionRow = (direction) => {
-    switch (direction) {
-        case "right": return 0;
-        case "left": return 1;
-        case "down": return 2;
-        case "up": return 3;
-        default: return 0;
-    }
-};
+const W = 256;
+const H = 256;
+const FRAMES = 4;
+const dirs = ["right", "left", "down", "up"];
+const rowFor = d => ({ right:0, left:1, down:2, up:3 }[d]);
 
 const Dog = () => {
-    const isWalking = useSelector((state) => state.dog.isWalking);
-    const [frame, setFrame] = useState(0);
-    const [direction, setDirection] = useState("right");
-    const [position, setPosition] = useState({x: 100, y: 100});
+  const dispatch = useDispatch();
+  const { x, y, direction, isWalking } = useSelector(s => s.dog);
+  const [frame, setFrame] = useState(0);
+  const stepRef = useRef(0);
 
-    //ANIMATE SPRITE FRAMES WHILE WALKING
-    useEffect(() => {
-        if(!isWalking) return;
+  /* walk ticker */
+  useEffect(() => {
+    if (!isWalking) return;
+    const fId = setInterval(() => setFrame(f => (f + 1) % FRAMES), 150);
+    return () => clearInterval(fId);
+  }, [isWalking]);
 
-        const frameTimer = setInterval(() => {
-            setFrame((prev) =>(prev + 1) % TOTAL_FRAMES);
-             const dir = directions[Math.floor(Math.random() * directions.length)];
-             setDirection(dir);
-            }, 150);
+  /* move ticker */
+  useEffect(() => {
+    if (!isWalking) return;
+    const tick = setInterval(() => {
+      stepRef.current += 1;
+      /* random direction every 2 s */
+      const dir = stepRef.current % 13 === 0 ? dirs[Math.floor(Math.random()*4)] : direction;
+      const step = 20;
+      const nx = Math.max(0, Math.min(window.innerWidth  - W, x + (dir==="right"?step:dir==="left"?-step:0)));
+      const ny = Math.max(0, Math.min(window.innerHeight - H, y + (dir==="down"?step:dir==="up"?-step:0)));
+      dispatch(move({ x: nx, y: ny, direction: dir }));
 
-            return () => clearInterval(frameTimer);
-        }, [isWalking]);
+      /* drop poop every 80 steps */
+      if (stepRef.current % 80 === 0) dispatch(dropPoop({ x: nx, y: ny }));
+      /* bark sometimes */
+      if (stepRef.current % 40 === 0 && Math.random() < 0.25) dispatch(playBark());
+    }, 300);
+    return () => clearInterval(tick);
+  }, [isWalking, x, y, direction, dispatch]);
 
-        //MOVE SPRITE ON SCREEN
-        useEffect(() => {
-            if(!isWalking) return;
-            const walkTimer = setInterval(() => {
-            setPosition((prev) => {
-                const move = 20;
-                const maxX = window.innerWidth - FRAME_WIDTH;
-                const maxY = window.innerHeight - FRAME_HEIGHT;
-                let newX = prev.x;
-                let newY = prev.y;
-
-                if (direction === "right") newX += move;
-                if (direction === "left") newX -= move;
-                if (direction === "up") newY -= move;
-                if (direction === "down") newY += move;
-
-                return {
-                    x:Math.max(0,Math.min(newX, maxX)),
-                    y:Math.max(0,Math.min(newY, maxY)),
-                };
-            });
-        }, 3000);
-
-        return () => clearInterval(walkTimer);
-    }, [isWalking, direction]);
-    
-    const backgroundX = -frame * FRAME_WIDTH;
-    const backgroundY = -getDirectionRow(direction) * FRAME_HEIGHT;
-
-    const dogStyle = {
-        width: `${FRAME_WIDTH}px`,
-        height: `${FRAME_HEIGHT}px`,
-        backgroundImage: `url(${jackRussellSprite})`,
-        backgroundPoisition: `${backgroundX}px ${backgroundY}px`,
-        backgroundSize: "1024px 1024px",
-        position: "absolute",
-        top: position.y,
-        left: position.x,
-        imageRendering: "pixelated",
-        transition: "top 1s linear, left 1s linear",
-    };
-
-    return <div className='dog-sprite' style={dogStyle}></div>;
+  const style = {
+    width: W, height: H,
+    backgroundImage: `url(${jackRussellSprite})`,
+    backgroundPosition: `-${frame*W}px -${rowFor(direction)*H}px`,
+    backgroundSize: `${W*FRAMES}px ${H*dirs.length}px`,
+    position:"absolute", top:y, left:x,
+    imageRendering:"pixelated",
+    transition:"top .3s linear,left .3s linear",
+    pointerEvents:"none",
+  };
+  return <div style={style} />;
 };
 
 export default Dog;

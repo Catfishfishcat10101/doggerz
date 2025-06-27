@@ -1,108 +1,102 @@
-import React, { useRef, useEffect } from 'react';
+// src/components/Features/DogSpriteCanvas.jsx
+/* Canvas-based version (day/night bg, poop icons, idle AI) */
+import React, { useRef, useEffect, useState } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { move, dropPoop, playBark } from "../../store/dogSlice";
+import barkSoundSrc  from "../../assets/audio/bark.mp3";
+import poopSprite    from "../../assets/sprites/poop.png";
+import dayBg         from "../../assets/backgrounds/yard_day.png";
+import nightBg       from "../../assets/backgrounds/yard_night.png";
+import dogSprite     from "../../assets/sprites/jack_russell_directions.png";
 
-// Default sprite sheet paths
-const DEFAULT_SPRITES = {
-  idle: "/sprites/idle.png",
-  walk: "/sprites/walk.png",
-  bark: "/sprites/bark.png",
-};
+const frameW = 64, frameH = 64, totalFrames = 4;
+const dirRow = { down:0, left:1, right:2, up:3 };
+const Cw = 256, Ch = 256;
 
-// Frame counts for each animation type
-const FRAME_COUNTS = {
-  idle: 4,
-  walk: 6,
-  bark: 2,
-};
+const DogSpriteCanvas = () => {
+  const canvasRef  = useRef(null);
+  const barkAudio  = useRef(new Audio(barkSoundSrc));
+  const poopImg    = useRef(new Image());
+  const [bgImg, setBgImg]       = useState(null);
+  const [dogImg, setDogImg]     = useState(null);
+  const [frame,  setFrame]      = useState(0);
 
-/**
- * @param {{
- *  action: "idle" | "walk" | "bark",
- *  sprites?: Record<string, string>,
- *  frameCounts?: Record<string, number>,
- *  fps?: number,
- *  scale?: number,
- *  width?: number,
- *  height?: number
- * }}
- */
-export default function DogSpriteCanvas({
-  action = 'idle',
-  sprites = DEFAULT_SPRITES,
-  frameCounts = FRAME_COUNTS,
-  fps = 8,
-  scale = 1,
-  width = 150,
-  height = 150,
-}) {
-  const canvasRef = useRef(null);
-  const frameRef = useRef(0);
-  const lastTimeRef = useRef(0);
-  const imgRef = useRef(null);
+  const dispatch = useDispatch();
+  const dog      = useSelector(s => s.dog);
 
-  // Load sprite when action changes
+  /* preload images */
   useEffect(() => {
-    const img = new Image();
-    img.src = sprites[action];
-    img.onload = () => {
-      imgRef.current = img;
-    };
-  }, [action, sprites]);
+    const d = new Image(); d.src = dogSprite;  d.onload = () => setDogImg(d);
+    const bg = new Image();
+    const hr = new Date().getHours();
+    bg.src   = hr>=7&&hr<=19 ? dayBg : nightBg;
+    bg.onload= () => setBgImg(bg);
+    poopImg.current.src = poopSprite;
+  }, []);
 
-  // Draw frame loop
+  /* draw */
   useEffect(() => {
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    const interval = 1000 / fps;
-    let animationId;
+    if (!dogImg || !bgImg) return;
+    const ctx = canvasRef.current.getContext("2d");
+    const loop = setInterval(() => {
+      ctx.clearRect(0,0,Cw,Ch);
+      ctx.drawImage(bgImg,0,0,Cw,Ch);
 
-    const draw = (now) => {
-      animationId = requestAnimationFrame(draw);
-
-      if (!lastTimeRef.current) {
-        lastTimeRef.current = now;
-        return;
-      }
-
-      const delta = now - lastTimeRef.current;
-      if (delta < interval) return;
-
-      lastTimeRef.current = now - (delta % interval);
-      const img = imgRef.current;
-
-      if (!img || !img.complete) return;
-
-      const totalFrames = frameCounts[action] || 1;
-      const frameW = img.naturalWidth / totalFrames;
-      const frameH = img.naturalHeight;
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
+      // sprite sheet
       ctx.drawImage(
-        img,
-        frameRef.current * frameW,
-        0,
-        frameW,
-        frameH,
-        0,
-        0,
-        frameW * scale,
-        frameH * scale
+        dogImg,
+        frame*frameW, dirRow[dog.direction]*frameH, frameW, frameH,
+        dog.x, dog.y, frameW, frameH
       );
 
-      frameRef.current = (frameRef.current + 1) % totalFrames;
+      // poops
+      dog.poops.forEach(p => ctx.drawImage(poopImg.current, p.x+10,p.y+10,24,24));
+
+      setFrame(f => (f+1)%totalFrames);
+    }, 150);
+    return () => clearInterval(loop);
+  }, [dogImg, bgImg, dog]);
+
+  /* idle AI */
+  useEffect(() => {
+    const dirs = ["left","right","up","down"];
+    let walkInt, changeDirTo;
+
+    const startWalk = () => {
+      const dir = dirs[Math.floor(Math.random()*4)];
+      walkInt = setInterval(() => {
+        const speed = 2;
+        const nx = Math.max(0, Math.min(Cw-frameW, dog.x + (dir==="right"? speed:dir==="left"?-speed:0)));
+        const ny = Math.max(0, Math.min(Ch-frameH, dog.y + (dir==="down"? speed:dir==="up"?-speed:0)));
+        dispatch(move({ x:nx, y:ny, direction:dir }));
+      }, 30);
+      changeDirTo = setTimeout(() => { clearInterval(walkInt); startWalk(); }, Math.random()*2000+1000);
     };
+    startWalk();
+    return () => { clearInterval(walkInt); clearTimeout(changeDirTo); };
+  }, [dog.x, dog.y, dispatch]);
 
-    animationId = requestAnimationFrame(draw);
-
-    return () => cancelAnimationFrame(animationId);
-  }, [action, frameCounts, fps, scale]);
+  /* poop + bark loop */
+  useEffect(() => {
+    const loop = setInterval(() => {
+      if (!dog.isPottyTrained && Math.random()<0.15)
+        dispatch(dropPoop({ x:dog.x, y:dog.y }));
+      if (dog.soundEnabled && Math.random()<0.3) {
+        barkAudio.current.play();
+        dispatch(playBark());
+      }
+    }, 3000);
+    return () => clearInterval(loop);
+  }, [dog, dispatch]);
 
   return (
     <canvas
       ref={canvasRef}
-      width={width}
-      height={height}
-      className="block mx-auto"
+      width={Cw}
+      height={Ch}
+      className="rounded border border-gray-600 block mx-auto"
     />
   );
-}
+};
+
+export default DogSpriteCanvas;
