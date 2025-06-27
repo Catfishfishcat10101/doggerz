@@ -1,33 +1,46 @@
-/* Remove @tailwind directives if not using Tailwind/PostCSS build process */
-/* Or ensure your build tool supports Tailwind CSS */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-/* 🌈 Global Variables */
-:root {
-  --primary: #2196f3;
-  --primary-d: #1976d2;
-  --accent: #21cbf5;
-  --bg-start: #4caf50;
-  --bg-end: #2196f3;
+/* ------------------------------------------------
+   Custom Doggerz components
+------------------------------------------------ */
+@layer components {
 
-  --walk-distance: 10px;
-  --walk-direction: 1s;
-  --walk-ease: cubic-bezier(0.4, 0, 0.2, 1);
-  --ripple-color: rgba(225, 225, 225, 0.5);
+  /* 🌅 Container */
+  .dog-container {
+    @apply relative w-[200px] h-[200px] mx-auto overflow-hidden;
+  }
+
+  /* 🌇 Background layers */
+  .dog-bg {
+    @apply absolute w-full h-full object-cover top-0 left-0 transition-opacity duration-500;
+  }
+  .dog-bg.night { @apply opacity-0; }
+
+  .dog-container[data-time="night"] .dog-bg.day   { @apply opacity-0; }
+  .dog-container[data-time="night"] .dog-bg.night { @apply opacity-100; }
+
+  /* 🐶 Sprite */
+  .dog-sprite {
+    @apply absolute bottom-0 left-0 w-[100px] h-[100px];
+    background: url("/src/assets/sprites/jack_russell_directions.png") no-repeat 0 0 / contain;
+    will-change: transform;
+  }
+
+  /* 🚶 Walk animation */
+  .walking .dog-sprite {
+    animation: dogWalk var(--walk-duration, 1s) var(--walk-ease, linear) infinite;
+  }
 }
 
-/* 🎉 Level-Up Animation */
+/* ------------------------------------------------
+   Keyframes
+------------------------------------------------ */
 @keyframes floatUp {
-  0% {
-    transform: translateY(0);
-    opacity: 0;
-  }
-  30% {
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(-40px);
-    opacity: 0;
-  }
+  0%   { transform: translateY(0); opacity: 0; }
+  50%  { opacity: 1; }
+  100% { transform: translateY(-40px); opacity: 0; }
 }
 
 .level-up {
@@ -39,4 +52,14 @@
   left: 50%;
   transform: translateX(-50%);
   white-space: nowrap;
+}
+
+@layer utilities {
+  @keyframes dogWalk {
+    0%   { transform: translateX(0) scaleY(1); }
+    25%  { transform: translateX(calc(var(--walk-distance)/2)) scaleY(1.05); }
+    50%  { transform: translateX(var(--walk-distance))         scaleY(1); }
+    75%  { transform: translateX(calc(var(--walk-distance)/2)) scaleY(0.95); }
+    100% { transform: translateX(0)                            scaleY(1); }
+  }
 }

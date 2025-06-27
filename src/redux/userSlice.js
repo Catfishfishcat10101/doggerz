@@ -13,13 +13,18 @@ const userSlice = createSlice({
   name: "user",
   initialState,
   reducers: {
-    loginSuccess: (s, a) => {
-      Object.assign(s, a.payload, { loggedIn: true });
+    loginSuccess: (state, action) => {
+      state.uid = action.payload.uid;
+      state.email = action.payload.email;
+      state.displayName = action.payload.displayName || "";
+      state.photoURL = action.payload.photoURL || "";
+      state.loggedIn = true;
+    } 
     },
-    logout: () => initialState,
+    logout: () => ({ ...initialState }),
     updateProfile: (s, a) => Object.assign(s, a.payload),
   },
-});
+);
 
 export const { loginSuccess, logout, updateProfile } = userSlice.actions;
 export default userSlice.reducer;

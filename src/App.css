@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+body {
+  margin: 0;
+  padding: 0;
+  font-family: sans-serif;
+}
+
 /* Global CSS variables */
 :root {
   --primary: #2196f3;

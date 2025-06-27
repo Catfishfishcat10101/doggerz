@@ -1,28 +1,30 @@
 import React, { useState } from "react";
+import { Link, Navigate, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../../firebase";
-import { useNavigate, Link, Navigate } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
-import { setUser } from "../../redux/userSlice";
+import { loginSuccess } from "../../redux/userSlice.js";
 
-const Login = () => {
+export default function Login() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const currentUser = useSelector((state) => state.user.currentUser);
+  const loggedIn = useSelector((s) => s.user.loggedIn);
 
-  const [email, setEmail] = useState("");
+  const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError]       = useState("");
 
-  if (currentUser) return <Navigate to="/" />;
+  /* already logged in? → /game */
+  if (loggedIn) return <Navigate to="/game" replace />;
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
+
     try {
-      const userCred = await signInWithEmailAndPassword(auth, email, password);
-      dispatch(setUser(userCred.user));
-      navigate("/");
+      const { user } = await signInWithEmailAndPassword(auth, email, password);
+      dispatch(loginSuccess({ uid: user.uid, email: user.email }));
+      navigate("/game");
     } catch (err) {
       console.error("Login error", err);
       setError("Login failed. Check your email and password.");
@@ -32,9 +34,11 @@ const Login = () => {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-purple-600 to-blue-600 text-white px-4">
       <h2 className="text-4xl font-bold mb-4 drop-shadow">🐾 Doggerz Login</h2>
+
       <form onSubmit={handleLogin} className="bg-white text-black p-6 rounded shadow-md w-full max-w-sm">
         {error && <p className="text-red-500 mb-2">{error}</p>}
-        <label>Email</label>
+
+        <label className="font-semibold">Email</label>
         <input
           type="email"
           value={email}
@@ -43,7 +47,7 @@ const Login = () => {
           required
         />
 
-        <label>Password</label>
+        <label className="font-semibold">Password</label>
         <input
           type="password"
           value={password}
@@ -53,8 +57,9 @@ const Login = () => {
         />
 
         <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded w-full hover:bg-blue-700">
-          Log In
+          Log&nbsp;In
         </button>
+
         <p className="text-sm text-center mt-4">
           Don’t have an account?{" "}
           <Link to="/signup" className="text-blue-600 hover:underline">
@@ -64,6 +69,4 @@ const Login = () => {
       </form>
     </div>
   );
-};
-
-export default Login;
+}

@@ -1,15 +1,6 @@
 import React from "react";
 import { useSelector } from "react-redux";
 
-const Progress = ({ label, value, color }) => (
-  <div className="w-full my-1">
-    <label className="text-xs font-semibold">{label}</label>
-    <div className="w-full bg-gray-200 h-4 rounded">
-      <div className={`h-4 rounded ${color}`} style={{ width: `${value}%` }}></div>
-    </div>
-  </div>
-);
-
 const StatsBar = () => {
   const { happiness, energy, xp } = useSelector((state) => state.dog);
   return (
@@ -20,5 +11,13 @@ const StatsBar = () => {
     </div>
   );
 };
+const Progress = ({ label, value, color }) => (
+  <div className="w-full my-1">
+    <label className="text-xs font-semibold">{label}</label>
+    <div className="w-full bg-gray-200 h-4 rounded">
+      <div className={`h-4 rounded ${color}`} style={{ width: `${value}%` }}></div>
+    </div>
+  </div>
+);
 
 export default StatsBar;

@@ -1,17 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
-import spritesheet from '../assets/sprites/jack_russell_directions.png';
 
 const FRAME_WIDTH = 128;
 const FRAME_HEIGHT = 128;
 const TOTAL_FRAMES = 4;
-const SCALE = 1; // Use 2 or 4 if you want it pixel-scaled
+const SCALE = 1;
 
 const DogSprite = () => {
   const { isWalking, isRunning, isBarking, isPooping } = useSelector((state) => state.dog);
   const [frameIndex, setFrameIndex] = useState(0);
 
-  // Choose which row of the sprite sheet to use
   const getAnimationRow = () => {
     if (isPooping) return 3;     // Row 4 = pooping
     if (isBarking) return 2;     // Row 3 = barking
@@ -33,19 +31,19 @@ const DogSprite = () => {
 
   return (
     <div
-      className="w-[128px] h-[128px] overflow-hidden"
+      className="overflow-hidden"
       style={{
         width: FRAME_WIDTH * SCALE,
         height: FRAME_HEIGHT * SCALE,
       }}
     >
       <img
-        src={spritesheet}
+        src='/sprites/jack_russell_sprite.png'
         alt="Dog Sprite"
         style={{
           imageRendering: 'pixelated',
           width: FRAME_WIDTH * TOTAL_FRAMES,
-          height: FRAME_HEIGHT * 4, // assuming 4 rows
+          height: FRAME_HEIGHT * 4,
           transform: `translate(-${offsetX}px, -${offsetY}px)`,
           position: 'relative',
         }}

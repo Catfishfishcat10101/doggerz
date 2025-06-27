@@ -1,30 +1,30 @@
 import React from "react";
 import { useSelector } from "react-redux";
 
-const StatusFlag = ({ label, active, color }) => (
-  <div className="text-xs font-semibold flex items-center gap-1">
-    <span
-      className={`w-3 h-3 rounded-full transition-all duration-300 ${
-        active ? color : "bg-gray-400"
-      }`}
-    ></span>
-    <span className={active ? "opacity-100" : "opacity-50"}>{label}</span>
-  </div>
-);
+function CleanlinessBar() {
+  const { isDirty, hasFleas, hasMange } = useSelector((s) => s.dog);
 
-const CleanlinessBar = () => {
-  const { isDirty, hasFleas, hasMange } = useSelector((state) => state.dog);
+  //SIMPLE PCT MAPPING
+  const pct =
+  hasMange ? 0 :
+  hasFleas ? 25 :
+  isDirty ? 60 :
+  100;
+
+  const barColor =
+  pct === 100 ? "bg-green-500"
+ : pct >= 60 ? "bg-yellow-400" 
+ : pct >= 25 ? "bg-orange-500"
+  :          "bg-red-600";
 
   return (
-    <div className="w-full max-w-sm px-4 py-3 bg-white/10 backdrop-blur-md rounded-lg shadow-md mt-2 text-white">
-      <h3 className="text-sm font-bold mb-2 tracking-wide">🧼 Cleanliness Status</h3>
-      <div className="flex justify-between gap-3">
-        <StatusFlag label="Dirty" active={isDirty} color="bg-yellow-400" />
-        <StatusFlag label="Fleas" active={hasFleas} color="bg-red-500" />
-        <StatusFlag label="Mange" active={hasMange} color="bg-purple-600" />
-      </div>
+    <div className="w-64 bg-gray-200 rounded h-4 overflow-hidden">
+      <div
+        className={`h-full ${barColor} transition-all duration-300`}
+        style={{ width: `#{pct}%` }}
+        />
     </div>
   );
-};
+}
 
 export default CleanlinessBar;

@@ -1,9 +1,7 @@
-// src/components/Features/DogSpriteCanvas.jsx
-/* Canvas-based version (day/night bg, poop icons, idle AI) */
 import React, { useRef, useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { move, dropPoop, playBark } from "../../redux/dogSlice.js";
-import barkSoundSrc  from "../../assets/audio/bark.mp3";
+import barkSoundSrc  from "../../assets/sfx/bark.wav";
 import poopSprite    from "../../assets/sprites/poop.png";
 import dayBg         from "../../assets/backgrounds/yard_day.png";
 import nightBg       from "../../assets/backgrounds/yard_night.png";

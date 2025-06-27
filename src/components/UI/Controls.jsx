@@ -8,10 +8,9 @@ import {
   stopWalking,
 } from "../../redux/dogSlice";
 
-export default function Controls() {
+const Controls = ({ onRendererToggle }) => {
   const dispatch = useDispatch();
 
-  // Increase potty need every 20 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       dispatch(increasePottyLevel(5));
@@ -20,7 +19,7 @@ export default function Controls() {
   }, [dispatch]);
 
   return (
-    <div style={{ padding: "1rem", display: "flex", gap: "1rem", flexWrap: "wrap" }}>
+    <div className="flex flex-wrap justify-center gap-4 p-4 bg-white/80 rounded-lg shawdow-lg w-full max-w 2xl mx-auto">
       <button
         onClick={() => dispatch(feedDog())}
         className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
@@ -50,7 +49,16 @@ export default function Controls() {
         className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600"
       >
         Walk
-      </button>
+      </button> 
+
+      <button
+        onClick={onRendererToggle}
+        className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+        >
+          Toggle Sprite Mode
+        </button>
     </div>
   );
 }
+
+export default Controls;

@@ -4,7 +4,8 @@ import { setDogName } from "../redux/dogSlice.js";
 
 const DogName = () => {
   const dispatch = useDispatch();
-  const currentName = useSelector((state) => state.dog.name);
+  const { name } = useSelector((state) => state.dog);
+  return <div className="text-xl font-bold">{name || "Your Dog"}</div>;
   const [input, setInput] = useState("");
   const inputRef = useRef(null);
 

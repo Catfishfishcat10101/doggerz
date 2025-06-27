@@ -1,34 +1,42 @@
-import React from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useEffect } from "react";
+import { auth } from "./firebase";
+import { onAuthStateChanged } from "firebase/auth";
+import { useDispatch, useSelector } from "react-redux";
+import { setUser, clearUser } from "./redux/userSlice";
+import { Routes, Route, Navigate } from "react-router-dom";
+import Login from "./components/Auth/Login";
+import Signup from "./components/Auth/Signup";
+import MainGame from "./components/MainGame";
+import Splash from "./components/UI/Splash";
 
-import Signup       from "./components/Auth/Signup";
-import Login        from "./components/Auth/Login";
-import LogoutButton from "./components/Auth/LogoutButton";
-import MainGame     from "./components/MainGame";
-
-const App = () => {
+function App() {
   const loggedIn = useSelector((s) => s.user.loggedIn);
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        dispatch(setUser({uid: user.uid, email: user.email}));
+      } else {
+        dispatch(clearUser());
+      }
+    });
+
+    return () => unsub();
+  }, []);
 
   return (
-    <BrowserRouter basename="/doggerz">
-      <div className="min-h-screen flex flex-col items-center justify-center text-center px-4 py-10 bg-gradient-to-br from-green-500 to-blue-500 font-sans">
-        {loggedIn && <LogoutButton />}
-
-        <Routes>
-          {/* ⬇️  this line handles “/doggerz” */}
-          <Route index element={loggedIn ? <MainGame /> : <Login />} />
-
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/login"  element={<Login  />} />
-          <Route path="/logout" element={<LogoutButton />} />
-          <Route path="/game"   element={loggedIn ? <MainGame /> : <Login />} />
-          {/* optional 404 fallback */}
-          <Route path="*" element={<div className="text-white p-4">Not Found</div>} />
-        </Routes>
-      </div>
-    </BrowserRouter>
+    <Routes>
+      <Route path="doggerz" element={<Splash />} />
+      <Route path="doggerz/login"  element={<Login  />} />
+      <Route path="doggerz/signup" element={<Signup />} />
+      <Route
+      path="doggerz/game"
+      element={loggedIn ? <MainGame /> : <Navigate to="doggerz/login" replace />}
+   />
+      <Route path="*" element={<Navigate to="/doggerz" replace />} />
+    </Routes>
   );
-};
+}
 
 export default App;

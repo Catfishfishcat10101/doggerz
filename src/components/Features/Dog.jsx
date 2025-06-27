@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { dropPoop, playBark, move } from "../../redux/dogSlice.js";
-import jackRussellSprite from "../../assets/sprites/jack_russell_directions.png";
+import jackRussellSprite from "/sprites/jack_russell_directions.png";
 
 const W = 256;                 // sprite width
 const H = 256;                 // sprite height
