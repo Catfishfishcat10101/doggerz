@@ -23,3 +23,5 @@ const userSlice = createSlice({
 
 export const { loginSuccess, logout, updateProfile } = userSlice.actions;
 export default userSlice.reducer;
+export const setUser = loginSuccess;
+export const clearUser = logout;

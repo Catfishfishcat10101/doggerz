@@ -4,11 +4,10 @@ import "./index.css";
 import App from "./App.jsx";
 
 import { Provider, useDispatch } from "react-redux";
-import { store } from "./store.js";
-
+import { store } from "./redux/store.js";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "./firebase.js";
-import { loginSuccess, logout } from "./store/userSlice.js";
+import { loginSuccess, logout } from "./redux/userSlice.js";
 
 function AuthListener({ children }) {
   const dispatch = useDispatch();
