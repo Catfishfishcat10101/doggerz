@@ -16,7 +16,7 @@ function App() {
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
       if (user) {
-        dispatch(setUser({uid: user.uid, email: user.email}));
+        dispatch(setUser({ uid: user.uid, email: user.email }));
       } else {
         dispatch(clearUser());
       }
@@ -28,12 +28,14 @@ function App() {
   return (
     <Routes>
       <Route path="doggerz" element={<Splash />} />
-      <Route path="doggerz/login"  element={<Login  />} />
+      <Route path="doggerz/login" element={<Login />} />
       <Route path="doggerz/signup" element={<Signup />} />
       <Route
-      path="doggerz/game"
-      element={loggedIn ? <MainGame /> : <Navigate to="doggerz/login" replace />}
-   />
+        path="doggerz/game"
+        element={
+          loggedIn ? <MainGame /> : <Navigate to="doggerz/login" replace />
+        }
+      />
       <Route path="*" element={<Navigate to="/doggerz" replace />} />
     </Routes>
   );

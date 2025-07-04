@@ -1,4 +1,4 @@
-import React  from "react";
+import React from "react";
 import { auth } from "../../firebase";
 import { useDispatch } from "react-redux";
 import { signOut } from "firebase/auth";
@@ -10,7 +10,7 @@ const LogoutButton = () => {
   const navigate = useNavigate();
 
   const handleLogout = async () => {
-    try {   
+    try {
       await signOut(auth);
       dispatch(clearUser());
       navigate("/login");

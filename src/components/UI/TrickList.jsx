@@ -1,5 +1,5 @@
-import React from 'react';
-import { useSelector } from 'react-redux';
+import React from "react";
+import { useSelector } from "react-redux";
 
 const TrickList = () => {
   const unlockedTricks = useSelector((state) => state.dog.tricksLearned || []);
@@ -9,7 +9,9 @@ const TrickList = () => {
       <h3 className="text-lg font-bold mb-2">🎓 Learned Tricks</h3>
 
       {unlockedTricks.length === 0 ? (
-        <p className="text-sm text-white/70">No tricks learned yet. Train your dog to unlock tricks!</p>
+        <p className="text-sm text-white/70">
+          No tricks learned yet. Train your dog to unlock tricks!
+        </p>
       ) : (
         <ul className="list-disc list-inside text-sm space-y-1">
           {unlockedTricks.map((trick) => (

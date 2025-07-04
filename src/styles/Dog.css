@@ -1,7 +1,3 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 /* 🌅 Container */
 .dog-container {
   @apply relative w-[200px] h-[200px] mx-auto overflow-hidden;
@@ -24,7 +20,7 @@
 /* 🐶 Sprite setup */
 .dog-sprite {
   @apply absolute bottom-0 left-0 w-[100px] h-[100px];
-  background: url('../assets/sprites/jack_russell_directions.png') no-repeat 0 0;
+  background: url("../assets/sprites/jack_russell_directions.png") no-repeat 0 0;
   background-size: contain;
   will-change: transform;
 }
@@ -41,9 +37,19 @@
 
 /* You can define this keyframe in tailwind.config.js or inline for extra polish */
 @keyframes dogWalk {
-  0%   { transform: translateX(0) scaleY(1); }
-  25%  { transform: translateX(calc(var(--walk-distance) / 2)) scaleY(1.05); }
-  50%  { transform: translateX(var(--walk-distance)) scaleY(1); }
-  75%  { transform: translateX(calc(var(--walk-distance) / 2)) scaleY(0.95); }
-  100% { transform: translateX(0) scaleY(1); }
+  0% {
+    transform: translateX(0) scaleY(1);
+  }
+  25% {
+    transform: translateX(calc(var(--walk-distance) / 2)) scaleY(1.05);
+  }
+  50% {
+    transform: translateX(var(--walk-distance)) scaleY(1);
+  }
+  75% {
+    transform: translateX(calc(var(--walk-distance) / 2)) scaleY(0.95);
+  }
+  100% {
+    transform: translateX(0) scaleY(1);
+  }
 }

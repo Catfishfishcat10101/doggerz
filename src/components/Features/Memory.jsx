@@ -9,10 +9,10 @@ import React from "react";
  */
 export default function Memory({ events }) {
   const milestones = events ?? [
-    { text: "Learned Sit",           date: "2025-07-01" },
-    { text: "First bath",            date: "2025-07-03" },
-    { text: "Fully potty trained",   date: "2025-07-10" },
-    { text: "Turned 1 year old",     date: "2025-12-20" },
+    { text: "Learned Sit", date: "2025-07-01" },
+    { text: "First bath", date: "2025-07-03" },
+    { text: "Fully potty trained", date: "2025-07-10" },
+    { text: "Turned 1 year old", date: "2025-12-20" },
   ];
 
   const fmt = (d) =>
@@ -33,7 +33,9 @@ export default function Memory({ events }) {
             <li key={idx}>
               {el.text}
               {el.date && (
-                <span className="text-xs text-gray-300 ml-2">· {fmt(el.date)}</span>
+                <span className="text-xs text-gray-300 ml-2">
+                  · {fmt(el.date)}
+                </span>
               )}
             </li>
           );

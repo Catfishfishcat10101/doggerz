@@ -41,9 +41,7 @@ function AuthListener({ children }) {
 
   if (loading) {
     return (
-      <div className="text-white text-center mt-10">
-        🐾 Loading Doggerz…
-      </div>
+      <div className="text-white text-center mt-10">🐾 Loading Doggerz…</div>
     );
   }
 
@@ -57,5 +55,5 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <App />
       </AuthListener>
     </BrowserRouter>
-  </Provider>
+  </Provider>,
 );

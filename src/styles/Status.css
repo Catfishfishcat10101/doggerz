@@ -21,6 +21,12 @@
   background: var(--primary);
   transition: width 0.4s ease;
 }
-.status-fill.energy   { background: #fbc02d; } /* yellow */
-.status-fill.happiness { background: #ff5722; } /* orange */
-.status-fill.xp        { background: #4caf50; } /* green */
+.status-fill.energy {
+  background: #fbc02d;
+} /* yellow */
+.status-fill.happiness {
+  background: #ff5722;
+} /* orange */
+.status-fill.xp {
+  background: #4caf50;
+} /* green */

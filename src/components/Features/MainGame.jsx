@@ -15,7 +15,6 @@ import DogAIEngine from "./UI/DogAIEngine";
 function MainGame() {
   return (
     <div className="relative w-screen h-screen bg-green-100 overflow-hidden font-sans">
-
       {/* 🧠 AI Engine */}
       <DogAIEngine />
 

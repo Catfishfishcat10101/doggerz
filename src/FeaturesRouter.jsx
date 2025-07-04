@@ -25,7 +25,10 @@ export default function FeaturesRouter() {
       <Route path="/memory" element={<Memory />} />
       <Route path="/potty" element={<PottyTraining />} />
       <Route path="/poop" element={<PoopRenderer />} />
-      <Route path="/settings" element={<SettingsModal isOpen={true} onClose={() => {}} />} />
+      <Route
+        path="/settings"
+        element={<SettingsModal isOpen={true} onClose={() => {}} />}
+      />
       <Route path="/shop" element={<Shop />} />
       <Route path="/upgrade" element={<UpgradeYard />} />
     </Routes>

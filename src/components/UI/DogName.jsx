@@ -27,9 +27,14 @@ const DogName = () => {
   return (
     <div className="mb-4 text-center animate-fadeIn">
       {currentName ? (
-        <h2 className="text-2xl font-semibold drop-shadow-sm">🐶 Meet {currentName}!</h2>
+        <h2 className="text-2xl font-semibold drop-shadow-sm">
+          🐶 Meet {currentName}!
+        </h2>
       ) : (
-        <form onSubmit={handleNameSubmit} className="flex flex-col items-center gap-2">
+        <form
+          onSubmit={handleNameSubmit}
+          className="flex flex-col items-center gap-2"
+        >
           <input
             ref={inputRef}
             className="text-black px-4 py-1 rounded shadow w-60"

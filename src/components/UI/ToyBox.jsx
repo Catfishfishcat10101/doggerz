@@ -10,7 +10,6 @@ const ToyBox = () => {
     { name: "Bone", icon: "🦴", bonus: 15 },
   ];
 
-
   return (
     <div className="my-4 text-center">
       <h3 className="text-lg font-bold mb-2">🎁 Toys</h3>

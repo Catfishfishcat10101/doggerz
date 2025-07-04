@@ -7,18 +7,18 @@ import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { auth, db } from "../../firebase";
 
-import { loginSuccess } from "../../redux/userSlice.js";  // canonical action
+import { loginSuccess } from "../../redux/userSlice.js"; // canonical action
 import { setDogName as setDogNameAction } from "../../redux/dogSlice.js";
 
 export default function Signup() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const [email,    setEmail]    = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [dogName,  setDogName]  = useState("");
+  const [dogName, setDogName] = useState("");
 
-  const [step,  setStep]  = useState(1);         // 1 = account, 2 = dog name
+  const [step, setStep] = useState(1); // 1 = account, 2 = dog name
   const [error, setError] = useState("");
 
   /* ───────────────────────────────────────────────────────── step 1 */
@@ -27,7 +27,11 @@ export default function Signup() {
     setError("");
 
     try {
-      const { user } = await createUserWithEmailAndPassword(auth, email, password);
+      const { user } = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password,
+      );
 
       // put user in Redux
       dispatch(loginSuccess({ uid: user.uid, email: user.email }));
@@ -50,7 +54,7 @@ export default function Signup() {
         coins: 0,
       });
 
-      setStep(2);          // go to dog-name prompt
+      setStep(2); // go to dog-name prompt
     } catch (err) {
       console.error("Signup error", err);
       if (err.code === "auth/email-already-in-use") {
@@ -72,7 +76,7 @@ export default function Signup() {
         await setDoc(doc(db, "dogs", uid), { name: dogName }, { merge: true });
         dispatch(setDogNameAction(dogName));
       }
-      navigate("/doggerz/game");                  // = /doggerz/ because of basename
+      navigate("/doggerz/game"); // = /doggerz/ because of basename
     } catch (err) {
       console.error("Dog-name save failed", err);
       setError("Could not save dog name. Try again.");
@@ -82,7 +86,9 @@ export default function Signup() {
   /* ───────────────────────────────────────────────────────── UI */
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-yellow-500 to-pink-500 text-white px-4">
-      <h2 className="text-4xl font-bold mb-4 drop-shadow">🐾 Sign Up for Doggerz</h2>
+      <h2 className="text-4xl font-bold mb-4 drop-shadow">
+        🐾 Sign Up for Doggerz
+      </h2>
 
       {step === 1 && (
         <form
@@ -109,7 +115,10 @@ export default function Signup() {
             required
           />
 
-          <button type="submit" className="bg-pink-600 text-white px-4 py-2 rounded w-full hover:bg-pink-700">
+          <button
+            type="submit"
+            className="bg-pink-600 text-white px-4 py-2 rounded w-full hover:bg-pink-700"
+          >
             Next&nbsp;→
           </button>
 
@@ -139,7 +148,10 @@ export default function Signup() {
             required
           />
 
-          <button type="submit" className="bg-indigo-600 text-white px-4 py-2 rounded w-full hover:bg-indigo-700">
+          <button
+            type="submit"
+            className="bg-indigo-600 text-white px-4 py-2 rounded w-full hover:bg-indigo-700"
+          >
             Finish&nbsp;🎉
           </button>
         </form>

@@ -8,24 +8,25 @@ const bark = new Audio("/sfx/bark.wav");
 // Ensure the bark sound file exists in the public/sfx directory
 
 const Splash = () => {
-  const [name, setName]     = useState("");
+  const [name, setName] = useState("");
   const [gender, setGender] = useState("");
-  const dispatch  = useDispatch();
-  const navigate  = useNavigate();
-  const loggedIn  = useSelector((s) => s.user.loggedIn);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const loggedIn = useSelector((s) => s.user.loggedIn);
 
   document.body.style.backgroundImage = `url(${yardBackground})`;
   document.body.style.backgroundSize = "cover";
   document.body.style.backgroundPosition = "center";
   document.body.style.backgroundRepeat = "no-repeat";
 
-
   const handleStart = () => {
     if (!name || !gender) return alert("Name and gender are required");
-    if (name.length < 2) return alert("Name must be at least 2 characters long");`
+    if (name.length < 2)
+      return alert("Name must be at least 2 characters long");
+    `
     if (name.length > 20) return alert("Name must be less than 20 characters long");
 
-    // Dispatch actions to set dog name`
+    // Dispatch actions to set dog name`;
 
     dispatch(setDogName(name.trim()));
     // Dispatch
@@ -34,7 +35,7 @@ const Splash = () => {
 
     // Play the bark sound
     bark.currentTime = 0; // Reset sound to start
-    bark.volume = 0.5;   // Set volume to a reasonable level
+    bark.volume = 0.5; // Set volume to a reasonable level
 
     bark.play().catch(() => {});
     // Handle navigation based on login status
@@ -93,7 +94,7 @@ const Splash = () => {
         <div className="mt-6 flex flex-col items-center">
           <p className="text-lg font-semibold">Meet {name}!</p>
           <img
-            src={`/sprites/${gender}.png`}   /* make sure these files exist */
+            src={`/sprites/${gender}.png`} /* make sure these files exist */
             alt="Dog preview"
             className="w-40 h-40 mt-2 rounded shadow-md object-contain"
           />
@@ -105,8 +106,8 @@ const Splash = () => {
         disabled={!name || !gender}
         className="mt-8 bg-green-500 disabled:bg-green-300 hover:bg-green-600 text-white px-6 py-2 rounded shadow"
       >
-        Start&nbsp;Game &nbsp;→ 
-      </button> 
+        Start&nbsp;Game &nbsp;→
+      </button>
     </div>
   );
 };

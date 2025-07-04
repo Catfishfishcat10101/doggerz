@@ -4,7 +4,7 @@ import userReducer from "./userSlice.js";
 
 export const store = configureStore({
   reducer: {
-    dog:  dogReducer,
+    dog: dogReducer,
     user: userReducer,
   },
 });

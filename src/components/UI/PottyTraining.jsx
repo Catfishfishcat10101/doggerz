@@ -24,7 +24,9 @@ const PottyTraining = () => {
       </div>
 
       <p className="mb-3">
-        {isPottyTrained ? "✅ Your dog is fully potty trained!" : "Still learning..."}
+        {isPottyTrained
+          ? "✅ Your dog is fully potty trained!"
+          : "Still learning..."}
       </p>
 
       {!isPottyTrained && (

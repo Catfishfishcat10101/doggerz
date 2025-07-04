@@ -2,11 +2,11 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
-  uid:        null,
-  email:      null,
+  uid: null,
+  email: null,
   displayName: "",
-  photoURL:   "",
-  loggedIn:   false,
+  photoURL: "",
+  loggedIn: false,
 };
 
 const userSlice = createSlice({
@@ -19,12 +19,11 @@ const userSlice = createSlice({
       state.displayName = action.payload.displayName || "";
       state.photoURL = action.payload.photoURL || "";
       state.loggedIn = true;
-    } 
     },
-    logout: () => ({ ...initialState }),
-    updateProfile: (s, a) => Object.assign(s, a.payload),
   },
-);
+  logout: () => ({ ...initialState }),
+  updateProfile: (s, a) => Object.assign(s, a.payload),
+});
 
 export const { loginSuccess, logout, updateProfile } = userSlice.actions;
 export default userSlice.reducer;

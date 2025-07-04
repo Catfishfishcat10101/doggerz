@@ -49,16 +49,16 @@ const Controls = ({ onRendererToggle }) => {
         className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600"
       >
         Walk
-      </button> 
+      </button>
 
       <button
         onClick={onRendererToggle}
         className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-        >
-          Toggle Sprite Mode
-        </button>
+      >
+        Toggle Sprite Mode
+      </button>
     </div>
   );
-}
+};
 
 export default Controls;

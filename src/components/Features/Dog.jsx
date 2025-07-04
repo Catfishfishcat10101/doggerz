@@ -4,11 +4,11 @@ import { useDispatch, useSelector } from "react-redux";
 import { dropPoop, playBark, move } from "../../redux/dogSlice.js";
 import jackRussellSprite from "/sprites/jack_russell_directions.png";
 
-const W = 256;                 // sprite width
-const H = 256;                 // sprite height
-const FRAMES = 4;              // frames per row
+const W = 256; // sprite width
+const H = 256; // sprite height
+const FRAMES = 4; // frames per row
 const dirs = ["right", "left", "down", "up"];
-const rowFor = (d) => ({ right: 0, left: 1, down: 2, up: 3 }[d]);
+const rowFor = (d) => ({ right: 0, left: 1, down: 2, up: 3 })[d];
 
 const Dog = () => {
   const dispatch = useDispatch();
@@ -44,11 +44,17 @@ const Dog = () => {
       const step = 20;
       const nx = Math.max(
         0,
-        Math.min(window.innerWidth - W, x + (dir === "right" ? step : dir === "left" ? -step : 0))
+        Math.min(
+          window.innerWidth - W,
+          x + (dir === "right" ? step : dir === "left" ? -step : 0),
+        ),
       );
       const ny = Math.max(
         0,
-        Math.min(window.innerHeight - H, y + (dir === "down" ? step : dir === "up" ? -step : 0))
+        Math.min(
+          window.innerHeight - H,
+          y + (dir === "down" ? step : dir === "up" ? -step : 0),
+        ),
       );
 
       dispatch(move({ x: nx, y: ny, direction: dir }));
@@ -57,7 +63,8 @@ const Dog = () => {
       if (stepRef.current % 80 === 0) dispatch(dropPoop({ x: nx, y: ny }));
 
       // bark occasionally
-      if (stepRef.current % 40 === 0 && Math.random() < 0.25) dispatch(playBark());
+      if (stepRef.current % 40 === 0 && Math.random() < 0.25)
+        dispatch(playBark());
     }, 300); // movement step every 300 ms
 
     return () => clearInterval(tick);

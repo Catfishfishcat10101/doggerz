@@ -9,7 +9,7 @@ const firebaseConfig = {
   storageBucket: "doggerz-81f4b.appsupport.com",
   messagingSenderId: "645903842930",
   appId: "1:645903842930:web:0b1235a451b803840f0ceb",
-  measurementId: "G-G6P0LD65ZJ"
+  measurementId: "G-G6P0LD65ZJ",
 };
 
 const app = initializeApp(firebaseConfig);
