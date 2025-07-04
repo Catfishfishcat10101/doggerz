@@ -1,3 +1,4 @@
+// src/components/DogAIEngine.jsx
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -10,38 +11,40 @@ import {
   updateCleanliness,
 } from "../../redux/dogSlice";
 
-const DogAIEngine = () => {
+/* -------------------------------------------------------
+   🕑  Game-speed constants  (1 real sec ≈ 12 dog mins here)
+------------------------------------------------------- */
+const WALK_INTERVAL_MS        = 8_000;   // try random walk every   8 s
+const BARK_INTERVAL_MS        = 12_000;  // try bark        every  12 s
+const POOP_INTERVAL_MS        = 20_000;  // try poop        every  20 s
+const CLEANLINESS_INTERVAL_MS = 60_000;  // decay hygiene   every  60 s
+
+export default function DogAIEngine() {
   const dispatch = useDispatch();
-  const dog = useSelector((state) => state.dog);
+  const dog      = useSelector((s) => s.dog); // keep if you later gate by dog state
 
-  // 🧠 Behavior timing constants
-  const WALK_INTERVAL = 8000;
-  const BARK_INTERVAL = 12000;
-  const POOP_INTERVAL = 20000;
-  const CLEANLINESS_INTERVAL = 15000;
-
-  // 🐾 Random behaviors (idle walking, barking, pooping)
+  /* 🐾  Random behaviours: walk, bark, poop ----------------------------- */
   useEffect(() => {
     const walkTimer = setInterval(() => {
-      if (Math.random() < 0.1) {
+      if (Math.random() < 0.10) {
         dispatch(startWalking());
-        setTimeout(() => dispatch(stopWalking()), 3000);
+        setTimeout(() => dispatch(stopWalking()), 3_000);
       }
-    }, WALK_INTERVAL);
+    }, WALK_INTERVAL_MS);
 
     const barkTimer = setInterval(() => {
-      if (Math.random() < 0.2) {
+      if (Math.random() < 0.20) {
         dispatch(startBarking());
-        setTimeout(() => dispatch(stopBarking()), 2000);
+        setTimeout(() => dispatch(stopBarking()), 2_000);
       }
-    }, BARK_INTERVAL);
+    }, BARK_INTERVAL_MS);
 
     const poopTimer = setInterval(() => {
       if (Math.random() < 0.15) {
         dispatch(startPooping());
-        setTimeout(() => dispatch(stopPooping()), 2500);
+        setTimeout(() => dispatch(stopPooping()), 2_500);
       }
-    }, POOP_INTERVAL);
+    }, POOP_INTERVAL_MS);
 
     return () => {
       clearInterval(walkTimer);
@@ -50,16 +53,14 @@ const DogAIEngine = () => {
     };
   }, [dispatch]);
 
-  // 🧼 Passive cleanliness decay
+  /* 🧼  Passive cleanliness decay  -------------------------------------- */
   useEffect(() => {
-    const decayInterval = setInterval(() => {
+    const decayTimer = setInterval(() => {
       dispatch(updateCleanliness());
-    }, CLEANLINESS_INTERVAL);
+    }, CLEANLINESS_INTERVAL_MS);
 
-    return () => clearInterval(decayInterval);
+    return () => clearInterval(decayTimer);
   }, [dispatch]);
 
-  return null;
-};
-
-export default DogAIEngine;
+  return null; // logic-only component
+}

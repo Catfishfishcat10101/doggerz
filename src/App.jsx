@@ -27,6 +27,7 @@ function App() {
 
   return (
     <Routes>
+      <Route index element={<Navigate to="/doggerz" replace />} />
       <Route path="doggerz" element={<Splash />} />
       <Route path="doggerz/login" element={<Login />} />
       <Route path="doggerz/signup" element={<Signup />} />

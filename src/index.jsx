@@ -17,7 +17,6 @@ function AuthListener({ children }) {
   /* track Firebase auth state */
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
-      console.log("🔥 Firebase user:", user);
       user
         ? dispatch(loginSuccess({ uid: user.uid, email: user.email }))
         : dispatch(logout());
