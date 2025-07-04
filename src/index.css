@@ -1,10 +1,9 @@
-🐶 Sprite */
+
   .dog-sprite {
-    background: url("./assets/jack_russell_directions.png") no-repeat 0 0 / contain;
+    background: url("./assets/jack_russell_directions.png");
     will-change: transform;
   }
 
-  /* 🚶 Walk animation */
   .walking .dog-sprite {
     animation: dogWalk var(--walk-duration, 1s) var(--walk-ease, linear)
       infinite;
