@@ -1,36 +1,42 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate }         from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { setDogName, setDogGender } from "../../redux/dogSlice";
 
 // ✅ Safe public-asset paths
 const yardBackground = process.env.PUBLIC_URL + "/backgrounds/yard_day.png";
-const bark           = new Audio(process.env.PUBLIC_URL + "/sfx/bark.wav");
+const bark = new Audio(process.env.PUBLIC_URL + "/sfx/bark.wav");
 
 const Splash = () => {
-  const [name, setName]       = useState("");
-  const [gender, setGender]   = useState("");
-  const loggedIn              = useSelector((s) => s.user.loggedIn);
-  const dispatch              = useDispatch();
-  const navigate              = useNavigate();
+  const [name, setName] = useState("");
+  const [gender, setGender] = useState("");
+  const loggedIn = useSelector((s) => s.user.loggedIn);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   /* set the full-screen background once */
   useEffect(() => {
     document.body.style.background = `url(${yardBackground}) center / cover no-repeat`;
-    return () => { document.body.style.background = ""; };   // clean up on unmount
+    return () => {
+      document.body.style.background = "";
+    }; // clean up on unmount
   }, []);
 
   const handleStart = () => {
-    if (!name || !gender)          return alert("Name and gender are required");
-    if (name.length < 2)           return alert("Name must be at least 2 characters long");
-    if (name.length > 20)          return alert("Name must be less than 20 characters long");
+    if (!name || !gender) return alert("Name and gender are required");
+    if (name.length < 2)
+      return alert("Name must be at least 2 characters long");
+    if (name.length > 20)
+      return alert("Name must be less than 20 characters long");
 
     dispatch(setDogName(name.trim()));
     dispatch(setDogGender(gender));
 
     bark.currentTime = 0;
-    bark.volume      = 0.5;
-    bark.play().catch(() => { /* ignore autoplay block */ });
+    bark.volume = 0.5;
+    bark.play().catch(() => {
+      /* ignore autoplay block */
+    });
 
     // absolute paths match <Route path="/doggerz/game" … />
     navigate(loggedIn ? "/doggerz/game" : "/doggerz/login");
@@ -78,7 +84,7 @@ const Splash = () => {
         <div className="mt-6 flex flex-col items-center">
           <p className="text-lg font-semibold">Meet {name}!</p>
           <img
-            src={`/sprites/${gender}.png`}        /* ensure these previews exist */
+            src={`/sprites/${gender}.png`} /* ensure these previews exist */
             alt="Dog preview"
             className="w-40 h-40 mt-2 rounded shadow-md object-contain"
           />

@@ -1,13 +1,11 @@
+.dog-sprite {
+  background: url("./assets/jack_russell_directions.png");
+  will-change: transform;
+}
 
-  .dog-sprite {
-    background: url("./assets/jack_russell_directions.png");
-    will-change: transform;
-  }
-
-  .walking .dog-sprite {
-    animation: dogWalk var(--walk-duration, 1s) var(--walk-ease, linear)
-      infinite;
-  }
+.walking .dog-sprite {
+  animation: dogWalk var(--walk-duration, 1s) var(--walk-ease, linear) infinite;
+}
 
 @keyframes floatUp {
   0% {

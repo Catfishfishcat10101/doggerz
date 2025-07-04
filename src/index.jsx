@@ -9,6 +9,7 @@ import { BrowserRouter } from "react-router-dom";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "./firebase.js";
 import { loginSuccess, logout } from "./redux/userSlice.js";
+;
 
 function AuthListener({ children }) {
   const dispatch = useDispatch();
