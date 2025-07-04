@@ -6,7 +6,7 @@ import { setUser, clearUser } from "./redux/userSlice";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "./components/Auth/Login";
 import Signup from "./components/Auth/Signup";
-import MainGame from "./components/MainGame";
+import MainGame from "../src/components/UI/MainGame";
 import Splash from "./components/UI/Splash";
 
 function App() {

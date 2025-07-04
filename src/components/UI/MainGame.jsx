@@ -1,15 +1,15 @@
 import React from "react";
-import DogSprite from "./DogSprite";
+import DogSprite from "../Features/DogSprite";
 import DogName from "./DogName";
-import Controls from "../UI/Controls";
-import StatsBar from "../UI/StatsBar";
+import Controls from "./Controls";
+import StatsBar from "./StatsBar";
 import "./CleanlinessBar";
 import Tricks from "../components/Tricks";
 import LogoutButton from "../Auth/LogoutButton";
 import PoopRenderer from "./PoopRenderer";
 import PottyTraining from "./PottyTraining";
-import Status from "../UI/Status";
-import ToyBox from "../UI/ToyBox";
+import Status from "./Status";
+import ToyBox from "./ToyBox";
 import DogAIEngine from "./UI/DogAIEngine";
 
 function MainGame() {
