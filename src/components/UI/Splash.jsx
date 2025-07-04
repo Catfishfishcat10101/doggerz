@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { setDogName, setDogGender } from "../../redux/dogSlice.js";
-import yardBackground from "public\backgrounds\yard_day.png";
+import yardBackground from "public/backgrounds/yard_day.png";
 
 const bark = new Audio("/sfx/bark.wav");
 // Ensure the bark sound file exists in the public/sfx directory

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { setDogName } from "../redux/dogSlice.js";
+import { setDogName } from "../../redux/dogSlice.js";
 
 const DogName = () => {
   const dispatch = useDispatch();

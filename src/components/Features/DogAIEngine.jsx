@@ -8,7 +8,7 @@ import {
   startPooping,
   stopPooping,
   updateCleanliness,
-} from "../redux/dogSlice";
+} from "../../redux/dogSlice";
 
 const DogAIEngine = () => {
   const dispatch = useDispatch();

@@ -4,24 +4,24 @@ import { useSelector } from 'react-redux';
 const FRAME_WIDTH = 128;
 const FRAME_HEIGHT = 128;
 const TOTAL_FRAMES = 4;
-const SCALE = 1;
+const SCALE = 1; // You can adjust to 2 or 4 for pixel zoom effect
 
 const DogSprite = () => {
   const { isWalking, isRunning, isBarking, isPooping } = useSelector((state) => state.dog);
   const [frameIndex, setFrameIndex] = useState(0);
 
   const getAnimationRow = () => {
-    if (isPooping) return 3;     // Row 4 = pooping
-    if (isBarking) return 2;     // Row 3 = barking
-    if (isWalking || isRunning) return 1; // Row 2 = walking/running
-    return 0;                    // Row 1 = idle
+    if (isPooping) return 3;      // Row 4
+    if (isBarking) return 2;      // Row 3
+    if (isWalking || isRunning) return 1; // Row 2
+    return 0;                     // Row 1 (idle)
   };
 
-  // Frame animation loop
+  // Advance frame on interval
   useEffect(() => {
     const interval = setInterval(() => {
       setFrameIndex((prev) => (prev + 1) % TOTAL_FRAMES);
-    }, 200);
+    }, 150);
     return () => clearInterval(interval);
   }, []);
 
@@ -31,14 +31,14 @@ const DogSprite = () => {
 
   return (
     <div
-      className="overflow-hidden"
+      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 overflow-hidden pointer-events-none z-20"
       style={{
         width: FRAME_WIDTH * SCALE,
         height: FRAME_HEIGHT * SCALE,
       }}
     >
       <img
-        src='/sprites/jack_russell_sprite.png'
+        src="/sprites/jack_russell_sprite.png"
         alt="Dog Sprite"
         style={{
           imageRendering: 'pixelated',

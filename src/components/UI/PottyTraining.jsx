@@ -1,6 +1,6 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { increasePottyLevel } from "../redux/dogSlice.js";
+import { increasePottyLevel } from "../../redux/dogSlice.js";
 
 const PottyTraining = () => {
   const dispatch = useDispatch();
