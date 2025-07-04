@@ -1,8 +1,8 @@
 {
   "name": "doggerz",
   "version": "1.0.0",
-  "private": true,
-  "description": "Fireball-inspired virtual dog sim.",
+  "private": false,
+  "description": "A dog simulator game where you can adopt, train, and play with virtual dogs.",
   "main": "index.js",
   "scripts": {
     "start": "react-scripts start",
@@ -26,7 +26,6 @@
     "react-redux": "^9.1.0",
     "react-router-dom": "^6.23.0",
     "react-scripts": "5.0.1",
-    "redux": "^5.0.1",
     "redux-persist": "^6.0.0"
   },
   "devDependencies": {
@@ -35,9 +34,7 @@
     "eslint-plugin-jsx-a11y": "^6.8.0",
     "eslint-plugin-react": "^7.34.1",
     "eslint-plugin-react-hooks": "^4.6.0",
-    "postcss": "^8.4.38",
-    "source-map-loader": "^4.0.1",
-    "tailwindcss": "^3.4.5"
+    "source-map-loader": "^4.0.1"
   },
   "browserslist": {
     "production": [

@@ -55,7 +55,7 @@ const Splash = () => {
 
       <input
         type="text"
-        placeholder="Dog’s Name"
+        placeholder="Dogs Name"
         value={name}
         onChange={(e) => setName(e.target.value)}
         className="mb-4 p-2 border rounded text-lg w-60"
