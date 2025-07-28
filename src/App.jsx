@@ -27,17 +27,17 @@ function App() {
 
   return (
     <Routes>
-      <Route index element={<Navigate to="/doggerz" replace />} />
+      <Route index element={<Navigate to={Routes.HOME} replace />} />
       <Route path="doggerz" element={<Splash />} />
       <Route path="doggerz/login" element={<Login />} />
       <Route path="doggerz/signup" element={<Signup />} />
       <Route
         path="doggerz/game"
         element={
-          loggedIn ? <MainGame /> : <Navigate to="/doggerz/login" replace />
+          loggedIn ? <MainGame /> : <Navigate to={Routes.LOGIN} replace />
         }
       />
-      <Route path="*" element={<Navigate to="/doggerz" replace />} />
+      <Route path="*" element={<Navigate to={Routes.HOME} replace />} />
     </Routes>
   );
 }

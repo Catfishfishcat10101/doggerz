@@ -2,18 +2,20 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { setDogName } from "../../redux/dogSlice";
+import { Helmet } from "react-helmet-async"; // Optional: for meta title SEO
 
 const DogName = () => {
   const dispatch = useDispatch();
   const currentName = useSelector((state) => state.dog.name);
   const [input, setInput] = useState("");
+  const [editing, setEditing] = useState(false);
   const inputRef = useRef(null);
 
   useEffect(() => {
-    if (!currentName && inputRef.current) {
+    if ((!currentName || editing) && inputRef.current) {
       inputRef.current.focus();
     }
-  }, [currentName]);
+  }, [currentName, editing]);
 
   const handleNameSubmit = (e) => {
     e.preventDefault();
@@ -21,15 +23,34 @@ const DogName = () => {
     if (trimmed.length > 0) {
       dispatch(setDogName(trimmed));
       setInput("");
+      setEditing(false);
     }
+  };
+
+  const handleRename = () => {
+    setEditing(true);
+    setInput(currentName);
   };
 
   return (
     <div className="mb-6 text-center animate-fadeIn">
-      {currentName ? (
-        <h2 className="text-3xl font-extrabold text-yellow-300 drop-shadow-lg transition-opacity duration-500">
-          🐶 Meet <span className="underline">{currentName}</span>!
-        </h2>
+      {/* Meta title for SEO */}
+      <Helmet>
+        <title>{currentName ? `🐾 Meet ${currentName}` : "Name Your Dog"}</title>
+      </Helmet>
+
+      {currentName && !editing ? (
+        <div className="space-y-4">
+          <h2 className="text-3xl font-extrabold text-yellow-300 drop-shadow-md transition-opacity duration-500">
+            🐶 Meet <span className="underline">{currentName}</span>!
+          </h2>
+          <button
+            onClick={handleRename}
+            className="text-sm text-yellow-200 hover:underline focus:outline-none"
+          >
+            Rename Dog
+          </button>
+        </div>
       ) : (
         <form
           onSubmit={handleNameSubmit}
@@ -57,3 +78,4 @@ const DogName = () => {
 };
 
 export default DogName;
+// src/components/UI/DogName.jsx
