@@ -34,7 +34,7 @@ function App() {
       <Route
         path="doggerz/game"
         element={
-          loggedIn ? <MainGame /> : <Navigate to="doggerz/login" replace />
+          loggedIn ? <MainGame /> : <Navigate to="/doggerz/login" replace />
         }
       />
       <Route path="*" element={<Navigate to="/doggerz" replace />} />

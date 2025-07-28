@@ -1,11 +1,11 @@
+// src/components/DogName.jsx
 import React, { useState, useRef, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { setDogName } from "../../redux/dogSlice.js";
+import { setDogName } from "../../redux/dogSlice";
 
 const DogName = () => {
   const dispatch = useDispatch();
-  const { name } = useSelector((state) => state.dog);
-  return <div className="text-xl font-bold">{name || "Your Dog"}</div>;
+  const currentName = useSelector((state) => state.dog.name);
   const [input, setInput] = useState("");
   const inputRef = useRef(null);
 
@@ -25,19 +25,19 @@ const DogName = () => {
   };
 
   return (
-    <div className="mb-4 text-center animate-fadeIn">
+    <div className="mb-6 text-center animate-fadeIn">
       {currentName ? (
-        <h2 className="text-2xl font-semibold drop-shadow-sm">
-          🐶 Meet {currentName}!
+        <h2 className="text-3xl font-extrabold text-yellow-300 drop-shadow-lg transition-opacity duration-500">
+          🐶 Meet <span className="underline">{currentName}</span>!
         </h2>
       ) : (
         <form
           onSubmit={handleNameSubmit}
-          className="flex flex-col items-center gap-2"
+          className="flex flex-col items-center gap-4"
         >
           <input
             ref={inputRef}
-            className="text-black px-4 py-1 rounded shadow w-60"
+            className="text-black px-5 py-2 rounded-xl shadow w-72 outline-none focus:ring-2 focus:ring-yellow-400 transition"
             type="text"
             placeholder="Name your dog..."
             value={input}
@@ -46,7 +46,7 @@ const DogName = () => {
           />
           <button
             type="submit"
-            className="bg-yellow-400 text-black px-4 py-1 rounded font-bold hover:bg-yellow-500 transition"
+            className="bg-yellow-400 text-black px-6 py-2 rounded-full font-bold hover:bg-yellow-500 transition-all hover:scale-105 shadow"
           >
             Confirm Name
           </button>
