@@ -11,6 +11,7 @@ import StatsBar from "./StatsBar";
 import LogoutButton from "../Auth/LogoutButton";
 import Dog from "../Features/Dog";
 import CleanlinessBar from "./CleanlinessBar";
+import PoopScoop from "./PoopScoop";
 
 const GameScreen = () => {
   return (
@@ -32,6 +33,7 @@ const GameScreen = () => {
       <ResetGame />
       <LogoutButton />
       <Dog />
+      <PoopScoop />
     </div>
   );
 };

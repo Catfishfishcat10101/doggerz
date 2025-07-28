@@ -20,7 +20,7 @@ function CleanlinessBar() {
     <div className="w-64 bg-gray-200 rounded h-4 overflow-hidden">
       <div
         className={`h-full ${barColor} transition-all duration-300`}
-        style={{ width: `#{pct}%` }}
+        style={{ width: `${pct}%` }}
       />
     </div>
   );

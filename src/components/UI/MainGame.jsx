@@ -3,7 +3,7 @@ import DogSprite from "./DogSprite";
 import DogName from "./DogName";
 import Controls from "./Controls";
 import StatsBar from "./StatsBar";
-import "./CleanlinessBar";
+import CleanlinessBar from "./CleanlinessBar";
 import Tricks from "./Tricks";
 import LogoutButton from "../Auth/LogoutButton";
 import PottyTraining from "./PottyTraining";

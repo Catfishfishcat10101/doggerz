@@ -7,7 +7,7 @@ const PottyTraining = () => {
   const { isPottyTrained, pottyLevel } = useSelector((state) => state.dog);
 
   const handleTrainClick = () => {
-    if (!isPottyTrained) {
+    if (!isPottyTrained && pottyLevel < 100) {
       dispatch(increasePottyLevel(20)); // 🧠 Boost training by 20 each click
     }
   };
