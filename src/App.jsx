@@ -1,4 +1,5 @@
-import { useEffect } from "react";
+import React, { useEffect } from "react";
+import { HelmetProvider } from "react-helmet-async";
 import { auth } from "./firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { useDispatch, useSelector } from "react-redux";
@@ -10,11 +11,11 @@ import MainGame from "./components/UI/MainGame";
 import Splash from "./components/UI/Splash";
 
 function App() {
-  const loggedIn = useSelector((s) => s.user.loggedIn);
+  const loggedIn = useSelector((state) => state.user.loggedIn);
   const dispatch = useDispatch();
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         dispatch(setUser({ uid: user.uid, email: user.email }));
       } else {
@@ -22,22 +23,29 @@ function App() {
       }
     });
 
-    return () => unsub();
-  }, []);
+    return () => unsubscribe();
+  }, [dispatch]);
 
   return (
     <Routes>
-      <Route index element={<Navigate to={Routes.HOME} replace />} />
-      <Route path="doggerz" element={<Splash />} />
-      <Route path="doggerz/login" element={<Login />} />
-      <Route path="doggerz/signup" element={<Signup />} />
+      {/* Redirect from root to splash */}
+      <Route index element={<Navigate to="/doggerz" replace />} />
+
+      {/* Public routes */}
+      <Route path="/doggerz" element={<Splash />} />
+      <Route path="/doggerz/login" element={<Login />} />
+      <Route path="/doggerz/signup" element={<Signup />} />
+
+      {/* Protected route */}
       <Route
-        path="doggerz/game"
+        path="/doggerz/game"
         element={
-          loggedIn ? <MainGame /> : <Navigate to={Routes.LOGIN} replace />
+          loggedIn ? <MainGame /> : <Navigate to="/doggerz/login" replace />
         }
       />
-      <Route path="*" element={<Navigate to={Routes.HOME} replace />} />
+
+      {/* Fallback route */}
+      <Route path="*" element={<Navigate to="/doggerz" replace />} />
     </Routes>
   );
 }

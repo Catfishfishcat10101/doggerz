@@ -1,4 +1,5 @@
 import React from "react";
+import { HelmetProvider } from "react-helmet-async";
 import DogSprite from "./Dog/DogSprite";
 import DogName from "./Dog/DogName";
 import Controls from "./Controls";
@@ -17,6 +18,12 @@ function MainGame() {
     <div className="relative w-screen h-screen bg-green-100 overflow-hidden font-sans">
       {/* 🧠 AI Engine */}
       <DogAIEngine />
+      {/* Helmet for SEO */}
+      <HelmetProvider>
+        <title>Doggerz - Main Game</title>
+        <meta name="description" content="Play with your virtual dog in Doggerz!" />
+      </HelmetProvider> 
+    
 
       {/* Logout Button */}
       <div className="absolute top-4 right-4 z-50">
