@@ -5,7 +5,7 @@ import Controls from "./Controls";
 import StatsBar from "./Stats/StatsBar";
 import CleanlinessBar from "./Stats/CleanlinessBar";
 import Tricks from "./Training/Tricks";
-import PoopRenderer from "./Features/PoopRenderer";
+import PoopRenderer from "../Features/PoopRenderer";
 import LogoutButton from "../Auth/LogoutButton";
 import PottyTraining from "./Training/PottyTraining";
 import Status from "./Stats/Status";

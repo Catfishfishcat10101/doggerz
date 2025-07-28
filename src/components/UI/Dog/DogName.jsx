@@ -1,7 +1,7 @@
 // src/components/DogName.jsx
 import React, { useState, useRef, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { setDogName } from "../../redux/dogSlice";
+import { setDogName } from "../../../redux/dogSlice.js";
 import { Helmet } from "react-helmet-async"; // Optional: for meta title SEO
 
 const DogName = () => {
