@@ -1,16 +1,18 @@
+// src/firebase.js
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDm7lEkTIpeMM57ClsorTMUSmsExAi2-IU",
-  authDomain: "doggerz-81f4b.firebaseapp.com",
-  projectId: "doggerz-pet",
-  storageBucket: "doggerz-81f4b.appsupport.com",
-  messagingSenderId: "645903842930",
-  appId: "1:645903842930:web:0b1235a451b803840f0ceb",
-  measurementId: "G-G6P0LD65ZJ",
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.REACT_APP_FIREBASE_APP_ID,
+  measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID,
 };
+
 
 const app = initializeApp(firebaseConfig);
 

@@ -1,17 +1,56 @@
-# dependencies
-/node_modules
-/pglite-debug.log
+# ------------------------
+# Node modules & logs
+# ------------------------
+/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pglite-debug.log
 
-# Firebase local emulator
+# ------------------------
+# Firebase emulation
+# ------------------------
 /firebase-debug.log
+/firebase.json
 .firebaserc
 
-# IDE specific files
+# ------------------------
+# Build output
+# ------------------------
+/build/
+/dist/
+
+# ------------------------
+# Environment files
+# ------------------------
+.env
+.env.*
+!.env.example
+
+# ------------------------
+# IDE / Editor configs
+# ------------------------
 .vscode/
 .idea/
 .DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
 
-# dotenv files
-/.env
-/.env.local
-/.env.development.local
+# ------------------------
+# OS / misc
+# ------------------------
+Thumbs.db
+Desktop.ini
+
+# ------------------------
+# Coverage / testing
+# ------------------------
+/coverage/
+*.lcov
+
+# ------------------------
+# Optional: Firebase Hosting Previews
+# ------------------------
+.firebase/

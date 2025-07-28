@@ -1,0 +1,29 @@
+{
+  "name": "doggerz",
+  "version": "1.0.0",
+  "description": "- **Frontend**: React, TailwindCSS, react-router\r - **State**: Redux Toolkit\r - **Auth & DB**: Firebase Authentication & Firestore\r - **Animation**: CSS transitions, sprite animations\r - **Dev Tools**: GitHub, Vite or CRA, ESLint",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Catfishfishcat10101/doggerz.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Catfishfishcat10101/doggerz/issues"
+  },
+  "homepage": "https://github.com/Catfishfishcat10101/doggerz#readme",
+  "dependencies": {
+    "@tailwindcss/forms": "^0.5.10",
+    "eslint": "^8.57.1",
+    "react-scripts": "^5.0.1"
+  },
+  "devDependencies": {
+    "jest": "^27.5.1"
+  }
+}
