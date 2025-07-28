@@ -9,11 +9,8 @@ import {
   startPooping,
   stopPooping,
   updateCleanliness,
-} from "../../redux/dogSlice";
+} from "../../../redux/dogSlice.js";
 
-/* -------------------------------------------------------
-   🕑  Game-speed constants  (1 real sec ≈ 12 dog mins here)
-------------------------------------------------------- */
 const WALK_INTERVAL_MS = 8_000; // try random walk every   8 s
 const BARK_INTERVAL_MS = 12_000; // try bark        every  12 s
 const POOP_INTERVAL_MS = 20_000; // try poop        every  20 s

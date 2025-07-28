@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
+import "./DogSprite.css"; // Ensure you have the necessary CSS for sprite rendering
+
 
 const FRAME_WIDTH = 128;
 const FRAME_HEIGHT = 128;
