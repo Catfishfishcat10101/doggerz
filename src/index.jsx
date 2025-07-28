@@ -47,13 +47,19 @@ function AuthListener({ children }) {
 
   return children;
 }
-
+const base = process.env.NODE_ENV === "production" ? "/doggerz" : "/";
 ReactDOM.createRoot(document.getElementById("root")).render(
   <Provider store={store}>
-    <BrowserRouter basename="/doggerz">
+    <BrowserRouter
+      basename={base}
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true,
+      }}
+    >
       <AuthListener>
         <App />
       </AuthListener>
     </BrowserRouter>
-  </Provider>,
+  </Provider>
 );
