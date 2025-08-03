@@ -1,105 +1,100 @@
+// src/components/UI/MainGame.jsx
 import React from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { Navigate } from "react-router-dom";
-import { HelmetProvider } from "react-helmet-async";
-import DogSprite from "./Dog/DogSprite";
-import DogName from "./Dog/DogName";
-import StatsBar from "./Stats/StatsBar";
-import CleanlinessBar from "./Stats/CleanlinessBar";
-import Status from "./Stats/Status";
-import PottyTraining from "./Training/PottyTraining";
-import Tricks from "./Training/Tricks";
+import DogSprite from "./DogSprite";
 import Controls from "./Controls";
-import ToyBox from "./ToyBox";
-import DogAIEngine from "./Dog/DogAIEngine";
-import LogoutButton from "./LogoutButton";
-import PoopRenderer from "../Features/PoopRenderer"; // Assuming this is a component that handles poop rendering in the d
-import { selectIsLoggedIn } from "../Features/authSlice"; // Adjust the import path as necessary
-import "../styles/mainGame.css"; // Assuming you have a CSS file for styles
-import "../styles/controls.css"; // Assuming you have a CSS file for controls styles
-import "../styles/toybox.css"; // Assuming you have a CSS file for toybox styles
-import "../styles/dog.css"; // Assuming you have a CSS file for dog styles
-import "../styles/stats.css"; // Assuming you have a CSS file for stats styles
-import "../styles/pottyTraining.css"; // Assuming you have a CSS file for potty training styles
-import "../styles/tricks.css"; // Assuming you have a CSS file for tricks styles
+import TrickList from "./TrickList";
+import { gainXP, feedDog, playWithDog, batheDog, move, startWalking, stopWalking } from "../../store/dogSlice";
+import { useNavigate } from "react-router-dom";
 
+export default function MainGame() {
+  const dog = useSelector((state) => state.dog);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
 
+  // Example handler for moving the dog
+  const walkDog = (dx = 0, dy = 0) => {
+    dispatch(startWalking());
+    setTimeout(() => {
+      dispatch(move({ x: dog.x + dx, y: dog.y + dy, direction: dx > 0 ? "right" : dx < 0 ? "left" : dy > 0 ? "down" : "up" }));
+      dispatch(stopWalking());
+    }, 400);
+  };
 
-function MainGame() {
   return (
-    <div className="relative w-screen h-screen bg-green-100 overflow-hidden font-sans">
-      {/* 🧠 AI Engine */}
-      <DogAIEngine />
-      {/* Helmet for SEO */}
-      <HelmetProvider>
-        <title>Doggerz - Main Game</title>
-        <meta name="description" content="Play with your virtual dog in Doggerz!" />
-      </HelmetProvider>
-      {/* AI Engine */}
-        <DogAIEngine />
-      {/* Logout Button */}
-      <div className="absolute top-4 right-4 z-50">
-        <LogoutButton />
-      </div>
-      {/* Dog Name */}
-      <div className="absolute top-4 left-4 z-40">
-        <DogName />
-      </div>
-      {/* Background */}
-      <div className="absolute inset-0 z-0 bg-gradient-to-b from-green-200 to-green-300">
-        {/* You can add a background image or gradient here */}
-      </div>
-      {/* Main Game Area */}
-      <div className="absolute inset-0 z-20 flex items-center justify-center">
-        <div className="w-full h-full bg-white rounded-lg shadow-lg p-4 overflow-auto">
-          {/* Main game content goes here */}
-          <h1 className="text-2xl font-bold text-center mb-4">
-            Welcome to Doggerz!
-          </h1>
-          <p className="text-center">
-            Play with your virtual dog, train it, and have fun!
-          </p>
+    <div className="bg-[#15161a] min-h-screen flex flex-col items-center p-4 relative">
+      <header className="flex flex-row items-center justify-between w-full max-w-xl mb-2">
+        <div>
+          <span className="font-bold text-xl text-yellow-200">{dog.name || "Your Dog"}</span>
+          <span className="ml-3 text-gray-400 text-sm">Level {dog.level} • XP {dog.xp}/{dog.level * 100}</span>
+        </div>
+        <button
+          className="bg-white/10 text-white text-xs px-3 py-1 rounded hover:bg-white/20"
+          onClick={() => navigate("/settings")}
+        >
+          ⚙️ Settings
+        </button>
+      </header>
+      <section className="relative w-full max-w-xl h-80 bg-[url('/backgrounds/yard_day.png')] bg-cover rounded-2xl shadow-lg overflow-hidden flex items-end justify-center mb-4">
+        <DogSprite x={dog.x} y={dog.y} direction={dog.direction} isWalking={dog.isWalking} isDirty={dog.isDirty} />
+        {/* You can render poop, toys, and more here */}
+      </section>
+      <div className="grid grid-cols-2 gap-4 mb-4 w-full max-w-xl">
+        <div className="bg-white/10 rounded-xl p-4 flex flex-col space-y-2">
+          <div>
+            <span className="font-semibold text-green-400">Hunger:</span>
+            <span className="ml-2">{dog.hunger}</span>
+          </div>
+          <div>
+            <span className="font-semibold text-pink-300">Happiness:</span>
+            <span className="ml-2">{dog.happiness}</span>
+          </div>
+          <div>
+            <span className="font-semibold text-blue-200">Energy:</span>
+            <span className="ml-2">{dog.energy}</span>
+          </div>
+          <div>
+            <span className="font-semibold text-purple-200">Potty Trained:</span>
+            <span className="ml-2">{dog.isPottyTrained ? "Yes" : "No"}</span>
+          </div>
+          <div>
+            <span className="font-semibold text-yellow-400">Cleanliness:</span>
+            <span className="ml-2">{dog.isDirty ? "Dirty" : "Clean"}</span>
+          </div>
+        </div>
+        <div>
+          <TrickList />
         </div>
       </div>
-
-      {/* HUD Stats */}
-      <div className="absolute top-20 left-4 z-40">
-        <StatsBar />
-        <CleanlinessBar />
+      <Controls
+        onFeed={() => { dispatch(feedDog()); dispatch(gainXP(10)); }}
+        onPlay={() => { dispatch(playWithDog()); dispatch(gainXP(15)); }}
+        onBathe={() => { dispatch(batheDog()); dispatch(gainXP(5)); }}
+        onWalkUp={() => walkDog(0, -16)}
+        onWalkDown={() => walkDog(0, 16)}
+        onWalkLeft={() => walkDog(-16, 0)}
+        onWalkRight={() => walkDog(16, 0)}
+      />
+      <div className="flex flex-row gap-4 mt-4">
+        <button
+          className="bg-green-600 text-white px-4 py-2 rounded-xl hover:bg-green-700"
+          onClick={() => navigate("/potty")}
+        >
+          🚽 Potty Training
+        </button>
+        <button
+          className="bg-sky-600 text-white px-4 py-2 rounded-xl hover:bg-sky-700"
+          onClick={() => navigate("/shop")}
+        >
+          🛒 Shop
+        </button>
+        <button
+          className="bg-yellow-500 text-white px-4 py-2 rounded-xl hover:bg-yellow-600"
+          onClick={() => navigate("/memory")}
+        >
+          📖 Memories
+        </button>
       </div>
-
-      {/* Status Messages */}
-      <div className="absolute top-40 left-4 z-40">
-        <Status />
-      </div>
-
-      {/* Potty Training */}
-      <div className="absolute inset-0 z-10">
-        <PottyTraining />
-      </div>
-
-      {/* Dog Canvas & Poop Layer */}
-      <div className="absolute inset-0 z-10">
-        <DogSprite />
-        <PoopRenderer />
-      </div>
-
-      {/* Tricks Display */}
-      <div className="absolute bottom-20 right-4 z-30">
-        <Tricks />
-      </div>
-
-      {/* Toybox */}
-      <div className="absolute bottom-36 right-4 z-30">
-        <ToyBox />
-      </div>
-
-      {/* Controls */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-50">
-        <Controls />
-      </div>
-      </div>
+    </div>
   );
-};
-
-export default MainGame;
+}

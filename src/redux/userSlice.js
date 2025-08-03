@@ -1,31 +1,30 @@
-// src/store/userSlice.js
+// src/redux/userSlice.js
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
+  loggedIn: false,
   uid: null,
   email: null,
-  displayName: "",
-  photoURL: "",
-  loggedIn: false,
+  // You can add displayName, photoURL, etc. if using Google/Firebase profile info
 };
 
 const userSlice = createSlice({
   name: "user",
   initialState,
   reducers: {
-    loginSuccess: (state, action) => {
+    setUser: (state, action) => {
+      state.loggedIn = true;
       state.uid = action.payload.uid;
       state.email = action.payload.email;
-      state.displayName = action.payload.displayName || "";
-      state.photoURL = action.payload.photoURL || "";
-      state.loggedIn = true;
     },
+    clearUser: (state) => {
+      state.loggedIn = false;
+      state.uid = null;
+      state.email = null;
+    },
+    // Optionally: add user profile update actions
   },
-  logout: () => ({ ...initialState }),
-  updateProfile: (s, a) => Object.assign(s, a.payload),
 });
 
-export const { loginSuccess, logout, updateProfile } = userSlice.actions;
+export const { setUser, clearUser } = userSlice.actions;
 export default userSlice.reducer;
-export const setUser = loginSuccess;
-export const clearUser = logout;

@@ -1,44 +1,76 @@
+// src/components/Features/PottyTraining.jsx
 import React from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { increasePottyLevel } from "../../../redux/dogSlice.js";
+import { useSelector, useDispatch } from "react-redux";
+import {
+  increasePottyLevel,
+  resetPottyLevel,
+} from "../../store/dogSlice";
+import { useNavigate } from "react-router-dom";
 
-const PottyTraining = () => {
+export default function PottyTraining() {
+  const pottyLevel = useSelector((state) => state.dog.pottyLevel);
+  const isPottyTrained = useSelector((state) => state.dog.isPottyTrained);
   const dispatch = useDispatch();
-  const { isPottyTrained, pottyLevel } = useSelector((state) => state.dog);
+  const navigate = useNavigate();
 
-  const handleTrainClick = () => {
-    if (!isPottyTrained && pottyLevel < 100) {
-      dispatch(increasePottyLevel(20)); // 🧠 Boost training by 20 each click
-    }
+  const trainStep = () => {
+    dispatch(increasePottyLevel(15));
+  };
+
+  const resetTraining = () => {
+    dispatch(resetPottyLevel());
   };
 
   return (
-    <div className="bg-white/10 backdrop-blur-md p-4 rounded-md shadow-md w-full max-w-sm text-white text-center mt-4">
-      <h2 className="text-lg font-bold mb-2">🚽 Potty Training</h2>
-
-      <div className="w-full h-4 bg-gray-700 rounded-full mb-2">
-        <div
-          className="h-full bg-lime-400 rounded-full transition-all duration-300"
-          style={{ width: `${pottyLevel}%` }}
-        />
+    <div className="min-h-screen bg-gradient-to-br from-green-100 to-green-300 flex flex-col items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md w-full">
+        <h2 className="text-2xl font-bold mb-4 text-green-900">
+          🚽 Potty Training
+        </h2>
+        <div className="mb-4">
+          <div className="flex items-center gap-2">
+            <span className="text-lg font-semibold">Progress:</span>
+            <div className="w-full bg-gray-200 rounded h-4 overflow-hidden flex-1">
+              <div
+                className={`h-full rounded transition-all duration-300 ${
+                  isPottyTrained ? "bg-green-600" : "bg-yellow-400"
+                }`}
+                style={{ width: `${pottyLevel}%` }}
+              ></div>
+            </div>
+            <span className="font-mono w-12 text-right">
+              {Math.round(pottyLevel)}%
+            </span>
+          </div>
+          <div className="mt-2 text-gray-700">
+            {isPottyTrained
+              ? "Your dog is fully potty trained! 🎉"
+              : "Keep training to reach 100%!"}
+          </div>
+        </div>
+        <div className="flex gap-2 mt-6">
+          <button
+            className="bg-yellow-400 hover:bg-yellow-500 text-white px-4 py-2 rounded-lg font-semibold"
+            onClick={trainStep}
+            disabled={isPottyTrained}
+          >
+            Train Potty 🚾
+          </button>
+          <button
+            className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg"
+            onClick={resetTraining}
+            disabled={pottyLevel === 0}
+          >
+            Reset
+          </button>
+          <button
+            className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg ml-auto"
+            onClick={() => navigate("/game")}
+          >
+            ← Back to Game
+          </button>
+        </div>
       </div>
-
-      <p className="mb-3">
-        {isPottyTrained
-          ? "✅ Your dog is fully potty trained!"
-          : "Still learning..."}
-      </p>
-
-      {!isPottyTrained && (
-        <button
-          onClick={handleTrainClick}
-          className="bg-lime-500 hover:bg-lime-600 text-black font-bold py-1 px-4 rounded transition"
-        >
-          Train to go outside
-        </button>
-      )}
     </div>
   );
-};
-
-export default PottyTraining;
+}

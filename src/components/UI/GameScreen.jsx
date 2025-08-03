@@ -1,16 +1,16 @@
 import React from "react";
-import Splash from "./components/UI/Splash";
-import DogName from "./DogName";
+import Splash from "./UI/Splash";
+import DogName from "./Dog/DogName";
 import Controls from "./Controls";
-import Status from "./Status";
-import Tricks from "./Tricks";
+import Status from "./Stats/Status";
+import Tricks from "./Training/Tricks";
 import FirebaseAutoSave from "./FirebaseAutoSave";
 import ToyBox from "./ToyBox";
 import ResetGame from "./ResetGame";
-import StatsBar from "./StatsBar";
+import StatsBar from "./Stats/StatsBar";
 import LogoutButton from "../Auth/LogoutButton";
 import Dog from "../Features/Dog";
-import CleanlinessBar from "./CleanlinessBar";
+import CleanlinessBar from "./Stats/CleanlinessBar";
 import PoopScoop from "./PoopScoop";
 
 const GameScreen = () => {
@@ -25,7 +25,7 @@ const GameScreen = () => {
       <DogName />
       <StatsBar />
       <CleanlinessBar />
-      <PoopScoop clearPoops={() => shimGetOwnPropertyDescriptors([])} />
+      <PoopScoop clearPoops={() => console.log("Poops cleared")} />
       <Controls />
       <ToyBox />
       <Status />
@@ -33,9 +33,17 @@ const GameScreen = () => {
       <ResetGame />
       <LogoutButton />
       <Dog />
-      <PoopScoop />
     </div>
   );
 };
 
 export default GameScreen;
+
+// This component serves as the main game screen, integrating various UI components
+// and features such as the dog name, controls, status, tricks, and more.
+// It also includes Firebase auto-save functionality and a logout button for user convenience.
+// The layout is styled with a gradient background and responsive design for different screen sizes.
+// The game screen is designed to provide an engaging and interactive experience for users, allowing them to
+// manage their virtual dog, train it, and keep track of its stats and cleanliness.
+// The components are organized to ensure a clean and user-friendly interface, enhancing the overall gameplay experience.
+// The use of Tailwind CSS classes ensures a modern and visually appealing design, while the functional components  

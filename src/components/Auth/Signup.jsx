@@ -1,161 +1,85 @@
 // src/components/Auth/Signup.jsx
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
-
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
-import { auth, db } from "../../firebase";
-
-import { loginSuccess } from "../../redux/userSlice.js"; // canonical action
-import { setDogName as setDogNameAction } from "../../redux/dogSlice.js";
+import { auth, googleProvider } from "../../firebase";
+import { createUserWithEmailAndPassword, signInWithPopup } from "firebase/auth";
+import { useNavigate } from "react-router-dom";
 
 export default function Signup() {
-  const dispatch = useDispatch();
+  const [email, setEmail] = useState("");
+  const [pw, setPw] = useState("");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [dogName, setDogName] = useState("");
-
-  const [step, setStep] = useState(1); // 1 = account, 2 = dog name
-  const [error, setError] = useState("");
-
-  /* ───────────────────────────────────────────────────────── step 1 */
-  const handleAccountSubmit = async (e) => {
+  const signupWithEmail = async (e) => {
     e.preventDefault();
     setError("");
-
     try {
-      const { user } = await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password,
-      );
-
-      // put user in Redux
-      dispatch(loginSuccess({ uid: user.uid, email: user.email }));
-
-      // pre-create dog doc with empty name; we'll update name in step 2
-      await setDoc(doc(db, "dogs", user.uid), {
-        name: "",
-        happiness: 100,
-        energy: 100,
-        hunger: 100,
-        xp: 0,
-        level: 1,
-        age: 0,
-        x: 96,
-        y: 96,
-        direction: "down",
-        tricksLearned: [],
-        pottyTrained: false,
-        soundEnabled: true,
-        coins: 0,
-      });
-
-      setStep(2); // go to dog-name prompt
+      await createUserWithEmailAndPassword(auth, email, pw);
+      navigate("/game");
     } catch (err) {
-      console.error("Signup error", err);
-      if (err.code === "auth/email-already-in-use") {
-        setError("Email already in use. Please try another.");
-      } else {
-        setError("Signup failed. Please try again.");
-      }
+      setError(err.message);
     }
   };
 
-  /* ───────────────────────────────────────────────────────── step 2 */
-  const handleNameSubmit = async (e) => {
-    e.preventDefault();
-    if (!dogName.trim()) return;
-
+  const signupWithGoogle = async () => {
+    setError("");
     try {
-      const uid = auth.currentUser?.uid;
-      if (uid) {
-        await setDoc(doc(db, "dogs", uid), { name: dogName }, { merge: true });
-        dispatch(setDogNameAction(dogName));
-      }
-      navigate("/doggerz/game"); // = /doggerz/ because of basename
+      await signInWithPopup(auth, googleProvider);
+      navigate("/game");
     } catch (err) {
-      console.error("Dog-name save failed", err);
-      setError("Could not save dog name. Try again.");
+      setError(err.message);
     }
   };
 
-  /* ───────────────────────────────────────────────────────── UI */
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-yellow-500 to-pink-500 text-white px-4">
-      <h2 className="text-4xl font-bold mb-4 drop-shadow">
-        🐾 Sign Up for Doggerz
-      </h2>
-
-      {step === 1 && (
-        <form
-          onSubmit={handleAccountSubmit}
-          className="bg-white text-black p-6 rounded shadow-md w-full max-w-sm"
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-gray-200 to-blue-100">
+      <form
+        onSubmit={signupWithEmail}
+        className="bg-white rounded-2xl shadow-lg p-8 max-w-sm w-full flex flex-col gap-4"
+      >
+        <h2 className="text-2xl font-bold text-blue-900 mb-2">Sign Up</h2>
+        <input
+          type="email"
+          className="border px-3 py-2 rounded"
+          placeholder="Email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          required
+        />
+        <input
+          type="password"
+          className="border px-3 py-2 rounded"
+          placeholder="Password"
+          value={pw}
+          onChange={e => setPw(e.target.value)}
+          required
+        />
+        <button
+          type="submit"
+          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded font-semibold"
         >
-          {error && <p className="text-red-500 mb-2">{error}</p>}
-
-          <label className="font-semibold">Email</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="border p-2 w-full mb-4 rounded"
-            required
-          />
-
-          <label className="font-semibold">Password</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="border p-2 w-full mb-4 rounded"
-            required
-          />
-
-          <button
-            type="submit"
-            className="bg-pink-600 text-white px-4 py-2 rounded w-full hover:bg-pink-700"
-          >
-            Next&nbsp;→
-          </button>
-
-          <p className="text-sm text-center mt-4">
-            Already have an account?{" "}
-            <Link to="/login" className="text-pink-600 hover:underline">
-              Log in here
-            </Link>
-          </p>
-        </form>
-      )}
-
-      {step === 2 && (
-        <form
-          onSubmit={handleNameSubmit}
-          className="bg-white text-black p-6 rounded shadow-md w-full max-w-sm"
+          Create Account
+        </button>
+        <button
+          type="button"
+          onClick={signupWithGoogle}
+          className="bg-white border border-blue-400 text-blue-700 px-4 py-2 rounded hover:bg-blue-50 font-semibold flex items-center gap-2 justify-center"
         >
-          {error && <p className="text-red-500 mb-2">{error}</p>}
-
-          <label className="font-semibold">Choose your dog’s name</label>
-          <input
-            type="text"
-            value={dogName}
-            onChange={(e) => setDogName(e.target.value)}
-            className="border p-2 w-full mb-4 rounded"
-            placeholder="Fireball"
-            required
-          />
-
+          <span>Sign up with Google</span>
+          <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
+        </button>
+        <div className="text-sm text-gray-600 mt-2">
+          Already have an account?{" "}
           <button
-            type="submit"
-            className="bg-indigo-600 text-white px-4 py-2 rounded w-full hover:bg-indigo-700"
+            className="text-blue-500 underline"
+            onClick={() => navigate("/login")}
+            type="button"
           >
-            Finish&nbsp;🎉
+            Log in
           </button>
-        </form>
-      )}
+        </div>
+        {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
+      </form>
     </div>
   );
 }

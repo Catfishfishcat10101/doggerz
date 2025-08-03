@@ -1,59 +1,39 @@
-import React, { useEffect, useState } from "react";
+// src/components/UI/DogSprite.jsx
+import React from "react";
 import { useSelector } from "react-redux";
-import "./DogSprite.css"; // Ensure you have the necessary CSS for sprite rendering
+import dogSprite from "../../assets/sprites/jack_russell_directions.png"; // Or your sprite path
 
+const SPRITE_SIZE = 64; // px
+const SPRITE_DIRECTIONS = {
+  down: 0,
+  left: 1,
+  right: 2,
+  up: 3,
+};
 
-const FRAME_WIDTH = 128;
-const FRAME_HEIGHT = 128;
-const TOTAL_FRAMES = 4;
-const SCALE = 1; // You can adjust to 2 or 4 for pixel zoom effect
+export default function DogSprite({ x = 96, y = 96, direction = "down", isWalking = false, isDirty = false }) {
+  // Optionally use Redux for more dynamic props (energy, status, etc.)
+  // const dog = useSelector((state) => state.dog);
 
-const DogSprite = () => {
-  const { isWalking, isRunning, isBarking, isPooping } = useSelector(
-    (state) => state.dog,
-  );
-  const [frameIndex, setFrameIndex] = useState(0);
-
-  const getAnimationRow = () => {
-    if (isPooping) return 3; // Row 4
-    if (isBarking) return 2; // Row 3
-    if (isWalking || isRunning) return 1; // Row 2
-    return 0; // Row 1 (idle)
-  };
-
-  // Advance frame on interval
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setFrameIndex((prev) => (prev + 1) % TOTAL_FRAMES);
-    }, 150);
-    return () => clearInterval(interval);
-  }, []);
-
-  const row = getAnimationRow();
-  const offsetX = frameIndex * FRAME_WIDTH;
-  const offsetY = row * FRAME_HEIGHT;
+  // Pick correct row from sprite based on facing direction
+  const spriteRow = SPRITE_DIRECTIONS[direction] || 0;
 
   return (
     <div
-      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 overflow-hidden pointer-events-none z-20"
+      className={`dog-sprite absolute`}
       style={{
-        width: FRAME_WIDTH * SCALE,
-        height: FRAME_HEIGHT * SCALE,
+        left: x,
+        top: y,
+        width: SPRITE_SIZE,
+        height: SPRITE_SIZE,
+        backgroundImage: `url(${dogSprite})`,
+        backgroundPosition: `0px -${spriteRow * SPRITE_SIZE}px`,
+        filter: isDirty ? "grayscale(100%) brightness(80%)" : "none",
+        transition: "left 0.3s, top 0.3s, filter 0.4s",
+        zIndex: 10,
+        imageRendering: "pixelated",
       }}
-    >
-      <img
-        src="/sprites/jack_russell_sprite.png"
-        alt="Dog Sprite"
-        style={{
-          imageRendering: "pixelated",
-          width: FRAME_WIDTH * TOTAL_FRAMES,
-          height: FRAME_HEIGHT * 4,
-          transform: `translate(-${offsetX}px, -${offsetY}px)`,
-          position: "relative",
-        }}
-      />
-    </div>
+      aria-label="Dog"
+    />
   );
-};
-
-export default DogSprite;
+}

@@ -1,46 +1,41 @@
 // src/components/Features/Memory.jsx
 import React from "react";
+import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 
-/**
- * Memory book of dog milestones.
- *
- * @param {Array<string|{text:string,date?:string|Date}>} events
- *        – If you pass objects they’ll render “text · MMM DD YYYY”.
- */
-export default function Memory({ events }) {
-  const milestones = events ?? [
-    { text: "Learned Sit", date: "2025-07-01" },
-    { text: "First bath", date: "2025-07-03" },
-    { text: "Fully potty trained", date: "2025-07-10" },
-    { text: "Turned 1 year old", date: "2025-12-20" },
-  ];
+export default function Memory() {
+  const milestones = useSelector((state) => state.dog.tricksLearned); // or state.dog.milestones if you track more
+  const navigate = useNavigate();
 
-  const fmt = (d) =>
-    new Date(d).toLocaleDateString(undefined, {
-      month: "short",
-      day: "2-digit",
-      year: "numeric",
-    });
+  // Optionally, you could merge tricks, level-ups, and special moments into a "milestones" array
 
   return (
-    <div className="p-4 bg-white/10 text-white rounded-lg shadow-md max-w-lg mx-auto mt-6 backdrop-blur">
-      <h2 className="text-2xl font-bold mb-3">📘 Memory Book</h2>
-
-      <ul className="list-disc pl-5 text-sm space-y-1 max-h-64 overflow-y-auto pr-2">
-        {milestones.map((m, idx) => {
-          const el = typeof m === "string" ? { text: m } : m;
-          return (
-            <li key={idx}>
-              {el.text}
-              {el.date && (
-                <span className="text-xs text-gray-300 ml-2">
-                  · {fmt(el.date)}
-                </span>
-              )}
-            </li>
-          );
-        })}
-      </ul>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-100 to-blue-200 p-4">
+      <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md w-full">
+        <h2 className="text-2xl font-bold mb-4 text-blue-900">📖 Memories</h2>
+        {(!milestones || milestones.length === 0) ? (
+          <p className="text-gray-700">
+            No memories yet. Play with your dog to make some!
+          </p>
+        ) : (
+          <ul className="space-y-2">
+            {milestones.map((milestone, idx) => (
+              <li
+                key={milestone + idx}
+                className="bg-blue-50 rounded p-2 text-blue-800"
+              >
+                {milestone}
+              </li>
+            ))}
+          </ul>
+        )}
+        <button
+          className="mt-8 bg-blue-400 hover:bg-blue-500 text-white px-4 py-2 rounded-lg"
+          onClick={() => navigate("/game")}
+        >
+          ← Back to Game
+        </button>
+      </div>
     </div>
   );
 }

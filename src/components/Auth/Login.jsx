@@ -1,77 +1,83 @@
+// src/components/Auth/Login.jsx
 import React, { useState } from "react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../../firebase";
-import { loginSuccess } from "../../redux/userSlice.js";
+import { auth, googleProvider } from "../../firebase";
+import { signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
+import { useNavigate } from "react-router-dom";
 
 export default function Login() {
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
-  const loggedIn = useSelector((s) => s.user.loggedIn);
-
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [pw, setPw] = useState("");
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
-  /* already logged in? → /game */
-  if (loggedIn) return <Navigate to="/game" replace />;
-
-  const handleLogin = async (e) => {
+  const loginWithEmail = async (e) => {
     e.preventDefault();
     setError("");
-
     try {
-      const { user } = await signInWithEmailAndPassword(auth, email, password);
-      dispatch(loginSuccess({ uid: user.uid, email: user.email }));
+      await signInWithEmailAndPassword(auth, email, pw);
       navigate("/game");
     } catch (err) {
-      console.error("Login error", err);
-      setError("Login failed. Check your email and password.");
+      setError(err.message);
+    }
+  };
+
+  const loginWithGoogle = async () => {
+    setError("");
+    try {
+      await signInWithPopup(auth, googleProvider);
+      navigate("/game");
+    } catch (err) {
+      setError(err.message);
     }
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-purple-600 to-blue-600 text-white px-4">
-      <h2 className="text-4xl font-bold mb-4 drop-shadow">🐾 Doggerz Login</h2>
-
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-gray-200 to-blue-100">
       <form
-        onSubmit={handleLogin}
-        className="bg-white text-black p-6 rounded shadow-md w-full max-w-sm"
+        onSubmit={loginWithEmail}
+        className="bg-white rounded-2xl shadow-lg p-8 max-w-sm w-full flex flex-col gap-4"
       >
-        {error && <p className="text-red-500 mb-2">{error}</p>}
-
-        <label className="font-semibold">Email</label>
+        <h2 className="text-2xl font-bold text-blue-900 mb-2">Login</h2>
         <input
           type="email"
+          className="border px-3 py-2 rounded"
+          placeholder="Email"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="border p-2 w-full mb-4 rounded"
+          onChange={e => setEmail(e.target.value)}
           required
         />
-
-        <label className="font-semibold">Password</label>
         <input
           type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="border p-2 w-full mb-4 rounded"
+          className="border px-3 py-2 rounded"
+          placeholder="Password"
+          value={pw}
+          onChange={e => setPw(e.target.value)}
           required
         />
-
         <button
           type="submit"
-          className="bg-blue-600 text-white px-4 py-2 rounded w-full hover:bg-blue-700"
+          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded font-semibold"
         >
-          Log&nbsp;In
+          Login
         </button>
-
-        <p className="text-sm text-center mt-4">
-          Don’t have an account?{" "}
-          <Link to="/signup" className="text-blue-600 hover:underline">
-            Sign up here
-          </Link>
-        </p>
+        <button
+          type="button"
+          onClick={loginWithGoogle}
+          className="bg-white border border-blue-400 text-blue-700 px-4 py-2 rounded hover:bg-blue-50 font-semibold flex items-center gap-2 justify-center"
+        >
+          <span>Sign in with Google</span> <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
+        </button>
+        <div className="text-sm text-gray-600 mt-2">
+          Don&apos;t have an account?{" "}
+          <button
+            className="text-blue-500 underline"
+            onClick={() => navigate("/signup")}
+            type="button"
+          >
+            Sign up
+          </button>
+        </div>
+        {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
       </form>
     </div>
   );
