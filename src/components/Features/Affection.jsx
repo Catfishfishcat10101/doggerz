@@ -1,7 +1,7 @@
 // src/components/Features/Affection.jsx
 import React from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { updateAffection } from "../../store/dogSlice";
+import { updateAffection } from "../../redux/dogSlice";
 import { useNavigate } from "react-router-dom";
 
 export default function Affection() {

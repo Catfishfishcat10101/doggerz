@@ -4,7 +4,7 @@ import { useSelector, useDispatch } from "react-redux";
 import DogSprite from "./DogSprite";
 import Controls from "./Controls";
 import TrickList from "./TrickList";
-import { gainXP, feedDog, playWithDog, batheDog, move, startWalking, stopWalking } from "../../store/dogSlice";
+import { gainXP, feedDog, playWithDog, batheDog, move, startWalking, stopWalking } from "../../redux/dogSlice";
 import { useNavigate } from "react-router-dom";
 
 export default function MainGame() {

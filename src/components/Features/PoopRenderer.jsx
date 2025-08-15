@@ -1,7 +1,7 @@
 // src/components/Features/PoopRenderer.jsx
 import React from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { scoopPoopReward, dropPoop } from "../../store/dogSlice";
+import { scoopPoopReward, dropPoop } from "../../redux/dogSlice";
 
 export default function PoopRenderer() {
   const poops = useSelector((state) => state.dog.poops);

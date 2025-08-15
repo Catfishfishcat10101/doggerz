@@ -1,7 +1,7 @@
 // src/components/Features/Shop.jsx
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { addToy } from "../../store/dogSlice";
+import { addToy } from "../../redux/dogSlice";
 import { useNavigate } from "react-router-dom";
 
 const SHOP_ITEMS = [

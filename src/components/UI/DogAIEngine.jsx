@@ -9,7 +9,7 @@ import {
   startPooping,
   stopPooping,
   updateCleanliness,
-} from "../../../redux/dogSlice.js";
+} from "../../redux/dogSlice.js";
 
 const WALK_INTERVAL_MS = 8_000; // try random walk every   8 s
 const BARK_INTERVAL_MS = 12_000; // try bark        every  12 s

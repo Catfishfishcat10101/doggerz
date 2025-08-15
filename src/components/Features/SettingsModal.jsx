@@ -1,7 +1,7 @@
 // src/components/Features/SettingsModal.jsx
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { resetDogState } from "../../store/dogSlice";
+import { resetDogState } from "../../redux/dogSlice";
 import { useNavigate } from "react-router-dom";
 
 export default function SettingsModal({ isOpen = true, onClose = () => {} }) {
