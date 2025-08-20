@@ -1,0 +1,35 @@
+// src/components/UI/hooks/useJitteredTimer.js
+import { useEffect, useRef } from "react";
+
+/**
+ * Runs `fn` on a repeating schedule with ±jitter (percentage of baseMs).
+ * Uses setTimeout (not setInterval) to avoid drift & allow dynamic jitter each loop.
+ */
+export default function useJitteredTimer(fn, baseMs, jitterPct = 0.3, deps = []) {
+  const idRef = useRef(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const schedule = () => {
+      const jitter = Math.max(0, Math.min(jitterPct, 0.95));
+      const delta = baseMs * jitter;
+      const ms = baseMs + (Math.random() * 2 - 1) * delta; // base ± delta
+
+      idRef.current = setTimeout(async () => {
+        try {
+          await fn();
+        } finally {
+          if (!cancelled) schedule();
+        }
+      }, Math.max(200, ms));
+    };
+
+    schedule();
+    return () => {
+      cancelled = true;
+      if (idRef.current) clearTimeout(idRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [baseMs, jitterPct, ...deps]);
+}
