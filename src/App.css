@@ -2,13 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ---- Base ---- */
+html, body, #root { height: 100%; }
 body {
   margin: 0;
   padding: 0;
   font-family: sans-serif;
 }
 
-/* Global CSS variables */
+/* ---- Global CSS variables ---- */
 :root {
   --primary: #2196f3;
   --primary-d: #1976d2;
@@ -16,27 +18,55 @@ body {
   --bg-start: #4caf50;
   --bg-end: #2196f3;
   --walk-distance: 10px;
-  --walk-direction: 1s;
+  --walk-speed: 1s; /* renamed from --walk-direction for clarity */
   --walk-ease: cubic-bezier(0.4, 0, 0.2, 1);
-  --ripple-color: rgba(225, 225, 225, 0.5);
+  --ripple-color: rgba(255, 255, 255, 0.5); /* was 225; 255 is true white */
 }
+
+/* ---- Animations ---- */
+
+/* Dog walk animation (bob) */
+@keyframes dogWalk {
+  0%   { transform: translateX(0) scaleY(1); }
+  25%  { transform: translateX(calc(var(--walk-distance) / 2)) scaleY(1.05); }
+  50%  { transform: translateX(var(--walk-distance)) scaleY(1); }
+  75%  { transform: translateX(calc(var(--walk-distance) / 2)) scaleY(0.95); }
+  100% { transform: translateX(0) scaleY(1); }
+}
+.dog-walk-bob { animation: dogWalk var(--walk-speed) var(--walk-ease) infinite; }
+
+/* Ripple effect (shared) */
+@keyframes ripple-effect { to { transform: scale(4); opacity: 0; } }
+.ripple-button { position: relative; overflow: hidden; isolation: isolate; }
+.ripple-button::after {
+  content: "";
+  position: absolute; inset: 0; margin: auto;
+  width: 12px; height: 12px; border-radius: 999px;
+  background: var(--ripple-color); opacity: 0; transform: scale(0);
+  pointer-events: none;
+}
+.ripple-button:active::after { opacity: .6; animation: ripple-effect 550ms ease-out; }
+
+/* Fade in utility */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.fade-in { animation: fadeIn 0.5s ease forwards; }
+
+/* Slide up utility */
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.slide-up { animation: slideUp 0.6s ease forwards; }
 
 /* Level-up animation */
 @keyframes floatUp {
-  0% {
-    transform: translateY(0);
-    opacity: 0;
-  }
-  30% {
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(-40px);
-    opacity: 0;
-  }
+  0%   { transform: translateY(0); opacity: 0; }
+  30%  { opacity: 1; }
+  100% { transform: translateY(-40px); opacity: 0; }
 }
-
 .level-up {
   @apply text-yellow-300 font-bold text-lg;
   animation: floatUp 1.8s ease-in-out;
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
 }
