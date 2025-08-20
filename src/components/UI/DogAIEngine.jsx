@@ -1,5 +1,5 @@
 // src/components/DogAIEngine.jsx
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   startWalking,
@@ -10,54 +10,136 @@ import {
   stopPooping,
   updateCleanliness,
 } from "../../redux/dogSlice.js";
+import useJitteredTimer from "./UI/hooks/useJitteredTimer";
+import usePageVisibility from "./UI/hooks/usePageVisibility";
 
-const WALK_INTERVAL_MS = 8_000; // try random walk every   8 s
-const BARK_INTERVAL_MS = 12_000; // try bark        every  12 s
-const POOP_INTERVAL_MS = 20_000; // try poop        every  20 s
-const CLEANLINESS_INTERVAL_MS = 60_000; // decay hygiene   every  60 s
+/**
+ * Tunables – keep the same base cadence you had, but add jitter to avoid patterns.
+ */
+const WALK_BASE_MS = 8_000;
+const BARK_BASE_MS = 12_000;
+const POOP_BASE_MS = 20_000;
+const CLEANLINESS_MS = 60_000;
 
-export default function DogAIEngine() {
+/**
+ * Probabilities are modulated by time-of-day.
+ * Morning/evening: more walk/bark; Night: less active, more poop “chance”.
+ */
+function getTimeBuckets(date = new Date()) {
+  const h = date.getHours();
+  if (h >= 6 && h < 11) return "morning";
+  if (h >= 11 && h < 17) return "day";
+  if (h >= 17 && h < 22) return "evening";
+  return "night";
+}
+
+function pickProbabilities(bucket) {
+  switch (bucket) {
+    case "morning":
+      return { walk: 0.18, bark: 0.18, poop: 0.12 };
+    case "day":
+      return { walk: 0.12, bark: 0.16, poop: 0.10 };
+    case "evening":
+      return { walk: 0.20, bark: 0.16, poop: 0.12 };
+    case "night":
+    default:
+      return { walk: 0.06, bark: 0.08, poop: 0.14 };
+  }
+}
+
+/**
+ * A tiny lock so the dog doesn’t try to walk & poop & bark at once.
+ */
+function useBehaviorLock() {
+  const ref = useRef(false);
+  const withLock = async (ms, fn) => {
+    if (ref.current) return false;
+    ref.current = true;
+    try {
+      await fn();
+      await new Promise((r) => setTimeout(r, ms)); // enforce min duration
+    } finally {
+      ref.current = false;
+    }
+    return true;
+  };
+  return withLock;
+}
+
+export default function DogAIEngine({
+  walkDurationMs = 3_000,
+  barkDurationMs = 2_000,
+  poopDurationMs = 2_500,
+  jitterPct = 0.35, // up to ±35% timing jitter
+} = {}) {
   const dispatch = useDispatch();
-  const dog = useSelector((s) => s.dog); // keep if you later gate by dog state
+  const dog = useSelector((s) => s.dog); // if you later want to gate behaviors on hunger, energy, etc.
 
-  /* 🐾  Random behaviours: walk, bark, poop ----------------------------- */
+  const isVisible = usePageVisibility(); // pause when hidden
+  const withLock = useBehaviorLock();
+
+  // Cleanliness decay (kept as a steady beat; no jitter to keep UX predictable)
   useEffect(() => {
-    const walkTimer = setInterval(() => {
-      if (Math.random() < 0.1) {
-        dispatch(startWalking());
-        setTimeout(() => dispatch(stopWalking()), 3_000);
+    if (!isVisible) return;
+    const decay = setInterval(() => dispatch(updateCleanliness()), CLEANLINESS_MS);
+    return () => clearInterval(decay);
+  }, [dispatch, isVisible]);
+
+  // WALK scheduler (jittered)
+  useJitteredTimer(
+    async () => {
+      if (!isVisible) return;
+      const bucket = getTimeBuckets();
+      const { walk } = pickProbabilities(bucket);
+      if (Math.random() < walk) {
+        await withLock(walkDurationMs, async () => {
+          dispatch(startWalking());
+          setTimeout(() => dispatch(stopWalking()), walkDurationMs);
+        });
       }
-    }, WALK_INTERVAL_MS);
+    },
+    WALK_BASE_MS,
+    jitterPct,
+    [isVisible, walkDurationMs]
+  );
 
-    const barkTimer = setInterval(() => {
-      if (Math.random() < 0.2) {
-        dispatch(startBarking());
-        setTimeout(() => dispatch(stopBarking()), 2_000);
+  // BARK scheduler (jittered)
+  useJitteredTimer(
+    async () => {
+      if (!isVisible) return;
+      const bucket = getTimeBuckets();
+      const { bark } = pickProbabilities(bucket);
+      if (Math.random() < bark) {
+        await withLock(barkDurationMs, async () => {
+          dispatch(startBarking());
+          setTimeout(() => dispatch(stopBarking()), barkDurationMs);
+          // Optional: fire a custom event any audio system can listen for
+          window.dispatchEvent(new CustomEvent("dog:sfx", { detail: { type: "bark" } }));
+        });
       }
-    }, BARK_INTERVAL_MS);
+    },
+    BARK_BASE_MS,
+    jitterPct,
+    [isVisible, barkDurationMs]
+  );
 
-    const poopTimer = setInterval(() => {
-      if (Math.random() < 0.15) {
-        dispatch(startPooping());
-        setTimeout(() => dispatch(stopPooping()), 2_500);
+  // POOP scheduler (jittered)
+  useJitteredTimer(
+    async () => {
+      if (!isVisible) return;
+      const bucket = getTimeBuckets();
+      const { poop } = pickProbabilities(bucket);
+      if (Math.random() < poop) {
+        await withLock(poopDurationMs, async () => {
+          dispatch(startPooping());
+          setTimeout(() => dispatch(stopPooping()), poopDurationMs);
+        });
       }
-    }, POOP_INTERVAL_MS);
+    },
+    POOP_BASE_MS,
+    jitterPct,
+    [isVisible, poopDurationMs]
+  );
 
-    return () => {
-      clearInterval(walkTimer);
-      clearInterval(barkTimer);
-      clearInterval(poopTimer);
-    };
-  }, [dispatch]);
-
-  /* 🧼  Passive cleanliness decay  -------------------------------------- */
-  useEffect(() => {
-    const decayTimer = setInterval(() => {
-      dispatch(updateCleanliness());
-    }, CLEANLINESS_INTERVAL_MS);
-
-    return () => clearInterval(decayTimer);
-  }, [dispatch]);
-
-  return null; // logic-only component
+  return null; // logic only
 }
