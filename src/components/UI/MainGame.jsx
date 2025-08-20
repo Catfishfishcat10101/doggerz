@@ -1,100 +1,123 @@
 // src/components/UI/MainGame.jsx
-import React from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import DogSprite from "./DogSprite";
 import Controls from "./Controls";
 import TrickList from "./TrickList";
-import { gainXP, feedDog, playWithDog, batheDog, move, startWalking, stopWalking } from "../../redux/dogSlice";
+import {
+  gainXP,
+  feedDog,
+  playWithDog,
+  batheDog,
+  move,
+  startWalking,
+  stopWalking,
+} from "../../redux/dogSlice";
 import { useNavigate } from "react-router-dom";
+import useKeyPressed from "./hooks/useKeyPressed";
+
+// If your DogSprite uses 64px frames and centerAnchor, keep this:
+const SPRITE_SIZE = 64;
+
+function StatBar({ label, value, colorClass = "from-sky-400 to-sky-600" }) {
+  const pct = Math.max(0, Math.min(100, Number(value) || 0));
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <span className="font-semibold text-white/90 text-sm">{label}</span>
+      <div className="flex-1 h-2.5 bg-white/10 rounded-full overflow-hidden">
+        <div
+          className={`h-full bg-gradient-to-r ${colorClass} transition-[width] duration-300`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <span className="text-white/70 text-xs w-9 text-right tabular-nums">{pct}%</span>
+    </div>
+  );
+}
 
 export default function MainGame() {
   const dog = useSelector((state) => state.dog);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  // Example handler for moving the dog
-  const walkDog = (dx = 0, dy = 0) => {
-    dispatch(startWalking());
-    setTimeout(() => {
-      dispatch(move({ x: dog.x + dx, y: dog.y + dy, direction: dx > 0 ? "right" : dx < 0 ? "left" : dy > 0 ? "down" : "up" }));
-      dispatch(stopWalking());
-    }, 400);
-  };
+  // Detect sprint (hold Shift)
+  const isSprinting = useKeyPressed("Shift");
 
-  return (
-    <div className="bg-[#15161a] min-h-screen flex flex-col items-center p-4 relative">
-      <header className="flex flex-row items-center justify-between w-full max-w-xl mb-2">
-        <div>
-          <span className="font-bold text-xl text-yellow-200">{dog.name || "Your Dog"}</span>
-          <span className="ml-3 text-gray-400 text-sm">Level {dog.level} • XP {dog.xp}/{dog.level * 100}</span>
-        </div>
-        <button
-          className="bg-white/10 text-white text-xs px-3 py-1 rounded hover:bg-white/20"
-          onClick={() => navigate("/settings")}
-        >
-          ⚙️ Settings
-        </button>
-      </header>
-      <section className="relative w-full max-w-xl h-80 bg-[url('/backgrounds/yard_day.png')] bg-cover rounded-2xl shadow-lg overflow-hidden flex items-end justify-center mb-4">
-        <DogSprite x={dog.x} y={dog.y} direction={dog.direction} isWalking={dog.isWalking} isDirty={dog.isDirty} />
-        {/* You can render poop, toys, and more here */}
-      </section>
-      <div className="grid grid-cols-2 gap-4 mb-4 w-full max-w-xl">
-        <div className="bg-white/10 rounded-xl p-4 flex flex-col space-y-2">
-          <div>
-            <span className="font-semibold text-green-400">Hunger:</span>
-            <span className="ml-2">{dog.hunger}</span>
-          </div>
-          <div>
-            <span className="font-semibold text-pink-300">Happiness:</span>
-            <span className="ml-2">{dog.happiness}</span>
-          </div>
-          <div>
-            <span className="font-semibold text-blue-200">Energy:</span>
-            <span className="ml-2">{dog.energy}</span>
-          </div>
-          <div>
-            <span className="font-semibold text-purple-200">Potty Trained:</span>
-            <span className="ml-2">{dog.isPottyTrained ? "Yes" : "No"}</span>
-          </div>
-          <div>
-            <span className="font-semibold text-yellow-400">Cleanliness:</span>
-            <span className="ml-2">{dog.isDirty ? "Dirty" : "Clean"}</span>
-          </div>
-        </div>
-        <div>
-          <TrickList />
-        </div>
-      </div>
-      <Controls
-        onFeed={() => { dispatch(feedDog()); dispatch(gainXP(10)); }}
-        onPlay={() => { dispatch(playWithDog()); dispatch(gainXP(15)); }}
-        onBathe={() => { dispatch(batheDog()); dispatch(gainXP(5)); }}
-        onWalkUp={() => walkDog(0, -16)}
-        onWalkDown={() => walkDog(0, 16)}
-        onWalkLeft={() => walkDog(-16, 0)}
-        onWalkRight={() => walkDog(16, 0)}
-      />
-      <div className="flex flex-row gap-4 mt-4">
-        <button
-          className="bg-green-600 text-white px-4 py-2 rounded-xl hover:bg-green-700"
-          onClick={() => navigate("/potty")}
-        >
-          🚽 Potty Training
-        </button>
-        <button
-          className="bg-sky-600 text-white px-4 py-2 rounded-xl hover:bg-sky-700"
-          onClick={() => navigate("/shop")}
-        >
-          🛒 Shop
-        </button>
-        <button
-          className="bg-yellow-500 text-white px-4 py-2 rounded-xl hover:bg-yellow-600"
-          onClick={() => navigate("/memory")}
-        >
-          📖 Memories
-        </button>
-      </div>
-    </div>
+  // Arena measurement to clamp position
+  const arenaRef = useRef(null);
+  const [arenaSize, setArenaSize] = useState({ w: 0, h: 0 });
+  useEffect(() => {
+    if (!arenaRef.current) return;
+    const el = arenaRef.current;
+    const ro = new ResizeObserver(() => {
+      const rect = el.getBoundingClientRect();
+      setArenaSize({ w: Math.floor(rect.width), h: Math.floor(rect.height) });
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // Background theme by local time
+  const timeTheme = useMemo(() => {
+    const h = new Date().getHours();
+    if (h >= 6 && h < 17) return "day";
+    if (h >= 17 && h < 21) return "evening";
+    return "night";
+  }, []);
+
+  const bgUrl =
+    timeTheme === "day"
+      ? "/backgrounds/yard_day.png"
+      : timeTheme === "evening"
+      ? "/backgrounds/yard_evening.png"
+      : "/backgrounds/yard_night.png";
+
+  // Clamp helper (DogSprite is centered on x,y)
+  const clampToArena = useCallback(
+    (x, y) => {
+      const half = SPRITE_SIZE / 2;
+      const maxX = Math.max(half, arenaSize.w - half);
+      const maxY = Math.max(half, arenaSize.h - half);
+      const clampedX = Math.max(half, Math.min(x, maxX));
+      const clampedY = Math.max(half, Math.min(y, maxY));
+      return { x: clampedX, y: clampedY };
+    },
+    [arenaSize.w, arenaSize.h]
   );
-}
+
+  // Movement handler
+  const walkDog = useCallback(
+    (dx = 0, dy = 0) => {
+      // Step and animation duration scale with sprint
+      const step = isSprinting ? 28 : 16; // tweak to taste
+      const duration = isSprinting ? 250 : 400;
+
+      const targetX = dog.x + dx * step;
+      const targetY = dog.y + dy * step;
+      const { x, y } = clampToArena(targetX, targetY);
+
+      const direction =
+        dx > 0 ? "right" : dx < 0 ? "left" : dy > 0 ? "down" : "up";
+
+      dispatch(startWalking());
+      // Move after a short delay to let the walk animation be noticeable
+      const t = setTimeout(() => {
+        dispatch(move({ x, y, direction }));
+        dispatch(stopWalking());
+      }, duration);
+
+      // Cleanup if component unmounts mid-move
+      return () => clearTimeout(t);
+    },
+    [dispatch, dog.x, dog.y, clampToArena, isSprinting]
+  );
+
+  // Optional: WASD/Arrows direct movement sync (in addition to Controls hotkeys)
+  // If you already wired hotkeys in Controls, you can remove this.
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      const tag = (e.target?.tagName || "").toLowerCase();
+      if (tag === "input" || tag === "textarea" || e.target?.isContentEditable) return;
+
+      if (["ArrowUp", "w", "W"].includes(e.key)) { e.preventDefault(); walkDog(0, -1); }
+      else if (["ArrowDown", "s", "S"].includes(e.key
