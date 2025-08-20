@@ -1,14 +1,34 @@
-// src/components/Features/SettingsModal.jsx
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { resetDogState } from "../../redux/dogSlice";
-import { useNavigate } from "react-router-dom";
+import { resetDogState, toggleSound } from "../../redux/dogSlice";
+import "../../styles/Modal.css"; // <-- add this file below
 
 export default function SettingsModal({ isOpen = true, onClose = () => {} }) {
   const dispatch = useDispatch();
   const soundEnabled = useSelector((state) => state.dog.soundEnabled);
+  const dialogRef = useRef(null);
 
-  // Handler for resetting dog state
+  // Close on ESC
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isOpen, onClose]);
+
+  // Simple focus trap (focus the dialog when opened)
+  useEffect(() => {
+    if (isOpen && dialogRef.current) {
+      dialogRef.current.focus();
+    }
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  const handleBackdrop = (e) => {
+    if (e.target.classList.contains("modal-backdrop")) onClose();
+  };
+
   const handleReset = () => {
     if (window.confirm("Are you sure? This will reset all dog progress!")) {
       dispatch(resetDogState());
@@ -16,39 +36,45 @@ export default function SettingsModal({ isOpen = true, onClose = () => {} }) {
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md relative">
+    <div
+      className="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      onMouseDown={handleBackdrop}
+    >
+      <div
+        className="modal-card"
+        tabIndex={-1}
+        ref={dialogRef}
+        aria-label="Settings"
+      >
         <button
+          className="modal-close"
           onClick={onClose}
-          className="absolute top-2 right-3 text-2xl text-gray-500 hover:text-gray-800"
+          aria-label="Close settings"
           title="Close"
         >
           ×
         </button>
-        <h2 className="text-2xl font-bold mb-4 text-gray-900">⚙️ Settings</h2>
-        <div className="flex flex-col gap-4">
-          <label className="flex items-center gap-2">
+
+        <h2 className="modal-title">⚙️ Settings</h2>
+
+        <div className="modal-content">
+          <label className="modal-row">
             <input
               type="checkbox"
               checked={soundEnabled}
-              // onChange={...}  // Implement toggling in your Redux if you want!
-              disabled
+              onChange={() => dispatch(toggleSound())}
             />
-            <span className="font-semibold text-gray-700">Sound Enabled</span>
+            <span>Sound Enabled</span>
           </label>
-          <button
-            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-semibold"
-            onClick={handleReset}
-          >
+
+          <button className="btn-danger" onClick={handleReset}>
             Reset Dog (Danger)
           </button>
-          <button
-            className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg"
-            onClick={onClose}
-          >
+
+          <button className="btn" onClick={onClose}>
             Close
           </button>
         </div>
