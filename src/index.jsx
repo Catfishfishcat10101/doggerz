@@ -1,4 +1,3 @@
-// src/index.jsx
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom/client";
 import "./index.css";
@@ -14,7 +13,8 @@ import { BrowserRouter } from "react-router-dom";
 // Firebase Auth
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "./firebase.js";
-import { loginSuccess, logout } from "./redux/userSlice.js";
+// Alias existing actions from your userSlice
+import { setUser as loginSuccess, clearUser as logout } from "./redux/userSlice.js";
 
 // Helmet for <head> tags
 import { HelmetProvider } from "react-helmet-async";
@@ -28,34 +28,46 @@ function AuthListener({ children }) {
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
       if (user) {
-        dispatch(loginSuccess({ uid: user.uid, email: user.email }));
+        dispatch(
+          loginSuccess({
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName ?? "",
+            photoURL: user.photoURL ?? null,
+            provider: user.providerData?.[0]?.providerId ?? null,
+          })
+        );
       } else {
         dispatch(logout());
       }
       setLoading(false);
     });
-    return unsub;
+    return () => unsub();
   }, [dispatch]);
 
-  // Unlock Web Audio context after first user interaction
+  // Unlock Web Audio context after first user interaction (single shared context)
   useEffect(() => {
     const unlock = () => {
       try {
-        if (AudioContext.prototype.state === "suspended") {
-          new AudioContext().resume();
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (AC) {
+          if (!window.__doggerzAudioCtx) window.__doggerzAudioCtx = new AC();
+          const ctx = window.__doggerzAudioCtx;
+          if (ctx.state === "suspended") ctx.resume();
         }
       } catch (err) {
         console.error("Web Audio unlock failed:", err);
+      } finally {
+        window.removeEventListener("pointerdown", unlock);
       }
-      window.removeEventListener("pointerdown", unlock);
     };
     window.addEventListener("pointerdown", unlock, { once: true });
   }, []);
 
-  // Display loading screen while checking auth state
+  // Loading screen while checking auth state
   if (loading) {
     return (
-      <div className="text-white text-center mt-10 text-xl">
+      <div style={{ color: "#fff", textAlign: "center", marginTop: 40, fontSize: 20 }}>
         🐾 Loading Doggerz…
       </div>
     );
@@ -71,13 +83,7 @@ const base = process.env.NODE_ENV === "production" ? "/doggerz" : "/";
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <Provider store={store}>
-      <BrowserRouter
-        basename={base}
-        future={{
-          v7_startTransition: true,
-          v7_relativeSplatPath: true,
-        }}
-      >
+      <BrowserRouter basename={base}>
         <HelmetProvider>
           <AuthListener>
             <App />
