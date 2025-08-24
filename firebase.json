@@ -23,7 +23,6 @@
         ]
       }
     ],
-    "cleanUrls": true,
-    "errorPage": "/index.html"
+    "cleanUrls": true
   }
 }
