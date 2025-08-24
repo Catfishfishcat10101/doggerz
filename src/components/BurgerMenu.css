@@ -1,174 +1,87 @@
-/* Palette */
-:root {
-  --clr-bg: #0b1220;                /* menu background base */
-  --clr-bg-grad-1: #0b1220;
-  --clr-bg-grad-2: #10243a;
-  --clr-overlay: rgba(0, 0, 0, 0.45);
-  --clr-item: rgba(255, 255, 255, 0.85);
-  --clr-item-dim: rgba(255, 255, 255, 0.65);
-  --clr-item-active: rgba(255, 255, 255, 0.12);
-  --clr-ring: rgba(255, 255, 255, 0.35);
-  --clr-accent: #f59e0b;            /* amber-500 */
-  --radius: 14px;
+// src/components/UI/NavBar.jsx
+import React from "react";
+import { NavLink } from "react-router-dom";
+import { slide as Menu } from "react-burger-menu";
+import { Home, Info, Gamepad2, Phone, Settings, PawPrint } from "lucide-react";
+import "./BurgerMenu.css";
+
+/* Custom buttons that match your .bm-burger-button-override / .bm-cross-button-override */
+function BurgerBtn() {
+  return (
+    <button aria-label="Open menu" className="bm-burger-button-override">
+      <span className="bm-burger-bar" />
+      <span className="bm-burger-bar" />
+      <span className="bm-burger-bar" />
+    </button>
+  );
 }
 
-/* ==== Built-in positions/sizes ==== */
-.bm-overlay {
-  background: var(--clr-overlay) !important;
+function CrossBtn() {
+  return (
+    <button aria-label="Close menu" className="bm-cross-button-override">
+      ✕
+    </button>
+  );
 }
 
-/* If you use the default burger icon (not the override), position it here */
-.bm-burger-button {
-  position: fixed;
-  width: 28px;
-  height: 22px;
-  right: 18px;
-  top: 18px;
-}
+/* Utility for active link styling using your .menu-item / .active classes */
+const itemClass = ({ isActive }) => `menu-item${isActive ? " active" : ""}`;
 
-/* Default bars (if not overriding the icon) */
-.bm-burger-bars {
-  background: #111827;
-}
-.bm-burger-bars-hover {
-  background: #0f172a !important;
-}
+export default function NavBar() {
+  return (
+    <Menu
+      right
+      width={320}
+      pageWrapId="page-wrap"   // optional if you want body push animation
+      outerContainerId="outer-container"
+      customBurgerIcon={<BurgerBtn />}
+      customCrossIcon={<CrossBtn />}
+      disableAutoFocus
+    >
+      <header className="menu-header">
+        <span className="brand">
+          <PawPrint size={18} />
+          Doggerz
+        </span>
+        <span className="hint">v0.1 • tap to explore</span>
+      </header>
 
-/* Cross button */
-.bm-cross-button {
-  height: 26px !important;
-  width: 26px !important;
-  right: 16px !important;
-  top: 14px !important;
-}
-.bm-cross {
-  background: #fff !important;
-}
+      <hr className="menu-divider" />
 
-/* Menu panel */
-.bm-menu-wrap {
-  /* width set from the React prop; don’t hardcode here */
-}
-.bm-menu {
-  background: linear-gradient(160deg, var(--clr-bg-grad-1), var(--clr-bg-grad-2));
-  padding: 16px 14px 14px;
-}
+      <nav className="menu-section" aria-label="Primary">
+        <NavLink to="/" className={itemClass} end>
+          <Home size={18} />
+          <span>Home</span>
+        </NavLink>
 
-/* List container within menu */
-.bm-item-list {
-  padding: 0 4px;
-}
+        <NavLink to="/game" className={itemClass}>
+          <Gamepad2 size={18} />
+          <span>Play</span>
+          {/* example badge if you use it */}
+          {/* <span className="badge">New</span> */}
+        </NavLink>
 
-/* ===== Custom accessible burger & cross (override) ===== */
-.bm-burger-button-override {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  width: 38px;
-  height: 38px;
-  border-radius: 9999px;
-  border: 1px solid var(--clr-ring);
-  background: rgba(255, 255, 255, 0.7);
-  color: #111827;
-}
-.bm-burger-button-override .bm-burger-bar {
-  display: block;
-  width: 16px;
-  height: 2px;
-  background: currentColor;
-}
-.bm-burger-button-override .bm-burger-bar + .bm-burger-bar {
-  margin-top: 3px;
-}
-.bm-burger-button-override:hover {
-  background: #fff;
-}
-.bm-cross-button-override {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  border: 1px solid var(--clr-ring);
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
-}
+        <NavLink to="/about" className={itemClass}>
+          <Info size={18} />
+          <span>About</span>
+        </NavLink>
 
-/* ===== Header / Footer ===== */
-.menu-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin: 6px 6px 10px;
-}
-.menu-header .brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  color: #fff;
-  font-weight: 700;
-  letter-spacing: .3px;
-}
-.menu-header .hint {
-  color: var(--clr-item-dim);
-  font-size: 11px;
-}
-.menu-divider {
-  border: 0;
-  height: 1px;
-  background: rgba(255, 255, 255, 0.12);
-  margin: 10px 6px;
-}
-.menu-footer {
-  margin: 10px 6px 4px;
-  color: var(--clr-item-dim);
-  font-size: 12px;
-}
-.menu-footer .footer-text {
-  opacity: .9;
-}
+        <NavLink to="/contact" className={itemClass}>
+          <Phone size={18} />
+          <span>Contact</span>
+        </NavLink>
 
-/* ===== Items ===== */
-.menu-section {
-  display: grid;
-  grid-auto-rows: min-content;
-  gap: 6px;
-}
+        <NavLink to="/settings" className={itemClass}>
+          <Settings size={18} />
+          <span>Settings</span>
+        </NavLink>
+      </nav>
 
-.menu-item {
-  display: grid;
-  grid-template-columns: 20px 1fr;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: var(--radius);
-  color: var(--clr-item);
-  text-decoration: none;
-  outline: none;
-  transition: background .16s ease, transform .06s ease;
-}
-.menu-item:hover {
-  background: var(--clr-item-active);
-}
-.menu-item:active {
-  transform: translateY(1px);
-}
-.menu-item.active {
-  background: var(--clr-item-active);
-  box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.35);
-}
-.menu-item:focus-visible {
-  box-shadow: 0 0 0 2px var(--clr-accent);
-}
+      <hr className="menu-divider" />
 
-/* Optional tiny badge style if you add counters */
-.menu-item .badge {
-  justify-self: end;
-  padding: 2px 6px;
-  border-radius: 9999px;
-  background: rgba(245, 158, 11, 0.18);
-  color: #fde68a;
-  font-size: 11px;
+      <footer className="menu-footer">
+        <div className="footer-text">Raise, train, and care for your virtual best friend.</div>
+      </footer>
+    </Menu>
+  );
 }
