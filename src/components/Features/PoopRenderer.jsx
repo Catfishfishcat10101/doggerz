@@ -1,10 +1,22 @@
+// src/components/UI/PoopRenderer.jsx
 import React from "react";
-export default function PoopRenderer({ poops=[] }) {
+import "./PoopRenderer.css";
+
+export default function PoopRenderer({ poops = [] }) {
+  if (!poops.length) return null; // don't render empty wrapper
+
   return (
-    <div>
-      {poops.map(p => (
-        <div key={p.id} style={{position:"absolute",left:p.x,top:p.y}}>💩</div>
+    <>
+      {poops.map((p) => (
+        <div
+          key={p.id}
+          className="poop"
+          style={{ left: p.x, top: p.y }}
+          title="Your dog left a surprise 🐕💩"
+        >
+          💩
+        </div>
       ))}
-    </div>
+    </>
   );
 }
