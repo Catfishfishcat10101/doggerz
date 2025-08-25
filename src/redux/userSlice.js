@@ -1,22 +1,17 @@
 import { createSlice } from "@reduxjs/toolkit";
 
-const initialState = {
-  loggedIn: false,
-  uid: null,
-  email: null,
-};
+const initialState = { id: null, email: null };
 
 const userSlice = createSlice({
   name: "user",
   initialState,
   reducers: {
-    setUser: (state, action) => {
-      const { uid, email } = action.payload || {};
-      state.loggedIn = true;
-      state.uid = uid || null;
-      state.email = email || null;
+    setUser(state, action) {
+      Object.assign(state, action.payload);
     },
-    clearUser: () => initialState,
+    clearUser() {
+      return initialState;
+    },
   },
 });
 

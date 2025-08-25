@@ -1,87 +1,38 @@
-// src/components/UI/NavBar.jsx
-import React from "react";
-import { NavLink } from "react-router-dom";
-import { slide as Menu } from "react-burger-menu";
-import { Home, Info, Gamepad2, Phone, Settings, PawPrint } from "lucide-react";
-import "./BurgerMenu.css";
-
-/* Custom buttons that match your .bm-burger-button-override / .bm-cross-button-override */
-function BurgerBtn() {
-  return (
-    <button aria-label="Open menu" className="bm-burger-button-override">
-      <span className="bm-burger-bar" />
-      <span className="bm-burger-bar" />
-      <span className="bm-burger-bar" />
-    </button>
-  );
+/* Button that opens the menu */
+.bm-burger-button-override{
+  position:fixed; right:16px; top:16px; z-index:1100;
+  width:28px; height:22px; display:grid; gap:4px;
+  background:transparent; border:0; padding:0; cursor:pointer;
+}
+.bm-burger-button-override .bm-burger-bar{
+  width:100%; height:3px; border-radius:2px;
+  background:rgba(255,255,255,.9);
 }
 
-function CrossBtn() {
-  return (
-    <button aria-label="Close menu" className="bm-cross-button-override">
-      ✕
-    </button>
-  );
+/* Button that closes the menu */
+.bm-cross-button-override{
+  border:0; background:transparent; font-size:22px; color:#fff; cursor:pointer;
 }
 
-/* Utility for active link styling using your .menu-item / .active classes */
-const itemClass = ({ isActive }) => `menu-item${isActive ? " active" : ""}`;
+/* react-burger-menu core classes */
+.bm-overlay { background: rgba(0,0,0,.45) !important; }
+.bm-menu { background:#0b1724; padding:2rem 1.25rem; font-size:1rem; overflow-y:auto; }
 
-export default function NavBar() {
-  return (
-    <Menu
-      right
-      width={320}
-      pageWrapId="page-wrap"   // optional if you want body push animation
-      outerContainerId="outer-container"
-      customBurgerIcon={<BurgerBtn />}
-      customCrossIcon={<CrossBtn />}
-      disableAutoFocus
-    >
-      <header className="menu-header">
-        <span className="brand">
-          <PawPrint size={18} />
-          Doggerz
-        </span>
-        <span className="hint">v0.1 • tap to explore</span>
-      </header>
+/* Your menu content */
+.menu-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:.5rem; color:#cbd5e1;}
+.brand{ display:flex; align-items:center; gap:.5rem; color:#fff; font-weight:700; }
+.hint{ font-size:.8rem; opacity:.8; }
 
-      <hr className="menu-divider" />
+.menu-divider{ height:1px; border:0; background:rgba(255,255,255,.12); margin:.75rem 0 1rem; }
+.menu-section{ display:flex; flex-direction:column; gap:.25rem; }
 
-      <nav className="menu-section" aria-label="Primary">
-        <NavLink to="/" className={itemClass} end>
-          <Home size={18} />
-          <span>Home</span>
-        </NavLink>
-
-        <NavLink to="/game" className={itemClass}>
-          <Gamepad2 size={18} />
-          <span>Play</span>
-          {/* example badge if you use it */}
-          {/* <span className="badge">New</span> */}
-        </NavLink>
-
-        <NavLink to="/about" className={itemClass}>
-          <Info size={18} />
-          <span>About</span>
-        </NavLink>
-
-        <NavLink to="/contact" className={itemClass}>
-          <Phone size={18} />
-          <span>Contact</span>
-        </NavLink>
-
-        <NavLink to="/settings" className={itemClass}>
-          <Settings size={18} />
-          <span>Settings</span>
-        </NavLink>
-      </nav>
-
-      <hr className="menu-divider" />
-
-      <footer className="menu-footer">
-        <div className="footer-text">Raise, train, and care for your virtual best friend.</div>
-      </footer>
-    </Menu>
-  );
+.menu-item{
+  display:flex; align-items:center; gap:.6rem;
+  padding:.625rem .75rem; border-radius:.75rem;
+  color:#e2e8f0; text-decoration:none;
 }
+.menu-item:hover{ background:rgba(255,255,255,.08); color:#fff; }
+.menu-item.active{ background:rgba(255,255,255,.14); color:#fff; }
+
+.menu-footer{ margin-top:1rem; color:#94a3b8; font-size:.9rem; }
+.badge{ margin-left:auto; background:#0ea5e9; color:#fff; font-size:.75rem; padding:.15rem .4rem; border-radius:.5rem; }
