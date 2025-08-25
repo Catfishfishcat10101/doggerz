@@ -1,93 +1,86 @@
 // src/components/Features/Dog.jsx
-import React, { useEffect, useRef, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { dropPoop, playBark, move } from "../../redux/dogSlice.js";
-// sprite lives in the sibling UI/sprites folder
-import jackRussellSprite from "../UI/sprites/jack_russell_directions.png";
+import React, { useCallback } from "react";
+import PropTypes from "prop-types";
+import DogSprite from "./DogSprite";
+import Sound from "./SoundManager";
+import { useDog } from "./DogContext";
 
-const W = 256; // sprite width
-const H = 256; // sprite height
-const FRAMES = 4; // frames per row
-const dirs = ["right", "left", "down", "up"];
-const rowFor = (d) => ({ right: 0, left: 1, down: 2, up: 3 })[d];
+// Reusable "Dog" entity wrapper.
+// - Renders the sprite based on DogContext state
+// - Click = bark (XP + small feedback)
+// - Double-click = pet (boost happiness)
+// - Keeps code in MainGame.jsx cleaner
+export default function Dog({
+  size = 64,
+  frameCount = 4,
+  frameRate = 8,
+  idleFrame = 0,
+  onBark,
+  onPet,
+}) {
+  const { dog, setDog, addXP } = useDog();
 
-const Dog = () => {
-  const dispatch = useDispatch();
-  // Redux slice uses `walking` elsewhere (MainGame passes dog.walking)
-  const { x, y, direction, walking } = useSelector((s) => s.dog);
+  const clamp = (v, min = 0, max = 100) => Math.max(min, Math.min(max, v));
 
-  const [frame, setFrame] = useState(0);
-  const stepRef = useRef(0);
+  const bark = useCallback(() => {
+    // sound + quick bark flag
+    Sound.bark();
+    setDog((d) => ({ ...d, isBarking: true }));
+    setTimeout(() => setDog((d) => ({ ...d, isBarking: false })), 220);
+    addXP(3);
+    onBark && onBark();
+  }, [setDog, addXP, onBark]);
 
-  /* ── frame ticker (sprite sheet) ───────────────────────────── */
-  useEffect(() => {
-    if (!walking) return;
+  const pet = useCallback(() => {
+    // simple pet interaction: boost happiness a bit
+    setDog((d) => ({ ...d, happiness: clamp((d.happiness ?? 100) + 8) }));
+    addXP(2);
+    onPet && onPet();
+  }, [setDog, addXP, onPet]);
 
-    const fId = setInterval(() => {
-      setFrame((f) => (f + 1) % FRAMES);
-    }, 150); // 150 ms per animation frame
+  // We render the sprite and overlay a transparent hitbox so clicks are easy
+  return (
+    <>
+      <DogSprite
+        x={dog.x}
+        y={dog.y}
+        direction={dog.direction}
+        isWalking={dog.isWalking}
+        size={size}
+        frameCount={frameCount}
+        frameRate={frameRate}
+        idleFrame={idleFrame}
+      />
 
-    return () => clearInterval(fId);
-  }, [walking]);
+      {/* Transparent click/gesture hitbox */}
+      <div
+        role="button"
+        aria-label="Dog"
+        title="Click to bark, double-click to pet"
+        onClick={bark}
+        onDoubleClick={pet}
+        onContextMenu={(e) => e.preventDefault()}
+        style={{
+          position: "absolute",
+          left: dog.x,
+          top: dog.y,
+          width: size,
+          height: size,
+          cursor: "pointer",
+          // no background; keep interactions smooth
+          background: "transparent",
+        }}
+      />
+    </>
+  );
+}
 
-  /* ── movement ticker + bark / poop ─────────────────────────── */
-  useEffect(() => {
-    if (!walking) return;
-
-    const tick = setInterval(() => {
-      stepRef.current += 1;
-
-      // change heading every ~2 s
-      const dir =
-        stepRef.current % 13 === 0
-          ? dirs[Math.floor(Math.random() * dirs.length)]
-          : direction;
-
-      const step = 20;
-      const nx = Math.max(
-        0,
-        Math.min(
-          window.innerWidth - W,
-          x + (dir === "right" ? step : dir === "left" ? -step : 0),
-        ),
-      );
-      const ny = Math.max(
-        0,
-        Math.min(
-          window.innerHeight - H,
-          y + (dir === "down" ? step : dir === "up" ? -step : 0),
-        ),
-      );
-
-      dispatch(move({ x: nx, y: ny, direction: dir }));
-
-      // drop poop every 80 steps
-      if (stepRef.current % 80 === 0) dispatch(dropPoop({ x: nx, y: ny }));
-
-      // bark occasionally
-      if (stepRef.current % 40 === 0 && Math.random() < 0.25)
-        dispatch(playBark());
-  }, 300); // movement step every 300 ms
-
-    return () => clearInterval(tick);
-  }, [walking, x, y, direction, dispatch]);
-
-  /* ── inline sprite styling ─────────────────────────────────── */
-  const style = {
-    width: W,
-    height: H,
-    backgroundImage: `url(${jackRussellSprite})`,
-    backgroundPosition: `-${frame * W}px -${rowFor(direction) * H}px`,
-    backgroundSize: `${W * FRAMES}px ${H * dirs.length}px`,
-    position: "absolute",
-    top: y,
-    left: x,
-    imageRendering: "pixelated",
-    transition: "top 0.3s linear, left 0.3s linear",
-    pointerEvents: "none",
-  };
-
-  return <div style={style} />;
+Dog.propTypes = {
+  size: PropTypes.number,
+  frameCount: PropTypes.number,
+  frameRate: PropTypes.number,
+  idleFrame: PropTypes.number,
+  onBark: PropTypes.func,
+  onPet: PropTypes.func,
 };
 
-export default Dog;
