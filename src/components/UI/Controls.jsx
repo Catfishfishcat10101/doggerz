@@ -1,7 +1,7 @@
 // src/components/UI/Controls.jsx
 import React, { memo, useMemo } from "react";
 import PropTypes from "prop-types";
-import "../styles/Controls.css";
+import "../../styles/Controls.css";
 import useHotkeys from "./hooks/useHotkeys";
 import useHoldRepeat from "./hooks/useHoldRepeat";
 

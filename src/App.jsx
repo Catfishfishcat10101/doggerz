@@ -13,8 +13,8 @@ import Splash from "./components/UI/Splash";
 import NavBar from "./components/UI/NavBar";
 
 function ProtectedRoute({ children }) {
-  const loggedIn = useSelector((s) => s.user.loggedIn);
-  return loggedIn ? children : <Navigate to="/doggerz/login" replace />;
+  const loggedIn = useSelector((s) => s.user?.loggedIn);
+  return loggedIn ? children : <Navigate to="/login" replace />;
 }
 
 export default function App() {

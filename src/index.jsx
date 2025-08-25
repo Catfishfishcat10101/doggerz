@@ -46,13 +46,17 @@ function AuthListener({ children }) {
   }, [dispatch]);
 
   // Unlock Web Audio context after first user interaction (single shared context)
+  // Symbol key for storing the shared AudioContext on the window object to avoid naming collisions.
+  const DOGGERZ_AUDIO_CTX_KEY = Symbol.for("doggerz.audioContext");
+
   useEffect(() => {
     const unlock = () => {
       try {
         const AC = window.AudioContext || window.webkitAudioContext;
         if (AC) {
-          if (!window.__doggerzAudioCtx) window.__doggerzAudioCtx = new AC();
-          const ctx = window.__doggerzAudioCtx;
+          // Store the shared AudioContext using a Symbol to avoid global namespace pollution.
+          if (!window[DOGGERZ_AUDIO_CTX_KEY]) window[DOGGERZ_AUDIO_CTX_KEY] = new AC();
+          const ctx = window[DOGGERZ_AUDIO_CTX_KEY];
           if (ctx.state === "suspended") ctx.resume();
         }
       } catch (err) {
@@ -73,23 +77,27 @@ function AuthListener({ children }) {
     );
   }
 
-  return children;
+const base =
+  process.env.NODE_ENV === "production"
+    ? process.env.PUBLIC_URL || "/doggerz"
+    : "/";
 }
 
-// Dynamic base path for routing (GitHub Pages support)
-const base = process.env.NODE_ENV === "production" ? "/doggerz" : "/";
-
 // App rendering
-ReactDOM.createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
-    <Provider store={store}>
-      <BrowserRouter basename={base}>
-        <HelmetProvider>
-          <AuthListener>
-            <App />
-          </AuthListener>
-        </HelmetProvider>
-      </BrowserRouter>
-    </Provider>
-  </React.StrictMode>
-);
+export function renderApp() {
+  ReactDOM.createRoot(document.getElementById("root")).render(
+    <React.StrictMode>
+      <Provider store={store}>
+        <BrowserRouter basename={base}>
+          <HelmetProvider>
+            <AuthListener>
+              <App />
+            </AuthListener>
+          </HelmetProvider>
+        </BrowserRouter>
+      </Provider>
+    </React.StrictMode>
+  );
+}
+
+renderApp();

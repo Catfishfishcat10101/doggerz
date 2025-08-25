@@ -115,4 +115,9 @@ DogSprite.propTypes = {
   flipLeftIfNoRow: PropTypes.bool,
 };
 
+if (typeof walking === "boolean") {
+  // If walking is a boolean, we can use it directly
+  isWalking = walking;
+}
+
 export default memo(DogSprite);
