@@ -1,5 +1,12 @@
+// Keep the entry super minimal. It matches the script in /index.html.
 import { renderApp } from "./index.jsx";
 
-// Keep a minimal main entry that matches the public/index.html Vite script.
-// index.jsx already sets up and renders the app via renderApp().
 renderApp();
+
+// Optional: HMR accept to avoid full reloads while editing.
+if (import.meta.hot) {
+  import.meta.hot.accept(() => {
+    // Re-render on hot updates without losing state
+    renderApp();
+  });
+}
