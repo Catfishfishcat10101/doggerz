@@ -15,7 +15,7 @@ const ToyBox = lazy(() => import("./ToyBox"));
 const ResetGame = lazy(() => import("./ResetGame"));
 const StatsBar = lazy(() => import("./StatsBar"));
 const LogoutButton = lazy(() => import("../Auth/LogoutButton")); // <- add back
-const Dog = lazy(() => import("../Features/Dog"));               // <- correct path
+const Dog = lazy(() => import("../../Features/Dog"));               // <- correct path
 const CleanlinessBar = lazy(() => import("./CleanlinessBar"));
 const PoopScoop = lazy(() => import("./PoopScoop"));
 

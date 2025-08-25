@@ -1,4 +1,4 @@
-// src/components/UI/PoopRenderer.jsx
+// src/components/Features/PoopRenderer.jsx
 import React from "react";
 import "./PoopRenderer.css";
 

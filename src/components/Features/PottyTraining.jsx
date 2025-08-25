@@ -1,2 +1,1 @@
-// Re-export the actual implementation
-export { default } from "./PottyTrainer";
+export default function PottyTrainer() { /* ... */ }
