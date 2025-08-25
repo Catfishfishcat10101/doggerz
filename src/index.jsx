@@ -19,6 +19,12 @@ import { setUser as loginSuccess, clearUser as logout } from "./redux/userSlice.
 // Helmet for <head> tags
 import { HelmetProvider } from "react-helmet-async";
 
+// Compute base at module scope so it's available during render
+const base =
+  process.env.NODE_ENV === "production"
+    ? process.env.PUBLIC_URL || "/doggerz"
+    : "/";
+
 // Auth state manager component
 function AuthListener({ children }) {
   const dispatch = useDispatch();
@@ -77,10 +83,8 @@ function AuthListener({ children }) {
     );
   }
 
-const base =
-  process.env.NODE_ENV === "production"
-    ? process.env.PUBLIC_URL || "/doggerz"
-    : "/";
+  // When not loading, render children
+  return <>{children}</>;
 }
 
 // App rendering

@@ -3,10 +3,9 @@ import React, { memo, useMemo } from "react";
 import PropTypes from "prop-types";
 import classNames from "classnames";
 import useSpriteAnimator from "./hooks/useSpriteAnimator";
-import "./styles/DogSprite.css";
 
 // Default sprite sheet: 4 rows (down, left, right, up) × N columns
-// Your file: /assets/sprites/jack_russell_directions.png
+// Correct relative import into the assets folder
 import dogSprite from "../../assets/sprites/jack_russell_directions.png";
 
 const SPRITE_DIRECTIONS = /** @type {const} */ ({
@@ -72,14 +71,11 @@ function DogSprite({
         top,
         width: size,
         height: size,
-        transform: `
-          translate(${centerAnchor ? "-50%, -50%" : "0, 0"})
-          scale(${flipX ? -scale : scale}, ${scale})
-        `,
+        transform: `translate(${centerAnchor ? "-50%, -50%" : "0, 0"}) scale(${flipX ? -scale : scale}, ${scale})`,
         transformOrigin: centerAnchor ? "center center" : "top left",
         backgroundImage: `url(${dogSprite})`,
         backgroundPosition: `${bgX}px ${bgY}px`,
-        backgroundSize: "auto", // each cell is exactly `size`, so original scaling
+        backgroundSize: `${frameCount * size}px ${4 * size}px`,
         imageRendering: "pixelated",
         zIndex: 10,
       }}
@@ -115,9 +111,6 @@ DogSprite.propTypes = {
   flipLeftIfNoRow: PropTypes.bool,
 };
 
-if (typeof walking === "boolean") {
-  // If walking is a boolean, we can use it directly
-  isWalking = walking;
-}
+// no runtime reassignment here; props are already normalized
 
 export default memo(DogSprite);

@@ -1,5 +1,5 @@
 import { slide as Menu } from 'react-burger-menu';
-import './BurgerMenu.css'; // ← NOT "/BurgerMenu.css"
+import './BurgerMenu.css'; // same-folder import
 import { Home, Info, Bones, Phone } from 'lucide-react';
 
 export default function NavBar() {

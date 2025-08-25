@@ -99,7 +99,7 @@ export default function DogAIEngine({
       }
     },
     WALK_BASE_MS,
-    jitterPct,
+    { jitterPct },
     [isVisible, walkDurationMs]
   );
 
@@ -119,7 +119,7 @@ export default function DogAIEngine({
       }
     },
     BARK_BASE_MS,
-    jitterPct,
+    { jitterPct },
     [isVisible, barkDurationMs]
   );
 
@@ -137,7 +137,7 @@ export default function DogAIEngine({
       }
     },
     POOP_BASE_MS,
-    jitterPct,
+    { jitterPct },
     [isVisible, poopDurationMs]
   );
 

@@ -21,10 +21,10 @@ export default function Memory() {
           <ul className="space-y-2">
             {milestones.map((milestone, idx) => (
               <li
-                key={milestone + idx}
+                key={`${typeof milestone === "string" ? milestone : JSON.stringify(milestone)}-${idx}`}
                 className="bg-blue-50 rounded p-2 text-blue-800"
               >
-                {milestone}
+                {typeof milestone === "string" ? milestone : String(milestone)}
               </li>
             ))}
           </ul>
