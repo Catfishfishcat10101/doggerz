@@ -2,28 +2,16 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, viewport-fit=cover"
-    />
-    <title>Doggerz 🐾</title>
-    <meta
-      name="description"
-      content="Doggerz — Raise, train, and care for your virtual best friend."
-    />
-    <meta name="theme-color" content="#0f1320" />
-    <!-- Favicon lives in /public for Vite; reference it by absolute path -->
-     <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="icon" type="image/png" href="/favicon.png" />
-    <!-- Optional: social share -->
-    <meta property="og:title" content="Doggerz" />
-    <meta property="og:description" content="Train, feed, and play with your virtual dog." />
-    <meta property="og:type" content="website" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#0b1220" />
+    <link rel="icon" href="/favicon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <title>Doggerz • Your Virtual Pup</title>
+    <link rel="preload" as="image" href="/assets/sprites/jack_russell_directions.png" />
   </head>
-  <body class="m-0 p-0">
-    <noscript>You need to enable JavaScript to run Doggerz.</noscript>
+  <body>
     <div id="root"></div>
-    <!-- Vite: explicitly load your React entry -->
+    <!-- This is the only script Vite needs -->
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
