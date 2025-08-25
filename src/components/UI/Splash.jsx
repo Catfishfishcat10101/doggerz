@@ -1,34 +1,50 @@
 // src/components/UI/Splash.jsx
-import React from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import "./Splash.css";
+
+// Use the single good copies in Features:
+import DogSprite from "../Features/DogSprite";
+import Sound from "../Features/SoundManager";
+
+// Local asset (put the image at: src/assets/backgrounds/yard_day.jpg)
+import bg from "../../assets/backgrounds/yard_day.jpg";
 
 export default function Splash() {
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const t1 = setTimeout(() => Sound.bark(), 700);
+    const t2 = setTimeout(() => Sound.bark(), 2200);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, []);
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-amber-200 to-amber-400">
-      <div className="text-center">
-        <img
-          src="/backgrounds/yard_day.png"
-          alt="Doggerz yard"
-          className="w-48 h-48 object-cover rounded-full mx-auto shadow-lg mb-6 border-4 border-white"
-        />
-        <h1 className="text-5xl font-extrabold text-yellow-800 drop-shadow mb-2">
-          🐾 Doggerz
-        </h1>
-        <p className="text-lg text-yellow-900 mb-6">
-          The most realistic virtual dog sim—raise, train, love, and play!
-        </p>
-        <button
-          className="bg-yellow-600 hover:bg-yellow-700 text-white px-8 py-3 rounded-xl shadow font-bold text-xl transition"
-          onClick={() => navigate("/game")}
-        >
-          Start Game
-        </button>
+    <div className="splash-root">
+      <div className="splash-backdrop" style={{ backgroundImage: `url(${bg})` }} />
+      <div className="splash-overlay" />
+
+      <div className="splash-card">
+        <h1 className="logo">🐾 Doggerz</h1>
+        <p className="tag">The most realistic virtual dog sim—raise, train, love, and play!</p>
+
+        <div className="dog-bounce" title="Woof!">
+          <DogSprite x={0} y={0} direction="down" isWalking={false} size={96} />
+        </div>
+
+        <div className="cta-row">
+          <button className="btn primary" onClick={() => navigate("/auth?m=signup")}>Sign up</button>
+          <button className="btn" onClick={() => navigate("/auth")}>Sign in</button>
+          <button
+            className="btn ghost"
+            onClick={() => { Sound.bark(); navigate("/game"); }}
+          >
+            Continue
+          </button>
+        </div>
+
+        <p className="rights">© {new Date().getFullYear()} Doggerz. All rights reserved.</p>
       </div>
-      <footer className="mt-16 text-yellow-800/80 text-xs">
-        &copy; {new Date().getFullYear()} Doggerz. All rights reserved.
-      </footer>
     </div>
   );
 }

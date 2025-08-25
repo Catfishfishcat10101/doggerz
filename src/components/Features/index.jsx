@@ -1,3 +1,4 @@
+// src/index.jsx
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom/client";
 import "./index.css";
@@ -7,25 +8,20 @@ import App from "./App.jsx";
 import { Provider, useDispatch } from "react-redux";
 import { store } from "./redux/store.js";
 
-// React Router
+// Router
 import { BrowserRouter } from "react-router-dom";
 
 // Firebase Auth
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "./firebase.js";
-// Alias existing actions from your userSlice
 import { setUser as loginSuccess, clearUser as logout } from "./redux/userSlice.js";
 
-// Helmet for <head> tags
+// Head tags
 import { HelmetProvider } from "react-helmet-async";
 
-// Compute base at module scope so it's available during render
-const base =
-  process.env.NODE_ENV === "production"
-    ? process.env.PUBLIC_URL || "/doggerz"
-    : "/";
+// Use Vite envs: BASE_URL is set from vite.config.base (e.g. '/doggerz/' on GH Pages)
+const base = (import.meta.env.BASE_URL || "/").replace(/\/+$/, "") || "/";
 
-// Auth state manager component
 function AuthListener({ children }) {
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(true);
@@ -51,16 +47,13 @@ function AuthListener({ children }) {
     return () => unsub();
   }, [dispatch]);
 
-  // Unlock Web Audio context after first user interaction (single shared context)
-  // Symbol key for storing the shared AudioContext on the window object to avoid naming collisions.
+  // Unlock a shared WebAudio context on first user interaction
   const DOGGERZ_AUDIO_CTX_KEY = Symbol.for("doggerz.audioContext");
-
   useEffect(() => {
     const unlock = () => {
       try {
         const AC = window.AudioContext || window.webkitAudioContext;
         if (AC) {
-          // Store the shared AudioContext using a Symbol to avoid global namespace pollution.
           if (!window[DOGGERZ_AUDIO_CTX_KEY]) window[DOGGERZ_AUDIO_CTX_KEY] = new AC();
           const ctx = window[DOGGERZ_AUDIO_CTX_KEY];
           if (ctx.state === "suspended") ctx.resume();
@@ -74,7 +67,6 @@ function AuthListener({ children }) {
     window.addEventListener("pointerdown", unlock, { once: true });
   }, []);
 
-  // Loading screen while checking auth state
   if (loading) {
     return (
       <div style={{ color: "#fff", textAlign: "center", marginTop: 40, fontSize: 20 }}>
@@ -82,14 +74,14 @@ function AuthListener({ children }) {
       </div>
     );
   }
-
-  // When not loading, render children
   return <>{children}</>;
 }
 
-// App rendering
 export function renderApp() {
-  ReactDOM.createRoot(document.getElementById("root")).render(
+  const rootEl = document.getElementById("root");
+  if (!rootEl) throw new Error("Missing #root element in index.html");
+
+  ReactDOM.createRoot(rootEl).render(
     <React.StrictMode>
       <Provider store={store}>
         <BrowserRouter basename={base}>
@@ -103,5 +95,3 @@ export function renderApp() {
     </React.StrictMode>
   );
 }
-
-renderApp();
