@@ -4,56 +4,32 @@
   "private": true,
   "description": "Doggerz - The Most Realistic Virtual Dog Simulator",
   "scripts": {
-    "start": "react-scripts start",
-    "dev": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "preview": "serve -s build",
-    "deploy": "npm run build && firebase deploy"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "deploy": "vite build && firebase deploy"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.8.2",
-    "@tailwindcss/postcss": "^4.1.12",
-    "autoprefixer": "^10.4.21",
     "firebase": "^12.0.0",
     "lucide-react": "^0.541.0",
-    "postcss": "^8.5.6",
     "react": "^18.2.0",
     "react-burger-menu": "^3.1.0",
     "react-dom": "^18.2.0",
     "react-helmet-async": "^2.0.5",
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.7.1",
-    "react-scripts": "^5.0.1",
-    "redux": "^5.0.1",
-    "serve": "^14.2.4",
-    "tailwindcss": "^4.1.12"
+    "redux": "^5.0.1"
   },
   "devDependencies": {
     "@tailwindcss/forms": "^0.5.10",
+    "@vitejs/plugin-react": "^4.7.0",
+    "autoprefixer": "^10.4.21",
     "eslint": "^9.32.0",
     "jest": "^30.0.5",
-    "vite-plugin-pwa": "^1.0.3"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Catfishfishcat10101/doggerz.git"
-  },
-  "bugs": {
-    "url": "https://github.com/Catfishfishcat10101/doggerz/issues"
-  },
-  "homepage": "https://github.com/Catfishfishcat10101/doggerz#readme",
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.12",
+    "vite": "^5.4.19",
+    "vite-plugin-pwa": "^0.20.0"
   }
 }

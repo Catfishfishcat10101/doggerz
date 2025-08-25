@@ -1,24 +1,34 @@
 # ------------------------
 # Node modules & logs
 # ------------------------
-/node_modules/
+node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
 pglite-debug.log
+logs/
+*.log
+
+# Speed-ups / caches
+.eslintcache
 
 # ------------------------
-# Firebase emulation
+# Firebase
 # ------------------------
-/firebase-debug.log
-/firebase.json
-.firebaserc
+firebase-debug.log
+.firebase/
+/emulator-data/
+
+# Keep these in git (needed for deploy/emulators):
+# firebase.json
+# .firebaserc
 
 # ------------------------
-# Build output
+# Build output (CRA & Vite)
 # ------------------------
-/build/
-/dist/
+build/
+dist/
 
 # ------------------------
 # Environment files
@@ -47,10 +57,5 @@ Desktop.ini
 # ------------------------
 # Coverage / testing
 # ------------------------
-/coverage/
+coverage/
 *.lcov
-
-# ------------------------
-# Optional: Firebase Hosting Previews
-# ------------------------
-.firebase/
