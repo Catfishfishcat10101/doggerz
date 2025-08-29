@@ -1,0 +1,38 @@
+/* Button that opens the menu */
+.bm-burger-button-override{
+  position:fixed; right:16px; top:16px; z-index:1100;
+  width:28px; height:22px; display:grid; gap:4px;
+  background:transparent; border:0; padding:0; cursor:pointer;
+}
+.bm-burger-button-override .bm-burger-bar{
+  width:100%; height:3px; border-radius:2px;
+  background:rgba(255,255,255,.9);
+}
+
+/* Button that closes the menu */
+.bm-cross-button-override{
+  border:0; background:transparent; font-size:22px; color:#fff; cursor:pointer;
+}
+
+/* react-burger-menu core classes */
+.bm-overlay { background: rgba(0,0,0,.45) !important; }
+.bm-menu { background:#0b1724; padding:2rem 1.25rem; font-size:1rem; overflow-y:auto; }
+
+/* Your menu content */
+.menu-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:.5rem; color:#cbd5e1;}
+.brand{ display:flex; align-items:center; gap:.5rem; color:#fff; font-weight:700; }
+.hint{ font-size:.8rem; opacity:.8; }
+
+.menu-divider{ height:1px; border:0; background:rgba(255,255,255,.12); margin:.75rem 0 1rem; }
+.menu-section{ display:flex; flex-direction:column; gap:.25rem; }
+
+.menu-item{
+  display:flex; align-items:center; gap:.6rem;
+  padding:.625rem .75rem; border-radius:.75rem;
+  color:#e2e8f0; text-decoration:none;
+}
+.menu-item:hover{ background:rgba(255,255,255,.08); color:#fff; }
+.menu-item.active{ background:rgba(255,255,255,.14); color:#fff; }
+
+.menu-footer{ margin-top:1rem; color:#94a3b8; font-size:.9rem; }
+.badge{ margin-left:auto; background:#0ea5e9; color:#fff; font-size:.75rem; padding:.15rem .4rem; border-radius:.5rem; }

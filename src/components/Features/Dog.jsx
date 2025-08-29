@@ -1,19 +1,26 @@
-// src/Features/Dog.jsx
-export default function Dog() {
-  return <div className="w-full h-full grid place-items-center text-6xl">🐶</div>;
-}
-
-// src/components/common/ErrorBoundary.jsx
+// src/components/Features/Dog.jsx
 import React from "react";
-export default class ErrorBoundary extends React.Component {
-  state = { hasError: false };
-  static getDerivedStateFromError() { return { hasError: true }; }
-  render() { return this.state.hasError ? <div>Something broke.</div> : this.props.children; }
-}
+import { useSelector } from "react-redux";
+import sprite from "../UI/sprites/jack_russell_directions.png";
 
-// src/components/common/Skeletons.jsx
-export const StatsBarSkeleton = () => <div className="h-6 bg-white/20 rounded mb-2" />;
-export const PanelSkeleton = ({ height = "10rem" }) => (
-  <div className="bg-white/20 rounded" style={{ height }} />
-);
-export const DogAreaSkeleton = () => <div className="min-h-[420px] bg-white/10 rounded-3xl" />;
+export default function Dog() {
+  // Pull position & facing from Redux if you already track them
+  const { x = 96, y = 96, direction = "down" } = useSelector((s) => s.dog || {});
+  console.log("resolved sprite URL ->", sprite);
+
+  return (
+    <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center p-8">
+      <div className="flex flex-col items-center gap-4">
+        <img
+          src={sprite}
+          alt="Dog sprite"
+          className="w-96 h-auto rounded shadow-lg"
+        />
+        <div className="text-lg">Your pup</div>
+        <div className="text-sm text-slate-400 break-words max-w-lg">
+          {sprite}
+        </div>
+      </div>
+    </div>
+  );
+}

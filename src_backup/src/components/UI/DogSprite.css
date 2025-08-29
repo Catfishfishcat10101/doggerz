@@ -1,0 +1,60 @@
+/* ===== Common vars ===== */
+:root {
+  --frame-w: 256px;  /* match your sheet */
+  --frame-h: 256px;
+  --frames: 4;       /* columns per row */
+}
+
+/* =========================
+   A) DIV-BASED SPRITE (current)
+   ========================= */
+.dog-sprite {
+  position: absolute;
+  width: var(--frame-w);
+  height: var(--frame-h);
+  background-repeat: no-repeat;
+  image-rendering: pixelated;   /* crisp */
+  will-change: background-position;
+  pointer-events: none;         /* so clicks pass through */
+}
+
+/* apply this class when walking */
+.dog-sprite.is-walking {
+  animation: dog-walk 0.6s steps(var(--frames)) infinite;
+}
+
+@keyframes dog-walk {
+  from { background-position-x: 0; }
+  to   { background-position-x: calc(var(--frame-w) * -1 * var(--frames)); }
+}
+
+/* optional: subtle shadow under the dog */
+.dog-shadow {
+  position: absolute;
+  left: 50%;
+  bottom: 6px;
+  transform: translateX(-50%);
+  width: 58%;
+  height: 10px;
+  background: rgba(0,0,0,.28);
+  filter: blur(4px);
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+/* =========================
+   B) CANVAS-BASED SPRITE (only if you use <canvas>)
+   ========================= */
+/* Keep canvas crisp & responsive without global canvas overrides */
+.dog-canvas {
+  display: block;
+  width: var(--frame-w);
+  height: var(--frame-h);
+  image-rendering: pixelated;
+}
+
+/* If you want the canvas to scale with its container */
+.dog-canvas.responsive {
+  width: 100%;
+  height: auto;
+}

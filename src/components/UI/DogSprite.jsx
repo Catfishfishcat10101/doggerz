@@ -1,63 +1,42 @@
 // src/components/UI/DogSprite.jsx
-import React, { memo } from "react";
-import PropTypes from "prop-types";
-import classNames from "classnames";
-import dogSprite from "../../assets/sprites/jack_russell_directions.png";
+import React from "react";
+import useSpriteAnimator from "../../hooks/useSpriteAnimator";
+import spriteSheet from "../../assets/sprites/jack_russell_sheet.png"; // <- your image
 
-const SPRITE_DIRECTIONS = { down: 0, left: 1, right: 2, up: 3 };
+// Map directions to row indexes in the sheet.
+// Adjust if your rows are ordered differently.
+const ROW = { down: 0, left: 1, right: 2, up: 3 };
 
-function DogSprite({
+/**
+ * Draws a single animated sprite from a sprite sheet laid out in a grid.
+ * Assumes each row = one direction; each column = a frame.
+ */
+export default function DogSprite({
   x = 96,
   y = 96,
   direction = "down",
-  isWalking = false,
-  isDirty = false,
-  isBathing = false,
-  isHappy = false,
-  frameCount = 4,
-  frameRate = 8,
-  idleFrame = 0,
-  size = 96
+  walking = false,
+  cols = 4,            // number of frames per row (columns)
+  rows = 4,            // number of rows (directions)
+  frameWidth = 256,    // width of a single cell in the sheet (px)
+  frameHeight = 256,   // height of a single cell (px)
+  scale = 0.75,        // visual scale on screen
+  fps = 8,
+  sheet = spriteSheet, // override if you swap art
 }) {
-  const row = SPRITE_DIRECTIONS[direction] ?? 0;
-  const col = isWalking ? Math.floor((Date.now() / (1000 / frameRate)) % frameCount) : idleFrame;
+  const frame = useSpriteAnimator({ fps, frames: cols, playing: walking });
+  const row = ROW[direction] ?? 0;
 
-  return (
-    <div
-      className={classNames("absolute transition-transform", {
-        "grayscale": isDirty && !isBathing,
-        "animate-pulse": isHappy
-      })}
-      style={{ left: x, top: y, width: size, height: size, imageRendering: "pixelated" }}
-      aria-label="Dog sprite"
-      role="img"
-    >
-      <div
-        style={{
-          width: size,
-          height: size,
-          backgroundImage: `url(${dogSprite})`,
-          backgroundRepeat: "no-repeat",
-          backgroundSize: `${frameCount * 100}% ${4 * 100}%`,
-          backgroundPosition: `${(-col * 100) / (frameCount - 1)}% ${(-row * 100) / (4 - 1)}%`
-        }}
-      />
-    </div>
-  );
+  const style = {
+    position: "absolute",
+    transform: `translate(${x}px, ${y}px)`,
+    width: `${frameWidth * scale}px`,
+    height: `${frameHeight * scale}px`,
+    backgroundImage: `url(${sheet})`,
+    backgroundRepeat: "no-repeat",
+    backgroundPosition: `-${frame * frameWidth}px -${row * frameHeight}px`,
+    imageRendering: "pixelated", // keeps it crisp
+  };
+
+  return <div aria-label="dog" style={style} />;
 }
-
-DogSprite.propTypes = {
-  x: PropTypes.number,
-  y: PropTypes.number,
-  direction: PropTypes.oneOf(["down", "left", "right", "up"]),
-  isWalking: PropTypes.bool,
-  isDirty: PropTypes.bool,
-  isBathing: PropTypes.bool,
-  isHappy: PropTypes.bool,
-  frameCount: PropTypes.number,
-  frameRate: PropTypes.number,
-  idleFrame: PropTypes.number,
-  size: PropTypes.number
-};
-
-export default memo(DogSprite);

@@ -1,3 +1,2 @@
-// CRA entry shim -> calls your existing renderer in index.jsx
-import { renderApp } from "./index.jsx";
-renderApp();
+// simple shim -> load the project's real entry module
+import './src/main.jsx';

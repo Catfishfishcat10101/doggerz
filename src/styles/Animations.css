@@ -1,6 +1,5 @@
 /* src/styles/animations.css */
 
-/* ---- Tunable vars ---- */
 :root {
   --walk-distance: 12px;          /* how far the dog bobs horizontally */
   --walk-speed: 600ms;            /* bob speed */
