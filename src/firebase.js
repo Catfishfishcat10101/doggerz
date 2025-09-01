@@ -1,3 +1,4 @@
+
 // safe firebase initializer — uses VITE_ env vars and avoids runtime crashes when placeholders are present
 import { initializeApp } from 'firebase/app';
 

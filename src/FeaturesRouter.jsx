@@ -1,5 +1,4 @@
-
-
+// src/FeaturesRouter.jsx
 function ErrorFallback({ error, resetErrorBoundary }) {
   return (
     <div style={{ padding: 16 }}>
