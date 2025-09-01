@@ -1,8 +1,11 @@
-// src/redux/dogSelectors.js
 import { createSelector } from "@reduxjs/toolkit";
+import { initialState as DOG_DEFAULTS } from "./dogSlice";
 
-/** Root selector */
-export const selectDog = (state) => state.dog ?? {};
+// Use a stable fallback object so memoization works even if dog is missing.
+const EMPTY_DOG = DOG_DEFAULTS; // or Object.freeze({ ...DOG_DEFAULTS })
+
+/** Root selector (stable) */
+export const selectDog = (state) => state.dog || EMPTY_DOG;
 
 /** Core need stats (safe defaults) */
 export const selectCoreStats = createSelector([selectDog], (d) => ({
@@ -13,16 +16,16 @@ export const selectCoreStats = createSelector([selectDog], (d) => ({
   isPottyTrained: !!d.isPottyTrained,
 }));
 
-/** Level/XP (keeps in sync with your slice if you later expose xpNeeded there) */
+/** Level/XP */
 export const selectProgress = createSelector([selectDog], (d) => {
-  // If your slice exports/holds xpNeeded, read it here. Fallback: 100.
-  const xpNeeded = typeof d.xpNeeded === "number" ? d.xpNeeded : 100;
-  const xp = d.xp ?? 0;
-  const pct = xpNeeded > 0 ? Math.min(100, Math.round((xp / xpNeeded) * 100)) : 0;
-  return { level: d.level ?? 1, xp, xpNeeded, xpPct: pct };
+  const xpNeeded = Number.isFinite(d.xpNeeded) ? d.xpNeeded : 100;
+  const xp = Number.isFinite(d.xp) ? d.xp : 0;
+  const raw = xpNeeded > 0 ? (xp / xpNeeded) * 100 : 0;
+  const xpPct = Math.max(0, Math.min(100, Math.round(raw)));
+  return { level: d.level ?? 1, xp, xpNeeded, xpPct };
 });
 
-/** Sprite-facing state (handles both `walking` and `isWalking` shapes) */
+/** Sprite-facing state */
 export const selectSpriteState = createSelector([selectDog], (d) => ({
   x: d.x ?? 96,
   y: d.y ?? 96,
@@ -48,7 +51,6 @@ export const selectAlerts = createSelector([selectDog], (d) => {
   if (d.hasFleas) alerts.push({ type: "error", msg: "Your pup has fleas. Bathe soon!" });
   if (d.hasMange) alerts.push({ type: "error", msg: "Mange detected. Vet visit needed." });
 
-  // If you're not tracking `isPooping`, just nudge when training is high but not complete.
   if (pottyLevel > 75 && !d.isPottyTrained) alerts.push({ type: "info", msg: "Pup needs to potty." });
 
   return alerts;
