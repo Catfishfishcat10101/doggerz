@@ -1,3 +1,4 @@
+//src/redux/dogSelector.js
 import { createSelector } from "@reduxjs/toolkit";
 import { initialState as DOG_DEFAULTS } from "./dogSlice";
 
