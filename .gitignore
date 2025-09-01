@@ -9,33 +9,54 @@ pnpm-debug.log*
 pglite-debug.log
 logs/
 *.log
+*.pid
+*.pid.lock
 
 # Speed-ups / caches
 .eslintcache
+.parcel-cache/
+.turbo/
+.cache/
+.vite/             # (Vite sometimes writes here if configured)
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+.pnp.*
+.pnpjs
 
 # ------------------------
 # Firebase
 # ------------------------
 firebase-debug.log
 .firebase/
-/emulator-data/
+emulator-data/
 
 # Keep these in git (needed for deploy/emulators):
 # firebase.json
 # .firebaserc
 
 # ------------------------
+# Hosting providers
+# ------------------------
+.vercel/           # local Vercel project state; do not commit
+.netlify/          # if you ever try Netlify locally
+
+# ------------------------
 # Build output (CRA & Vite)
 # ------------------------
 build/
 dist/
+storybook-static/
 
 # ------------------------
 # Environment files
 # ------------------------
 .env
 .env.*
-!.env.example
+!.env.example      # keep a template for collaborators
 
 # ------------------------
 # IDE / Editor configs
@@ -55,7 +76,24 @@ Thumbs.db
 Desktop.ini
 
 # ------------------------
-# Coverage / testing
+# Coverage / testing / tooling
 # ------------------------
 coverage/
 *.lcov
+.nyc_output/
+playwright-report/
+test-results/
+jest-html-reporters-*
+*.tsbuildinfo
+
+# ------------------------
+# App-specific junk you don’t want committed
+# ------------------------
+src_backup/        # remove from tracking if it was committed before
+*.local.*
+*.bak
+*.orig
+*.rej
+*.tmp
+*.swp
+*.tgz              # npm pack tarballs
