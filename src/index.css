@@ -1,29 +1,31 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-/* --- Theme tokens --- */
+/* src/index.css */
 :root {
-  --bg-1: #0b1220; /* deep navy */
-  --bg-2: #0f172a; /* slate-900-ish */
-  --glass: #0b1220cc; /* 80% opacity */
-  --ring: rgba(59, 130, 246, .35);
+  color-scheme: light dark;
+  --bg: #0f172a; /* slate-900 */
+  --panel: rgba(0,0,0,0.3);
+  --text: #ffffff;
+  --muted: rgba(255,255,255,0.7);
+  --ring: rgba(59,130,246,0.6);
 }
 
-/* Background gradient + subtle noise */
-body {
-  background:
-    radial-gradient(1200px 800px at 10% -10%, #111827 0%, transparent 60%),
-    radial-gradient(1000px 600px at 120% 20%, #0b2447 0%, transparent 50%),
-    linear-gradient(180deg, var(--bg-1), var(--bg-2));
-  color: #e5e7eb;
-}
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+body { background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"; }
 
-/* Glass panel utility (for sidebar & cards) */
-.glass {
-  background: var(--glass);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, .08);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, .35), inset 0 1px 0 rgba(255, 255, 255, .04);
-  border-radius: 1rem;
+a { color: inherit; text-decoration: none; }
+button { font: inherit; }
+
+.container { max-width: 1120px; margin-inline: auto; padding: 1rem; }
+.card { background: var(--panel); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 1rem; }
+
+.bar { height: 8px; width: 100%; border-radius: 999px; background: rgba(255,255,255,0.2); overflow: hidden; }
+.bar > span { display: block; height: 100%; background: #fff; }
+
+kbd {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-bottom-width: 2px;
+  padding: 0.1rem 0.35rem;
+  border-radius: 6px;
+  font-size: 0.85em;
 }
