@@ -1,16 +1,29 @@
+// src/redux/userSlice.js
 import { createSlice } from "@reduxjs/toolkit";
 
-const initialState = { id: null, email: null };
+// Keep only what you actually use in the app UI.
+export const initialUserState = {
+  id: null,
+  email: null,
+  displayName: null,
+  photoURL: null,
+};
 
 const userSlice = createSlice({
   name: "user",
-  initialState,
+  initialState: initialUserState,
   reducers: {
-    setUser(state, action) {
-      Object.assign(state, action.payload);
+    setUser(state, { payload = {} }) {
+      // only accept whitelisted keys to avoid accidental state pollution
+      const { id = null, email = null, displayName = null, photoURL = null } = payload || {};
+      state.id = id;
+      state.email = email;
+      state.displayName = displayName;
+      state.photoURL = photoURL;
     },
     clearUser() {
-      return initialState;
+      // return a fresh copy to avoid shared object references
+      return { ...initialUserState };
     },
   },
 });
