@@ -1,11 +1,11 @@
-//src/redux/dogSelector.js
+// src/redux/dogSelectors.js
 import { createSelector } from "@reduxjs/toolkit";
-import { initialState as DOG_DEFAULTS } from "./dogSlice";
+import { initialState as DOG_DEFAULTS } from "./dogSlice.js";
 
-// Use a stable fallback object so memoization works even if dog is missing.
-const EMPTY_DOG = DOG_DEFAULTS; // or Object.freeze({ ...DOG_DEFAULTS })
+// Use a stable fallback so memoization isn't busted by new {} each call.
+const EMPTY_DOG = DOG_DEFAULTS;
 
-/** Root selector (stable) */
+/** Root selector */
 export const selectDog = (state) => state.dog || EMPTY_DOG;
 
 /** Core need stats (safe defaults) */
@@ -31,7 +31,8 @@ export const selectSpriteState = createSelector([selectDog], (d) => ({
   x: d.x ?? 96,
   y: d.y ?? 96,
   direction: d.direction ?? "down",
-  isWalking: (d.isWalking ?? d.walking ?? false) || !!d.isRunning,
+  // support both flags during refactor
+  isWalking: (d.walking ?? d.isWalking ?? false) || !!d.isRunning,
   isHappy: (d.happiness ?? 100) > 70,
   isDirty: !!d.isDirty,
 }));
@@ -56,3 +57,4 @@ export const selectAlerts = createSelector([selectDog], (d) => {
 
   return alerts;
 });
+```0
