@@ -1,36 +1,23 @@
-// src/components/UI/GameScreen.jsx
 import React, { Suspense, lazy, useCallback } from "react";
 import { ChevronDown, PawPrint, LogOut, RefreshCcw, Gamepad } from "lucide-react";
 import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
 import ErrorBoundary from "../common/ErrorBoundary";
 import { StatsBarSkeleton, PanelSkeleton, DogAreaSkeleton } from "../common/Skeletons";
+import PottyTrainer from "../Features/PottyTrainer.jsx"; // <-- fixed
 
-const Splash = lazy(() => import("./Splash"));
-const DogName = lazy(() => import("./DogName"));
-const Controls = lazy(() => import("./Controls"));
-const Status = lazy(() => import("./Status"));
-const Tricks = lazy(() => import("./Tricks"));
-const FirebaseAutoSave = lazy(() => import("./FirebaseAutoSave"));
-const ToyBox = lazy(() => import("./ToyBox"));
-const ResetGame = lazy(() => import("./ResetGame"));
-const StatsBar = lazy(() => import("./StatsBar"));
-const LogoutButton = lazy(() => import("../Auth/LogoutButton")); // <- add back
-const Dog = lazy(() => import("../Features/Dog"));               // <- correct path
-const CleanlinessBar = lazy(() => import("./CleanlinessBar"));
-const PoopScoop = lazy(() => import("./PoopScoop"));
-
-/**
- * Layout goals:
- * - Header (brand + quick actions)
- * - 12-col responsive grid:
- *   - Left rail: Tricks & ToyBox (collapsible on mobile)
- *   - Center: Dog area (Dog, Splash overlay, PoopScoop zone)
- *   - Right rail: Status panels
- * - Sticky mobile action dock
- * - Keyboard shortcuts
- * - A11y: landmarks, skip link, aria-live for stat changes
- * - Error isolation per panel
- */
+const Splash = lazy(() => import("./Splash.jsx"));
+const DogName = lazy(() => import("./DogName.jsx"));
+const Controls = lazy(() => import("./Controls.jsx"));
+const Status = lazy(() => import("./Status.jsx"));
+const Tricks = lazy(() => import("./Tricks.jsx"));
+const FirebaseAutoSave = lazy(() => import("./FirebaseAutoSave.jsx"));
+const ToyBox = lazy(() => import("./ToyBox.jsx"));
+const ResetGame = lazy(() => import("./ResetGame.jsx"));
+const StatsBar = lazy(() => import("./StatsBar.jsx"));
+const LogoutButton = lazy(() => import("../Auth/LogoutButton.jsx"));
+const Dog = lazy(() => import("../Features/Dog.jsx"));
+const CleanlinessBar = lazy(() => import("./CleanlinessBar.jsx"));
+const PoopScoop = lazy(() => import("./PoopScoop.jsx"));
 
 const GameScreen = () => {
   const handleClearPoops = useCallback(() => {
@@ -46,15 +33,15 @@ const GameScreen = () => {
       className="min-h-screen relative overflow-x-hidden bg-gradient-to-br from-emerald-500 via-cyan-500 to-sky-600 text-white"
       data-testid="game-screen"
     >
-      {/* background flair */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-15 [mask-image:radial-gradient(ellipse_at_center,black_40%,transparent_70%)]"
+        className="pointer-events-none absolute inset-0 opacity-[0.15] [mask-image:radial-gradient(ellipse_at_center,black_40%,transparent_70%)]"
         style={{
           backgroundImage:
             "repeating-linear-gradient(45deg, rgba(255,255,255,.08) 0 10px, transparent 10px 20px)",
         }}
       />
+
       <div aria-hidden className="absolute inset-0 -z-10 animate-pulse">
         <div className="absolute -top-10 -left-16 rotate-12 opacity-20 text-white">
           <PawPrint size={220} />
@@ -63,6 +50,9 @@ const GameScreen = () => {
           <PawPrint size={180} />
         </div>
       </div>
+
+      {/* Potty training HUD */}
+      <PottyTrainer />
 
       {/* skip link */}
       <a
@@ -79,6 +69,7 @@ const GameScreen = () => {
             <PawPrint className="shrink-0" />
             Doggerz
           </h1>
+
           <div className="hidden md:flex items-center gap-2">
             <ErrorBoundary name="AutoSave">
               <Suspense fallback={<span className="text-sm opacity-80">Saving…</span>}>
@@ -171,9 +162,9 @@ const GameScreen = () => {
             <div className="relative bg-black/20 rounded-3xl min-h-[420px] md:min-h-[520px] overflow-hidden shadow-xl">
               <ErrorBoundary name="DogArea">
                 <Suspense fallback={<DogAreaSkeleton />}>
-                  {/* Game world */}
                   <div className="absolute inset-0">
                     <Dog />
+                    {/* Splash overlay if you want it here; otherwise move to / route */}
                     <Suspense>
                       <Splash />
                     </Suspense>

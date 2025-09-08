@@ -1,8 +1,8 @@
-/* ===== Common vars ===== */
+/* src/components/UI/DogSprite.css */
 :root {
-  --frame-w: 256px;  /* match your sheet */
+  --frame-w: 256px;
   --frame-h: 256px;
-  --frames: 4;       /* columns per row */
+  --frames: 4;
 }
 
 /* =========================
@@ -13,12 +13,11 @@
   width: var(--frame-w);
   height: var(--frame-h);
   background-repeat: no-repeat;
-  image-rendering: pixelated;   /* crisp */
+  image-rendering: pixelated;
   will-change: background-position;
-  pointer-events: none;         /* so clicks pass through */
+  pointer-events: none;
 }
 
-/* apply this class when walking */
 .dog-sprite.is-walking {
   animation: dog-walk 0.6s steps(var(--frames)) infinite;
 }
@@ -42,18 +41,6 @@
   pointer-events: none;
 }
 
-/* =========================
-   B) CANVAS-BASED SPRITE (only if you use <canvas>)
-   ========================= */
-/* Keep canvas crisp & responsive without global canvas overrides */
-.dog-canvas {
-  display: block;
-  width: var(--frame-w);
-  height: var(--frame-h);
-  image-rendering: pixelated;
-}
-
-/* If you want the canvas to scale with its container */
 .dog-canvas.responsive {
   width: 100%;
   height: auto;

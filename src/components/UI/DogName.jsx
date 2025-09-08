@@ -1,4 +1,4 @@
-// src/components/DogName.jsx
+// src/components/UI/DogName.jsx
 import React, { useState, useRef, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { setDogName } from "../../redux/dogSlice.js";
@@ -78,4 +78,3 @@ const DogName = () => {
 };
 
 export default DogName;
-// src/components/UI/DogName.jsx
