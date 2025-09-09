@@ -1,149 +1,110 @@
-// src/redux/dogSlice.js
 import { createSlice } from "@reduxjs/toolkit";
 
-export const initialState = {
-  // Core needs
+const clamp = (n, lo = 0, hi = 100) => Math.max(lo, Math.min(hi, n));
+
+const initialState = {
+  name: "Pupper",
   happiness: 100,
   energy: 100,
   hunger: 100,
-
-  // Training/health
-  pottyLevel: 0,
+  cleanliness: 100,
+  mood: "idle",
+  poopCount: 0,
   isPottyTrained: false,
-  isDirty: false,
-  hasFleas: false,
-  hasMange: false,
-
-  // Progression
-  level: 1,
+  toys: ["Ball", "Rope", "Bone"],
+  learnedTricks: [],
   xp: 0,
-  xpNeeded: 100,
-
-  // Sprite-facing pose
-  x: 96,
-  y: 96,
-  direction: "down", // 'up' | 'down' | 'left' | 'right'
-  // Keep both flags for compatibility with different components
-  walking: false,     // <- canonical going forward
-  isWalking: false,   // <- backwards-compat alias
-  isRunning: false,
+  level: 1,
 };
-
-const clamp = (n, min = 0, max = 100) => Math.max(min, Math.min(max, n));
 
 const dogSlice = createSlice({
   name: "dog",
   initialState,
   reducers: {
-    // ---- Needs / care -------------------------------------------------------
-    feed(state, { payload = 15 }) {
-      state.hunger = clamp(state.hunger + payload);
+    loadState: (state, action) => {
+      // Replace state but keep unknown keys safe
+      return { ...state, ...action.payload };
+    },
+    setName: (state, action) => {
+      state.name = String(action.payload?.name ?? "").slice(0, 24) || "Pupper";
+    },
+    feed: (state) => {
+      state.hunger = clamp(state.hunger + 20);
+      state.cleanliness = clamp(state.cleanliness - 5);
       state.happiness = clamp(state.happiness + 5);
+      state.mood = "happy";
     },
-    play(state, { payload = 10 }) {
-      state.happiness = clamp(state.happiness + payload);
+    play: (state) => {
+      state.happiness = clamp(state.happiness + 12);
       state.energy = clamp(state.energy - 10);
-      state.hunger = clamp(state.hunger - 5);
-      state.isDirty = true;
+      state.hunger = clamp(state.hunger - 6);
+      state.mood = "happy";
     },
-    rest(state, { payload = 20 }) {
-      state.energy = clamp(state.energy + payload);
-      state.hunger = clamp(state.hunger - 5);
+    train: (state) => {
+      state.energy = clamp(state.energy - 12);
+      state.hunger = clamp(state.hunger - 8);
+      state.happiness = clamp(state.happiness + 4);
+      state.xp += 6;
+      if (state.xp >= state.level * 50) state.level += 1;
+      state.mood = "focused";
     },
-
-    // ---- Movement (simple step API used by MainGame.jsx) --------------------
-    startWalking(state) {
-      state.walking = true;
-      state.isWalking = true; // keep alias in sync
+    rest: (state) => {
+      state.energy = clamp(state.energy + 18);
+      state.happiness = clamp(state.happiness + 2);
+      state.mood = "sleeping";
     },
-    stopWalking(state) {
-      state.walking = false;
-      state.isWalking = false; // keep alias in sync
-      state.isRunning = false;
+    useToy: (state, action) => {
+      const toy = action.payload?.toy;
+      if (!toy) return;
+      state.happiness = clamp(state.happiness + 10);
+      state.energy = clamp(state.energy - 5);
+      state.mood = "happy";
     },
-    move(state, { payload = {} }) {
-      const { x = state.x, y = state.y, direction = state.direction, running = false } = payload;
-      state.x = x;
-      state.y = y;
-      state.direction = direction;
-      state.isRunning = !!running;
-      // Note: we do NOT change needs here; MainGame can call addXp/tick separately.
-    },
-
-    // ---- Movement (legacy "walk" that also adjusts needs) -------------------
-    walk(state, { payload = { dx: 0, dy: 0, direction: "down" } }) {
-      const { dx = 0, dy = 0, direction = "down", running = false } = payload;
-      state.x += dx;
-      state.y += dy;
-      state.direction = direction;
-      state.walking = !!(dx || dy);
-      state.isWalking = state.walking;
-      state.isRunning = !!running;
-      state.energy = clamp(state.energy - (running ? 6 : 2), 0, 100);
-      state.hunger = clamp(state.hunger - (running ? 3 : 1), 0, 100);
-      state.happiness = clamp(state.happiness + 1, 0, 100);
-      state.pottyLevel = clamp(state.pottyLevel + 2);
-    },
-
-    // ---- Hygiene / training -------------------------------------------------
-    bathe(state) {
-      state.isDirty = false;
-      state.hasFleas = false;
-    },
-    giveFleaTreatment(state) {
-      state.hasFleas = false;
-    },
-    pottyTrain(state, { payload = 10 }) {
-      state.pottyLevel = clamp(state.pottyLevel + payload);
-      if (state.pottyLevel >= 100) {
-        state.isPottyTrained = true;
-        state.pottyLevel = 100;
+    learnTrick: (state, action) => {
+      const trick = action.payload?.trick;
+      if (trick && !state.learnedTricks.includes(trick)) {
+        state.learnedTricks.push(trick);
+        state.happiness = clamp(state.happiness + 6);
+        state.xp += 10;
       }
+      state.mood = "proud";
     },
-
-    // ---- Progression --------------------------------------------------------
-    addXp(state, { payload = 10 }) {
-      state.xp += payload;
-      while (state.xp >= state.xpNeeded) {
-        state.xp -= state.xpNeeded;
-        state.level += 1;
-        state.xpNeeded = Math.round(state.xpNeeded * 1.15); // simple curve
-        state.happiness = clamp(state.happiness + 5);
-      }
+    pottyTrain: (state) => {
+      state.isPottyTrained = true;
+      state.happiness = clamp(state.happiness + 5);
+      state.mood = "proud";
     },
-
-    // ---- Ambient decay tick -------------------------------------------------
-    tick(state) {
-      state.energy = clamp(state.energy - 0.2);
-      state.hunger = clamp(state.hunger - 0.25);
-      state.happiness = clamp(state.happiness - 0.1);
-      state.pottyLevel = clamp(state.pottyLevel + 0.3);
+    scoopPoop: (state) => {
+      state.poopCount = Math.max(0, state.poopCount - 1);
+      state.cleanliness = clamp(state.cleanliness + 12);
+      state.mood = "relieved";
     },
-
-    resetDog() {
-      return { ...initialState };
+    tick: (state) => {
+      state.energy = clamp(state.energy - 1);
+      state.hunger = clamp(state.hunger - 1);
+      state.cleanliness = clamp(state.cleanliness - (state.poopCount > 0 ? 2 : 0.5));
+      if (Math.random() < 0.06) state.poopCount += 1;
+      if (state.energy < 25) state.mood = "tired";
+      else if (state.hunger < 25) state.mood = "hungry";
+      else state.mood = "idle";
     },
+    reset: () => initialState,
   },
 });
 
 export const {
-  // needs
+  loadState,
+  setName,
   feed,
   play,
+  train,
   rest,
-  // movement
-  startWalking,
-  stopWalking,
-  move,
-  walk,
-  // hygiene/training
-  bathe,
-  giveFleaTreatment,
+  useToy,
+  learnTrick,
   pottyTrain,
-  // progression/system
-  addXp,
+  scoopPoop,
   tick,
-  resetDog,
+  reset,
 } = dogSlice.actions;
 
 export default dogSlice.reducer;
