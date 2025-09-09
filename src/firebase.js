@@ -1,8 +1,9 @@
+// src/firebase.js
+import { initializeApp } from "firebase/app";
+import { getAuth, GoogleAuthProvider } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 
-// safe firebase initializer — uses VITE_ env vars and avoids runtime crashes when placeholders are present
-import { initializeApp } from 'firebase/app';
-
-const cfg = {
+const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
@@ -12,11 +13,8 @@ const cfg = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
-// do not initialize if apiKey is missing (prevents runtime crash with placeholder .env)
-let app = null;
-if (cfg.apiKey && cfg.apiKey !== 'yourKey') {
-  try { app = initializeApp(cfg); } catch (e) { /* ignore in dev */ }
-}
-
+const app = initializeApp(firebaseConfig);
+export const auth = getAuth(app);
+export const db = getFirestore(app);
+export const googleProvider = new GoogleAuthProvider();
 export default app;
-export { cfg as firebaseConfig };
