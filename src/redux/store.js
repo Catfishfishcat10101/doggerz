@@ -1,18 +1,12 @@
 import { configureStore } from "@reduxjs/toolkit";
-
-// Example placeholder reducer so the store is valid.
-// Replace with your real slices when ready:
-// import auth from "./slices/authSlice";
-// import game from "./slices/gameSlice";
+import userReducer from "./userSlice";
+import dogReducer from "./dogSlice";
 
 export const store = configureStore({
   reducer: {
-    // auth,
-    // game,
+    user: userReducer,
+    dog: dogReducer,
   },
-});
-
-// Optional: quick dev debug
-if (import.meta.env.DEV) {
-  window.__STORE__ = store;
-}
+  devTools: process.env.NODE_ENV !== "production",
+});false
+export default store;

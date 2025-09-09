@@ -1,10 +1,12 @@
-import React, { Suspense, lazy, useCallback } from "react";
+// src/components/UI/GameScreen.jsx
+import React, { Suspense, lazy, useCallback, useState } from "react";
 import { ChevronDown, PawPrint, LogOut, RefreshCcw, Gamepad } from "lucide-react";
 import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
 import ErrorBoundary from "../common/ErrorBoundary";
 import { StatsBarSkeleton, PanelSkeleton, DogAreaSkeleton } from "../common/Skeletons";
-import PottyTrainer from "../Features/PottyTrainer.jsx"; // <-- fixed
+import PottyTrainer from "../Features/PottyTrainer.jsx";
 
+// Lazy UI modules (ensure these files exist with the exact names/paths)
 const Splash = lazy(() => import("./Splash.jsx"));
 const DogName = lazy(() => import("./DogName.jsx"));
 const Controls = lazy(() => import("./Controls.jsx"));
@@ -20,6 +22,10 @@ const CleanlinessBar = lazy(() => import("./CleanlinessBar.jsx"));
 const PoopScoop = lazy(() => import("./PoopScoop.jsx"));
 
 const GameScreen = () => {
+  // Mobile overlay toggle for Controls
+  const [showControls, setShowControls] = useState(true);
+
+  // Example keyboard hook usage
   const handleClearPoops = useCallback(() => {
     console.log("Poops cleared");
   }, []);
@@ -33,15 +39,17 @@ const GameScreen = () => {
       className="min-h-screen relative overflow-x-hidden bg-gradient-to-br from-emerald-500 via-cyan-500 to-sky-600 text-white"
       data-testid="game-screen"
     >
+      {/* Decorative overlay pushed behind everything and non-interactive */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-[0.15] [mask-image:radial-gradient(ellipse_at_center,black_40%,transparent_70%)]"
+        className="pointer-events-none absolute inset-0 -z-10 opacity-[0.15] [mask-image:radial-gradient(ellipse_at_center,black_40%,transparent_70%)]"
         style={{
           backgroundImage:
             "repeating-linear-gradient(45deg, rgba(255,255,255,.08) 0 10px, transparent 10px 20px)",
         }}
       />
 
+      {/* Background paw silhouettes */}
       <div aria-hidden className="absolute inset-0 -z-10 animate-pulse">
         <div className="absolute -top-10 -left-16 rotate-12 opacity-20 text-white">
           <PawPrint size={220} />
@@ -51,10 +59,10 @@ const GameScreen = () => {
         </div>
       </div>
 
-      {/* Potty training HUD */}
+      {/* Potty training HUD (absolute component) */}
       <PottyTrainer />
 
-      {/* skip link */}
+      {/* Skip link for a11y */}
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 bg-black/70 px-3 py-2 rounded-md"
@@ -62,8 +70,8 @@ const GameScreen = () => {
         Skip to game
       </a>
 
-      {/* header */}
-      <header className="relative z-10">
+      {/* Header */}
+      <header className="relative z-30">
         <div className="mx-auto w-full max-w-7xl px-4 py-4 flex items-center justify-between">
           <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight drop-shadow-sm flex items-center gap-3">
             <PawPrint className="shrink-0" />
@@ -106,7 +114,7 @@ const GameScreen = () => {
         </div>
       </header>
 
-      {/* top stat bars */}
+      {/* Top stat bars */}
       <section aria-label="Stats" className="mx-auto w-full max-w-7xl px-4">
         <ErrorBoundary name="StatsBar">
           <Suspense fallback={<StatsBarSkeleton />}>
@@ -123,7 +131,7 @@ const GameScreen = () => {
         </ErrorBoundary>
       </section>
 
-      {/* main grid */}
+      {/* Main grid */}
       <main id="main" role="main" className="mx-auto w-full max-w-7xl px-4 py-4 md:py-6">
         <div className="grid grid-cols-12 gap-4 md:gap-6">
           {/* Left rail */}
@@ -162,9 +170,10 @@ const GameScreen = () => {
             <div className="relative bg-black/20 rounded-3xl min-h-[420px] md:min-h-[520px] overflow-hidden shadow-xl">
               <ErrorBoundary name="DogArea">
                 <Suspense fallback={<DogAreaSkeleton />}>
-                  <div className="absolute inset-0">
+                  {/* Game world sits at base layer so overlays can be clickable */}
+                  <div className="absolute inset-0 z-0">
                     <Dog />
-                    {/* Splash overlay if you want it here; otherwise move to / route */}
+                    {/* Optional: if your Splash should only be on "/" route, move this into the Splash route instead */}
                     <Suspense>
                       <Splash />
                     </Suspense>
@@ -173,7 +182,7 @@ const GameScreen = () => {
               </ErrorBoundary>
 
               {/* Poop scoop zone (click / keyboard) */}
-              <div className="absolute bottom-3 right-3 z-10">
+              <div className="absolute bottom-3 right-3 z-20">
                 <ErrorBoundary name="PoopScoop">
                   <Suspense fallback={null}>
                     <PoopScoop onClear={handleClearPoops} />
@@ -181,14 +190,16 @@ const GameScreen = () => {
                 </ErrorBoundary>
               </div>
 
-              {/* Controls overlay button */}
-              <div className="absolute top-3 left-3 z-10">
-                <ErrorBoundary name="Controls">
-                  <Suspense fallback={null}>
-                    <Controls />
-                  </Suspense>
-                </ErrorBoundary>
-              </div>
+              {/* Controls overlay */}
+              {showControls && (
+                <div className="absolute top-3 left-3 z-20">
+                  <ErrorBoundary name="Controls">
+                    <Suspense fallback={null}>
+                      <Controls />
+                    </Suspense>
+                  </ErrorBoundary>
+                </div>
+              )}
             </div>
           </section>
 
@@ -213,12 +224,16 @@ const GameScreen = () => {
         </div>
       </main>
 
-      {/* mobile dock */}
-      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 md:hidden z-20">
+      {/* Mobile dock */}
+      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 md:hidden z-30">
         <div className="flex gap-2 bg-black/40 backdrop-blur px-3 py-2 rounded-2xl shadow-lg">
-          <button className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/10">
+          <button
+            onClick={() => setShowControls((v) => !v)}
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/10"
+          >
             <Gamepad size={18} /> Controls
           </button>
+
           <ErrorBoundary name="Reset-md">
             <Suspense fallback={<button className="px-3 py-2 rounded-xl bg-white/10">…</button>}>
               <ResetGame>
