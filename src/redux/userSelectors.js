@@ -1,4 +1,5 @@
-export const selectUser = (state) => state.user;
-export const selectUserId = (state) => state.user?.id ?? null;
-export const selectUserEmail = (state) => state.user?.email ?? null;
-export const selectIsAuthed = (state) => Boolean(state.user?.id);
+// src/redux/userSelectors.js
+export const selectUser = (s) => s.user;
+export const selectIsAuthed = (s) => Boolean(s.user?.id);
+export const selectUserId = (s) => s.user?.id ?? null;
+export const selectEmail = (s) => s.user?.email ?? null;
