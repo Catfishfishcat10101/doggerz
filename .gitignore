@@ -97,3 +97,9 @@ src_backup/        # remove from tracking if it was committed before
 *.tmp
 *.swp
 *.tgz              # npm pack tarballs
+NUL
+CON
+PRN
+AUX
+COM1
+LPT
