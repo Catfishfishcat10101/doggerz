@@ -1,31 +1,83 @@
-/* src/index.css */
+/* Tailwind v4 entry */
+@import "tailwindcss";
+@plugin "@tailwindcss/forms";
+
+/* Theme tokens (tweak to your brand) */
 :root {
-  color-scheme: light dark;
-  --bg: #0f172a; /* slate-900 */
-  --panel: rgba(0,0,0,0.3);
-  --text: #ffffff;
-  --muted: rgba(255,255,255,0.7);
-  --ring: rgba(59,130,246,0.6);
+  --doggerz-purple-1: #5a00c8;
+  --doggerz-purple-2: #7a2bd4;
+  --doggerz-indigo: #3a6bd9;
+  --doggerz-teal: #00d1b2;
+  --doggerz-yellow: #ffc022;
+  --glass-bg: rgba(255, 255, 255, 0.08);
+  --glass-brd: rgba(255, 255, 255, 0.18);
 }
 
-* { box-sizing: border-box; }
-html, body, #root { height: 100%; margin: 0; }
-body { background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"; }
+/* Animated multi-stop gradient */
+.animated-gradient {
+  background:
+    radial-gradient(1200px 800px at 10% 10%, rgba(255,255,255,.08), transparent 60%),
+    radial-gradient(1200px 800px at 90% 20%, rgba(255,255,255,.06), transparent 60%),
+    linear-gradient(120deg, var(--doggerz-purple-1), var(--doggerz-purple-2), var(--doggerz-indigo), var(--doggerz-teal));
+  background-size: 200% 200%;
+  animation: gradient-pan 16s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animated-gradient { animation: none; }
+}
+@keyframes gradient-pan {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
 
-a { color: inherit; text-decoration: none; }
-button { font: inherit; }
+/* Frosted glass card */
+.glass-card {
+  @apply rounded-3xl border px-6 py-8 shadow-2xl backdrop-blur-md;
+  background: var(--glass-bg);
+  border-color: var(--glass-brd);
+}
 
-.container { max-width: 1120px; margin-inline: auto; padding: 1rem; }
-.card { background: var(--panel); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 1rem; }
+/* Big primary CTA with glossy “shine” */
+.btn-start {
+  @apply inline-flex items-center justify-center rounded-2xl px-6 py-3 text-lg font-semibold shadow-lg transition;
+  background: linear-gradient(180deg, #ffd76b, var(--doggerz-yellow));
+  color: #3b2b00;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  position: relative;
+  isolation: isolate;
+}
+.btn-start:hover { transform: translateY(-2px); }
+.btn-start:active { transform: translateY(0); }
+.btn-start::after {
+  /* moving sheen */
+  content: "";
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(120deg, rgba(255,255,255,0) 20%, rgba(255,255,255,.45) 50%, rgba(255,255,255,0) 80%);
+  transform: translateX(-120%);
+  animation: sheen 2.6s ease-in-out infinite;
+  border-radius: inherit;
+  z-index: -1;
+  pointer-events: none;
+  mix-blend-mode: soft-light;
+}
+@keyframes sheen {
+  0% { transform: translateX(-120%); }
+  40% { transform: translateX(120%); }
+  100% { transform: translateX(120%); }
+}
 
-.bar { height: 8px; width: 100%; border-radius: 999px; background: rgba(255,255,255,0.2); overflow: hidden; }
-.bar > span { display: block; height: 100%; background: #fff; }
-
-kbd {
-  background: rgba(255,255,255,0.1);
-  border: 1px solid rgba(255,255,255,0.2);
-  border-bottom-width: 2px;
-  padding: 0.1rem 0.35rem;
-  border-radius: 6px;
-  font-size: 0.85em;
+/* Floating paw particles */
+.paw-float {
+  display: inline-block;
+  animation-name: pawRise;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  filter: drop-shadow(0 6px 12px rgba(0,0,0,.18));
+}
+@keyframes pawRise {
+  0%   { transform: translateY(0) scale(0.9) rotate(var(--rot, 0deg)); opacity: 0; }
+  10%  { opacity: .65; }
+  100% { transform: translateY(-115vh) scale(1.05) rotate(var(--rot, 0deg)); opacity: 0; }
 }
