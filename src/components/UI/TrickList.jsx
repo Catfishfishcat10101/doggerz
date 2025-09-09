@@ -1,45 +1,37 @@
-// src/components/UI/TrickList.jsx
 import React, { useMemo } from "react";
-import { useSelector } from "react-redux";
+const ALL_TRICKS = ["Sit", "Stay", "Roll Over", "High Five", "Speak"];
 
-export default function TrickList() {
-  // Always fall back to empty array to avoid crashes
-  const tricksRaw = useSelector((state) => state.dog.tricksLearned || []);
-
-  // De-dupe, filter empties, and sort for a clean UI
-  const tricks = useMemo(
-    () =>
-      Array.from(new Set((tricksRaw || []).filter(Boolean)))
-        .map((t) => (typeof t === "string" ? t : t?.name ?? "")) // supports objects later
-        .filter(Boolean)
-        .sort((a, b) => a.localeCompare(b)),
-    [tricksRaw]
+export default function TrickList({ learnedTricks = [], onLearnTrick = () => {} }) {
+  const learnable = useMemo(
+    () => ALL_TRICKS.filter((t) => !learnedTricks.includes(t)),
+    [learnedTricks]
   );
 
-  const empty = tricks.length === 0;
-
   return (
-    <div
-      className="bg-white/10 backdrop-blur-md p-4 rounded shadow-md w-full mx-auto text-white"
-      aria-live="polite"
-      aria-label="Learned tricks"
-    >
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="text-lg font-bold">🎓 Learned Tricks</h3>
-        <span className="text-sm opacity-80">{tricks.length}</span>
-      </div>
-
-      {empty ? (
-        <p className="text-sm text-white/70">
-          No tricks learned yet. Train your dog to unlock tricks!
-        </p>
-      ) : (
-        <ul className="list-disc list-inside text-sm space-y-1">
-          {tricks.map((trick) => (
-            <li key={trick}>{trick}</li>
-          ))}
-        </ul>
+    <div className="rounded-xl bg-slate-900/40 p-4">
+      <h3 className="font-semibold mb-2">Tricks</h3>
+      {learnedTricks.length > 0 && (
+        <div className="mb-3 text-sm">
+          <span className="opacity-70">Learned:</span>{" "}
+          <span className="font-medium">{learnedTricks.join(", ")}</span>
+        </div>
       )}
+      <ul className="space-y-2">
+        {learnable.map((t) => (
+          <li key={t} className="flex items-center justify-between">
+            <span>{t}</span>
+            <button
+              className="text-xs rounded-lg border border-slate-600 px-2 py-1 hover:bg-slate-700"
+              onClick={() => onLearnTrick(t)}
+            >
+              Train
+            </button>
+          </li>
+        ))}
+        {learnable.length === 0 && (
+          <li className="text-sm opacity-70">All tricks learned!</li>
+        )}
+      </ul>
     </div>
   );
 }
