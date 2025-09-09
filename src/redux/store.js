@@ -1,12 +1,8 @@
 import { configureStore } from "@reduxjs/toolkit";
-import userReducer from "./userSlice";
-import dogReducer from "./dogSlice";
+import user from "./userSlice";
+import dog from "./dogSlice";
 
 export const store = configureStore({
-  reducer: {
-    user: userReducer,
-    dog: dogReducer,
-  },
+  reducer: { user, dog },
   devTools: process.env.NODE_ENV !== "production",
-});false
-export default store;
+});
