@@ -1,9 +1,8 @@
-// src/main.jsx
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { Provider } from "react-redux";
 import { store } from "./redux/store";
-import AuthProvider from "./context/AuthProvider.jsx"; // <-- no braces (default import)
+import AuthProvider from "./context/AuthProvider.jsx"; // <-- no braces
 import App from "./App.jsx";
 import "./index.css";
 
