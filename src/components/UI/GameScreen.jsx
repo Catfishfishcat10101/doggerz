@@ -92,6 +92,9 @@ export default function GameScreen() {
       <audio ref={audioRef} src={barkSfx} preload="auto" />
 
       {/* HUD */}
+      
+      <Link to="/shop" className="px-3 py-2 text-sm rounded-xl bg-white shadow hover:shadow-md active:scale-95">🛒 Shop</Link>
+      <Link to="/accessories" className="px-3 py-2 text-sm rounded-xl bg-white shadow hover:shadow-md active:scale-95">🧢 Accessories</Link>
       <div className="w-full max-w-4xl px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <span className="font-semibold text-emerald-900">Happiness</span>

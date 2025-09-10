@@ -1,5 +1,5 @@
 // src/components/Features/Shop.jsx
-import React from "react";
+import React, { useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import {
@@ -11,9 +11,13 @@ import {
   selectBuffs,
   selectCoins,
   selectCosmetics,
+  selectShopSaleEnds,
   selectUnlocks,
   spendCoins,
+  startShopSale,
+  unlockAccessory,
   unlockBackyardSkin,
+  equipAccessory,
 } from "../../redux/dogSlice";
 
 const ITEMS = [
@@ -22,12 +26,7 @@ const ITEMS = [
     title: "Happy Snack",
     desc: "+15 happiness now & 10 min +25% happiness gains.",
     cost: 15,
-    onBuy: (dispatch) => {
-      dispatch(grantBuff({ kind: "happiness", minutes: 10 }));
-      // immediate nudge happens where you award happiness in gameplay; buff scales those gains
-      // if you want an immediate boost too:
-      dispatch(addCoins(0)); // no-op to force autosave timing if needed
-    },
+    onBuy: (dispatch) => { dispatch(grantBuff({ kind: "happiness", minutes: 10 })); },
   },
   {
     id: "xp_treat",
@@ -41,20 +40,41 @@ const ITEMS = [
     title: "Backyard Skin: Lush",
     desc: "Greener, prettier yard. Cosmetic only.",
     cost: 100,
-    onBuy: (dispatch) => {
-      dispatch(unlockBackyardSkin({ skin: "lush" }));
-      dispatch(equipBackyardSkin({ skin: "lush" }));
-    },
+    onBuy: (dispatch) => { dispatch(unlockBackyardSkin({ skin: "lush" })); dispatch(equipBackyardSkin({ skin: "lush" })); },
   },
 ];
+
+const STARTER_BUNDLE = {
+  id: "starter_bundle",
+  title: "Starter Bundle",
+  desc: "15m XP boost + 15m Happiness boost + Lush Skin + Red Collar",
+  price: 120,
+  salePrice: 79,
+  grant: (dispatch) => {
+    dispatch(grantBuff({ kind: "xp", minutes: 15 }));
+    dispatch(grantBuff({ kind: "happiness", minutes: 15 }));
+    dispatch(unlockBackyardSkin({ skin: "lush" }));
+    dispatch(equipBackyardSkin({ skin: "lush" }));
+    dispatch(unlockAccessory({ id: "collar_red" }));
+    dispatch(equipAccessory({ slot: "collar", id: "collar_red" }));
+  },
+};
 
 export default function Shop() {
   const dispatch = useDispatch();
   const coins = useSelector(selectCoins);
   const buffs = useSelector(selectBuffs);
-  const owned = useSelector((s) => new Set(selectCosmetics(s).ownedSkins));
+  const ownedSkins = useSelector((s) => new Set(selectCosmetics(s).ownedSkins));
   const equippedSkin = useSelector(selectBackyardSkin);
   const unlocks = useSelector(selectUnlocks);
+  const saleEndsAt = useSelector(selectShopSaleEnds);
+
+  // Start a timed sale if none is active (3 hours)
+  useEffect(() => {
+    if (!saleEndsAt) dispatch(startShopSale({ minutes: 180 }));
+  }, [saleEndsAt, dispatch]);
+
+  const saleLeft = useMemo(() => timeLeft(saleEndsAt), [saleEndsAt]);
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-amber-50 to-emerald-100 flex flex-col items-center">
@@ -71,7 +91,29 @@ export default function Shop() {
         </div>
       )}
 
-      <div className="w-full max-w-5xl px-4 grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+      {/* Limited-time banner */}
+      {unlocks.shop && saleEndsAt && (
+        <div className="w-full max-w-5xl px-4">
+          <div className="rounded-2xl bg-gradient-to-r from-emerald-600 to-lime-500 text-white p-5 shadow flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div className="text-lg font-semibold">⏳ Limited-Time Offer: {STARTER_BUNDLE.title}</div>
+            <div className="text-sm opacity-90">{STARTER_BUNDLE.desc}</div>
+            <div className="flex items-center gap-3">
+              <div className="text-white font-bold">🪙 <s className="opacity-80">{STARTER_BUNDLE.price}</s> <span className="text-yellow-200">{STARTER_BUNDLE.salePrice}</span></div>
+              <div className="text-white/90 text-sm">Ends in {saleLeft}</div>
+              <BuyBtn
+                canBuy={coins >= STARTER_BUNDLE.salePrice}
+                onClick={() => {
+                  if (coins < STARTER_BUNDLE.salePrice) return;
+                  dispatch(spendCoins(STARTER_BUNDLE.salePrice));
+                  STARTER_BUNDLE.grant(dispatch);
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="w-full max-w-5xl px-4 grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
         <Wallet coins={coins} buffs={buffs} />
         <DailyClaim onClaim={() => dispatch(claimDailyReward({ now: Date.now(), amount: 20 }))} />
       </div>
@@ -79,7 +121,7 @@ export default function Shop() {
       <div className="w-full max-w-5xl px-4 grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
         {ITEMS.map((it) => {
           const isSkin = it.id.startsWith("backyard_");
-          const alreadyOwned = isSkin ? owned.has(it.id.split("_")[1]) || owned.has("lush") : false;
+          const alreadyOwned = isSkin ? ownedSkins.has("lush") : false;
           const canBuy = unlocks.shop && coins >= it.cost && !alreadyOwned;
           return (
             <div key={it.id} className="rounded-2xl bg-white shadow p-5 flex flex-col">
@@ -97,11 +139,7 @@ export default function Shop() {
                 ) : (
                   <button
                     className={`px-3 py-1 rounded-lg ${canBuy ? "bg-emerald-600 text-white hover:shadow-md active:scale-95" : "bg-gray-200 text-gray-500 cursor-not-allowed"} shadow`}
-                    onClick={() => {
-                      if (!canBuy) return;
-                      dispatch(spendCoins(it.cost));
-                      it.onBuy(dispatch);
-                    }}
+                    onClick={() => { if (!canBuy) return; dispatch(spendCoins(it.cost)); it.onBuy(dispatch); }}
                   >
                     Buy
                   </button>
@@ -122,31 +160,33 @@ function Wallet({ coins, buffs }) {
     <div className="rounded-2xl bg-white shadow p-5">
       <div className="text-sm text-emerald-900/70">Coins</div>
       <div className="text-2xl font-bold text-emerald-700">🪙 {coins}</div>
-      <div className="mt-3 text-sm text-emerald-900/70">
-        XP Boost: <b>{xpLeft}</b> • Happiness Boost: <b>{happyLeft}</b>
-      </div>
+      <div className="mt-3 text-sm text-emerald-900/70">XP Boost: <b>{xpLeft}</b> • Happiness Boost: <b>{happyLeft}</b></div>
     </div>
   );
 }
-
 function DailyClaim({ onClaim }) {
   return (
     <div className="rounded-2xl bg-white shadow p-5">
       <div className="text-sm text-emerald-900/70">Daily Treat</div>
       <div className="text-2xl font-bold text-emerald-700">+20</div>
-      <button onClick={onClaim} className="mt-3 px-3 py-1 rounded-lg bg-emerald-600 text-white shadow hover:shadow-md active:scale-95">
-        Claim
-      </button>
+      <button onClick={onClaim} className="mt-3 px-3 py-1 rounded-lg bg-emerald-600 text-white shadow hover:shadow-md active:scale-95">Claim</button>
       <div className="text-xs text-emerald-900/60 mt-2">Claim once per day to build your streak.</div>
     </div>
   );
 }
-
+function BuyBtn({ canBuy, onClick }) {
+  return (
+    <button className={`px-4 py-2 rounded-xl ${canBuy ? "bg-yellow-300 text-emerald-900 hover:shadow-md active:scale-95" : "bg-gray-300 text-gray-600 cursor-not-allowed"} shadow`} onClick={onClick}>
+      Get Bundle
+    </button>
+  );
+}
 function timeLeft(until) {
   if (!until) return "—";
   const ms = until - Date.now();
   if (ms <= 0) return "—";
-  const m = Math.floor(ms / 60000);
+  const h = Math.floor(ms / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
   const s = Math.floor((ms % 60000) / 1000);
-  return `${m}m ${s}s`;
+  return `${h}h ${m}m ${s}s`;
 }

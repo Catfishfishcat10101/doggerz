@@ -7,3 +7,8 @@
   image-rendering: pixelated;
   image-rendering: crisp-edges;
 }
+/* Smooth pixel art anywhere you add className="smooth" */
+.smooth {
+  image-rendering: auto;
+}
+/* Example usage: <div className="pixelated bg-gray-200 p-4">Pixelated Content</div> */

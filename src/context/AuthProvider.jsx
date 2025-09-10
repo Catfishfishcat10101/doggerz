@@ -31,3 +31,4 @@ export default function AuthProvider({ children }) {
 }
 
 export function useAuthCtx() { return useContext(AuthCtx); }
+// src/context/AuthProvider.jsx
