@@ -1,46 +1,52 @@
 // src/components/UI/DogSprite.jsx
-import React from "react";
-import "./DogSprite.css"; // <- your CSS is here
+import React, { memo, useMemo } from "react";
 import useSpriteAnimator from "../../hooks/useSpriteAnimator";
-import spriteSheet from "../../assets/sprites/jack_russell_sheet.png"; // make sure this filename matches exactly
+import "./DogSprite.css";
+import spritePng from "../../assets/sprites/jack_russell_directions.png";
 
-// sheet rows (top->bottom)
-const ROW = { down: 0, left: 1, right: 2, up: 3 };
+/**
+ * Directions are rows: 0=down,1=left,2=right,3=up
+ */
+const DIR_ROW = { down: 0, left: 1, right: 2, up: 3 };
 
-export default function DogSprite({
-  x = 96,
-  y = 96,
+function DogSprite({
+  size = 96,
   direction = "down",
-  walking = false,
-  cols = 4,          // frames per row
-  rows = 4,          // total rows
-  frameWidth = 256,  // source cell width in px
-  frameHeight = 256, // source cell height in px
-  scale = 0.75,      // visual size multiplier
-  fps = 8,
-  sheet = spriteSheet,
-  showShadow = true,
+  isWalking = false,
+  frameWidth = 64,
+  frameHeight = 64,
+  frameCount = 4,
+  frameRate = 8,
+  idleFrame = 0,
 }) {
-  const frame = useSpriteAnimator({ fps, frames: cols, playing: walking });
-  const row = ROW[direction] ?? 0;
+  const dirRow = DIR_ROW[direction] ?? 0;
 
-  const style = {
-    position: "absolute",
-    transform: `translate(${x}px, ${y}px)`,
-    width: `${frameWidth * scale}px`,
-    height: `${frameHeight * scale}px`,
-    backgroundImage: `url(${sheet})`,
-    backgroundRepeat: "no-repeat",
-    // pick the current cell in the sheet
-    backgroundPosition: `-${frame * frameWidth}px -${row * frameHeight}px`,
-    backgroundSize: `${cols * frameWidth}px ${rows * frameHeight}px`,
-    imageRendering: "pixelated",
-    pointerEvents: "none",
-  };
+  const { frame, getBackgroundPosition } = useSpriteAnimator({
+    isPlaying: isWalking,
+    frameCount,
+    frameRate,
+    idleFrame,
+  });
+
+  const style = useMemo(() => {
+    return {
+      width: `${size}px`,
+      height: `${size}px`,
+      backgroundImage: `url(${spritePng})`,
+      backgroundRepeat: "no-repeat",
+      ...getBackgroundPosition({ frameWidth, frameHeight, directionRow: dirRow }),
+      backgroundSize: "auto", // each tile is fixed frameWidth/height in the sheet
+      imageRendering: "pixelated",
+    };
+  }, [size, frameWidth, frameHeight, dirRow, getBackgroundPosition]);
 
   return (
-    <div className="dog-sprite" aria-label="dog" style={style}>
-      {showShadow && <div className="dog-shadow" />}
-    </div>
+    <div
+      className="dog-sprite select-none"
+      aria-label={`dog facing ${direction} frame ${frame}`}
+      style={style}
+    />
   );
 }
+
+export default memo(DogSprite);

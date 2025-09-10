@@ -1,29 +1,24 @@
 // src/App.jsx
 import React, { Suspense, lazy } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import ProtectedRoute from "./routes/ProtectedRoute";
 
+const Splash = lazy(() => import("./components/UI/Splash"));
+const GameScreen = lazy(() => import("./components/UI/GameScreen"));
+
+// Keep your existing Auth components & paths if already present:
 const Login = lazy(() => import("./components/Auth/Login"));
 const Signup = lazy(() => import("./components/Auth/Signup"));
-const GameScreen = lazy(() => import("./components/UI/GameScreen")); // <- your main game
 
 export default function App() {
   return (
     <BrowserRouter>
-      <Suspense fallback={<div className="min-h-screen bg-gradient-to-b from-gray-200 to-blue-100" />}>
+      <Suspense fallback={<div className="p-8 text-center">Loading…</div>}>
         <Routes>
-          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/" element={<Splash />} />
+          <Route path="/game" element={<GameScreen />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
-          <Route
-            path="/game"
-            element={
-              <ProtectedRoute>
-                <GameScreen />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="*" element={<Navigate to="/login" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
     </BrowserRouter>

@@ -17,6 +17,12 @@
   padding: 1rem;
 }
 
+/* Crisp pixel art across the app */
+.pixelated {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
 /* safe utility groupings that DO work with @apply */
 .card {
   @apply rounded-xl shadow p-4;

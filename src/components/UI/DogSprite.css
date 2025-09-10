@@ -1,47 +1,8 @@
 /* src/components/UI/DogSprite.css */
-:root {
-  --frame-w: 256px;
-  --frame-h: 256px;
-  --frames: 4;
-}
-
-/* =========================
-   A) DIV-BASED SPRITE (current)
-   ========================= */
 .dog-sprite {
-  position: absolute;
-  width: var(--frame-w);
-  height: var(--frame-h);
-  background-repeat: no-repeat;
+  /* crisp pixels on all browsers */
   image-rendering: pixelated;
-  will-change: background-position;
-  pointer-events: none;
-}
-
-.dog-sprite.is-walking {
-  animation: dog-walk 0.6s steps(var(--frames)) infinite;
-}
-
-@keyframes dog-walk {
-  from { background-position-x: 0; }
-  to   { background-position-x: calc(var(--frame-w) * -1 * var(--frames)); }
-}
-
-/* optional: subtle shadow under the dog */
-.dog-shadow {
-  position: absolute;
-  left: 50%;
-  bottom: 6px;
-  transform: translateX(-50%);
-  width: 58%;
-  height: 10px;
-  background: rgba(0,0,0,.28);
-  filter: blur(4px);
-  border-radius: 999px;
-  pointer-events: none;
-}
-
-.dog-canvas.responsive {
-  width: 100%;
-  height: auto;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  will-change: background-position, transform;
 }

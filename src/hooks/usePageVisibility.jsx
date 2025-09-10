@@ -1,19 +1,35 @@
-// src/components/UI/hooks/usePageVisibility.js
+// src/hooks/usePageVisibility.jsx
 import { useEffect, useState } from "react";
 
 /**
- * True when the tab/app is visible. Falls back to true if API missing.
+ * React hook for Page Visibility API.
+ * - Returns `isVisible`
+ * - Optional callbacks: onShow, onHide
+ *
+ * Example:
+ *   const isVisible = usePageVisibility({
+ *     onHide: () => queueAutoSave(),
+ *     onShow: () => flushPending(),
+ *   });
  */
-export default function usePageVisibility() {
-  const [visible, setVisible] = useState(
-    typeof document !== "undefined" ? !document.hidden : true
+export default function usePageVisibility({ onShow, onHide } = {}) {
+  const [isVisible, setIsVisible] = useState(
+    typeof document !== "undefined" ? document.visibilityState !== "hidden" : true
   );
 
   useEffect(() => {
-    const handler = () => setVisible(!document.hidden);
-    document.addEventListener("visibilitychange", handler);
-    return () => document.removeEventListener("visibilitychange", handler);
-  }, []);
+    if (typeof document === "undefined") return;
 
-  return visible;
+    const onChange = () => {
+      const visible = document.visibilityState !== "hidden";
+      setIsVisible(visible);
+      if (visible) onShow?.();
+      else onHide?.();
+    };
+
+    document.addEventListener("visibilitychange", onChange);
+    return () => document.removeEventListener("visibilitychange", onChange);
+  }, [onShow, onHide]);
+
+  return isVisible;
 }
