@@ -1,24 +1,29 @@
+/* src/styles/index.css */
+
 /* Tailwind v4 entry */
 @import "tailwindcss";
 @plugin "@tailwindcss/forms";
 
-/* Theme tokens (tweak to your brand) */
-:root {
-  --doggerz-purple-1: #5a00c8;
-  --doggerz-purple-2: #7a2bd4;
-  --doggerz-indigo: #3a6bd9;
-  --doggerz-teal: #00d1b2;
-  --doggerz-yellow: #ffc022;
-  --glass-bg: rgba(255, 255, 255, 0.08);
-  --glass-brd: rgba(255, 255, 255, 0.18);
-}
+/* Global layers */
+@import "./tokens.css";
+@import "./base.css";
+@import "./animations.css";
+
+/* Shared “component” utility classes */
+@import "./components/controls.css";
+@import "./components/modals.css";
+@import "./components/status.css";
+
+/* -----------------------------------------------------------
+   Flair utilities (from your snippet; kept generic + “natural”)
+   ----------------------------------------------------------- */
 
 /* Animated multi-stop gradient */
 .animated-gradient {
   background:
     radial-gradient(1200px 800px at 10% 10%, rgba(255,255,255,.08), transparent 60%),
     radial-gradient(1200px 800px at 90% 20%, rgba(255,255,255,.06), transparent 60%),
-    linear-gradient(120deg, var(--doggerz-purple-1), var(--doggerz-purple-2), var(--doggerz-indigo), var(--doggerz-teal));
+    linear-gradient(120deg, #718096, #4a5568, #2d3748, #22543d);
   background-size: 200% 200%;
   animation: gradient-pan 16s ease-in-out infinite;
 }
@@ -34,15 +39,15 @@
 /* Frosted glass card */
 .glass-card {
   @apply rounded-3xl border px-6 py-8 shadow-2xl backdrop-blur-md;
-  background: var(--glass-bg);
-  border-color: var(--glass-brd);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.18);
 }
 
 /* Big primary CTA with glossy “shine” */
 .btn-start {
   @apply inline-flex items-center justify-center rounded-2xl px-6 py-3 text-lg font-semibold shadow-lg transition;
-  background: linear-gradient(180deg, #ffd76b, var(--doggerz-yellow));
-  color: #3b2b00;
+  background: linear-gradient(180deg, #f6e05e, #ecc94b); /* amber */
+  color: #1a202c;
   border: 1px solid rgba(255, 255, 255, 0.35);
   position: relative;
   isolation: isolate;
@@ -50,7 +55,6 @@
 .btn-start:hover { transform: translateY(-2px); }
 .btn-start:active { transform: translateY(0); }
 .btn-start::after {
-  /* moving sheen */
   content: "";
   position: absolute;
   inset: -2px;
