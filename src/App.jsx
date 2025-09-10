@@ -1,25 +1,31 @@
+// src/App.jsx
 import React, { Suspense, lazy } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
-import ProtectedRoute from "@routes/ProtectedRoute";
-import AuthProvider from "@context/AuthProvider";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import ProtectedRoute from "./routes/ProtectedRoute";
 
-const Splash = lazy(() => import("@components/UI/Splash"));
-const AuthPage = lazy(() => import("@pages/Auth"));
-const GameScreen = lazy(() => import("@components/UI/GameScreen"));
+const Login = lazy(() => import("./components/Auth/Login"));
+const Signup = lazy(() => import("./components/Auth/Signup"));
+const GameScreen = lazy(() => import("./components/UI/GameScreen")); // <- your main game
 
 export default function App() {
   return (
-    <AuthProvider>
-      <Suspense fallback={<div className="p-8">Loading…</div>}>
+    <BrowserRouter>
+      <Suspense fallback={<div className="min-h-screen bg-gradient-to-b from-gray-200 to-blue-100" />}>
         <Routes>
-          <Route path="/" element={<Splash />} />
-          <Route path="/auth" element={<AuthPage />} />
-          <Route element={<ProtectedRoute />}>
-            <Route path="/game" element={<GameScreen />} />
-          </Route>
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route
+            path="/game"
+            element={
+              <ProtectedRoute>
+                <GameScreen />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </Suspense>
-    </AuthProvider>
+    </BrowserRouter>
   );
 }
