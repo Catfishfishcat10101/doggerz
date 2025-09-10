@@ -1,53 +1,66 @@
-import React, { useRef } from "react";
+// src/components/UI/Splash.jsx
+import React, { useRef, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import "./Splash.css";
 
 export default function Splash() {
-  const nav = useNavigate();
+  const navigate = useNavigate();
   const audioRef = useRef(null);
+  const [canPlay, setCanPlay] = useState(false);
+
+  // Mobile browsers need a user gesture for audio — enable after first tap
+  useEffect(() => {
+    const enableAudio = () => setCanPlay(true);
+    window.addEventListener("pointerdown", enableAudio, { once: true });
+    return () => window.removeEventListener("pointerdown", enableAudio);
+  }, []);
 
   const bark = () => {
-    const a = audioRef.current;
-    if (!a) return;
-    a.currentTime = 0;
-    a.play().catch(() => {}); // ignore autoplay errors
+    if (!canPlay) return;
+    audioRef.current?.currentTime && (audioRef.current.currentTime = 0);
+    audioRef.current?.play().catch(() => {});
   };
 
   return (
-    <main className="min-h-screen grid place-items-center relative overflow-hidden">
-      {/* Background sparkle */}
-      <div className="absolute inset-0 bg-gradient-to-b from-indigo-900 via-slate-900 to-black" />
-      {/* Dog + Title */}
-      <section className="relative z-10 w-full max-w-xl mx-auto text-center card p-8">
-        <div
-          className="mx-auto w-40 h-40 rounded-full bg-white/20 grid place-items-center select-none"
-          onClick={bark}
-        >
-          {/* Emoji dog = no asset required; animated */}
-          <div
-            className="text-6xl"
-            style={{ animation: "dog-bounce 1.8s ease-in-out infinite" }}
-          >
-            🐶
-          </div>
+    <div className="splash bg-gradient-to-b from-sky-200 to-indigo-200 text-center">
+      {/* Bark SFX (place file at /public/audio/bark.mp3) */}
+      <audio ref={audioRef} src="/audio/bark.mp3" preload="auto" />
+
+      {/* Title + Tagline */}
+      <header className="splash-header">
+        <h1 className="splash-title">Doggerz</h1>
+        <p className="splash-tag">The most realistic virtual dog simulator.</p>
+      </header>
+
+      {/* Dog running track (click/tap to bark) */}
+      <div className="puppy-stage" onPointerDown={bark} onClick={bark}>
+        <div className="puppy-track">
+          {/* You can swap this emoji for an <img> sprite if you prefer */}
+          <div className="puppy" aria-label="excited dog" title="Tap to bark!">🐶</div>
         </div>
+        <div className="tap-note">Tap anywhere to bark 🐾</div>
+      </div>
 
-        <h1 className="mt-6 text-4xl font-extrabold tracking-tight">Doggerz</h1>
-        <p className="mt-2 text-slate-300">
-          The most realistic virtual dog: potty training, tricks, aging, stats & milestones.
-        </p>
+      {/* CTA buttons */}
+      <div className="cta">
+        <button className="btn btn-primary" onClick={() => navigate("/signup")}>
+          Sign up
+        </button>
+        <button className="btn btn-ghost" onClick={() => navigate("/login")}>
+          Sign in
+        </button>
+      </div>
 
-        <div className="mt-8 flex items-center justify-center gap-3">
-          <button className="btn btn-primary" onClick={() => nav("/auth?tab=signup")}>
-            Sign Up
-          </button>
-          <button className="btn btn-secondary" onClick={() => nav("/auth?tab=signin")}>
-            Sign In
-          </button>
-        </div>
-      </section>
-
-      {/* Bark audio from /public/bark.mp3 */}
-      <audio ref={audioRef} src="/bark.mp3" preload="auto" />
-    </main>
+      {/* Footer bits */}
+      <footer className="splash-foot">
+        <ul className="pillrow">
+          <li>Potty training</li>
+          <li>Tricks</li>
+          <li>Aging</li>
+          <li>Stats & Levels</li>
+          <li>Milestones</li>
+        </ul>
+      </footer>
+    </div>
   );
 }
