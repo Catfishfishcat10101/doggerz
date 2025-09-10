@@ -1,4 +1,3 @@
-// src/App.jsx
 import React, { Suspense, lazy } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
@@ -9,7 +8,7 @@ const TricksTrainer = lazy(() => import("./components/Features/TricksTrainer"));
 const StatsPanel = lazy(() => import("./components/Features/StatsPanel"));
 const Shop = lazy(() => import("./components/Features/Shop"));
 const Breeding = lazy(() => import("./components/Features/Breeding"));
-const Accessories = lazy(() => import("./components/Features/Accessories")); // ← add this
+const Accessories = lazy(() => import("./components/Features/Accessories"));
 const Login = lazy(() => import("./components/Auth/Login"));
 const Signup = lazy(() => import("./components/Auth/Signup"));
 
@@ -27,7 +26,7 @@ export default function App() {
         {/* Meta / economy */}
         <Route path="/stats" element={<StatsPanel />} />
         <Route path="/shop" element={<Shop />} />
-        <Route path="/accessories" element={<Accessories />} /> {/* ← accessories route */}
+        <Route path="/accessories" element={<Accessories />} />
         <Route path="/breed" element={<Breeding />} />
 
         {/* Auth */}
@@ -40,4 +39,3 @@ export default function App() {
     </Suspense>
   );
 }
-// Note: Ensure that the Accessories component is created at src/components/Features/Accessories.jsx

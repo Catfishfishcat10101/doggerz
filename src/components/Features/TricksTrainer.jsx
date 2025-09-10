@@ -1,4 +1,3 @@
-// src/components/Features/TricksTrainer.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useDispatch } from "react-redux";
@@ -11,12 +10,12 @@ import {
   learnTrick,
 } from "../../redux/dogSlice";
 
-const TRICKS = /** @type {const} */ ([
+const TRICKS = [
   { name: "sit", label: "Sit", key: "s", type: "tap" },
   { name: "stay", label: "Stay", key: "k", type: "hold", holdSec: 1.5 },
   { name: "paw", label: "Paw", key: "p", type: "tap" },
   { name: "rollOver", label: "Roll Over", key: "r", type: "tap" },
-]);
+];
 
 export default function TricksTrainer() {
   const dispatch = useDispatch();
@@ -24,19 +23,13 @@ export default function TricksTrainer() {
 
   const [round, setRound] = useState(1);
   const [prompt, setPrompt] = useState(() => TRICKS[Math.floor(Math.random() * TRICKS.length)]);
-  const [timeLeft, setTimeLeft] = useState(3.0);  // seconds to act
-  const [holdLeft, setHoldLeft] = useState(0);    // for "stay"
+  const [timeLeft, setTimeLeft] = useState(3.0);
+  const [holdLeft, setHoldLeft] = useState(0);
   const [combo, setCombo] = useState(0);
   const [msg, setMsg] = useState("Press the right key in time!");
 
-  const difficulty = useMemo(() => {
-    // Scale: faster timers as combo grows; floor to keep it fair
-    const base = 3.0;
-    const min = 1.4;
-    return Math.max(min, base - combo * 0.1);
-  }, [combo]);
+  const difficulty = useMemo(() => Math.max(1.4, 3.0 - combo * 0.1), [combo]);
 
-  // New round
   const nextPrompt = () => {
     const next = TRICKS[Math.floor(Math.random() * TRICKS.length)];
     setPrompt(next);
@@ -45,7 +38,6 @@ export default function TricksTrainer() {
     setRound((r) => r + 1);
   };
 
-  // Decrement timers
   useEffect(() => {
     setTimeLeft((t) => Math.max(0, t - delta));
     if (prompt.type === "hold" && holdLeft > 0 && isHoldingRef.current) {
@@ -53,17 +45,14 @@ export default function TricksTrainer() {
     }
   }, [delta]); // eslint-disable-line
 
-  // Failure when timer runs out
   useEffect(() => {
     if (timeLeft > 0) return;
-    // failed the round
     setCombo(0);
     setMsg(`Too slow! Lost the round.`);
     dispatch(changeHappiness(-2));
     nextPrompt();
   }, [timeLeft]); // eslint-disable-line
 
-  // Key handling (tap or hold)
   const isHoldingRef = useRef(false);
 
   useKeyboardShortcuts(
@@ -72,7 +61,6 @@ export default function TricksTrainer() {
         if (prompt.type === "tap") {
           succeed(prompt.name);
         } else {
-          // start holding for "Stay"
           if (!isHoldingRef.current) {
             isHoldingRef.current = true;
             setMsg("Hold… hold…");
@@ -83,7 +71,6 @@ export default function TricksTrainer() {
     { enabled: true, preventDefault: true, allowRepeat: false }
   );
 
-  // Release handler for hold action
   useEffect(() => {
     const onKeyUp = (ev) => {
       if (prompt.type !== "hold") return;
@@ -91,7 +78,6 @@ export default function TricksTrainer() {
         if (holdLeft <= 0.02) {
           succeed(prompt.name);
         } else {
-          // released too soon
           isHoldingRef.current = false;
           setCombo(0);
           setMsg("Released too early! Try again.");
@@ -106,7 +92,6 @@ export default function TricksTrainer() {
 
   function succeed(trickName) {
     isHoldingRef.current = false;
-    // reward scales a bit with combo
     const deltaSkill = 2 + Math.floor(combo / 3);
     const xp = 5 + Math.floor(combo / 5);
     const coins = 3 + Math.floor(combo / 4);
@@ -121,15 +106,11 @@ export default function TricksTrainer() {
 
   return (
     <div className="min-h-screen w-full flex flex-col items-center bg-gradient-to-br from-indigo-50 to-purple-100">
-      {/* Header */}
       <div className="w-full max-w-4xl px-4 py-3 flex items-center justify-between">
         <h2 className="text-xl font-semibold text-indigo-900">Tricks Trainer</h2>
-        <Link to="/game" className="px-3 py-2 rounded-xl bg-white shadow hover:shadow-md active:scale-95">
-          ← Back to Game
-        </Link>
+        <Link to="/game" className="px-3 py-2 rounded-xl bg-white shadow hover:shadow-md active:scale-95">← Back to Game</Link>
       </div>
 
-      {/* Trainer Card */}
       <div className="w-full max-w-3xl px-4">
         <div className="rounded-2xl bg-white shadow p-6">
           <div className="flex items-center justify-between">
@@ -155,7 +136,6 @@ export default function TricksTrainer() {
             </div>
           </div>
 
-          {/* Hold progress for "Stay" */}
           {prompt.type === "hold" && (
             <div className="mt-6">
               <div className="text-sm text-indigo-900/70 mb-1">Hold meter</div>
@@ -168,10 +148,8 @@ export default function TricksTrainer() {
             </div>
           )}
 
-          {/* Status message */}
           <div className="mt-6 text-indigo-900">{msg}</div>
 
-          {/* Difficulty hint */}
           <div className="mt-2 text-xs text-indigo-900/60">
             Difficulty scales with combo. Sit (S), Stay (K hold), Paw (P), Roll Over (R).
           </div>

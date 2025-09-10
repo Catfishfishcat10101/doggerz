@@ -1,97 +1,46 @@
-// src/hooks/useGameClock.js
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /**
- * Game-time clock driven by requestAnimationFrame.
- * - Scales time with a speed multiplier (e.g., 1 = real-time, 2 = 2x faster).
- * - Pauses when tab is hidden (optional).
- * - Returns elapsed (seconds), delta (seconds), and start/stop controls.
+ * Game clock with requestAnimationFrame.
+ * @param {{running?:boolean, speed?:number, pauseOnHidden?:boolean}} opts
  */
-export default function useGameClock({
-  running = true,
-  speed = 1,
-  pauseOnHidden = true,
-} = {}) {
-  const [elapsed, setElapsed] = useState(0);   // total seconds since start (scaled)
-  const [delta, setDelta] = useState(0);       // seconds since last frame (scaled)
+export default function useGameClock({ running = true, speed = 1, pauseOnHidden = true } = {}) {
+  const [delta, setDelta] = useState(0); // seconds
+  const [mult, setMult] = useState(speed);
+  const rafRef = useRef(null);
+  const prevRef = useRef(performance.now());
 
-  const rafIdRef = useRef(null);
-  const lastTsRef = useRef(null);
-  const runningRef = useRef(running);
-  const speedRef = useRef(Math.max(0, speed));
+  useEffect(() => { setMult(speed); }, [speed]);
 
-  const frame = useCallback((ts) => {
-    if (!runningRef.current) return;
-
-    if (lastTsRef.current == null) {
-      lastTsRef.current = ts;
-      rafIdRef.current = requestAnimationFrame(frame);
-      return;
-    }
-
-    const realDeltaMs = ts - lastTsRef.current;
-    lastTsRef.current = ts;
-
-    // Convert ms -> s and scale by speed
-    const scaledDelta = (realDeltaMs / 1000) * speedRef.current;
-
-    setElapsed((e) => e + scaledDelta);
-    setDelta(scaledDelta);
-
-    rafIdRef.current = requestAnimationFrame(frame);
-  }, []);
-
-  const start = useCallback(() => {
-    if (runningRef.current) return;
-    runningRef.current = true;
-    lastTsRef.current = null;
-    rafIdRef.current = requestAnimationFrame(frame);
-  }, [frame]);
-
-  const stop = useCallback(() => {
-    runningRef.current = false;
-    if (rafIdRef.current) {
-      cancelAnimationFrame(rafIdRef.current);
-      rafIdRef.current = null;
-    }
-  }, []);
-
-  const setSpeed = useCallback((next) => {
-    speedRef.current = Math.max(0, Number(next) || 0);
-  }, []);
-
-  // Start/stop with `running` prop
   useEffect(() => {
-    runningRef.current = running;
-    if (running) {
-      lastTsRef.current = null;
-      rafIdRef.current = requestAnimationFrame(frame);
-    } else {
-      stop();
-    }
-    return () => stop();
-  }, [running, frame, stop]);
+    let active = true;
 
-  // Update speed prop
-  useEffect(() => {
-    setSpeed(speed);
-  }, [speed, setSpeed]);
+    const loop = (t) => {
+      if (!active) return;
+      const prev = prevRef.current || t;
+      const dt = (t - prev) / 1000 * mult;
+      prevRef.current = t;
+      setDelta(dt > 0 && dt < 1 ? dt : 0);
+      rafRef.current = requestAnimationFrame(loop);
+    };
 
-  // Optionally pause on page hidden
-  useEffect(() => {
-    if (!pauseOnHidden) return;
     const onVis = () => {
-      if (document.visibilityState === "hidden") {
-        stop();
-      } else if (runningRef.current) {
-        // restart only if supposed to be running
-        lastTsRef.current = null;
-        rafIdRef.current = requestAnimationFrame(frame);
+      if (pauseOnHidden && document.visibilityState === "hidden") {
+        prevRef.current = performance.now();
       }
     };
-    document.addEventListener("visibilitychange", onVis);
-    return () => document.removeEventListener("visibilitychange", onVis);
-  }, [pauseOnHidden, frame, stop]);
 
-  return { elapsed, delta, start, stop, setSpeed, running: runningRef.current, speed: speedRef.current };
+    if (running) {
+      prevRef.current = performance.now();
+      rafRef.current = requestAnimationFrame(loop);
+      document.addEventListener("visibilitychange", onVis);
+    }
+    return () => {
+      active = false;
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, [running, mult, pauseOnHidden]);
+
+  return { delta, setSpeed: setMult };
 }

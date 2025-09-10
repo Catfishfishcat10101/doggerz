@@ -1,67 +1,30 @@
-// src/hooks/useJitteredTimer.js
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
 /**
- * Fires on an interval with jitter (random +/- %) to avoid sync patterns.
- * Useful for idle animations, random barks, wagging, NPC ticks, etc.
- *
- * @param {object} options
- * @param {number} options.baseMs    Base interval in ms (e.g., 2000)
- * @param {number} options.jitter    0..1 (e.g., 0.25 = ±25% jitter)
- * @param {boolean} options.autoStart Start automatically
+ * Calls onTick repeatedly with jittered intervals.
+ * @param {{baseMs?:number, jitter?:number, autoStart?:boolean, onTick?:(count:number)=>void}} opts
  */
-export default function useJitteredTimer({ baseMs = 2000, jitter = 0.25, autoStart = true } = {}) {
-  const [count, setCount] = useState(0);
-  const [lastAt, setLastAt] = useState(null);
+export default function useJitteredTimer({ baseMs = 2000, jitter = 0.3, autoStart = false, onTick } = {}) {
+  const countRef = useRef(0);
   const timerRef = useRef(null);
-  const runningRef = useRef(false);
-  const baseRef = useRef(Math.max(0, baseMs));
-  const jitterRef = useRef(Math.max(0, Math.min(1, jitter)));
 
-  const schedule = useCallback(() => {
-    const base = baseRef.current;
-    const jit = jitterRef.current;
-    const delta = base * jit;
-    const ms = Math.floor(base + (Math.random() * 2 - 1) * delta); // base ± delta
+  const schedule = () => {
+    const j = Math.max(0, Math.min(1, jitter));
+    const dev = baseMs * j;
+    const wait = baseMs + (Math.random() * 2 - 1) * dev;
     timerRef.current = setTimeout(() => {
-      setCount((c) => c + 1);
-      setLastAt(Date.now());
-      if (runningRef.current) schedule();
-    }, Math.max(0, ms));
-  }, []);
+      countRef.current += 1;
+      onTick && onTick(countRef.current);
+      schedule();
+    }, Math.max(50, wait));
+  };
 
-  const start = useCallback(() => {
-    if (runningRef.current) return;
-    runningRef.current = true;
+  useEffect(() => {
+    if (!autoStart) return;
     schedule();
-  }, [schedule]);
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [baseMs, jitter, autoStart, onTick]);
 
-  const stop = useCallback(() => {
-    runningRef.current = false;
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-      timerRef.current = null;
-    }
-  }, []);
-
-  const restart = useCallback(() => {
-    stop();
-    start();
-  }, [stop, start]);
-
-  useEffect(() => {
-    baseRef.current = Math.max(0, baseMs);
-    jitterRef.current = Math.max(0, Math.min(1, jitter));
-    if (runningRef.current) {
-      // reschedule with new settings
-      restart();
-    }
-  }, [baseMs, jitter, restart]);
-
-  useEffect(() => {
-    if (autoStart) start();
-    return () => stop();
-  }, [autoStart, start, stop]);
-
-  return { tick: count, lastAt, running: runningRef.current, start, stop, restart };
+  return null;
 }

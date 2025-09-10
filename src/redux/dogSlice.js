@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 // src/redux/dogSlice.js
 import { createSlice, nanoid, createSelector } from "@reduxjs/toolkit";
 
@@ -9,6 +10,9 @@ import { createSlice, nanoid, createSelector } from "@reduxjs/toolkit";
  * - Tricks: learn/forget and per-trick XP
  * - Timestamps for simple cooldowns and login streak logic
  */
+=======
+import { createSlice } from "@reduxjs/toolkit";
+>>>>>>> Stashed changes
 
 const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
 const nowIso = () => new Date().toISOString();
@@ -23,14 +27,28 @@ const initialState = {
   breed: "Ridgeback",
   level: 1,
   xp: 0,
+<<<<<<< Updated upstream
   xpToNext: xpToNextFor(1),
   happiness: 60, // 0..100
   energy: 70,    // 0..100
+=======
+  ageDays: 0, // 1 per real day
+
+  // Training
+  potty: { level: 0, progress: 0, accidents: 0, lastAccidentAt: null },
+  tricks: { sit: 0, stay: 0, paw: 0, rollOver: 0 },
+
+  // Milestones
+  milestones: { firstBark: true, firstWalk: true, firstPotty: false, breedingPreview: false },
+
+  // Economy & retention
+>>>>>>> Stashed changes
   coins: 0,
   streak: 0,
   lastLoginDay: null, // "YYYY-MM-DD"
   lastUpdatedAt: nowIso(),
 
+<<<<<<< Updated upstream
   // Tricks are objects so we can track per-trick XP later (for mastery)
   tricks: [
     // { id: 'sit', name: 'Sit', xp: 15, mastered: false }
@@ -40,6 +58,23 @@ const initialState = {
     tricksLearned: 0,
     highestStreak: 0,
   },
+=======
+  // Session buffs & cosmetics
+  buffs: { xpBoostUntil: null, happinessBoostUntil: null },
+  cosmetics: {
+    backyardSkin: "default",
+    ownedSkins: ["default"],
+    accessories: {
+      owned: [],
+      equipped: { collar: null, hat: null },
+    },
+  },
+
+  // Shop limited-time sale
+  shopSaleEndsAt: null,
+
+  _meta: { lastLocalUpdateAt: 0 },
+>>>>>>> Stashed changes
 };
 
 const slice = createSlice({
@@ -215,3 +250,37 @@ export const {
 } = slice.actions;
 
 export default slice.reducer;
+<<<<<<< Updated upstream
+=======
+
+// Selectors
+export const selectDog = (s) => s.dog;
+export const selectPos = (s) => s.dog.pos;
+export const selectDirection = (s) => s.dog.direction;
+export const selectMoving = (s) => s.dog.moving;
+export const selectHappiness = (s) => s.dog.happiness;
+export const selectXP = (s) => ({ xp: s.dog.xp, level: s.dog.level, next: 100 * s.dog.level });
+export const selectCoins = (s) => s.dog.coins;
+export const selectUnlocks = (s) => {
+  const L = s.dog.level;
+  return { pottyTrainer: L >= 1, tricksTrainer: L >= 2, shop: L >= 3, backyardUpgrade: L >= 5, accessories: L >= 8, breeding: L >= 12 };
+};
+export const selectBuffs = (s) => s.dog.buffs;
+export const selectCosmetics = (s) => s.dog.cosmetics;
+export const selectBackyardSkin = (s) => s.dog.cosmetics.backyardSkin;
+export const selectAccessories = (s) => s.dog.cosmetics.accessories;
+export const selectShopSaleEnds = (s) => s.dog.shopSaleEndsAt;
+export const selectPotty = (s) => s.dog.potty;
+export const selectBladder = (s) => s.dog.bladder;
+export const selectTricks = (s) => s.dog.tricks;
+export const selectAgeDays = (s) => s.dog.ageDays;
+export const selectAgeStage = (s) => {
+  const d = s.dog.ageDays || 0;
+  if (d < 90) return "Puppy";
+  if (d < 730) return "Adult";
+  return "Senior";
+};
+export const selectStreak = (s) => s.dog.loginStreak;
+export const selectLastVisit = (s) => s.dog.lastVisitAt;
+export const selectLastClaim = (s) => s.dog.lastDailyClaimAt;
+>>>>>>> Stashed changes

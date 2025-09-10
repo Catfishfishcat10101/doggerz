@@ -1,4 +1,3 @@
-// src/components/UI/GameScreen.jsx
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
@@ -82,7 +81,6 @@ export default function GameScreen() {
         border: "2px solid rgba(16,185,129,0.25)",
       };
     }
-    // default
     return { width: WORLD_W, height: WORLD_H, backgroundColor: "rgba(6,95,70,0.05)" };
   }, [backyardSkin]);
 
@@ -92,9 +90,6 @@ export default function GameScreen() {
       <audio ref={audioRef} src={barkSfx} preload="auto" />
 
       {/* HUD */}
-      
-      <Link to="/shop" className="px-3 py-2 text-sm rounded-xl bg-white shadow hover:shadow-md active:scale-95">🛒 Shop</Link>
-      <Link to="/accessories" className="px-3 py-2 text-sm rounded-xl bg-white shadow hover:shadow-md active:scale-95">🧢 Accessories</Link>
       <div className="w-full max-w-4xl px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <span className="font-semibold text-emerald-900">Happiness</span>
@@ -108,6 +103,7 @@ export default function GameScreen() {
           <Link to="/train/potty" className="px-3 py-2 text-sm rounded-xl bg-white shadow hover:shadow-md active:scale-95">🚽 Potty</Link>
           <Link to="/train/tricks" className="px-3 py-2 text-sm rounded-xl bg-white shadow hover:shadow-md active:scale-95">🎓 Tricks</Link>
           <Link to="/breed" className="px-3 py-2 text-sm rounded-xl bg-white shadow hover:shadow-md active:scale-95">🐶 Breed</Link>
+          <Link to="/accessories" className="px-3 py-2 text-sm rounded-xl bg-white shadow hover:shadow-md active:scale-95">🧢 Accessories</Link>
           <Link to="/stats" className="px-3 py-2 text-sm rounded-xl bg-white shadow hover:shadow-md active:scale-95">📊 Stats</Link>
           <button {...holdPetBind} className="px-3 py-2 text-sm rounded-xl bg-white shadow hover:shadow-md active:scale-95">🐶 Pet</button>
           <button onClick={() => { bark(); dispatch(setHappiness(Math.min(100, happiness + 2))); dispatch(addXP(2)); }} className="px-3 py-2 text-sm rounded-xl bg-white shadow hover:shadow-md active:scale-95">🗣️ Bark</button>

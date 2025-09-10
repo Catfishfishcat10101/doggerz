@@ -1,9 +1,7 @@
-// src/components/Features/Shop.jsx
 import React, { useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import {
-  addCoins,
   claimDailyReward,
   equipBackyardSkin,
   grantBuff,
@@ -69,7 +67,6 @@ export default function Shop() {
   const unlocks = useSelector(selectUnlocks);
   const saleEndsAt = useSelector(selectShopSaleEnds);
 
-  // Start a timed sale if none is active (3 hours)
   useEffect(() => {
     if (!saleEndsAt) dispatch(startShopSale({ minutes: 180 }));
   }, [saleEndsAt, dispatch]);
@@ -91,7 +88,6 @@ export default function Shop() {
         </div>
       )}
 
-      {/* Limited-time banner */}
       {unlocks.shop && saleEndsAt && (
         <div className="w-full max-w-5xl px-4">
           <div className="rounded-2xl bg-gradient-to-r from-emerald-600 to-lime-500 text-white p-5 shadow flex flex-col md:flex-row md:items-center md:justify-between gap-3">
@@ -138,55 +134,3 @@ export default function Shop() {
                   </button>
                 ) : (
                   <button
-                    className={`px-3 py-1 rounded-lg ${canBuy ? "bg-emerald-600 text-white hover:shadow-md active:scale-95" : "bg-gray-200 text-gray-500 cursor-not-allowed"} shadow`}
-                    onClick={() => { if (!canBuy) return; dispatch(spendCoins(it.cost)); it.onBuy(dispatch); }}
-                  >
-                    Buy
-                  </button>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function Wallet({ coins, buffs }) {
-  const xpLeft = timeLeft(buffs.xpBoostUntil);
-  const happyLeft = timeLeft(buffs.happinessBoostUntil);
-  return (
-    <div className="rounded-2xl bg-white shadow p-5">
-      <div className="text-sm text-emerald-900/70">Coins</div>
-      <div className="text-2xl font-bold text-emerald-700">🪙 {coins}</div>
-      <div className="mt-3 text-sm text-emerald-900/70">XP Boost: <b>{xpLeft}</b> • Happiness Boost: <b>{happyLeft}</b></div>
-    </div>
-  );
-}
-function DailyClaim({ onClaim }) {
-  return (
-    <div className="rounded-2xl bg-white shadow p-5">
-      <div className="text-sm text-emerald-900/70">Daily Treat</div>
-      <div className="text-2xl font-bold text-emerald-700">+20</div>
-      <button onClick={onClaim} className="mt-3 px-3 py-1 rounded-lg bg-emerald-600 text-white shadow hover:shadow-md active:scale-95">Claim</button>
-      <div className="text-xs text-emerald-900/60 mt-2">Claim once per day to build your streak.</div>
-    </div>
-  );
-}
-function BuyBtn({ canBuy, onClick }) {
-  return (
-    <button className={`px-4 py-2 rounded-xl ${canBuy ? "bg-yellow-300 text-emerald-900 hover:shadow-md active:scale-95" : "bg-gray-300 text-gray-600 cursor-not-allowed"} shadow`} onClick={onClick}>
-      Get Bundle
-    </button>
-  );
-}
-function timeLeft(until) {
-  if (!until) return "—";
-  const ms = until - Date.now();
-  if (ms <= 0) return "—";
-  const h = Math.floor(ms / 3600000);
-  const m = Math.floor((ms % 3600000) / 60000);
-  const s = Math.floor((ms % 60000) / 1000);
-  return `${h}h ${m}m ${s}s`;
-}

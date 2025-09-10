@@ -1,4 +1,3 @@
-// src/components/Features/StatsPanel.jsx
 import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -6,7 +5,6 @@ import {
   claimDailyReward,
   registerDailyVisit,
   selectAgeDays,
-  selectAgeStage,
   selectCoins,
   selectDog,
   selectLastClaim,
@@ -16,6 +14,10 @@ import {
   selectTricks,
   selectXP,
   selectUnlocks,
+  selectBuffs,
+  selectBackyardSkin,
+  selectCosmetics,
+  selectShopSaleEnds,
 } from "../../redux/dogSlice";
 
 const Bar = ({ value, color }) => (
@@ -29,7 +31,6 @@ export default function StatsPanel() {
   const dog = useSelector(selectDog);
   const { xp, level, next } = useSelector(selectXP);
   const ageDays = useSelector(selectAgeDays);
-  const ageStage = useSelector(selectAgeStage);
   const potty = useSelector(selectPotty);
   const tricks = useSelector(selectTricks);
   const coins = useSelector(selectCoins);
@@ -37,8 +38,11 @@ export default function StatsPanel() {
   const lastVisit = useSelector(selectLastVisit);
   const lastClaim = useSelector(selectLastClaim);
   const unlocks = useSelector(selectUnlocks);
+  const buffs = useSelector(selectBuffs);
+  const skin = useSelector(selectBackyardSkin);
+  const cosmetics = useSelector(selectCosmetics);
+  const saleEnds = useSelector(selectShopSaleEnds);
 
-  // Register visit for streaks (mount)
   useEffect(() => {
     dispatch(registerDailyVisit({ now: Date.now() }));
   }, [dispatch]);
@@ -52,14 +56,12 @@ export default function StatsPanel() {
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-amber-50 to-rose-100 flex flex-col items-center">
-      {/* Header */}
       <div className="w-full max-w-5xl px-4 py-3 flex items-center justify-between">
         <h2 className="text-xl font-semibold text-rose-900">Milestones & Stats</h2>
         <Link to="/game" className="px-3 py-2 rounded-xl bg-white shadow hover:shadow-md active:scale-95">← Back to Game</Link>
       </div>
 
       <div className="w-full max-w-5xl px-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Level & XP */}
         <div className="rounded-2xl bg-white shadow p-5">
           <div className="flex items-center justify-between">
             <div>
@@ -71,16 +73,13 @@ export default function StatsPanel() {
               <div className="font-semibold">{xp} / {next}</div>
             </div>
           </div>
-          <div className="mt-3">
-            <Bar value={(xp / next) * 100} color="bg-rose-500" />
-          </div>
+          <div className="mt-3"><Bar value={(xp / next) * 100} color="bg-rose-500" /></div>
           <div className="mt-3 text-xs text-rose-900/60">
             Unlocks: {unlocks.shop ? "Shop (Lvl 3)" : "Shop at Lvl 3"}, {unlocks.backyardUpgrade ? "Backyard Upgrade (Lvl 5)" : "Backyard at Lvl 5"},
-            {` ${unlocks.accessories ? "Accessories (Lvl 8)" : "Accessories at Lvl 8)"}`}
+            {` ${unlocks.accessories ? "Accessories (Lvl 8)" : "Accessories at Lvl 8)"}`} {unlocks.breeding ? "• Breeding (Lvl 12)" : "• Breeding at Lvl 12"}
           </div>
         </div>
 
-        {/* Age & Stage */}
         <div className="rounded-2xl bg-white shadow p-5">
           <div className="flex items-center justify-between">
             <div>
@@ -88,16 +87,13 @@ export default function StatsPanel() {
               <div className="text-3xl font-extrabold text-rose-700">{ageDays} days</div>
             </div>
             <div className="text-right">
-              <div className="text-sm text-rose-900/70">Stage</div>
-              <div className="font-semibold">{ageStage}</div>
+              <div className="text-sm text-rose-900/70">Backyard Skin</div>
+              <div className="font-semibold">{skin}</div>
             </div>
           </div>
-          <div className="mt-3 text-xs text-rose-900/60">
-            Puppy &lt; 90 days • Adult 90–730 days • Senior 730+ days
-          </div>
+          <div className="mt-3 text-xs text-rose-900/60">Puppy &lt; 90 days • Adult 90–730 days • Senior 730+ days</div>
         </div>
 
-        {/* Needs */}
         <div className="rounded-2xl bg-white shadow p-5">
           <div className="text-lg font-semibold text-rose-900 mb-3">Needs</div>
           <div className="space-y-3">
@@ -109,7 +105,6 @@ export default function StatsPanel() {
           </div>
         </div>
 
-        {/* Potty & Tricks */}
         <div className="rounded-2xl bg-white shadow p-5">
           <div className="text-lg font-semibold text-rose-900 mb-3">Training</div>
           <div className="mb-4">
@@ -124,7 +119,6 @@ export default function StatsPanel() {
           </div>
         </div>
 
-        {/* Retention & Rewards */}
         <div className="rounded-2xl bg-white shadow p-5 md:col-span-2">
           <div className="flex items-center justify-between">
             <div>
@@ -151,7 +145,7 @@ export default function StatsPanel() {
           </div>
 
           <div className="mt-4 text-xs text-rose-900/50">
-            Last visit: {lastVisit ? new Date(lastVisit).toLocaleString() : "—"} • Last claim: {lastClaim ? new Date(lastClaim).toLocaleString() : "—"}
+            Sale ends: {saleEnds ? new Date(saleEnds).toLocaleString() : "—"} • Accessories owned: {cosmetics.accessories.owned.length}
           </div>
         </div>
       </div>

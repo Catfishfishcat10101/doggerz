@@ -1,66 +1,22 @@
-// src/hooks/useKeyPressed.js
 import { useEffect, useRef, useState } from "react";
 
 /**
- * Track whether a specific key (or any of a list) is currently pressed.
- *
- * Usage:
- *   const isLeft = useKeyPressed("arrowleft");
- *   const isMove = useKeyPressed(["arrowleft", "arrowright", "arrowup", "arrowdown"]);
+ * Returns true while any of the specified keys are down.
+ * @param {string|string[]} keys
  */
-export default function useKeyPressed(targetKeys, { target = typeof window !== "undefined" ? window : null } = {}) {
-  const [pressed, setPressed] = useState(false);
-  const keysRef = useRef(new Set());
+export default function useKeyPressed(keys) {
+  const list = Array.isArray(keys) ? keys.map((k) => k.toLowerCase()) : [String(keys).toLowerCase()];
+  const setRef = useRef(new Set());
+  const [, setTick] = useState(0);
 
   useEffect(() => {
-    const wanted = new Set(
-      (Array.isArray(targetKeys) ? targetKeys : [targetKeys])
-        .filter(Boolean)
-        .map((k) => String(k).toLowerCase())
-    );
+    const down = (e) => { setRef.current.add((e.key || "").toLowerCase()); setTick((t) => t + 1); };
+    const up = (e) => { setRef.current.delete((e.key || "").toLowerCase()); setTick((t) => t + 1); };
+    window.addEventListener("keydown", down);
+    window.addEventListener("keyup", up);
+    return () => { window.removeEventListener("keydown", down); window.removeEventListener("keyup", up); };
+  }, []);
 
-    if (!target) return;
-
-    const down = (e) => {
-      const key = (e.key || "").toLowerCase();
-      keysRef.current.add(key);
-      // If any target key is in set, mark pressed true
-      for (const w of wanted) {
-        if (keysRef.current.has(w)) {
-          setPressed(true);
-          return;
-        }
-      }
-    };
-
-    const up = (e) => {
-      const key = (e.key || "").toLowerCase();
-      keysRef.current.delete(key);
-      // If none of the targets are down, pressed -> false
-      for (const w of wanted) {
-        if (keysRef.current.has(w)) {
-          setPressed(true);
-          return;
-        }
-      }
-      setPressed(false);
-    };
-
-    const blur = () => {
-      keysRef.current.clear();
-      setPressed(false);
-    };
-
-    target.addEventListener("keydown", down);
-    target.addEventListener("keyup", up);
-    target.addEventListener?.("blur", blur);
-
-    return () => {
-      target.removeEventListener("keydown", down);
-      target.removeEventListener("keyup", up);
-      target.removeEventListener?.("blur", blur);
-    };
-  }, [targetKeys, target]);
-
+  const pressed = list.some((k) => setRef.current.has(k));
   return pressed;
 }

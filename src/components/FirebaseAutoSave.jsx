@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { auth, db } from "../../firebase";
+import { auth, db } from "../firebase";
 import { doc, setDoc, onSnapshot, serverTimestamp } from "firebase/firestore";
-import { loadState, selectDog } from "../../redux/dogSlice";
+import { loadState, selectDog } from "../redux/dogSlice";
 
 export default function FirebaseAutoSave() {
   const dispatch = useDispatch();
@@ -12,7 +12,6 @@ export default function FirebaseAutoSave() {
   const debounceRef = useRef(null);
   const unsubRef = useRef(null);
   const readyRef = useRef(false);
-  const writingRef = useRef(false);
 
   const stateForSave = useMemo(() => {
     const { _meta, _version, ...rest } = dog || {};
@@ -44,19 +43,9 @@ export default function FirebaseAutoSave() {
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(async () => {
-      try {
-        writingRef.current = true;
-        const ref = doc(db, "dogs", user.uid);
-        await setDoc(ref, {
-          version: 1,
-          clientId: clientIdRef.current,
-          updatedAt: serverTimestamp(),
-          state: stateForSave,
-        }, { merge: true });
-        lastSavedJsonRef.current = json;
-      } finally {
-        writingRef.current = false;
-      }
+      const ref = doc(db, "dogs", user.uid);
+      await setDoc(ref, { version: 1, clientId: clientIdRef.current, updatedAt: serverTimestamp(), state: stateForSave }, { merge: true });
+      lastSavedJsonRef.current = json;
     }, 400);
 
     return () => { debounceRef.current && clearTimeout(debounceRef.current); };

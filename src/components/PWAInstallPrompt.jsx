@@ -1,4 +1,3 @@
-// src/components/PWAInstallPrompt.jsx
 import React, { useEffect, useRef, useState } from "react";
 
 export default function PWAInstallPrompt() {
@@ -33,7 +32,7 @@ export default function PWAInstallPrompt() {
               const prompt = deferredRef.current;
               if (!prompt) return;
               prompt.prompt();
-              await prompt.userChoice; // accepted / dismissed
+              await prompt.userChoice;
               setVisible(false);
               deferredRef.current = null;
             }}

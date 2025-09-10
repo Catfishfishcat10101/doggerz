@@ -1,35 +1,17 @@
-// src/hooks/usePageVisibility.jsx
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 /**
- * React hook for Page Visibility API.
- * - Returns `isVisible`
- * - Optional callbacks: onShow, onHide
- *
- * Example:
- *   const isVisible = usePageVisibility({
- *     onHide: () => queueAutoSave(),
- *     onShow: () => flushPending(),
- *   });
+ * Visibility helpers.
+ * @param {{onShow?:()=>void, onHide?:()=>void}} opts
  */
 export default function usePageVisibility({ onShow, onHide } = {}) {
-  const [isVisible, setIsVisible] = useState(
-    typeof document !== "undefined" ? document.visibilityState !== "hidden" : true
-  );
-
   useEffect(() => {
-    if (typeof document === "undefined") return;
-
-    const onChange = () => {
-      const visible = document.visibilityState !== "hidden";
-      setIsVisible(visible);
-      if (visible) onShow?.();
-      else onHide?.();
+    const onVis = () => {
+      if (document.visibilityState === "visible") onShow && onShow();
+      else onHide && onHide();
     };
-
-    document.addEventListener("visibilitychange", onChange);
-    return () => document.removeEventListener("visibilitychange", onChange);
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
   }, [onShow, onHide]);
-
-  return isVisible;
+  return document.visibilityState === "visible";
 }
