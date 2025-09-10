@@ -1,5 +1,7 @@
+// src/components/UI/GameScreen.jsx
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { Link } from "react-router-dom";
 import useGameClock from "../../hooks/useGameClock";
 import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
 import useKeyPressed from "../../hooks/useKeyPressed";
@@ -34,9 +36,8 @@ export default function GameScreen() {
   const up = useKeyPressed(["arrowup", "w"]);
   const down = useKeyPressed(["arrowdown", "s"]);
 
-  const { bind: holdPetBind } = useHoldRepeat(() => {
-    dispatch(changeHappiness(+1)); dispatch(addXP(1));
-  }, { initialDelay: 200, interval: 80 });
+  const { bind: holdPetBind } = useHoldRepeat(() => { dispatch(changeHappiness(+1)); dispatch(addXP(1)); },
+    { initialDelay: 200, interval: 80 });
 
   useKeyboardShortcuts({ b: () => bark(), "shift+.": () => setSpeed(2), ".": () => setSpeed(1) },
     { enabled: true, preventDefault: true });
@@ -72,6 +73,7 @@ export default function GameScreen() {
       <FirebaseAutoSave />
       <audio ref={audioRef} src={barkSfx} preload="auto" />
 
+      {/* HUD */}
       <div className="w-full max-w-4xl px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <span className="font-semibold text-emerald-900">Happiness</span>
@@ -79,13 +81,17 @@ export default function GameScreen() {
             <div className={`h-3 ${barColor} rounded`} style={{ width: `${happiness}%` }} />
           </div>
         </div>
+
         <div className="flex items-center gap-2">
-          <button {...holdPetBind} className="px-3 py-2 text-sm rounded-xl bg-white shadow hover:shadow-md active:scale-95" title="Hold to pet!">🐶 Pet</button>
-          <button onClick={() => { bark(); dispatch(setHappiness(Math.min(100, happiness + 2))); dispatch(addXP(2)); }}
-                  className="px-3 py-2 text-sm rounded-xl bg-white shadow hover:shadow-md active:scale-95" title="Bark (B)">🗣️ Bark</button>
+          <Link to="/train/potty" className="px-3 py-2 text-sm rounded-xl bg-white shadow hover:shadow-md active:scale-95">🚽 Potty</Link>
+          <Link to="/train/tricks" className="px-3 py-2 text-sm rounded-xl bg-white shadow hover:shadow-md active:scale-95">🎓 Tricks</Link>
+          <Link to="/stats" className="px-3 py-2 text-sm rounded-xl bg-white shadow hover:shadow-md active:scale-95">📊 Stats</Link>
+          <button {...holdPetBind} className="px-3 py-2 text-sm rounded-xl bg-white shadow hover:shadow-md active:scale-95">🐶 Pet</button>
+          <button onClick={() => { bark(); dispatch(setHappiness(Math.min(100, happiness + 2))); dispatch(addXP(2)); }} className="px-3 py-2 text-sm rounded-xl bg-white shadow hover:shadow-md active:scale-95">🗣️ Bark</button>
         </div>
       </div>
 
+      {/* World */}
       <div className="w-full max-w-4xl px-4">
         <div className="relative rounded-2xl bg-emerald-900/5 shadow-inner" style={{ width: WORLD_W, height: WORLD_H }}>
           <div className="absolute transition-transform will-change-transform" style={{ transform: `translate(${pos.x}px, ${pos.y}px)` }}>
