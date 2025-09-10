@@ -1,29 +1,9 @@
-/* Tailwind v4 entry */
-@import "tailwindcss";
-@plugin "@tailwindcss/forms";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-/* ---- no slash-opacity inside @apply ---- */
-/* Replaces things like: @apply bg-white/10 border-white/20 backdrop-blur; */
-:root {
-  --glass-rgb: 255 255 255;
-}
-.glass {
-  background-color: rgb(var(--glass-rgb) / 0.10);   /* was bg-white/10 */
-  border: 1px solid rgb(var(--glass-rgb) / 0.20);   /* was border-white/20 */
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
-  border-radius: 0.75rem; /* rounded-xl */
-  box-shadow: 0 10px 25px rgb(0 0 0 / 0.10);
-  padding: 1rem;
-}
-
-/* Crisp pixel art across the app */
+/* Crisp pixel art anywhere you add className="pixelated" */
 .pixelated {
   image-rendering: pixelated;
   image-rendering: crisp-edges;
-}
-
-/* safe utility groupings that DO work with @apply */
-.card {
-  @apply rounded-xl shadow p-4;
 }

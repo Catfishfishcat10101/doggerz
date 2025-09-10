@@ -1,6 +1,4 @@
-/* src/components/UI/DogSprite.css */
 .dog-sprite {
-  /* crisp pixels on all browsers */
   image-rendering: pixelated;
   image-rendering: -moz-crisp-edges;
   image-rendering: crisp-edges;

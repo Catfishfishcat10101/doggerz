@@ -7,13 +7,11 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "src"),
-      "@assets": path.resolve(__dirname, "src/assets"),
       "@components": path.resolve(__dirname, "src/components"),
-      "@pages": path.resolve(__dirname, "src/pages"),
       "@redux": path.resolve(__dirname, "src/redux"),
-      "@routes": path.resolve(__dirname, "src/routes"),
-      "@styles": path.resolve(__dirname, "src/styles"),
-      "@context": path.resolve(__dirname, "src/context"),
-    },
+      "@hooks": path.resolve(__dirname, "src/hooks"),
+      "@assets": path.resolve(__dirname, "src/assets")
+    }
   },
+  base: "/"
 });
