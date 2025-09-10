@@ -1,136 +1,41 @@
-import React, { useEffect, useMemo } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { Link } from "react-router-dom";
-import {
-  claimDailyReward,
-  equipBackyardSkin,
-  grantBuff,
-  selectBackyardSkin,
-  selectBuffs,
-  selectCoins,
-  selectCosmetics,
-  selectShopSaleEnds,
-  selectUnlocks,
-  spendCoins,
-  startShopSale,
-  unlockAccessory,
-  unlockBackyardSkin,
-  equipAccessory,
-} from "../../redux/dogSlice";
-
-const ITEMS = [
-  {
-    id: "happy_snack",
-    title: "Happy Snack",
-    desc: "+15 happiness now & 10 min +25% happiness gains.",
-    cost: 15,
-    onBuy: (dispatch) => { dispatch(grantBuff({ kind: "happiness", minutes: 10 })); },
-  },
-  {
-    id: "xp_treat",
-    title: "XP Treat",
-    desc: "10 min XP boost (×1.5 to XP gains).",
-    cost: 25,
-    onBuy: (dispatch) => dispatch(grantBuff({ kind: "xp", minutes: 10 })),
-  },
-  {
-    id: "backyard_lush",
-    title: "Backyard Skin: Lush",
-    desc: "Greener, prettier yard. Cosmetic only.",
-    cost: 100,
-    onBuy: (dispatch) => { dispatch(unlockBackyardSkin({ skin: "lush" })); dispatch(equipBackyardSkin({ skin: "lush" })); },
-  },
-];
-
-const STARTER_BUNDLE = {
-  id: "starter_bundle",
-  title: "Starter Bundle",
-  desc: "15m XP boost + 15m Happiness boost + Lush Skin + Red Collar",
-  price: 120,
-  salePrice: 79,
-  grant: (dispatch) => {
-    dispatch(grantBuff({ kind: "xp", minutes: 15 }));
-    dispatch(grantBuff({ kind: "happiness", minutes: 15 }));
-    dispatch(unlockBackyardSkin({ skin: "lush" }));
-    dispatch(equipBackyardSkin({ skin: "lush" }));
-    dispatch(unlockAccessory({ id: "collar_red" }));
-    dispatch(equipAccessory({ slot: "collar", id: "collar_red" }));
-  },
-};
+// src/components/Features/Shop.jsx
+import React, { useState } from "react";
 
 export default function Shop() {
-  const dispatch = useDispatch();
-  const coins = useSelector(selectCoins);
-  const buffs = useSelector(selectBuffs);
-  const ownedSkins = useSelector((s) => new Set(selectCosmetics(s).ownedSkins));
-  const equippedSkin = useSelector(selectBackyardSkin);
-  const unlocks = useSelector(selectUnlocks);
-  const saleEndsAt = useSelector(selectShopSaleEnds);
+  const [items] = useState([
+    { id: 1, name: "Bone", price: 10, desc: "Boost happiness for one session." },
+    { id: 2, name: "Ball", price: 20, desc: "Increases play XP for one session." },
+    { id: 3, name: "Training Whistle", price: 50, desc: "Boosts training XP for one session." },
+  ]);
 
-  useEffect(() => {
-    if (!saleEndsAt) dispatch(startShopSale({ minutes: 180 }));
-  }, [saleEndsAt, dispatch]);
-
-  const saleLeft = useMemo(() => timeLeft(saleEndsAt), [saleEndsAt]);
+  const handleBuy = (item) => {
+    alert(`You bought a ${item.name} for ${item.price} coins!`);
+    // TODO: hook into Redux / Dog state for real XP or happiness buffs
+  };
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-amber-50 to-emerald-100 flex flex-col items-center">
-      <div className="w-full max-w-5xl px-4 py-3 flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-emerald-900">Shop</h2>
-        <Link to="/game" className="px-3 py-2 rounded-xl bg-white shadow hover:shadow-md active:scale-95">← Back to Game</Link>
-      </div>
+    <div className="shop-container p-6 bg-gradient-to-b from-gray-100 to-gray-200 min-h-screen">
+      <h1 className="text-3xl font-bold mb-6 text-center">Shop</h1>
 
-      {!unlocks.shop && (
-        <div className="w-full max-w-5xl px-4">
-          <div className="rounded-xl bg-white shadow p-4 text-emerald-900">
-            Reach <b>Level 3</b> to unlock the shop.
-          </div>
-        </div>
-      )}
-
-      {unlocks.shop && saleEndsAt && (
-        <div className="w-full max-w-5xl px-4">
-          <div className="rounded-2xl bg-gradient-to-r from-emerald-600 to-lime-500 text-white p-5 shadow flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-            <div className="text-lg font-semibold">⏳ Limited-Time Offer: {STARTER_BUNDLE.title}</div>
-            <div className="text-sm opacity-90">{STARTER_BUNDLE.desc}</div>
-            <div className="flex items-center gap-3">
-              <div className="text-white font-bold">🪙 <s className="opacity-80">{STARTER_BUNDLE.price}</s> <span className="text-yellow-200">{STARTER_BUNDLE.salePrice}</span></div>
-              <div className="text-white/90 text-sm">Ends in {saleLeft}</div>
-              <BuyBtn
-                canBuy={coins >= STARTER_BUNDLE.salePrice}
-                onClick={() => {
-                  if (coins < STARTER_BUNDLE.salePrice) return;
-                  dispatch(spendCoins(STARTER_BUNDLE.salePrice));
-                  STARTER_BUNDLE.grant(dispatch);
-                }}
-              />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {items.map((item) => (
+          <div
+            key={item.id}
+            className="bg-white rounded-2xl shadow-lg p-4 flex flex-col justify-between"
+          >
+            <div>
+              <h2 className="text-xl font-semibold">{item.name}</h2>
+              <p className="text-gray-600 mb-2">{item.desc}</p>
             </div>
+            <button
+              onClick={() => handleBuy(item)}
+              className="mt-3 px-4 py-2 rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-medium transition"
+            >
+              Buy for {item.price} coins
+            </button>
           </div>
-        </div>
-      )}
-
-      <div className="w-full max-w-5xl px-4 grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-        <Wallet coins={coins} buffs={buffs} />
-        <DailyClaim onClaim={() => dispatch(claimDailyReward({ now: Date.now(), amount: 20 }))} />
+        ))}
       </div>
-
-      <div className="w-full max-w-5xl px-4 grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-        {ITEMS.map((it) => {
-          const isSkin = it.id.startsWith("backyard_");
-          const alreadyOwned = isSkin ? ownedSkins.has("lush") : false;
-          const canBuy = unlocks.shop && coins >= it.cost && !alreadyOwned;
-          return (
-            <div key={it.id} className="rounded-2xl bg-white shadow p-5 flex flex-col">
-              <div className="text-lg font-semibold text-emerald-900">{it.title}</div>
-              <div className="text-sm text-emerald-900/70 mt-1 flex-1">{it.desc}</div>
-              <div className="mt-3 flex items-center justify-between">
-                <div className="text-emerald-900 font-semibold">🪙 {it.cost}</div>
-                {isSkin && alreadyOwned ? (
-                  <button
-                    className={`px-3 py-1 rounded-lg ${equippedSkin === "lush" ? "bg-emerald-600 text-white" : "bg-emerald-100 text-emerald-700"} shadow`}
-                    onClick={() => dispatch(equipBackyardSkin({ skin: "lush" }))}
-                  >
-                    {equippedSkin === "lush" ? "Equipped" : "Equip"}
-                  </button>
-                ) : (
-                  <button
+    </div>
+  );
+}
