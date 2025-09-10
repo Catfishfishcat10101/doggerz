@@ -1,49 +1,33 @@
 /* src/styles/animations.css */
 
-:root {
-  --walk-distance: 12px;          /* how far the dog bobs horizontally */
-  --walk-speed: 600ms;            /* bob speed */
-  --ripple-color: rgba(255,255,255,.5);
+@keyframes wag {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(12deg); }
+  50% { transform: rotate(0deg); }
+  75% { transform: rotate(-12deg); }
+  100% { transform: rotate(0deg); }
 }
 
-/* Dog walk/bob (applies to the container; safe with sprite-sheet bg animation) */
-@keyframes dogWalk {
-  0%   { transform: translateX(0) scaleY(1); }
-  25%  { transform: translateX(calc(var(--walk-distance) / 2)) scaleY(1.05); }
-  50%  { transform: translateX(var(--walk-distance)) scaleY(1); }
-  75%  { transform: translateX(calc(var(--walk-distance) / 2)) scaleY(0.95); }
-  100% { transform: translateX(0) scaleY(1); }
-}
-.dog-walk-bob { animation: dogWalk var(--walk-speed) ease-in-out infinite; }
-
-/* Ripple (CSS-only using :active) */
-@keyframes ripple-effect { to { transform: scale(4); opacity: 0; } }
-.ripple-button {
-  position: relative;
-  overflow: hidden;
-  isolation: isolate; /* keep ripple under text */
-}
-.ripple-button::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  margin: auto;
-  width: 12px;
-  height: 12px;
-  border-radius: 999px;
-  background: var(--ripple-color);
-  opacity: 0;
-  transform: scale(0);
-  pointer-events: none;
-}
-.ripple-button:active::after {
-  opacity: .6;
-  animation: ripple-effect 550ms ease-out;
+@keyframes blink {
+  0%, 92%, 100% { transform: scaleY(1); }
+  94% { transform: scaleY(0.05); }
+  96% { transform: scaleY(1); }
 }
 
-/* Utility entrances */
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes breathe {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.03); }
+}
 
-.fade-in { animation: fadeIn .5s ease forwards; }
-.slide-up { animation: slideUp .6s ease forwards; }
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+
+@keyframes spin-slow { to { transform: rotate(360deg); } }
+
+.anim-wag        { animation: wag .9s ease-in-out infinite; transform-origin: 85% 90%; }
+.anim-blink      { animation: blink 4s linear infinite; transform-origin: 50% 50%; }
+.anim-breathe    { animation: breathe 3.6s ease-in-out infinite; }
+.anim-float      { animation: float 3s ease-in-out infinite; }
+.anim-spin-slow  { animation: spin-slow 8s linear infinite; }
