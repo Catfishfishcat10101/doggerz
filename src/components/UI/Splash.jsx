@@ -1,50 +1,53 @@
-// src/components/UI/Splash.jsx
-import React, { useEffect } from "react";
+import React, { useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import "./Splash.css";
-
-// Use the single good copies in Features:
-import DogSprite from "./DogSprite";
-
-
-// Local asset (put the image at: src/assets/backgrounds/yard_day.jpg)
-import bg from "../../assets/backgrounds/yard_day.jpg";
 
 export default function Splash() {
-  const navigate = useNavigate();
+  const nav = useNavigate();
+  const audioRef = useRef(null);
 
-  useEffect(() => {
-    const t1 = setTimeout(() => Sound.bark(), 700);
-    const t2 = setTimeout(() => Sound.bark(), 2200);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
-  }, []);
+  const bark = () => {
+    const a = audioRef.current;
+    if (!a) return;
+    a.currentTime = 0;
+    a.play().catch(() => {}); // ignore autoplay errors
+  };
 
   return (
-    <div className="splash-root">
-      <div className="splash-backdrop" style={{ backgroundImage: `url(${bg})` }} />
-      <div className="splash-overlay" />
-
-      <div className="splash-card">
-        <h1 className="logo">🐾 Doggerz</h1>
-        <p className="tag">The most realistic virtual dog sim—raise, train, love, and play!</p>
-
-        <div className="dog-bounce" title="Woof!">
-          <DogSprite x={0} y={0} direction="down" isWalking={false} size={96} />
+    <main className="min-h-screen grid place-items-center relative overflow-hidden">
+      {/* Background sparkle */}
+      <div className="absolute inset-0 bg-gradient-to-b from-indigo-900 via-slate-900 to-black" />
+      {/* Dog + Title */}
+      <section className="relative z-10 w-full max-w-xl mx-auto text-center card p-8">
+        <div
+          className="mx-auto w-40 h-40 rounded-full bg-white/20 grid place-items-center select-none"
+          onClick={bark}
+        >
+          {/* Emoji dog = no asset required; animated */}
+          <div
+            className="text-6xl"
+            style={{ animation: "dog-bounce 1.8s ease-in-out infinite" }}
+          >
+            🐶
+          </div>
         </div>
 
-        <div className="cta-row">
-          <button className="btn primary" onClick={() => navigate("/auth?m=signup")}>Sign up</button>
-          <button className="btn" onClick={() => navigate("/auth")}>Sign in</button>
-          <button
-            className="btn ghost"
-            onClick={() => { Sound.bark(); navigate("/game"); }}
-          >
-            Continue
+        <h1 className="mt-6 text-4xl font-extrabold tracking-tight">Doggerz</h1>
+        <p className="mt-2 text-slate-300">
+          The most realistic virtual dog: potty training, tricks, aging, stats & milestones.
+        </p>
+
+        <div className="mt-8 flex items-center justify-center gap-3">
+          <button className="btn btn-primary" onClick={() => nav("/auth?tab=signup")}>
+            Sign Up
+          </button>
+          <button className="btn btn-secondary" onClick={() => nav("/auth?tab=signin")}>
+            Sign In
           </button>
         </div>
+      </section>
 
-        <p className="rights">© {new Date().getFullYear()} Doggerz. All rights reserved.</p>
-      </div>
-    </div>
+      {/* Bark audio from /public/bark.mp3 */}
+      <audio ref={audioRef} src="/bark.mp3" preload="auto" />
+    </main>
   );
 }
