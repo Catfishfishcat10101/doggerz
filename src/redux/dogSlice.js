@@ -41,13 +41,23 @@ export const initialState = {
   tricks: { sit: 0, stay: 0, paw: 0, rollOver: 0 },
 
   // Milestones
-  milestones: { firstBark: true, firstWalk: true, firstPotty: false },
+  milestones: { firstBark: true, firstWalk: true, firstPotty: false, breedingPreview: false },
 
   // Economy & retention
   coins: 0,
   loginStreak: 0,
   lastVisitAt: null,
   lastDailyClaimAt: null,
+
+  // Session buffs & cosmetics (can be persisted; buffs expire by timestamp)
+  buffs: {
+    xpBoostUntil: null,         // timestamp ms
+    happinessBoostUntil: null,  // timestamp ms
+  },
+  cosmetics: {
+    backyardSkin: "default",          // "default" | "lush"
+    ownedSkins: ["default"],
+  },
 
   _meta: { lastLocalUpdateAt: 0 },
 };
@@ -74,6 +84,10 @@ function normalizeLoadedState(raw) {
   s.lastVisitAt = s.lastVisitAt ?? null;
   s.lastDailyClaimAt = s.lastDailyClaimAt ?? null;
 
+  // Buffs & cosmetics defensive merge
+  s.buffs = { ...initialState.buffs, ...(raw?.buffs || {}) };
+  s.cosmetics = { ...initialState.cosmetics, ...(raw?.cosmetics || {}) };
+
   s._version = DOG_VERSION;
   return s;
 }
@@ -98,9 +112,17 @@ const slice = createSlice({
     setDirection(state, { payload }) { state.direction = payload || "down"; state._meta.lastLocalUpdateAt = Date.now(); },
     setMoving(state, { payload }) { state.moving = !!payload; state._meta.lastLocalUpdateAt = Date.now(); },
 
-    // Needs
+    // Needs (apply happiness buff multiplier on positive change)
     setHappiness(state, { payload }) { state.happiness = clamp(Math.floor(payload ?? state.happiness), 0, 100); state._meta.lastLocalUpdateAt = Date.now(); },
-    changeHappiness(state, { payload }) { state.happiness = clamp(state.happiness + Number(payload || 0), 0, 100); state._meta.lastLocalUpdateAt = Date.now(); },
+    changeHappiness(state, { payload }) {
+      const now = Date.now();
+      let delta = Number(payload || 0);
+      if (delta > 0 && state.buffs.happinessBoostUntil && now < state.buffs.happinessBoostUntil) {
+        delta = Math.ceil(delta * 1.25); // +25% during buff
+      }
+      state.happiness = clamp(state.happiness + delta, 0, 100);
+      state._meta.lastLocalUpdateAt = now;
+    },
 
     setBladder(state, { payload }) { state.bladder = clamp(Math.floor(payload ?? state.bladder), 0, 100); state._meta.lastLocalUpdateAt = Date.now(); },
     changeBladder(state, { payload }) { state.bladder = clamp(state.bladder + Number(payload || 0), 0, 100); state._meta.lastLocalUpdateAt = Date.now(); },
@@ -123,15 +145,25 @@ const slice = createSlice({
 
       // Aging: 1 age day per *real* day
       state.ageDays = Math.floor(state.ageDays + d / 86400);
+
+      // Clear expired buffs (cheap check)
+      const now = Date.now();
+      if (state.buffs.xpBoostUntil && now >= state.buffs.xpBoostUntil) state.buffs.xpBoostUntil = null;
+      if (state.buffs.happinessBoostUntil && now >= state.buffs.happinessBoostUntil) state.buffs.happinessBoostUntil = null;
+
       state._meta.lastLocalUpdateAt = Date.now();
     },
 
-    // Progression
+    // Progression (apply xp buff multiplier)
     addXP(state, { payload }) {
-      const add = Math.max(0, Math.floor(payload || 0));
+      const now = Date.now();
+      let add = Math.max(0, Math.floor(payload || 0));
+      if (state.buffs.xpBoostUntil && now < state.buffs.xpBoostUntil) {
+        add = Math.ceil(add * 1.5); // 1.5x during buff
+      }
       state.xp += add;
       while (state.xp >= 100 * state.level) { state.xp -= 100 * state.level; state.level += 1; }
-      state._meta.lastLocalUpdateAt = Date.now();
+      state._meta.lastLocalUpdateAt = now;
     },
 
     // Potty
@@ -194,6 +226,33 @@ const slice = createSlice({
       state._meta.lastLocalUpdateAt = now;
     },
 
+    // Buffs + Cosmetics
+    grantBuff(state, { payload: { kind, minutes = 10, from = Date.now() } = {} }) {
+      const until = from + Math.max(1, minutes) * 60_000;
+      if (kind === "xp") state.buffs.xpBoostUntil = until;
+      if (kind === "happiness") state.buffs.happinessBoostUntil = until;
+      state._meta.lastLocalUpdateAt = from;
+    },
+    clearExpiredBuffs(state, { payload: { now = Date.now() } = {} }) {
+      if (state.buffs.xpBoostUntil && now >= state.buffs.xpBoostUntil) state.buffs.xpBoostUntil = null;
+      if (state.buffs.happinessBoostUntil && now >= state.buffs.happinessBoostUntil) state.buffs.happinessBoostUntil = null;
+      state._meta.lastLocalUpdateAt = now;
+    },
+    unlockBackyardSkin(state, { payload: { skin } }) {
+      if (!skin) return;
+      if (!state.cosmetics.ownedSkins.includes(skin)) {
+        state.cosmetics.ownedSkins.push(skin);
+      }
+      state._meta.lastLocalUpdateAt = Date.now();
+    },
+    equipBackyardSkin(state, { payload: { skin } }) {
+      if (!skin) return;
+      if (state.cosmetics.ownedSkins.includes(skin)) {
+        state.cosmetics.backyardSkin = skin;
+      }
+      state._meta.lastLocalUpdateAt = Date.now();
+    },
+
     // Firestore sync
     loadState: (_s, { payload }) => normalizeLoadedState(payload || initialState),
     mergeState: (s, { payload }) => normalizeLoadedState({ ...s, ...(payload || {}) }),
@@ -210,6 +269,8 @@ export const {
   addXP, pottyProgress, pottyAccident, learnTrick, setMilestone,
   // economy & retention
   addCoins, spendCoins, registerDailyVisit, claimDailyReward,
+  // buffs & cosmetics
+  grantBuff, clearExpiredBuffs, unlockBackyardSkin, equipBackyardSkin,
   // sync
   loadState, mergeState,
 } = slice.actions;
@@ -241,7 +302,7 @@ export const selectAgeStage = (s) => {
   return "Senior";
 };
 
-// Simple feature gates by level
+// Feature gates by level
 export const selectUnlocks = (s) => {
   const L = s.dog.level;
   return {
@@ -253,3 +314,7 @@ export const selectUnlocks = (s) => {
     breeding: L >= 12,
   };
 };
+
+export const selectBuffs = (s) => s.dog.buffs;
+export const selectCosmetics = (s) => s.dog.cosmetics;
+export const selectBackyardSkin = (s) => s.dog.cosmetics.backyardSkin;

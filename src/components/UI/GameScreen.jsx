@@ -15,6 +15,7 @@ import barkSfx from "../../assets/audio/bark1.mp3";
 import {
   addXP, changeHappiness, selectDirection, selectHappiness, selectMoving,
   selectPos, setDirection, setHappiness, setMoving, setPosition, tickNeeds,
+  selectBackyardSkin,
 } from "../../redux/dogSlice";
 
 const WORLD_W = 640, WORLD_H = 360, TILE = 64, SPEED = 140;
@@ -25,6 +26,7 @@ export default function GameScreen() {
   const dir = useSelector(selectDirection);
   const moving = useSelector(selectMoving);
   const happiness = useSelector(selectHappiness);
+  const backyardSkin = useSelector(selectBackyardSkin);
 
   const audioRef = useRef(null);
   const bark = useCallback(async () => { try { await audioRef.current?.play(); } catch {} }, []);
@@ -68,6 +70,22 @@ export default function GameScreen() {
 
   const barColor = useMemo(() => (happiness > 66 ? "bg-green-500" : happiness > 33 ? "bg-yellow-500" : "bg-red-500"), [happiness]);
 
+  const worldStyle = useMemo(() => {
+    if (backyardSkin === "lush") {
+      return {
+        width: WORLD_W,
+        height: WORLD_H,
+        backgroundColor: "#b7f7c5",
+        backgroundImage:
+          "linear-gradient(0deg,#99f0ae 0 1px,transparent 1px), linear-gradient(90deg,#99f0ae 0 1px, transparent 1px)",
+        backgroundSize: "64px 64px",
+        border: "2px solid rgba(16,185,129,0.25)",
+      };
+    }
+    // default
+    return { width: WORLD_W, height: WORLD_H, backgroundColor: "rgba(6,95,70,0.05)" };
+  }, [backyardSkin]);
+
   return (
     <div className="min-h-screen w-full bg-gradient-to-b from-emerald-50 to-emerald-200 flex flex-col items-center">
       <FirebaseAutoSave />
@@ -83,8 +101,10 @@ export default function GameScreen() {
         </div>
 
         <div className="flex items-center gap-2">
+          <Link to="/shop" className="px-3 py-2 text-sm rounded-xl bg-white shadow hover:shadow-md active:scale-95">🛒 Shop</Link>
           <Link to="/train/potty" className="px-3 py-2 text-sm rounded-xl bg-white shadow hover:shadow-md active:scale-95">🚽 Potty</Link>
           <Link to="/train/tricks" className="px-3 py-2 text-sm rounded-xl bg-white shadow hover:shadow-md active:scale-95">🎓 Tricks</Link>
+          <Link to="/breed" className="px-3 py-2 text-sm rounded-xl bg-white shadow hover:shadow-md active:scale-95">🐶 Breed</Link>
           <Link to="/stats" className="px-3 py-2 text-sm rounded-xl bg-white shadow hover:shadow-md active:scale-95">📊 Stats</Link>
           <button {...holdPetBind} className="px-3 py-2 text-sm rounded-xl bg-white shadow hover:shadow-md active:scale-95">🐶 Pet</button>
           <button onClick={() => { bark(); dispatch(setHappiness(Math.min(100, happiness + 2))); dispatch(addXP(2)); }} className="px-3 py-2 text-sm rounded-xl bg-white shadow hover:shadow-md active:scale-95">🗣️ Bark</button>
@@ -93,7 +113,7 @@ export default function GameScreen() {
 
       {/* World */}
       <div className="w-full max-w-4xl px-4">
-        <div className="relative rounded-2xl bg-emerald-900/5 shadow-inner" style={{ width: WORLD_W, height: WORLD_H }}>
+        <div className="relative rounded-2xl shadow-inner" style={worldStyle}>
           <div className="absolute transition-transform will-change-transform" style={{ transform: `translate(${pos.x}px, ${pos.y}px)` }}>
             <DogSprite size={64} frameWidth={64} frameHeight={64} direction={dir} isWalking={moving} frameCount={4} frameRate={moving ? 10 : 6}/>
           </div>

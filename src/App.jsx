@@ -7,6 +7,8 @@ const GameScreen = lazy(() => import("./components/UI/GameScreen"));
 const PottyTrainer = lazy(() => import("./components/Features/PottyTrainer"));
 const TricksTrainer = lazy(() => import("./components/Features/TricksTrainer"));
 const StatsPanel = lazy(() => import("./components/Features/StatsPanel"));
+const Shop = lazy(() => import("./components/Features/Shop"));
+const Breeding = lazy(() => import("./components/Features/Breeding"));
 const Login = lazy(() => import("./components/Auth/Login"));
 const Signup = lazy(() => import("./components/Auth/Signup"));
 
@@ -19,6 +21,8 @@ export default function App() {
         <Route path="/train/potty" element={<PottyTrainer />} />
         <Route path="/train/tricks" element={<TricksTrainer />} />
         <Route path="/stats" element={<StatsPanel />} />
+        <Route path="/shop" element={<Shop />} />
+        <Route path="/breed" element={<Breeding />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="*" element={<Navigate to="/" replace />} />
