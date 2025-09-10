@@ -1,5 +1,6 @@
 // src/components/UI/GameScreen.jsx
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import useGameClock from "../../hooks/useGameClock";
 import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
 import useKeyPressed from "../../hooks/useKeyPressed";
@@ -7,19 +8,36 @@ import useJitteredTimer from "../../hooks/useJitteredTimer";
 import usePageVisibility from "../../hooks/usePageVisibility";
 import useHoldRepeat from "../../hooks/useHoldRepeat";
 import DogSprite from "./DogSprite";
+import FirebaseAutoSave from "../FirebaseAutoSave";
 
 import barkSfx from "../../assets/audio/bark1.mp3";
+import {
+  addXP,
+  changeHappiness,
+  selectDirection,
+  selectDog,
+  selectHappiness,
+  selectMoving,
+  selectPos,
+  setDirection,
+  setHappiness,
+  setMoving,
+  setPosition,
+  tickNeeds,
+} from "../../redux/dogSlice";
 
 const WORLD_W = 640;
 const WORLD_H = 360;
+const TILE = 64;
 const SPEED = 140; // px/sec
 
 export default function GameScreen() {
-  // World state
-  const [pos, setPos] = useState({ x: 320, y: 180 });
-  const [dir, setDir] = useState("down");
-  const [moving, setMoving] = useState(false);
-  const [happiness, setHappiness] = useState(75);
+  const dispatch = useDispatch();
+  const pos = useSelector(selectPos);
+  const dir = useSelector(selectDirection);
+  const moving = useSelector(selectMoving);
+  const happiness = useSelector(selectHappiness);
+  const dog = useSelector(selectDog);
 
   // Audio
   const audioRef = useRef(null);
@@ -29,7 +47,7 @@ export default function GameScreen() {
     } catch {}
   }, []);
 
-  // Clock
+  // Clock (drives movement + need ticks)
   const { delta, setSpeed } = useGameClock({ running: true, speed: 1, pauseOnHidden: true });
 
   // Key states (continuous)
@@ -38,9 +56,12 @@ export default function GameScreen() {
   const up = useKeyPressed(["arrowup", "w"]);
   const down = useKeyPressed(["arrowdown", "s"]);
 
-  // Pet button: hold to boost happiness
+  // Pet button: hold to boost happiness + xp
   const { bind: holdPetBind } = useHoldRepeat(
-    () => setHappiness((h) => Math.min(100, h + 1)),
+    () => {
+      dispatch(changeHappiness(+1));
+      dispatch(addXP(1));
+    },
     { initialDelay: 200, interval: 80 }
   );
 
@@ -48,31 +69,28 @@ export default function GameScreen() {
   useKeyboardShortcuts(
     {
       b: () => bark(),
-      // fast-forward sim time while holding Shift
       "shift+.": () => setSpeed(2),
       ".": () => setSpeed(1),
     },
     { enabled: true, preventDefault: true, allowRepeat: false }
   );
 
-  // Idle “life” ticks for tiny happiness decay (and occasional bark)
-  const tickRef = useRef(0);
+  // Idle life ticks
   useJitteredTimer({ baseMs: 3000, jitter: 0.25, autoStart: true });
   useEffect(() => {
     const id = setInterval(() => {
-      tickRef.current++;
-      setHappiness((h) => Math.max(0, h - 1));
+      dispatch(tickNeeds({ dtSec: 3 }));
       if (Math.random() < 0.08) bark();
     }, 3000);
     return () => clearInterval(id);
-  }, [bark]);
+  }, [dispatch, bark]);
 
   // Pause audio when hidden
   usePageVisibility({
     onHide: () => audioRef.current?.pause(),
   });
 
-  // Movement integration with clock delta
+  // Movement step (per frame)
   useEffect(() => {
     let dx = 0,
       dy = 0;
@@ -83,8 +101,7 @@ export default function GameScreen() {
     if (down) dy += 1;
 
     const isMoving = dx !== 0 || dy !== 0;
-    setMoving(isMoving);
-
+    if (isMoving !== moving) dispatch(setMoving(isMoving));
     if (!isMoving) return;
 
     // normalize diagonal
@@ -95,15 +112,13 @@ export default function GameScreen() {
     }
 
     // choose facing from last input priority
-    if (Math.abs(dx) > Math.abs(dy)) setDir(dx < 0 ? "left" : "right");
-    else if (Math.abs(dy) > 0) setDir(dy < 0 ? "up" : "down");
+    if (Math.abs(dx) > Math.abs(dy)) dispatch(setDirection(dx < 0 ? "left" : "right"));
+    else if (Math.abs(dy) > 0) dispatch(setDirection(dy < 0 ? "up" : "down"));
 
-    setPos((p) => {
-      const nx = Math.max(0, Math.min(WORLD_W - 64, p.x + dx * SPEED * delta));
-      const ny = Math.max(0, Math.min(WORLD_H - 64, p.y + dy * SPEED * delta));
-      return { x: nx, y: ny };
-    });
-  }, [delta, left, right, up, down]);
+    const nx = Math.max(0, Math.min(WORLD_W - TILE, pos.x + dx * SPEED * delta));
+    const ny = Math.max(0, Math.min(WORLD_H - TILE, pos.y + dy * SPEED * delta));
+    if (nx !== pos.x || ny !== pos.y) dispatch(setPosition({ x: nx, y: ny, world: { w: WORLD_W, h: WORLD_H, tile: TILE } }));
+  }, [delta, left, right, up, down, pos.x, pos.y, moving, dispatch]);
 
   const barColor = useMemo(() => {
     if (happiness > 66) return "bg-green-500";
@@ -113,7 +128,11 @@ export default function GameScreen() {
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-b from-emerald-50 to-emerald-200 flex flex-col items-center">
+      {/* Headless Firestore sync */}
+      <FirebaseAutoSave />
+
       <audio ref={audioRef} src={barkSfx} preload="auto" />
+
       {/* HUD */}
       <div className="w-full max-w-4xl px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -132,7 +151,11 @@ export default function GameScreen() {
             🐶 Pet
           </button>
           <button
-            onClick={bark}
+            onClick={() => {
+              bark();
+              dispatch(setHappiness(Math.min(100, happiness + 2)));
+              dispatch(addXP(2));
+            }}
             className="px-3 py-2 text-sm rounded-xl bg-white shadow hover:shadow-md active:scale-95"
             title="Bark (B)"
           >
@@ -162,8 +185,6 @@ export default function GameScreen() {
               frameRate={moving ? 10 : 6}
             />
           </div>
-
-          {/* simple “tiles” or objects could be layered here later */}
         </div>
 
         <p className="mt-3 text-sm text-emerald-900/70">

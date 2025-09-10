@@ -1,9 +1,21 @@
+// src/redux/store.js
 import { configureStore } from "@reduxjs/toolkit";
-import user from "./userSlice";
-import dog from "./dogSlice";
+import userReducer from "./userSlice";
+import dogReducer from "./dogSlice";
 
 const store = configureStore({
-  reducer: { user, dog },
-  middleware: (getDefault) => getDefault({ serializableCheck: false }),
+  reducer: {
+    user: userReducer,
+    dog: dogReducer,
+  },
+  middleware: (getDefault) =>
+    getDefault({
+      serializableCheck: {
+        // Allow Firestore Timestamps in actions if they ever appear
+        ignoredActionPaths: ["payload.updatedAt"],
+        ignoredPaths: ["dog._meta"],
+      },
+    }),
 });
+
 export default store;
