@@ -1,121 +1,127 @@
-// src/components/Auth/Login.jsx
-import React, { useEffect, useState } from "react";
-import {
-  signInWithEmailAndPassword,
-  signInWithPopup,
-  signInWithRedirect,
-  getRedirectResult,
-} from "firebase/auth";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from "react";
 import { auth, googleProvider } from "../../firebase";
-
-function mapAuthError(code) {
-  switch (code) {
-    case "auth/invalid-email":
-      return "That email address looks invalid.";
-    case "auth/user-disabled":
-      return "This account has been disabled.";
-    case "auth/user-not-found":
-    case "auth/wrong-password":
-      return "Email or password is incorrect.";
-    case "auth/popup-closed-by-user":
-      return "Google sign-in popup was closed.";
-    default:
-      return "Sign-in failed. Please try again.";
-  }
-}
-
-function isMobileWeb() {
-  return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-}
+import { signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
+import { useNavigate } from "react-router-dom";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-
-  // If a redirect sign-in completed (mobile), handle it.
-  useEffect(() => {
-    getRedirectResult(auth).then((res) => {
-      if (res?.user) navigate("/game", { replace: true });
-    }).catch(() => {});
-  }, [navigate]);
 
   const loginWithEmail = async (e) => {
     e.preventDefault();
     setError("");
-    setBusy(true);
+    setLoading(true);
     try {
-      // normalize email input
-      const normalized = email.trim().toLowerCase();
-      await signInWithEmailAndPassword(auth, normalized, pw);
-      navigate("/game", { replace: true });
+      await signInWithEmailAndPassword(auth, email, pw);
+      navigate("/game");
     } catch (err) {
-      setError(mapAuthError(err.code || err.message));
+      setError(err.message || "Login failed.");
     } finally {
-      setBusy(false);
+      setLoading(false);
     }
   };
 
   const loginWithGoogle = async () => {
     setError("");
-    setBusy(true);
+    setLoading(true);
     try {
-      // Mobile browsers often block popups: use redirect on mobile
-      if (isMobileWeb()) {
-        await signInWithRedirect(auth, googleProvider);
-        return; // navigation will occur after getRedirectResult
-      }
       await signInWithPopup(auth, googleProvider);
-      navigate("/game", { replace: true });
+      navigate("/game");
     } catch (err) {
-      setError(mapAuthError(err.code || err.message));
-      setBusy(false);
+      setError(err.message || "Google sign-in failed.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-gray-200 to-blue-100 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-200 to-blue-100 p-4">
       <form
         onSubmit={loginWithEmail}
-        className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-sm flex flex-col gap-4"
-        noValidate
+        className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8 space-y-6"
       >
-        <h2 className="text-2xl font-bold text-blue-900 mb-2">Login</h2>
+        <h1 className="text-2xl font-bold text-center">Sign in to Doggerz</h1>
 
-        <label className="flex flex-col gap-1">
-          <span className="text-sm text-gray-700">Email</span>
+        {error ? (
+          <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded p-2">
+            {error}
+          </p>
+        ) : null}
+
+        <label className="block space-y-1">
+          <span className="text-sm font-medium">Email</span>
           <input
             type="email"
-            inputMode="email"
-            autoComplete="email"
-            className="border px-3 py-2 rounded outline-none focus:ring-2 focus:ring-blue-400"
-            placeholder="you@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            disabled={busy}
+            autoComplete="email"
+            className="w-full rounded-lg border p-3 focus:outline-none focus:ring"
+            placeholder="you@example.com"
           />
         </label>
 
-        <label className="flex flex-col gap-1">
-          <span className="text-sm text-gray-700">Password</span>
-          <div className="flex">
+        <label className="block space-y-1">
+          <span className="text-sm font-medium">Password</span>
+          <div className="relative">
             <input
               type={showPw ? "text" : "password"}
-              autoComplete="current-password"
-              className="border px-3 py-2 rounded-l w-full outline-none focus:ring-2 focus:ring-blue-400"
-              placeholder="••••••••"
               value={pw}
               onChange={(e) => setPw(e.target.value)}
               required
-              disabled={busy}
+              autoComplete="current-password"
+              className="w-full rounded-lg border p-3 pr-12 focus:outline-none focus:ring"
+              placeholder="••••••••"
             />
             <button
               type="button"
               onClick={() => setShowPw((s) => !s)}
-              className="border border-l-0 px-3 rounded-r text-sm text-blue-600 hover:bg-blue-50"
-              aria-label={showPw ? "Hide password
+              className="absolute inset-y-0 right-2 my-auto px-2 text-sm underline"
+              aria-label={showPw ? "Hide password" : "Show password"}
+              aria-pressed={showPw}
+            >
+              {showPw ? "Hide" : "Show"}
+            </button>
+          </div>
+        </label>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full rounded-lg bg-blue-600 text-white py-3 font-semibold hover:bg-blue-700 disabled:opacity-50"
+        >
+          {loading ? "Signing in…" : "Sign In"}
+        </button>
+
+        <div className="flex items-center gap-2">
+          <div className="h-px flex-1 bg-gray-200" />
+          <span className="text-xs text-gray-500">or</span>
+          <div className="h-px flex-1 bg-gray-200" />
+        </div>
+
+        <button
+          type="button"
+          onClick={loginWithGoogle}
+          className="w-full rounded-lg border py-3 font-semibold hover:bg-gray-50"
+          disabled={loading}
+        >
+          Continue with Google
+        </button>
+
+        <p className="text-center text-sm">
+          Don’t have an account?{" "}
+          <a
+            href="/signup"
+            className="text-blue-700 underline underline-offset-2"
+          >
+            Sign up
+          </a>
+        </p>
+      </form>
+    </div>
+  );
+}
