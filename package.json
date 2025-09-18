@@ -10,7 +10,7 @@
     "clean": "rimraf dist .vite"
   },
   "dependencies": {
-    "firebase": "^10.14.0",
+    "firebase": "^12.2.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-redux": "^9.1.2",
