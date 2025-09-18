@@ -1,31 +1,38 @@
-.bg-root {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
+/* src/components/Features/BackgroundScene.css */
+.bg-yard {
+  position: relative;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
 }
-.bg-image {
-  position: absolute;
-  inset: 0;
-  background-size: cover;
-  background-position: center;
-  will-change: filter;
-  transition: filter 800ms ease;
+
+/* default skin */
+.skin-default {
+  background: linear-gradient(180deg, #bfe7ff 0%, #e9f7ff 40%, #d8f7d0 41%, #b4e09b 100%);
 }
-/* Soft light tint on top for mood + readability */
-.bg-overlay {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  transition: opacity 800ms ease, background 800ms ease;
+
+/* alt skins set by sessionStorage 'yardSkin' */
+.skin-lawn {
+  background: linear-gradient(180deg, #bfe7ff 0%, #e9f7ff 40%, #d8ffd8 41%, #8ad47a 100%);
 }
-.bg-overlay.day {
-  background: radial-gradient(ellipse at 30% 15%, rgba(255,255,255,0.18), rgba(255,255,255,0) 60%),
-              linear-gradient(to bottom, rgba(255,255,255,0.06), rgba(0,0,0,0.15));
-  opacity: 1;
+
+.skin-sunset {
+  background: linear-gradient(180deg, #ffd6a5 0%, #ffedd5 40%, #fde68a 41%, #fcd34d 100%);
 }
-.bg-overlay.night {
-  background: radial-gradient(ellipse at 70% 10%, rgba(255,255,255,0.06), rgba(0,0,0,0) 55%),
-              linear-gradient(to bottom, rgba(0,10,40,0.45), rgba(0,0,0,0.55));
-  opacity: 1;
+
+.scene-ground {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  height: 42%;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0,0,0,0.05) 0 8px,
+    rgba(255,255,255,0.05) 8px 16px
+  );
+}
+
+.scene-stage {
+  position: absolute; inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
 }
