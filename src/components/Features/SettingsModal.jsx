@@ -1,80 +1,43 @@
-import React, { useEffect, useRef } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { resetDogState, toggleSound } from "../../redux/dogSlice";
-import "../../styles/Modal.css"; // <-- add this file below
+// src/components/Features/SettingsModal.jsx
+import React from "react";
 
-export default function SettingsModal({ isOpen = true, onClose = () => {} }) {
-  const dispatch = useDispatch();
-  const soundEnabled = useSelector((state) => state.dog.soundEnabled);
-  const dialogRef = useRef(null);
+export default function SettingsModal({ onClose }) {
+  const sound = (localStorage.getItem("doggerz_sound") ?? "on") === "on";
 
-  // Close on ESC
-  useEffect(() => {
-    if (!isOpen) return;
-    const onKey = (e) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [isOpen, onClose]);
-
-  // Simple focus trap (focus the dialog when opened)
-  useEffect(() => {
-    if (isOpen && dialogRef.current) {
-      dialogRef.current.focus();
-    }
-  }, [isOpen]);
-
-  if (!isOpen) return null;
-
-  const handleBackdrop = (e) => {
-    if (e.target.classList.contains("modal-backdrop")) onClose();
+  const toggleSound = () => {
+    const next = sound ? "off" : "on";
+    localStorage.setItem("doggerz_sound", next);
+    window.dispatchEvent(new Event("doggerz:soundchange"));
   };
 
-  const handleReset = () => {
-    if (window.confirm("Are you sure? This will reset all dog progress!")) {
-      dispatch(resetDogState());
-      onClose();
-    }
+  const clearSession = () => {
+    sessionStorage.removeItem("buff");
+    sessionStorage.removeItem("yardSkin");
   };
 
   return (
-    <div
-      className="modal-backdrop"
-      role="dialog"
-      aria-modal="true"
-      onMouseDown={handleBackdrop}
-    >
-      <div
-        className="modal-card"
-        tabIndex={-1}
-        ref={dialogRef}
-        aria-label="Settings"
-      >
-        <button
-          className="modal-close"
-          onClick={onClose}
-          aria-label="Close settings"
-          title="Close"
-        >
-          ×
-        </button>
+    <div className="fixed inset-0 bg-black/40 grid place-items-center p-4 z-50">
+      <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md">
+        <h3 className="text-lg font-semibold text-rose-900">Settings</h3>
 
-        <h2 className="modal-title">⚙️ Settings</h2>
-
-        <div className="modal-content">
-          <label className="modal-row">
-            <input
-              type="checkbox"
-              checked={soundEnabled}
-              onChange={() => dispatch(toggleSound())}
-            />
-            <span>Sound Enabled</span>
-          </label>
-
-          <button className="btn-danger" onClick={handleReset}>
-            Reset Dog (Danger)
+        <div className="mt-4 space-y-3 text-rose-900">
+          <button
+            className="w-full px-4 py-3 rounded-xl bg-rose-100 text-rose-900 hover:shadow active:scale-95"
+            onClick={toggleSound}
+          >
+            Sound: {sound ? "On 🔊" : "Off 🔇"}
           </button>
 
-          <button className="btn" onClick={onClose}>
+          <button
+            className="w-full px-4 py-3 rounded-xl bg-rose-100 text-rose-900 hover:shadow active:scale-95"
+            onClick={clearSession}
+          >
+            Clear Session Buffs / Yard Skin
+          </button>
+        </div>
+
+        <div className="mt-6 text-right">
+          <button className="px-4 py-2 rounded-xl bg-rose-600 text-white" onClick={onClose}>
             Close
           </button>
         </div>
