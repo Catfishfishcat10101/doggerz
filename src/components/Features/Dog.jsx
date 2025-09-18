@@ -1,26 +1,26 @@
 // src/components/Features/Dog.jsx
 import React from "react";
 import { useSelector } from "react-redux";
-import sprite from "../UI/sprites/jack_russell_directions.png";
+import { selectAccessories } from "../../redux/dogSlice";
+import DogSprite from "../UI/DogSprite.jsx"; // assumes you already have this
 
+/** Shows the dog sprite and overlays equipped accessories (simple emoji badges).
+ * Replace with real sprites when assets are ready.
+ */
 export default function Dog() {
-  // Pull position & facing from Redux if you already track them
-  const { x = 96, y = 96, direction = "down" } = useSelector((s) => s.dog || {});
-  console.log("resolved sprite URL ->", sprite);
+  const accessories = useSelector(selectAccessories);
+  const eq = accessories?.equipped ?? { collar: null, hat: null };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center p-8">
-      <div className="flex flex-col items-center gap-4">
-        <img
-          src={sprite}
-          alt="Dog sprite"
-          className="w-96 h-auto rounded shadow-lg"
-        />
-        <div className="text-lg">Your pup</div>
-        <div className="text-sm text-slate-400 break-words max-w-lg">
-          {sprite}
-        </div>
-      </div>
+    <div className="relative">
+      <DogSprite />
+      {/* simple overlay badges so we get visual feedback */}
+      {eq.collar && (
+        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-lg select-none">🔗</div>
+      )}
+      {eq.hat && (
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2 text-xl select-none">🎩</div>
+      )}
     </div>
   );
 }
