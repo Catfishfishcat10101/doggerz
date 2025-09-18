@@ -1,159 +1,60 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+// src/components/Features/TricksTrainer.jsx
+import React, { useState } from "react";
 import { useDispatch } from "react-redux";
-import useGameClock from "../../hooks/useGameClock";
-import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
-import {
-  addCoins,
-  addXP,
-  changeHappiness,
-  learnTrick,
-} from "../../redux/dogSlice";
+import { earnCoins } from "../../redux/dogSlice";
+import SoundManager from "./SoundManager";
 
 const TRICKS = [
-  { name: "sit", label: "Sit", key: "s", type: "tap" },
-  { name: "stay", label: "Stay", key: "k", type: "hold", holdSec: 1.5 },
-  { name: "paw", label: "Paw", key: "p", type: "tap" },
-  { name: "rollOver", label: "Roll Over", key: "r", type: "tap" },
+  { id: "sit", title: "Sit", diff: 1, reward: 3 },
+  { id: "paw", title: "Shake/Paw", diff: 2, reward: 5 },
+  { id: "roll", title: "Roll Over", diff: 3, reward: 8 },
 ];
 
 export default function TricksTrainer() {
   const dispatch = useDispatch();
-  const { delta } = useGameClock({ running: true, speed: 1 });
+  const [progress, setProgress] = useState({}); // {trickId: 0..100}
 
-  const [round, setRound] = useState(1);
-  const [prompt, setPrompt] = useState(() => TRICKS[Math.floor(Math.random() * TRICKS.length)]);
-  const [timeLeft, setTimeLeft] = useState(3.0);
-  const [holdLeft, setHoldLeft] = useState(0);
-  const [combo, setCombo] = useState(0);
-  const [msg, setMsg] = useState("Press the right key in time!");
+  const train = (t) => {
+    const prev = progress[t.id] ?? 0;
+    const delta = 20 - t.diff * 4; // harder tricks progress slower
+    const next = Math.min(100, prev + delta);
 
-  const difficulty = useMemo(() => Math.max(1.4, 3.0 - combo * 0.1), [combo]);
+    const nextState = { ...progress, [t.id]: next };
+    setProgress(nextState);
 
-  const nextPrompt = () => {
-    const next = TRICKS[Math.floor(Math.random() * TRICKS.length)];
-    setPrompt(next);
-    setTimeLeft(difficulty);
-    setHoldLeft(next.type === "hold" ? (next.holdSec ?? 1.5) : 0);
-    setRound((r) => r + 1);
+    if (next >= 100) {
+      dispatch(earnCoins(t.reward));
+      SoundManager.play("click");
+      setTimeout(() => setProgress({ ...nextState, [t.id]: 0 }), 300);
+    }
   };
 
-  useEffect(() => {
-    setTimeLeft((t) => Math.max(0, t - delta));
-    if (prompt.type === "hold" && holdLeft > 0 && isHoldingRef.current) {
-      setHoldLeft((h) => Math.max(0, h - delta));
-    }
-  }, [delta]); // eslint-disable-line
-
-  useEffect(() => {
-    if (timeLeft > 0) return;
-    setCombo(0);
-    setMsg(`Too slow! Lost the round.`);
-    dispatch(changeHappiness(-2));
-    nextPrompt();
-  }, [timeLeft]); // eslint-disable-line
-
-  const isHoldingRef = useRef(false);
-
-  useKeyboardShortcuts(
-    {
-      [prompt.key]: (e) => {
-        if (prompt.type === "tap") {
-          succeed(prompt.name);
-        } else {
-          if (!isHoldingRef.current) {
-            isHoldingRef.current = true;
-            setMsg("Hold… hold…");
-          }
-        }
-      },
-    },
-    { enabled: true, preventDefault: true, allowRepeat: false }
-  );
-
-  useEffect(() => {
-    const onKeyUp = (ev) => {
-      if (prompt.type !== "hold") return;
-      if (ev.key?.toLowerCase() === prompt.key) {
-        if (holdLeft <= 0.02) {
-          succeed(prompt.name);
-        } else {
-          isHoldingRef.current = false;
-          setCombo(0);
-          setMsg("Released too early! Try again.");
-          dispatch(changeHappiness(-2));
-          nextPrompt();
-        }
-      }
-    };
-    window.addEventListener("keyup", onKeyUp);
-    return () => window.removeEventListener("keyup", onKeyUp);
-  }, [prompt, holdLeft]); // eslint-disable-line
-
-  function succeed(trickName) {
-    isHoldingRef.current = false;
-    const deltaSkill = 2 + Math.floor(combo / 3);
-    const xp = 5 + Math.floor(combo / 5);
-    const coins = 3 + Math.floor(combo / 4);
-    dispatch(learnTrick({ name: trickName, delta: deltaSkill }));
-    dispatch(addXP(xp));
-    dispatch(addCoins(coins));
-    dispatch(changeHappiness(+2));
-    setCombo((c) => c + 1);
-    setMsg(`Great! +${deltaSkill} ${trickName}, +${xp} XP, +${coins} coins`);
-    nextPrompt();
-  }
-
   return (
-    <div className="min-h-screen w-full flex flex-col items-center bg-gradient-to-br from-indigo-50 to-purple-100">
-      <div className="w-full max-w-4xl px-4 py-3 flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-indigo-900">Tricks Trainer</h2>
-        <Link to="/game" className="px-3 py-2 rounded-xl bg-white shadow hover:shadow-md active:scale-95">← Back to Game</Link>
-      </div>
+    <div className="bg-white rounded-2xl shadow p-6">
+      <h3 className="text-lg font-semibold text-rose-900">Tricks Trainer</h3>
+      <p className="text-sm text-rose-900/70">Train tricks to earn coins.</p>
 
-      <div className="w-full max-w-3xl px-4">
-        <div className="rounded-2xl bg-white shadow p-6">
-          <div className="flex items-center justify-between">
-            <div className="text-indigo-900">
-              <div className="text-sm opacity-70">Round</div>
-              <div className="text-2xl font-bold">{round}</div>
-            </div>
+      <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+        {TRICKS.map((t) => {
+          const p = progress[t.id] ?? 0;
+          return (
+            <div key={t.id} className="rounded-xl border border-rose-100 p-4">
+              <div className="font-semibold text-rose-900">{t.title}</div>
+              <div className="text-xs text-rose-900/60">Difficulty {t.diff} • Reward {t.reward}💰</div>
 
-            <div className="text-center">
-              <div className="text-sm opacity-70">Prompt</div>
-              <div className="text-3xl font-extrabold text-indigo-700 tracking-wide">
-                {prompt.label}
+              <div className="h-2 bg-rose-100 rounded mt-2 overflow-hidden">
+                <div className="h-full bg-rose-600" style={{ width: `${p}%` }} />
               </div>
-              <div className="text-xs mt-1 text-indigo-900/70">
-                Press <span className="font-mono uppercase">{prompt.key}</span>
-                {prompt.type === "hold" ? " and hold" : ""}.
-              </div>
+
+              <button
+                onClick={() => train(t)}
+                className="mt-3 w-full px-3 py-2 rounded-lg bg-rose-600 text-white active:scale-95"
+              >
+                Practice
+              </button>
             </div>
-
-            <div className="text-right text-indigo-900">
-              <div className="text-sm opacity-70">Time Left</div>
-              <div className="text-2xl font-bold">{timeLeft.toFixed(1)}s</div>
-            </div>
-          </div>
-
-          {prompt.type === "hold" && (
-            <div className="mt-6">
-              <div className="text-sm text-indigo-900/70 mb-1">Hold meter</div>
-              <div className="h-3 w-full bg-indigo-100 rounded">
-                <div
-                  className="h-3 bg-indigo-500 rounded"
-                  style={{ width: `${Math.max(0, 100 * (1 - holdLeft / (prompt.holdSec ?? 1.5)))}%` }}
-                />
-              </div>
-            </div>
-          )}
-
-          <div className="mt-6 text-indigo-900">{msg}</div>
-
-          <div className="mt-2 text-xs text-indigo-900/60">
-            Difficulty scales with combo. Sit (S), Stay (K hold), Paw (P), Roll Over (R).
-          </div>
-        </div>
+          );
+        })}
       </div>
     </div>
   );
