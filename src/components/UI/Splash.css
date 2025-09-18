@@ -1,77 +1,25 @@
-/* Root layout */
-.splash-root {
+.splash-wrap {
   position: relative;
-  min-height: 100dvh;
+  min-height: 100vh;
   overflow: hidden;
-  display: grid;
-  place-items: center;
-  background: #0b1220;
+  background: radial-gradient(80% 70% at 50% 0%, #ffe6ee 0%, #fde68a 40%, #ffd6a5 100%);
 }
 
-/* Background image + overlay */
-.splash-backdrop {
-  position: absolute;
-  inset: 0;
-  background-size: cover;
-  background-position: center;
-  filter: saturate(1.05) brightness(0.85);
-}
-.splash-overlay {
-  position: absolute; inset: 0;
-  background: radial-gradient(ellipse at center, rgba(0,0,0,0) 40%, rgba(0,0,0,.65) 100%);
-}
-
-/* Card */
-.splash-card {
-  position: relative;
-  z-index: 2;
-  width: min(720px, 92vw);
-  padding: 24px;
-  border-radius: 18px;
-  backdrop-filter: blur(6px);
-  background: rgba(255,255,255,0.06);
-  box-shadow: 0 10px 50px rgba(0,0,0,.35);
-  text-align: center;
-  color: #fff;
-}
-.logo {
-  margin: 0 0 4px 0;
-  font-size: 48px;
-  letter-spacing: 0.5px;
-}
-.tag { margin: 0 0 16px 0; opacity: .9; }
-
-/* Dog bounce */
-.dog-bounce {
+.dog-jumper {
   width: 96px;
   height: 96px;
-  margin: 0 auto 16px;
-  animation: dogjump 1200ms ease-in-out infinite;
-  transform-origin: 50% 70%;
-}
-@keyframes dogjump {
-  0%   { transform: translateY(0) scale(1); }
-  35%  { transform: translateY(-18px) scale(1.02); }
-  70%  { transform: translateY(0) scale(1); }
-  100% { transform: translateY(0); }
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 25%;
+  animation: jump 1.2s ease-in-out infinite;
+  image-rendering: pixelated;
+  background-image: url('/assets/sprites/dog.png');
+  background-size: 768px 96px;
+  animation-composition: accumulate;
 }
 
-/* Buttons */
-.cta-row {
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-  margin: 10px 0 6px;
-  flex-wrap: wrap;
+@keyframes jump {
+  0%, 100% { transform: translate(-50%, 0); }
+  50%      { transform: translate(-50%, -40px); }
 }
-.btn {
-  border: none; border-radius: 10px; padding: 10px 16px;
-  background: rgba(255,255,255,0.12); color: #fff; cursor: pointer;
-  transition: transform .12s ease, background .2s;
-}
-.btn:hover { transform: translateY(-1px); background: rgba(255,255,255,0.18); }
-.btn.primary { background: #10b981; }
-.btn.primary:hover { background: #0ea371; }
-.btn.ghost { background: transparent; outline: 1px solid rgba(255,255,255,.35); }
-
-.rights { margin: 8px 0 0; font-size: 12px; opacity: .75; }
