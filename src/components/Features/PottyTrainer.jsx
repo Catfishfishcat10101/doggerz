@@ -1,149 +1,58 @@
-import React, { useEffect, useMemo } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { Link } from "react-router-dom";
-import useGameClock from "../../hooks/useGameClock";
-import useKeyPressed from "../../hooks/useKeyPressed";
-import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
-import DogSprite from "../UI/DogSprite";
-import {
-  addXP,
-  changeBladder,
-  changeHappiness,
-  selectBackyardSkin,
-  selectBladder,
-  selectDirection,
-  selectPos,
-  setDirection,
-  setMilestone,
-  setMoving,
-  setPosition,
-  pottyAccident,
-  pottyProgress,
-} from "../../redux/dogSlice";
+// src/components/Features/PottyTrainer.jsx
+import React, { useMemo, useState } from "react";
+import { useDispatch } from "react-redux";
+import { earnCoins } from "../../redux/dogSlice";
+import PoopRenderer from "./PoopRenderer.jsx";
+import SoundManager from "./SoundManager";
 
-const WORLD_W = 640, WORLD_H = 360, TILE = 64;
-const YARD_X_START = 7 * TILE;
+let idSeq = 1;
 
 export default function PottyTrainer() {
   const dispatch = useDispatch();
-  const pos = useSelector(selectPos);
-  const dir = useSelector(selectDirection);
-  const bladder = useSelector(selectBladder);
-  const backyardSkin = useSelector(selectBackyardSkin);
+  const [outside, setOutside] = useState(false);
+  const [poops, setPoops] = useState([]);
 
-  const left = useKeyPressed(["arrowleft", "a"]);
-  const right = useKeyPressed(["arrowright", "d"]);
-  const up = useKeyPressed(["arrowup", "w"]);
-  const down = useKeyPressed(["arrowdown", "s"]);
-  const { delta } = useGameClock({ running: true, speed: 1 });
+  const mood = useMemo(() => (outside ? "Ready to go! 🚽" : "Needs to go soon… ⏳"), [outside]);
 
-  const SPEED = 110;
-
-  useEffect(() => {
-    let dx = 0, dy = 0;
-    if (left) dx -= 1; if (right) dx += 1; if (up) dy -= 1; if (down) dy += 1;
-    const moving = dx || dy;
-    dispatch(setMoving(!!moving));
-    if (!moving) return;
-
-    if (dx && dy) { const inv = 1 / Math.sqrt(2); dx *= inv; dy *= inv; }
-    if (Math.abs(dx) > Math.abs(dy)) dispatch(setDirection(dx < 0 ? "left" : "right"));
-    else if (Math.abs(dy) > 0) dispatch(setDirection(dy < 0 ? "up" : "down"));
-
-    const nx = Math.max(0, Math.min(WORLD_W - TILE, pos.x + dx * SPEED * delta));
-    const ny = Math.max(0, Math.min(WORLD_H - TILE, pos.y + dy * SPEED * delta));
-    if (nx !== pos.x || ny !== pos.y) dispatch(setPosition({ x: nx, y: ny, world: { w: WORLD_W, h: WORLD_H, tile: TILE } }));
-  }, [delta, left, right, up, down, pos.x, pos.y, dispatch]);
-
-  useKeyboardShortcuts(
-    { p: () => handleGo(), enter: () => handleGo() },
-    { enabled: true, preventDefault: true }
-  );
-
-  const inYard = pos.x >= YARD_X_START;
-  const ready = bladder >= 60;
-
-  function handleGo() {
-    if (!ready) return;
-
-    if (inYard) {
-      dispatch(changeBladder(-bladder));
-      dispatch(pottyProgress({ delta: 15 }));
-      dispatch(changeHappiness(+6));
-      dispatch(addXP(5));
-      dispatch(setMilestone({ key: "firstPotty", value: true }));
-    } else {
-      dispatch(pottyAccident());
+  const takeOutside = () => {
+    setOutside(true);
+    SoundManager.play("bark");
+    // 60% chance to create a poop “outside”
+    if (Math.random() < 0.6) {
+      setPoops((arr) => arr.concat({ id: idSeq++ }));
     }
-  }
+  };
 
-  const bladderBar = useMemo(() => {
-    if (bladder > 80) return "bg-red-500";
-    if (bladder > 60) return "bg-orange-500";
-    if (bladder > 30) return "bg-yellow-500";
-    return "bg-emerald-500";
-  }, [bladder]);
+  const accidentInside = () => {
+    setOutside(false);
+    // small chance an “inside” poop appears
+    if (Math.random() < 0.4) {
+      setPoops((arr) => arr.concat({ id: idSeq++ }));
+    }
+  };
 
-  const yardStyle = backyardSkin === "lush"
-    ? {
-        left: YARD_X_START, height: WORLD_H,
-        backgroundImage:
-          "linear-gradient(0deg,#99f0ae 0 1px,transparent 1px), linear-gradient(90deg,#99f0ae 0 1px, transparent 1px)",
-        backgroundSize: "64px 64px", backgroundColor: "#b7f7c5"
-      }
-    : {
-        left: YARD_X_START, height: WORLD_H,
-        backgroundImage:
-          "linear-gradient(0deg,#c7f9cc 0 1px,transparent 1px), linear-gradient(90deg,#c7f9cc 0 1px, transparent 1px)",
-        backgroundSize: "64px 64px", backgroundColor: "#bbf7d0"
-      };
+  const scoop = (id) => {
+    setPoops((arr) => arr.filter((p) => p.id !== id));
+    dispatch(earnCoins(2)); // reward scooping
+    SoundManager.play("scoop");
+  };
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center bg-gradient-to-br from-amber-50 to-emerald-100">
-      <div className="w-full max-w-4xl px-4 py-3 flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-emerald-900">Potty Trainer</h2>
-        <Link to="/game" className="px-3 py-2 rounded-xl bg-white shadow hover:shadow-md active:scale-95">← Back to Game</Link>
-      </div>
+    <div className="bg-white rounded-2xl shadow p-6">
+      <h3 className="text-lg font-semibold text-rose-900">Potty Trainer</h3>
+      <p className="text-sm text-rose-900/70">{mood}</p>
 
-      <div className="w-full max-w-4xl px-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className="text-emerald-900 font-medium">Bladder</span>
-          <div className="w-56 h-3 bg-emerald-900/10 rounded">
-            <div className={`h-3 ${bladderBar} rounded`} style={{ width: `${bladder}%` }} />
-          </div>
-          <span className="text-emerald-900/70 text-sm">{Math.round(bladder)}%</span>
-        </div>
-
-        <button
-          onClick={handleGo}
-          className={`px-3 py-2 rounded-xl shadow ${ready ? "bg-emerald-600 text-white hover:shadow-md active:scale-95" : "bg-gray-200 text-gray-500 cursor-not-allowed"}`}
-          title="P or Enter"
-        >
-          🚽 Go Potty (P)
+      <div className="flex items-center gap-2 mt-4">
+        <button className="px-3 py-2 rounded-xl bg-rose-600 text-white active:scale-95" onClick={takeOutside}>
+          🚪 Take Outside
+        </button>
+        <button className="px-3 py-2 rounded-xl bg-rose-100 text-rose-800 active:scale-95" onClick={accidentInside}>
+          😬 Accident Inside
         </button>
       </div>
 
-      <div className="w-full max-w-4xl px-4 mt-3">
-        <div className="relative rounded-2xl overflow-hidden shadow-inner" style={{ width: WORLD_W, height: WORLD_H }}>
-          <div className="absolute inset-0" style={{ width: YARD_X_START, height: WORLD_H,
-            backgroundImage:
-              "linear-gradient(0deg,#ede9fe 0 1px,transparent 1px), linear-gradient(90deg,#ede9fe 0 1px, transparent 1px)",
-            backgroundSize: "64px 64px",
-            backgroundColor: "#faf5ff"
-          }} />
-          <div className="absolute right-0 top-0" style={yardStyle} />
-          <div className="absolute top-2 left-2 text-xs px-2 py-1 rounded bg-white/80 text-emerald-900">Indoors</div>
-          <div className="absolute top-2 right-2 text-xs px-2 py-1 rounded bg-white/80 text-emerald-900">Yard (go here!)</div>
-
-          <div className="absolute transition-transform will-change-transform" style={{ transform: `translate(${pos.x}px, ${pos.y}px)` }}>
-            <DogSprite size={64} frameWidth={64} frameHeight={64} direction={dir} isWalking={true} frameCount={4} frameRate={10} />
-          </div>
-        </div>
-
-        <p className="mt-3 text-sm text-emerald-900/70">
-          Move with Arrow Keys / WASD. When the bladder is high (&ge; 60%), press <span className="font-mono">P</span> (or Enter).
-          Do it in the <b>yard</b> for progress — indoors causes an accident.
-        </p>
+      <div className="mt-4">
+        <PoopRenderer poops={poops} onScoop={scoop} />
       </div>
     </div>
   );
