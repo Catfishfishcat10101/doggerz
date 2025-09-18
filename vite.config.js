@@ -10,11 +10,11 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       includeAssets: [
+        "/offline.html",           // <- add this so it's cached
         "/favicon.png",
         "/icons/icon-192.png",
         "/icons/icon-512.png"
       ],
-      // Supply a manifest (keep it simple for now)
       manifest: {
         name: "Doggerz",
         short_name: "Doggerz",
@@ -29,10 +29,10 @@ export default defineConfig({
           { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png" }
         ]
       },
-      // Use Workbox only for runtime stuff and provide a safe offline fallback.
       workbox: {
         globPatterns: ["**/*.{js,css,html,svg,png,woff2}"],
-        navigateFallback: "/offline.html", // served when offline
+        navigateFallback: "/offline.html",
+        cleanupOutdatedCaches: true,
         runtimeCaching: [
           {
             urlPattern: ({ request }) => request.destination === "image",
@@ -43,19 +43,11 @@ export default defineConfig({
             }
           }
         ]
-      }
+      },
+      // (Optional) enable SW during dev to test install/offline:
+      // devOptions: { enabled: true }
     })
   ],
-
-  // IMPORTANT: do NOT add build.rollupOptions.input here.
-  // Vite will treat ONLY /index.html as the app entry.
-
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "src")
-    }
-  },
-
-  // Optional: quiet some noisy warnings
+  resolve: { alias: { "@": path.resolve(__dirname, "src") } },
   server: { port: 5173, open: false }
 });
