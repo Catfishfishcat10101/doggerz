@@ -103,4 +103,9 @@ export default function Accessories() {
       </div>
     </div>
   );
+<<<<<<< Updated upstream
 }
+=======
+}
+
+>>>>>>> Stashed changes
