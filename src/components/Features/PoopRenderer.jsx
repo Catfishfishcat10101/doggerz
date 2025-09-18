@@ -1,22 +1,25 @@
 // src/components/Features/PoopRenderer.jsx
 import React from "react";
-import "./PoopRenderer.css";
 
-export default function PoopRenderer({ poops = [] }) {
-  if (!poops.length) return null; // don't render empty wrapper
-
+/** Simple renderer to show current poop items in yard.
+ *  Controlled by parent (e.g., PottyTrainer) via props.
+ */
+export default function PoopRenderer({ poops = [], onScoop }) {
   return (
-    <>
+    <div className="grid grid-cols-6 gap-2">
+      {poops.length === 0 && (
+        <div className="col-span-6 text-center text-rose-900/60">No poop in the yard. Nice! ✨</div>
+      )}
       {poops.map((p) => (
-        <div
+        <button
           key={p.id}
-          className="poop"
-          style={{ left: p.x, top: p.y }}
-          title="Your dog left a surprise 🐕💩"
+          onClick={() => onScoop?.(p.id)}
+          className="bg-white rounded-xl shadow px-3 py-2 hover:shadow-md active:scale-95"
+          title="Scoop"
         >
           💩
-        </div>
+        </button>
       ))}
-    </>
+    </div>
   );
 }
