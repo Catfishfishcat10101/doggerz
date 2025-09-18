@@ -1,30 +1,42 @@
 import React from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { earnCoins, selectCoins } from "../../redux/dogSlice";
+import SoundManager from "../Features/SoundManager";
 
-const ToyBox = () => {
+const TOYS = [
+  { id: "ball", icon: "🎾", title: "Ball", reward: 1 },
+  { id: "bone", icon: "🦴", title: "Bone", reward: 2 },
+  { id: "rope", icon: "🪢", title: "Rope", reward: 1 },
+];
+
+export default function ToyBox() {
   const dispatch = useDispatch();
+  const coins = useSelector(selectCoins);
 
-  const toys = [
-    { name: "Ball", icon: "🧶", bonus: 5 },
-    { name: "Frisbee", icon: "🥏", bonus: 10 },
-    { name: "Bone", icon: "🦴", bonus: 15 },
-  ];
+  const play = (t) => {
+    SoundManager.play("click");
+    dispatch(earnCoins(t.reward));
+  };
 
   return (
-    <div className="my-4 text-center">
-      <h3 className="text-lg font-bold mb-2">🎁 Toys</h3>
-      <div className="flex gap-4 justify-center flex-wrap">
-        {toys.map((toy) => (
+    <div className="bg-white rounded-2xl shadow p-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-rose-900">Toy Box</h3>
+        <div className="text-sm px-2 py-1 rounded bg-rose-100 text-rose-900">💰 {coins}</div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2 mt-3">
+        {TOYS.map((t) => (
           <button
-            key={toy.name}
-            className="bg-violet-500 hover:bg-violet-600 px-4 py-2 rounded text-white shadow font-semibold"
+            key={t.id}
+            onClick={() => play(t)}
+            className="px-3 py-4 rounded-xl bg-rose-100 text-rose-900 hover:shadow active:scale-95 flex flex-col items-center"
           >
-            {toy.icon} {toy.name} (+{toy.bonus} Happy)
+            <div className="text-2xl">{t.icon}</div>
+            <div className="text-xs">{t.title}</div>
           </button>
         ))}
       </div>
     </div>
   );
-};
-
-export default ToyBox;
+}
