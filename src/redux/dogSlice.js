@@ -8,6 +8,7 @@ const clamp = (n, min = 0, max = 100) => Math.max(min, Math.min(max, n));
 const levelThreshold = (level) => 100 + (level - 1) * 50; // simple curve
 
 const initialState = {
+<<<<<<< Updated upstream
   // core avatar state
   level: 1,
   xp: 0,
@@ -22,6 +23,18 @@ const initialState = {
   pos: { x: 0, y: 0 },
 
   // needs model (can be expanded later)
+=======
+  coins: 0,
+  accessories: [],
+  unlocks: [],
+  level: 0,
+  xp: 0,
+  happiness: 50,
+  direction: "down",
+  moving: false,
+  pos: { x: 0, y: 0 },
+  backyardSkin: "default",
+>>>>>>> Stashed changes
   needs: {
     hunger: 50,
     energy: 50,
@@ -38,10 +51,49 @@ const dogSlice = createSlice({
   name: "dog",
   initialState,
   reducers: {
+<<<<<<< Updated upstream
     /** Economy */
     earnCoins(state, action) {
       const amount = Number(action.payload) || 0;
       state.coins = Math.max(0, state.coins + amount);
+=======
+    earnCoins: (state, action) => {
+      state.coins += action.payload;
+    },
+    spendCoins: (state, action) => {
+      state.coins = Math.max(state.coins - action.payload, 0);
+    },
+    equipAccessory: (state, action) => {
+      state.accessories.push(action.payload);
+    },
+    unlockAccessory: (state, action) => {
+      state.unlocks.push(action.payload);
+    },
+    addXP: (state, action) => {
+      state.xp += action.payload;
+    },
+    changeHappiness: (state, action) => {
+      state.happiness = action.payload;
+    },
+    setDirection: (state, action) => {
+      state.direction = action.payload;
+    },
+    setMoving: (state, action) => {
+      state.moving = action.payload;
+    },
+    setPosition : (state, action) => {
+      state.pos = action.payload;
+    },
+    tickNeeds: (state) => {
+      state.happiness = Math.max(0, state.happiness - 1);
+    },
+    selectBackyardSkin: (state, action) => {
+      state.backyardSkin = action.payload;
+    },
+    feedDog: (state) => {
+      state.needs.hunger = Math.min(state.needs.hunger + 20, 100);
+      state.happiness = Math.min(state.happiness + 5, 100);
+>>>>>>> Stashed changes
     },
     spendCoins(state, action) {
       const amount = Number(action.payload) || 0;
@@ -124,6 +176,7 @@ const dogSlice = createSlice({
   },
 });
 
+<<<<<<< Updated upstream
 /** Actions */
 export const {
   earnCoins,
@@ -157,5 +210,22 @@ export const selectMoving = (state) => state.dog.moving;
 export const selectPos = (state) => state.dog.pos;
 
 export const selectBackyardSkinValue = (state) => state.dog.backyardSkin; // extra alias if needed
+=======
+export const { earnCoins, spendCoins, equipAccessory, unlockAccessory, addXP, changeHappiness, setDirection, setMoving, setPosition, tickNeeds, selectBackyardSkin, feedDog, waterDog, restDog, trainDog, playDog } =
+  dogSlice.actions;
+
+// ✅ Selectors
+export const selectCoins = (state) => state.dog.coins;
+export const selectAccessories = (state) => state.dog.accessories;
+export const selectUnlocks = (state) => state.dog.unlocks;
+export const selectDirection = (state) => state.dog.direction;
+export const selectMoving = (state) => state.dog.moving;
+export const selectPos = (state) => state.dog.pos;
+export const selectDog = (state) => state.dog;
+export const selectDogLevel = (state) => state.dog.level;
+export const selectDogNeeds = (state) => state.dog.needs;
+export const selectHappiness = (state) => state.dog.happiness;
+export const selectDogXP = (state) => state.dog.xp;
+>>>>>>> Stashed changes
 
 export default dogSlice.reducer;
