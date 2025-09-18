@@ -1,89 +1,30 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Doggerz — Offline</title>
-  <meta name="theme-color" content="#059669" />
+  <link rel="icon" href="/favicon.png" />
   <style>
-    :root {
-      --bg1: #ecfeff; /* cyan-50 */
-      --bg2: #e8fff4; /* light emerald */
-      --ink: #064e3b; /* emerald-900 */
-      --muted: #065f46; /* emerald-800 */
-      --card: #ffffff;
-      --accent: #059669; /* emerald-600 */
-      --accent-ink: #ffffff;
-    }
-    * { box-sizing: border-box; }
-    html, body { height: 100%; }
-    body {
-      margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
-      color: var(--ink);
-      background: linear-gradient(180deg, var(--bg1), var(--bg2));
-      display: grid; place-items: center;
-    }
-    .card {
-      width: min(92vw, 560px);
-      background: var(--card);
-      border-radius: 20px;
-      padding: 24px;
-      box-shadow: 0 10px 30px rgba(0,0,0,.08);
-      text-align: center;
-    }
-    .title { font-size: 1.75rem; font-weight: 800; margin: 8px 0 6px; }
-    .desc { color: #065f46cc; margin: 0 0 16px; }
-    .row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-    .btn {
-      appearance: none; border: 0; border-radius: 12px;
-      background: var(--accent); color: var(--accent-ink);
-      padding: 10px 14px; font-weight: 700; cursor: pointer;
-      box-shadow: 0 4px 16px rgba(5,150,105,.24);
-    }
-    .btn.secondary {
-      background: #ecfdf5; color: var(--muted); box-shadow: none; border: 1px solid #d1fae5;
-    }
-    .hint { margin-top: 14px; font-size: 12px; color: #065f4688; }
-    .paw {
-      width: 72px; height: 72px; margin: 0 auto 6px; display: block;
-      filter: drop-shadow(0 2px 6px rgba(0,0,0,.15));
-    }
+    :root{--bg:#0b1220;--fg:#e2e8f0;--brand:#0ea5e9}
+    html,body{height:100%}
+    body{margin:0;display:grid;place-items:center;background:var(--bg);color:var(--fg);
+         font:500 16px system-ui,-apple-system,"Segoe UI",Roboto,Ubuntu,Cantarell,"Helvetica Neue",Arial}
+    .card{max-width:560px;padding:32px;border-radius:20px;background:rgba(255,255,255,.05);
+          box-shadow:0 10px 40px rgba(0,0,0,.35);text-align:center;backdrop-filter:blur(8px)}
+    h1{margin:0 0 8px;font-size:28px}
+    p{opacity:.9;margin:0 0 20px}
+    button{border:0;border-radius:14px;padding:12px 18px;font-weight:700;background:var(--brand);color:#001018;cursor:pointer}
+    .tips{opacity:.8;font-size:14px;margin-top:14px}
   </style>
 </head>
 <body>
-  <main class="card" role="main" aria-labelledby="offline-title">
-    <!-- inline SVG = no network dependency -->
-    <svg class="paw" viewBox="0 0 100 100" aria-hidden="true">
-      <defs>
-        <linearGradient id="g" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0" stop-color="#34d399"/>
-          <stop offset="1" stop-color="#059669"/>
-        </linearGradient>
-      </defs>
-      <rect x="0" y="0" width="100" height="100" rx="22" fill="url(#g)"></rect>
-      <g fill="#fff">
-        <circle cx="50" cy="58" r="18"></circle>
-        <circle cx="32" cy="36" r="9"></circle>
-        <circle cx="44" cy="30" r="9"></circle>
-        <circle cx="56" cy="30" r="9"></circle>
-        <circle cx="68" cy="36" r="9"></circle>
-      </g>
-    </svg>
-
-    <h1 id="offline-title" class="title">You’re offline</h1>
-    <p class="desc">Doggerz can’t reach the network right now. Check your connection and try again.</p>
-
-    <div class="row">
-      <button class="btn" onclick="location.reload()">Retry</button>
-      <button class="btn secondary" onclick="location.href='/'">Go Home</button>
-    </div>
-
-    <p class="hint">This page is served by your device while offline.</p>
+  <main class="card">
+    <img src="/icons/icon-192.png" alt="Doggerz" width="72" height="72" style="border-radius:16px;margin-bottom:12px"/>
+    <h1>You’re offline</h1>
+    <p>Doggerz runs offline for most screens. Some actions (login, cloud saves) need a connection.</p>
+    <button onclick="location.reload()">Try again</button>
+    <div class="tips">Tip: turn off Airplane mode or reconnect to Wi-Fi.</div>
   </main>
-
-  <script>
-    // If the connection comes back, auto-return to the app.
-    window.addEventListener('online', () => location.href = '/');
-  </script>
 </body>
 </html>
