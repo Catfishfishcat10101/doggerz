@@ -1,25 +1,144 @@
-import React, { useEffect } from "react";
-import { Link } from "react-router-dom";
-import "./Splash.css";
-import SoundManager from "../Features/SoundManager";
+import { Link, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import { useEffect } from "react";
+import { useAuth } from "../context/AuthContext";
+import Logo from "../components/Logo";
+import GradientOrbs from "../components/GradientOrbs";
+import FeatureBullets from "../components/FeatureBullets";
 
 export default function Splash() {
+  const { user, loading } = useAuth();
+  const nav = useNavigate();
+
   useEffect(() => {
-    const id = setInterval(() => SoundManager.play("bark"), 1800);
-    return () => clearInterval(id);
-  }, []);
+    if (!loading && user) nav("/app", { replace: true });
+  }, [loading, user, nav]);
 
   return (
-    <div className="splash-wrap grid place-items-center">
-      <div className="dog-jumper" />
-      <div className="max-w-md w-full mx-auto p-6 bg-white/80 rounded-2xl shadow text-center space-y-4">
-        <h1 className="text-3xl font-bold text-rose-900">Doggerz</h1>
-        <p className="text-rose-900/70">
-          Adopt a pixel pup. Train, potty, and collect accessories.
-        </p>
-        <div className="flex gap-3 justify-center">
-          <Link to="/login" className="px-4 py-2 rounded-xl bg-rose-600 text-white active:scale-95">Sign In</Link>
-          <Link to="/signup" className="px-4 py-2 rounded-xl bg-rose-100 text-rose-900 active:scale-95">Sign Up</Link>
+    <div className="relative min-h-dvh overflow-hidden bg-slate-950 text-white">
+      {/* animated background */}
+      <GradientOrbs />
+
+      {/* top nav */}
+      <div className="relative z-10 max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
+        <Logo />
+        <div className="flex items-center gap-3">
+          <Link
+            to="/signin"
+            className="rounded-xl border border-white/20 px-4 py-2 text-sm font-semibold hover:bg-white/10 transition"
+          >
+            Sign in
+          </Link>
+          <Link
+            to="/signup"
+            className="rounded-xl bg-sky-500 px-4 py-2 text-sm font-semibold hover:bg-sky-400 transition"
+          >
+            Create account
+          </Link>
+        </div>
+      </div>
+
+      {/* hero */}
+      <div className="relative z-10 max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-10 items-center pt-10 lg:pt-16">
+        <div>
+          <motion.h1
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="text-5xl md:text-6xl font-black tracking-tight"
+          >
+            Adopt a{" "}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-emerald-300">
+              pixel pup
+            </span>
+            . Raise it. Flex it.
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="mt-5 text-lg text-slate-300/90"
+          >
+            Zero-friction onboarding, offline-first PWA, cloud saves, and a
+            cosmetics pipeline that prints serotonin.
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="mt-8 flex flex-wrap gap-4"
+          >
+            <Link
+              to="/signup"
+              className="px-6 py-3 rounded-2xl bg-sky-500 font-semibold hover:brightness-110 active:brightness-95"
+            >
+              Create account
+            </Link>
+            <Link
+              to="/signin"
+              className="px-6 py-3 rounded-2xl border border-white/20 font-semibold hover:bg-white/10"
+            >
+              I already have one
+            </Link>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.35 }}
+            className="mt-10"
+          >
+            <FeatureBullets />
+          </motion.div>
+        </div>
+
+        {/* hero card / device mock */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.97 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6, delay: 0.25 }}
+          className="relative"
+        >
+          <div className="relative aspect-[10/7] rounded-3xl border border-white/10 bg-gradient-to-br from-white/10 to-white/[0.06] p-1 backdrop-blur">
+            <div className="h-full w-full rounded-[22px] bg-[radial-gradient(35%_45%_at_30%_30%,rgba(56,189,248,0.35),transparent),radial-gradient(35%_45%_at_70%_70%,rgba(16,185,129,0.35),transparent)] grid place-items-center overflow-hidden">
+              <motion.div
+                animate={{ y: [0, -6, 0] }}
+                transition={{ repeat: Infinity, duration: 3.5, ease: "easeInOut" }}
+                className="text-[110px] md:text-[140px] drop-shadow-[0_6px_20px_rgba(0,0,0,0.45)]"
+              >
+                🐶
+              </motion.div>
+              {/* diagonal shine */}
+              <div className="pointer-events-none absolute inset-0 [mask-image:linear-gradient(to_bottom,black,transparent)]">
+                <div className="absolute -left-1/3 -top-1/3 h-[200%] w-1/3 rotate-45 bg-white/6" />
+              </div>
+            </div>
+          </div>
+          {/* floating chips */}
+          <motion.div
+            className="absolute -top-6 -right-6 rounded-2xl px-3 py-2 text-xs bg-emerald-400/20 border border-emerald-300/30"
+            animate={{ y: [0, -6, 0] }}
+            transition={{ repeat: Infinity, duration: 4.2, ease: "easeInOut", delay: 0.2 }}
+          >
+            Cloud save ✅
+          </motion.div>
+          <motion.div
+            className="absolute -bottom-6 -left-6 rounded-2xl px-3 py-2 text-xs bg-sky-400/20 border border-sky-300/30"
+            animate={{ y: [0, 6, 0] }}
+            transition={{ repeat: Infinity, duration: 4.8, ease: "easeInOut", delay: 0.5 }}
+          >
+            Offline PWA ⚡
+          </motion.div>
+        </motion.div>
+      </div>
+
+      {/* footer */}
+      <div className="relative z-10 px-6 pt-14 pb-8 max-w-7xl mx-auto">
+        <div className="h-px w-full bg-gradient-to-r from-transparent via-white/15 to-transparent" />
+        <div className="mt-6 text-xs text-white/60">
+          © {new Date().getFullYear()} Doggerz. Be kind to your dogs.
         </div>
       </div>
     </div>
