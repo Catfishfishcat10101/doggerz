@@ -1,21 +1,46 @@
-import React from "react";
+// src/components/UI/DogName.jsx
+import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-export default function DogName() {
+let setNameAction, selectNameSelector;
+try {
+  // Optional: if your slice provides these
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const dogSlice = require("../../redux/dogSlice");
+  setNameAction = dogSlice.setName;
+  selectNameSelector = dogSlice.selectName;
+} catch {}
+
+export default function DogName({ onSubmit }) {
   const dispatch = useDispatch();
-  const name = useSelector((s) => s.dog?.name ?? "Pupper");
+  const reduxName = useSelector(selectNameSelector || (() => null));
+  const [name, setName] = useState(reduxName || "");
+
+  useEffect(() => {
+    if (reduxName != null) setName(reduxName);
+  }, [reduxName]);
+
+  const submit = (e) => {
+    e.preventDefault();
+    if (setNameAction) dispatch(setNameAction(name));
+    if (onSubmit) onSubmit(name);
+  };
 
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-xs opacity-70">Name:</span>
+    <form onSubmit={submit} className="w-full max-w-md mx-auto p-4 bg-white rounded-2xl shadow">
+      <label className="block text-sm font-medium text-emerald-900 mb-2">Name your dog</label>
       <input
-        className="bg-slate-900/40 border border-slate-700 rounded-xl px-3 py-1 text-sm"
         value={name}
-        onChange={(e) =>
-          dispatch({ type: "dog/setName", payload: { name: e.target.value } })
-        }
-        placeholder="Your dog's name"
+        onChange={(e) => setName(e.target.value)}
+        placeholder="Fireball"
+        className="w-full px-3 py-2 rounded-xl border border-emerald-900/10 focus:outline-none focus:ring-2 focus:ring-emerald-400"
       />
-    </div>
+      <button
+        className="mt-3 w-full px-4 py-2 rounded-xl bg-emerald-600 text-white font-semibold hover:shadow active:scale-95"
+        type="submit"
+      >
+        Save
+      </button>
+    </form>
   );
 }

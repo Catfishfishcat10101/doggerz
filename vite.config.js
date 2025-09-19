@@ -1,8 +1,6 @@
-// vite.config.js
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
-import path from "node:path";
 
 export default defineConfig({
   plugins: [
@@ -10,7 +8,6 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       includeAssets: [
-        "/offline.html",           // <- add this so it's cached
         "/favicon.png",
         "/icons/icon-192.png",
         "/icons/icon-512.png"
@@ -30,24 +27,9 @@ export default defineConfig({
         ]
       },
       workbox: {
-        globPatterns: ["**/*.{js,css,html,svg,png,woff2}"],
         navigateFallback: "/offline.html",
-        cleanupOutdatedCaches: true,
-        runtimeCaching: [
-          {
-            urlPattern: ({ request }) => request.destination === "image",
-            handler: "CacheFirst",
-            options: {
-              cacheName: "doggerz-images",
-              expiration: { maxEntries: 60, maxAgeSeconds: 60 * 60 * 24 * 30 }
-            }
-          }
-        ]
-      },
-      // (Optional) enable SW during dev to test install/offline:
-      // devOptions: { enabled: true }
+        globPatterns: ["**/*.{js,css,html,svg,png,mp3,woff2}"]
+      }
     })
-  ],
-  resolve: { alias: { "@": path.resolve(__dirname, "src") } },
-  server: { port: 5173, open: false }
+  ]
 });

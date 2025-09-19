@@ -1,41 +1,32 @@
+// src/components/UI/ToyBox.jsx
 import React from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { earnCoins, selectCoins } from "../../redux/dogSlice";
-import SoundManager from "../Features/SoundManager";
+import { useDispatch } from "react-redux";
+import { addXP, changeHappiness } from "../../redux/dogSlice";
 
-const TOYS = [
-  { id: "ball", icon: "🎾", title: "Ball", reward: 1 },
-  { id: "bone", icon: "🦴", title: "Bone", reward: 2 },
-  { id: "rope", icon: "🪢", title: "Rope", reward: 1 },
-];
+const Toy = ({ name, mood, xp, onPlay }) => (
+  <button
+    onClick={onPlay}
+    className="px-4 py-2 rounded-xl bg-white shadow hover:shadow-md active:scale-95"
+    title={`+${mood} happiness, +${xp} XP`}
+  >
+    {name}
+  </button>
+);
 
 export default function ToyBox() {
   const dispatch = useDispatch();
-  const coins = useSelector(selectCoins);
-
-  const play = (t) => {
-    SoundManager.play("click");
-    dispatch(earnCoins(t.reward));
+  const play = (mood, xp) => () => {
+    dispatch(changeHappiness(mood));
+    dispatch(addXP(xp));
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow p-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-rose-900">Toy Box</h3>
-        <div className="text-sm px-2 py-1 rounded bg-rose-100 text-rose-900">💰 {coins}</div>
-      </div>
-
-      <div className="grid grid-cols-3 gap-2 mt-3">
-        {TOYS.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => play(t)}
-            className="px-3 py-4 rounded-xl bg-rose-100 text-rose-900 hover:shadow active:scale-95 flex flex-col items-center"
-          >
-            <div className="text-2xl">{t.icon}</div>
-            <div className="text-xs">{t.title}</div>
-          </button>
-        ))}
+    <div className="w-full max-w-3xl mx-auto bg-white rounded-2xl shadow p-4">
+      <div className="font-semibold text-emerald-900 mb-3">Toy Box</div>
+      <div className="flex flex-wrap gap-2">
+        <Toy name="Tennis Ball 🎾" mood={3} xp={2} onPlay={play(3, 2)} />
+        <Toy name="Chew Toy 🦴" mood={2} xp={1} onPlay={play(2, 1)} />
+        <Toy name="Frisbee 🥏" mood={4} xp={3} onPlay={play(4, 3)} />
       </div>
     </div>
   );

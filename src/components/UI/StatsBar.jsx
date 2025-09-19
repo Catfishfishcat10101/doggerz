@@ -1,24 +1,32 @@
-import React from "react";
+// src/components/UI/StatsBar.jsx
+import React, { useMemo } from "react";
+import { useSelector } from "react-redux";
+import { selectHappiness } from "../../redux/dogSlice";
 
-function Bar({ label, value }) {
-  const v = Math.max(0, Math.min(100, Number(value) || 0));
-  return (
-    <div className="space-y-1">
-      <div className="text-xs text-rose-900/70">{label}</div>
-      <div className="h-3 bg-rose-100 rounded-full overflow-hidden">
-        <div className="h-full bg-rose-600" style={{ width: `${v}%` }} />
-      </div>
-    </div>
+export default function StatsBar() {
+  const happiness = useSelector(selectHappiness);
+
+  const barColor = useMemo(
+    () =>
+      happiness > 66
+        ? "bg-green-500"
+        : happiness > 33
+        ? "bg-yellow-500"
+        : "bg-red-500",
+    [happiness]
   );
-}
 
-export default function StatsBar({ happiness = 50, energy = 50, cleanliness = 50, hunger = 50 }) {
   return (
-    <div className="bg-white rounded-2xl shadow p-4 space-y-3">
-      <Bar label="Happiness" value={happiness} />
-      <Bar label="Energy" value={energy} />
-      <Bar label="Cleanliness" value={cleanliness} />
-      <Bar label="Hunger (lower is better)" value={100 - hunger} />
+    <div className="w-full max-w-4xl px-4 py-3 flex items-center justify-between">
+      <div className="flex items-center gap-3">
+        <span className="font-semibold text-emerald-900">Happiness</span>
+        <div className="w-48 h-3 bg-emerald-900/10 rounded">
+          <div
+            className={`h-3 ${barColor} rounded`}
+            style={{ width: `${Math.max(0, Math.min(100, happiness))}%` }}
+          />
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,20 +1,20 @@
+// src/components/UI/Status.jsx
 import React from "react";
 import { useSelector } from "react-redux";
-import { selectDog, selectDogLevel, selectCoins } from "../../redux/dogSlice";
+import { selectPos, selectDirection, selectHappiness } from "../../redux/dogSlice";
 
 export default function Status() {
-  const dog = useSelector(selectDog) || {};
-  const coins = useSelector(selectCoins);
-  const level = useSelector(selectDogLevel);
-  const name = dog.name ?? localStorage.getItem("doggerz_name") ?? "Your Pup";
+  const pos = useSelector(selectPos);
+  const dir = useSelector(selectDirection);
+  const happiness = useSelector(selectHappiness);
 
   return (
-    <div className="bg-white rounded-2xl shadow p-4 flex items-center justify-between">
-      <div className="text-rose-900">
-        <div className="font-semibold">{name}</div>
-        <div className="text-xs text-rose-900/60">Level {level}</div>
+    <div className="w-full max-w-3xl mx-auto mt-3 bg-white rounded-2xl shadow p-4 text-sm text-emerald-900">
+      <div className="grid grid-cols-3 gap-4">
+        <div>Position: <span className="font-mono">{Math.round(pos.x)}, {Math.round(pos.y)}</span></div>
+        <div>Facing: <span className="capitalize">{dir}</span></div>
+        <div>Happiness: <span>{Math.round(happiness)}%</span></div>
       </div>
-      <div className="px-3 py-1 rounded-lg bg-rose-100 text-rose-900">💰 {coins}</div>
     </div>
   );
 }

@@ -1,9 +1,10 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Dog sprite animation */
+.dog-sprite {
+  animation: dog-walk var(--dog-ms, 120ms) steps(var(--dog-steps, 4)) infinite;
+  animation-play-state: paused; /* start paused */
+}
 
-/* Utility for crisp sprites */
-.pixelated {
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
+@keyframes dog-walk {
+  from { background-position-x: 0px; }
+  to   { background-position-x: calc(-1px * var(--dog-steps, 4) * 64); }
 }

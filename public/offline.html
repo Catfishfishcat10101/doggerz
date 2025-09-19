@@ -1,30 +1,31 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Doggerz — Offline</title>
-  <link rel="icon" href="/favicon.png" />
-  <style>
-    :root{--bg:#0b1220;--fg:#e2e8f0;--brand:#0ea5e9}
-    html,body{height:100%}
-    body{margin:0;display:grid;place-items:center;background:var(--bg);color:var(--fg);
-         font:500 16px system-ui,-apple-system,"Segoe UI",Roboto,Ubuntu,Cantarell,"Helvetica Neue",Arial}
-    .card{max-width:560px;padding:32px;border-radius:20px;background:rgba(255,255,255,.05);
-          box-shadow:0 10px 40px rgba(0,0,0,.35);text-align:center;backdrop-filter:blur(8px)}
-    h1{margin:0 0 8px;font-size:28px}
-    p{opacity:.9;margin:0 0 20px}
-    button{border:0;border-radius:14px;padding:12px 18px;font-weight:700;background:var(--brand);color:#001018;cursor:pointer}
-    .tips{opacity:.8;font-size:14px;margin-top:14px}
-  </style>
-</head>
-<body>
-  <main class="card">
-    <img src="/icons/icon-192.png" alt="Doggerz" width="72" height="72" style="border-radius:16px;margin-bottom:12px"/>
-    <h1>You’re offline</h1>
-    <p>Doggerz runs offline for most screens. Some actions (login, cloud saves) need a connection.</p>
-    <button onclick="location.reload()">Try again</button>
-    <div class="tips">Tip: turn off Airplane mode or reconnect to Wi-Fi.</div>
-  </main>
-</body>
-</html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Doggerz • Offline</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      :root{
+        --bg1:#ecfeff;--bg2:#d1fae5;--ink:#064e3b;--muted:#0f766e;
+        --card:#ffffff;--ring:#86efac
+      }
+      html,body{height:100%}
+      body{
+        margin:0;display:grid;place-items:center;
+        background:linear-gradient(180deg,var(--bg1),var(--bg2));
+        color:var(--ink);font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial
+      }
+      .card{
+        background:var(--card);border:2px solid var(--ring);border-radius:20px;
+        padding:28px;max-width:560px;box-shadow:0 10px 40px rgba(0,0,0,.08);text-align:center
+      }
+      h1{margin:0 0 6px;font-size:1.75rem}
+      p{margin:6px 0;color:var(--muted)}
+      .btn{
+        display:inline-block;margin-top:14px;padding:10px 16px;border-radius:12px;
+        background:#10b981;color:#fff;text-decoration:none
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card" role="main" aria-label="Offline page">
