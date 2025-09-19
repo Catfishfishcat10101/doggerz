@@ -1,10 +1,15 @@
-// src/components/Features/index.js
-export { default as FeatureGate } from "./FeatureGate";
-export { default as PottyTrainer } from "./PottyTrainer";
-export { default as TricksTrainer } from "./TricksTrainer";
-export { default as StatsAndMilestones } from "./StatsAndMilestones";
-export { default as Shop } from "./Shop";
-export { default as BackyardUpgrade } from "./BackyardUpgrade";
-export { default as Accessories } from "./Accessories";
-export { default as Breed } from "./Breed";
-export { default as PWAInstallPrompt } from "./PWAInstallPrompt";
+// Barrel exports so imports stay tidy, e.g. import { Dog, StatsPanel } from "@/components";
+export { default as Accessories } from "./Accessories.jsx";
+export { default as Affection } from "./Affection.jsx";
+export { default as BackgroundScene } from "./BackgroundScene.jsx";
+export { default as Breeding } from "./Breeding.jsx";
+export { default as Dog } from "./Dog.jsx";
+export { default as Memory } from "./Memory.jsx";
+export { default as PoopRenderer } from "./PoopRenderer.jsx";
+export { default as PottyTrainer } from "./PottyTrainer.jsx";
+export { default as SettingsModal } from "./SettingsModal.jsx";
+export { default as Shop } from "./Shop.jsx";
+export { default as SoundManager } from "./SoundManager.js";
+export { default as StatsPanel } from "./StatsPanel.jsx";
+export { default as TricksTrainer } from "./TricksTrainer.jsx";
+export { default as UpgradeYard } from "./UpgradeYard.jsx";
