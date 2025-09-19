@@ -22,7 +22,7 @@ import {
   selectDirection,
   selectHappiness,
   selectMoving,
-  selectPos,
+  selectPosition,
   setDirection,
   setHappiness,
   setMoving,
