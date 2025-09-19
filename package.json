@@ -1,39 +1,29 @@
 {
   "name": "doggerz",
-  "private": false,
   "version": "1.1.0",
+  "private": true,
   "type": "module",
   "scripts": {
-    "verify": "npm run lint && npm run build",
-    "deps:outdated": "npm outdated || exit 0",
-    "deps:upgrade:semver": "npm upgrade && npm run verify",
-    "deps:ncu:preview": "npx npm-check updates",
-    "deps:ncu:update": "npx npm-check-updates-u && npm install && npm run verify",
-    "clean": "rimraf node_modules package-lock.json.vite dist",
-    "reinstall": "npm run clean && npm install && npm run verify",
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
-  },
-  "engines": {
-    "node": ">=20.0.0"
+    "preview": "vite preview --port 5173",
+    "lint": "eslint ."
   },
   "dependencies": {
-    "@reduxjs/toolkit": "^2.9.0",
-    "classnames": "^2.5.1",
-    "firebase": "^10.14.1",
+    "@reduxjs/toolkit": "^2.2.0",
+    "firebase": "^10.12.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-redux": "^9.1.2",
-    "react-router-dom": "^6.30.1"
+    "react-router-dom": "^6.26.2"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.4.20",
+    "eslint": "^9.11.1",
+    "eslint-plugin-react-hooks": "^5.0.0",
     "postcss": "^8.4.47",
-    "rimraf": "^6.0.1",
-    "tailwindcss": "^3.4.7",
-    "vite": "^5.4.10",
-    "vite-plugin-pwa": "^0.20.5"
+    "tailwindcss": "^3.4.12",
+    "vite": "^5.4.8"
   }
 }
