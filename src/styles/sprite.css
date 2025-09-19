@@ -1,0 +1,18 @@
+.dog-sprite { /* vars: --fw, --fh, --scale, --sheet, --row, --col0, --dog-steps, --dog-ms */
+  image-rendering: pixelated; image-rendering: -moz-crisp-edges; image-rendering: crisp-edges;
+  width: calc(var(--fw,64px) * var(--scale,1));
+  height: calc(var(--fh,64px) * var(--scale,1));
+  background: var(--sheet) no-repeat var(--col0,0px) calc(-1 * var(--row,0) * var(--fh,64px)) / auto auto;
+  will-change: background-position, transform; position: relative;
+  animation: dog-walk var(--dog-ms,480ms) steps(var(--dog-steps,4)) infinite;
+  animation-play-state: paused;
+}
+.dog-sprite[data-playing="true"] { animation-play-state: running; }
+.dog-sprite__layer { /* accessory sync */ position:absolute; inset:0; background-repeat:no-repeat;
+  background-position: var(--col0,0px) calc(-1 * var(--row,0) * var(--fh,64px));
+  animation: dog-walk var(--dog-ms,480ms) steps(var(--dog-steps,4)) infinite; animation-play-state: inherit;
+}
+@keyframes dog-walk {
+  from { background-position-x: var(--col0,0px); }
+  to   { background-position-x: calc(var(--col0,0px) - (var(--dog-steps,4) * var(--fw,64px))); }
+}

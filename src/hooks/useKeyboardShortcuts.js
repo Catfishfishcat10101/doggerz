@@ -1,33 +1,19 @@
 import { useEffect } from "react";
 
 /**
- * Global keyboard shortcuts.
- * @param {Record<string, (e:KeyboardEvent)=>void>} handlers e.g. { "shift+.": fn, "arrowleft": fn }
- * @param {{enabled?:boolean, preventDefault?:boolean, allowRepeat?:boolean}} opts
+ * Map of key => handler. Example:
+ * useKeyboardShortcuts({ ' ': onJump, ArrowLeft: onLeft, ArrowRight: onRight })
  */
-export default function useKeyboardShortcuts(handlers = {}, { enabled = true, preventDefault = false, allowRepeat = false } = {}) {
+export default function useKeyboardShortcuts(map, deps = []) {
   useEffect(() => {
-    if (!enabled) return;
-    const normalize = (e) => {
-      const k = (e.key || "").toLowerCase();
-      const parts = [];
-      if (e.ctrlKey) parts.push("ctrl");
-      if (e.metaKey) parts.push("meta");
-      if (e.altKey) parts.push("alt");
-      if (e.shiftKey) parts.push("shift");
-      parts.push(k);
-      return parts.join("+");
-    };
-    const onDown = (e) => {
-      if (!allowRepeat && e.repeat) return;
-      const combo = normalize(e);
-      const h = handlers[combo] || handlers[(e.key || "").toLowerCase()];
-      if (h) {
-        if (preventDefault) e.preventDefault();
-        h(e);
+    const onKey = (e) => {
+      const fn = map[e.key];
+      if (typeof fn === "function") {
+        fn(e);
       }
     };
-    window.addEventListener("keydown", onDown);
-    return () => window.removeEventListener("keydown", onDown);
-  }, [handlers, enabled, preventDefault, allowRepeat]);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, deps); // caller controls rebinds
 }

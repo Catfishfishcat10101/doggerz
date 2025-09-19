@@ -1,46 +1,35 @@
 import { useEffect, useRef, useState } from "react";
 
 /**
- * Game clock with requestAnimationFrame.
- * @param {{running?:boolean, speed?:number, pauseOnHidden?:boolean}} opts
+ * RequestAnimationFrame clock with pause/resume.
+ * Returns { time, dt, playing, pause, resume, toggle }.
  */
-export default function useGameClock({ running = true, speed = 1, pauseOnHidden = true } = {}) {
-  const [delta, setDelta] = useState(0); // seconds
-  const [mult, setMult] = useState(speed);
-  const rafRef = useRef(null);
-  const prevRef = useRef(performance.now());
+export default function useGameClock(playingDefault = true) {
+  const [playing, setPlaying] = useState(playingDefault);
+  const [time, setTime] = useState(0);   // ms since start
+  const [dt, setDt] = useState(16.67);   // ms since last frame
 
-  useEffect(() => { setMult(speed); }, [speed]);
+  const ref = useRef({ last: 0, start: 0, raf: 0 });
 
   useEffect(() => {
-    let active = true;
-
     const loop = (t) => {
-      if (!active) return;
-      const prev = prevRef.current || t;
-      const dt = (t - prev) / 1000 * mult;
-      prevRef.current = t;
-      setDelta(dt > 0 && dt < 1 ? dt : 0);
-      rafRef.current = requestAnimationFrame(loop);
+      if (!ref.current.start) ref.current.start = t;
+      if (!ref.current.last) ref.current.last = t;
+      const elapsed = t - ref.current.start;
+      const delta = t - ref.current.last;
+      ref.current.last = t;
+      setTime(elapsed);
+      setDt(delta);
+      ref.current.raf = requestAnimationFrame(loop);
     };
 
-    const onVis = () => {
-      if (pauseOnHidden && document.visibilityState === "hidden") {
-        prevRef.current = performance.now();
-      }
-    };
+    if (playing) ref.current.raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(ref.current.raf);
+  }, [playing]);
 
-    if (running) {
-      prevRef.current = performance.now();
-      rafRef.current = requestAnimationFrame(loop);
-      document.addEventListener("visibilitychange", onVis);
-    }
-    return () => {
-      active = false;
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      document.removeEventListener("visibilitychange", onVis);
-    };
-  }, [running, mult, pauseOnHidden]);
+  const pause = () => setPlaying(false);
+  const resume = () => setPlaying(true);
+  const toggle = () => setPlaying((p) => !p);
 
-  return { delta, setSpeed: setMult };
+  return { time, dt, playing, pause, resume, toggle };
 }

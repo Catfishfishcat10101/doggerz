@@ -1,0 +1,12 @@
+/* modern reset */
+*,*::before,*::after { box-sizing: border-box; }
+html,body,#root { height: 100%; }
+body {
+  margin: 0;
+  background: var(--clr-bg);
+  color: var(--clr-fg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+img,svg,video,canvas { display:block; max-width:100%; }
+button,input,select,textarea { font: inherit; }

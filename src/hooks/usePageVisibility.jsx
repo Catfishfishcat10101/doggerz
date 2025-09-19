@@ -1,17 +1,14 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
-/**
- * Visibility helpers.
- * @param {{onShow?:()=>void, onHide?:()=>void}} opts
- */
-export default function usePageVisibility({ onShow, onHide } = {}) {
+/** Returns true when the tab is visible. */
+export default function usePageVisibility() {
+  const [visible, setVisible] = useState(!document.hidden);
+
   useEffect(() => {
-    const onVis = () => {
-      if (document.visibilityState === "visible") onShow && onShow();
-      else onHide && onHide();
-    };
-    document.addEventListener("visibilitychange", onVis);
-    return () => document.removeEventListener("visibilitychange", onVis);
-  }, [onShow, onHide]);
-  return document.visibilityState === "visible";
+    const onChange = () => setVisible(!document.hidden);
+    document.addEventListener("visibilitychange", onChange);
+    return () => document.removeEventListener("visibilitychange", onChange);
+  }, []);
+
+  return visible;
 }

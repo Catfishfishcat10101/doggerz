@@ -1,6 +1,109 @@
+/* src/components/UI/DogSprite.css */
+
+/* ────────────────────────────────────────────────────────────────────────────
+   Core sprite box
+   Driven entirely via CSS variables (set by DogSprite.jsx):
+   --fw, --fh, --scale, --sheet, --row, --col0, --dog-steps, --dog-ms
+   ──────────────────────────────────────────────────────────────────────────── */
 .dog-sprite {
+  /* crisp pixels everywhere */
   image-rendering: pixelated;
   image-rendering: -moz-crisp-edges;
   image-rendering: crisp-edges;
+
+  /* perf */
   will-change: background-position, transform;
+  transform: translateZ(0);
+
+  /* sizing */
+  width: calc(var(--fw, 64px) * var(--scale, 1));
+  height: calc(var(--fh, 64px) * var(--scale, 1));
+
+  /* sheet placement */
+  background-image: var(--sheet, none);
+  background-repeat: no-repeat;
+  background-size: auto auto;
+  background-position:
+    var(--col0, 0px)
+    calc(-1 * var(--row, 0) * var(--fh, 64px));
+
+  /* default animation (horizontal stepping); paused by default */
+  animation: dog-walk var(--dog-ms, 480ms) steps(var(--dog-steps, 4)) infinite;
+  animation-play-state: paused;
+  position: relative; /* for layers */
+}
+
+/* Play/pause toggled by component via data attribute */
+.dog-sprite[data-playing="true"] {
+  animation-play-state: running;
+}
+
+/* Optional horizontal flip (handy if your sheet only faces one direction) */
+.dog-sprite[data-flip="true"] {
+  transform: scaleX(-1) translateZ(0);
+}
+
+/* Idle "breathing" overlay without changing frames */
+.dog-sprite[data-anim="idle"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 80%;
+  animation: dog-breathe 1800ms ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+   Accessory layers (hats, bandanas, etc.)
+   These reuse the exact same CSS vars to stay perfectly in sync with frames.
+   ──────────────────────────────────────────────────────────────────────────── */
+.dog-sprite__layer {
+  position: absolute;
+  inset: 0;
+  background-repeat: no-repeat;
+  background-size: auto auto;
+  background-position:
+    var(--col0, 0px)
+    calc(-1 * var(--row, 0) * var(--fh, 64px));
+  image-rendering: inherit;
+  pointer-events: none;
+  will-change: background-position;
+  animation: dog-walk var(--dog-ms, 480ms) steps(var(--dog-steps, 4)) infinite;
+  animation-play-state: inherit; /* follows parent play state */
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+   Keyframes
+   ──────────────────────────────────────────────────────────────────────────── */
+@keyframes dog-walk {
+  from { background-position-x: var(--col0, 0px); }
+  to   { background-position-x: calc(var(--col0, 0px) - (var(--dog-steps, 4) * var(--fw, 64px))); }
+}
+
+@keyframes dog-breathe {
+  0%   { transform: scale(1);       filter: brightness(1); }
+  50%  { transform: scale(1.015);   filter: brightness(1.02); }
+  100% { transform: scale(1);       filter: brightness(1); }
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+   A11y / motion
+   ──────────────────────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .dog-sprite,
+  .dog-sprite::after,
+  .dog-sprite__layer {
+    animation: none !important;
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+   Optional dev helpers
+   ──────────────────────────────────────────────────────────────────────────── */
+.dog-sprite[data-debug="hitbox"]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  outline: 1px dashed rgba(16, 185, 129, 0.6);
+  pointer-events: none;
 }

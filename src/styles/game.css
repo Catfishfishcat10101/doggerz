@@ -1,0 +1,16 @@
+.world {
+  background-color: #b7f7c5;
+  background-image:
+    linear-gradient(0deg,#99f0ae 0 1px,transparent 1px),
+    linear-gradient(90deg,#99f0ae 0 1px,transparent 1px);
+  background-size: 64px 64px;
+  border: 2px solid rgba(16,185,129,0.25);
+  border-radius: 16px;
+}
+.world[data-debug="grid"]::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background-image:
+    linear-gradient(transparent, transparent 63px, rgba(0,0,0,.06) 64px),
+    linear-gradient(90deg, transparent, transparent 63px, rgba(0,0,0,.06) 64px);
+  background-size: 64px 64px;
+}

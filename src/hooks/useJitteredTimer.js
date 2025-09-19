@@ -1,30 +1,23 @@
 import { useEffect, useRef } from "react";
 
 /**
- * Calls onTick repeatedly with jittered intervals.
- * @param {{baseMs?:number, jitter?:number, autoStart?:boolean, onTick?:(count:number)=>void}} opts
+ * Calls `fn` every `baseMs ± jitterMs`.
+ * Good for “alive” feel without synchronized spikes.
  */
-export default function useJitteredTimer({ baseMs = 2000, jitter = 0.3, autoStart = false, onTick } = {}) {
-  const countRef = useRef(0);
-  const timerRef = useRef(null);
-
-  const schedule = () => {
-    const j = Math.max(0, Math.min(1, jitter));
-    const dev = baseMs * j;
-    const wait = baseMs + (Math.random() * 2 - 1) * dev;
-    timerRef.current = setTimeout(() => {
-      countRef.current += 1;
-      onTick && onTick(countRef.current);
-      schedule();
-    }, Math.max(50, wait));
-  };
+export default function useJitteredTimer(fn, baseMs = 1000, jitterMs = 300) {
+  const fnRef = useRef(fn); fnRef.current = fn;
 
   useEffect(() => {
-    if (!autoStart) return;
-    schedule();
-    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [baseMs, jitter, autoStart, onTick]);
-
-  return null;
+    let killed = false, id;
+    const loop = () => {
+      const jitter = (Math.random() * 2 - 1) * jitterMs;
+      const wait = Math.max(50, baseMs + jitter);
+      id = setTimeout(() => {
+        if (!killed) fnRef.current?.();
+        if (!killed) loop();
+      }, wait);
+    };
+    loop();
+    return () => { killed = true; clearTimeout(id); };
+  }, [baseMs, jitterMs]);
 }

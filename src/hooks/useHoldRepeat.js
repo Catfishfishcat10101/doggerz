@@ -1,36 +1,22 @@
-import { useCallback, useRef } from "react";
+import { useEffect, useRef } from "react";
 
 /**
- * Hold a button to repeat an action.
- * @param {() => void} fn
- * @param {{initialDelay?:number, interval?:number}} opts
+ * Repeatedly fires `fn` while `active` is true.
+ * @param {boolean} active
+ * @param {function} fn
+ * @param {number} initialDelay ms before first repeat (default 250)
+ * @param {number} interval ms between repeats (default 50)
  */
-export default function useHoldRepeat(fn, { initialDelay = 250, interval = 80 } = {}) {
-  const timerRef = useRef(null);
-  const intRef = useRef(null);
+export default function useHoldRepeat(active, fn, initialDelay = 250, interval = 50) {
+  const fnRef = useRef(fn);
+  fnRef.current = fn;
 
-  const clear = () => {
-    if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
-    if (intRef.current) { clearInterval(intRef.current); intRef.current = null; }
-  };
-
-  const start = useCallback(() => {
-    clear();
-    fn();
-    timerRef.current = setTimeout(() => {
-      intRef.current = setInterval(fn, interval);
+  useEffect(() => {
+    if (!active) return;
+    let timer = setTimeout(function tick() {
+      fnRef.current?.();
+      timer = setTimeout(tick, interval);
     }, initialDelay);
-  }, [fn, initialDelay, interval]);
-
-  const stop = useCallback(() => { clear(); }, []);
-
-  const bind = {
-    onMouseDown: start,
-    onMouseUp: stop,
-    onMouseLeave: stop,
-    onTouchStart: start,
-    onTouchEnd: stop,
-  };
-
-  return { bind, start, stop };
+    return () => clearTimeout(timer);
+  }, [active, initialDelay, interval]);
 }

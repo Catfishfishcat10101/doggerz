@@ -1,127 +1,82 @@
+// src/components/Auth/Login.jsx
 import React, { useState } from "react";
+import { useSelector } from "react-redux";
+import { Navigate, Link } from "react-router-dom";
 import { auth, googleProvider } from "../../firebase";
-import { signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
-import { useNavigate } from "react-router-dom";
+import { signInWithPopup, signInWithEmailAndPassword } from "firebase/auth";
+import { selectUid } from "../../redux/userSlice";
 
 export default function Login() {
+  const uid = useSelector(selectUid);
   const [email, setEmail] = useState("");
-  const [pw, setPw] = useState("");
-  const [showPw, setShowPw] = useState(false);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
+  const [pwd, setPwd] = useState("");
+  const [err, setErr] = useState("");
 
-  const loginWithEmail = async (e) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
+  if (uid) return <Navigate to="/game" replace />;
+
+  const onGoogle = async () => {
+    setErr("");
     try {
-      await signInWithEmailAndPassword(auth, email, pw);
-      navigate("/game");
-    } catch (err) {
-      setError(err.message || "Login failed.");
-    } finally {
-      setLoading(false);
+      await signInWithPopup(auth, googleProvider);
+    } catch (e) {
+      setErr(e?.message || "Google sign-in failed");
     }
   };
 
-  const loginWithGoogle = async () => {
-    setError("");
-    setLoading(true);
+  const onEmail = async (e) => {
+    e.preventDefault();
+    setErr("");
     try {
-      await signInWithPopup(auth, googleProvider);
-      navigate("/game");
-    } catch (err) {
-      setError(err.message || "Google sign-in failed.");
-    } finally {
-      setLoading(false);
+      await signInWithEmailAndPassword(auth, email.trim(), pwd);
+    } catch (e2) {
+      setErr(e2?.message || "Login failed");
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-200 to-blue-100 p-4">
-      <form
-        onSubmit={loginWithEmail}
-        className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8 space-y-6"
+    <main className="p-6 space-y-4 max-w-sm mx-auto">
+      <h1 className="text-xl font-bold">Sign in</h1>
+
+      {err && <p className="text-sm text-red-600">{err}</p>}
+
+      <button
+        onClick={onGoogle}
+        className="w-full rounded-lg bg-sky-600 text-white px-3 py-2 hover:bg-sky-700"
       >
-        <h1 className="text-2xl font-bold text-center">Sign in to Doggerz</h1>
+        Continue with Google
+      </button>
 
-        {error ? (
-          <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded p-2">
-            {error}
-          </p>
-        ) : null}
+      <div className="h-px bg-slate-200" />
 
-        <label className="block space-y-1">
-          <span className="text-sm font-medium">Email</span>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            autoComplete="email"
-            className="w-full rounded-lg border p-3 focus:outline-none focus:ring"
-            placeholder="you@example.com"
-          />
-        </label>
-
-        <label className="block space-y-1">
-          <span className="text-sm font-medium">Password</span>
-          <div className="relative">
-            <input
-              type={showPw ? "text" : "password"}
-              value={pw}
-              onChange={(e) => setPw(e.target.value)}
-              required
-              autoComplete="current-password"
-              className="w-full rounded-lg border p-3 pr-12 focus:outline-none focus:ring"
-              placeholder="••••••••"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPw((s) => !s)}
-              className="absolute inset-y-0 right-2 my-auto px-2 text-sm underline"
-              aria-label={showPw ? "Hide password" : "Show password"}
-              aria-pressed={showPw}
-            >
-              {showPw ? "Hide" : "Show"}
-            </button>
-          </div>
-        </label>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full rounded-lg bg-blue-600 text-white py-3 font-semibold hover:bg-blue-700 disabled:opacity-50"
-        >
-          {loading ? "Signing in…" : "Sign In"}
+      <form className="space-y-3" onSubmit={onEmail}>
+        <input
+          className="w-full rounded-lg border px-3 py-2"
+          placeholder="Email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          autoComplete="email"
+        />
+        <input
+          className="w-full rounded-lg border px-3 py-2"
+          placeholder="Password"
+          type="password"
+          value={pwd}
+          onChange={(e) => setPwd(e.target.value)}
+          autoComplete="current-password"
+        />
+        <button className="w-full rounded-lg border px-3 py-2 hover:bg-slate-50">
+          Sign in
         </button>
-
-        <div className="flex items-center gap-2">
-          <div className="h-px flex-1 bg-gray-200" />
-          <span className="text-xs text-gray-500">or</span>
-          <div className="h-px flex-1 bg-gray-200" />
-        </div>
-
-        <button
-          type="button"
-          onClick={loginWithGoogle}
-          className="w-full rounded-lg border py-3 font-semibold hover:bg-gray-50"
-          disabled={loading}
-        >
-          Continue with Google
-        </button>
-
-        <p className="text-center text-sm">
-          Don’t have an account?{" "}
-          <a
-            href="/signup"
-            className="text-blue-700 underline underline-offset-2"
-          >
-            Sign up
-          </a>
-        </p>
       </form>
-    </div>
+
+      <p className="text-sm text-slate-600">
+        New here?{" "}
+        <Link className="text-sky-700 hover:underline" to="/signup">
+          Create an account
+        </Link>
+      </p>
+    </main>
   );
 }
+// src/router.jsx

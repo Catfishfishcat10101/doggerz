@@ -1,0 +1,13 @@
+/* src/styles/index.css */
+@import "./tokens.css";
+@import "./reset.css";
+@import "./helpers.css";
+@import "./accessibility.css";
+@import "./animations.css";
+@import "./layout.css";
+@import "./components.css";
+@import "./sprite.css";
+@import "./game.css";
+@import "./pwa.css";
+/* Component-local CSS (like Splash.css) can be imported in the component file */
+/* Global styles can be added here if needed */

@@ -1,0 +1,15 @@
+.card {
+  background: #fff;
+  border: 1px solid rgba(2,6,23,0.06);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-sm);
+}
+.btn {
+  border-radius: 12px;
+  border: 1px solid rgba(2,6,23,0.08);
+  background: #fff;
+  transition: transform var(--dur-fast) var(--eio), box-shadow var(--dur-fast) var(--eio);
+}
+.btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.btn--primary { background: var(--clr-brand-600); color: #fff; border-color: color-mix(in srgb, var(--clr-brand-600) 40%, transparent); }
+.btn--ghost   { background: #ffffffb0; }

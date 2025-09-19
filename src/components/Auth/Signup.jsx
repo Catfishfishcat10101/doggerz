@@ -1,83 +1,72 @@
-// src/components/Auth/Signup.jsx
 import React, { useState } from "react";
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { Navigate, Link } from "react-router-dom";
 import { auth } from "../../firebase";
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { selectUid } from "../../redux/userSlice";
 
 export default function Signup() {
+  const uid = useSelector(selectUid);
   const [email, setEmail] = useState("");
-  const [pw, setPw] = useState("");
+  const [pwd, setPwd] = useState("");
   const [name, setName] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-  const navigate = useNavigate();
+  const [err, setErr] = useState("");
 
-  const onSubmit = async (e) => {
+  if (uid) return <Navigate to="/game" replace />;
+
+  const onSignup = async (e) => {
     e.preventDefault();
-    setError("");
-    setBusy(true);
+    setErr("");
     try {
-      const normalized = email.trim().toLowerCase();
-      const cred = await createUserWithEmailAndPassword(auth, normalized, pw);
-      if (name) await updateProfile(cred.user, { displayName: name });
-      navigate("/game", { replace: true });
-    } catch (err) {
-      setError(err.code || err.message);
-    } finally {
-      setBusy(false);
+      const cred = await createUserWithEmailAndPassword(auth, email.trim(), pwd);
+      if (name.trim()) {
+        await updateProfile(cred.user, { displayName: name.trim() });
+      }
+    } catch (e2) {
+      setErr(e2?.message || "Signup failed");
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-200 to-blue-100 px-4">
-      <form onSubmit={onSubmit} className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-sm flex flex-col gap-4">
-        <h2 className="text-2xl font-bold text-blue-900 mb-2">Create account</h2>
-
+    <main className="p-6 space-y-4 max-w-sm mx-auto">
+      <h1 className="text-xl font-bold">Create account</h1>
+      {err && <p className="text-sm text-red-600">{err}</p>}
+      <form className="space-y-3" onSubmit={onSignup}>
         <input
-          className="border px-3 py-2 rounded"
+          className="w-full rounded-lg border px-3 py-2"
           placeholder="Display name (optional)"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          disabled={busy}
+          autoComplete="nickname"
         />
         <input
+          className="w-full rounded-lg border px-3 py-2"
+          placeholder="Email"
           type="email"
-          className="border px-3 py-2 rounded"
-          placeholder="you@example.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          autoComplete="email"
           required
-          disabled={busy}
         />
         <input
-          type="password"
-          className="border px-3 py-2 rounded"
+          className="w-full rounded-lg border px-3 py-2"
           placeholder="Password"
-          value={pw}
-          onChange={(e) => setPw(e.target.value)}
+          type="password"
+          value={pwd}
+          onChange={(e) => setPwd(e.target.value)}
+          autoComplete="new-password"
           required
-          disabled={busy}
         />
-
-        <button
-          type="submit"
-          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded font-semibold disabled:opacity-60"
-          disabled={busy}
-        >
-          {busy ? "Creating..." : "Sign up"}
+        <button className="w-full rounded-lg bg-emerald-600 text-white px-3 py-2 hover:bg-emerald-700">
+          Sign up
         </button>
-
-        <button
-          type="button"
-          onClick={() => navigate("/login")}
-          className="text-blue-600 underline underline-offset-2"
-          disabled={busy}
-        >
-          Already have an account? Log in
-        </button>
-
-        {error && <div className="text-red-600 text-sm">{error}</div>}
       </form>
-    </div>
+      <p className="text-sm text-slate-600">
+        Already have an account?{" "}
+        <Link className="text-sky-700 hover:underline" to="/login">
+          Log in
+        </Link>
+      </p>
+    </main>
   );
 }
