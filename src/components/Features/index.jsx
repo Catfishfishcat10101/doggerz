@@ -1,31 +1,10 @@
-import React from "react";
-import ReactDOM from "react-dom/client";
-import "./index.css";
-import App from "./App.jsx";
-
-// Redux (optional if you already use it)
-import { Provider } from "react-redux";
-import { store } from "./redux/store.js";
-
-// Router
-import { BrowserRouter } from "react-router-dom";
-
-// Head tags
-import { HelmetProvider } from "react-helmet-async";
-
-export function renderApp() {
-  const rootEl = document.getElementById("root");
-  if (!rootEl) throw new Error("Missing #root in index.html");
-
-  ReactDOM.createRoot(rootEl).render(
-    <React.StrictMode>
-      <Provider store={store}>
-        <BrowserRouter basename={import.meta.env.BASE_URL || "/"}>
-          <HelmetProvider>
-            <App />
-          </HelmetProvider>
-        </BrowserRouter>
-      </Provider>
-    </React.StrictMode>
-  );
-}
+// src/components/Features/index.js
+export { default as FeatureGate } from "./FeatureGate";
+export { default as PottyTrainer } from "./PottyTrainer";
+export { default as TricksTrainer } from "./TricksTrainer";
+export { default as StatsAndMilestones } from "./StatsAndMilestones";
+export { default as Shop } from "./Shop";
+export { default as BackyardUpgrade } from "./BackyardUpgrade";
+export { default as Accessories } from "./Accessories";
+export { default as Breed } from "./Breed";
+export { default as PWAInstallPrompt } from "./PWAInstallPrompt";
