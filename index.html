@@ -1,16 +1,55 @@
-// index.html
+<!-- C:\Users\fireb\doggerz\index.html -->
 <!doctype html>
-<html lang="en">
+<html lang="en" class="h-full">
   <head>
-    <link rel="manifest" href="manifest.webmanifest" />
-    <meta name="theme-color" content="#059669" />
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+
     <title>Doggerz</title>
+    <meta name="description" content="Adopt a pixel pup and raise it! Doggerz is a cozy virtual-pet PWA." />
+
+    <!-- Color & theming (kept in sync with vite-plugin-pwa manifest theme_color) -->
+    <meta name="theme-color" content="#0ea5e9" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0ea5e9" media="(prefers-color-scheme: dark)" />
+    <meta name="color-scheme" content="light dark" />
+
+    <!-- PWA install surface (VitePWA injects the manifest & SW; icons live in /public/icons) -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Doggerz" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="512x512" href="/icons/icon-512.png" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+
+    <!-- Social cards (nice for portfolio shares) -->
+    <meta property="og:title" content="Doggerz" />
+    <meta property="og:description" content="Adopt a pixel pup and raise it! A fast, offline-ready React PWA." />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/icons/icon-512.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <!-- Preconnects (mild perf win for Firebase/Auth) -->
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://www.googleapis.com" crossorigin />
+    <link rel="preconnect" href="https://firebase.googleapis.com" crossorigin />
+
+    <!-- Tailwind is bundled by Vite; no CSS link needed here -->
   </head>
-  <body class="min-h-screen">
-    <div id="root"></div>
+
+  <body class="h-full bg-[var(--bg-0)] text-[var(--tx-0)]">
+    <noscript>
+      <div style="padding:1rem;max-width:42rem;margin:2rem auto;font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
+        <h1 style="margin:0 0 .5rem">Doggerz requires JavaScript</h1>
+        <p style="opacity:.75">Please enable JavaScript to play. Your pup is waiting.</p>
+      </div>
+    </noscript>
+
+    <div id="root" class="h-full"></div>
+
+    <!-- Entry point -->
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
-
