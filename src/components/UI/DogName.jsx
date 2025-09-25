@@ -1,10 +1,16 @@
 // src/components/UI/DogName.jsx
 import React, { memo, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { setName as setDogName } from "@/redux/dogSlice";
 
-// If you have action creators, prefer importing them:
-// import { setName as setDogName } from "@/redux/dogSlice";
-
+/**
+ * DogName
+ * - Single source of truth: Redux (dog.name)
+ * - Hydrates from localStorage once if Redux has no name yet
+ * - Debounced commit on change, immediate commit on Enter/blur
+ * - IME-friendly via composition events
+ * - Visual + SR status feedback
+ */
 export default memo(function DogName({
   maxLen = 20,
   className = "",
@@ -12,44 +18,71 @@ export default memo(function DogName({
 }) {
   const dispatch = useDispatch();
 
-  // Source of truth from store (safe fallback)
-  const storeName = useSelector((s) => s?.dog?.name) ?? readLS(persistKey) ?? "Pupper";
+  // Pull raw name from store; do NOT use selector that injects defaults.
+  const reduxName = useSelector((s) => s?.dog?.name);
 
-  // Local edit state
-  const [value, setValue] = useState(storeName);
+  // Local editable value mirrors Redux and can be ahead of it during typing.
+  const [value, setValue] = useState(reduxName ?? "");
   const [error, setError] = useState("");
-  const [status, setStatus] = useState(""); // SR-friendly status line
-  const composingRef = useRef(false); // IME in progress?
+  const [status, setStatus] = useState(""); // human-visible + SR feedback
+
+  const composingRef = useRef(false); // IME composition in progress?
   const debTimer = useRef(null);
+  const statusTimer = useRef(null);
 
-  // Keep local input in sync if Redux changes externally
-  useEffect(() => { setValue(storeName); }, [storeName]);
-
-  // Validate + normalize before dispatch/persist
+  /* ------------------------------ utilities ------------------------------ */
+  const readLS = (key) => {
+    try { return localStorage.getItem(key) || null; } catch { return null; }
+  };
+  const writeLS = (key, v) => {
+    try { localStorage.setItem(key, v); } catch {}
+  };
   const normalize = (v) => {
-    const trimmed = v.replace(/\s+/g, " ").trim();
+    const trimmed = (v ?? "").replace(/\s+/g, " ").trim();
     return trimmed.length ? trimmed : "Pupper";
   };
   const validate = (v) => {
     if (v.length > maxLen) return `Name must be ≤ ${maxLen} characters.`;
     return "";
   };
+  const setTransientStatus = (msg) => {
+    setStatus(msg);
+    if (statusTimer.current) clearTimeout(statusTimer.current);
+    statusTimer.current = setTimeout(() => setStatus(""), 1200);
+  };
 
-  // Persist + dispatch (debounced calls collapse to one)
+  /* ------------------------------- hydrate ------------------------------- */
+  // On first mount: if Redux has no name, hydrate from localStorage.
+  useEffect(() => {
+    if (!reduxName) {
+      const cached = readLS(persistKey);
+      if (cached) {
+        dispatch(setDogName(cached));
+        setValue(cached);
+        setTransientStatus(`Loaded saved name: ${cached}`);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // run once
+
+  /* ------------------------- keep local in sync -------------------------- */
+  useEffect(() => {
+    // When Redux changes (elsewhere), mirror it—unless in IME composition.
+    if (!composingRef.current && typeof reduxName === "string") {
+      setValue(reduxName);
+    }
+  }, [reduxName]);
+
+  /* ---------------------------- commit logic ----------------------------- */
   const commit = (raw) => {
     const next = normalize(raw);
     const err = validate(next);
     if (err) { setError(err); return; }
     setError("");
-    // Persist
-    try { localStorage.setItem(persistKey, next); } catch {}
 
-    // Dispatch (prefer action creator if you have one)
-    try {
-      // dispatch(setDogName(next))  // if you import an action creator
-      dispatch({ type: "dog/setName", payload: { name: next } });
-    } catch {}
-    setStatus(`Saved name: ${next}`);
+    writeLS(persistKey, next);
+    dispatch(setDogName(next));
+    setTransientStatus(`Saved name: ${next}`);
   };
 
   const scheduleCommit = (raw) => {
@@ -57,7 +90,7 @@ export default memo(function DogName({
     debTimer.current = setTimeout(() => commit(raw), 400);
   };
 
-  // Handlers
+  /* ------------------------------ handlers ------------------------------- */
   const onChange = (e) => {
     const raw = e.target.value;
     setValue(raw);
@@ -71,24 +104,37 @@ export default memo(function DogName({
       e.currentTarget.blur();
     } else if (e.key === "Escape") {
       e.preventDefault();
-      setValue(storeName); // revert
+      // Revert to last Redux value
+      const revertTo = typeof reduxName === "string" ? reduxName : "";
+      setValue(revertTo);
       setError("");
-      setStatus("Reverted changes");
+      setTransientStatus("Reverted changes");
       e.currentTarget.blur();
     }
   };
 
+  /* ------------------------------ cleanup -------------------------------- */
+  useEffect(() => {
+    return () => {
+      if (debTimer.current) clearTimeout(debTimer.current);
+      if (statusTimer.current) clearTimeout(statusTimer.current);
+    };
+  }, []);
+
+  /* -------------------------------- view --------------------------------- */
   return (
     <div className={["flex items-center gap-2", className].join(" ")}>
       <label htmlFor="dog-name" className="text-xs opacity-70">
         Name:
       </label>
+
       <input
         id="dog-name"
         className={[
-          "bg-slate-900/40 border border-slate-700 rounded-xl px-3 py-1 text-sm min-w-[12ch] max-w-[22ch]",
+          "bg-slate-900/40 border border-slate-700 rounded-xl px-3 py-1 text-sm",
+          "min-w-[12ch] max-w-[24ch]",
           "focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400",
-          error ? "border-rose-500" : ""
+          error ? "border-rose-500" : "",
         ].join(" ")}
         value={value}
         onChange={onChange}
@@ -96,30 +142,32 @@ export default memo(function DogName({
         onBlur={() => commit(value)}
         onCompositionStart={() => { composingRef.current = true; }}
         onCompositionEnd={(e) => { composingRef.current = false; scheduleCommit(e.currentTarget.value); }}
-        maxLength={Math.max(1, maxLen + 10)} // allow typing before normalize/trim
+        maxLength={Math.max(1, maxLen + 10)} // allow typing before normalize/trim caps it
         placeholder="Your dog's name"
         aria-describedby="dog-name-hint dog-name-status"
-        aria-invalid={error ? "true" : "false"}
+        aria-invalid={!!error}
         inputMode="text"
         autoComplete="off"
         spellCheck="false"
       />
-      {/* Inline hint / errors */}
-      <span id="dog-name-hint" className="sr-only">
-        Press Enter to save, Escape to cancel. Maximum {maxLen} characters.
-      </span>
+
+      {/* Inline error */}
       {error && (
         <span className="ml-1 text-[11px] text-rose-400">{error}</span>
       )}
-      {/* SR/live status */}
+
+      {/* Optional visual confirmation */}
+      {!error && status && (
+        <span className="ml-2 text-[11px] text-emerald-300 italic">{status}</span>
+      )}
+
+      {/* SR-only helpers */}
+      <span id="dog-name-hint" className="sr-only">
+        Press Enter to save, Escape to cancel. Maximum {maxLen} characters.
+      </span>
       <span id="dog-name-status" className="sr-only" aria-live="polite">
         {status}
       </span>
     </div>
   );
 });
-
-/* ---------- utils ---------- */
-function readLS(key) {
-  try { return localStorage.getItem(key) || null; } catch { return null; }
-}
