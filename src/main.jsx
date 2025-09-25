@@ -1,4 +1,3 @@
-// src/main.jsx
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom/client";
 import { Provider } from "react-redux";
@@ -8,11 +7,14 @@ import App from "./App.jsx";
 import store from "./redux/store.js";
 import "./index.css";
 
+// PWA bits
 import { registerSW } from "./pwa/registerSW.js";
 import PWAInstallPrompt from "@/components/common/PWAInstallPrompt.jsx";
+
+// Auth listener wires Firebase auth -> Redux
 import AuthListener from "@/components/Auth/AuthListener.jsx";
 
-/** Minimal inline toast for SW updates (keeps main self-contained). */
+/** Tiny inline toast shown when a new SW version is waiting. */
 function UpdateToast({ visible, onReload }) {
   if (!visible) return null;
   return (
@@ -45,21 +47,22 @@ function Boot() {
         setUpdateReady(true);
       },
       onOfflineReady: () => {
-        // Optional: emit a toast "Ready for offline"
+        // Optional: toast "Ready for offline"
       },
       onRegistered: () => {
-        // Optional: console.info("SW registered", reg);
+        // Optional: console.info("SW registered");
       },
     });
 
-    // keep a handle so we can force-apply if needed
+    // Keep a handle so we can force-apply if needed
     setApplyUpdate(() => updateSW);
   }, []);
 
   return (
     <React.StrictMode>
       <Provider store={store}>
-        <BrowserRouter>
+        {/* IMPORTANT: ensure routes and asset links work under GitHub Pages subpath */}
+        <BrowserRouter basename={import.meta.env.BASE_URL}>
           <AuthListener />
           <App />
           <PWAInstallPrompt />
