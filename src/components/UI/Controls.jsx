@@ -1,6 +1,6 @@
-// src/components/UI/Controls.jsx
 import React, { memo, useMemo } from "react";
 import PropTypes from "prop-types";
+import { motion } from "framer-motion";
 import "../../styles/Controls.css";
 import useHotkeys from "./hooks/useHotkeys";
 import useHoldRepeat from "./hooks/useHoldRepeat";
@@ -9,12 +9,14 @@ function Controls({
   onFeed,
   onPlay,
   onBathe,
+  onBark,
+  onRest,
   onWalkUp,
   onWalkDown,
   onWalkLeft,
   onWalkRight,
 }) {
-  // Bind keyboard shortcuts (works app-wide while window is focused)
+  // --- Hotkeys (global) ---
   useHotkeys({
     ArrowUp: onWalkUp,
     w: onWalkUp,
@@ -27,14 +29,20 @@ function Controls({
     f: onFeed,
     p: onPlay,
     b: onBathe,
+    r: onRest,
+    " ": onBark, // spacebar
   });
 
-  // Hold-to-repeat helpers for the 4 directional buttons
-  const holdUp = useHoldRepeat(onWalkUp, { delay: 275, interval: 85 });
-  const holdDown = useHoldRepeat(onWalkDown, { delay: 275, interval: 85 });
-  const holdLeft = useHoldRepeat(onWalkLeft, { delay: 275, interval: 85 });
-  const holdRight = useHoldRepeat(onWalkRight, { delay: 275, interval: 85 });
+  // --- Hold-to-repeat (dpad) ---
+  const opts = { delay: 275, interval: 85 };
+  const hold = {
+    up: useHoldRepeat(onWalkUp, opts),
+    down: useHoldRepeat(onWalkDown, opts),
+    left: useHoldRepeat(onWalkLeft, opts),
+    right: useHoldRepeat(onWalkRight, opts),
+  };
 
+  // --- Primary action buttons ---
   const actions = useMemo(
     () => [
       {
@@ -61,8 +69,24 @@ function Controls({
         onClick: onBathe,
         hotkey: "B",
       },
+      {
+        id: "rest",
+        label: "Rest",
+        emoji: "🛌",
+        title: "Let your dog rest (R)",
+        onClick: onRest,
+        hotkey: "R",
+      },
+      {
+        id: "bark",
+        label: "Bark",
+        emoji: "🐕",
+        title: "Make your dog bark (Space)",
+        onClick: onBark,
+        hotkey: "Space",
+      },
     ],
-    [onFeed, onPlay, onBathe]
+    [onFeed, onPlay, onBathe, onRest, onBark]
   );
 
   return (
@@ -70,7 +94,7 @@ function Controls({
       <div className="controls-grid">
         {/* Primary actions */}
         {actions.map((a) => (
-          <button
+          <motion.button
             key={a.id}
             type="button"
             className="ctrl btn-action"
@@ -78,6 +102,8 @@ function Controls({
             title={a.title}
             aria-label={a.title}
             data-hotkey={a.hotkey}
+            whileTap={{ scale: 0.9 }}
+            whileHover={{ scale: 1.05 }}
           >
             <span className="emoji" aria-hidden="true">
               {a.emoji}
@@ -86,85 +112,78 @@ function Controls({
             <span className="kbd" aria-hidden="true">
               {a.hotkey}
             </span>
-          </button>
+          </motion.button>
         ))}
 
         {/* Direction pad */}
         <div className="dpad" role="group" aria-label="Movement controls">
-          <button
+          <motion.button
             type="button"
             className="ctrl btn-dpad up"
             title="Walk up (W or ↑)"
             aria-label="Walk up"
             data-hotkey="W / ↑"
             onClick={onWalkUp}
-            onPointerDown={holdUp.onPointerDown}
-            onPointerUp={holdUp.onPointerUp}
-            onPointerLeave={holdUp.onPointerLeave}
-            onTouchStart={holdUp.onTouchStart}
-            onTouchEnd={holdUp.onTouchEnd}
+            {...hold.up}
+            whileTap={{ scale: 0.9 }}
+            whileHover={{ scale: 1.1 }}
           >
             ⬆️
-          </button>
+          </motion.button>
 
           <div className="dpad-middle">
-            <button
+            <motion.button
               type="button"
               className="ctrl btn-dpad left"
               title="Walk left (A or ←)"
               aria-label="Walk left"
               data-hotkey="A / ←"
               onClick={onWalkLeft}
-              onPointerDown={holdLeft.onPointerDown}
-              onPointerUp={holdLeft.onPointerUp}
-              onPointerLeave={holdLeft.onPointerLeave}
-              onTouchStart={holdLeft.onTouchStart}
-              onTouchEnd={holdLeft.onTouchEnd}
+              {...hold.left}
+              whileTap={{ scale: 0.9 }}
+              whileHover={{ scale: 1.1 }}
             >
               ⬅️
-            </button>
+            </motion.button>
 
             <div className="dpad-dot" aria-hidden="true" />
 
-            <button
+            <motion.button
               type="button"
               className="ctrl btn-dpad right"
               title="Walk right (D or →)"
               aria-label="Walk right"
               data-hotkey="D / →"
               onClick={onWalkRight}
-              onPointerDown={holdRight.onPointerDown}
-              onPointerUp={holdRight.onPointerUp}
-              onPointerLeave={holdRight.onPointerLeave}
-              onTouchStart={holdRight.onTouchStart}
-              onTouchEnd={holdRight.onTouchEnd}
+              {...hold.right}
+              whileTap={{ scale: 0.9 }}
+              whileHover={{ scale: 1.1 }}
             >
               ➡️
-            </button>
+            </motion.button>
           </div>
 
-          <button
+          <motion.button
             type="button"
             className="ctrl btn-dpad down"
             title="Walk down (S or ↓)"
             aria-label="Walk down"
             data-hotkey="S / ↓"
             onClick={onWalkDown}
-            onPointerDown={holdDown.onPointerDown}
-            onPointerUp={holdDown.onPointerUp}
-            onPointerLeave={holdDown.onPointerLeave}
-            onTouchStart={holdDown.onTouchStart}
-            onTouchEnd={holdDown.onTouchEnd}
+            {...hold.down}
+            whileTap={{ scale: 0.9 }}
+            whileHover={{ scale: 1.1 }}
           >
             ⬇️
-          </button>
+          </motion.button>
         </div>
       </div>
 
       {/* Hint row */}
       <div className="hint-row" aria-hidden="true">
-        Tip: Use <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or arrow keys to walk.
-        Quick keys: <kbd>F</kbd>=Feed, <kbd>P</kbd>=Play, <kbd>B</kbd>=Bathe.
+        Tip: Use <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or arrow keys to walk. &nbsp;
+        Quick keys: <kbd>F</kbd>=Feed, <kbd>P</kbd>=Play, <kbd>B</kbd>=Bathe,{" "}
+        <kbd>R</kbd>=Rest, <kbd>Space</kbd>=Bark.
       </div>
     </div>
   );
@@ -174,6 +193,8 @@ Controls.propTypes = {
   onFeed: PropTypes.func.isRequired,
   onPlay: PropTypes.func.isRequired,
   onBathe: PropTypes.func.isRequired,
+  onBark: PropTypes.func.isRequired,
+  onRest: PropTypes.func.isRequired,
   onWalkUp: PropTypes.func.isRequired,
   onWalkDown: PropTypes.func.isRequired,
   onWalkLeft: PropTypes.func.isRequired,
