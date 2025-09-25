@@ -1,19 +1,17 @@
 // postcss.config.js
+import tailwindcss from "tailwindcss";
+import autoprefixer from "autoprefixer";
+import postcssPresetEnv from "postcss-preset-env";
+
 export default {
-  plugins: {
-    // Stage-3+ CSS features, autoprefixing, and sensible polyfills
-    "postcss-preset-env": {
+  plugins: [
+    tailwindcss(),
+    autoprefixer(),
+    postcssPresetEnv({
       stage: 3,
       features: {
-        "nesting-rules": true, // native-like CSS nesting
+        "nesting-rules": true,
       },
-      autoprefixer: { grid: true },
-    },
-
-    // Tailwind (order matters: preset-env first so Tailwind sees expanded rules)
-    tailwindcss: {},
-
-    // Minify in production only; Tailwind already purges dead classes.
-    ...(process.env.NODE_ENV === "production" ? { cssnano: { preset: "default" } } : {}),
-  },
+    }),
+  ],
 };
