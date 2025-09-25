@@ -1,9 +1,10 @@
 // src/redux/dogSlice.js
 import { createSlice } from "@reduxjs/toolkit";
 
-/** Helpers */
+/* ---------- utils ---------- */
 const clamp = (v, min = 0, max = 100) => Math.max(min, Math.min(max, v));
 
+/* ---------- state ---------- */
 const initialState = {
   name: null,
 
@@ -25,14 +26,23 @@ const initialState = {
   // Economy
   coins: 0,
 
-  // Cosmetics
+  // Cosmetics / unlocks
   accessories: {
     owned: [],           // ["collar-red", ...]
     equipped: null       // one equipped id or null
-  }
+  },
+
+  // Unified unlock registry (extensible)
+  unlocks: {
+    accessories: [],     // mirror of accessories.owned (for compatibility)
+    skins: [],           // yard/background skins the user has unlocked
+  },
+
+  // Current yard/background skin
+  backyardSkin: "default", // "default" | "lawn" | "sunset" | etc.
 };
 
-/** Simple level curve: 100 XP per level */
+/* ---------- helpers ---------- */
 function applyXP(state, amount = 0) {
   state.xp = Math.max(0, state.xp + Number(amount || 0));
   while (state.xp >= 100) {
@@ -41,6 +51,7 @@ function applyXP(state, amount = 0) {
   }
 }
 
+/* ---------- slice ---------- */
 const dogSlice = createSlice({
   name: "dog",
   initialState,
@@ -72,7 +83,6 @@ const dogSlice = createSlice({
     changeHappiness(state, { payload }) {
       state.happiness = clamp(state.happiness + Number(payload || 0));
     },
-
     setEnergy(state, { payload }) {
       state.energy = clamp(Number(payload));
     },
@@ -82,16 +92,12 @@ const dogSlice = createSlice({
     setHunger(state, { payload }) {
       state.hunger = clamp(Number(payload));
     },
-
-    /** Game loop “tick” – advance needs by dt seconds (or arbitrary unit) */
     tickNeeds(state, { payload }) {
       const dt = Math.max(0, Number(payload?.dt ?? 1));
-      // Tunables: feel free to tweak
       state.energy       = clamp(state.energy - 0.5 * dt);
       state.cleanliness  = clamp(state.cleanliness - 0.2 * dt);
-      state.hunger       = clamp(state.hunger + 0.6 * dt);    // higher = hungrier
-      // Happiness trends a bit with satiation and cleanliness
-      const happyDelta = ( (100 - state.hunger) * 0.003 + state.cleanliness * 0.002 ) - 0.15;
+      state.hunger       = clamp(state.hunger + 0.6 * dt); // higher = hungrier
+      const happyDelta = ((100 - state.hunger) * 0.003 + state.cleanliness * 0.002) - 0.15;
       state.happiness = clamp(state.happiness + happyDelta * dt);
     },
 
@@ -109,16 +115,28 @@ const dogSlice = createSlice({
       if (state.coins >= amt) state.coins -= amt;
     },
 
-    // Accessories
+    // Accessories (unlocks + equip)
     unlockAccessory(state, { payload }) {
       const id = String(payload || "").trim();
       if (!id) return;
       if (!state.accessories.owned.includes(id)) state.accessories.owned.push(id);
+      if (!state.unlocks.accessories.includes(id)) state.unlocks.accessories.push(id);
     },
     equipAccessory(state, { payload }) {
       const id = payload == null ? null : String(payload || "").trim();
       if (id === null) { state.accessories.equipped = null; return; }
       if (state.accessories.owned.includes(id)) state.accessories.equipped = id;
+    },
+
+    // Skins / backgrounds
+    unlockSkin(state, { payload }) {
+      const id = String(payload || "").trim();
+      if (!id) return;
+      if (!state.unlocks.skins.includes(id)) state.unlocks.skins.push(id);
+    },
+    setBackyardSkin(state, { payload }) {
+      const skin = String(payload || "").trim() || "default";
+      state.backyardSkin = skin;
     },
   },
 });
@@ -139,11 +157,13 @@ export const {
   spendCoins,
   unlockAccessory,
   equipAccessory,
+  unlockSkin,
+  setBackyardSkin,
 } = dogSlice.actions;
 
 export default dogSlice.reducer;
 
-/* -------------------- Selectors -------------------- */
+/* ---------- selectors (incl. the ones your code imports) ---------- */
 export const selectDog           = (s) => s.dog;
 export const selectName          = (s) => s.dog?.name ?? "Your Pup";
 export const selectPos           = (s) => s.dog?.pos ?? { x: 0, y: 0 };
@@ -161,3 +181,9 @@ export const selectDogLevel      = (s) => s.dog?.level ?? 1;
 export const selectCoins         = (s) => s.dog?.coins ?? 0;
 
 export const selectAccessories   = (s) => s.dog?.accessories ?? { owned: [], equipped: null };
+
+/** NEW: used by Accessories.jsx */
+export const selectUnlocks       = (s) => s.dog?.unlocks ?? { accessories: [], skins: [] };
+
+/** NEW: used by GameScreen.jsx */
+export const selectBackyardSkin  = (s) => s.dog?.backyardSkin ?? "default";

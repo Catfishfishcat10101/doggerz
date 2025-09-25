@@ -1,104 +1,107 @@
 // src/components/UI/NavBar.jsx
-import React, { useEffect, useState } from "react";
+import React, { memo, useEffect, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
-import { Dog, Menu, X, LogIn, UserPlus, Download } from "lucide-react";
+import { useSelector } from "react-redux";
 
-/**
- * Simple PWA-install hook: exposes an "install" action when eligible.
- * We intentionally hide this on Splash to avoid visual noise at first touch.
- */
+/* ---------- tiny inline icons (no deps) ---------- */
+const iconProps = { width: 18, height: 18, stroke: "currentColor", fill: "none", strokeWidth: 2 };
+const DogIcon      = (p) => (<svg {...iconProps} {...p} viewBox="0 0 24 24"><path d="M3 10l2-2 3 2 3-2 3 2 2-2 2 2v3a5 5 0 0 1-5 5H8a5 5 0 0 1-5-5v-3z"/><circle cx="9" cy="11" r="1"/><circle cx="15" cy="11" r="1"/></svg>);
+const MenuIcon     = (p) => (<svg {...iconProps} {...p} viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>);
+const XIcon        = (p) => (<svg {...iconProps} {...p} viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>);
+const LogInIcon    = (p) => (<svg {...iconProps} {...p} viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/></svg>);
+const UserPlusIcon = (p) => (<svg {...iconProps} {...p} viewBox="0 0 24 24"><path d="M15 19a6 6 0 0 0-12 0"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>);
+const DownloadIcon = (p) => (<svg {...iconProps} {...p} viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>);
+
+/* ---------- minimal PWA install hook ---------- */
 function usePWAInstall() {
-  const [deferred, setDeferred] = useState(null);
+  const [canInstall, setCanInstall] = useState(false);
+  const [evt, setEvt] = useState(null);
   useEffect(() => {
     const onBeforeInstall = (e) => {
       e.preventDefault();
-      setDeferred(e);
+      setEvt(e);
+      setCanInstall(true);
     };
-    const onInstalled = () => setDeferred(null);
     window.addEventListener("beforeinstallprompt", onBeforeInstall);
-    window.addEventListener("appinstalled", onInstalled);
-    return () => {
-      window.removeEventListener("beforeinstallprompt", onBeforeInstall);
-      window.removeEventListener("appinstalled", onInstalled);
-    };
+    return () => window.removeEventListener("beforeinstallprompt", onBeforeInstall);
   }, []);
   const install = async () => {
-    if (!deferred) return;
-    deferred.prompt();
-    const choice = await deferred.userChoice.catch(() => null);
-    setDeferred(null);
-    return choice;
+    if (!evt) return;
+    evt.prompt();
+    await evt.userChoice;
+    setCanInstall(false);
+    setEvt(null);
   };
-  return { canInstall: !!deferred, install };
+  return { canInstall, install };
 }
 
-const NAV = [
-  { to: "/game", label: "Game" },
-  { to: "/stats", label: "Stats" },
-  { to: "/shop", label: "Shop" },
-];
-
-export default function NavBar() {
-  const { pathname } = useLocation();
-  const onSplash = pathname === "/" || pathname === "/splash";
+export default memo(function NavBar({ className = "" }) {
+  const user = useSelector((s) => s?.user) || {};
+  const isAuthed = Boolean(user?.id || user?.uid || user?.email);
+  const loc = useLocation();
   const [open, setOpen] = useState(false);
   const { canInstall, install } = usePWAInstall();
 
-  useEffect(() => setOpen(false), [pathname]); // close menu on navigation
-
-  const linkBase =
-    "text-sm px-2 py-1 rounded-md transition-colors text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white";
+  const base =
+    "px-3 py-1 rounded-xl text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400";
+  const navClass = ({ isActive }) =>
+    `${base} ${isActive ? "bg-slate-700 text-white" : "bg-slate-800/40 hover:bg-slate-700 text-slate-200"}`;
+  const gameActive = /^\/(game|train|shop|stats|breed|accessories)/i.test(loc.pathname || "/");
 
   return (
-    <div className="sticky top-0 z-40 backdrop-blur supports-[backdrop-filter]:bg-white/60 bg-white/70 dark:bg-slate-950/70 border-b border-slate-200/60 dark:border-slate-800">
-      <nav className="mx-auto max-w-6xl h-14 px-4 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2 font-semibold text-slate-800 dark:text-white">
-          <Dog className="h-5 w-5" />
-          <span>Doggerz</span>
+    <header
+      className={`sticky top-0 z-40 backdrop-blur bg-slate-950/60 border-b border-slate-800 ${String(
+        className || ""
+      )}`}
+      role="banner"
+    >
+      <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between gap-3">
+        {/* Brand */}
+        <Link
+          to="/"
+          className="flex items-center gap-2 font-extrabold tracking-tight text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 rounded-xl px-1.5"
+          aria-label="Go to home"
+        >
+          <img src="/icons/icon-192.png" alt="" className="h-6 w-6 rounded-lg" />
+          <span className="hidden sm:inline">Doggerz</span>
+          <DogIcon className="sm:hidden" />
         </Link>
 
         {/* Desktop nav */}
-        <div className="hidden md:flex items-center gap-6">
-          {NAV.map(({ to, label }) => (
-            <NavLink
-              key={to}
-              to={to}
-              className={({ isActive }) =>
-                `${linkBase} ${isActive ? "text-sky-600 dark:text-sky-400 font-medium" : ""}`
-              }
-            >
-              {label}
-            </NavLink>
-          ))}
-        </div>
+        <nav className="hidden md:flex gap-2" aria-label="Primary">
+          <NavLink to="/" className={navClass} end>Splash</NavLink>
+          <NavLink
+            to="/game"
+            className={({ isActive }) =>
+              `${base} ${isActive || gameActive ? "bg-slate-700 text-white" : "bg-slate-800/40 hover:bg-slate-700 text-slate-200"}`
+            }
+          >
+            Game
+          </NavLink>
+          <NavLink to="/stats" className={navClass}>Stats</NavLink>
+          <NavLink to="/shop" className={navClass}>Shop</NavLink>
+        </nav>
 
-        {/* Right-side CTAs (suppressed on Splash to prevent duplication) */}
+        {/* Actions */}
         <div className="hidden md:flex items-center gap-2">
-          {!onSplash && canInstall && (
+          {canInstall && (
             <button
               onClick={install}
-              className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-900"
+              className={`${base} bg-emerald-600 hover:bg-emerald-500 text-white inline-flex items-center gap-2`}
               title="Install app"
             >
-              <Download className="h-4 w-4" />
-              Install
+              <DownloadIcon /> Install
             </button>
           )}
-          {!onSplash && (
+          {isAuthed ? (
+            <Link to="/game" className={`${base} bg-sky-600 hover:bg-sky-500 text-white`}>Continue</Link>
+          ) : (
             <>
-              <Link
-                to="/login"
-                className="text-sm px-3 py-1.5 rounded-full border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-900 inline-flex items-center gap-1.5"
-              >
-                <LogIn className="h-4 w-4" />
-                Log in
+              <Link to="/login" className={`${base} bg-slate-800/40 hover:bg-slate-700 text-slate-200 inline-flex items-center gap-2`}>
+                <LogInIcon /> Log in
               </Link>
-              <Link
-                to="/signup"
-                className="text-sm px-3 py-1.5 rounded-full bg-sky-600 text-white hover:bg-sky-700 inline-flex items-center gap-1.5"
-              >
-                <UserPlus className="h-4 w-4" />
-                Sign up
+              <Link to="/signup" className={`${base} bg-sky-600 hover:bg-sky-500 text-white inline-flex items-center gap-2`}>
+                <UserPlusIcon /> Sign up
               </Link>
             </>
           )}
@@ -106,59 +109,60 @@ export default function NavBar() {
 
         {/* Mobile hamburger */}
         <button
-          className="md:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-900"
-          aria-label="Open menu"
+          className="md:hidden inline-flex items-center justify-center h-9 w-9 rounded-lg bg-slate-800/40 hover:bg-slate-700 text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
           onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          aria-label="Toggle navigation"
         >
-          {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          {open ? <XIcon /> : <MenuIcon />}
         </button>
-      </nav>
+      </div>
 
-      {/* Mobile sheet */}
+      {/* Mobile panel */}
       {open && (
-        <div className="md:hidden border-t border-slate-200/60 dark:border-slate-800 bg-white/90 dark:bg-slate-950/90 backdrop-blur">
-          <div className="mx-auto max-w-6xl px-4 py-3 flex flex-col gap-2">
-            {NAV.map(({ to, label }) => (
-              <NavLink
-                key={to}
-                to={to}
-                className={({ isActive }) =>
-                  `block ${linkBase} ${isActive ? "text-sky-600 dark:text-sky-400 font-medium" : ""}`
-                }
-              >
-                {label}
-              </NavLink>
-            ))}
+        <div className="md:hidden border-t border-slate-800 bg-slate-950/90 backdrop-blur">
+          <nav className="px-4 py-3 flex flex-col gap-2" aria-label="Primary mobile">
+            <NavLink to="/" className={navClass} end onClick={() => setOpen(false)}>Splash</NavLink>
+            <NavLink
+              to="/game"
+              className={({ isActive }) =>
+                `${base} ${isActive || gameActive ? "bg-slate-700 text-white" : "bg-slate-800/40 hover:bg-slate-700 text-slate-200"}`
+              }
+              onClick={() => setOpen(false)}
+            >
+              Game
+            </NavLink>
+            <NavLink to="/stats" className={navClass} onClick={() => setOpen(false)}>Stats</NavLink>
+            <NavLink to="/shop" className={navClass} onClick={() => setOpen(false)}>Shop</NavLink>
 
-            {!onSplash && canInstall && (
+            <div className="h-px bg-slate-800 my-2" />
+
+            {canInstall && (
               <button
-                onClick={install}
-                className="mt-1 inline-flex items-center gap-2 text-sm px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-900"
+                onClick={() => { install(); setOpen(false); }}
+                className={`${base} bg-emerald-600 hover:bg-emerald-500 text-white inline-flex items-center gap-2`}
               >
-                <Download className="h-4 w-4" />
-                Install
+                <DownloadIcon /> Install
               </button>
             )}
 
-            {!onSplash && (
-              <div className="mt-1 flex items-center gap-2">
-                <Link
-                  to="/login"
-                  className="flex-1 text-center text-sm px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-900"
-                >
-                  Log in
+            {isAuthed ? (
+              <Link to="/game" className={`${base} bg-sky-600 hover:bg-sky-500 text-white`} onClick={() => setOpen(false)}>
+                Continue
+              </Link>
+            ) : (
+              <>
+                <Link to="/login" className={`${base} bg-slate-800/40 hover:bg-slate-700 text-slate-200 inline-flex items-center gap-2`} onClick={() => setOpen(false)}>
+                  <LogInIcon /> Log in
                 </Link>
-                <Link
-                  to="/signup"
-                  className="flex-1 text-center text-sm px-3 py-2 rounded-lg bg-sky-600 text-white hover:bg-sky-700"
-                >
-                  Sign up
+                <Link to="/signup" className={`${base} bg-sky-600 hover:bg-sky-500 text-white inline-flex items-center gap-2`} onClick={() => setOpen(false)}>
+                  <UserPlusIcon /> Sign up
                 </Link>
-              </div>
+              </>
             )}
-          </div>
+          </nav>
         </div>
       )}
-    </div>
+    </header>
   );
-}
+});
