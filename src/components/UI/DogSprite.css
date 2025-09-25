@@ -1,8 +1,11 @@
+/* ============= Base sprite (yours, with tiny additions) ============= */
+
 /* Base sprite */
 .dog-sprite {
   position: relative;
   user-select: none;
   pointer-events: none; /* opt-in interactivity with .dog-sprite--interactive */
+
   /* Sizing & tuning knobs */
   --sprite-w: 64px;         /* unscaled frame width (JS can set this) */
   --sprite-h: 64px;         /* unscaled frame height */
@@ -15,16 +18,19 @@
   width: calc(var(--sprite-w) * var(--sprite-scale));
   height: calc(var(--sprite-h) * var(--sprite-scale));
 
-  /* Crisp pixels across more engines */
-  image-rendering: -moz-crisp-edges;     /* FF */
-  image-rendering: pixelated;            /* Chrome/Edge */
-  image-rendering: crisp-edges;          /* Safari heuristic */
+  /* Crisp pixels across engines */
+  image-rendering: -moz-crisp-edges; /* FF */
+  image-rendering: pixelated;        /* Chrome/Edge */
+  image-rendering: crisp-edges;      /* Safari heuristic */
+
+  /* Flip without affecting layout sizing */
+  transform: scaleX(var(--flipX, 1));
 }
 
 /* Interactivity opt-in */
 .dog-sprite--interactive { pointer-events: auto; }
 
-/* Only enable will-change when you really animate it (set this class in React while animating) */
+/* Only enable will-change when you really animate it (set while moving) */
 .dog-sprite--animating {
   will-change: background-position, transform;
 }
@@ -56,10 +62,26 @@
   --shadow-opacity: 0.25;
 }
 
-/* Respect reduced motion in case you add shimmer/float animations later */
+/* Respect reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .dog-sprite--animating {
     will-change: auto;
-    /* optional: freeze background-position updates on your animator */
   }
+}
+
+/* ============= Step animation helpers (new) ============= */
+
+/* Walk cycle using CSS steps(). Frames & speed are set via CSS vars. */
+@keyframes sprite-steps {
+  from { background-position-x: 0%; }
+  to   { background-position-x: calc(-100% + (100% / var(--frames, 6))); }
+}
+
+.dog-sprite--walk {
+  --frames: 6;       /* number of frames in the sheet */
+  --speed-ms: 900ms; /* cadence; slow to ~1400ms when idle if desired */
+
+  background-size: calc(var(--frames) * 100%) 100%;
+  animation: sprite-steps var(--speed-ms) steps(var(--frames)) infinite;
+  animation-play-state: var(--play, running); /* paused|running */
 }
