@@ -1,3 +1,4 @@
+// src/main.jsx
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom/client";
 import { Provider } from "react-redux";
@@ -7,7 +8,7 @@ import App from "./App.jsx";
 import store from "./redux/store.js";
 import "./index.css";
 
-// PWA bits
+// PWA bits (safe import; may be tree-shaken in dev)
 import { registerSW } from "./pwa/registerSW.js";
 import PWAInstallPrompt from "@/components/common/PWAInstallPrompt.jsx";
 
@@ -39,29 +40,41 @@ function Boot() {
   const [updateReady, setUpdateReady] = useState(false);
   const [applyUpdate, setApplyUpdate] = useState(() => () => {});
 
-  // Register the service worker; surface update UI when a new version is waiting.
+  // Only register a service worker in *production*.
   useEffect(() => {
-    const updateSW = registerSW({
-      onNeedRefresh: (reload) => {
-        setApplyUpdate(() => reload);
-        setUpdateReady(true);
-      },
-      onOfflineReady: () => {
-        // Optional: toast "Ready for offline"
-      },
-      onRegistered: () => {
-        // Optional: console.info("SW registered");
-      },
-    });
+    if (!import.meta.env.PROD) return;
 
-    // Keep a handle so we can force-apply if needed
-    setApplyUpdate(() => updateSW);
+    let cleanup = () => {};
+    try {
+      const updateSW = registerSW({
+        onNeedRefresh: (reload) => {
+          setApplyUpdate(() => reload);
+          setUpdateReady(true);
+        },
+        onOfflineReady: () => {
+          // Optional: toast "Ready for offline"
+        },
+        onRegistered: (/* reg */) => {
+          // Optional: console.info("SW registered");
+        },
+      });
+
+      // If registerSW returns a manual apply function, keep it
+      if (typeof updateSW === "function") {
+        setApplyUpdate(() => updateSW);
+        cleanup = () => {}; // nothing specific to clean
+      }
+    } catch (e) {
+      // Don’t let SW errors kill dev UX
+      console.warn("SW registration skipped:", e?.message || e);
+    }
+    return cleanup;
   }, []);
 
   return (
     <React.StrictMode>
       <Provider store={store}>
-        {/* IMPORTANT: ensure routes and asset links work under GitHub Pages subpath */}
+        {/* Keep BASE_URL so routes work under GitHub Pages subpath */}
         <BrowserRouter basename={import.meta.env.BASE_URL}>
           <AuthListener />
           <App />
@@ -70,7 +83,7 @@ function Boot() {
             visible={updateReady}
             onReload={() => {
               setUpdateReady(false);
-              applyUpdate(); // activates waiting SW & reloads
+              try { applyUpdate(); } catch {/* no-op */}
             }}
           />
         </BrowserRouter>

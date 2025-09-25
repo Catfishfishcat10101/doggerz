@@ -1,100 +1,58 @@
 // src/firebase.js
-// Firebase v9+ modular, hardened for Vite + React + PWAs
-
-import { initializeApp, getApps } from "firebase/app";
+import { initializeApp, getApps, getApp } from "firebase/app";
 import {
-  initializeAuth,
+  getAuth,
+  setPersistence,
   browserLocalPersistence,
-  indexedDBLocalPersistence,
-  inMemoryPersistence,
-  GoogleAuthProvider,
   connectAuthEmulator,
+  GoogleAuthProvider,
 } from "firebase/auth";
-import {
-  getFirestore,
-  connectFirestoreEmulator,
-  doc,
-  collection,
-} from "firebase/firestore";
+import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
 
-/* ----------------------------- Env helpers ------------------------------ */
-
-function requireEnv(key) {
-  const v = import.meta.env[key];
-  if (v === undefined || v === "") {
-    // Fail fast during local dev; keeps you from chasing null configs
-    throw new Error(`Missing required env: ${key}`);
-  }
-  return v;
-}
-
-const firebaseConfig = {
-  apiKey:            requireEnv("VITE_FB_API_KEY"),
-  authDomain:        requireEnv("VITE_FB_AUTH_DOMAIN"),
-  projectId:         requireEnv("VITE_FB_PROJECT_ID"),
-  storageBucket:     requireEnv("VITE_FB_STORAGE_BUCKET"),
-  messagingSenderId: requireEnv("VITE_FB_MESSAGING_SENDER_ID"),
-  appId:             requireEnv("VITE_FB_APP_ID"),
+const cfg = {
+  apiKey: import.meta.env.VITE_FB_API_KEY,
+  authDomain: import.meta.env.VITE_FB_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FB_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FB_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FB_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FB_APP_ID,
 };
 
-/* ----------------------------- App singletons --------------------------- */
+// Fail fast in dev if obviously broken – avoids silent “network error”
+if (import.meta.env.DEV) {
+  ["apiKey", "projectId"].forEach((k) => {
+    if (!cfg[k]) {
+      // eslint-disable-next-line no-console
+      console.error(`❌ Missing Firebase env: ${k}`);
+    }
+  });
+  // eslint-disable-next-line no-console
+  console.info("[Firebase] cfg summary", {
+    hasApiKey: !!cfg.apiKey,
+    authDomain: cfg.authDomain,
+    projectId: cfg.projectId,
+  });
+}
 
-// Avoid double-init across HMR reloads
-const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+const app = getApps().length ? getApp() : initializeApp(cfg);
 
-/**
- * Auth:
- * - initializeAuth lets us define persistence before first use.
- * - Persistence order: IndexedDB (best), then LocalStorage, then in-memory.
- * - In-memory ensures auth APIs don’t throw in weird sandbox contexts.
- */
-export const auth = initializeAuth(app, {
-  persistence: [indexedDBLocalPersistence, browserLocalPersistence, inMemoryPersistence],
+export const auth = getAuth(app);
+export const db = getFirestore(app);
+export const googleProvider = new GoogleAuthProvider();
+
+setPersistence(auth, browserLocalPersistence).catch((e) => {
+  // eslint-disable-next-line no-console
+  console.warn("Auth persistence failed:", e?.code || e?.message || e);
 });
 
-export const googleProvider = new GoogleAuthProvider();
-// Force account chooser, avoids auto-selecting a cached Google session
-googleProvider.setCustomParameters({ prompt: "select_account" });
+// Toggle emulators via env (explicit beats implicit)
+export const isEmulator =
+  String(import.meta.env.VITE_USE_FIREBASE_EMULATOR) === "1";
 
-/**
- * Firestore:
- * - Standard instance + convenience ref helpers
- */
-export const db = getFirestore(app);
-
-// Convenience helpers for common doc/collection refs (optional but handy)
-export const refs = {
-  userDoc: (uid) => doc(db, "users", uid),
-  dogDoc:  (uid) => doc(db, "users", uid, "doggerz", "dog"),   // one-dog-per-user
-  shop:    () => collection(db, "shop"),
-  stats:   (uid) => doc(db, "users", uid, "meta", "stats"),
-};
-
-/* ----------------------------- Emulators (dev) -------------------------- */
-/**
- * Flip the emulators on with VITE_USE_EMULATORS=true in your .env.development
- * Default ports:
- *  - Auth:      9099
- *  - Firestore: 8080
- */
-const useEmu = import.meta.env.DEV && String(import.meta.env.VITE_USE_EMULATORS).toLowerCase() === "true";
-
-if (useEmu) {
-  // Avoid reconnecting across HMR
-  // Auth emulator must be http:// (not https) and include port
-  try {
-    connectAuthEmulator(auth, "http://localhost:9099", { disableWarnings: true });
-  } catch (_) {/* noop */}
-  try {
-    connectFirestoreEmulator(db, "localhost", 8080);
-  } catch (_) {/* noop */}
+if (isEmulator) {
+  // eslint-disable-next-line no-console
+  console.warn("⚠️ Using Firebase emulators (auth:9099, firestore:8080)");
+  // Use 127.0.0.1 to dodge odd localhost resolution in some stacks
+  connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
+  connectFirestoreEmulator(db, "127.0.0.1", 8080);
 }
-
-/* ----------------------------- Optional niceties ------------------------ */
-// Example: set auth language (affects OAuth popups)
-try {
-  auth.languageCode = navigator?.language || "en";
-} catch (_) {/* noop */}
-
-// Export the app too, if you need Storage/Functions elsewhere
-export { app };

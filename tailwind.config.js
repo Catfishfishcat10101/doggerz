@@ -1,8 +1,10 @@
 /** @type {import('tailwindcss').Config} */
 import defaultTheme from "tailwindcss/defaultTheme";
+import tailwindForms from "@tailwindcss/forms";
+import tailwindTypography from "@tailwindcss/typography";
 
 export default {
-  darkMode: "class", // toggle via document.documentElement.classList.add('dark')
+  darkMode: "class", // toggle with document.documentElement.classList.add('dark')
   content: [
     "./index.html",
     "./src/**/*.{js,jsx,ts,tsx}"
@@ -21,6 +23,7 @@ export default {
     },
     extend: {
       fontFamily: {
+        // Ensure Inter is actually loaded (see note below)
         sans: ["Inter", ...defaultTheme.fontFamily.sans],
         display: ["Inter", ...defaultTheme.fontFamily.sans],
         mono: ["ui-monospace", "SFMono-Regular", ...defaultTheme.fontFamily.mono],
@@ -36,10 +39,9 @@ export default {
         brand: {
           DEFAULT: "#0ea5e9", // sky-500
           strong: "#0284c7",  // sky-600
-          alt: "#22d3ee",     // cyan-400 (for neon/night accents)
+          alt: "#22d3ee",     // cyan-400
         },
       },
-      // Map our micro-animations to Tailwind classes
       keyframes: {
         pop: {
           "0%":   { transform: "translateY(6px) scale(0.85)", opacity: "0" },
@@ -47,7 +49,7 @@ export default {
           "100%": { transform: "translateY(-3px) scale(1)",  opacity: "0" },
         },
         "float-soft": {
-          "0%":  { transform: "translateY(0)" },
+          "0%":   { transform: "translateY(0)" },
           "100%": { transform: "translateY(-4px)" },
         },
         shimmer: {
@@ -55,7 +57,7 @@ export default {
           "100%": { backgroundPosition: "200% 0" },
         },
         clouds: {
-          "0%":  { backgroundPosition: "0 8%, 0 8%" },
+          "0%":   { backgroundPosition: "0 8%, 0 8%" },
           "100%": { backgroundPosition: "300px 8%, 300px 8%" },
         },
         twinkle: {
@@ -63,7 +65,18 @@ export default {
           "100%": { opacity: "0" },
         },
       },
+      animation: {
+        // now you can use classnames like `animate-pop`
+        pop: "pop 500ms ease",
+        "float-soft": "float-soft 4s ease-in-out infinite alternate",
+        shimmer: "shimmer 2s linear infinite",
+        clouds: "clouds 30s linear infinite",
+        twinkle: "twinkle 1.5s ease-in-out infinite alternate",
+      },
+      backgroundSize: {
+        "shimmer-200": "200% 100%", // pair with shimmer
+      },
     },
   },
-  plugins: [],
+  plugins: [tailwindForms, tailwindTypography],
 };

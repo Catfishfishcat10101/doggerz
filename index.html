@@ -1,77 +1,39 @@
-<!-- C:\Users\fireb\doggerz\index.html -->
 <!doctype html>
 <html lang="en" class="h-full">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 
     <title>Doggerz</title>
-    <meta name="application-name" content="Doggerz" />
-    <meta name="description" content="Adopt a pixel pup and raise it! Doggerz is a cozy, offline-ready virtual pet PWA." />
-    <meta name="referrer" content="strict-origin-when-cross-origin" />
-    <meta name="format-detection" content="telephone=no" />
+    <meta name="description" content="Adopt a pixel pup and raise it! Doggerz is a cozy virtual-pet PWA." />
+
+    <!-- Modern PWA meta -->
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="color-scheme" content="light dark" />
-
-    <!-- Theme color (match vite-plugin-pwa manifest.theme_color) -->
-    <meta name="theme-color" content="#0ea5e9" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#0ea5e9" media="(prefers-color-scheme: dark)" />
-
-    <!-- PWA install surface (VitePWA injects manifest & SW) -->
+    <!-- Keep apple tags for iOS -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Doggerz" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png" />
-    <link rel="apple-touch-icon" sizes="512x512" href="/icons/icon-512.png" />
-    <link rel="icon" type="image/png" href="/favicon.png" />
 
-    <!-- Social cards -->
+    <!-- Theme color (match manifest theme_color) -->
+    <meta name="theme-color" content="#0ea5e9" />
+
+    <!-- Icons: relative paths so they work under GitHub Pages base -->
+    <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png" />
+    <link rel="icon" type="image/png" href="favicon.png" />
+
+    <!-- Social -->
     <meta property="og:title" content="Doggerz" />
     <meta property="og:description" content="Adopt a pixel pup and raise it! A fast, offline-ready React PWA." />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="/icons/icon-512.png" />
+    <meta property="og:image" content="icons/icon-512.png" />
     <meta name="twitter:card" content="summary_large_image" />
 
-    <!-- Preconnects (Firebase/Auth) -->
+    <!-- Preconnects for Firebase -->
     <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://www.googleapis.com" crossorigin />
     <link rel="preconnect" href="https://firebase.googleapis.com" crossorigin />
-
-    <!-- Early theme + base tokens to avoid flash -->
-    <script>
-      // Avoid FOUC: apply dark class before paint based on saved preference
-      try {
-        var dark = localStorage.getItem("doggerz_theme_dark");
-        if (dark && JSON.parse(dark)) {
-          document.documentElement.classList.add("dark");
-        } else {
-          document.documentElement.classList.remove("dark");
-        }
-      } catch (e) {}
-
-      // Baseline color tokens so body vars resolve even pre-CSS
-      var root = document.documentElement;
-      var light = { bg: "#ffffff", tx: "#0f172a" };     // slate-900-ish
-      var darkT = { bg: "#0b1220", tx: "#e2e8f0" };     // slate-100-ish
-      var isDark = root.classList.contains("dark");
-      root.style.setProperty("--bg-0", isDark ? darkT.bg : light.bg);
-      root.style.setProperty("--tx-0", isDark ? darkT.tx : light.tx);
-    </script>
-
-    <!-- Minimal JSON-LD for nicer link unfurls -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
-      "name": "Doggerz",
-      "applicationCategory": "GameApplication",
-      "operatingSystem": "Web",
-      "description": "Adopt a pixel pup and raise it! A cozy virtual pet Progressive Web App.",
-      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
-    }
-    </script>
   </head>
 
   <body class="h-full bg-[var(--bg-0)] text-[var(--tx-0)]">
@@ -84,7 +46,6 @@
 
     <div id="root" class="h-full"></div>
 
-    <!-- Entry point -->
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
