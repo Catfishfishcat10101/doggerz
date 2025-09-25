@@ -1,184 +1,56 @@
 // src/components/UI/Splash.jsx
-import React, { useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { useAuthCtx } from "@/context/AuthProvider"; // <-- our provider
+import React from "react";
+import { Link } from "react-router-dom";
+import FeatureStripe from "./FeatureStripe";
+import { Dog } from "lucide-react";
 
 export default function Splash() {
-  const { user, loading } = useAuthCtx();
-  const nav = useNavigate();
-
-  useEffect(() => {
-    if (!loading && user) nav("/game", { replace: true }); // align to your routes
-  }, [loading, user, nav]);
-
   return (
-    <div className="relative min-h-dvh overflow-hidden bg-slate-950 text-white">
-      {/* animated background */}
-      <GradientOrbs />
-
-      {/* top nav */}
-      <div className="relative z-10 max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
-        <Logo />
-        <div className="flex items-center gap-3">
-          <Link
-            to="/login"
-            className="rounded-xl border border-white/20 px-4 py-2 text-sm font-semibold hover:bg-white/10 transition"
-          >
-            Log in
-          </Link>
-          <Link
-            to="/signup"
-            className="rounded-xl bg-sky-500 px-4 py-2 text-sm font-semibold hover:bg-sky-400 transition"
-          >
-            Create account
-          </Link>
-        </div>
-      </div>
-
-      {/* hero */}
-      <div className="relative z-10 max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-10 items-center pt-10 lg:pt-16">
+    <main className="min-h-[calc(100vh-56px)] bg-gradient-to-b from-slate-900 to-slate-800 text-white">
+      <section className="mx-auto max-w-6xl px-4 py-16 grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
         <div>
-          <motion.h1
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-5xl md:text-6xl font-black tracking-tight"
-          >
-            Adopt a{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-emerald-300">
-              pixel pup
-            </span>
-            . Raise it. Flex it.
-          </motion.h1>
+          <div className="inline-flex items-center gap-2 rounded-full bg-slate-800/70 ring-1 ring-white/10 px-3 py-1 mb-6">
+            <Dog className="h-4 w-4" />
+            <span className="text-xs tracking-wide uppercase text-slate-300">Doggerz</span>
+          </div>
 
-          <motion.p
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="mt-5 text-lg text-white/70"
-          >
-            Zero-friction onboarding, offline-first PWA, cloud saves, and a cosmetics pipeline that
-            prints serotonin.
-          </motion.p>
+          <h1 className="text-4xl sm:text-5xl font-extrabold leading-tight">
+            Raise your <span className="text-sky-400">pixel pup</span>.
+            Keep it happy. Show it off.
+          </h1>
 
-          <motion.div
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="mt-8 flex flex-wrap gap-4"
-          >
+          <p className="mt-4 text-slate-300 max-w-prose">
+            Frictionless onboarding, true offline play, and cloud saves when you’re back online.
+            Cosmetics you actually care about. Zero clutter. Maximum vibes.
+          </p>
+
+          <div className="mt-8 flex flex-wrap items-center gap-3">
             <Link
               to="/signup"
-              className="px-6 py-3 rounded-2xl bg-sky-500 font-semibold hover:brightness-110 active:brightness-95"
+              className="px-5 py-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-medium shadow-lg shadow-sky-900/30"
             >
               Create account
             </Link>
             <Link
               to="/login"
-              className="px-6 py-3 rounded-2xl border border-white/20 font-semibold hover:bg-white/10"
+              className="px-5 py-3 rounded-xl border border-white/20 hover:bg-white/10 font-medium"
             >
               I already have one
             </Link>
-          </motion.div>
+          </div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.35 }}
-            className="mt-10"
-          >
-            <FeatureBullets />
-          </motion.div>
+          <FeatureStripe />
         </div>
 
-        {/* hero card / device mock */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.97 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6, delay: 0.25 }}
-          className="relative"
-        >
-          <div className="relative aspect-[10/7] rounded-3xl border border-white/10 bg-gradient-to-br from-white/10 to-white/[0.06] p-1 backdrop-blur">
-            <div className="h-full w-full rounded-[22px] bg-[radial-gradient(35%_45%_at_30%_30%,rgba(56,189,248,0.35),transparent),radial-gradient(35%_45%_at_70%_70%,rgba(16,185,129,0.35),transparent)] grid place-items-center overflow-hidden">
-              <motion.div
-                animate={{ y: [0, -6, 0] }}
-                transition={{ repeat: Infinity, duration: 3.5, ease: "easeInOut" }}
-                className="text-[110px] md:text-[140px] drop-shadow-[0_6px_20px_rgba(0,0,0,0.45)]"
-                aria-hidden
-              >
-                🐶
-              </motion.div>
-              {/* diagonal shine */}
-              <div className="pointer-events-none absolute inset-0 [mask-image:linear-gradient(to_bottom,black,transparent)]">
-                <div className="absolute -left-1/3 -top-1/3 h-[200%] w-1/3 rotate-45 bg-white/10" />
-              </div>
+        <div className="relative">
+          <div className="aspect-square rounded-3xl bg-gradient-to-br from-sky-500/20 via-sky-300/10 to-transparent ring-1 ring-white/10 p-8">
+            <div className="h-full w-full rounded-2xl bg-slate-900/40 grid place-content-center">
+              {/* Placeholder hero art; swap with your dog sprite/animation */}
+              <div className="h-24 w-24 rounded-2xl bg-gradient-to-br from-pink-400 to-rose-500 mx-auto" />
             </div>
           </div>
-          {/* floating chips */}
-          <motion.div
-            className="absolute -top-6 -right-6 rounded-2xl px-3 py-2 text-xs bg-emerald-400/20 border border-emerald-300/30"
-            animate={{ y: [0, -6, 0] }}
-            transition={{ repeat: Infinity, duration: 4.2, ease: "easeInOut", delay: 0.2 }}
-          >
-            Cloud save ✅
-          </motion.div>
-          <motion.div
-            className="absolute -bottom-6 -left-6 rounded-2xl px-3 py-2 text-xs bg-sky-400/20 border border-sky-300/30"
-            animate={{ y: [0, 6, 0] }}
-            transition={{ repeat: Infinity, duration: 4.8, ease: "easeInOut", delay: 0.5 }}
-          >
-            Offline PWA ⚡
-          </motion.div>
-        </motion.div>
-      </div>
-
-      {/* footer */}
-      <div className="relative z-10 px-6 pt-14 pb-8 max-w-7xl mx-auto">
-        <div className="h-px w-full bg-gradient-to-r from-transparent via-white/15 to-transparent" />
-        <div className="mt-6 text-xs text-white/60">
-          © {new Date().getFullYear()} Doggerz. Be kind to your dogs.
         </div>
-      </div>
-    </div>
-  );
-}
-
-/* ------------------------ inline UI atoms ------------------------ */
-
-function Logo() {
-  return (
-    <div className="flex items-center gap-2 font-black">
-      <img src="/icons/icon-192.png" alt="" className="h-8 w-8 rounded-xl" />
-      <span className="text-xl">Doggerz</span>
-    </div>
-  );
-}
-
-function GradientOrbs() {
-  return (
-    <div aria-hidden className="absolute inset-0">
-      <div className="absolute -top-24 -left-24 w-[40rem] h-[40rem] rounded-full blur-3xl opacity-20 bg-sky-500" />
-      <div className="absolute -bottom-24 -right-24 w-[40rem] h-[40rem] rounded-full blur-3xl opacity-20 bg-emerald-500" />
-      <div className="absolute inset-0 bg-[radial-gradient(60%_60%_at_50%_40%,rgba(255,255,255,0.06),transparent)]" />
-    </div>
-  );
-}
-
-function FeatureBullets() {
-  const items = [
-    { title: "PWA", text: "Installable, offline-first, background updates" },
-    { title: "Training", text: "Potty & tricks with XP multipliers" },
-    { title: "Economy", text: "Coins, shop, accessories" },
-  ];
-  return (
-    <div className="grid gap-3 sm:grid-cols-3">
-      {items.map((it) => (
-        <div key={it.title} className="rounded-2xl border border-white/10 bg-white/5 p-4">
-          <div className="font-semibold">{it.title}</div>
-          <div className="text-sm text-white/70">{it.text}</div>
-        </div>
-      ))}
-    </div>
+      </section>
+    </main>
   );
 }
