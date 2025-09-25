@@ -3,6 +3,7 @@
   "short_name": "Doggerz",
   "description": "The ultimate virtual dog: train, potty, age, and bond.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#ecfeff",
   "theme_color": "#059669",
