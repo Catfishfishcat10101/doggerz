@@ -1,11 +1,15 @@
+// src/redux/store.js
 import { configureStore } from "@reduxjs/toolkit";
-import userReducer from "./userSlice";
+import userReducer, { userListenerMiddleware } from "./userSlice";
 import dogReducer from "./dogSlice";
 
-export default configureStore({
-  reducer: { user: userReducer, dog: dogReducer },
+const store = configureStore({
+  reducer: {
+    user: userReducer,
+    dog: dogReducer,
+  },
   middleware: (getDefault) =>
-    getDefault({
-      serializableCheck: { ignoredPaths: ["dog._meta"], ignoredActionPaths: ["payload.updatedAt"] },
-    }),
+    getDefault().prepend(userListenerMiddleware.middleware),
 });
+
+export default store;

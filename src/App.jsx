@@ -1,70 +1,98 @@
 // src/App.jsx
 import React, { Suspense, lazy, useEffect } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { useSelector } from "react-redux";
 
-/* ---------------------- Lazy routes (code-split) ----------------------- */
-const Splash         = lazy(() => import("./components/UI/Splash"));
-const GameScreen     = lazy(() => import("./components/UI/GameScreen"));
-const PottyTrainer   = lazy(() => import("./components/Features/PottyTrainer"));
-const TricksTrainer  = lazy(() => import("./components/Features/TricksTrainer"));
-const StatsPanel     = lazy(() => import("./components/Features/StatsPanel"));
-const Shop           = lazy(() => import("./components/Features/Shop"));
-const Breeding       = lazy(() => import("./components/Features/Breeding"));
-const Accessories    = lazy(() => import("./components/Features/Accessories"));
-const Login          = lazy(() => import("./components/Auth/Login"));
-const Signup         = lazy(() => import("./components/Auth/Signup"));
+// UI shell
+import NavBar from "@/components/UI/NavBar.jsx";
 
-/* Optional: simple idle preloader to warm critical chunks */
-function usePreloadRoutesOnIdle() {
-  useEffect(() => {
-    const idle = window.requestIdleCallback || ((cb) => setTimeout(cb, 400));
-    const cancel = window.cancelIdleCallback || clearTimeout;
+// Route-level code-splitting
+const Splash         = lazy(() => import("@/components/UI/Splash.jsx"));
+const GameScreen     = lazy(() => import("@/components/UI/GameScreen.jsx"));
+const PottyTrainer   = lazy(() => import("@/components/Features/PottyTrainer.jsx"));
+const TricksTrainer  = lazy(() => import("@/components/Features/TricksTrainer.jsx"));
+const StatsPanel     = lazy(() => import("@/components/Features/StatsPanel.jsx"));
+const Shop           = lazy(() => import("@/components/Features/Shop.jsx"));
+const Breeding       = lazy(() => import("@/components/Features/Breeding.jsx"));
+const Accessories    = lazy(() => import("@/components/Features/Accessories.jsx"));
+const Login          = lazy(() => import("@/components/Auth/Login.jsx"));
+const Signup         = lazy(() => import("@/components/Auth/Signup.jsx"));
 
-    const id = idle(() => {
-      // Preload core game paths the user is likely to hit next
-      Promise.allSettled([
-        import("./components/UI/GameScreen"),
-        import("./components/Features/StatsPanel"),
-        import("./components/Features/Shop"),
-      ]);
-    });
-
-    return () => cancel(id);
-  }, []);
-}
-
-/* -------------------------- UX scaffolding ----------------------------- */
-function LoadingFallback() {
+export default function App() {
   return (
-    <div className="p-8 grid place-items-center min-h-[40vh]">
-      <div className="w-full max-w-sm">
-        <div className="h-4 w-28 bg-slate-200 dark:bg-slate-800 rounded mb-4 shimmer"></div>
-        <div className="h-24 rounded-xl bg-slate-100 dark:bg-slate-900 border border-black/5 dark:border-white/10 shimmer"></div>
-        <div className="mt-4 h-10 rounded-xl bg-slate-100 dark:bg-slate-900 border border-black/5 dark:border-white/10"></div>
-      </div>
+    <div className="min-h-screen bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+      <NavBar />
+      <ScrollRestore />
+
+      <main className="mx-auto max-w-6xl px-4 py-4">
+        <ErrorBoundary
+          fallback={
+            <div className="rounded-2xl border border-rose-300/50 bg-rose-50 text-rose-900 dark:bg-rose-900/20 dark:text-rose-100 p-4">
+              <div className="font-semibold">Something went sideways.</div>
+              <div className="text-sm opacity-80">Try refreshing the page.</div>
+            </div>
+          }
+        >
+          <Suspense fallback={<RouteSkeleton />}>
+            <Routes>
+              {/* Public */}
+              <Route path="/" element={<Splash />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+
+              {/* Core game surfaces */}
+              <Route path="/game" element={<GameScreen />} />
+              <Route path="/stats" element={<StatsPanel />} />
+              <Route path="/shop" element={<Shop />} />
+              <Route path="/accessories" element={<Accessories />} />
+              <Route path="/breed" element={<Breeding />} />
+
+              {/* Trainers */}
+              <Route path="/train/potty" element={<PottyTrainer />} />
+              <Route path="/train/tricks" element={<TricksTrainer />} />
+
+              {/* 404 → home */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Suspense>
+        </ErrorBoundary>
+      </main>
     </div>
   );
 }
 
-class AppErrorBoundary extends React.Component {
+/* ----------------------------- UX glue ----------------------------- */
+
+function ScrollRestore() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    // restore to top on route changes; avoids stale scroll between surfaces
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, [pathname]);
+  return null;
+}
+
+function RouteSkeleton() {
+  return (
+    <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white dark:bg-slate-900 p-6">
+      <div className="h-6 w-40 rounded bg-slate-200 dark:bg-slate-800 animate-pulse" />
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <div className="h-28 rounded-xl bg-slate-100 dark:bg-slate-800 animate-pulse" />
+        <div className="h-28 rounded-xl bg-slate-100 dark:bg-slate-800 animate-pulse" />
+      </div>
+      <div className="mt-4 h-10 w-40 rounded-lg bg-slate-200 dark:bg-slate-800 animate-pulse" />
+    </div>
+  );
+}
+
+class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { hasError: false, err: null };
+    this.state = { err: null };
   }
-  static getDerivedStateFromError(err) {
-    return { hasError: true, err };
-  }
-  componentDidCatch(err, info) {
-    // Optional: send to analytics or logging
-    // console.error("App crash:", err, info);
-  }
+  static getDerivedStateFromError(err) { return { err }; }
+  componentDidCatch(err, info) { console.error("[App] route crash:", err, info); }
   render() {
-    if (this.state.hasError) {
-      return (
-        <div className="p-8 max-w-xl mx-auto">
-          <h1 className="text-xl font-semibold mb-2">Something went sideways.</h1>
-          <p className="text-sm opacity-80 mb-4">
-            The UI tripped over itself. Try reloading; if it persists, clear site data or check console logs.
-          </p>
-          <pre className="text-xs p-3 rounded-xl bg-slate-100 dark:bg-slate-900 border border-blac
+    if (this.state.err) return this.props.fallback ?? null;
+    return this.props.children;
+  }
+}

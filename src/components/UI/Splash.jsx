@@ -1,17 +1,15 @@
+// src/components/UI/Splash.jsx
+import React, { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useEffect } from "react";
-import { useAuth } from "../context/AuthContext";
-import Logo from "../components/Logo";
-import GradientOrbs from "../components/GradientOrbs";
-import FeatureBullets from "../components/FeatureBullets";
+import { useAuthCtx } from "@/context/AuthProvider"; // <-- our provider
 
 export default function Splash() {
-  const { user, loading } = useAuth();
+  const { user, loading } = useAuthCtx();
   const nav = useNavigate();
 
   useEffect(() => {
-    if (!loading && user) nav("/app", { replace: true });
+    if (!loading && user) nav("/game", { replace: true }); // align to your routes
   }, [loading, user, nav]);
 
   return (
@@ -24,10 +22,10 @@ export default function Splash() {
         <Logo />
         <div className="flex items-center gap-3">
           <Link
-            to="/signin"
+            to="/login"
             className="rounded-xl border border-white/20 px-4 py-2 text-sm font-semibold hover:bg-white/10 transition"
           >
-            Sign in
+            Log in
           </Link>
           <Link
             to="/signup"
@@ -58,10 +56,10 @@ export default function Splash() {
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="mt-5 text-lg text-slate-300/90"
+            className="mt-5 text-lg text-white/70"
           >
-            Zero-friction onboarding, offline-first PWA, cloud saves, and a
-            cosmetics pipeline that prints serotonin.
+            Zero-friction onboarding, offline-first PWA, cloud saves, and a cosmetics pipeline that
+            prints serotonin.
           </motion.p>
 
           <motion.div
@@ -77,7 +75,7 @@ export default function Splash() {
               Create account
             </Link>
             <Link
-              to="/signin"
+              to="/login"
               className="px-6 py-3 rounded-2xl border border-white/20 font-semibold hover:bg-white/10"
             >
               I already have one
@@ -107,12 +105,13 @@ export default function Splash() {
                 animate={{ y: [0, -6, 0] }}
                 transition={{ repeat: Infinity, duration: 3.5, ease: "easeInOut" }}
                 className="text-[110px] md:text-[140px] drop-shadow-[0_6px_20px_rgba(0,0,0,0.45)]"
+                aria-hidden
               >
                 🐶
               </motion.div>
               {/* diagonal shine */}
               <div className="pointer-events-none absolute inset-0 [mask-image:linear-gradient(to_bottom,black,transparent)]">
-                <div className="absolute -left-1/3 -top-1/3 h-[200%] w-1/3 rotate-45 bg-white/6" />
+                <div className="absolute -left-1/3 -top-1/3 h-[200%] w-1/3 rotate-45 bg-white/10" />
               </div>
             </div>
           </div>
@@ -141,6 +140,45 @@ export default function Splash() {
           © {new Date().getFullYear()} Doggerz. Be kind to your dogs.
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ------------------------ inline UI atoms ------------------------ */
+
+function Logo() {
+  return (
+    <div className="flex items-center gap-2 font-black">
+      <img src="/icons/icon-192.png" alt="" className="h-8 w-8 rounded-xl" />
+      <span className="text-xl">Doggerz</span>
+    </div>
+  );
+}
+
+function GradientOrbs() {
+  return (
+    <div aria-hidden className="absolute inset-0">
+      <div className="absolute -top-24 -left-24 w-[40rem] h-[40rem] rounded-full blur-3xl opacity-20 bg-sky-500" />
+      <div className="absolute -bottom-24 -right-24 w-[40rem] h-[40rem] rounded-full blur-3xl opacity-20 bg-emerald-500" />
+      <div className="absolute inset-0 bg-[radial-gradient(60%_60%_at_50%_40%,rgba(255,255,255,0.06),transparent)]" />
+    </div>
+  );
+}
+
+function FeatureBullets() {
+  const items = [
+    { title: "PWA", text: "Installable, offline-first, background updates" },
+    { title: "Training", text: "Potty & tricks with XP multipliers" },
+    { title: "Economy", text: "Coins, shop, accessories" },
+  ];
+  return (
+    <div className="grid gap-3 sm:grid-cols-3">
+      {items.map((it) => (
+        <div key={it.title} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+          <div className="font-semibold">{it.title}</div>
+          <div className="text-sm text-white/70">{it.text}</div>
+        </div>
+      ))}
     </div>
   );
 }

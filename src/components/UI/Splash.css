@@ -1,3 +1,4 @@
+/* Splash.css */
 .splash-wrap {
   position: relative;
   min-height: 100vh;
@@ -5,21 +6,69 @@
   background: radial-gradient(80% 70% at 50% 0%, #ffe6ee 0%, #fde68a 40%, #ffd6a5 100%);
 }
 
-.dog-jumper {
-  width: 96px;
-  height: 96px;
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: 25%;
-  animation: jump 1.2s ease-in-out infinite;
-  image-rendering: pixelated;
-  background-image: url('/assets/sprites/dog.png');
-  background-size: 768px 96px;
-  animation-composition: accumulate;
+/* Tuning knobs */
+:root {
+  --sprite-w: 96px;         /* single frame width  */
+  --sprite-h: 96px;         /* single frame height */
+  --frames: 8;              /* frame count in sheet */
+  --scale: 1;               /* integer scale 1,2,3… */
+  --jump-y: 40px;           /* peak jump offset */
+  --jump-dur: 1.2s;         /* jump period */
+  --run-dur: 0.8s;          /* sheet cycle period */
 }
 
-@keyframes jump {
+.dog-jumper {
+  position: absolute;
+  left: 50%;
+  bottom: 25%;
+  transform: translateX(-50%);               /* baseline position */
+  width: calc(var(--sprite-w) * var(--scale));
+  height: calc(var(--sprite-h) * var(--scale));
+
+  /* Crisp pixels across engines */
+  image-rendering: -moz-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+
+  /* If your PNG is in /public, keep this path.
+     If it's under src/assets, move it to /public/sprites/dog.png or set via inline style in JSX. */
+  background-image: url("/sprites/dog.png");
+  background-repeat: no-repeat;
+  /* Sheet is frames laid out horizontally: width = frameW * frames */
+  background-size: calc(var(--sprite-w) * var(--frames)) var(--sprite-h);
+  background-position: 0 0;
+
+  /* Separate transforms from background animation to reduce tearing */
+  will-change: transform, background-position;
+  backface-visibility: hidden;
+  transform-origin: 50% 100%;
+
+  /* Compose two animations: jump path + frame stepping */
+  animation:
+    dog-jump var(--jump-dur) ease-in-out infinite,
+    dog-run  var(--run-dur)  steps(var(--frames)) infinite;
+}
+
+/* Smaller / larger variants (optional) */
+.dog-jumper--small { --scale: 0.75; --jump-y: 28px; --run-dur: 0.7s; }
+.dog-jumper--big   { --scale: 2;    --jump-y: 56px; --run-dur: 0.9s; }
+
+/* Pause on hover/focus if you want */
+.dog-jumper:is(:hover, :focus) { animation-play-state: paused; outline: none; }
+
+@keyframes dog-jump {
   0%, 100% { transform: translate(-50%, 0); }
-  50%      { transform: translate(-50%, -40px); }
+  50%      { transform: translate(-50%, calc(var(--jump-y) * -1)); }
+}
+
+@keyframes dog-run {
+  from { background-position:    0 0; }
+  to   { background-position: calc(var(--sprite-w) * var(--frames) * -1) 0; }
+}
+
+/* Motion hygiene */
+@media (prefers-reduced-motion: reduce) {
+  .dog-jumper {
+    animation: none; /* freeze on idle frame */
+  }
 }

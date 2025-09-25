@@ -1,21 +1,22 @@
 // src/context/AuthProvider.jsx
-import React, { createContext, useEffect, useMemo, useRef, useState, useContext } from "react";
+import React, {
+  createContext, useContext, useEffect, useMemo, useRef, useState,
+} from "react";
 import { onIdTokenChanged, getIdToken, getIdTokenResult, signOut } from "firebase/auth";
 import { auth } from "@/firebase";
 import { useDispatch } from "react-redux";
-// FIX: use the configured alias "@"
 import { setUser, clearUser } from "@/redux/userSlice";
 
 /**
- * Shape:
+ * Context shape
  * {
- *   user: { id, email, displayName } | null,
+ *   user: { id, email, displayName, photoURL } | null,
  *   claims: object | null,
- *   token: string | null,          // current ID token
+ *   token: string | null,
  *   loading: boolean,
  *   error: string | null,
- *   refresh: () => Promise<void>,  // force-refresh ID token
- *   signOutAndClear: () => Promise<void>
+ *   refresh: () => Promise<void>,
+ *   signOutAndClear: () => Promise<void>,
  * }
  */
 const AuthCtx = createContext({
@@ -35,26 +36,31 @@ export default function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
   const dispatch = useDispatch();
-  const mounted = useRef(true);
+  const mounted = useRef(false);
 
   useEffect(() => {
     mounted.current = true;
-    // Use onIdTokenChanged to also catch token refreshes (~hourly) and profile updates
+
     const unsub = onIdTokenChanged(auth, async (fbUser) => {
       if (!mounted.current) return;
+
       try {
         setErr(null);
+
         if (fbUser) {
-          // Pull a fresh token + claims
+          // Pull fresh token + claims (non-blocking UX)
           const [idToken, result] = await Promise.all([
             getIdToken(fbUser, /* forceRefresh */ false),
             getIdTokenResult(fbUser),
           ]);
+
           const payload = {
             id: fbUser.uid,
             email: fbUser.email,
             displayName: fbUser.displayName || null,
+            photoURL: fbUser.photoURL || null,
           };
+
           dispatch(setUser(payload));
           setLocalUser(payload);
           setClaims(result?.claims || null);
@@ -66,7 +72,6 @@ export default function AuthProvider({ children }) {
           setToken(null);
         }
       } catch (e) {
-        // Non-fatal; keep UI usable
         setErr(e?.message || String(e));
       } finally {
         if (mounted.current) setLoading(false);
@@ -98,7 +103,7 @@ export default function AuthProvider({ children }) {
   const signOutAndClear = async () => {
     try {
       await signOut(auth);
-      // Redux + local state are cleared in the listener, but we defensively clear here too.
+      // Listener clears Redux, but we defensively clear local state as well
       dispatch(clearUser());
       setLocalUser(null);
       setClaims(null);
@@ -124,13 +129,12 @@ export default function AuthProvider({ children }) {
   return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>;
 }
 
+/** Hook */
 export function useAuthCtx() {
   return useContext(AuthCtx);
 }
 
-/* ------------------------------------------------------------------ */
-/* Optional helper: gate a subtree behind auth with a loading/fallback */
-/* ------------------------------------------------------------------ */
+/** Optional gate to protect subtrees/routes */
 export function AuthGate({ children, fallback = null, unauthenticated = null }) {
   const { user, loading } = useAuthCtx();
   if (loading) return fallback;

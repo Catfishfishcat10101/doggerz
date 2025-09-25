@@ -1,6 +1,65 @@
+/* Base sprite */
 .dog-sprite {
-  image-rendering: pixelated;
-  image-rendering: -moz-crisp-edges;
-  image-rendering: crisp-edges;
+  position: relative;
+  user-select: none;
+  pointer-events: none; /* opt-in interactivity with .dog-sprite--interactive */
+  /* Sizing & tuning knobs */
+  --sprite-w: 64px;         /* unscaled frame width (JS can set this) */
+  --sprite-h: 64px;         /* unscaled frame height */
+  --sprite-scale: 1;        /* integer scale (1,2,3...) */
+  --shadow-width: 62%;      /* elliptical shadow width */
+  --shadow-height: 18%;     /* elliptical shadow height */
+  --shadow-bottom: 6px;     /* offset from bottom */
+  --shadow-opacity: 0.35;
+
+  width: calc(var(--sprite-w) * var(--sprite-scale));
+  height: calc(var(--sprite-h) * var(--sprite-scale));
+
+  /* Crisp pixels across more engines */
+  image-rendering: -moz-crisp-edges;     /* FF */
+  image-rendering: pixelated;            /* Chrome/Edge */
+  image-rendering: crisp-edges;          /* Safari heuristic */
+}
+
+/* Interactivity opt-in */
+.dog-sprite--interactive { pointer-events: auto; }
+
+/* Only enable will-change when you really animate it (set this class in React while animating) */
+.dog-sprite--animating {
   will-change: background-position, transform;
+}
+
+/* Soft elliptical ground shadow */
+.dog-sprite--shadow::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: var(--shadow-bottom);
+  transform: translateX(-50%);
+  width: var(--shadow-width);
+  height: var(--shadow-height);
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(0,0,0,var(--shadow-opacity)),
+    rgba(0,0,0,0) 70%
+  );
+  filter: blur(2px);
+  pointer-events: none;
+}
+
+/* Smaller shadow modifier (cleaner naming) */
+.dog-sprite--shadow-small {
+  --shadow-width: 40%;
+  --shadow-height: 10%;
+  --shadow-bottom: 4px;
+  --shadow-opacity: 0.25;
+}
+
+/* Respect reduced motion in case you add shimmer/float animations later */
+@media (prefers-reduced-motion: reduce) {
+  .dog-sprite--animating {
+    will-change: auto;
+    /* optional: freeze background-position updates on your animator */
+  }
 }
