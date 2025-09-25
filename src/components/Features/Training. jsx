@@ -1,71 +1,24 @@
 // src/components/Features/Training.jsx
 import React from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { bark, feed, pet, rest, selectDog, setMute, trainSkill } from "@/redux/dogSlice";
+import { Link } from "react-router-dom";
 
 export default function Training() {
-  const dog = useSelector(selectDog);
-  const dispatch = useDispatch();
-
-  const skills = [
-    { id: "sit", label: "Sit" },
-    { id: "stay", label: "Stay" },
-    { id: "fetch", label: "Fetch" },
-    { id: "roll", label: "Roll Over" },
-    { id: "speak", label: "Speak" },
-  ];
-
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-slate-100">
-      <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-lg font-bold">Training & Care</h3>
-        <button
-          onClick={() => dispatch(setMute(!dog.mute))}
-          className="rounded-md border border-white/10 bg-white/10 px-3 py-1 text-xs"
+    <div className="grid gap-3">
+      <h3 className="text-lg font-semibold">Training</h3>
+      <div className="grid sm:grid-cols-2 gap-3">
+        <Link
+          to="/train/potty"
+          className="rounded-2xl border border-black/5 bg-white dark:bg-slate-900 dark:border-white/10 px-4 py-3 hover:shadow"
         >
-          {dog.mute ? "Unmute" : "Mute"}
-        </button>
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-2">
-        {skills.map(s => (
-          <button
-            key={s.id}
-            onClick={() => dispatch(trainSkill(s.id))}
-            className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2 hover:bg-white/10"
-          >
-            <span>{s.label}</span>
-            <span className="text-sm text-slate-300">
-              Lv {dog.skills[s.id].level} • XP {dog.skills[s.id].xp}
-            </span>
-          </button>
-        ))}
-      </div>
-
-      <div className="mt-4 grid grid-cols-3 gap-3">
-        <button onClick={() => dispatch(feed())} className="rounded-lg border border-white/10 bg-emerald-500/20 px-3 py-2 hover:bg-emerald-500/30">Feed</button>
-        <button onClick={() => dispatch(rest())} className="rounded-lg border border-white/10 bg-indigo-500/20 px-3 py-2 hover:bg-indigo-500/30">Rest</button>
-        <button onClick={() => dispatch(pet())}  className="rounded-lg border border-white/10 bg-pink-500/20 px-3 py-2 hover:bg-pink-500/30">Pet</button>
-      </div>
-
-      <button onClick={() => dispatch(bark(Date.now()))} className="mt-3 w-full rounded-lg border border-white/10 bg-white/10 px-3 py-2 hover:bg-white/20">
-        Bark
-      </button>
-
-      <div className="mt-4 grid grid-cols-3 gap-2 text-xs text-slate-300">
-        <Stat label="Hunger" v={dog.hunger} />
-        <Stat label="Energy" v={dog.energy} />
-        <Stat label="Happy"  v={dog.happiness} />
-      </div>
-    </div>
-  );
-}
-function Stat({ label, v }) {
-  return (
-    <div>
-      <div className="mb-1">{label}</div>
-      <div className="h-2 w-full rounded bg-slate-800">
-        <div className="h-2 rounded bg-cyan-400" style={{ width: `${v}%` }} />
+          🚽 Potty Trainer
+        </Link>
+        <Link
+          to="/train/tricks"
+          className="rounded-2xl border border-black/5 bg-white dark:bg-slate-900 dark:border-white/10 px-4 py-3 hover:shadow"
+        >
+          🤹 Tricks Trainer
+        </Link>
       </div>
     </div>
   );

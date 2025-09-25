@@ -1,12 +1,20 @@
-import React from "react";
-
-export default function TrickList({ tricks = ["Sit", "Shake", "Roll Over"] }) {
+import React, { useState } from "react";
+const all = ["Sit", "Stay", "Roll Over", "High Five"];
+export default function TrickList({ learnedTricks = [], onLearnTrick = () => {} }) {
+  const [next, setNext] = useState(all.find(t => !learnedTricks.includes(t)) || "");
   return (
-    <div className="bg-white rounded-2xl shadow p-4">
-      <h3 className="text-lg font-semibold text-rose-900">Known Tricks</h3>
-      <ul className="mt-2 text-sm text-rose-900/80 list-disc pl-5 space-y-1">
-        {tricks.map((t) => <li key={t}>{t}</li>)}
-      </ul>
+    <div className="rounded-xl border border-slate-700 p-4">
+      <div className="font-semibold mb-2">Tricks</div>
+      <div className="text-xs opacity-70 mb-2">Learned: {learnedTricks.join(", ") || "None"}</div>
+      <button className="rounded-lg bg-slate-800 hover:bg-slate-700 px-3 py-2 text-sm disabled:opacity-50"
+        disabled={!next}
+        onClick={() => { onLearnTrick(next); setNext(all.find(t => !learnedTricks.includes(t) && t !== next) || ""); }}>
+        Learn {next || "—"}
+      </button>
     </div>
   );
 }
+import { useEffect, useRef, useState } from "react";
+import { useDispatch } from "react-redux";
+import useGameClock from "./useGameClock";
+import { tickNeeds, setPosition, setDirection, setMoving } from "@/redux/dogSlice";
