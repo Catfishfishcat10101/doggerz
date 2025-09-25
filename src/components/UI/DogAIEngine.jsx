@@ -1,145 +1,268 @@
-// src/components/DogAIEngine.jsx
-import { useEffect, useRef } from "react";
+// src/components/Features/DogAIEngine.jsx
+/**
+ * DogAIEngine.jsx
+ * ---------------------------------------------------------------------------
+ * Headless orchestration layer that drives:
+ *  - Real-time aging & needs decay (redux: tickRealTime)
+ *  - Autonomous locomotion (wander/idle/nap) with stage/energy-aware speed
+ *  - Bark interaction (Space or click from any consumer via dispatch(bark()))
+ *  - Optional manual override with arrow keys (temporary) for QA
+ *  - Bark SFX playback via howler w/ mute toggle in redux
+ *
+ * This component renders nothing (unless debug=true). Mount it once per scene
+ * that contains the dog world (e.g., GameScreen). It will not duplicate
+ * state—everything authoritative lives in redux/dogSlice.
+ *
+ * Usage:
+ *   <DogAIEngine worldW={640} worldH={360} debug={false} />
+ *
+ * Hard requirements:
+ *   npm i howler
+ *
+ * Sprite rendering is handled by your visual component (e.g., Dog.jsx).
+ * This engine only updates redux: position, moving, direction, and global tick.
+ * ---------------------------------------------------------------------------
+ */
+
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  startWalking,
-  stopWalking,
-  startBarking,
-  stopBarking,
-  startPooping,
-  stopPooping,
-  updateCleanliness,
-} from "../../redux/dogSlice.js";
-import useJitteredTimer from "./UI/hooks/useJitteredTimer";
-import usePageVisibility from "./UI/hooks/usePageVisibility";
+  bark as barkAction,
+  feed,
+  rest,
+  pet,
+  selectDog,
+  selectStage,
+  selectMute,
+  setDirection,
+  setMoving,
+  setPosition,
+  tickRealTime,
+} from "@/redux/dogSlice";
+import { Howl } from "howler";
 
-/**
- * Tunables – keep the same base cadence you had, but add jitter to avoid patterns.
- */
-const WALK_BASE_MS = 8_000;
-const BARK_BASE_MS = 12_000;
-const POOP_BASE_MS = 20_000;
-const CLEANLINESS_MS = 60_000;
+// Public asset (place at public/assets/audio/bark1.mp3)
+const BARK_URL = "/assets/audio/bark1.mp3";
 
-/**
- * Probabilities are modulated by time-of-day.
- * Morning/evening: more walk/bark; Night: less active, more poop “chance”.
- */
-function getTimeBuckets(date = new Date()) {
-  const h = date.getHours();
-  if (h >= 6 && h < 11) return "morning";
-  if (h >= 11 && h < 17) return "day";
-  if (h >= 17 && h < 22) return "evening";
-  return "night";
-}
+// World-safe clamps
+const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
-function pickProbabilities(bucket) {
-  switch (bucket) {
-    case "morning":
-      return { walk: 0.18, bark: 0.18, poop: 0.12 };
-    case "day":
-      return { walk: 0.12, bark: 0.16, poop: 0.10 };
-    case "evening":
-      return { walk: 0.20, bark: 0.16, poop: 0.12 };
-    case "night":
-    default:
-      return { walk: 0.06, bark: 0.08, poop: 0.14 };
+/** Stage-aware base speed in pixels/sec */
+function stageSpeed(stage) {
+  switch (stage) {
+    case "puppy": return 90;
+    case "senior": return 60;
+    default: return 75; // adult
   }
 }
 
-/**
- * A tiny lock so the dog doesn’t try to walk & poop & bark at once.
- */
-function useBehaviorLock() {
-  const ref = useRef(false);
-  const withLock = async (ms, fn) => {
-    if (ref.current) return false;
-    ref.current = true;
-    try {
-      await fn();
-      await new Promise((r) => setTimeout(r, ms)); // enforce min duration
-    } finally {
-      ref.current = false;
-    }
-    return true;
-  };
-  return withLock;
-}
+/** Simple state machine enumerations */
+const MODE = {
+  IDLE: "idle",
+  WANDER: "wander",
+  NAP: "nap",
+  PLAY: "play", // reserved for future toys
+};
 
 export default function DogAIEngine({
-  walkDurationMs = 3_000,
-  barkDurationMs = 2_000,
-  poopDurationMs = 2_500,
-  jitterPct = 0.35, // up to ±35% timing jitter
-} = {}) {
+  worldW = 640,
+  worldH = 360,
+  debug = false,
+  logicHz = 30,      // movement solver frequency
+  tickHz = 4,        // redux time/needs loop frequency
+  manualOverrideMs = 2500, // arrow-key control hold time
+}) {
   const dispatch = useDispatch();
-  const dog = useSelector((s) => s.dog); // if you later want to gate behaviors on hunger, energy, etc.
+  const dog = useSelector(selectDog);
+  const stage = useSelector(selectStage);
+  const isMuted = useSelector(selectMute);
 
-  const isVisible = usePageVisibility(); // pause when hidden
-  const withLock = useBehaviorLock();
+  // SFX
+  const barkSfxRef = useRef(null);
 
-  // Cleanliness decay (kept as a steady beat; no jitter to keep UX predictable)
+  // AI working state (not stored in redux to keep save small)
+  const [mode, setMode] = useState(MODE.WANDER);
+  const targetRef = useRef({ x: 0.5, y: 0.65 }); // normalized targets (0..1)
+  const normPosRef = useRef({
+    x: dog.pos?.x ? clamp(dog.pos.x / worldW, 0.05, 0.95) : 0.5,
+    y: dog.pos?.y ? clamp(dog.pos.y / worldH, 0.50, 0.90) : 0.65,
+  });
+  const facingRef = useRef("right");
+  const lastCommandTs = useRef(0); // manual override timer
+
+  // ---------- Init sound ----------
   useEffect(() => {
-    if (!isVisible) return;
-    const decay = setInterval(() => dispatch(updateCleanliness()), CLEANLINESS_MS);
-    return () => clearInterval(decay);
-  }, [dispatch, isVisible]);
+    barkSfxRef.current = new Howl({ src: [BARK_URL], volume: isMuted ? 0 : 0.75 });
+    return () => barkSfxRef.current?.unload();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => {
+    if (barkSfxRef.current) barkSfxRef.current.volume(isMuted ? 0 : 0.75);
+  }, [isMuted]);
 
-  // WALK scheduler (jittered)
-  useJitteredTimer(
-    async () => {
-      if (!isVisible) return;
-      const bucket = getTimeBuckets();
-      const { walk } = pickProbabilities(bucket);
-      if (Math.random() < walk) {
-        await withLock(walkDurationMs, async () => {
-          dispatch(startWalking());
-          setTimeout(() => dispatch(stopWalking()), walkDurationMs);
-        });
+  // ---------- Global time/needs ticker ----------
+  useEffect(() => {
+    const period = Math.max(1, Math.floor(1000 / tickHz));
+    const id = setInterval(() => dispatch(tickRealTime(Date.now())), period);
+    return () => clearInterval(id);
+  }, [dispatch, tickHz]);
+
+  // ---------- Wander target scheduler ----------
+  useEffect(() => {
+    let tm = 0;
+    const schedule = () => {
+      // Puppies roam more; seniors keep tighter loops
+      const roam = stage === "puppy" ? 0.85 : stage === "senior" ? 0.65 : 0.75;
+      targetRef.current = {
+        x: 0.5 + (Math.random() - 0.5) * roam,
+        y: 0.65 + (Math.random() - 0.5) * 0.2,
+      };
+      targetRef.current.x = clamp(targetRef.current.x, 0.08, 0.92);
+      targetRef.current.y = clamp(targetRef.current.y, 0.52, 0.90);
+
+      const dwell = 1800 + Math.random() * 3200;
+      tm = window.setTimeout(schedule, dwell);
+    };
+    schedule();
+    return () => clearTimeout(tm);
+  }, [stage]);
+
+  // ---------- Mode arbitration (energy-aware) ----------
+  useEffect(() => {
+    // When energy is low, nap opportunistically
+    if (dog.energy < 18 && mode !== MODE.NAP) {
+      setMode(MODE.NAP);
+      dispatch(rest(18)); // small top-up on nap start
+      return;
+    }
+    if (dog.energy > 30 && mode === MODE.NAP) {
+      setMode(MODE.WANDER);
+    }
+  }, [dog.energy, mode, dispatch]);
+
+  // ---------- Movement solver ----------
+  useEffect(() => {
+    const dt = 1 / logicHz;
+    const pxPerSec = stageSpeed(stage);
+    let raf = 0;
+    let accum = 0;
+    let last = performance.now();
+
+    const loop = (now) => {
+      const frameDt = (now - last) / 1000;
+      last = now;
+      accum += frameDt;
+
+      // Fixed-step integrator for stable movement
+      while (accum >= dt) {
+        const np = normPosRef.current;
+
+        // manual override window
+        const manualActive = now - lastCommandTs.current < manualOverrideMs;
+
+        if (mode === MODE.NAP && !manualActive) {
+          dispatch(setMoving(false));
+        } else {
+          let speed = pxPerSec;
+          // small stage/mood modifiers
+          if (stage === "puppy") speed *= 1.1;
+          if (stage === "senior") speed *= 0.85;
+          if (dog.happiness < 35) speed *= 0.92;
+          if (dog.energy < 25) speed *= 0.9;
+
+          // convert to normalized per-step velocity
+          const vxNorm = (speed / worldW) * dt;
+          const vyNorm = (speed / worldH) * dt;
+
+          let dx = 0, dy = 0;
+          if (manualActive) {
+            // manual direction already encoded in facingRef; dx set on key press
+            dx = facingRef.current === "right" ? vxNorm : -vxNorm;
+            dy = 0;
+          } else {
+            // seek target
+            const tx = targetRef.current.x - np.x;
+            const ty = targetRef.current.y - np.y;
+            const dist = Math.hypot(tx, ty);
+            if (dist > 0.0015) {
+              dx = (tx / dist) * vxNorm;
+              dy = (ty / dist) * vyNorm;
+            }
+          }
+
+          // integrate & clamp
+          let nx = clamp(np.x + dx, 0.05, 0.95);
+          let ny = clamp(np.y + dy, 0.50, 0.90);
+
+          // bounce at edges
+          if (nx <= 0.05 || nx >= 0.95) {
+            facingRef.current = nx <= 0.05 ? "right" : "left";
+          }
+
+          // writeback
+          np.x = nx; np.y = ny;
+
+          const px = Math.round(nx * worldW);
+          const py = Math.round(ny * worldH);
+          dispatch(setPosition({ x: px, y: py }));
+          dispatch(setMoving(Math.abs(dx) + Math.abs(dy) > 0.0001));
+          const facing = dx >= 0 ? "right" : "left";
+          dispatch(setDirection(facing));
+          facingRef.current = facing;
+        }
+        accum -= dt;
       }
-    },
-    WALK_BASE_MS,
-    { jitterPct },
-    [isVisible, walkDurationMs]
-  );
 
-  // BARK scheduler (jittered)
-  useJitteredTimer(
-    async () => {
-      if (!isVisible) return;
-      const bucket = getTimeBuckets();
-      const { bark } = pickProbabilities(bucket);
-      if (Math.random() < bark) {
-        await withLock(barkDurationMs, async () => {
-          dispatch(startBarking());
-          setTimeout(() => dispatch(stopBarking()), barkDurationMs);
-          // Optional: fire a custom event any audio system can listen for
-          window.dispatchEvent(new CustomEvent("dog:sfx", { detail: { type: "bark" } }));
-        });
+      raf = requestAnimationFrame(loop);
+    };
+
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [logicHz, stage, worldW, worldH, mode, dog.happiness, dog.energy]);
+
+  // ---------- Keyboard controls ----------
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.code === "Space") {
+        e.preventDefault();
+        dispatch(barkAction(Date.now()));
+        barkSfxRef.current?.play();
       }
-    },
-    BARK_BASE_MS,
-    { jitterPct },
-    [isVisible, barkDurationMs]
-  );
+      if (e.code === "ArrowLeft")  { lastCommandTs.current = performance.now(); facingRef.current = "left"; }
+      if (e.code === "ArrowRight") { lastCommandTs.current = performance.now(); facingRef.current = "right"; }
+      if (e.code === "KeyF") { dispatch(feed(20)); }
+      if (e.code === "KeyR") { dispatch(rest(20)); }
+      if (e.code === "KeyP") { dispatch(pet(8)); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [dispatch]);
 
-  // POOP scheduler (jittered)
-  useJitteredTimer(
-    async () => {
-      if (!isVisible) return;
-      const bucket = getTimeBuckets();
-      const { poop } = pickProbabilities(bucket);
-      if (Math.random() < poop) {
-        await withLock(poopDurationMs, async () => {
-          dispatch(startPooping());
-          setTimeout(() => dispatch(stopPooping()), poopDurationMs);
-        });
-      }
-    },
-    POOP_BASE_MS,
-    { jitterPct },
-    [isVisible, poopDurationMs]
-  );
+  // ---------- Debug overlay (optional) ----------
+  const debugInfo = useMemo(() => ({
+    mode,
+    stage,
+    energy: Math.round(dog.energy),
+    hunger: Math.round(dog.hunger),
+    happy: Math.round(dog.happiness),
+    pos: dog.pos,
+  }), [mode, stage, dog.energy, dog.hunger, dog.happiness, dog.pos]);
 
-  return null; // logic only
+  if (!debug) return null;
+
+  return (
+    <div
+      className="pointer-events-none fixed bottom-3 left-3 z-[60] rounded-lg border border-white/10 bg-slate-900/80 p-3 text-xs text-slate-100 shadow-lg"
+      style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" }}
+    >
+      <div className="font-semibold mb-1">Dog AI (debug)</div>
+      <pre className="whitespace-pre-wrap leading-4">
+        {JSON.stringify(debugInfo, null, 2)}
+      </pre>
+      <div className="mt-2 text-[10px] text-slate-300">
+        ⌨ Space=bark • ←/→=manual nudge • F=feed • R=rest • P=pet
+      </div>
+    </div>
+  );
 }
