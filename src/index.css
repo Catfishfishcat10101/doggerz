@@ -274,14 +274,3 @@
 .dev-outline * {
   outline: 1px dashed color-mix(in oklab, var(--tx-1), transparent 50%);
 }
-
-/* -----------------------------------------------------------------------------
-   Haptics — opt-in class to trigger short vibration on actionable elements
-   Usage: <button class="haptic:10">…</button> or haptic:30 for longer buzz
-   (Will be a no-op on desktop/non-supporting devices)
------------------------------------------------------------------------------ */
-[class^="haptic:"], [class*=" haptic:"] {
-  /* empty; we hook it via JS if you want later */
-}
-/* -----------------------------------------------------------------------------
-   End of src/index.css
