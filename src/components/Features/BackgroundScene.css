@@ -1,38 +1,201 @@
-/* src/components/Features/BackgroundScene.css */
+/* --- Scene Core ---------------------------------------------------------- */
+
 .bg-yard {
+  --scene-accent: #0ea5e9;               /* overridable via prop */
+  --sky-1: #cde7ff;
+  --sky-2: #87baff;
+  --ground-1: #d1fae5;
+  --ground-2: #a7f3d0;
+  --ground-line: #0d9488;
+
   position: relative;
+  min-height: 100%;
   width: 100%;
-  height: 100%;
   overflow: hidden;
-}
-
-/* default skin */
-.skin-default {
-  background: linear-gradient(180deg, #bfe7ff 0%, #e9f7ff 40%, #d8f7d0 41%, #b4e09b 100%);
-}
-
-/* alt skins set by sessionStorage 'yardSkin' */
-.skin-lawn {
-  background: linear-gradient(180deg, #bfe7ff 0%, #e9f7ff 40%, #d8ffd8 41%, #8ad47a 100%);
-}
-
-.skin-sunset {
-  background: linear-gradient(180deg, #ffd6a5 0%, #ffedd5 40%, #fde68a 41%, #fcd34d 100%);
-}
-
-.scene-ground {
-  position: absolute; left: 0; right: 0; bottom: 0;
-  height: 42%;
-  background: repeating-linear-gradient(
-    0deg,
-    rgba(0,0,0,0.05) 0 8px,
-    rgba(255,255,255,0.05) 8px 16px
-  );
+  background: linear-gradient(180deg, var(--sky-1) 0%, var(--sky-2) 60%);
+  isolation: isolate; /* ensure filters don’t bleed */
 }
 
 .scene-stage {
-  position: absolute; inset: 0;
-  display: grid;
-  place-items: center;
-  padding: 1rem;
+  position: relative;
+  z-index: 10;
+  margin: 0 auto;
+  max-width: 960px;
+  min-height: 60vh;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
+
+.scene-ground {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 22vh;
+  background:
+    linear-gradient(180deg, var(--ground-1), var(--ground-2)),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 28px,
+      color-mix(in oklab, var(--ground-line), transparent 70%) 28px 29px
+    );
+  z-index: 5;
+  box-shadow: 0 -12px 32px color-mix(in oklab, black, transparent 85%) inset;
+}
+
+/* --- Parallax ------------------------------------------------------------ */
+
+.parallax.layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.7;
+}
+
+.parallax.layer.back {
+  background:
+    radial-gradient(1200px 400px at 80% 10%, color-mix(in oklab, white, transparent 80%), transparent),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 60'%3E%3Cg fill='%23ffffff22'%3E%3Ccircle cx='40' cy='20' r='10'/%3E%3Ccircle cx='80' cy='24' r='14'/%3E%3Ccircle cx='120' cy='18' r='9'/%3E%3C/g%3E%3C/svg%3E") repeat-x;
+  background-size: auto 60px, 300px 60px;
+  background-position: 0 8%, 0 8%;
+  animation: clouds 60s linear infinite;
+}
+
+.parallax.layer.mid {
+  background:
+    radial-gradient(1000px 300px at 20% 14%, color-mix(in oklab, var(--scene-accent), transparent 85%), transparent);
+  mix-blend-mode: soft-light;
+  opacity: 0.6;
+}
+
+.parallax.layer.front {
+  background:
+    radial-gradient(600px 200px at 40% 0%, color-mix(in oklab, black, transparent 90%), transparent);
+  opacity: 0.6;
+}
+
+@keyframes clouds {
+  from { background-position: 0 8%, 0 8%; }
+  to   { background-position: 300px 8%, 300px 8%; }
+}
+
+/* Reduced motion: disable animations */
+@media (prefers-reduced-motion: reduce) {
+  .parallax.layer.back { animation: none; }
+}
+
+/* --- Skins --------------------------------------------------------------- */
+
+/* Default */
+.skin-default {
+  --sky-1: #dff3ff;
+  --sky-2: #9fd0ff;
+  --ground-1: #d9fbe6;
+  --ground-2: #bff7d4;
+  --ground-line: #10b981;
+}
+
+/* Lawn (lush green) */
+.skin-lawn {
+  --sky-1: #cfe9ff;
+  --sky-2: #7ec4ff;
+  --ground-1: #c7f9cc;
+  --ground-2: #80ed99;
+  --ground-line: #2d6a4f;
+}
+
+/* Sunset (warm gradient, slight glow) */
+.skin-sunset {
+  --sky-1: #ffd0b3;
+  --sky-2: #ff7b7b;
+  --ground-1: #ffe0b2;
+  --ground-2: #ffcc80;
+  --ground-line: #f59e0b;
+}
+.skin-sunset .parallax.layer.mid {
+  background:
+    radial-gradient(900px 260px at 65% 16%, color-mix(in oklab, #ffb74d, transparent 50%), transparent);
+}
+
+/* Night (stars + fireflies) */
+.skin-night {
+  --sky-1: #0b1220;
+  --sky-2: #111e35;
+  --ground-1: #12242b;
+  --ground-2: #0d1b21;
+  --ground-line: #0ea5e9;
+}
+.skin-night .parallax.layer.back {
+  opacity: 0.9;
+  background:
+    radial-gradient(1000px 400px at 50% -5%, color-mix(in oklab, #0ea5e9, transparent 92%), transparent),
+    repeating-radial-gradient(circle at 30% 20%, #ffffff55 0 1px, transparent 1px 6px);
+  animation: twinkle 6s ease-in-out infinite alternate;
+}
+@keyframes twinkle {
+  0% { opacity: 0.75; }
+  100% { opacity: 0.95; }
+}
+.skin-night::after {
+  /* fireflies */
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(2px 2px at 10% 80%, #d9f99d, transparent),
+    radial-gradient(2px 2px at 35% 70%, #bef264, transparent),
+    radial-gradient(2px 2px at 80% 85%, #fde68a, transparent),
+    radial-gradient(2px 2px at 65% 60%, #facc15, transparent);
+  opacity: 0.6;
+  z-index: 2;
+  animation: drift 12s linear infinite alternate;
+}
+@keyframes drift {
+  0%   { transform: translateY(0px); }
+  100% { transform: translateY(-8px); }
+}
+
+/* Neon (arcade vibe) */
+.skin-neon {
+  --sky-1: #15002b;
+  --sky-2: #3a094f;
+  --ground-1: #0b132b;
+  --ground-2: #1c2541;
+  --ground-line: #22d3ee;
+  --scene-accent: #22d3ee;
+}
+.skin-neon .scene-ground {
+  box-shadow:
+    0 -12px 32px color-mix(in oklab, #22d3ee, transparent 80%) inset,
+    0 -2px 0 #22d3ee inset;
+}
+
+/* Winter (cool whites) */
+.skin-winter {
+  --sky-1: #e6f3ff;
+  --sky-2: #bcdcff;
+  --ground-1: #eef6ff;
+  --ground-2: #dfefff;
+  --ground-line: #7dd3fc;
+}
+.skin-winter .scene-ground {
+  background:
+    linear-gradient(180deg, var(--ground-1), var(--ground-2)),
+    radial-gradient(600px 80px at 50% 0%, #ffffffcc, transparent);
+}
+
+/* --- Dark mode tuning ---------------------------------------------------- */
+@media (prefers-color-scheme: dark) {
+  .skin-default {
+    --sky-1: #0d1b2a;
+    --sky-2: #1b263b;
+    --ground-1: #102a24;
+    --ground-2: #0b221d;
+    --ground-line: #22c55e;
+  }
+}
+
+/* --- Utilities ----------------------------------------------------------- */
+.bg-yard::selection { background: color-mix(in oklab, var(--scene-accent), transparent 70%); }

@@ -1,3 +1,4 @@
+// src/components/common/PWAInstallPrompt.jsx
 import React, { useEffect, useRef, useState } from "react";
 
 export default function PWAInstallPrompt() {
