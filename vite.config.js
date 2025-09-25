@@ -79,4 +79,4 @@ export default defineConfig(({ mode }) => {
     preview: { port: 5173 },
     build: { sourcemap: isDev, outDir: "dist" }
   };
-});qA)
+});
