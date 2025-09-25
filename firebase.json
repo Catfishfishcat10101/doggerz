@@ -1,9 +1,9 @@
 // src/firebase.js
-import { initializeApp } from "firebase/app";
-import { getAuth, connectAuthEmulator, GoogleAuthProvider } from "firebase/auth";
+import { initializeApp, getApps } from "firebase/app";
+import { getAuth, setPersistence, browserLocalPersistence, connectAuthEmulator } from "firebase/auth";
 import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
 
-const firebaseConfig = {
+const cfg = {
   apiKey: import.meta.env.VITE_FB_API_KEY,
   authDomain: import.meta.env.VITE_FB_AUTH_DOMAIN,
   projectId: import.meta.env.VITE_FB_PROJECT_ID,
@@ -12,18 +12,28 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FB_APP_ID,
 };
 
-const app = initializeApp(firebaseConfig);
+if (import.meta.env.DEV) {
+  // Quick visibility in dev tools
+  // eslint-disable-next-line no-console
+  console.info("[Firebase] cfg", cfg);
+}
 
-// Singletons
+// Fail fast on obviously broken config
+["apiKey", "projectId"].forEach((k) => {
+  if (!cfg[k]) console.error(`❌ Missing Firebase env: ${k}`);
+});
+
+const app = getApps().length ? getApps()[0] : initializeApp(cfg);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
-export const googleProvider = new GoogleAuthProvider();
-// Optional: force account selection each time (useful on shared machines)
-googleProvider.setCustomParameters({ prompt: "select_account" });
 
-// Emulators (Windows-friendly: use localhost or 127.0.0.1, not 0.0.0.0)
-if (import.meta.env.VITE_USE_FIREBASE_EMULATORS === "1") {
-  // Note: Auth emulator does not support real Google OAuth.
+setPersistence(auth, browserLocalPersistence).catch((e) => {
+  console.warn("Auth persistence failed:", e?.code || e?.message || e);
+});
+
+// Optional: local emulators
+if (String(import.meta.env.VITE_USE_FIREBASE_EMULATOR) === "1") {
+  console.warn("⚠️ Using Firebase emulators (auth:9099, firestore:8080)");
   connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
   connectFirestoreEmulator(db, "127.0.0.1", 8080);
 }
