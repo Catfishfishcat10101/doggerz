@@ -1,92 +1,65 @@
-// src/components/UI/DogSprite.jsx
-import React, { memo, useMemo } from "react";
-import useSpriteAnimator from "@/hooks/useSpriteAnimator";
+import React, { useMemo } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { bark, selectDirection, selectDog, selectStage } from "@/redux/dogSlice";
 import "./DogSprite.css";
-import spritePng from "@/assets/sprites/jack_russell_directions.png";
 
-// Rows in your sheet: frames laid out horizontally, directions vertically.
-const DIR_ROW = { down: 0, left: 1, right: 2, up: 3 };
+// Import sprite sheets from src so Vite fingerprints paths reliably
+import puppyWalk  from "@/assets/sprites/puppy_walk.png";
+import adultWalk  from "@/assets/sprites/adult_walk.png";
+import seniorWalk from "@/assets/sprites/senior_walk.png";
 
 /**
- * DogSprite
- * - Uses useSpriteAnimator v2 API (getStyle)
- * - Integer scaling to keep pixels crisp (prefer scale over arbitrary size)
- * - Optional mirroring: if your sheet doesn't have 'right', you can mirror 'left'
+ * Per-stage sprite meta. If your sheets have different frame sizes, set
+ * w/h per frame here. The CSS will scale via --sprite-scale if you want.
  */
-function DogSprite({
-  direction = "down",          // "down" | "left" | "right" | "up"
-  walking = false,             // anim on/off
-  frameWidth = 64,             // single tile width (px)
-  frameHeight = 64,            // single tile height (px)
-  frames = 4,                  // frames per row
-  fps = 8,                     // animation speed
-  idle = 0,                    // idle frame index when paused
-  scale = 1,                   // integer scale multiplier (1, 2, 3…)
-  size,                        // optional absolute size; if given, scale is derived
-  mirrorRight = false,         // if true and direction === 'right', mirror 'left' row
-  shadow = true,               // soft drop shadow under sprite
-  className = "",
-  style: styleProp = {},
-  "aria-label": ariaLabel,
-}) {
-  // Derive integer scale from size if provided
-  const _scale = useMemo(() => {
-    if (!size) return Math.max(1, Math.round(scale || 1));
-    return Math.max(1, Math.round(Number(size) / frameWidth));
-  }, [size, scale, frameWidth]);
+const SHEETS = {
+  puppy:  { src: puppyWalk,  frames: 6, w: 96,  h: 96,  scale: 1 },
+  adult:  { src: adultWalk,  frames: 6, w: 112, h: 112, scale: 1 },
+  senior: { src: seniorWalk, frames: 6, w: 120, h: 120, scale: 1 },
+};
 
-  const basePx = frameWidth * _scale;
-  const dirRowRaw = DIR_ROW[direction] ?? 0;
-  const useMirror = mirrorRight && direction === "right";
-  const dirRow = useMirror ? DIR_ROW.left : dirRowRaw;
+export default function DogSprite({ worldBottomPct = "12%" }) {
+  const d   = useSelector(selectDog);
+  const dir = useSelector(selectDirection);
+  const stage = useSelector(selectStage);
+  const dispatch = useDispatch();
 
-  const anim = useSpriteAnimator({
-    isPlaying: walking,
-    frameCount: frames,
-    frameRate: fps,
-    idleFrame: idle,
-    initialRow: dirRow,
-    pauseWhenHidden: true,
-    respectReducedMotion: true,
-    loop: true,
-  });
+  const meta = useMemo(() => SHEETS[stage] ?? SHEETS.adult, [stage]);
 
-  // Update row when direction changes
-  React.useEffect(() => { anim.setRow(dirRow); }, [dirRow]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Position math: center sprite on x by subtracting half the width.
+  const left = `${Math.max(0, (d.pos?.x ?? meta.w / 2) - (meta.w * meta.scale) / 2)}px`;
 
-  // Inline style: base sprite + animator-provided backgroundPosition
-  const style = useMemo(() => {
-    const s = {
-      width: `${basePx}px`,
-      height: `${basePx}px`,
-      backgroundImage: `url(${spritePng})`,
-      backgroundRepeat: "no-repeat",
-      imageRendering: "pixelated",
-      transform: useMirror ? "scaleX(-1)" : "none",
-      ...anim.getStyle({ frameWidth, frameHeight, row: dirRow }),
-      ...styleProp,
-    };
-    // anim.getStyle sets width/height to frameWidth/Height; we overwrite to scaled size.
-    s.width = `${basePx}px`;
-    s.height = `${basePx}px`;
-    return s;
-  }, [anim, frameWidth, frameHeight, dirRow, basePx, useMirror, styleProp]);
+  const classNames = [
+    "dog-sprite",
+    "dog-sprite--walk",
+    "dog-sprite--animating",
+    "dog-sprite--shadow",
+    "dog-sprite--interactive",
+  ].join(" ");
 
-  const label =
-    ariaLabel ?? `dog ${direction} frame ${anim.frame}${walking ? " (walking)" : " (idle)"}`;
+  // Running vs paused animation + flip direction via CSS vars.
+  const styleVars = {
+    "--sprite-w": `${meta.w}px`,
+    "--sprite-h": `${meta.h}px`,
+    "--sprite-scale": meta.scale,
+    "--flipX": dir === "left" ? -1 : 1,
+    "--frames": meta.frames,
+    "--speed-ms": d.moving ? "900ms" : "1400ms",
+    "--play": d.moving ? "running" : "paused",
+  };
 
   return (
-    <div
-      className={[
-        "dog-sprite",
-        shadow && "dog-sprite--shadow",
-        className,
-      ].filter(Boolean).join(" ")}
-      style={style}
-      role="img"
-      aria-label={label}
-    />
+    <div className="absolute" style={{ left, bottom: worldBottomPct }}>
+      {/* The shadow ellipse is injected by ::after of .dog-sprite--shadow */}
+      <div
+        className={classNames}
+        style={{
+          ...styleVars,
+          backgroundImage: `url(${meta.src})`,
+        }}
+        title="Click to bark"
+        onClick={() => dispatch(bark(Date.now()))}
+      />
+    </div>
   );
 }
-
-export default memo(DogSprite);
