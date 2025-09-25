@@ -1,115 +1,164 @@
 // src/components/UI/NavBar.jsx
-import React, { memo } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { Dog, Menu, X, LogIn, UserPlus, Download } from "lucide-react";
 
-export default memo(function NavBar({ className = "" }) {
-  // Try to infer auth presence; won’t crash if slice isn’t wired yet
-  const user = useSelector((s) => s?.user) || {};
-  const isAuthed = Boolean(user?.id || user?.uid || user?.email);
-  const loc = useLocation();
+/**
+ * Simple PWA-install hook: exposes an "install" action when eligible.
+ * We intentionally hide this on Splash to avoid visual noise at first touch.
+ */
+function usePWAInstall() {
+  const [deferred, setDeferred] = useState(null);
+  useEffect(() => {
+    const onBeforeInstall = (e) => {
+      e.preventDefault();
+      setDeferred(e);
+    };
+    const onInstalled = () => setDeferred(null);
+    window.addEventListener("beforeinstallprompt", onBeforeInstall);
+    window.addEventListener("appinstalled", onInstalled);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", onBeforeInstall);
+      window.removeEventListener("appinstalled", onInstalled);
+    };
+  }, []);
+  const install = async () => {
+    if (!deferred) return;
+    deferred.prompt();
+    const choice = await deferred.userChoice.catch(() => null);
+    setDeferred(null);
+    return choice;
+  };
+  return { canInstall: !!deferred, install };
+}
 
-  // Treat these paths as “Game” active
-  const gameActive = /^\/(game|train|shop|stats|breed|accessories)/i.test(
-    loc.pathname || "/"
-  );
+const NAV = [
+  { to: "/game", label: "Game" },
+  { to: "/stats", label: "Stats" },
+  { to: "/shop", label: "Shop" },
+];
 
-  const base =
-    "px-3 py-1 rounded-xl text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400";
-  const item = ({ isActive }) =>
-    [
-      base,
-      isActive ? "bg-slate-700 text-white" : "bg-slate-800/40 hover:bg-slate-700 text-slate-200",
-    ].join(" ");
+export default function NavBar() {
+  const { pathname } = useLocation();
+  const onSplash = pathname === "/" || pathname === "/splash";
+  const [open, setOpen] = useState(false);
+  const { canInstall, install } = usePWAInstall();
+
+  useEffect(() => setOpen(false), [pathname]); // close menu on navigation
+
+  const linkBase =
+    "text-sm px-2 py-1 rounded-md transition-colors text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white";
 
   return (
-    <header
-      className={[
-        "sticky top-0 z-40 backdrop-blur",
-        "bg-slate-950/60 border-b border-slate-800",
-        className,
-      ].join(" ")}
-      role="banner"
-    >
-      <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between gap-3">
-        {/* Brand */}
-        <Link
-          to="/"
-          className="flex items-center gap-2 font-extrabold tracking-tight text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 rounded-xl px-1.5"
-          aria-label="Go to home"
-        >
-          <img
-            src="/icons/icon-192.png"
-            alt=""
-            className="h-6 w-6 rounded-lg"
-          />
+    <div className="sticky top-0 z-40 backdrop-blur supports-[backdrop-filter]:bg-white/60 bg-white/70 dark:bg-slate-950/70 border-b border-slate-200/60 dark:border-slate-800">
+      <nav className="mx-auto max-w-6xl h-14 px-4 flex items-center justify-between">
+        <Link to="/" className="flex items-center gap-2 font-semibold text-slate-800 dark:text-white">
+          <Dog className="h-5 w-5" />
           <span>Doggerz</span>
         </Link>
 
-        {/* Primary nav – horizontally scrollable on small screens */}
-        <nav
-          className="flex gap-2 overflow-x-auto scrollbar-none"
-          aria-label="Primary"
-        >
-          <NavLink to="/" className={item} end>
-            Splash
-          </NavLink>
+        {/* Desktop nav */}
+        <div className="hidden md:flex items-center gap-6">
+          {NAV.map(({ to, label }) => (
+            <NavLink
+              key={to}
+              to={to}
+              className={({ isActive }) =>
+                `${linkBase} ${isActive ? "text-sky-600 dark:text-sky-400 font-medium" : ""}`
+              }
+            >
+              {label}
+            </NavLink>
+          ))}
+        </div>
 
-          {/* Force active style for “Game” across nested app routes */}
-          <NavLink
-            to="/game"
-            className={({ isActive }) =>
-              [
-                base,
-                (isActive || gameActive)
-                  ? "bg-slate-700 text-white"
-                  : "bg-slate-800/40 hover:bg-slate-700 text-slate-200",
-              ].join(" ")
-            }
-          >
-            Game
-          </NavLink>
-
-          <NavLink to="/stats" className={item}>
-            Stats
-          </NavLink>
-
-          <NavLink to="/shop" className={item}>
-            Shop
-          </NavLink>
-        </nav>
-
-        {/* Auth cluster */}
-        <div className="flex items-center gap-2">
-          {isAuthed ? (
+        {/* Right-side CTAs (suppressed on Splash to prevent duplication) */}
+        <div className="hidden md:flex items-center gap-2">
+          {!onSplash && canInstall && (
+            <button
+              onClick={install}
+              className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-900"
+              title="Install app"
+            >
+              <Download className="h-4 w-4" />
+              Install
+            </button>
+          )}
+          {!onSplash && (
             <>
-              <span className="hidden sm:inline text-xs text-slate-300">
-                {user.displayName || user.email || "Player"}
-              </span>
               <Link
-                to="/game"
-                className={base + " bg-emerald-600 hover:bg-emerald-500 text-white"}
+                to="/login"
+                className="text-sm px-3 py-1.5 rounded-full border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-900 inline-flex items-center gap-1.5"
               >
-                Continue
-              </Link>
-              {/* Optional: route to a settings/profile page if/when you add it */}
-              {/* <Link to="/profile" className={item}>Profile</Link> */}
-            </>
-          ) : (
-            <>
-              <Link to="/login" className={item}>
+                <LogIn className="h-4 w-4" />
                 Log in
               </Link>
               <Link
                 to="/signup"
-                className={base + " bg-sky-600 hover:bg-sky-500 text-white"}
+                className="text-sm px-3 py-1.5 rounded-full bg-sky-600 text-white hover:bg-sky-700 inline-flex items-center gap-1.5"
               >
+                <UserPlus className="h-4 w-4" />
                 Sign up
               </Link>
             </>
           )}
         </div>
-      </div>
-    </header>
+
+        {/* Mobile hamburger */}
+        <button
+          className="md:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-900"
+          aria-label="Open menu"
+          onClick={() => setOpen((v) => !v)}
+        >
+          {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </button>
+      </nav>
+
+      {/* Mobile sheet */}
+      {open && (
+        <div className="md:hidden border-t border-slate-200/60 dark:border-slate-800 bg-white/90 dark:bg-slate-950/90 backdrop-blur">
+          <div className="mx-auto max-w-6xl px-4 py-3 flex flex-col gap-2">
+            {NAV.map(({ to, label }) => (
+              <NavLink
+                key={to}
+                to={to}
+                className={({ isActive }) =>
+                  `block ${linkBase} ${isActive ? "text-sky-600 dark:text-sky-400 font-medium" : ""}`
+                }
+              >
+                {label}
+              </NavLink>
+            ))}
+
+            {!onSplash && canInstall && (
+              <button
+                onClick={install}
+                className="mt-1 inline-flex items-center gap-2 text-sm px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-900"
+              >
+                <Download className="h-4 w-4" />
+                Install
+              </button>
+            )}
+
+            {!onSplash && (
+              <div className="mt-1 flex items-center gap-2">
+                <Link
+                  to="/login"
+                  className="flex-1 text-center text-sm px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-900"
+                >
+                  Log in
+                </Link>
+                <Link
+                  to="/signup"
+                  className="flex-1 text-center text-sm px-3 py-2 rounded-lg bg-sky-600 text-white hover:bg-sky-700"
+                >
+                  Sign up
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   );
-});
+}
