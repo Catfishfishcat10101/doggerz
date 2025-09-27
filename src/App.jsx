@@ -1,7 +1,6 @@
 import React, { Suspense, lazy } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import NavBar from "@/components/UI/NavBar.jsx";
-import UpdateToast from "@/components/UI/UpdateToast.jsx";
 import InstallPrompt from "@/components/UI/InstallPrompt.jsx";
 
 const Splash     = lazy(() => import("@/components/UI/Splash.jsx"));
@@ -21,7 +20,6 @@ export default function App() {
         </Routes>
       </Suspense>
       <InstallPrompt />
-      <UpdateToast />
     </div>
   );
 }
