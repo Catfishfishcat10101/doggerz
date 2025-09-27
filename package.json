@@ -15,7 +15,7 @@
     "@reduxjs/toolkit": "^2.9.0",
     "classnames": "^2.5.1",
     "clsx": "^2.1.1",
-    "firebase": "^10.14.1",
+    "firebase": "^12.3.0",
     "framer-motion": "^12.23.21",
     "howler": "^2.2.4",
     "lucide-react": "^0.544.0",
