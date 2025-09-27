@@ -1,90 +1,67 @@
 // src/components/UI/Splash.jsx
-import React, { useState } from "react";
-import "./Splash.css";
-import { auth, googleProvider } from "@/lib/firebase";
-import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { useDispatch } from "react-redux";
-import { userLoading, userAuthed, userError } from "@/redux/userSlice";
+import React from "react";
+import { Link } from "react-router-dom";
 
-export default function Splash(){
-  const [mode, setMode] = useState("google"); // google | login | signup
-  const [email, setEmail] = useState("");
-  const [pw, setPw] = useState("");
-  const [name, setName] = useState("");
-  const [msg, setMsg] = useState(null);
-  const dispatch = useDispatch();
-
-  async function doGoogle(){
-    try {
-      dispatch(userLoading());
-      const { user } = await signInWithPopup(auth, googleProvider);
-      dispatch(userAuthed({ uid:user.uid, email:user.email, displayName:user.displayName ?? "" }));
-      setMsg(null);
-    } catch (e){
-      dispatch(userError(e?.message));
-      setMsg(e?.message || "Google sign-in failed");
-    }
-  }
-
-  async function doLogin(e){
-    e?.preventDefault();
-    try {
-      dispatch(userLoading());
-      const { user } = await signInWithEmailAndPassword(auth, email.trim(), pw);
-      dispatch(userAuthed({ uid:user.uid, email:user.email, displayName:user.displayName ?? "" }));
-      setMsg(null);
-    } catch (e){ dispatch(userError(e?.message)); setMsg(e?.message || "Login failed"); }
-  }
-
-  async function doSignup(e){
-    e?.preventDefault();
-    try {
-      dispatch(userLoading());
-      const { user } = await createUserWithEmailAndPassword(auth, email.trim(), pw);
-      if (name.trim()) await updateProfile(user, { displayName: name.trim() });
-      const u = auth.currentUser;
-      dispatch(userAuthed({ uid:u.uid, email:u.email, displayName:u.displayName ?? "" }));
-      setMsg(null);
-    } catch (e){ dispatch(userError(e?.message)); setMsg(e?.message || "Signup failed"); }
-  }
-
+export default function Splash() {
   return (
-    <div className="splash">
-      <div className="logo">Doggerz</div>
-      <p className="tag">Adopt a pixel pup and raise it.</p>
-
-      <div className="auth-card">
-        <div className="tabs">
-          <button className={mode==="google"?"active":""} onClick={()=>setMode("google")}>Google</button>
-          <button className={mode==="login"?"active":""}  onClick={()=>setMode("login")}>Login</button>
-          <button className={mode==="signup"?"active":""} onClick={()=>setMode("signup")}>Sign up</button>
+    <div className="min-h-screen bg-slate-950 text-slate-100">
+      {/* Top bar */}
+      <header className="max-w-6xl mx-auto px-6 pt-10 flex items-center justify-between">
+        <div className="text-sm font-semibold tracking-wide text-slate-300">
+          DOGGERZ
         </div>
+        <div className="text-xs text-slate-400">
+          Doggerz 2025 · Be kind to your dogs.
+        </div>
+      </header>
 
-        {mode==="google" && (
-          <div className="stack">
-            <button className="cta" onClick={doGoogle}>Continue with Google</button>
+      {/* Hero */}
+      <main className="max-w-6xl mx-auto px-6 py-10 grid md:grid-cols-2 gap-10 items-center">
+        {/* Left: copy + CTA */}
+        <section>
+          <h1 className="text-5xl md:text-6xl font-extrabold leading-tight">
+            Raise your <span className="text-sky-400">pixel pup</span>.<br />
+            Keep it happy. <span className="text-sky-400">Show it off.</span>
+          </h1>
+
+          <p className="mt-5 text-slate-300 max-w-xl">
+            Frictionless onboarding, true offline play, and cloud saves when you’re back online.
+            Cosmetics you actually care about. Zero clutter. Maximum vibes.
+          </p>
+
+          <div className="mt-8 flex gap-4">
+            <Link
+              to="/signup"
+              className="px-5 py-3 rounded-xl bg-sky-500 hover:bg-sky-400 font-semibold"
+            >
+              Create account
+            </Link>
+            <Link
+              to="/login"
+              className="px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 font-semibold"
+            >
+              I already have one
+            </Link>
           </div>
-        )}
+        </section>
 
-        {mode==="login" && (
-          <form className="stack" onSubmit={doLogin}>
-            <input type="email" placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} required />
-            <input type="password" placeholder="Password" value={pw} onChange={e=>setPw(e.target.value)} required />
-            <button className="cta" type="submit">Login</button>
-          </form>
-        )}
-
-        {mode==="signup" && (
-          <form className="stack" onSubmit={doSignup}>
-            <input type="text" placeholder="Display name (optional)" value={name} onChange={e=>setName(e.target.value)} />
-            <input type="email" placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} required />
-            <input type="password" placeholder="Password (min 6)" value={pw} onChange={e=>setPw(e.target.value)} required />
-            <button className="cta" type="submit">Create account</button>
-          </form>
-        )}
-
-        {msg && <p className="msg">{msg}</p>}
-      </div>
+        {/* Right: simple dog preview card (no tiles/pink square) */}
+        <section className="relative">
+          <div className="rounded-3xl p-8 bg-gradient-to-b from-slate-900 to-slate-800 shadow-2xl">
+            <div className="rounded-2xl p-6 bg-slate-900/60 border border-slate-800 flex items-center justify-center min-h-[280px]">
+              <img
+                src="@/assets/sprites/jack_russell_directions.png"
+                alt="Doggerz jack russell preview"
+                className="w-48 h-auto"
+                style={{ imageRendering: "pixelated" }}
+              />
+            </div>
+            <div className="mt-4 text-center text-slate-400 text-sm">
+              Your pup, your story — plays offline, syncs when online.
+            </div>
+          </div>
+        </section>
+      </main>
     </div>
   );
 }
