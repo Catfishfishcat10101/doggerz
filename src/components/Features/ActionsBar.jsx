@@ -23,7 +23,7 @@ export default function ActionsBar() {
     <div className="flex flex-wrap gap-3">
       <Btn label="Feed" onClick={action(feed, "feed")} />
       <Btn label="Play" onClick={action(play, "play")} />
-      <Btn label="Wash/Scoop" onClick={action(wash, "wash"))} />
+      <Btn label="Wash/Scoop" onClick={action(wash, "wash")} />
       <Btn label="Rest" onClick={action(rest, "rest")} />
     </div>
   );
