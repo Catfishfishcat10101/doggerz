@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import React, { Suspense, lazy } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
@@ -25,31 +24,3 @@ export default function AppRoutes() {
     </Suspense>
   );
 }
-=======
-// src/AppRoutes.jsx
-import ProtectedRoute from "@/routes/ProtectedRoute.jsx";
-import GameScreen from "@/components/UI/GameScreen.jsx";
-import NewPup from "@/components/Setup/NewPup.jsx";
-import { Navigate, createBrowserRouter } from "react-router-dom";
-
-function RequireDogName({ children }) {
-  const hasName = (typeof localStorage !== "undefined" && (localStorage.getItem("dogName") || "").trim());
-  return hasName ? children : <Navigate to="/setup/new" replace />;
-}
-
-export const router = createBrowserRouter([
-  // ...other routes
-  { path: "/setup/new", element: <NewPup /> },
-  {
-    path: "/play",
-    element: (
-      <ProtectedRoute /* requireEmailVerified optionally */>
-        <RequireDogName>
-          <GameScreen />
-        </RequireDogName>
-      </ProtectedRoute>
-    ),
-  },
-  { path: "*", element: <Navigate to="/" replace /> },
-]);
->>>>>>> 26c67077 (Initial push of Doggerz)
