@@ -1,45 +1,58 @@
+// src/components/UI/Splash.jsx
 import React from "react";
-import { Link } from "react-router-dom";
-
-const Bullet = ({ title, body }) => (
-  <div className="card p-4">
-    <div className="font-semibold">{title}</div>
-    <div className="text-white/70 text-sm mt-1">{body}</div>
-  </div>
-);
+import { useNavigate } from "react-router-dom";
 
 export default function Splash() {
-  return (
-    <main className="mx-auto max-w-6xl px-6 py-10 grid gap-8 lg:grid-cols-2">
-      <section className="flex flex-col justify-center gap-6">
-        <h1 className="text-4xl md:text-5xl font-black leading-tight">
-          Adopt your pixel pup. <span className="text-sky">Raise. Train. Bond.</span>
-        </h1>
-        <p className="text-white/70">
-          One dog per user, offline-ready, choices that shape behavior. Install it like an app and keep playing without signal.
-        </p>
-        <div className="flex gap-3">
-          <Link to="/game" className="btn btn-primary animate-pop">Play Now</Link>
-          <a href="#learn" className="btn">Learn More</a>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="badge">React 18</span>
-          <span className="badge">Redux</span>
-          <span className="badge">Firebase</span>
-          <span className="badge">Offline</span>
-        </div>
-      </section>
+  const nav = useNavigate();
 
-      <section className="grid gap-3" id="learn">
-        <Bullet title="Needs & Mood"
-          body="Feed, play, rest. Mood drives animations and behaviors." />
-        <Bullet title="Installable PWA"
-          body="One tap install. Auto-updates with a toast, no app store delay." />
-        <Bullet title="Responsive Controls"
-          body="Keyboard, touch D-pad, or click-to-move. Accessible and smooth." />
-        <Bullet title="Shop & Cosmetics"
-          body="Earn coins, unlock skins, keep it tasteful. No pay-to-win nonsense." />
+  return (
+    <main className="mx-auto max-w-6xl px-4 py-12">
+      <section className="grid md:grid-cols-2 gap-10 items-center">
+        <div>
+          <h1 className="text-4xl md:text-6xl font-black leading-tight">
+            Adopt your pixel pup.<br />
+            <span className="bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-400 bg-clip-text text-transparent">
+              Raise. Train. Bond.
+            </span>
+          </h1>
+
+          <p className="mt-4 text-neutral-300 max-w-prose">
+            One dog per user, offline-ready, and your choices shape behavior.
+            Installable as a PWA when available. No pay-to-win nonsense.
+          </p>
+
+          <div className="mt-8 flex flex-wrap gap-3">
+            <button
+              onClick={() => nav("/game")}
+              className="rounded-xl px-5 py-3 bg-fuchsia-500 font-semibold text-white hover:bg-fuchsia-400 active:scale-[.99] transition"
+            >
+              Play Now
+            </button>
+            <button
+              onClick={() => nav("/signup")}
+              className="rounded-xl px-5 py-3 border border-white/20 hover:bg-white/10 transition"
+            >
+              Create Account
+            </button>
+          </div>
+        </div>
+
+        <div className="rounded-3xl p-6 bg-white/5 border border-white/10">
+          {/* Feature cards */}
+          <Feature title="Needs & Mood" text="Feed, play, rest. Mood drives animations and behaviors." />
+          <Feature title="Responsive Controls" text="Keyboard, touch D-pad, or click-to-move. Smooth and accessible." />
+          <Feature title="Shop & Cosmetics" text="Earn coins, unlock skins, keep it tasteful." />
+        </div>
       </section>
     </main>
+  );
+}
+
+function Feature({ title, text }) {
+  return (
+    <div className="rounded-2xl p-4 mb-4 bg-black/30 border border-white/10">
+      <div className="font-semibold">{title}</div>
+      <div className="text-sm text-neutral-300">{text}</div>
+    </div>
   );
 }
