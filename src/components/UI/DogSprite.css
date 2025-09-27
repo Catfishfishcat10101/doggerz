@@ -1,87 +1,114 @@
-/* ============= Base sprite (yours, with tiny additions) ============= */
+/* Core node */
+.dog-sprite-container {
+  /* We position this container at world X and bottom percent.
+     The child centers itself via translateX(-50%). */
+  pointer-events: none; /* allow the sprite itself to handle pointer interactions */
+}
 
-/* Base sprite */
 .dog-sprite {
+  --sprite-w: 96px;
+  --sprite-h: 96px;
+  --sprite-scale: 1;
+  --frames: 4;
+  --speed-ms: 1200ms;
+  --play: paused;
+  --flipX: 1;
+
   position: relative;
-  user-select: none;
-  pointer-events: none; /* opt-in interactivity with .dog-sprite--interactive */
+  left: 0;
+  transform: translateX(-50%) scaleX(var(--flipX)) scale(var(--sprite-scale));
+  transform-origin: 50% 100%;
 
-  /* Sizing & tuning knobs */
-  --sprite-w: 64px;         /* unscaled frame width (JS can set this) */
-  --sprite-h: 64px;         /* unscaled frame height */
-  --sprite-scale: 1;        /* integer scale (1,2,3...) */
-  --shadow-width: 62%;      /* elliptical shadow width */
-  --shadow-height: 18%;     /* elliptical shadow height */
-  --shadow-bottom: 6px;     /* offset from bottom */
-  --shadow-opacity: 0.35;
+  width: var(--sprite-w);
+  height: var(--sprite-h);
 
-  width: calc(var(--sprite-w) * var(--sprite-scale));
-  height: calc(var(--sprite-h) * var(--sprite-scale));
+  background-image: none; /* set from inline style */
+  background-repeat: no-repeat;
+  background-size: calc(var(--sprite-w) * var(--frames)) var(--sprite-h);
+  background-position: 0 0;
 
-  /* Crisp pixels across engines */
-  image-rendering: -moz-crisp-edges; /* FF */
-  image-rendering: pixelated;        /* Chrome/Edge */
-  image-rendering: crisp-edges;      /* Safari heuristic */
+  /* crispy pixels for retro art */
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
 
-  /* Flip without affecting layout sizing */
-  transform: scaleX(var(--flipX, 1));
+  /* Interactive base (since we use a <button>) */
+  appearance: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background-color: transparent;
+  cursor: pointer;
+  pointer-events: auto;
+
+  /* Accessibility: visible focus without being garish */
+  outline: none;
+}
+.dog-sprite:focus-visible {
+  box-shadow:
+    0 0 0 2px rgba(255,255,255,0.9),
+    0 0 0 4px rgba(14,165,233,0.7); /* brand ring */
+  border-radius: 10px;
 }
 
-/* Interactivity opt-in */
-.dog-sprite--interactive { pointer-events: auto; }
-
-/* Only enable will-change when you really animate it (set while moving) */
-.dog-sprite--animating {
-  will-change: background-position, transform;
+/* Walking animation: step through columns horizontally */
+.dog-sprite--walk {
+  animation-name: dog-frames;
+  animation-duration: var(--speed-ms);
+  animation-timing-function: steps(var(--frames));
+  animation-iteration-count: infinite;
+  animation-play-state: var(--play);
 }
 
-/* Soft elliptical ground shadow */
+/* Shadow */
 .dog-sprite--shadow::after {
   content: "";
   position: absolute;
   left: 50%;
-  bottom: var(--shadow-bottom);
+  bottom: 6px;
   transform: translateX(-50%);
-  width: var(--shadow-width);
-  height: var(--shadow-height);
+  width: 62%;
+  height: 18%;
   border-radius: 50%;
-  background: radial-gradient(
-    ellipse at center,
-    rgba(0,0,0,var(--shadow-opacity)),
-    rgba(0,0,0,0) 70%
-  );
+  background:
+    radial-gradient(ellipse at center, rgba(0,0,0,0.35), rgba(0,0,0,0) 70%);
   filter: blur(2px);
+  opacity: 0.35;
   pointer-events: none;
 }
-
-/* Smaller shadow modifier (cleaner naming) */
-.dog-sprite--shadow-small {
-  --shadow-width: 40%;
-  --shadow-height: 10%;
-  --shadow-bottom: 4px;
-  --shadow-opacity: 0.25;
-}
-
-/* Respect reduced motion */
-@media (prefers-reduced-motion: reduce) {
-  .dog-sprite--animating {
-    will-change: auto;
+@media (min-width: 900px) {
+  .dog-sprite--shadow::after {
+    bottom: 8px;
   }
 }
 
-/* ============= Step animation helpers (new) ============= */
-
-/* Walk cycle using CSS steps(). Frames & speed are set via CSS vars. */
-@keyframes sprite-steps {
-  from { background-position-x: 0%; }
-  to   { background-position-x: calc(-100% + (100% / var(--frames, 6))); }
+/* Interaction affordances */
+.dog-sprite--interactive {
+  transition: filter 150ms ease, transform 120ms ease;
+}
+.dog-sprite--interactive:active {
+  transform:
+    translateX(-50%) scaleX(var(--flipX))
+    scale(calc(var(--sprite-scale) * 0.98));
+  filter: brightness(1.05);
 }
 
-.dog-sprite--walk {
-  --frames: 6;       /* number of frames in the sheet */
-  --speed-ms: 900ms; /* cadence; slow to ~1400ms when idle if desired */
+/* Keyframes: move the background position across frames */
+@keyframes dog-frames {
+  0%   { background-position: 0 0; }
+  100% { background-position: calc(var(--sprite-w) * var(--frames) * -1) 0; }
+}
 
-  background-size: calc(var(--frames) * 100%) 100%;
-  animation: sprite-steps var(--speed-ms) steps(var(--frames)) infinite;
-  animation-play-state: var(--play, running); /* paused|running */
+/* Respect reduced motion: freeze walking animation but keep interaction */
+@media (prefers-reduced-motion: reduce) {
+  .dog-sprite--walk {
+    animation: none !important;
+  }
+}
+
+/* Optional: smaller shadow variant (you referenced this modifier in older CSS) */
+.dog-sprite--shadow.dog-sprite--shadow--small::after {
+  width: 40%;
+  height: 10%;
+  bottom: 4px;
+  opacity: 0.25;
 }

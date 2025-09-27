@@ -13,7 +13,7 @@ import PottyTraining from "./PottyTraining.jsx";
 import PoopScoop from "./PoopScoop.jsx";
 import ResetGame from "./ResetGame.jsx";
 import DogAIEngine from "./DogAIEngine.jsx";
-import FirebaseAutoSave from "./FirebaseAutoSave.jsx";
+import FirebaseAutoSave from "@/components/common/FirebaseAutoSave.jsx";
 
 export default function MainGame() {
   const dispatch = useDispatch();
