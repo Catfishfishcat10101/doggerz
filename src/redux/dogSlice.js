@@ -1,88 +1,72 @@
 // src/redux/dogSlice.js
 import { createSlice, nanoid } from "@reduxjs/toolkit";
 
-/** --------------------------------------------------------------------------
- *  World + gameplay tuning (edit as needed)
- *  -------------------------------------------------------------------------- */
-const WORLD_WIDTH = 1920;        // px — clamp sprite X within this range
-const WORLD_PADDING = 24;        // px — keep away from hard edges
-const IDLE_DECAY_PER_SEC = {     // stat drain per second when idle
-  hunger: 0.8,
-  energy: 0.4,
-  cleanliness: 0.25,
-};
-const MOVE_DECAY_PER_SEC = {     // stat drain per second when moving
-  hunger: 1.1,
-  energy: 1.6,
-  cleanliness: 0.35,
-};
+/** --- Tuning knobs --- */
+const WORLD_WIDTH = 1920;
+const WORLD_PADDING = 24;
+
+const IDLE_DECAY_PER_SEC = { hunger: 0.8, energy: 0.4, cleanliness: 0.25 };
+const MOVE_DECAY_PER_SEC = { hunger: 1.1, energy: 1.6, cleanliness: 0.35 };
+
 const ACTION_EFFECTS = {
-  feed:       { hunger: +22, cleanliness: -2,  energy: +2,  happiness: +6,  mood: "fed" },
-  play:       { hunger: -6,  cleanliness: -3,  energy: -10, happiness: +12, mood: "play" },
-  wash:       { hunger: -2,  cleanliness: +28, energy: -2,  happiness: +4,  mood: "clean" },
-  rest:       { hunger: -3,  cleanliness: 0,   energy: +24, happiness: +5,  mood: "rest" },
+  feed: { hunger: +22, cleanliness: -2, energy: +2, happiness: +6, mood: "fed" },
+  play: { hunger: -6, cleanliness: -3, energy: -10, happiness: +12, mood: "play" },
+  wash: { hunger: -2, cleanliness: +28, energy: -2, happiness: +4, mood: "clean" },
+  rest: { hunger: -3, cleanliness: 0, energy: +24, happiness: +5, mood: "rest" },
 };
-const CLAMP_STAT_MIN = 0;
-const CLAMP_STAT_MAX = 100;
 
-/** --------------------------------------------------------------------------
- *  Utilities
- *  -------------------------------------------------------------------------- */
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
-const clampStats = (dog) => {
-  dog.hunger      = clamp(dog.hunger,      CLAMP_STAT_MIN, CLAMP_STAT_MAX);
-  dog.energy      = clamp(dog.energy,      CLAMP_STAT_MIN, CLAMP_STAT_MAX);
-  dog.cleanliness = clamp(dog.cleanliness, CLAMP_STAT_MIN, CLAMP_STAT_MAX);
-  dog.happiness   = clamp(dog.happiness,   CLAMP_STAT_MIN, CLAMP_STAT_MAX);
+const clampStats = (d) => {
+  d.hunger = clamp(d.hunger, 0, 100);
+  d.energy = clamp(d.energy, 0, 100);
+  d.cleanliness = clamp(d.cleanliness, 0, 100);
+  d.happiness = clamp(d.happiness, 0, 100);
 };
-const clampX = (x) =>
-  clamp(x, WORLD_PADDING, Math.max(WORLD_PADDING, WORLD_WIDTH - WORLD_PADDING));
+const clampX = (x) => clamp(x, WORLD_PADDING, Math.max(WORLD_PADDING, WORLD_WIDTH - WORLD_PADDING));
 
-/** --------------------------------------------------------------------------
- *  Initial state
- *  -------------------------------------------------------------------------- */
+/** Level thresholds (XP required for each level) */
+const LEVELS = [0, 100, 250, 500, 900, 1400, 2000];
+const levelForXp = (xp) => {
+  let lvl = 1;
+  for (let i = 0; i < LEVELS.length; i++) {
+    if (xp >= LEVELS[i]) lvl = i + 1;
+  }
+  return lvl;
+};
+
+/** --- Initial state --- */
 const initialState = {
   id: nanoid(),
   name: "Pupper",
-  stage: "adult",          // "puppy" | "adult" | "senior"
-  mood: "idle",            // "idle" | "walk" | "fed" | "play" | "clean" | "rest" | "bark"
-  dir: "right",            // "left" | "right"
-  moving: false,           // toggled by controls/engine
-  lastTickAt: Date.now(),  // ms — for dt-based stat decay
-  lastBarkAt: 0,           // ms — optional cooldown logic
-  pos: { x: 240 },         // world-space X in px
-  // Core stats
-  hunger: 80,              // 0 (starving) .. 100 (full)
-  energy: 80,              // 0 (exhausted) .. 100 (rested)
-  cleanliness: 80,         // 0 (filthy) .. 100 (sparkling)
-  happiness: 80,           // 0 .. 100 (meta, boosted by actions)
-  // Progression / streak hooks if you want them later
+  stage: "adult", // "puppy" | "adult" | "senior"
+  mood: "idle",   // "idle" | "walk" | "fed" | "play" | "clean" | "rest" | "bark"
+  dir: "right",
+  moving: false,
+  lastTickAt: Date.now(),
+  lastBarkAt: 0,
+  pos: { x: 240 },
+  hunger: 80,
+  energy: 80,
+  cleanliness: 80,
+  happiness: 80,
   xp: 0,
   level: 1,
 };
 
-/** --------------------------------------------------------------------------
- *  Slice
- *  -------------------------------------------------------------------------- */
 const dogSlice = createSlice({
   name: "dog",
   initialState,
   reducers: {
-    /** One-off full reset (debug) */
     resetDog: () => ({ ...initialState, id: nanoid(), lastTickAt: Date.now() }),
 
-    /** Identity & lifecycle */
     setName(state, action) {
       state.name = String(action.payload || "").slice(0, 20);
     },
     setStage(state, action) {
       const s = String(action.payload);
-      if (s === "puppy" || s === "adult" || s === "senior") {
-        state.stage = s;
-      }
+      if (s === "puppy" || s === "adult" || s === "senior") state.stage = s;
     },
 
-    /** Movement + direction */
     setPosition(state, action) {
       const x = Number(action.payload?.x ?? state.pos.x);
       state.pos.x = clampX(x);
@@ -90,7 +74,6 @@ const dogSlice = createSlice({
     moveBy(state, action) {
       const dx = Number(action.payload?.dx ?? 0);
       state.pos.x = clampX(state.pos.x + dx);
-      // Update mood when actively moving
       if (dx !== 0) {
         state.mood = "walk";
         state.moving = true;
@@ -110,106 +93,70 @@ const dogSlice = createSlice({
       if (state.mood === "walk") state.mood = "idle";
     },
 
-    /** Bark interaction (consumed by your DogSprite) */
     bark(state, action) {
       state.lastBarkAt = Number(action.payload || Date.now());
       state.mood = "bark";
-      // Tiny happiness nudge; debounce naturally via UI if needed
       state.happiness = clamp(state.happiness + 0.5, 0, 100);
+      state.xp += 1;
     },
 
-    /** Core actions — align with your ActionsBar buttons */
-    feed(state) {
-      const e = ACTION_EFFECTS.feed;
-      state.hunger += e.hunger;
-      state.cleanliness += e.cleanliness;
-      state.energy += e.energy;
-      state.happiness += e.happiness;
-      state.mood = e.mood;
-      clampStats(state);
-    },
-    play(state) {
-      const e = ACTION_EFFECTS.play;
-      state.hunger += e.hunger;
-      state.cleanliness += e.cleanliness;
-      state.energy += e.energy;
-      state.happiness += e.happiness;
-      state.mood = e.mood;
-      clampStats(state);
-    },
-    wash(state) {
-      const e = ACTION_EFFECTS.wash;
-      state.hunger += e.hunger;
-      state.cleanliness += e.cleanliness;
-      state.energy += e.energy;
-      state.happiness += e.happiness;
-      state.mood = e.mood;
-      clampStats(state);
-    },
-    rest(state) {
-      const e = ACTION_EFFECTS.rest;
-      state.hunger += e.hunger;
-      state.cleanliness += e.cleanliness;
-      state.energy += e.energy;
-      state.happiness += e.happiness;
-      state.mood = e.mood;
-      clampStats(state);
-    },
+    feed(state) { applyAction(state, ACTION_EFFECTS.feed); },
+    play(state) { applyAction(state, ACTION_EFFECTS.play); },
+    wash(state) { applyAction(state, ACTION_EFFECTS.wash); },
+    rest(state) { applyAction(state, ACTION_EFFECTS.rest); },
 
-    /** Frame/timer tick: call from an engine loop or requestAnimationFrame */
+    /** Game-loop tick with stat decay */
     tick(state, action) {
       const now = Number(action.payload?.now ?? Date.now());
       const prev = Number(state.lastTickAt || now);
       const dtMs = Math.max(0, now - prev);
-      if (dtMs <= 0) {
-        state.lastTickAt = now;
-        return;
-      }
+      state.lastTickAt = now;
+      if (dtMs <= 0) return;
 
-      // Decay stats based on movement
       const decay = state.moving ? MOVE_DECAY_PER_SEC : IDLE_DECAY_PER_SEC;
       const dtSec = dtMs / 1000;
-
       state.hunger -= decay.hunger * dtSec;
       state.energy -= decay.energy * dtSec;
       state.cleanliness -= decay.cleanliness * dtSec;
 
-      // Passive happiness trends towards the mean of other stats
       const target = (state.hunger + state.energy + state.cleanliness) / 3;
-      const delta = (target - state.happiness) * 0.1 * dtSec; // gentle easing
+      const delta = (target - state.happiness) * 0.1 * dtSec;
       state.happiness += delta;
 
       clampStats(state);
 
-      // Auto-idle if we haven't moved recently and mood was walk
       if (!state.moving && state.mood === "walk") state.mood = "idle";
+    },
 
-      state.lastTickAt = now;
+    /** Level gate used by useGameTick (safe no-op if already correct) */
+    levelCheck(state) {
+      const next = levelForXp(state.xp);
+      if (next !== state.level) state.level = next;
     },
   },
 });
 
-/** --------------------------------------------------------------------------
- *  Selectors
- *  -------------------------------------------------------------------------- */
-export const selectDog = (state) => state?.dog ?? initialState;
-export const selectDirection = (state) => state?.dog?.dir ?? "right";
-export const selectStage = (state) => state?.dog?.stage ?? "adult";
+function applyAction(state, e) {
+  state.hunger += e.hunger;
+  state.cleanliness += e.cleanliness;
+  state.energy += e.energy;
+  state.happiness += e.happiness;
+  state.mood = e.mood;
+  state.xp += 5; // tiny progression per action
+  clampStats(state);
+}
 
-/** Handy derived selectors if you need them later */
-export const selectStats = (state) => {
-  const d = selectDog(state);
-  return {
-    hunger: d.hunger,
-    energy: d.energy,
-    cleanliness: d.cleanliness,
-    happiness: d.happiness,
-  };
+/** --- Selectors --- */
+export const selectDog = (s) => s?.dog ?? initialState;
+export const selectDirection = (s) => s?.dog?.dir ?? "right";
+export const selectStage = (s) => s?.dog?.stage ?? "adult";
+export const selectMood = (s) => s?.dog?.mood ?? "idle";
+export const selectStats = (s) => {
+  const d = selectDog(s);
+  return { hunger: d.hunger, energy: d.energy, cleanliness: d.cleanliness, happiness: d.happiness };
 };
 
-/** --------------------------------------------------------------------------
- *  Exports
- *  -------------------------------------------------------------------------- */
+/** --- Actions/Reducer --- */
 export const {
   resetDog,
   setName,
@@ -225,6 +172,7 @@ export const {
   wash,
   rest,
   tick,
+  levelCheck,
 } = dogSlice.actions;
 
 export default dogSlice.reducer;
