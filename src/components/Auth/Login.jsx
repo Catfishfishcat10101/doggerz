@@ -1,60 +1,80 @@
+// src/components/Auth/Login.jsx
 import React, { useState } from "react";
+import { useDispatch } from "react-redux";
 import { signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
-import { auth, googleProvider } from "@/firebase";
-import { Link, useNavigate } from "react-router-dom";
+import { doc, getDoc } from "firebase/firestore";
+import { auth, db, googleProvider } from "@/lib/firebase";
+import { userLoading, userAuthed, userError } from "@/redux/userSlice";
+import { setDogName } from "@/redux/dogSlice";
+import { useNavigate, Link } from "react-router-dom";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const [msg, setMsg] = useState(null);
   const nav = useNavigate();
+  const dispatch = useDispatch();
 
-  const onSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-    setBusy(true);
-    try {
-      const em = String(email || "").trim().toLowerCase();
-      const pass = String(pw || "");
-      if (!em || !pass) throw new Error("auth/argument-error");
-      await signInWithEmailAndPassword(auth, em, pass);
+  async function afterLogin(user) {
+    dispatch(userAuthed({ uid: user.uid, email: user.email, displayName: user.displayName }));
+    const snap = await getDoc(doc(db, "dogs", user.uid));
+    if (snap.exists() && snap.data()?.name) {
+      dispatch(setDogName(snap.data().name));
       nav("/game", { replace: true });
-    } catch (err) {
-      setError(err?.code || err?.message || String(err));
-    } finally {
-      setBusy(false);
+    } else {
+      nav("/setup", { replace: true });
     }
-  };
-
-  const onGoogle = async () => {
-    setError("");
-    setBusy(true);
-    try {
-      await signInWithPopup(auth, googleProvider);
-      nav("/game", { replace: true });
-    } catch (err) {
-      setError(err?.code || err?.message || String(err));
-    } finally {
-      setBusy(false);
-    }
-  };
+  }
 
   return (
-    <div className="min-h-screen grid place-items-center bg-slate-100 px-4">
-      <form onSubmit={onSubmit} className="bg-white rounded-2xl shadow p-6 w-full max-w-sm space-y-3">
-        <h2 className="text-xl font-bold">Sign in</h2>
-        <input className="border px-3 py-2 rounded" type="email" placeholder="you@example.com" value={email} onChange={(e)=>setEmail(e.target.value)} required disabled={busy}/>
-        <input className="border px-3 py-2 rounded" type="password" placeholder="Password" value={pw} onChange={(e)=>setPw(e.target.value)} required disabled={busy}/>
-        <button className="bg-blue-600 text-white rounded px-4 py-2 font-semibold disabled:opacity-60" disabled={busy}>
-          {busy ? "Signing in…" : "Sign in"}
-        </button>
-        <button type="button" onClick={onGoogle} className="w-full rounded px-4 py-2 border font-semibold disabled:opacity-60" disabled={busy}>
-          Continue with Google
-        </button>
-        {error && <div className="text-red-600 text-sm break-all">{error}</div>}
-        <div className="text-sm">Need an account? <Link className="text-blue-600 underline" to="/signup">Create one</Link></div>
-      </form>
+    <div className="min-h-screen grid place-items-center bg-amber-50">
+      <div className="bg-white rounded-2xl shadow p-6 w-[min(92vw,480px)]">
+        <h2 className="text-2xl font-bold">Welcome back</h2>
+        {msg && <p className="mt-2 text-red-600">{msg}</p>}
+
+        <form
+          className="mt-4 grid gap-3"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            setMsg(null);
+            dispatch(userLoading());
+            try {
+              const { user } = await signInWithEmailAndPassword(auth, email.trim(), pw);
+              await afterLogin(user);
+            } catch (err) {
+              dispatch(userError(err.message));
+              setMsg("Login failed. Check your email/password.");
+            }
+          }}
+        >
+          <input className="input" placeholder="Email" value={email} onChange={(e)=>setEmail(e.target.value)} />
+          <input className="input" placeholder="Password" type="password" value={pw} onChange={(e)=>setPw(e.target.value)} />
+          <button className="btn-primary" type="submit">Log in</button>
+        </form>
+
+        <div className="mt-4">
+          <button
+            className="btn-outline w-full"
+            onClick={async () => {
+              setMsg(null);
+              dispatch(userLoading());
+              try {
+                const { user } = await signInWithPopup(auth, googleProvider);
+                await afterLogin(user);
+              } catch (err) {
+                dispatch(userError(err.message));
+                setMsg("Google sign-in failed (provider disabled?).");
+              }
+            }}
+          >
+            Continue with Google
+          </button>
+        </div>
+
+        <p className="mt-4 text-sm text-gray-600">
+          New here? <Link className="underline" to="/signup">Create an account</Link>
+        </p>
+      </div>
     </div>
   );
 }
