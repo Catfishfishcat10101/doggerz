@@ -10,7 +10,7 @@ import {
   selectCoins,
   selectUnlocks,
   selectDogLevel,
-} from "@/../redux/dogSlice";
+} from "@/redux/dogSlice.js";
 
 const ACCESSORIES = [
   { id: "collar_red",  slot: "collar", title: "Red Collar",  cost: 30,  icon: "🟥" },
@@ -37,7 +37,7 @@ export default function Accessories() {
         <div className="max-w-4xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-semibold text-rose-900">Accessories</h1>
-            <Link className="bg-white px-3 py-2 rounded-xl shadow" to="/game">← Back</Link>
+            <Link className="bg-white px-3 py-2 rounded-xl shadow" to="/play">← Back</Link>
           </div>
           <div className="bg-white rounded-2xl shadow p-6 mt-4 text-rose-900">
             Reach <b>Level 8</b> to unlock Accessories.
@@ -54,7 +54,7 @@ export default function Accessories() {
           <h1 className="text-xl font-semibold text-rose-900">Accessories</h1>
           <div className="flex items-center gap-2">
             <span className="bg-white px-3 py-1 rounded-lg shadow">💰 {coins}</span>
-            <Link className="bg-white px-3 py-2 rounded-xl shadow" to="/game">← Back</Link>
+            <Link className="bg-white px-3 py-2 rounded-xl shadow" to="/play">← Back</Link>
           </div>
         </div>
 

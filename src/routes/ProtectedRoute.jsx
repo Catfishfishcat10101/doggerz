@@ -2,21 +2,15 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { onIdTokenChanged, getIdTokenResult } from "firebase/auth";
-import { auth } from "@/firebase";
+import { auth } from "@/lib/firebase"; // ← fixed path
 
 /**
  * ProtectedRoute
- *
  * Props:
  * - children: ReactNode
  * - requireEmailVerified?: boolean (default false)
  * - requireClaims?: string[] (claim keys that must be truthy on the token)
  * - fallback?: ReactNode (rendered while authenticating)
- *
- * Behavior:
- * - Subscribes to Firebase token changes (sign-in/out + refresh)
- * - Redirects to /login if unauthenticated, preserving `from` for post-login
- * - Optionally enforces email verification and required custom claims
  */
 export default function ProtectedRoute({
   children,
@@ -30,30 +24,24 @@ export default function ProtectedRoute({
 
   useEffect(() => {
     mounted.current = true;
-
+    if (!auth) {
+      setState({ loading: false, user: null, claims: null });
+      return;
+    }
     const unsub = onIdTokenChanged(auth, async (fbUser) => {
       if (!mounted.current) return;
-
       if (!fbUser) {
         setState({ loading: false, user: null, claims: null });
         return;
       }
-
-      // Pull (cached) token result to read claims/verification
       try {
         const res = await getIdTokenResult(fbUser);
         if (!mounted.current) return;
-        setState({
-          loading: false,
-          user: fbUser,
-          claims: res?.claims || {},
-        });
+        setState({ loading: false, user: fbUser, claims: res?.claims || {} });
       } catch {
-        // Non-fatal; proceed with user sans claims
         setState({ loading: false, user: fbUser, claims: null });
       }
     });
-
     return () => {
       mounted.current = false;
       unsub?.();
@@ -63,32 +51,19 @@ export default function ProtectedRoute({
   if (state.loading) return fallback;
 
   // Unauthed → login with redirect memory
-  if (!state.user) {
-    return <Navigate to="/login" replace state={{ from: loc }} />;
-  }
+  if (!state.user) return <Navigate to="/login" replace state={{ from: loc }} />;
 
   // Email verification gate
   if (requireEmailVerified && state.user.email && !state.user.emailVerified) {
-    return (
-      <GateMessage
-        title="Verify your email to continue"
-        body="We sent a verification link to your inbox. Once verified, reload this page."
-      />
-    );
+    return <GateMessage title="Verify your email to continue" body="We sent a verification link. After verifying, reload this page." />;
   }
 
   // Claims/role gate
   const missingClaims = useMissingClaims(requireClaims, state.claims);
   if (missingClaims.length > 0) {
-    return (
-      <GateMessage
-        title="Insufficient permissions"
-        body={`Your account is missing required access: ${missingClaims.join(", ")}`}
-      />
-    );
+    return <GateMessage title="Insufficient permissions" body={`Missing required access: ${missingClaims.join(", ")}`} />;
   }
 
-  // All good
   return children;
 }
 
@@ -97,7 +72,7 @@ export default function ProtectedRoute({
 function useMissingClaims(keys = [], claims) {
   return useMemo(() => {
     if (!keys?.length) return [];
-    if (!claims) return keys.slice(); // if we couldn't fetch claims yet
+    if (!claims) return keys.slice();
     return keys.filter((k) => !Boolean(claims?.[k]));
   }, [keys, claims]);
 }

@@ -109,3 +109,7 @@ PRN
 AUX
 COM1
 LPT1
+node_modules/
+.dist/
+.env*
+.DS_Store

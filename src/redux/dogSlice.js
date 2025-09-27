@@ -1,100 +1,113 @@
 // src/redux/dogSlice.js
 import { createSlice } from "@reduxjs/toolkit";
 
-const nowMs = () => (typeof performance !== "undefined" ? performance.now() : Date.now());
-
 const initialState = {
-  name: (typeof localStorage !== "undefined" && localStorage.getItem("dogName")) || "",
+  name: typeof localStorage !== "undefined" ? localStorage.getItem("dogName") || "" : "",
   pos: { x: 320, y: 180 },
   direction: "down",
   moving: false,
   happiness: 50,
   xp: 0,
+  // NEW: economy + cosmetics
+  coins: 100,
+  accessories: {
+    owned: [],                              // e.g., ["collar_red"]
+    equipped: { collar: null, hat: null },  // { collar: "collar_red", hat: "hat_party" }
+  },
+  unlocks: {
+    accessories: false, // flip to true when you want to unlock early (or rely on level >= 8)
+  },
+
   needs: { hunger: 50, thirst: 50, poop: 0 },
   backyardSkin: "default",
-
-  // NEW: seed a birthday so Age never NaNs
-  birthdayMs:
-    (typeof localStorage !== "undefined" && Number(localStorage.getItem("dogBirthdayMs"))) ||
-    Date.now(),
-
-  // Optional flavor
-  stage: "Pup",
-  level: 1,
-
-  lastTickMs: nowMs(),
+  lastTickMs: typeof performance !== "undefined" ? performance.now() : Date.now(),
 };
 
 const clamp01 = (v) => Math.max(0, Math.min(100, v));
-
-function applyNeedsTick(state, dt) {
-  state.needs.hunger = clamp01(state.needs.hunger + 0.2 * dt);
-  state.needs.thirst = clamp01(state.needs.thirst + 0.3 * dt);
-  state.needs.poop   = clamp01(state.needs.poop   + 0.15 * dt);
-  const penalty = (state.needs.hunger + state.needs.thirst) / 100;
-  state.happiness = clamp01(state.happiness - 0.1 * dt - 0.25 * penalty * dt);
+function applyNeedsTick(s, dt) {
+  s.needs.hunger = clamp01(s.needs.hunger + 0.2 * dt);
+  s.needs.thirst = clamp01(s.needs.thirst + 0.3 * dt);
+  s.needs.poop   = clamp01(s.needs.poop   + 0.15 * dt);
+  const penalty = (s.needs.hunger + s.needs.thirst) / 100;
+  s.happiness = clamp01(s.happiness - 0.1 * dt - 0.25 * penalty * dt);
 }
 
 const dogSlice = createSlice({
   name: "dog",
   initialState,
   reducers: {
-    setDogName(state, action) {
-      state.name = (action.payload || "").trim();
-      try { localStorage.setItem("dogName", state.name); } catch {}
+    setDogName(s, a) {
+      s.name = (a.payload || "").trim();
+      try { localStorage.setItem("dogName", s.name); } catch {}
     },
-    // NEW: set birthday explicitly (called on first-time setup)
-    setBirthdayNow(state) {
-      state.birthdayMs = Date.now();
-      try { localStorage.setItem("dogBirthdayMs", String(state.birthdayMs)); } catch {}
+    setPosition(s, a) {
+      const { x, y } = a.payload || {};
+      if (Number.isFinite(x)) s.pos.x = x;
+      if (Number.isFinite(y)) s.pos.y = y;
     },
+    setDirection(s, a) {
+      const d = a.payload;
+      if (["up", "down", "left", "right"].includes(d)) s.direction = d;
+    },
+    setMoving(s, a) { s.moving = !!a.payload; },
+    setHappiness(s, a) { s.happiness = clamp01(Number(a.payload ?? s.happiness)); },
+    addXP(s, a) { s.xp = Math.max(0, s.xp + Number(a.payload || 0)); },
 
-    setPosition(state, action) {
-      const { x, y } = action.payload || {};
-      if (typeof x === "number") state.pos.x = x;
-      if (typeof y === "number") state.pos.y = y;
-    },
-    setDirection(state, action) {
-      const d = action.payload;
-      if (d === "up" || d === "down" || d === "left" || d === "right") state.direction = d;
-    },
-    setMoving(state, action) { state.moving = !!action.payload; },
-    setHappiness(state, action) { state.happiness = clamp01(Number(action.payload ?? state.happiness)); },
-    addXP(state, action) { state.xp = Math.max(0, state.xp + Number(action.payload || 0)); },
-    tickNeeds(state, action) { applyNeedsTick(state, Number(action.payload || 1)); },
-    tickRealTime(state, action) {
-      const now = (action?.payload?.nowMs ?? nowMs());
-      let dtMs = now - (state.lastTickMs || now);
+    // realtime tick
+    tickNeeds(s, a) { applyNeedsTick(s, Number(a.payload || 1)); },
+    tickRealTime(s, a) {
+      const now = a?.payload?.nowMs ?? (typeof performance !== "undefined" ? performance.now() : Date.now());
+      let dtMs = now - (s.lastTickMs || now);
       if (!isFinite(dtMs) || dtMs < 0) dtMs = 0;
       if (dtMs > 5000) dtMs = 5000;
-      applyNeedsTick(state, dtMs / 1000);
-      state.lastTickMs = now;
+      applyNeedsTick(s, dtMs / 1000);
+      s.lastTickMs = now;
     },
-    setBackyardSkin(state, action) { state.backyardSkin = action.payload || "default"; },
-    resetDog(state) {
-      Object.assign(state, initialState, { lastTickMs: nowMs() });
+
+    setBackyardSkin(s, a) { s.backyardSkin = a.payload || "default"; },
+    resetDog() {
+      return { ...initialState, lastTickMs: typeof performance !== "undefined" ? performance.now() : Date.now() };
     },
+
+    // NEW: simple economy/cosmetics
+    grantCoins(s, a) { s.coins = Math.max(0, s.coins + Number(a.payload || 0)); },
+    spendCoins(s, a) {
+      const amt = Math.max(0, Number(a.payload || 0));
+      if (s.coins >= amt) s.coins -= amt;
+    },
+    unlockAccessory(s, a) {
+      const id = String(a.payload || "");
+      if (id && !s.accessories.owned.includes(id)) s.accessories.owned.push(id);
+    },
+    equipAccessory(s, a) {
+      const { slot, id } = a.payload || {};
+      if (!slot || !["collar", "hat"].includes(slot)) return;
+      // allow unequip with id = null
+      if (id === null) { s.accessories.equipped[slot] = null; return; }
+      // only equip if owned
+      if (s.accessories.owned.includes(id)) s.accessories.equipped[slot] = id;
+    },
+    setAccessoriesUnlocked(s, a) { s.unlocks.accessories = !!a.payload; },
   },
 });
 
 export const {
-  setDogName, setBirthdayNow,
-  setPosition, setDirection, setMoving,
-  setHappiness, addXP, tickNeeds, tickRealTime,
-  setBackyardSkin, resetDog,
+  setDogName, setPosition, setDirection, setMoving, setHappiness,
+  addXP, tickNeeds, tickRealTime, setBackyardSkin, resetDog,
+  // new:
+  grantCoins, spendCoins, unlockAccessory, equipAccessory, setAccessoriesUnlocked,
 } = dogSlice.actions;
 
-// Selectors
-export const selectDog          = (s) => s.dog;
-export const selectName         = (s) => s.dog.name;
-export const selectPos          = (s) => s.dog.pos;
-export const selectDirection    = (s) => s.dog.direction;
+// selectors
+export const selectDog = (s) => s.dog;
+export const selectName = (s) => s.dog.name;
+export const selectPos = (s) => s.dog.pos;
+export const selectDirection = (s) => s.dog.direction;
 export const selectBackyardSkin = (s) => s.dog.backyardSkin;
-export const selectAgeDays      = (s) => {
-  const b = Number(s.dog.birthdayMs || 0);
-  if (!isFinite(b) || b <= 0) return 0;
-  const days = Math.floor((Date.now() - b) / 86_400_000);
-  return Math.max(0, days);
-};
+
+export const selectCoins = (s) => s.dog.coins;
+export const selectAccessories = (s) => s.dog.accessories;
+export const selectUnlocks = (s) => s.dog.unlocks;
+export const selectDogLevel = (s) => Math.floor((s.dog.xp || 0) / 100) + 1; // level 1 at 0–99 xp
 
 export default dogSlice.reducer;

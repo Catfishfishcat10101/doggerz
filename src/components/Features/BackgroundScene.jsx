@@ -1,39 +1,36 @@
 // src/components/Features/BackgroundScene.jsx
 import React from "react";
-import useSessionStorage from "@/hooks/useSessionStorage";
 import "./BackgroundScene.css";
 
 /**
- * BackgroundScene
- * Wrap your game area with an ambient background.
- *
  * Props:
- * - skin?: "default" | "lawn" | "sunset" | "night" | "neon" | "winter"
- *   If omitted, uses sessionStorage("yardSkin") with fallback "default".
- * - tint?: CSS color string; applied as --scene-accent (lights, UI accents)
- * - className?: extra classes for .scene-stage
+ * - skin: "default" | "lawn" | "sunset" | "night" | "neon" | "winter"
+ * - accent: CSS color string (optional; tints mid-layer)
+ * - className: extra classes
+ * - children: your game stage (canvas, dog sprite, etc.)
  */
-export default function BackgroundScene({ children, skin, tint, className = "" }) {
-  const [storedSkin] = useSessionStorage("yardSkin", "default");
-  const activeSkin = (skin ?? storedSkin) || "default";
-
+export default function BackgroundScene({
+  skin = "default",
+  accent,
+  className = "",
+  children,
+}) {
+  const style = accent ? { ["--scene-accent"]: accent } : undefined;
   return (
     <div
-      className={`bg-yard skin-${activeSkin}`}
-      style={tint ? { ["--scene-accent"]: tint } : undefined}
-      data-skin={activeSkin}
+      className={`bg-yard skin-${skin} ${className}`}
+      style={style}
     >
       {/* Parallax layers */}
-      <div className="parallax layer back" aria-hidden />
-      <div className="parallax layer mid" aria-hidden />
-      <div className="parallax layer front" aria-hidden />
+      <div className="parallax layer back" />
+      <div className="parallax layer mid" />
+      <div className="parallax layer front" />
 
-      {/* Main stage where your game renders */}
-      <div className={`scene-stage ${className}`}>{children}</div>
+      {/* Your stage goes here */}
+      <div className="scene-stage">{children}</div>
 
-      {/* Ground plane */}
-      <div className="scene-ground" aria-hidden />
+      {/* Ground */}
+      <div className="scene-ground" />
     </div>
   );
 }
-// src/components/Features/Accessories.jsx

@@ -1,7 +1,7 @@
 // src/components/Features/Affection.jsx
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
-import { earnCoins } from "@/../redux/dogSlice";
+import { grantCoins } from "@/redux/dogSlice.js";
 import SoundManager from "./SoundManager";
 
 /**
@@ -15,8 +15,8 @@ export default function Affection() {
   const dispatch = useDispatch();
 
   // UI state
-  const [pets, setPets] = useState(0);             // total pets this session/view
-  const [streak, setStreak] = useState(0);         // visual mini-combo meter (0..4 then reset)
+  const [pets, setPets] = useState(0);               // total pets this session/view
+  const [streak, setStreak] = useState(0);           // visual mini-combo meter (0..4 then reset)
   const [coinFlash, setCoinFlash] = useState(false); // transient “+1 coin!” signal
   const liveRegionRef = useRef(null);
 
@@ -25,9 +25,9 @@ export default function Affection() {
   const lastPetAt = useRef(0);
 
   // CONFIG: adjust feel here
-  const PET_THROTTLE_MS = 120;     // minimum interval between pets
-  const HOLD_START_DELAY = 260;    // delay before auto-repeat kicks in
-  const HOLD_REPEAT_MS = 110;      // interval while holding (will be clamped by throttle)
+  const PET_THROTTLE_MS = 120;       // minimum interval between pets
+  const HOLD_START_DELAY = 260;      // delay before auto-repeat kicks in
+  const HOLD_REPEAT_MS = 110;        // interval while holding (will be clamped by throttle)
   const MAX_HOLD_PETS_PER_PRESS = 50; // safety cap vs. “infinite” holds
 
   const performPet = useCallback(() => {
@@ -39,25 +39,25 @@ export default function Affection() {
     try {
       SoundManager?.play?.("bark");
       if ("vibrate" in navigator) navigator.vibrate?.(10);
-    } catch {/* no-op */}
+    } catch {
+      /* no-op */
+    }
 
-    setPets(prev => {
+    setPets((prev) => {
       const next = prev + 1;
 
       // reward coin every 5th pet
       if (next % 5 === 0) {
-        dispatch(earnCoins(1));
+        dispatch(grantCoins(1));
         // pulse feedback
         setCoinFlash(true);
-        // announce for screen readers
         const el = liveRegionRef.current;
         if (el) el.textContent = `+1 coin earned, total pets ${next}`;
-        // reset flash
         window.setTimeout(() => setCoinFlash(false), 500);
       }
 
       // update visible mini-streak 0..4
-      setStreak((next % 5)); // 0 after payout, 1..4 otherwise
+      setStreak(next % 5); // 0 after payout, 1..4 otherwise
       return next;
     });
   }, [dispatch]);
@@ -90,9 +90,7 @@ export default function Affection() {
     repeatTimer.current = null;
   }, []);
 
-  useEffect(() => {
-    return () => stopHold(); // cleanup on unmount
-  }, [stopHold]);
+  useEffect(() => () => stopHold(), [stopHold]);
 
   // Keyboard support: Space/Enter = pet (supports hold via key repeat)
   const onKeyDown = (e) => {
@@ -130,7 +128,9 @@ export default function Affection() {
               key={i}
               className={[
                 "h-2.5 w-2.5 rounded-full transition-transform duration-150",
-                (i < (streak || 5) && streak !== 0) ? "bg-rose-600 scale-100" : "bg-rose-200 dark:bg-rose-800/50 scale-90"
+                i < (streak || 5) && streak !== 0
+                  ? "bg-rose-600 scale-100"
+                  : "bg-rose-200 dark:bg-rose-800/50 scale-90",
               ].join(" ")}
               aria-hidden
             />
@@ -150,7 +150,7 @@ export default function Affection() {
         className={[
           "mt-4 w-full px-4 py-3 rounded-xl text-white active:scale-95 select-none",
           "bg-rose-600 hover:bg-rose-500 focus:outline-none focus-visible:ring-2",
-          "ring-rose-400/60 shadow transition-all"
+          "ring-rose-400/60 shadow transition-all",
         ].join(" ")}
         aria-label="Pet the dog"
       >
@@ -161,7 +161,7 @@ export default function Affection() {
       <div
         className={[
           "pointer-events-none mt-3 h-6 overflow-visible",
-          "flex items-center justify-center"
+          "flex items-center justify-center",
         ].join(" ")}
         aria-hidden
       >
@@ -173,21 +173,16 @@ export default function Affection() {
       </div>
 
       {/* SR-only live region for coin announcements */}
-      <span
-        ref={liveRegionRef}
-        aria-live="polite"
-        className="sr-only"
-      />
+      <span ref={liveRegionRef} aria-live="polite" className="sr-only" />
+
       {/* tiny utility animation */}
-      <style>
-        {`
-          @keyframes pop {
-            0% { transform: translateY(6px) scale(0.85); opacity: 0; }
-            50% { transform: translateY(0px) scale(1.05); opacity: 1; }
-            100% { transform: translateY(-4px) scale(1); opacity: 0; }
-          }
-        `}
-      </style>
+      <style>{`
+        @keyframes pop {
+          0% { transform: translateY(6px) scale(0.85); opacity: 0; }
+          50% { transform: translateY(0px) scale(1.05); opacity: 1; }
+          100% { transform: translateY(-4px) scale(1); opacity: 0; }
+        }
+      `}</style>
     </div>
   );
 }

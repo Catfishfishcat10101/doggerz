@@ -2,7 +2,8 @@
 import React, { Suspense, lazy, useEffect } from "react";
 import { Link } from "react-router-dom";
 
-const TricksTrainer = lazy(() => import("../Features/TricksTrainer.jsx"));
+// Prefer absolute alias so moves/renames don't break:
+const TricksTrainer = lazy(() => import("@/components/Features/TricksTrainer.jsx"));
 
 export default function Tricks(props) {
   useEffect(() => {
@@ -17,7 +18,7 @@ export default function Tricks(props) {
         <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <Link
-              to="/game"
+              to="/play" {/* ← was /game */}
               className="px-3 py-1 rounded-xl text-sm bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-black/5 dark:border-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
               aria-label="Back to game"
             >
@@ -37,7 +38,7 @@ export default function Tricks(props) {
             <div className="rounded-2xl border border-rose-300/50 bg-rose-50 text-rose-900 dark:bg-rose-900/20 dark:text-rose-100 p-4">
               <div className="font-semibold">Trainer failed to load</div>
               <div className="text-sm opacity-80">
-                Try refreshing, or head <Link to="/game" className="underline">back to the yard</Link>.
+                Try refreshing, or head <Link to="/play" className="underline">back to the yard</Link>.
               </div>
             </div>
           }
