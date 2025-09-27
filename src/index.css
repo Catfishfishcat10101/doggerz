@@ -2,32 +2,27 @@
 @tailwind components;
 @tailwind utilities;
 
-/* App shell */
+/* Design tokens */
 :root {
-  color-scheme: dark;
+  --ring: 0 0% 100% / .2;
 }
 
-html, body, #root {
-  height: 100%;
+/* Reusable buttons */
+.btn-primary {
+  @apply inline-flex items-center justify-center h-9 px-4 rounded-xl
+         bg-emerald-500/90 hover:bg-emerald-500 active:bg-emerald-600
+         text-black font-semibold shadow-md shadow-emerald-500/20
+         transition;
 }
 
-body {
-  @apply bg-black text-white antialiased;
+.btn-ghost {
+  @apply inline-flex items-center justify-center h-9 px-4 rounded-xl
+         border border-white/15 hover:bg-white/5 text-white/90 transition;
 }
 
-/* Click-safety: any decorative full-screen layer must not intercept clicks */
-.decor-overlay {
-  pointer-events: none !important;
-}
+/* Small cards on Splash */
+.card-kpi { @apply p-4 rounded-xl bg-white/5 border border-white/10; }
+.kpi { @apply block text-white font-semibold mb-1; }
 
-.z-content {
-  position: relative;
-  z-index: 10;
-}
-
-/* Nice focus ring */
-:where(button, a, input, select, textarea):focus-visible {
-  outline: 2px solid rgba(255,255,255,.6);
-  outline-offset: 2px;
-  border-radius: 0.75rem;
-}
+/* Make the app fill the viewport cleanly */
+html, body, #root { height: 100%; }
