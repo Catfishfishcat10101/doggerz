@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+if git diff --cached | grep -nE '^(<<<<<<<|=======|>>>>>>>)' >/dev/null; then
+  echo "❌ Commit blocked: conflict markers detected."
+  exit 1
+fi

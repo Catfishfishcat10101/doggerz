@@ -1,23 +1,50 @@
+// src/App.jsx
 import React, { Suspense, lazy } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-import NavBar from "@/components/UI/NavBar.jsx";
+import RootLayout from "@/layout/RootLayout.jsx";
+import PublicLayout from "@/layout/PublicLayout.jsx";
+import AuthedLayout from "@/layout/AuthedLayout.jsx";
+import RequireAuth from "@/layout/RequireAuth.jsx";
+import ErrorBoundary from "@/layout/ErrorBoundary.jsx";
 
-const Splash     = lazy(() => import("@/components/UI/Splash.jsx"));
-const GameScreen = lazy(() => import("@/components/UI/GameScreen.jsx")); // keep your file if it exists
-const Shop       = lazy(() => import("@/components/Features/Shop.jsx")); // optional route
+// Lazy pages
+const Home     = lazy(() => import("@/pages/Home.jsx"));
+const Game     = lazy(() => import("@/pages/Game.jsx"));
+const Shop     = lazy(() => import("@/pages/Shop.jsx"));
+const Login    = lazy(() => import("@/pages/Login.jsx"));
+const Signup   = lazy(() => import("@/pages/Signup.jsx"));
+const Profile  = lazy(() => import("@/pages/Profile.jsx"));
+const Settings = lazy(() => import("@/pages/Settings.jsx"));
+const NotFound = lazy(() => import("@/pages/NotFound.jsx"));
 
 export default function App() {
   return (
-    <div className="min-h-dvh flex flex-col bg-gradient-to-b from-slate-950 to-slate-900 text-slate-100">
-      <NavBar />
+    <ErrorBoundary>
       <Suspense fallback={<div className="p-6 opacity-70">Loading…</div>}>
         <Routes>
-          <Route path="/" element={<Splash />} />
-          <Route path="/game" element={<GameScreen />} />
-          <Route path="/shop" element={<Shop />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          {/* Root shell always wraps */}
+          <Route element={<RootLayout />}>
+            {/* Public area (no auth) */}
+            <Route element={<PublicLayout />}>
+              <Route index element={<Home />} />
+              <Route path="login" element={<Login />} />
+              <Route path="signup" element={<Signup />} />
+            </Route>
+
+            {/* Authed area (requires login) */}
+            <Route element={<RequireAuth><AuthedLayout /></RequireAuth>}>
+              <Route path="game" element={<Game />} />
+              <Route path="shop" element={<Shop />} />
+              <Route path="profile" element={<Profile />} />
+              <Route path="settings" element={<Settings />} />
+            </Route>
+
+            {/* Fallbacks */}
+            <Route path="404" element={<NotFound />} />
+            <Route path="*" element={<Navigate to="/404" replace />} />
+          </Route>
         </Routes>
       </Suspense>
-    </div>
+    </ErrorBoundary>
   );
 }

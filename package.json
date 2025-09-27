@@ -9,7 +9,8 @@
     "emudev": "concurrently \"npm:emulators\" \"npm:dev\"",
     "build": "vite build",
     "clean": "rimraf dist .vite",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "prepare": "husky"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.9.0",
