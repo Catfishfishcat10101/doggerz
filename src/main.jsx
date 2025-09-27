@@ -1,18 +1,17 @@
-// src/main.jsx
 import React from "react";
-import ReactDOM from "react-dom/client";
+import { createRoot } from "react-dom/client";
 import { Provider } from "react-redux";
-import { BrowserRouter, HashRouter } from "react-router-dom";
+import { HashRouter } from "react-router-dom";
 import App from "./App.jsx";
 import store from "./redux/store.js";
 import "./index.css";
 
-const Router = import.meta.env.DEV ? BrowserRouter : HashRouter;
-
-ReactDOM.createRoot(document.getElementById("root")).render(
+const container = document.getElementById("root");
+const root = createRoot(container);
+root.render(
   <Provider store={store}>
-    <Router basename="/">
+    <HashRouter>
       <App />
-    </Router>
+    </HashRouter>
   </Provider>
 );
