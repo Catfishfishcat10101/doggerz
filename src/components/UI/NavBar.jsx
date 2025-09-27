@@ -1,38 +1,52 @@
+// src/components/UI/NavBar.jsx
 import React from "react";
-import { Link, useLocation } from "react-router-dom";
-import clsx from "clsx";
-
-const Tab = ({ to, children }) => {
-  const loc = useLocation();
-  const active = loc.pathname === to;
-  return (
-    <Link
-      to={to}
-      className={clsx(
-        "px-3 py-2 rounded-xl transition",
-        active ? "bg-white/15 text-white" : "text-white/80 hover:bg-white/10"
-      )}
-    >
-      {children}
-    </Link>
-  );
-};
+import { Link, NavLink } from "react-router-dom";
 
 export default function NavBar() {
   return (
-    <header className="sticky top-0 z-40 backdrop-blur supports-[backdrop-filter]:bg-ink/50 border-b border-white/10">
-      <div className="mx-auto max-w-6xl px-4 py-3 flex items-center gap-3">
-        <Link to="/" className="font-black tracking-tight text-lg">
-          Doggerz <span className="badge ml-2">PWA</span>
+    <header className="sticky top-0 z-40 backdrop-blur bg-black/40 border-b border-white/10">
+      <div className="mx-auto max-w-6xl px-4 py-3 flex items-center gap-4">
+        {/* Brand */}
+        <Link to="/" className="select-none">
+          <span className="text-2xl md:text-3xl font-extrabold tracking-tight">
+            Doggerz
+          </span>
         </Link>
-        <nav className="ml-auto flex items-center gap-1">
-          <Tab to="/">Home</Tab>
-          <Tab to="/game">Game</Tab>
-          <Tab to="/shop">Shop</Tab>
-          {/* auth slot; wire to Firebase later */}
-          <button className="btn btn-ghost ml-2">Sign in</button>
+
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {/* Primary nav */}
+        <nav className="hidden sm:flex items-center gap-2">
+          <NavItem to="/">Home</NavItem>
+          <NavItem to="/game">Game</NavItem>
+          <NavItem to="/shop">Shop</NavItem>
         </nav>
+
+        {/* Auth CTA */}
+        <Link
+          to="/login"
+          className="rounded-xl px-3 py-1.5 bg-white text-black font-semibold hover:bg-neutral-200 transition"
+        >
+          Sign in
+        </Link>
       </div>
     </header>
+  );
+}
+
+function NavItem({ to, children }) {
+  return (
+    <NavLink
+      to={to}
+      className={({ isActive }) =>
+        [
+          "px-3 py-1.5 rounded-xl transition",
+          isActive ? "bg-white/15" : "hover:bg-white/10",
+        ].join(" ")
+      }
+    >
+      {children}
+    </NavLink>
   );
 }
