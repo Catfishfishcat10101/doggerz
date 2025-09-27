@@ -1,132 +1,25 @@
-/* Tailwind hooks */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* -----------------------------------------------------------------------------
-   Design tokens (light/dark)
------------------------------------------------------------------------------ */
 :root {
-  --bg-0: #f8fafc;
-  --bg-1: #ffffff;
-  --bg-elev: #ffffff;
-  --tx-0: #0f172a;
-  --tx-1: #334155;
-  --brand: #0ea5e9;
-  --brand-strong: #0284c7;
-  --ring: 0 0% 100%;
-  --ring-shadow: 0 0% 0%;
-  --card-border: rgba(2, 6, 23, .06);
-  --muted: rgba(2, 6, 23, .06);
-}
-:root.dark,
-:root[data-theme="dark"],
-[data-theme="dark"] {
-  --bg-0: #0b1220;
-  --bg-1: #0f172a;
-  --bg-elev: #0b1220;
-  --tx-0: #e6edf3;
-  --tx-1: #9aa5b1;
-  --brand: #22d3ee;
-  --brand-strong: #06b6d4;
-  --ring: 210 40% 96%;
-  --ring-shadow: 210 40% 2%;
-  --card-border: rgba(255,255,255,.08);
-  --muted: rgba(255,255,255,.06);
+  color-scheme: dark;
 }
 
-/* -----------------------------------------------------------------------------
-   Base + page chrome
------------------------------------------------------------------------------ */
-@layer base {
-  html, body, #root { height: 100%; }
-  html { color-scheme: light dark; }
-  body {
-    @apply antialiased;
-    background: var(--bg-0);
-    color: var(--tx-0);
-  }
-  ::selection {
-    background: color-mix(in oklab, var(--brand), transparent 70%);
-  }
-  canvas, .pixel-font {
-    -webkit-font-smoothing: none;
-    -moz-osx-font-smoothing: auto;
-    image-rendering: pixelated;
-  }
-  * { scrollbar-width: thin; scrollbar-color: color-mix(in oklab, var(--tx-1), transparent 70%) transparent; }
-  *::-webkit-scrollbar { width: 10px; height: 10px; }
-  *::-webkit-scrollbar-thumb {
-    background: color-mix(in oklab, var(--tx-1), transparent 70%);
-    border-radius: 999px; border: 2px solid transparent; background-clip: content-box;
-  }
-  *::-webkit-scrollbar-track { background: transparent; }
+html, body, #root {
+  height: 100%;
+  background: radial-gradient(1200px 600px at 70% -10%, rgba(90,15,200,.28), transparent),
+              radial-gradient(900px 500px at -10% 110%, rgba(56,189,248,.18), transparent),
+              #0b0b12;
+  color: #eef2ff;
 }
 
-/* -----------------------------------------------------------------------------
-   Components (TW-friendly)
------------------------------------------------------------------------------ */
-@layer components {
-  .card {
-    @apply rounded-2xl border bg-white shadow;
-    border-color: var(--card-border);
-    background: var(--bg-elev);
-  }
-  .card-muted {
-    @apply rounded-2xl border shadow-inner;
-    border-color: var(--muted);
-    background: linear-gradient(180deg, color-mix(in oklab, var(--bg-elev), transparent 0%), color-mix(in oklab, var(--bg-elev), transparent 0%));
-    backdrop-filter: blur(6px);
-  }
-  .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2.5 text-sm font-medium shadow transition active:scale-95;
-    @apply focus:outline-none focus-visible:ring-2;
-    box-shadow: 0 1px 0 rgba(2,6,23,0.03), 0 1px 2px rgba(2,6,23,0.08);
-  }
-  .btn-primary { @apply text-white; background: var(--brand); }
-  .btn-primary:hover { background: var(--brand-strong); }
-  .btn-ghost { @apply bg-transparent text-slate-700 dark:text-slate-100 border border-transparent; }
-  .btn-ghost:hover { border-color: var(--muted); background: color-mix(in oklab, var(--muted), transparent 50%); }
-  .icon-btn { @apply inline-grid place-items-center rounded-xl p-2 hover:bg-slate-100 dark:hover:bg-slate-800; }
-  .input, .select, .textarea {
-    @apply w-full rounded-xl border bg-white dark:bg-slate-900 px-3 py-2 text-sm outline-none transition;
-    border-color: var(--card-border);
-  }
-  .input:focus, .select:focus, .textarea:focus { @apply ring-2 ring-sky-400; }
-  .toast { @apply rounded-2xl px-3 py-2 text-sm shadow-lg border; border-color: var(--card-border); background: var(--bg-elev); }
-  .tooltip { @apply rounded-md px-2 py-1 text-xs shadow border; border-color: var(--card-border); background: var(--bg-elev); }
-  .backdrop { @apply fixed inset-0 bg-black/60; backdrop-filter: saturate(90%) blur(6px); }
-  .focus-ring {
-    outline: none;
-    box-shadow: 0 0 0 2px hsl(var(--ring) / .9), 0 0 0 4px hsl(var(--ring-shadow) / .25);
-  }
+.btn {
+  @apply inline-flex items-center gap-2 rounded-2xl px-4 py-3 font-semibold transition shadow-soft;
+  @apply bg-ink/60 border border-white/10 hover:bg-white/10 active:scale-[.98];
+  -webkit-tap-highlight-color: transparent;
 }
-
-/* -----------------------------------------------------------------------------
-   Game utilities + small animations
------------------------------------------------------------------------------ */
-@layer utilities {
-  .pixelated { image-rendering: pixelated; image-rendering: crisp-edges; image-rendering: -webkit-optimize-contrast; }
-  .sprite { @apply block pixelated; transform: translateZ(0); will-change: transform; }
-  .sprite-shadow { filter: drop-shadow(0 2px 0 rgba(0,0,0,.15)) drop-shadow(0 6px 8px rgba(2,6,23,.18)); }
-  .soft-shadow { box-shadow: 0 1px 0 rgba(2,6,23,0.03), 0 2px 6px rgba(2,6,23,0.06), 0 8px 24px rgba(2,6,23,0.06); }
-  .z-stage { z-index: 10; } .z-hud { z-index: 20; } .z-portal { z-index: 40; } .z-top { z-index: 50; }
-  .text-pop { text-shadow: 0 1px 0 rgba(255,255,255,.7), 0 2px 4px rgba(2,6,23,.12); }
-
-  @keyframes dog-bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
-  @keyframes shadow-breathe { 0%,100% { transform: scale(1); opacity: .25; } 50% { transform: scale(1.06); opacity: .35; } }
-  .dz-bob { animation: dog-bob 2.4s ease-in-out infinite; }
-  .dz-shadow { width: 58%; height: 14%; background: radial-gradient(ellipse at center, rgba(0,0,0,.35), rgba(0,0,0,0)); filter: blur(2px); animation: shadow-breathe 2.4s ease-in-out infinite; }
-  .dz-glow { box-shadow: 0 0 0 1px rgba(148,163,184,.15), 0 10px 40px rgba(0,0,0,.5); }
-
-  @keyframes float-soft { from { transform: translateY(0); } to { transform: translateY(-4px); } }
-  .float-soft { animation: float-soft 2.2s ease-in-out infinite alternate; }
-
-  @media (prefers-reduced-motion: reduce) {
-    .dz-bob, .dz-shadow, .float-soft { animation: none !important; }
-  }
-
-  .px-safe { padding-left: max(1rem, env(safe-area-inset-left)); padding-right: max(1rem, env(safe-area-inset-right)); }
-  .py-safe { padding-top: max(1rem, env(safe-area-inset-top)); padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
-}
-.dev-outline * { outline: 1px dashed color-mix(in oklab, var(--tx-1), transparent 50%); }
+.btn-primary { @apply bg-grape text-white hover:bg-grape/90; }
+.btn-ghost   { @apply bg-transparent border-white/10 hover:bg-white/10; }
+.card { @apply rounded-3xl bg-white/5 border border-white/10 shadow-soft; }
+.badge { @apply inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-white/10 border border-white/10; }
