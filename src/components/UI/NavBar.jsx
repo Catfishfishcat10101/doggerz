@@ -1,4 +1,3 @@
-// src/components/UI/NavBar.jsx
 import React from "react";
 import { Link, NavLink } from "react-router-dom";
 
@@ -13,7 +12,6 @@ export default function NavBar() {
           </span>
         </Link>
 
-        {/* Spacer */}
         <div className="flex-1" />
 
         {/* Primary nav */}
@@ -23,7 +21,7 @@ export default function NavBar() {
           <NavItem to="/shop">Shop</NavItem>
         </nav>
 
-        {/* Auth CTA */}
+        {/* Auth */}
         <Link
           to="/login"
           className="rounded-xl px-3 py-1.5 bg-white text-black font-semibold hover:bg-neutral-200 transition"
