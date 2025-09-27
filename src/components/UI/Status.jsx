@@ -5,7 +5,7 @@ import {
   selectDog,
   selectDogLevel,
   selectCoins
-} from "../../redux/dogSlice";
+} from "@/../redux/dogSlice";
 
 /**
  * Status

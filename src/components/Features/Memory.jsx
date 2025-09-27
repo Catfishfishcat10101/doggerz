@@ -1,7 +1,7 @@
 // src/components/Features/Memory.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import { selectDogLevel, selectCoins, selectAccessories } from "../../redux/dogSlice";
+import { selectDogLevel, selectCoins, selectAccessories } from "@/../redux/dogSlice";
 
 /* ----------------------------- tiny hooks ------------------------------ */
 function useIsBrowser() {

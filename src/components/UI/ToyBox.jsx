@@ -1,7 +1,7 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { earnCoins, selectCoins } from "../../redux/dogSlice";
-import SoundManager from "../Features/SoundManager";
+import { earnCoins, selectCoins } from "@/../redux/dogSlice";
+import SoundManager from "@/Features/SoundManager";
 
 const TOYS = [
   { id: "ball", icon: "🎾", title: "Ball", reward: 1 },

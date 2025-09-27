@@ -1,7 +1,7 @@
 // src/components/Features/Affection.jsx
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
-import { earnCoins } from "../../redux/dogSlice";
+import { earnCoins } from "@/../redux/dogSlice";
 import SoundManager from "./SoundManager";
 
 /**

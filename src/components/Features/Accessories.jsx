@@ -10,7 +10,7 @@ import {
   selectCoins,
   selectUnlocks,
   selectDogLevel,
-} from "../../redux/dogSlice";
+} from "@/../redux/dogSlice";
 
 const ACCESSORIES = [
   { id: "collar_red",  slot: "collar", title: "Red Collar",  cost: 30,  icon: "🟥" },

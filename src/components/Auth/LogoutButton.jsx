@@ -3,8 +3,8 @@ import React, { useState } from "react";
 import { signOut } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { auth } from "../../firebase";
-import { clearUser } from "../../redux/userSlice";
+import { auth } from "@/../firebase";
+import { clearUser } from "@/../redux/userSlice";
 
 /**
  * LogoutButton

@@ -1,7 +1,7 @@
 // src/components/Features/StatsPanel.jsx
 import React, { useEffect, useMemo } from "react";
 import { useSelector } from "react-redux";
-import * as dog from "../../redux/dogSlice";
+import * as dog from "@/../redux/dogSlice";
 
 /**
  * StatsPanel

@@ -1,6 +1,6 @@
 import React from "react";
 import { useDispatch } from "react-redux";
-import { resetDogState, increasePottyLevel } from "../../redux/dogSlice";
+import { resetDogState, increasePottyLevel } from "@/../redux/dogSlice";
 
 const ResetGame = () => {
   const dispatch = useDispatch();

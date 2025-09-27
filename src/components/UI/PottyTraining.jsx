@@ -8,9 +8,9 @@ import {
   selectPottyStreak,
   selectPottyLastTrainedAt,
   markAccident,
-} from "../../store/dogSlice";
+} from "@/../store/dogSlice";
 import { useNavigate } from "react-router-dom";
-import ProgressBar from "../UI/ProgressBar";
+import ProgressBar from "@/UI/ProgressBar";
 import { CheckCircle2, RotateCcw, ArrowLeft, Award, AlertTriangle } from "lucide-react";
 
 // Optional: framer-motion micro-interactions (installed elsewhere in your project)
