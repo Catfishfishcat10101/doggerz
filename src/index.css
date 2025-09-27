@@ -2,24 +2,32 @@
 @tailwind components;
 @tailwind utilities;
 
+/* App shell */
 :root {
   color-scheme: dark;
 }
 
 html, body, #root {
   height: 100%;
-  background: radial-gradient(1200px 600px at 70% -10%, rgba(90,15,200,.28), transparent),
-              radial-gradient(900px 500px at -10% 110%, rgba(56,189,248,.18), transparent),
-              #0b0b12;
-  color: #eef2ff;
 }
 
-.btn {
-  @apply inline-flex items-center gap-2 rounded-2xl px-4 py-3 font-semibold transition shadow-soft;
-  @apply bg-ink/60 border border-white/10 hover:bg-white/10 active:scale-[.98];
-  -webkit-tap-highlight-color: transparent;
+body {
+  @apply bg-black text-white antialiased;
 }
-.btn-primary { @apply bg-grape text-white hover:bg-grape/90; }
-.btn-ghost   { @apply bg-transparent border-white/10 hover:bg-white/10; }
-.card { @apply rounded-3xl bg-white/5 border border-white/10 shadow-soft; }
-.badge { @apply inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-white/10 border border-white/10; }
+
+/* Click-safety: any decorative full-screen layer must not intercept clicks */
+.decor-overlay {
+  pointer-events: none !important;
+}
+
+.z-content {
+  position: relative;
+  z-index: 10;
+}
+
+/* Nice focus ring */
+:where(button, a, input, select, textarea):focus-visible {
+  outline: 2px solid rgba(255,255,255,.6);
+  outline-offset: 2px;
+  border-radius: 0.75rem;
+}
