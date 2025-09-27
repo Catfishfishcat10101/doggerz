@@ -1,15 +1,12 @@
 // src/redux/store.js
 import { configureStore } from "@reduxjs/toolkit";
-import userReducer, { userListenerMiddleware } from "./userSlice";
-import dogReducer from "./dogSlice";
+import dog from "./dogSlice.js"; // ensure this file exists
+import user, { userListenerMiddleware } from "./userSlice.js";
 
 const store = configureStore({
-  reducer: {
-    user: userReducer,
-    dog: dogReducer,
-  },
+  reducer: { dog, user },
   middleware: (getDefault) =>
-    getDefault().prepend(userListenerMiddleware.middleware),
+    getDefault().concat(userListenerMiddleware.middleware),
 });
 
 export default store;
