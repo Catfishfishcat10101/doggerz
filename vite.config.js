@@ -4,12 +4,13 @@ import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { visualizer } from "rollup-plugin-visualizer"; // optional
 
 // __dirname for ESM
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Helpful: keep this in sync with your actual "public/" assets
+// Keep this EXACTLY in sync with files inside /public
 const PWA_INCLUDE_ASSETS = [
   "offline.html",
   "favicon.ico",
@@ -17,25 +18,16 @@ const PWA_INCLUDE_ASSETS = [
   "icons/icon-512.png",
 ];
 
+// Set ANALYZE=true npm run build to emit dist/stats.html
+const withViz = process.env.ANALYZE === "true";
+
 export default defineConfig({
-  // If you deploy under a subpath (e.g. /doggerz/ on GitHub Pages), change base accordingly.
   base: "/",
   plugins: [
-    react({
-      // Recommended flags for React 18; keeps dev overlay fast
-      jsxImportSource: "react",
-      babel: {
-        // keep defaults; plugin handles the JSX transform
-      },
-      fastRefresh: true,
-    }),
-
-    // Progressive Web App
+    react({ fastRefresh: true }),
     VitePWA({
       registerType: "autoUpdate",
-      // Generate a Workbox service worker at build time
       workbox: {
-        // Ensure HTML/CSS/JS and common assets are picked up; this avoids your prior "non-precached-url" issues
         globPatterns: ["**/*.{js,css,html,ico,png,svg,webp,woff2}"],
         navigateFallback: "index.html",
         cleanupOutdatedCaches: true,
@@ -48,59 +40,58 @@ export default defineConfig({
         description: "Adopt a pixel pup and raise it!",
         start_url: "/",
         scope: "/",
+        display: "standalone",
         theme_color: "#0f172a",
         background_color: "#0f172a",
-        display: "standalone",
         icons: [
           { src: "icons/icon-192.png", sizes: "192x192", type: "image/png" },
           { src: "icons/icon-512.png", sizes: "512x512", type: "image/png" },
-          // optional maskable version if you have it:
-          // { src: "icons/icon-512-maskable.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
         ],
       },
-      // Keep the SW off in dev; let Vite preview serve your built SW
       devOptions: { enabled: false },
     }),
-  ],
+    withViz &&
+      visualizer({
+        filename: "dist/stats.html",
+        template: "treemap",
+        gzipSize: true,
+        brotliSize: true,
+      }),
+  ].filter(Boolean),
 
   resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "src"),
-    },
-    // Vite defaults are fine; explicit extensions help editor tooling
+    alias: { "@": path.resolve(__dirname, "src") },
     extensions: [".mjs", ".js", ".ts", ".jsx", ".tsx", ".json"],
   },
 
-  // Dev server ergonomics
-  server: {
-    host: true, // listen on LAN
-    port: 5173,
-    open: false,
-  },
+  server: { host: true, port: 5173, open: false },
+  preview: { host: true, port: 4173, open: false },
 
-  // Preview server (after `npm run build && npm run preview`)
-  preview: {
-    host: true,
-    port: 4173,
-    open: false,
-  },
-
-  // Build ergonomics
   build: {
     target: "es2020",
     outDir: "dist",
     assetsDir: "assets",
     sourcemap: false,
     cssTarget: "chrome90",
-    // Tighten chunking if you want smaller initial payloads later
+    chunkSizeWarningLimit: 900, // hush the noise; we’re also splitting vendors
     rollupOptions: {
       output: {
-        // manualChunks: { firebase: ["firebase/app","firebase/auth","firebase/firestore"] },
+        entryFileNames: "assets/[name]-[hash].js",
+        chunkFileNames: "assets/[name]-[hash].js",
+        assetFileNames: "assets/[name]-[hash][extname]",
+        // Smarter vendor slicing -> better caching + smaller initial payload
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return;
+          if (id.includes("react")) return "react";
+          if (id.includes("@reduxjs") || id.includes("react-redux")) return "redux";
+          if (id.includes("firebase")) return "firebase";
+        },
       },
     },
+    // Trim console/debugger in prod builds (optional, small win)
+    minify: "esbuild",
   },
 
-  // Optimize deps for faster cold starts
   optimizeDeps: {
     include: [
       "react",
@@ -111,11 +102,9 @@ export default defineConfig({
       "firebase/app",
       "firebase/auth",
       "firebase/firestore",
+      "firebase/storage",
     ],
   },
 
-  // Use modern JS in workers if you ever add them
-  worker: {
-    format: "es",
-  },
+  worker: { format: "es" },
 });

@@ -32,3 +32,51 @@ html { scroll-behavior: smooth; }
   .btn-ghost   { @apply btn text-white bg-white/10 hover:bg-white/15; }
   .btn-solid   { @apply btn bg-white text-zinc-900 hover:bg-zinc-100; }
 }
+
+/* Tailwind base/components/utilities already imported elsewhere */
+
+/* Idle pup “breathing” + micro-bounce */
+@keyframes pup-breathe {
+  0%, 100% { transform: translateY(0) scale(1); filter: drop-shadow(0 8px 20px rgba(0,0,0,.25)); }
+  50%      { transform: translateY(-2px) scale(1.02); filter: drop-shadow(0 10px 24px rgba(0,0,0,.28)); }
+}
+.animate-pup-breathe {
+  animation: pup-breathe 2.6s ease-in-out infinite;
+}
+@keyframes pup-bounce {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-2px); }
+}
+.animate-pup-bounce {
+  animation: pup-bounce 0.6s ease-in-out infinite;
+}
+@keyframes pup-rotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.animate-pup-rotate {
+  animation: pup-rotate 2s linear infinite;
+}
+@keyframes pup-rotate-reverse {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(-360deg); }
+}
+.animate-pup-rotate-reverse {
+  animation: pup-rotate-reverse 2s linear infinite;
+}
+@keyframes pup-rotate-reverse-slow {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(-360deg); }
+}
+.animate-pup-rotate-reverse-slow {
+  animation: pup-rotate-reverse-slow 6s linear infinite;
+}
+
+/* Idle pup “breathing” + micro-bounce */
+@keyframes pup-breathe {
+  0%, 100% { transform: translateY(0) scale(1); filter: drop-shadow(0 8px 20px rgba(0,0,0,.25)); }
+  50%      { transform: translateY(-2px) scale(1.02); filter: drop-shadow(0 12px 30px rgba(0,0,0,.35)); }
+}
+.animate-pup-breathe {
+  animation: pup-breathe 2.6s ease-in-out infinite;
+}

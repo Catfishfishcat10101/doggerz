@@ -1,72 +1,43 @@
 // src/App.jsx
 import React, { Suspense, lazy } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { useSelector } from "react-redux";
+import NavBar from "@/components/UI/NavBar.jsx";
+import { selectUser } from "@/redux/userSlice";
 
-// Layout shells & guards
-import RootLayout from "@/layout/RootLayout.jsx";
-import PublicLayout from "@/layout/PublicLayout.jsx";
-import AuthedLayout from "@/layout/AuthedLayout.jsx";
-import RequireAuth from "@/layout/RequireAuth.jsx";
-import ErrorBoundary from "@/layout/ErrorBoundary.jsx";
+// Inline guard (no common/ folder needed)
+function ProtectedRoute({ children }) {
+  const user = useSelector(selectUser);
+  const loc = useLocation();
+  if (!user) return <Navigate to="/login" replace state={{ from: loc }} />;
+  return children;
+}
 
-/** Route-level code splitting (vibes: fast startup, lazy deep pages) */
-const Home        = lazy(() => import("@/pages/Home.jsx"));
-const Game        = lazy(() => import("@/pages/Game.jsx"));
-const Shop        = lazy(() => import("@/pages/Shop.jsx"));
-const Login       = lazy(() => import("@/pages/Login.jsx"));
-const Signup      = lazy(() => import("@/pages/Signup.jsx"));
-const Profile     = lazy(() => import("@/pages/Profile.jsx"));
-const Settings    = lazy(() => import("@/pages/Settings.jsx"));
-const NotFound    = lazy(() => import("@/pages/NotFound.jsx"));
-const Terms       = lazy(() => import("@/pages/Legal/Terms.jsx"));
-const Privacy     = lazy(() => import("@/pages/Legal/Privacy.jsx"));
-const Onboarding  = lazy(() => import("@/pages/Onboarding.jsx"));
+const Splash     = lazy(() => import("@/components/UI/Splash.jsx"));
+const GameScreen = lazy(() => import("@/components/UI/GameScreen.jsx"));
+const Login      = lazy(() => import("@/components/Auth/Login.jsx"));
+const Signup     = lazy(() => import("@/components/Auth/Signup.jsx"));
 
 export default function App() {
   return (
-    <ErrorBoundary>
-      <Suspense
-        fallback={
-          <div className="p-6 text-white/80">
-            Loading experience…
-          </div>
-        }
-      >
+    <div className="min-h-dvh bg-gradient-to-b from-slate-900 via-indigo-950 to-slate-950 text-slate-100">
+      <NavBar />
+      <Suspense fallback={<div className="p-6 opacity-70">Loading…</div>}>
         <Routes>
-          {/* Global shell (NavBar + <Outlet/>) */}
-          <Route element={<RootLayout />}>
-            {/* Public area */}
-            <Route element={<PublicLayout />}>
-              <Route index element={<Home />} />
-              <Route path="login" element={<Login />} />
-              <Route path="signup" element={<Signup />} />
-              <Route path="onboarding" element={<Onboarding />} />
-              <Route path="legal">
-                <Route path="terms" element={<Terms />} />
-                <Route path="privacy" element={<Privacy />} />
-              </Route>
-            </Route>
-
-            {/* Authenticated app area */}
-            <Route
-              element={
-                <RequireAuth>
-                  <AuthedLayout />
-                </RequireAuth>
-              }
-            >
-              <Route path="game" element={<Game />} />
-              <Route path="shop" element={<Shop />} />
-              <Route path="profile" element={<Profile />} />
-              <Route path="settings" element={<Settings />} />
-            </Route>
-
-            {/* 404s and safety nets */}
-            <Route path="404" element={<NotFound />} />
-            <Route path="*" element={<Navigate to="/404" replace />} />
-          </Route>
+          <Route path="/" element={<Splash />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route
+            path="/game"
+            element={
+              <ProtectedRoute>
+                <GameScreen />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
-    </ErrorBoundary>
+    </div>
   );
 }

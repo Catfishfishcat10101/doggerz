@@ -1,49 +1,124 @@
 import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { Link, useNavigate } from "react-router-dom";
+import { auth } from "@/lib/firebase";
+import { userLoading, userAuthed, userError } from "@/redux/userSlice";
+
+function shapeUser(u) {
+  if (!u) return null;
+  const { uid, email, displayName, photoURL } = u;
+  return { uid, email, displayName, photoURL };
+}
 
 export default function Signup() {
-  const nav = useNavigate();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
   const [msg, setMsg] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const dispatch = useDispatch();
+  const nav = useNavigate();
 
-  async function onSubmit(e) {
+  async function onEmailSignup(e) {
     e.preventDefault();
     setMsg(null);
-    setLoading(true);
+    dispatch(userLoading());
     try {
-      // TODO: plug real Firebase here
-      await new Promise(r => setTimeout(r, 300));
-      setMsg("Account created. Redirecting…");
+      const { createUserWithEmailAndPassword, updateProfile } = await import("firebase/auth");
+      const cred = await createUserWithEmailAndPassword(auth, email.trim(), pw);
+      if (name.trim()) {
+        await updateProfile(cred.user, { displayName: name.trim() });
+      }
+      const current = auth.currentUser; // reflects displayName
+      dispatch(userAuthed(shapeUser(current)));
       nav("/game", { replace: true });
     } catch (err) {
-      setMsg(err?.message || "Signup failed.");
-    } finally {
-      setLoading(false);
+      console.error(err);
+      dispatch(userError(err.message));
+      setMsg(err.message);
+    }
+  }
+
+  async function onGoogle() {
+    setMsg(null);
+    dispatch(userLoading());
+    try {
+      const { GoogleAuthProvider, signInWithPopup } = await import("firebase/auth");
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: "select_account" });
+      const { user } = await signInWithPopup(auth, provider);
+      dispatch(userAuthed(shapeUser(user)));
+      nav("/game", { replace: true });
+    } catch (err) {
+      console.error(err);
+      dispatch(userError(err.message));
+      setMsg(err.message);
     }
   }
 
   return (
     <main className="mx-auto max-w-md px-4 py-10">
-      <h1 className="text-3xl font-bold">Create account</h1>
-      <form onSubmit={onSubmit} className="mt-6 space-y-4">
-        <input className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-3"
-               placeholder="Display name" value={name} onChange={(e)=>setName(e.target.value)} />
-        <input type="email" className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-3"
-               placeholder="Email" value={email} onChange={(e)=>setEmail(e.target.value)} required />
-        <input type="password" className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-3"
-               placeholder="Password" value={pw} onChange={(e)=>setPw(e.target.value)} minLength={6} required />
-        <button type="submit" disabled={loading}
-          className="w-full rounded-xl px-4 py-3 bg-fuchsia-500 text-white font-semibold hover:bg-fuchsia-400 disabled:opacity-60 transition">
-          {loading ? "Creating…" : "Create account"}
+      <h1 className="text-3xl font-extrabold">Create your account</h1>
+      <p className="mt-2 text-slate-300">Name your trainer and adopt your first pup.</p>
+
+      <form onSubmit={onEmailSignup} className="mt-6 space-y-3">
+        <label className="block">
+          <span className="text-sm text-slate-300">Display name</span>
+          <input
+            type="text"
+            className="mt-1 w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2 outline-none focus:ring-2 focus:ring-amber-300"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            autoComplete="nickname"
+            placeholder="PupMaster3000"
+          />
+        </label>
+
+        <label className="block">
+          <span className="text-sm text-slate-300">Email</span>
+          <input
+            type="email"
+            className="mt-1 w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2 outline-none focus:ring-2 focus:ring-amber-300"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email"
+            required
+          />
+        </label>
+
+        <label className="block">
+          <span className="text-sm text-slate-300">Password</span>
+          <input
+            type="password"
+            className="mt-1 w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2 outline-none focus:ring-2 focus:ring-amber-300"
+            value={pw}
+            onChange={(e) => setPw(e.target.value)}
+            autoComplete="new-password"
+            required
+            minLength={6}
+          />
+        </label>
+
+        {msg && <div className="text-sm text-rose-300">{msg}</div>}
+
+        <button
+          type="submit"
+          className="w-full mt-2 rounded-2xl bg-amber-400 text-slate-900 font-semibold px-4 py-2 hover:bg-amber-300"
+        >
+          Sign up
         </button>
-        {msg && <p className="text-sm text-neutral-300">{msg}</p>}
+
+        <button
+          type="button"
+          onClick={onGoogle}
+          className="w-full rounded-2xl bg-white/10 px-4 py-2 hover:bg-white/20"
+        >
+          Continue with Google
+        </button>
+
+        <p className="text-sm text-slate-400">
+          Already have an account? <Link to="/login" className="text-amber-300 hover:underline">Log in</Link>
+        </p>
       </form>
-      <p className="mt-4 text-sm text-neutral-400">
-        Already have an account? <Link to="/login" className="underline">Sign in</Link>
-      </p>
     </main>
   );
 }
