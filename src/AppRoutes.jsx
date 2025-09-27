@@ -1,42 +1,26 @@
-import React from "react";
-import {
-  createBrowserRouter,
-  Navigate,
-} from "react-router-dom";
+import React, { Suspense, lazy } from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
 
-import Splash from "@/components/UI/Splash.jsx";
-import Login from "@/components/Auth/Login.jsx";
-import Signup from "@/components/Auth/Signup.jsx";
-import NewPup from "@/components/Setup/NewPup.jsx";
-import GameScreen from "@/components/UI/GameScreen.jsx";
+// Use your actual file paths (match your tree in the screenshots)
+const Splash     = lazy(() => import("@/pages/Splash.jsx"));
+const Auth       = lazy(() => import("@/pages/Auth.jsx"));
+const GameScreen = lazy(() => import("@/components/UI/GameScreen.jsx"));
+const NewPup     = lazy(() => import("@/components/Setup/NewPup.jsx"));
 
-// Gate /play until the pup has a name (saved in localStorage)
-function RequireDogName({ children }) {
-  const hasName =
-    typeof localStorage !== "undefined" && !!localStorage.getItem("dogName");
-  return hasName ? children : <Navigate to="/setup/new" replace />;
+import ProtectedRoute from "@/routes/ProtectedRoute.jsx";
+
+const Fallback = () => <div className="p-6 text-center">Loading…</div>;
+
+export default function AppRoutes() {
+  return (
+    <Suspense fallback={<Fallback />}>
+      <Routes>
+        <Route path="/" element={<Splash />} />
+        <Route path="/auth" element={<Auth />} />
+        <Route path="/setup" element={<ProtectedRoute><NewPup /></ProtectedRoute>} />
+        <Route path="/game" element={<ProtectedRoute><GameScreen /></ProtectedRoute>} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Suspense>
+  );
 }
-
-export const router = createBrowserRouter(
-  [
-    { path: "/", element: <Splash /> },
-    { path: "/login", element: <Login /> },
-    { path: "/signup", element: <Signup /> },
-    { path: "/setup/new", element: <NewPup /> },
-    {
-      path: "/play",
-      element: (
-        <RequireDogName>
-          <GameScreen />
-        </RequireDogName>
-      ),
-    },
-    { path: "*", element: <Navigate to="/" replace /> }
-  ],
-  {
-    future: {
-      v7_startTransition: true,
-      v7_relativeSplatPath: true
-    }
-  }
-);
