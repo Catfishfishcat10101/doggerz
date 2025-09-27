@@ -1,4 +1,3 @@
-// src/components/UI/Splash.jsx
 import React from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -7,10 +6,14 @@ export default function Splash() {
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-12">
-      <section className="grid md:grid-cols-2 gap-10 items-center">
+      {/* Decorative background that cannot eat clicks */}
+      <div className="decor-overlay fixed inset-0 -z-10 bg-gradient-to-b from-slate-900 via-[#0b0f19] to-black" />
+
+      <section className="z-content grid md:grid-cols-2 gap-10 items-center">
         <div>
           <h1 className="text-4xl md:text-6xl font-black leading-tight">
-            Adopt your pixel pup.<br />
+            Adopt your pixel pup.
+            <br />
             <span className="bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-400 bg-clip-text text-transparent">
               Raise. Train. Bond.
             </span>
@@ -37,11 +40,19 @@ export default function Splash() {
           </div>
         </div>
 
-        <div className="rounded-3xl p-6 bg-white/5 border border-white/10">
-          {/* Feature cards */}
-          <Feature title="Needs & Mood" text="Feed, play, rest. Mood drives animations and behaviors." />
-          <Feature title="Responsive Controls" text="Keyboard, touch D-pad, or click-to-move. Smooth and accessible." />
-          <Feature title="Shop & Cosmetics" text="Earn coins, unlock skins, keep it tasteful." />
+        <div className="rounded-3xl p-6 bg-white/5 border border-white/10 z-content">
+          <Feature
+            title="Needs & Mood"
+            text="Feed, play, rest. Mood drives animations and behaviors."
+          />
+          <Feature
+            title="Responsive Controls"
+            text="Keyboard, touch D-pad, or click-to-move. Smooth and accessible."
+          />
+          <Feature
+            title="Shop & Cosmetics"
+            text="Earn coins, unlock skins, keep it tasteful."
+          />
         </div>
       </section>
     </main>
