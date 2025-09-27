@@ -1,47 +1,58 @@
-import React, { Suspense, lazy } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+// src/App.jsx
+import React, { useEffect, useState } from "react";
+import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { onAuthStateChanged } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+import { auth, db } from "@/lib/firebase";
+import { userAuthed, userLoggedOut } from "@/redux/userSlice";
+import { setDogName } from "@/redux/dogSlice";
 
-// Lazy route chunks (code-splitting)
-const Splash        = lazy(() => import("@/components/UI/Splash.jsx"));
-const GameScreen    = lazy(() => import("@/components/UI/GameScreen.jsx"));
-const PottyTrainer  = lazy(() => import("@/components/Features/PottyTrainer.jsx"));
-const TricksTrainer = lazy(() => import("@/components/Features/TricksTrainer.jsx"));
-const StatsPanel    = lazy(() => import("@/components/Features/StatsPanel.jsx"));
-const Shop          = lazy(() => import("@/components/Features/Shop.jsx"));
-const Breeding      = lazy(() => import("@/components/Features/Breeding.jsx"));
-const Accessories   = lazy(() => import("@/components/Features/Accessories.jsx"));
-const Login         = lazy(() => import("@/components/Auth/Login.jsx"));
-const Signup        = lazy(() => import("@/components/Auth/Signup.jsx"));
+import Splash from "@/components/UI/Splash.jsx";
+import Login from "@/components/Auth/Login.jsx";
+import Signup from "@/components/Auth/Signup.jsx";
+import NewPup from "@/components/Setup/NewPup.jsx";
+import GameScreen from "@/components/UI/GameScreen.jsx";
 
-// Optional: simple page shell/header could be added here if you want global nav
+function Protected({ children }) {
+  const token = auth.currentUser;
+  return token ? children : <Navigate to="/login" replace />;
+}
 
 export default function App() {
+  const [booted, setBooted] = useState(false);
+  const dispatch = useDispatch();
+  const nav = useNavigate();
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        dispatch(userLoggedOut());
+        setBooted(true);
+        return;
+      }
+      dispatch(userAuthed({ uid: user.uid, email: user.email, displayName: user.displayName }));
+      // Pull dog profile
+      const snap = await getDoc(doc(db, "dogs", user.uid));
+      if (snap.exists()) {
+        const { name } = snap.data();
+        if (name) dispatch(setDogName(name));
+      }
+      setBooted(true);
+    });
+    return () => unsub();
+  }, [dispatch]);
+
+  if (!booted) return <div className="p-6 text-center">Booting…</div>;
+
   return (
-    <Suspense fallback={<div className="p-8 text-center">Loading…</div>}>
-      <Routes>
-        {/* Landing */}
-        <Route path="/" element={<Splash />} />
-
-        {/* Core game */}
-        <Route path="/game" element={<GameScreen />} />
-
-        {/* Trainers */}
-        <Route path="/train/potty" element={<PottyTrainer />} />
-        <Route path="/train/tricks" element={<TricksTrainer />} />
-
-        {/* Meta / economy */}
-        <Route path="/stats" element={<StatsPanel />} />
-        <Route path="/shop" element={<Shop />} />
-        <Route path="/accessories" element={<Accessories />} />
-        <Route path="/breed" element={<Breeding />} />
-
-        {/* Auth */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-
-        {/* Fallback */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </Suspense>
+    <Routes>
+      <Route path="/" element={<Splash />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
+      <Route path="/setup" element={<Protected><NewPup /></Protected>} />
+      <Route path="/game" element={<Protected><GameScreen /></Protected>} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
