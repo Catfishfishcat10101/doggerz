@@ -1,276 +1,132 @@
-/* src/index.css */
+/* Tailwind hooks */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* -----------------------------------------------------------------------------
-   Design Tokens (CSS variables) — light & dark
-   Tailwind will handle most styling; these variables make custom CSS consistent.
+   Design tokens (light/dark)
 ----------------------------------------------------------------------------- */
 :root {
-  --bg-0: #f8fafc;   /* slate-50-ish */
+  --bg-0: #f8fafc;
   --bg-1: #ffffff;
   --bg-elev: #ffffff;
-  --tx-0: #0f172a;   /* slate-900 */
-  --tx-1: #334155;   /* slate-600 */
-  --brand: #0ea5e9;  /* sky-500 */
-  --brand-strong: #0284c7; /* sky-600 */
+  --tx-0: #0f172a;
+  --tx-1: #334155;
+  --brand: #0ea5e9;
+  --brand-strong: #0284c7;
   --ring: 0 0% 100%;
   --ring-shadow: 0 0% 0%;
   --card-border: rgba(2, 6, 23, .06);
   --muted: rgba(2, 6, 23, .06);
-  --success: #10b981;
-  --warn: #f59e0b;
-  --danger: #ef4444;
 }
-
 :root.dark,
 :root[data-theme="dark"],
 [data-theme="dark"] {
-  --bg-0: #0b1220;   /* deep navy */
-  --bg-1: #0f172a;   /* slate-900 */
+  --bg-0: #0b1220;
+  --bg-1: #0f172a;
   --bg-elev: #0b1220;
-  --tx-0: #e6edf3;   /* github-ish */
+  --tx-0: #e6edf3;
   --tx-1: #9aa5b1;
-  --brand: #22d3ee;  /* cyan-400 */
-  --brand-strong: #06b6d4; /* cyan-500 */
+  --brand: #22d3ee;
+  --brand-strong: #06b6d4;
   --ring: 210 40% 96%;
   --ring-shadow: 210 40% 2%;
-  --card-border: rgba(255, 255, 255, .08);
-  --muted: rgba(255, 255, 255, .06);
+  --card-border: rgba(255,255,255,.08);
+  --muted: rgba(255,255,255,.06);
 }
 
 /* -----------------------------------------------------------------------------
-   Base resets & page chrome
+   Base + page chrome
 ----------------------------------------------------------------------------- */
 @layer base {
-  html, body, #root {
-    height: 100%;
-  }
-
-  html {
-    color-scheme: light dark;
-  }
-
+  html, body, #root { height: 100%; }
+  html { color-scheme: light dark; }
   body {
     @apply antialiased;
     background: var(--bg-0);
     color: var(--tx-0);
   }
-
   ::selection {
     background: color-mix(in oklab, var(--brand), transparent 70%);
   }
-
-  /* Smooth fonts for pixel-art without blurring UI text */
   canvas, .pixel-font {
     -webkit-font-smoothing: none;
     -moz-osx-font-smoothing: auto;
     image-rendering: pixelated;
   }
-
-  /* Scrollbars — subtle and theme-aware */
-  * {
-    scrollbar-width: thin;
-    scrollbar-color: color-mix(in oklab, var(--tx-1), transparent 70%) transparent;
-  }
-  *::-webkit-scrollbar {
-    height: 10px;
-    width: 10px;
-  }
+  * { scrollbar-width: thin; scrollbar-color: color-mix(in oklab, var(--tx-1), transparent 70%) transparent; }
+  *::-webkit-scrollbar { width: 10px; height: 10px; }
   *::-webkit-scrollbar-thumb {
     background: color-mix(in oklab, var(--tx-1), transparent 70%);
-    border-radius: 999px;
-    border: 2px solid transparent;
-    background-clip: content-box;
+    border-radius: 999px; border: 2px solid transparent; background-clip: content-box;
   }
-  *::-webkit-scrollbar-track {
-    background: transparent;
-  }
+  *::-webkit-scrollbar-track { background: transparent; }
 }
 
 /* -----------------------------------------------------------------------------
-   Components: cards, buttons, inputs, toasts, tooltips (Tailwind-friendly)
+   Components (TW-friendly)
 ----------------------------------------------------------------------------- */
 @layer components {
-  /* Elevated container */
   .card {
     @apply rounded-2xl border bg-white shadow;
     border-color: var(--card-border);
     background: var(--bg-elev);
   }
-
   .card-muted {
     @apply rounded-2xl border shadow-inner;
     border-color: var(--muted);
-    background:
-      linear-gradient(180deg, color-mix(in oklab, var(--bg-elev), transparent 0%), color-mix(in oklab, var(--bg-elev), transparent 0%));
+    background: linear-gradient(180deg, color-mix(in oklab, var(--bg-elev), transparent 0%), color-mix(in oklab, var(--bg-elev), transparent 0%));
     backdrop-filter: blur(6px);
   }
-
-  /* Buttons */
   .btn {
     @apply inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2.5 text-sm font-medium shadow transition active:scale-95;
     @apply focus:outline-none focus-visible:ring-2;
     box-shadow: 0 1px 0 rgba(2,6,23,0.03), 0 1px 2px rgba(2,6,23,0.08);
   }
-  .btn-primary {
-    @apply text-white;
-    background: var(--brand);
-  }
+  .btn-primary { @apply text-white; background: var(--brand); }
   .btn-primary:hover { background: var(--brand-strong); }
-  .btn-ghost {
-    @apply bg-transparent text-slate-700 dark:text-slate-100 border border-transparent;
-  }
-  .btn-ghost:hover {
-    border-color: var(--muted);
-    background: color-mix(in oklab, var(--muted), transparent 50%);
-  }
-  .icon-btn {
-    @apply inline-grid place-items-center rounded-xl p-2 hover:bg-slate-100 dark:hover:bg-slate-800;
-  }
-
-  /* Inputs */
+  .btn-ghost { @apply bg-transparent text-slate-700 dark:text-slate-100 border border-transparent; }
+  .btn-ghost:hover { border-color: var(--muted); background: color-mix(in oklab, var(--muted), transparent 50%); }
+  .icon-btn { @apply inline-grid place-items-center rounded-xl p-2 hover:bg-slate-100 dark:hover:bg-slate-800; }
   .input, .select, .textarea {
     @apply w-full rounded-xl border bg-white dark:bg-slate-900 px-3 py-2 text-sm outline-none transition;
     border-color: var(--card-border);
   }
-  .input:focus, .select:focus, .textarea:focus {
-    @apply ring-2 ring-sky-400;
-  }
-
-  /* Toast */
-  .toast {
-    @apply rounded-2xl px-3 py-2 text-sm shadow-lg border;
-    border-color: var(--card-border);
-    background: var(--bg-elev);
-  }
-  .toast-success { @apply text-emerald-900 dark:text-emerald-200; border-color: rgba(16,185,129,.2); }
-  .toast-warn    { @apply text-amber-900  dark:text-amber-200;   border-color: rgba(245,158,11,.25); }
-  .toast-danger  { @apply text-red-900    dark:text-red-200;     border-color: rgba(239,68,68,.25); }
-
-  /* Tooltip */
-  .tooltip {
-    @apply rounded-md px-2 py-1 text-xs shadow border;
-    border-color: var(--card-border);
-    background: var(--bg-elev);
-  }
-
-  /* Modal Backdrop */
-  .backdrop {
-    @apply fixed inset-0 bg-black/60;
-    backdrop-filter: saturate(90%) blur(6px);
-  }
-
-  /* Focus ring utility class for non-TW elements (e.g., canvas layers) */
+  .input:focus, .select:focus, .textarea:focus { @apply ring-2 ring-sky-400; }
+  .toast { @apply rounded-2xl px-3 py-2 text-sm shadow-lg border; border-color: var(--card-border); background: var(--bg-elev); }
+  .tooltip { @apply rounded-md px-2 py-1 text-xs shadow border; border-color: var(--card-border); background: var(--bg-elev); }
+  .backdrop { @apply fixed inset-0 bg-black/60; backdrop-filter: saturate(90%) blur(6px); }
   .focus-ring {
     outline: none;
-    box-shadow:
-      0 0 0 2px hsl(var(--ring) / .9),
-      0 0 0 4px hsl(var(--ring-shadow) / .25);
+    box-shadow: 0 0 0 2px hsl(var(--ring) / .9), 0 0 0 4px hsl(var(--ring-shadow) / .25);
   }
 }
 
 /* -----------------------------------------------------------------------------
-   Utilities specific to your game feel
+   Game utilities + small animations
 ----------------------------------------------------------------------------- */
 @layer utilities {
-  /* Crisp pixel art & sprite sheets */
-  .pixelated {
-    image-rendering: pixelated;
-    image-rendering: crisp-edges;
-    /* Safari fallback */
-    image-rendering: -webkit-optimize-contrast;
-  }
+  .pixelated { image-rendering: pixelated; image-rendering: crisp-edges; image-rendering: -webkit-optimize-contrast; }
+  .sprite { @apply block pixelated; transform: translateZ(0); will-change: transform; }
+  .sprite-shadow { filter: drop-shadow(0 2px 0 rgba(0,0,0,.15)) drop-shadow(0 6px 8px rgba(2,6,23,.18)); }
+  .soft-shadow { box-shadow: 0 1px 0 rgba(2,6,23,0.03), 0 2px 6px rgba(2,6,23,0.06), 0 8px 24px rgba(2,6,23,0.06); }
+  .z-stage { z-index: 10; } .z-hud { z-index: 20; } .z-portal { z-index: 40; } .z-top { z-index: 50; }
+  .text-pop { text-shadow: 0 1px 0 rgba(255,255,255,.7), 0 2px 4px rgba(2,6,23,.12); }
 
-  .sprite {
-    @apply block pixelated;
-    image-rendering: pixelated;
-    transform: translateZ(0); /* kick to its own layer */
-    will-change: transform;
-  }
+  @keyframes dog-bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+  @keyframes shadow-breathe { 0%,100% { transform: scale(1); opacity: .25; } 50% { transform: scale(1.06); opacity: .35; } }
+  .dz-bob { animation: dog-bob 2.4s ease-in-out infinite; }
+  .dz-shadow { width: 58%; height: 14%; background: radial-gradient(ellipse at center, rgba(0,0,0,.35), rgba(0,0,0,0)); filter: blur(2px); animation: shadow-breathe 2.4s ease-in-out infinite; }
+  .dz-glow { box-shadow: 0 0 0 1px rgba(148,163,184,.15), 0 10px 40px rgba(0,0,0,.5); }
 
-  .sprite-shadow {
-    filter: drop-shadow(0 2px 0 rgba(0,0,0,.15)) drop-shadow(0 6px 8px rgba(2,6,23,.18));
-  }
+  @keyframes float-soft { from { transform: translateY(0); } to { transform: translateY(-4px); } }
+  .float-soft { animation: float-soft 2.2s ease-in-out infinite alternate; }
 
-  /* Subtle depth without blur-glare */
-  .soft-shadow {
-    box-shadow:
-      0 1px 0 rgba(2,6,23,0.03),
-      0 2px 6px rgba(2,6,23,0.06),
-      0 8px 24px rgba(2,6,23,0.06);
-  }
-
-  /* Layering helpers for canvas + UI */
-  .z-stage   { z-index: 10; }
-  .z-hud     { z-index: 20; }
-  .z-portal  { z-index: 40; }
-  .z-top     { z-index: 50; }
-
-  /* Text shadow for light backgrounds (avoid overuse) */
-  .text-pop {
-    text-shadow:
-      0 1px 0 rgba(255,255,255,.7),
-      0 2px 4px rgba(2,6,23,.12);
-  }
-
-  /* Glassy panel */
-  .glass {
-    background: color-mix(in oklab, var(--bg-elev), transparent 15%);
-    backdrop-filter: blur(8px) saturate(110%);
-    border: 1px solid var(--card-border);
-  }
-
-  /* Motion presets */
-  @keyframes float-soft {
-    from { transform: translateY(0px); }
-    to   { transform: translateY(-4px); }
-  }
-  .float-soft {
-    animation: float-soft 2.2s ease-in-out infinite alternate;
-  }
-
-  @keyframes shimmer {
-    0%   { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
-  }
-  .shimmer {
-    background: linear-gradient(90deg,
-      transparent 0%,
-      rgba(255,255,255,.24) 50%,
-      transparent 100%);
-    background-size: 200% 100%;
-    animation: shimmer 1.25s linear infinite;
-  }
-
-  /* Pop-in micro anim (used by your coin flash too) */
-  @keyframes pop {
-    0%   { transform: translateY(6px) scale(.85); opacity: 0; }
-    50%  { transform: translateY(0)   scale(1.05); opacity: 1; }
-    100% { transform: translateY(-3px) scale(1);   opacity: 0; }
-  }
-  .pop-in { animation: pop 500ms ease; }
-
-  /* Respect reduced motion */
   @media (prefers-reduced-motion: reduce) {
-    .float-soft, .shimmer, .pop-in { animation: none !important; }
+    .dz-bob, .dz-shadow, .float-soft { animation: none !important; }
   }
 
-  /* Safe-area aware paddings (mobile PWA) */
-  .px-safe {
-    padding-left: max(1rem, env(safe-area-inset-left));
-    padding-right: max(1rem, env(safe-area-inset-right));
-  }
-  .py-safe {
-    padding-top: max(1rem, env(safe-area-inset-top));
-    padding-bottom: max(1rem, env(safe-area-inset-bottom));
-  }
+  .px-safe { padding-left: max(1rem, env(safe-area-inset-left)); padding-right: max(1rem, env(safe-area-inset-right)); }
+  .py-safe { padding-top: max(1rem, env(safe-area-inset-top)); padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
 }
-
-/* -----------------------------------------------------------------------------
-   Debug helpers (toggle via dev-only class names to avoid purge issues)
------------------------------------------------------------------------------ */
-.dev-outline * {
-  outline: 1px dashed color-mix(in oklab, var(--tx-1), transparent 50%);
-}
+.dev-outline * { outline: 1px dashed color-mix(in oklab, var(--tx-1), transparent 50%); }
