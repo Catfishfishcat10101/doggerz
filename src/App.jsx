@@ -1,25 +1,23 @@
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
+import NavBar from "@/components/UI/NavBar.jsx";
 
-import NavBar from "./components/UI/NavBar.jsx";
-import Splash from "./components/UI/Splash.jsx";
-import GameScreen from "./components/UI/GameScreen.jsx"; // keep your version
-import Shop from "./components/Features/Shop.jsx";       // placeholder ok
-import Login from "./components/Auth/Login.jsx";
-import Signup from "./components/Auth/Signup.jsx";
+const Splash     = lazy(() => import("@/components/UI/Splash.jsx"));
+const GameScreen = lazy(() => import("@/components/UI/GameScreen.jsx")); // keep your file if it exists
+const Shop       = lazy(() => import("@/components/Features/Shop.jsx")); // optional route
 
 export default function App() {
   return (
-    <div className="min-h-dvh flex flex-col bg-neutral-950 text-white">
+    <div className="min-h-dvh flex flex-col bg-gradient-to-b from-slate-950 to-slate-900 text-slate-100">
       <NavBar />
-      <Routes>
-        <Route path="/" element={<Splash />} />
-        <Route path="/game" element={<GameScreen />} />
-        <Route path="/shop" element={<Shop />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <Suspense fallback={<div className="p-6 opacity-70">Loading…</div>}>
+        <Routes>
+          <Route path="/" element={<Splash />} />
+          <Route path="/game" element={<GameScreen />} />
+          <Route path="/shop" element={<Shop />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
     </div>
   );
 }
