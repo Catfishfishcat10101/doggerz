@@ -1,18 +1,17 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { BrowserRouter, HashRouter } from "react-router-dom";
 import { Provider } from "react-redux";
+import { BrowserRouter, HashRouter } from "react-router-dom";
 import App from "./App.jsx";
 import store from "./redux/store.js";
+import "./index.css";
 
-// Use BrowserRouter in dev, HashRouter in built preview to avoid history/base issues
+// Use BrowserRouter in dev; HashRouter for built preview to avoid base-path/history weirdness.
 const Router = import.meta.env.DEV ? BrowserRouter : HashRouter;
 
-// Do NOT register a service worker during local preview; stale caches cause “blank screen”.
-const rootEl = document.getElementById("root");
-ReactDOM.createRoot(rootEl).render(
+ReactDOM.createRoot(document.getElementById("root")).render(
   <Provider store={store}>
-    <Router>
+    <Router basename="/">
       <App />
     </Router>
   </Provider>
