@@ -1,49 +1,25 @@
-import React, { useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import useDogEngine from "@/hooks/useDogEngine";
-import Dog from "@/components/Features/Dog.jsx";
-import Training from "@/components/Features/Training.jsx";
-import { selectDog, tickRealTime } from "@/redux/dogSlice";
-
-// Optional style imports — create the files or remove these lines
-// import "@/styles/GameScreen.css";
+import React from "react";
+import useGameTick from "@/hooks/useGameTick";
+import NeedsHUD from "@/components/Features/NeedsHUD.jsx";
+import ActionsBar from "@/components/Features/ActionsBar.jsx";
+import DailyQuests from "@/components/Features/DailyQuests.jsx";
 
 export default function GameScreen() {
-  useDogEngine();
-  const d = useSelector(selectDog);
-  const dispatch = useDispatch();
-
-  useEffect(() => {
-    const onVis = () => {
-      if (document.visibilityState === "visible") dispatch(tickRealTime(Date.now()));
-    };
-    document.addEventListener("visibilitychange", onVis);
-    return () => document.removeEventListener("visibilitychange", onVis);
-  }, [dispatch]);
-
+  useGameTick();
   return (
-    <div className="relative min-h-[calc(100dvh-64px)] overflow-hidden bg-gradient-to-b from-slate-900 via-slate-950 to-black text-slate-100">
-      <div className="absolute bottom-0 left-0 right-0 h-[22%] bg-gradient-to-t from-emerald-900/60 via-emerald-800/20 to-transparent" />
-      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-4 pt-8 pb-24 lg:grid-cols-5">
-        <div className="relative col-span-3 rounded-2xl border border-white/10 bg-gradient-to-b from-sky-900/20 to-sky-950/30 p-2 backdrop-blur overflow-hidden">
-          <div className="absolute top-[28%] left-0 right-0 h-px bg-white/10" />
-          <Dog worldW={640} worldH={360} />
+    <div className="mx-auto max-w-5xl p-6 grid md:grid-cols-[320px_1fr] gap-6">
+      <div className="space-y-6">
+        <NeedsHUD />
+        <DailyQuests />
+      </div>
+
+      <div className="rounded-2xl bg-gradient-to-b from-slate-800 to-slate-900 border border-white/10 min-h-[420px] p-4 flex flex-col justify-between">
+        {/* TODO: plug your DogSprite here, for now a placeholder arena */}
+        <div className="flex-1 grid place-items-center">
+          <div className="size-24 bg-white/10 rounded-full grid place-items-center text-5xl select-none">🐶</div>
         </div>
-        <div className="col-span-2 space-y-4">
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-            <div className="mb-1 text-sm text-slate-300">Name</div>
-            <div className="text-2xl font-bold">{d.name ?? "Your Pup"}</div>
-            <div className="mt-2 text-sm text-slate-300">
-              Stage: <span className="font-semibold text-slate-100">{d.stage}</span>
-            </div>
-            <div className="text-sm text-slate-300">
-              Age: <span className="font-semibold text-slate-100">{Math.floor(d.ageDays)} days</span>
-            </div>
-            <div className="text-sm text-slate-300">
-              Level: <span className="font-semibold text-slate-100">{d.level}</span>
-            </div>
-          </div>
-          <Training />
+        <div className="pt-4 border-t border-white/10">
+          <ActionsBar />
         </div>
       </div>
     </div>
