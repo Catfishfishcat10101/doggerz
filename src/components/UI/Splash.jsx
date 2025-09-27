@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+<<<<<<< Updated upstream
 import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { auth, googleProvider } from "@/lib/firebase.js";
@@ -118,6 +119,144 @@ export default function Splash() {
             <button onClick={() => nav("/game")} className="btn-ghost">Tricks & Training</button>
             <button onClick={() => nav("/shop")} className="btn-ghost">Accessories</button>
             <button onClick={() => nav("/game")} className="btn-ghost">Installable PWA</button>
+=======
+import { useNavigate, Link } from "react-router-dom";
+import "./Splash.css"; // background grid + sparkles
+
+export default function Splash() {
+  const nav = useNavigate();
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState(null);
+
+  function handlePlayNow() {
+    nav("/game");
+  }
+
+  async function handleGoogleLogin() {
+    setBusy(true);
+    setMsg(null);
+    try {
+      // TODO: wire real Firebase auth:
+      // const provider = new GoogleAuthProvider();
+      // await signInWithPopup(auth, provider);
+      // nav("/game");
+      setMsg("Google Sign-In not wired yet. Configure Firebase and uncomment the code.");
+    } catch (e) {
+      setMsg(e.message || "Login failed.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function handleEmailSignup(e) {
+    e.preventDefault();
+    setMsg("Email/password flow not wired yet. Implement in /components/Auth.");
+  }
+
+  return (
+    <main className="relative z-40 min-h-[calc(100dvh-3.5rem)] overflow-hidden">
+      {/* Decorative layers behind everything and click-through only */}
+      <div className="splash-grid pointer-events-none" aria-hidden="true" />
+      <div className="splash-sparkles pointer-events-none" aria-hidden="true" />
+
+      <section className="relative z-50 mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-12 md:py-16">
+        <div className="grid md:grid-cols-2 gap-8 items-center">
+          {/* Left column */}
+          <div className="space-y-6">
+            <h1 className="text-4xl md:text-6xl font-black leading-tight tracking-tight text-white">
+              Adopt your pixel pup.
+              <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-br from-sky-400 to-blue-500">
+                Raise. Train. Bond.
+              </span>
+            </h1>
+
+            <p className="text-white/80 max-w-prose">
+              One dog per user, offline-ready, and your choices shape behavior.
+              Installable as a PWA when available. No pay-to-win nonsense.
+            </p>
+
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={handlePlayNow}
+                disabled={busy}
+                className="rounded-xl px-5 py-3 font-semibold shadow bg-gradient-to-br from-fuchsia-500 to-blue-500 text-white hover:opacity-95 focus:outline-none focus:ring-2 focus:ring-offset-2"
+              >
+                Play Now
+              </button>
+
+              <button
+                type="button"
+                onClick={handleGoogleLogin}
+                disabled={busy}
+                aria-busy={busy}
+                className="rounded-xl px-5 py-3 font-semibold bg-white/10 text-white hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-offset-2"
+              >
+                Sign in with Google
+              </button>
+
+              <Link
+                to="/shop"
+                className="rounded-xl px-5 py-3 font-semibold bg-white text-zinc-900 hover:bg-zinc-100 focus:outline-none focus:ring-2 focus:ring-offset-2"
+              >
+                Shop
+              </Link>
+            </div>
+
+            {msg && (
+              <div className="rounded-lg border border-white/20 bg-white/5 p-3 text-white/90">
+                {msg}
+              </div>
+            )}
+
+            <form
+              onSubmit={handleEmailSignup}
+              className="mt-2 grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2"
+            >
+              <input
+                type="email"
+                name="email"
+                required
+                placeholder="Email address"
+                className="rounded-lg bg-zinc-900/60 border border-white/10 px-4 py-3 text-white placeholder:text-white/40"
+              />
+              <button
+                type="submit"
+                className="rounded-lg bg-white/10 text-white px-4 py-3 hover:bg-white/15"
+              >
+                Create Account
+              </button>
+            </form>
+
+            <ul className="mt-4 grid grid-cols-2 gap-2 text-xs text-white/70">
+              <li>React 18</li>
+              <li>Redux Toolkit</li>
+              <li>Vite + Tailwind</li>
+              <li>Firebase Auth + Firestore</li>
+              <li>Offline PWA</li>
+              <li>Responsive</li>
+            </ul>
+          </div>
+
+          {/* Right column */}
+          <div className="relative rounded-2xl p-1 bg-gradient-to-br from-amber-400/40 to-rose-500/40">
+            <div className="rounded-xl bg-zinc-900/70 border border-white/10 p-6">
+              <div className="aspect-[4/3] rounded-lg border border-white/10 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,.08),rgba(0,0,0,.0))] flex items-center justify-center">
+                <div className="text-white/90 text-center">
+                  <div className="text-6xl select-none">🐶</div>
+                  <div className="font-semibold mt-2">Your Dog is Waiting…</div>
+                  <div className="text-sm text-white/60">Idle • Curious • Ready to Train</div>
+                </div>
+              </div>
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <Badge>Needs System</Badge>
+                <Badge>Tricks & Training</Badge>
+                <Badge>Accessories</Badge>
+                <Badge>Installable PWA</Badge>
+              </div>
+            </div>
+>>>>>>> Stashed changes
           </div>
         </div>
       </section>
@@ -126,4 +265,16 @@ export default function Splash() {
       <InstallPrompt />
     </main>
   );
+<<<<<<< Updated upstream
 }
+=======
+}
+
+function Badge({ children }) {
+  return (
+    <div className="text-xs rounded-lg px-3 py-2 bg-white/5 border border-white/10 text-white/80">
+      {children}
+    </div>
+  );
+}
+>>>>>>> Stashed changes

@@ -2,6 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
+<<<<<<< Updated upstream
 /* Design tokens */
 :root {
   --ring: 0 0% 100% / .2;
@@ -26,3 +27,35 @@
 
 /* Make the app fill the viewport cleanly */
 html, body, #root { height: 100%; }
+=======
+/* Base */
+@layer base {
+  html, body, #root { height: 100%; }
+  body {
+    @apply bg-zinc-950 text-zinc-100 antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  ::selection { background: rgba(59,130,246,.25); } /* blue-500/25 */
+}
+
+/* Interaction guardrails */
+button, a, [role="button"], input, select, textarea {
+  pointer-events: auto; /* if any global reset broke clicks, this fixes it */
+}
+
+/* Visible focus on dark UIs when ring not used */
+:focus-visible { outline: 2px solid rgba(255,255,255,.6); outline-offset: 2px; }
+
+/* Smooth scroll */
+html { scroll-behavior: smooth; }
+
+/* Handy utilities */
+@layer utilities {
+  .surface { @apply rounded-xl border border-white/10 bg-white/5; }
+  .btn { @apply inline-flex items-center justify-center rounded-xl px-4 py-2 font-semibold transition
+                 focus:outline-none focus:ring-2 focus:ring-offset-2; }
+  .btn-primary { @apply btn text-white bg-gradient-to-br from-fuchsia-500 to-blue-500 hover:opacity-95; }
+  .btn-ghost   { @apply btn text-white bg-white/10 hover:bg-white/15; }
+  .btn-solid   { @apply btn bg-white text-zinc-900 hover:bg-zinc-100; }
+}
+>>>>>>> Stashed changes

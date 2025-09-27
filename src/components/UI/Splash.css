@@ -4,6 +4,7 @@
   min-height: 100vh;
   overflow: hidden;
   background: radial-gradient(80% 70% at 50% 0%, #ffe6ee 0%, #fde68a 40%, #ffd6a5 100%);
+  pointer-events: auto; /* content stays clickable */
 }
 
 /* Tuning knobs */
@@ -21,39 +22,37 @@
   position: absolute;
   left: 50%;
   bottom: 25%;
-  transform: translateX(-50%);               /* baseline position */
+  transform: translateX(-50%);
   width: calc(var(--sprite-w) * var(--scale));
   height: calc(var(--sprite-h) * var(--scale));
+  z-index: 10;               /* above background, below UI */
+  pointer-events: none;      /* never block clicks */
 
-  /* Crisp pixels across engines */
+  /* crisp pixels */
   image-rendering: -moz-crisp-edges;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
 
   /* If your PNG is in /public, keep this path.
-     If it's under src/assets, move it to /public/sprites/dog.png or set via inline style in JSX. */
+     If it's under src/assets, move it to /public/sprites/dog.png
+     or set via inline style in JSX. */
   background-image: url("/sprites/dog.png");
   background-repeat: no-repeat;
-  /* Sheet is frames laid out horizontally: width = frameW * frames */
   background-size: calc(var(--sprite-w) * var(--frames)) var(--sprite-h);
   background-position: 0 0;
 
-  /* Separate transforms from background animation to reduce tearing */
   will-change: transform, background-position;
   backface-visibility: hidden;
   transform-origin: 50% 100%;
 
-  /* Compose two animations: jump path + frame stepping */
   animation:
     dog-jump var(--jump-dur) ease-in-out infinite,
     dog-run  var(--run-dur)  steps(var(--frames)) infinite;
 }
 
-/* Smaller / larger variants (optional) */
 .dog-jumper--small { --scale: 0.75; --jump-y: 28px; --run-dur: 0.7s; }
 .dog-jumper--big   { --scale: 2;    --jump-y: 56px; --run-dur: 0.9s; }
 
-/* Pause on hover/focus if you want */
 .dog-jumper:is(:hover, :focus) { animation-play-state: paused; outline: none; }
 
 @keyframes dog-jump {
@@ -62,13 +61,10 @@
 }
 
 @keyframes dog-run {
-  from { background-position:    0 0; }
+  from { background-position: 0 0; }
   to   { background-position: calc(var(--sprite-w) * var(--frames) * -1) 0; }
 }
 
-/* Motion hygiene */
 @media (prefers-reduced-motion: reduce) {
-  .dog-jumper {
-    animation: none; /* freeze on idle frame */
-  }
+  .dog-jumper { animation: none; }
 }
