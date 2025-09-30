@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <<<<<<< Updated upstream
 import React, { Suspense, lazy } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
@@ -160,3 +161,61 @@ export default function App() {
   );
 >>>>>>> Stashed changes
 }
+=======
+// src/App.jsx
+import React, { Suspense, lazy } from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import NavBar from "@/components/UI/NavBar.jsx";
+import { selectUser } from "@/redux/userSlice";
+
+// Lazy routes kept lean to reduce time-to-interactive
+const Splash     = lazy(() => import("@/components/UI/Splash.jsx"));
+const GameScreen = lazy(() => import("@/components/UI/GameScreen.jsx"));
+const Shop       = lazy(() => import("@/components/Features/Shop.jsx"));
+const Login      = lazy(() => import("@/components/Auth/Login.jsx"));
+const Signup     = lazy(() => import("@/components/Auth/Signup.jsx"));
+
+// Simple auth gate: redirects to /login if no user in store
+function RequireAuth({ children }) {
+  const user = useSelector(selectUser);
+  return user ? children : <Navigate to="/login" replace />;
+}
+
+export default function App() {
+  return (
+    <div className="min-h-dvh flex flex-col">
+      <NavBar />
+      <Suspense fallback={<div className="p-6 opacity-70">Loading…</div>}>
+        <Routes>
+          {/* Public */}
+          <Route path="/" element={<Splash />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+
+          {/* Authenticated only */}
+          <Route
+            path="/game"
+            element={
+              <RequireAuth>
+                <GameScreen />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/shop"
+            element={
+              <RequireAuth>
+                <Shop />
+              </RequireAuth>
+            }
+          />
+
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
+    </div>
+  );
+}
+>>>>>>> 851b2172 (fix: resolve conflict and harden router in App.jsx)
