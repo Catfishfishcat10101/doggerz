@@ -1,20 +1,12 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
-import { Provider } from "react-redux";
 import { BrowserRouter } from "react-router-dom";
-import store from "@/redux/store.js";
-import { attachAuthListener } from "@/redux/bootAuth.js";
+import { Provider } from "react-redux";
 import App from "./App.jsx";
+import store from "./redux/store.js";
+import "./index.css";
 
-// global styles (tailwind is optional; omit if you don’t use it)
-import "./styles.css";
-
-attachAuthListener(store); // safe even if not signed in
-
-const el = document.getElementById("root");
-const root = createRoot(el);
-
-root.render(
+createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <Provider store={store}>
       <BrowserRouter>
