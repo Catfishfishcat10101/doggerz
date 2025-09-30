@@ -3,10 +3,6 @@ import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { dogPatched, selectDogName } from "@/redux/dogSlice.js";
 
-/**
- * Lightweight modal for first-run naming or renaming.
- * Expects parent to show/hide via `open` prop; calls `onClose()` after submit.
- */
 export default function NamePupModal({ open = false, onClose = () => {} }) {
   const dispatch = useDispatch();
   const current = useSelector(selectDogName);
@@ -69,4 +65,3 @@ export default function NamePupModal({ open = false, onClose = () => {} }) {
     </div>
   );
 }
-// src/redux/dogSlice.js

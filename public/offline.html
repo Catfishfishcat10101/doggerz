@@ -4,17 +4,22 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Offline • Doggerz</title>
+    <title>Doggerz — Offline</title>
     <style>
-      body { margin:0; font-family: system-ui, sans-serif; background:#0f172a; color:#e5e7eb; display:grid; place-items:center; min-height:100dvh; }
-      .card { padding:1.25rem 1rem; border:1px solid #334155; border-radius:12px; max-width:32rem; text-align:center }
-      a { color:#93c5fd; text-decoration: none; }
+      html,body{height:100%}body{margin:0;display:grid;place-items:center;font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;background:#0f172a;color:#e2e8f0}
+      .card{max-width:28rem;padding:1.25rem 1.5rem;border:1px solid #334155;border-radius:14px;background:#111827}
+      h1{margin:0 0 .5rem;font-weight:700;font-size:1.25rem}
+      p{margin:.25rem 0 .25rem;opacity:.9}
+      .hint{opacity:.7;font-size:.95rem}
+      .btn{display:inline-block;margin-top:.75rem;padding:.5rem .9rem;border-radius:10px;border:1px solid #334155;text-decoration:none;color:#e2e8f0}
     </style>
   </head>
   <body>
     <div class="card">
       <h1>You're offline</h1>
-      <p>We’ll auto-retry when you’re back online. Try <a href="/">reloading</a>.</p>
+      <p>Doggerz can’t reach the network right now.</p>
+      <p class="hint">We’ll auto-retry when you’re back online.</p>
+      <a class="btn" href="/">Reload</a>
     </div>
   </body>
 </html>
