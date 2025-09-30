@@ -1,0 +1,63 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Require auth for everything (optionally require verified email)
+    function isAuthed()      { return request.auth != null; }
+    function isVerified()    { return request.auth.token.email_verified == true; }
+    function isOwner(uid)    { return isAuthed() && request.auth.uid == uid; }
+    function nowMs()         { return request.time.toMillis(); }
+
+    // Public read-only config (optional)
+    match /config/{doc} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // User profile doc: /profiles/{uid}
+    match /profiles/{uid} {
+      allow read: if isOwner(uid);
+      allow create: if isOwner(uid);
+      allow update: if isOwner(uid);
+      allow delete: if false;
+
+      // Schema-ish guards (optional but recommended)
+      allow write: if request.resource.data.keys().hasOnly([
+        'displayName', 'createdAt', 'updatedAt', 'pupName', 'photoURL'
+      ])
+      && request.resource.data.createdAt is timestamp
+      && request.resource.data.updatedAt is timestamp;
+    }
+
+    // ONE dog per user: /dogs/{uid}
+    match /dogs/{uid} {
+      allow read:   if isOwner(uid);
+      // Create allowed only if doc doesn't exist yet
+      allow create: if isOwner(uid)
+                    && !exists(/databases/$(database)/documents/dogs/$(uid));
+      // Updates allowed only by owner; prevent ownerId changes
+      allow update: if isOwner(uid)
+                    && request.resource.data.ownerId == uid
+                    && resource.data.ownerId == uid;
+      allow delete: if false;
+
+      // Require email verification to write (toggle off if you don't want this)
+      allow write: if isVerified();
+
+      // Optional shape constraints (stats capped to sane ranges)
+      allow write: if
+        (request.resource.data.name is string)
+        && (request.resource.data.ownerId == uid)
+        && (request.resource.data.stats.hunger >= 0 && request.resource.data.stats.hunger <= 100)
+        && (request.resource.data.stats.energy >= 0 && request.resource.data.stats.energy <= 100)
+        && (request.resource.data.stats.cleanliness >= 0 && request.resource.data.stats.cleanliness <= 100)
+        && (request.resource.data.updatedAt is timestamp)
+        && (request.resource.data.createdAt is timestamp);
+    }
+
+    // Optional: inventories tied to the same UID
+    match /inventories/{uid} {
+      allow read, write: if isOwner(uid) && isVerified();
+    }
+  }
+}

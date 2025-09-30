@@ -1,29 +1,27 @@
-// src/hooks/useGameTick.js
-import { useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { tick, levelCheck, selectDog } from "@/redux/dogSlice";
-import { saveSnapshot } from "@/lib/persistence";
-import { rewardPassive } from "@/redux/economySlice";
+import { useEffect, useRef } from "react";
+import { useDispatch } from "react-redux";
+import { tick, levelCheck } from "@/redux/dogSlice";
 
-export default function useGameTick() {
+export default function useGameTick(enabled = true) {
   const dispatch = useDispatch();
-  const dog = useSelector(selectDog);
+  const raf = useRef(0);
 
   useEffect(() => {
-    const t = setInterval(() => {
-      dispatch(tick());
+    if (!enabled) return;
+    let running = true;
+    const loop = (t) => {
+      if (!running) return;
+      dispatch(tick({ now: t }));
       dispatch(levelCheck());
-      // tiny passive coin drip when mood is healthy
-      if (dog.mood === "happy" || dog.mood === "ecstatic") {
-        dispatch(rewardPassive(1));
-      }
-    }, 1000);
+      raf.current = requestAnimationFrame(loop);
+    };
+    raf.current = requestAnimationFrame(loop);
 
-    const p = setInterval(() => {
-      saveSnapshot(dog).catch(() => {});
-    }, 10_000);
-
-    return () => { clearInterval(t); clearInterval(p); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dispatch, dog.id]);
+    const onHide = () => running = !document.hidden;
+    document.addEventListener("visibilitychange", onHide);
+    return () => {
+      cancelAnimationFrame(raf.current);
+      document.removeEventListener("visibilitychange", onHide);
+    };
+  }, [enabled, dispatch]);
 }

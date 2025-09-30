@@ -1,14 +1,10 @@
-// src/redux/store.js
 import { configureStore } from "@reduxjs/toolkit";
-import dog from "./dogSlice.js";
 import user from "./userSlice.js";
+import dog from "./dogSlice.js"; // you already have this; file must exist
 
-export const store = configureStore({
-  reducer: { dog, user },
-  middleware: (getDefault) =>
-    getDefault({
-      serializableCheck: false, // Firebase user objects aren't strictly serializable
-    }),
+const store = configureStore({
+  reducer: { user, dog },
+  devTools: true,
 });
 
 export default store;

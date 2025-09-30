@@ -1,178 +1,235 @@
 // src/redux/dogSlice.js
 import { createSlice, nanoid } from "@reduxjs/toolkit";
 
-/** --- Tuning knobs --- */
-const WORLD_WIDTH = 1920;
-const WORLD_PADDING = 24;
+/** Decay rates per second (gentle) */
+const IDLE_DECAY_PER_SEC = { hunger: 0.06, energy: 0.03, cleanliness: 0.02 };
+const MOVE_DECAY_PER_SEC = { hunger: 0.10, energy: 0.18, cleanliness: 0.04 };
 
-const IDLE_DECAY_PER_SEC = { hunger: 0.8, energy: 0.4, cleanliness: 0.25 };
-const MOVE_DECAY_PER_SEC = { hunger: 1.1, energy: 1.6, cleanliness: 0.35 };
-
-const ACTION_EFFECTS = {
-  feed: { hunger: +22, cleanliness: -2, energy: +2, happiness: +6, mood: "fed" },
-  play: { hunger: -6, cleanliness: -3, energy: -10, happiness: +12, mood: "play" },
-  wash: { hunger: -2, cleanliness: +28, energy: -2, happiness: +4, mood: "clean" },
-  rest: { hunger: -3, cleanliness: 0, energy: +24, happiness: +5, mood: "rest" },
+/** World constants (shared by UI/AI if needed) */
+export const WORLD = {
+  WIDTH: 1920,
+  PADDING: 24,
+  YARD_X: 1400, // x >= YARD_X is “outside”
 };
 
-const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
-const clampStats = (d) => {
-  d.hunger = clamp(d.hunger, 0, 100);
-  d.energy = clamp(d.energy, 0, 100);
-  d.cleanliness = clamp(d.cleanliness, 0, 100);
-  d.happiness = clamp(d.happiness, 0, 100);
-};
-const clampX = (x) => clamp(x, WORLD_PADDING, Math.max(WORLD_PADDING, WORLD_WIDTH - WORLD_PADDING));
+/** Helpers */
+const clamp01 = (v) => Math.max(0, Math.min(100, v));
+const clamp = (min, v, max) => Math.max(min, Math.min(max, v));
 
-/** Level thresholds (XP required for each level) */
-const LEVELS = [0, 100, 250, 500, 900, 1400, 2000];
-const levelForXp = (xp) => {
-  let lvl = 1;
-  for (let i = 0; i < LEVELS.length; i++) {
-    if (xp >= LEVELS[i]) lvl = i + 1;
-  }
-  return lvl;
+/**
+ * Compute level + title from current dog stats (pure).
+ * Exported because hooks like useGameTick import it directly.
+ */
+export function levelCheck(d) {
+  if (!d) return { level: 1, title: "New Pup" };
+
+  // Score reflects current well-being
+  const score =
+    ((d.happiness ?? 0) +
+      (d.energy ?? 0) +
+      (d.cleanliness ?? 0) +
+      (d.hunger ?? 0)) / 4; // 0..100
+
+  // Age adds small progression; every 7 days ~= +1, softly capped
+  const ageBonus = Math.min(5, Math.floor((d.ageDays ?? 0) / 7));
+  const pottyBonus = d.isPottyTrained ? 1 : 0;
+
+  const base = Math.round(score / 10); // 0..10
+  const rawLevel = base + Math.floor(ageBonus / 2) + pottyBonus;
+  const level = clamp(1, rawLevel, 10);
+
+  const TITLES = [
+    "New Pup",         // 1
+    "Eager Pup",       // 2
+    "Quick Learner",   // 3
+    "Good Dog",        // 4
+    "Loyal Buddy",     // 5
+    "Trickster",       // 6
+    "Guardian",        // 7
+    "Champion",        // 8
+    "Legendary Pup",   // 9
+    "Mythic Hound",    // 10
+  ];
+  return { level, title: TITLES[level - 1] ?? "New Pup" };
+}
+
+/** Factory for a fresh dog object */
+const newDog = (overrides = {}) => {
+  const base = {
+    id: nanoid(),
+    name: "Pupper",
+    ageDays: 0,
+    happiness: 100,
+    energy: 100,
+    hunger: 100,
+    cleanliness: 100,
+    mood: "idle", // 'idle' | 'walk' | 'play' | 'sleep' | 'poop' | 'wash'
+    poopCount: 0,
+    isPottyTrained: false,
+    createdAt: Date.now(),
+    lastSavedAt: null,
+    level: 1,
+    title: "New Pup",
+  };
+  const next = { ...base, ...overrides };
+  const { level, title } = levelCheck(next);
+  next.level = level;
+  next.title = title;
+  return next;
 };
 
-/** --- Initial state --- */
-const initialState = {
-  id: nanoid(),
-  name: "Pupper",
-  stage: "adult", // "puppy" | "adult" | "senior"
-  mood: "idle",   // "idle" | "walk" | "fed" | "play" | "clean" | "rest" | "bark"
-  dir: "right",
-  moving: false,
-  lastTickAt: Date.now(),
-  lastBarkAt: 0,
-  pos: { x: 240 },
-  hunger: 80,
-  energy: 80,
-  cleanliness: 80,
-  happiness: 80,
-  xp: 0,
-  level: 1,
+const initialState = newDog();
+
+/** Internal: apply attribute decay */
+const applyDecay = (state, perSec, dt) => {
+  state.hunger = clamp01(state.hunger - perSec.hunger * dt);
+  state.energy = clamp01(state.energy - perSec.energy * dt);
+  state.cleanliness = clamp01(state.cleanliness - perSec.cleanliness * dt);
+  // Happiness is a soft aggregate so it doesn’t whipsaw
+  const avg = (state.hunger + state.energy + state.cleanliness) / 3;
+  state.happiness = clamp01(0.5 * state.happiness + 0.5 * avg);
 };
 
 const dogSlice = createSlice({
   name: "dog",
   initialState,
   reducers: {
-    resetDog: () => ({ ...initialState, id: nanoid(), lastTickAt: Date.now() }),
-
-    setName(state, action) {
-      state.name = String(action.payload || "").slice(0, 20);
-    },
-    setStage(state, action) {
-      const s = String(action.payload);
-      if (s === "puppy" || s === "adult" || s === "senior") state.stage = s;
-    },
-
-    setPosition(state, action) {
-      const x = Number(action.payload?.x ?? state.pos.x);
-      state.pos.x = clampX(x);
-    },
-    moveBy(state, action) {
-      const dx = Number(action.payload?.dx ?? 0);
-      state.pos.x = clampX(state.pos.x + dx);
-      if (dx !== 0) {
-        state.mood = "walk";
-        state.moving = true;
-        state.dir = dx < 0 ? "left" : "right";
+    /** Arbitrary partial patch from UI/Cloud. */
+    dogPatched(state, { payload }) {
+      for (const [k, v] of Object.entries(payload || {})) {
+        if (k in state) state[k] = v;
       }
-    },
-    setDirection(state, action) {
-      const d = String(action.payload);
-      if (d === "left" || d === "right") state.dir = d;
-    },
-    startMoving(state) {
-      state.moving = true;
-      if (state.mood === "idle") state.mood = "walk";
-    },
-    stopMoving(state) {
-      state.moving = false;
-      if (state.mood === "walk") state.mood = "idle";
+      const { level, title } = levelCheck(state);
+      state.level = level;
+      state.title = title;
+      state.lastSavedAt = Date.now();
     },
 
-    bark(state, action) {
-      state.lastBarkAt = Number(action.payload || Date.now());
-      state.mood = "bark";
-      state.happiness = clamp(state.happiness + 0.5, 0, 100);
-      state.xp += 1;
+    /** Rename the dog, trims and clamps length. */
+    setName(state, { payload }) {
+      const raw = String(payload ?? "").trim();
+      state.name = raw.slice(0, 24) || "Pupper";
+      const { level, title } = levelCheck(state);
+      state.level = level;
+      state.title = title;
+      state.lastSavedAt = Date.now();
     },
 
-    feed(state) { applyAction(state, ACTION_EFFECTS.feed); },
-    play(state) { applyAction(state, ACTION_EFFECTS.play); },
-    wash(state) { applyAction(state, ACTION_EFFECTS.wash); },
-    rest(state) { applyAction(state, ACTION_EFFECTS.rest); },
-
-    /** Game-loop tick with stat decay */
-    tick(state, action) {
-      const now = Number(action.payload?.now ?? Date.now());
-      const prev = Number(state.lastTickAt || now);
-      const dtMs = Math.max(0, now - prev);
-      state.lastTickAt = now;
-      if (dtMs <= 0) return;
-
-      const decay = state.moving ? MOVE_DECAY_PER_SEC : IDLE_DECAY_PER_SEC;
-      const dtSec = dtMs / 1000;
-      state.hunger -= decay.hunger * dtSec;
-      state.energy -= decay.energy * dtSec;
-      state.cleanliness -= decay.cleanliness * dtSec;
-
-      const target = (state.hunger + state.energy + state.cleanliness) / 3;
-      const delta = (target - state.happiness) * 0.1 * dtSec;
-      state.happiness += delta;
-
-      clampStats(state);
-
-      if (!state.moving && state.mood === "walk") state.mood = "idle";
+    /** Advance simulation by delta seconds (float). */
+    tick(state, { payload }) {
+      const dt = Math.max(0, Number(payload ?? 0));
+      if (!dt) return;
+      const moving = state.mood === "walk" || state.mood === "play";
+      applyDecay(state, moving ? MOVE_DECAY_PER_SEC : IDLE_DECAY_PER_SEC, dt);
+      state.ageDays += dt / 86400;
+      const { level, title } = levelCheck(state);
+      state.level = level;
+      state.title = title;
     },
 
-    /** Level gate used by useGameTick (safe no-op if already correct) */
-    levelCheck(state) {
-      const next = levelForXp(state.xp);
-      if (next !== state.level) state.level = next;
+    /** High-level actions used by UI buttons. */
+    feed(state) {
+      state.hunger = clamp01(state.hunger + 22);
+      state.happiness = clamp01(state.happiness + 8);
+      state.mood = "idle";
+      const { level, title } = levelCheck(state);
+      state.level = level;
+      state.title = title;
+    },
+    play(state) {
+      state.happiness = clamp01(state.happiness + 15);
+      state.energy = clamp01(state.energy - 8);
+      state.mood = "play";
+      const { level, title } = levelCheck(state);
+      state.level = level;
+      state.title = title;
+    },
+    wash(state) {
+      state.cleanliness = clamp01(state.cleanliness + 28);
+      state.mood = "wash";
+      const { level, title } = levelCheck(state);
+      state.level = level;
+      state.title = title;
+    },
+    rest(state) {
+      state.energy = clamp01(state.energy + 22);
+      state.mood = "sleep";
+      const { level, title } = levelCheck(state);
+      state.level = level;
+      state.title = title;
+    },
+
+    /** Poop lifecycle, used by potty training loop. */
+    poop(state) {
+      state.poopCount = Math.max(0, state.poopCount + 1);
+      state.cleanliness = clamp01(state.cleanliness - 12);
+      state.mood = "poop";
+      const { level, title } = levelCheck(state);
+      state.level = level;
+      state.title = title;
+    },
+    scoopPoop(state) {
+      state.poopCount = Math.max(0, state.poopCount - 1);
+      state.cleanliness = clamp01(state.cleanliness + 6);
+      const { level, title } = levelCheck(state);
+      state.level = level;
+      state.title = title;
+    },
+    setPottyTrained(state, { payload }) {
+      state.isPottyTrained = !!payload;
+      const { level, title } = levelCheck(state);
+      state.level = level;
+      state.title = title;
+    },
+
+    /** Cloud hydration from Firestore profile. */
+    hydrateFromCloud(_state, { payload }) {
+      return newDog({ ...payload });
+    },
+
+    /** Hard reset for a fresh run. */
+    resetDog() {
+      return newDog();
     },
   },
 });
 
-function applyAction(state, e) {
-  state.hunger += e.hunger;
-  state.cleanliness += e.cleanliness;
-  state.energy += e.energy;
-  state.happiness += e.happiness;
-  state.mood = e.mood;
-  state.xp += 5; // tiny progression per action
-  clampStats(state);
-}
-
-/** --- Selectors --- */
-export const selectDog = (s) => s?.dog ?? initialState;
-export const selectDirection = (s) => s?.dog?.dir ?? "right";
-export const selectStage = (s) => s?.dog?.stage ?? "adult";
-export const selectMood = (s) => s?.dog?.mood ?? "idle";
-export const selectStats = (s) => {
-  const d = selectDog(s);
-  return { hunger: d.hunger, energy: d.energy, cleanliness: d.cleanliness, happiness: d.happiness };
-};
-
-/** --- Actions/Reducer --- */
 export const {
-  resetDog,
+  dogPatched,
   setName,
-  setStage,
-  setPosition,
-  moveBy,
-  setDirection,
-  startMoving,
-  stopMoving,
-  bark,
+  tick,
   feed,
   play,
   wash,
   rest,
-  tick,
-  levelCheck,
+  poop,
+  scoopPoop,
+  setPottyTrained,
+  hydrateFromCloud,
+  resetDog,
 } = dogSlice.actions;
 
 export default dogSlice.reducer;
+
+/** Selectors */
+export const selectDog = (s) => s.dog;
+export const selectDogName = (s) => s.dog?.name ?? "Pupper";
+export const selectStats = (s) => {
+  const d = s.dog;
+  return d
+    ? {
+        hunger: d.hunger,
+        energy: d.energy,
+        cleanliness: d.cleanliness,
+        happiness: d.happiness,
+      }
+    : { hunger: 0, energy: 0, cleanliness: 0, happiness: 0 };
+};
+export const selectMood = (s) => s.dog?.mood ?? "idle";
+export const selectAgeDays = (s) => s.dog?.ageDays ?? 0;
+export const selectPoopCount = (s) => s.dog?.poopCount ?? 0;
+export const selectIsPottyTrained = (s) => !!s.dog?.isPottyTrained;
+export const selectLastSavedAt = (s) => s.dog?.lastSavedAt || null;
+export const selectCreatedAt = (s) => s.dog?.createdAt || null;
+export const selectLevel = (s) => s.dog?.level ?? 1;
+export const selectTitle = (s) => s.dog?.title ?? "New Pup";

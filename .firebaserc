@@ -1,0 +1,19 @@
+{
+  "projects": {
+    "default": "dogger-a8021",
+    "prod": "dogger-a8021",
+    "firaaasdf": "dogger-a8021",
+    "ddoggerz": "dogger-a8021",
+    "dog": "dogger-a8021"
+  },
+  "targets": {
+    "dogger-a8021": {
+      "hosting": {
+        "prod": [
+          "dogger-a8021-site"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

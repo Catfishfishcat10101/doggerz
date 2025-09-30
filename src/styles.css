@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root { color-scheme: dark; }
+  html, body, #root { height: 100%; }
+  body { @apply bg-gradient-to-b from-bgd-900 via-indigo-950 to-bgd-800 text-slate-100 font-sans; }
+}

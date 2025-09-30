@@ -1,15 +1,7 @@
-// src/redux/userSlice.js
 import { createSlice } from "@reduxjs/toolkit";
 
-/**
- * Auth state:
- *  - idle         : not checked yet / signed out
- *  - loading      : auth op in-flight
- *  - authenticated: user present
- *  - error        : last op failed
- */
-const initialState = {
-  status: "idle",
+const initial = {
+  status: "idle", // idle | loading | authed | error
   uid: null,
   email: null,
   displayName: null,
@@ -17,64 +9,25 @@ const initialState = {
   error: null,
 };
 
-const userSlice = createSlice({
+const slice = createSlice({
   name: "user",
-  initialState,
+  initialState: initial,
   reducers: {
-    userLoading(state) {
-      state.status = "loading";
-      state.error = null;
+    userLoading(s) { s.status = "loading"; s.error = null; },
+    userAuthed(s, { payload }) {
+      s.status = "authed";
+      s.uid = payload?.uid ?? null;
+      s.email = payload?.email ?? null;
+      s.displayName = payload?.displayName ?? null;
+      s.photoURL = payload?.photoURL ?? null;
+      s.error = null;
     },
-    userAuthed(state, action) {
-      const u = action.payload || {};
-      state.status = "authenticated";
-      state.uid = u.uid ?? null;
-      state.email = u.email ?? null;
-      state.displayName = u.displayName ?? null;
-      state.photoURL = u.photoURL ?? null;
-      state.error = null;
-    },
-    userError(state, action) {
-      state.status = "error";
-      state.error = action.payload ?? "Unknown auth error";
-    },
-    userProfileUpdated(state, action) {
-      const u = action.payload || {};
-      if (typeof u.displayName !== "undefined") state.displayName = u.displayName;
-      if (typeof u.photoURL !== "undefined") state.photoURL = u.photoURL;
-      if (typeof u.email !== "undefined") state.email = u.email;
-    },
-    /** This is the thing NavBar imports */
-    userSignedOut(state) {
-      state.status = "idle";
-      state.uid = null;
-      state.email = null;
-      state.displayName = null;
-      state.photoURL = null;
-      state.error = null;
-    },
-  },
+    userSignedOut() { return { ...initial, status: "idle" }; },
+    userError(s, { payload }) { s.status = "error"; s.error = payload || "Auth error"; },
+  }
 });
 
-export const {
-  userLoading,
-  userAuthed,
-  userError,
-  userProfileUpdated,
-  userSignedOut,
-} = userSlice.actions;
-
-export const selectUser = (s) =>
-  s?.user?.uid
-    ? {
-        uid: s.user.uid,
-        email: s.user.email,
-        displayName: s.user.displayName,
-        photoURL: s.user.photoURL,
-      }
-    : null;
-
-export const selectAuthStatus = (s) => s?.user?.status ?? "idle";
-export const selectAuthError = (s) => s?.user?.error ?? null;
-
-export default userSlice.reducer;
+export const { userLoading, userAuthed, userSignedOut, userError } = slice.actions;
+export const selectUser = (s) => (s?.user?.uid ? s.user : null);
+export const selectUserStatus = (s) => s?.user?.status ?? "idle";
+export default slice.reducer;

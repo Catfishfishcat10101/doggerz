@@ -1,12 +1,8 @@
 // src/utils/routes.js
-export const PUBLIC_PATHS = [
-  "/", "/login", "/signup",
-  "/legal/terms", "/legal/privacy",
-  "/onboarding",
-];
-
+/** Return true for routes that use the compact public navbar. */
 export function isPublicPath(pathname = "/") {
-  if (!pathname) return true;
-  // Handle nested public paths in the future if needed
-  return PUBLIC_PATHS.includes(pathname);
+  const PUBLIC = new Set(["/", "/login", "/signup", "/privacy", "/terms"]);
+  // treat subpaths of /privacy and /terms as public too, if you have them:
+  if (pathname.startsWith("/privacy") || pathname.startsWith("/terms")) return true;
+  return PUBLIC.has(pathname);
 }

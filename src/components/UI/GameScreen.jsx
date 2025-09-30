@@ -1,27 +1,27 @@
 import React from "react";
-import useGameTick from "@/hooks/useGameTick";
-import NeedsHUD from "@/components/Features/NeedsHUD.jsx";
-import ActionsBar from "@/components/Features/ActionsBar.jsx";
-import DailyQuests from "@/components/Features/DailyQuests.jsx";
+import { useSelector } from "react-redux";
+import { selectUser } from "@/redux/userSlice";
+import { selectDog } from "@/redux/dogSlice";
+import PupStage from "./PupStage.jsx";
 
 export default function GameScreen() {
-  useGameTick();
-  return (
-    <div className="mx-auto max-w-5xl p-6 grid md:grid-cols-[320px_1fr] gap-6">
-      <div className="space-y-6">
-        <NeedsHUD />
-        <DailyQuests />
-      </div>
+  const user = useSelector(selectUser);
+  const dog  = useSelector(selectDog);
 
-      <div className="rounded-2xl bg-gradient-to-b from-slate-800 to-slate-900 border border-white/10 min-h-[420px] p-4 flex flex-col justify-between">
-        {/* TODO: plug your DogSprite here, for now a placeholder arena */}
-        <div className="flex-1 grid place-items-center">
-          <div className="size-24 bg-white/10 rounded-full grid place-items-center text-5xl select-none">🐶</div>
-        </div>
-        <div className="pt-4 border-t border-white/10">
-          <ActionsBar />
-        </div>
-      </div>
+  return (
+    <div className="grid gap-6">
+      <header className="flex items-center justify-between">
+        <h1 className="text-2xl font-extrabold">
+          {dog.name ? `${dog.name} the Pup` : "Your Pup"}
+        </h1>
+        <div className="text-sm text-slate-300">Signed in as {user?.email}</div>
+      </header>
+
+      <PupStage />
+
+      <p className="text-sm text-slate-400">
+        Tip: Tap/click to bark. Use A/D or Left/Right to move.
+      </p>
     </div>
   );
 }
