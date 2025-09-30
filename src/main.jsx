@@ -1,14 +1,4 @@
 import React from "react";
-<<<<<<< Updated upstream
-import { createRoot } from "react-dom/client";
-import { BrowserRouter } from "react-router-dom";
-import { Provider } from "react-redux";
-import App from "./App.jsx";
-import store from "./redux/store.js";
-import "./index.css";
-
-createRoot(document.getElementById("root")).render(
-=======
 import ReactDOM from "react-dom/client";
 import { Provider } from "react-redux";
 import { BrowserRouter } from "react-router-dom";
@@ -56,7 +46,6 @@ class RootErrorBoundary extends React.Component {
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(
->>>>>>> Stashed changes
   <React.StrictMode>
     <Provider store={store}>
       <BrowserRouter>
