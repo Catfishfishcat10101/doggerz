@@ -2,62 +2,48 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Require auth for everything (optionally require verified email)
-    function isAuthed()      { return request.auth != null; }
-    function isVerified()    { return request.auth.token.email_verified == true; }
-    function isOwner(uid)    { return isAuthed() && request.auth.uid == uid; }
-    function nowMs()         { return request.time.toMillis(); }
-
-    // Public read-only config (optional)
-    match /config/{doc} {
-      allow read: if true;
-      allow write: if false;
-    }
-
-    // User profile doc: /profiles/{uid}
-    match /profiles/{uid} {
-      allow read: if isOwner(uid);
-      allow create: if isOwner(uid);
-      allow update: if isOwner(uid);
-      allow delete: if false;
-
-      // Schema-ish guards (optional but recommended)
-      allow write: if request.resource.data.keys().hasOnly([
-        'displayName', 'createdAt', 'updatedAt', 'pupName', 'photoURL'
-      ])
-      && request.resource.data.createdAt is timestamp
-      && request.resource.data.updatedAt is timestamp;
-    }
-
-    // ONE dog per user: /dogs/{uid}
+    // Dogs collection: doc id MUST be the owner's UID
     match /dogs/{uid} {
-      allow read:   if isOwner(uid);
-      // Create allowed only if doc doesn't exist yet
-      allow create: if isOwner(uid)
-                    && !exists(/databases/$(database)/documents/dogs/$(uid));
-      // Updates allowed only by owner; prevent ownerId changes
-      allow update: if isOwner(uid)
-                    && request.resource.data.ownerId == uid
-                    && resource.data.ownerId == uid;
-      allow delete: if false;
 
-      // Require email verification to write (toggle off if you don't want this)
-      allow write: if isVerified();
+      allow read: if request.auth != null && request.auth.uid == uid;
 
-      // Optional shape constraints (stats capped to sane ranges)
-      allow write: if
-        (request.resource.data.name is string)
-        && (request.resource.data.ownerId == uid)
-        && (request.resource.data.stats.hunger >= 0 && request.resource.data.stats.hunger <= 100)
-        && (request.resource.data.stats.energy >= 0 && request.resource.data.stats.energy <= 100)
-        && (request.resource.data.stats.cleanliness >= 0 && request.resource.data.stats.cleanliness <= 100)
-        && (request.resource.data.updatedAt is timestamp)
-        && (request.resource.data.createdAt is timestamp);
-    }
+      allow create: if request.auth != null
+        && request.auth.uid == uid
+        && !exists(/databases/$(database)/documents/dogs/$(uid)) // one dog per user
+        && isValidNewDog();
 
-    // Optional: inventories tied to the same UID
-    match /inventories/{uid} {
-      allow read, write: if isOwner(uid) && isVerified();
+      allow update: if request.auth != null
+        && request.auth.uid == uid
+        && isValidDogUpdate();
+
+      allow delete: if request.auth != null && request.auth.uid == uid;
+
+      function isValidNewDog() {
+        return request.resource.data.keys().hasAll(['ownerId','stats','mood','createdAt','updatedAt'])
+          && request.resource.data.ownerId == uid
+          && request.resource.data.stats.hunger is number
+          && request.resource.data.stats.energy is number
+          && request.resource.data.stats.cleanliness is number
+          && request.resource.data.stats.hunger >= 0 && request.resource.data.stats.hunger <= 100
+          && request.resource.data.stats.energy >= 0 && request.resource.data.stats.energy <= 100
+          && request.resource.data.stats.cleanliness >= 0 && request.resource.data.stats.cleanliness <= 100;
+      }
+
+      function isValidDogUpdate() {
+        // Name optional but constrained if present
+        return (!('name' in request.resource.data) ||
+                (request.resource.data.name is string &&
+                 request.resource.data.name.size() >= 1 &&
+                 request.resource.data.name.size() <= 24 &&
+                 request.resource.data.name.matches('^[\\p{L}\\p{N} .,\'-]{1,24}$')))
+          && (!('stats' in request.resource.data) ||
+              (request.resource.data.stats.hunger is number &&
+               request.resource.data.stats.energy is number &&
+               request.resource.data.stats.cleanliness is number &&
+               request.resource.data.stats.hunger >= 0 && request.resource.data.stats.hunger <= 100 &&
+               request.resource.data.stats.energy >= 0 && request.resource.data.stats.energy <= 100 &&
+               request.resource.data.stats.cleanliness >= 0 && request.resource.data.stats.cleanliness <= 100));
+      }
     }
   }
 }

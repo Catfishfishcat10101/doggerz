@@ -5,6 +5,10 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App.jsx";
 import store from "./redux/store";
 import "./index.css";
+import "./styles.css";
+import "@fontsource/inter/variable.css"; // or /400.css etc.
+import "@/styles.css"; // or index.css
+
 
 // If you have Firebase init, load it once here so providers are ready app-wide
 // import "@/lib/firebase";

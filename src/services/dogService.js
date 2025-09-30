@@ -1,21 +1,31 @@
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  serverTimestamp,
+  runTransaction,
+} from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
+/** One-dog-per-user; create if missing, return the doc */
 export async function ensureDogForUser(uid) {
   const ref = doc(db, "dogs", uid);
+  await runTransaction(db, async (tx) => {
+    const snap = await tx.get(ref);
+    if (snap.exists()) return;
+    tx.set(ref, {
+      ownerId: uid,
+      name: null,
+      mood: "idle",
+      stats: { hunger: 100, energy: 100, cleanliness: 100 },
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      schemaVersion: 1,
+    });
+  });
   const snap = await getDoc(ref);
-  if (snap.exists()) return { id: uid, ...snap.data() };
-
-  const dog = {
-    ownerId: uid,
-    name: null,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-    stats: { hunger: 100, energy: 100, cleanliness: 100 },
-    mood: "idle",
-  };
-  await setDoc(ref, dog, { merge: false });
-  return { id: uid, ...dog };
+  return { id: ref.id, ...(snap.data() || {}) };
 }
 
 export async function nameDog(uid, name) {
