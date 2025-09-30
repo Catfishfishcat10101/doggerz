@@ -1,5 +1,5 @@
 // src/components/UI/NavBar.jsx
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useId } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { selectUser, userSignedOut } from "@/redux/userSlice";
@@ -7,31 +7,36 @@ import { auth } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
 
 /**
- * Top navigation with public/privileged footprints.
- * - Public pages ("/", "/login", "/signup", "/privacy") → compact nav.
- * - Authenticated pages show Game/Profile/Settings + Sign out.
- * - Mobile menu with ESC/route-change auto-close.
+ * Production-safe, accessible top nav.
+ * - Desktop (public): Home + Privacy (left), Log in / Sign up (right)
+ * - Desktop (authed): Game / Profile / Settings (left), User chip + Sign out (right)
+ * - Mobile: drawer with everything; ESC/route-close + body scroll-lock
  */
 export default function NavBar() {
   const user = useSelector(selectUser);
+  const isAuthed = !!user?.uid;
   const dispatch = useDispatch();
   const nav = useNavigate();
   const { pathname } = useLocation();
 
   const [open, setOpen] = useState(false);
+  const mobileId = useId();
 
-  // Compact header on public pages
   const compact = useMemo(() => isPublicPath(pathname), [pathname]);
 
-  // Close mobile menu whenever the route changes
-  useEffect(() => setOpen(false), [pathname]);
-
-  // ESC to close
+  useEffect(() => setOpen(false), [pathname]); // close on route change
   useEffect(() => {
     const onKey = (e) => e.key === "Escape" && setOpen(false);
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
+  useEffect(() => {
+    // body scroll-lock for mobile drawer
+    const { style } = document.body;
+    const prev = style.overflow;
+    style.overflow = open ? "hidden" : prev || "";
+    return () => { style.overflow = prev || ""; };
+  }, [open]);
 
   async function onLogout() {
     try {
@@ -39,7 +44,6 @@ export default function NavBar() {
       dispatch(userSignedOut());
       nav("/");
     } catch (e) {
-      // eslint-disable-next-line no-console
       console.error("Sign-out failed:", e);
     }
   }
@@ -47,7 +51,7 @@ export default function NavBar() {
   const linkBase =
     "px-3 py-2 rounded-xl text-sm font-medium transition-colors duration-150";
   const linkIdle = "text-white/90 hover:bg-white/10";
-  const linkActive = "bg-white/15 text-white";
+  const linkActive = "bg-white/15 text-white"; // swap to /20 if your Tailwind config dislikes /15
 
   const renderLink = (to, label) => (
     <NavLink
@@ -60,12 +64,12 @@ export default function NavBar() {
   );
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-white/10 bg-black/20 backdrop-blur">
+    <header className="sticky top-0 z-40 w-full border-b border-white/10 bg-black/20 backdrop-blur supports-[backdrop-filter]:bg-black/30">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
         {/* Brand */}
         <Link
           to="/"
-          className="inline-flex items-center gap-2 focus:outline-none focus-visible:ring focus-visible:ring-amber-300/40 rounded-xl"
+          className="inline-flex items-center gap-2 rounded-xl focus:outline-none focus-visible:ring focus-visible:ring-amber-300/40"
           aria-label="Doggerz home"
         >
           <span className="h-7 w-7 rounded-xl bg-gradient-to-br from-amber-300 to-pink-400 shadow-inner" />
@@ -75,13 +79,13 @@ export default function NavBar() {
         {/* Desktop nav */}
         <nav className="hidden items-center gap-2 sm:flex">
           {compact ? (
+            // PUBLIC: only Home + Privacy here (no duplicate auth links)
             <>
               {renderLink("/", "Home")}
-              {!user && renderLink("/login", "Log in")}
-              {!user && renderLink("/signup", "Sign up")}
               {renderLink("/privacy", "Privacy")}
             </>
           ) : (
+            // AUTHED: product nav
             <>
               {renderLink("/game", "Game")}
               {renderLink("/profile", "Profile")}
@@ -90,11 +94,15 @@ export default function NavBar() {
           )}
         </nav>
 
-        {/* Right cluster: auth controls */}
+        {/* Right cluster: auth controls (desktop) */}
         <div className="hidden items-center gap-2 sm:flex">
-          {user ? (
+          {isAuthed ? (
             <>
-              <UserChip displayName={user.displayName} email={user.email} photoURL={user.photoURL} />
+              <UserChip
+                displayName={user.displayName}
+                email={user.email}
+                photoURL={user.photoURL}
+              />
               <button
                 type="button"
                 onClick={onLogout}
@@ -128,6 +136,7 @@ export default function NavBar() {
           type="button"
           aria-label="Open menu"
           aria-expanded={open}
+          aria-controls={mobileId}
           onClick={() => setOpen((v) => !v)}
           className="inline-flex items-center justify-center rounded-xl p-2 text-white/90 hover:bg-white/10 sm:hidden"
         >
@@ -137,16 +146,21 @@ export default function NavBar() {
         </button>
       </div>
 
-      {/* Mobile sheet */}
+      {/* Mobile drawer */}
       {open && (
         <div className="sm:hidden">
-          <div className="mx-3 mb-3 rounded-2xl border border-white/10 bg-black/50 p-3 backdrop-blur">
+          <div
+            id={mobileId}
+            role="dialog"
+            aria-modal="true"
+            className="mx-3 mb-3 rounded-2xl border border-white/10 bg-black/60 p-3 backdrop-blur"
+          >
             <div className="flex flex-col gap-2">
               {compact ? (
                 <>
                   <NavItem to="/" label="Home" onClick={() => setOpen(false)} />
-                  {!user && <NavItem to="/login" label="Log in" onClick={() => setOpen(false)} />}
-                  {!user && <NavItem to="/signup" label="Sign up" onClick={() => setOpen(false)} />}
+                  <NavItem to="/login" label="Log in" onClick={() => setOpen(false)} />
+                  <NavItem to="/signup" label="Sign up" onClick={() => setOpen(false)} />
                   <NavItem to="/privacy" label="Privacy" onClick={() => setOpen(false)} />
                 </>
               ) : (
@@ -158,7 +172,7 @@ export default function NavBar() {
               )}
 
               <div className="mt-1 border-t border-white/10 pt-3">
-                {user ? (
+                {isAuthed ? (
                   <button
                     type="button"
                     onClick={() => {
@@ -218,6 +232,7 @@ function NavItem({ to, label, onClick }) {
         "block rounded-xl px-3 py-2 text-sm font-medium " +
         (isActive ? "bg-white/15 text-white" : "text-white/90 hover:bg-white/10")
       }
+      aria-current={({ isActive }) => (isActive ? "page" : undefined)}
     >
       {label}
     </NavLink>
