@@ -40,5 +40,52 @@ export const dogSlice = createSlice({
   },
 });
 
+<<<<<<< HEAD
 export const { setMoving, move, tick, feed, wash, rest } = dogSlice.actions;
 export default dogSlice.reducer;
+=======
+export const {
+  dogPatched,
+  setName,
+  tick,
+  feed,
+  bark,
+  play,
+  wash,
+  rest,
+  poop,
+  moveBy,
+  startMoving,
+  stopMoving,
+  takeOutside,
+  scoopPoop,
+  setPottyTrained,
+  hydrateFromCloud,
+  resetDog,
+} = dogSlice.actions;
+
+export default dogSlice.reducer;
+
+/** Selectors */
+export const selectDog = (s) => s.dog;
+export const selectDogName = (s) => s.dog?.name ?? "Pupper";
+export const selectStats = (s) => {
+  const d = s.dog;
+  return d
+    ? {
+        hunger: d.hunger,
+        energy: d.energy,
+        cleanliness: d.cleanliness,
+        happiness: d.happiness,
+      }
+    : { hunger: 0, energy: 0, cleanliness: 0, happiness: 0 };
+};
+export const selectMood = (s) => s.dog?.mood ?? "idle";
+export const selectAgeDays = (s) => s.dog?.ageDays ?? 0;
+export const selectPoopCount = (s) => s.dog?.poopCount ?? 0;
+export const selectIsPottyTrained = (s) => !!s.dog?.isPottyTrained;
+export const selectLastSavedAt = (s) => s.dog?.lastSavedAt || null;
+export const selectCreatedAt = (s) => s.dog?.createdAt || null;
+export const selectLevel = (s) => s.dog?.level ?? 1;
+export const selectTitle = (s) => s.dog?.title ?? "New Pup";
+>>>>>>> b160375a (updated)
