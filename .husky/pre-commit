@@ -1,1 +1,0 @@
-npm run build -w || exit 1
