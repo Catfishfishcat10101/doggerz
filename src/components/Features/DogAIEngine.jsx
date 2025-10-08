@@ -1,16 +1,4 @@
-/**
- * DogAIEngine.jsx — Autonomous-only
- * ---------------------------------------------------------------------------
- * Headless orchestrator:
- *  - Real-time needs decay (tickRealTime)
- *  - Autonomous locomotion (wander/nap) with stage/energy-aware speed
- *  - Optional bark SFX trigger via external dispatch(bark()) only (no user keys)
- *
- * Renders nothing (unless debug=true). Mount once in the scene.
- * This variant intentionally has **no** keyboard handlers and **no** manual override.
- * ---------------------------------------------------------------------------
- */
-
+/* src/components/Features/DogAIEngine.jsx */
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -35,7 +23,7 @@ function stageSpeed(stage) {
   switch (stage) {
     case "puppy": return 90;
     case "senior": return 60;
-    default: return 75; // adult
+    default: return 75;
   }
 }
 
@@ -50,13 +38,18 @@ export default function DogAIEngine({
   worldW = 640,
   worldH = 360,
   debug = false,
-  logicHz = 30, // movement solver frequency
-  tickHz = 4,   // redux time/needs loop frequency
+  logicHz = 30,  // movement solver frequency
+  tickHz = 4,    // redux time/needs loop frequency
 }) {
   const dispatch = useDispatch();
+
+  // Select *once* into a ref for the RAF loop; keep it fresh via a side-effect.
   const dog = useSelector(selectDog);
   const stage = useSelector(selectStage);
   const isMuted = useSelector(selectMute);
+
+  const dogRef = useRef(dog);
+  useEffect(() => { dogRef.current = dog; }, [dog]);
 
   // Motion prefs
   const prefersReduced = useMemo(() => {
@@ -64,14 +57,15 @@ export default function DogAIEngine({
     catch { return false; }
   }, []);
 
-  // SFX (triggered only by external actions; engine won’t bind keys)
+  // SFX (created once, then volume-follow mute)
   const barkSfxRef = useRef(null);
   useEffect(() => {
-    barkSfxRef.current = new Howl({ src: [barkSfxUrl], volume: isMuted ? 0 : 0.75 });
-    return () => barkSfxRef.current?.unload();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    const howl = new Howl({ src: [barkSfxUrl], volume: 0 });
+    barkSfxRef.current = howl;
+    return () => howl.unload();
+  }, []);
   useEffect(() => {
-    if (barkSfxRef.current) barkSfxRef.current.volume(isMuted ? 0 : 0.75);
+    barkSfxRef.current?.volume(isMuted ? 0 : 0.75);
   }, [isMuted]);
 
   // AI working state (local only)
@@ -81,13 +75,43 @@ export default function DogAIEngine({
     x: dog.pos?.x ? clamp(dog.pos.x / worldW, 0.05, 0.95) : 0.5,
     y: dog.pos?.y ? clamp(dog.pos.y / worldH, 0.50, 0.90) : 0.65,
   });
-  const facingRef = useRef("right");
 
-  // Global time/needs ticker
+  // ---- Global time/needs ticker (paused when hidden) ----
   useEffect(() => {
-    const period = Math.max(250, Math.floor(1000 / tickHz));
-    const id = setInterval(() => dispatch(tickRealTime(Date.now())), period);
-    return () => clearInterval(id);
+    let id;
+    let lastTs = performance.now();
+
+    function tick() {
+      const now = performance.now();
+      // reducer can compute dt from 'now' relative to its last snapshot
+      dispatch(tickRealTime(Date.now()));
+      lastTs = now;
+    }
+
+    function start() {
+      if (id) return;
+      const period = Math.max(250, Math.floor(1000 / tickHz));
+      id = setInterval(tick, period);
+    }
+    function stop() {
+      if (id) { clearInterval(id); id = null; }
+    }
+
+    function onVis() {
+      if (document.hidden) stop();
+      else {
+        // reset any clocks so we don't dump a huge dt
+        lastTs = performance.now();
+        start();
+      }
+    }
+
+    onVis();
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      stop();
+      document.removeEventListener("visibilitychange", onVis);
+    };
   }, [dispatch, tickHz]);
 
   // Wander target scheduler
@@ -108,7 +132,7 @@ export default function DogAIEngine({
     return () => clearTimeout(tm);
   }, [stage]);
 
-  // Mode arbitration (energy-aware)
+  // Mode arbitration (energy-aware) — uses ref so loop stays stable
   useEffect(() => {
     if (dog.energy < 18 && mode !== MODE.NAP) {
       setMode(MODE.NAP);
@@ -118,21 +142,23 @@ export default function DogAIEngine({
     if (dog.energy > 30 && mode === MODE.NAP) {
       setMode(MODE.WANDER);
     }
-  }, [dog.energy, mode, dispatch]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dispatch, mode, dog.energy]);
 
-  // Movement solver (autonomy only)
+  // ---- Movement solver (stable RAF; no re-mounting on state changes) ----
   useEffect(() => {
     const dt = 1 / logicHz;
-    const pxPerSecBase = stageSpeed(stage);
     let raf = 0;
     let accum = 0;
     let last = performance.now();
 
     const step = (now) => {
-      const frameDt = Math.min(0.066, (now - last) / 1000); // clamp worst-case
+      const dogNow = dogRef.current;
+      const frameDt = Math.min(0.066, (now - last) / 1000);
       last = now;
       accum += frameDt;
 
+      // run a few fixed steps to catch up smoothly
       let guard = 0;
       while (accum >= dt && guard++ < 5) {
         const np = normPosRef.current;
@@ -140,17 +166,17 @@ export default function DogAIEngine({
         if (mode === MODE.NAP) {
           dispatch(setMoving(false));
         } else {
-          let speed = pxPerSecBase;
-          if (stage === "puppy") speed *= 1.1;
+          let speed = stageSpeed(stage);
+          if (stage === "puppy")  speed *= 1.1;
           if (stage === "senior") speed *= 0.85;
-          if (dog.happiness < 35) speed *= 0.92;
-          if (dog.energy < 25) speed *= 0.9;
-          if (prefersReduced) speed *= 0.85;
+          if (dogNow.happiness < 35) speed *= 0.92;
+          if (dogNow.energy < 25)    speed *= 0.90;
+          if (prefersReduced)        speed *= 0.85;
 
           const vxNorm = (speed / worldW) * dt;
           const vyNorm = (speed / worldH) * dt;
 
-          // Seek current target
+          // seek target
           const tx = targetRef.current.x - np.x;
           const ty = targetRef.current.y - np.y;
           const dist = Math.hypot(tx, ty);
@@ -161,24 +187,17 @@ export default function DogAIEngine({
             dy = (ty / dist) * vyNorm;
           }
 
-          let nx = clamp(np.x + dx, 0.05, 0.95);
-          let ny = clamp(np.y + dy, 0.50, 0.90);
-
-          // bounce hint for facing
-          if (nx <= 0.05 || nx >= 0.95) {
-            facingRef.current = nx <= 0.05 ? "right" : "left";
-          }
-
+          const nx = clamp(np.x + dx, 0.05, 0.95);
+          const ny = clamp(np.y + dy, 0.50, 0.90);
           np.x = nx; np.y = ny;
 
           const px = Math.round(nx * worldW);
           const py = Math.round(ny * worldH);
           dispatch(setPosition({ x: px, y: py }));
+
           const movingNow = Math.abs(dx) + Math.abs(dy) > 0.0001;
           dispatch(setMoving(movingNow));
-          const facing = dx >= 0 ? "right" : "left";
-          dispatch(setDirection(facing));
-          facingRef.current = facing;
+          dispatch(setDirection(dx >= 0 ? "right" : "left"));
         }
 
         accum -= dt;
@@ -189,19 +208,20 @@ export default function DogAIEngine({
 
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [logicHz, stage, worldW, worldH, mode, dog.happiness, dog.energy, prefersReduced]);
+    // only re-create when geometry/frequency changes
+  }, [dispatch, logicHz, worldW, worldH, prefersReduced, stage, mode]);
 
-  // Debug overlay only
+  // Debug overlay
   if (!debug) return null;
 
+  const d = dogRef.current;
   const dbg = {
     mode,
     stage,
-    pos: dog.pos,
-    energy: Math.round(dog.energy),
-    hunger: Math.round(dog.hunger),
-    happy: Math.round(dog.happiness),
+    pos: d.pos,
+    energy: Math.round(d.energy),
+    hunger: Math.round(d.hunger),
+    happiness: Math.round(d.happiness),
   };
 
   return (
@@ -215,3 +235,4 @@ export default function DogAIEngine({
     </div>
   );
 }
+/* vite.config.js */

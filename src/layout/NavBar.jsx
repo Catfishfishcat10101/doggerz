@@ -1,4 +1,4 @@
- // src/components/UI/NavBar.jsx
+ // src/NavBar.jsx
 import React, { useEffect, useMemo, useState, useId, useRef } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
