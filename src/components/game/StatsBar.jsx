@@ -1,3 +1,4 @@
+// src/components/game/StatsBar.jsx
 import React from "react";
 
 export default function StatsBar() {

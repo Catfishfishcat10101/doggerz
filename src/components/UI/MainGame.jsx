@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 // Playfield UI
 import DogSprite from "./DogSprite.jsx";
-import StatsBar from "./StatsBar.jsx";
+import StatsPanel from "./StatsPanel.jsx";
 import Status from "./Status.jsx";
 import Controls from "./Controls.jsx";
 import DogName from "./DogName.jsx";
