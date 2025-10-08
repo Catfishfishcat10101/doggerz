@@ -1,83 +1,37 @@
 // src/components/Auth/AuthListener.jsx
-import React, { useEffect } from "react";
+import { useEffect } from "react";
+import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { onIdTokenChanged, getRedirectResult } from "firebase/auth";
-
-// Redux
 import { useDispatch } from "react-redux";
-import { userLoading, userAuthed, userCleared, userError } from "@/redux/userSlice";
+import { userLoading, userAuthed, userError, userSignedOut } from "@/redux/userSlice";
 
-// Optional: warm frequently-used data (safe to remove)
-let stopDog = null;
-async function warmDog(uid) {
-  try {
-    const { watchDog } = await import("@/data/dogRepo");
-    stopDog = watchDog(uid, () => {});
-  } catch { /* ignore if not present */ }
-}
-
-function shapeUser(u, claims) {
+function shapeUser(u) {
   if (!u) return null;
   const { uid, email, displayName, photoURL } = u;
-  return { uid, email, displayName, photoURL, claims: claims || {} };
+  return { uid, email, displayName, photoURL };
 }
 
-/**
- * Mount once (RootLayout/App).
- * - Bridges Firebase auth → Redux
- * - Handles redirect results
- * - Reads custom claims (if any)
- */
-export default function AuthListener() {
+export default function AuthListener({ children }) {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    if (!auth) return;
-
     dispatch(userLoading());
-
-    // Complete any pending redirect sign-in (noop if none)
-    getRedirectResult(auth).catch((err) => {
-      if (import.meta.env.DEV) console.warn("[auth] redirect result error:", err);
-    });
-
-    const unsub = onIdTokenChanged(
+    const unsub = onAuthStateChanged(
       auth,
-      async (firebaseUser) => {
-        try {
-          if (!firebaseUser) {
-            stopDog?.(); stopDog = null;
-            dispatch(userCleared());
-            return;
-          }
-          // Claims are optional; skip if you don't use them
-          let claims = {};
-          try {
-            const token = await firebaseUser.getIdTokenResult();
-            claims = token?.claims || {};
-          } catch {}
-
-          dispatch(userAuthed(shapeUser(firebaseUser, claims)));
-
-          // Warm popular data paths
-          if (!stopDog) warmDog(firebaseUser.uid);
-        } catch (err) {
-          dispatch(userError(err?.message || "Auth state error"));
-          if (import.meta.env.DEV) console.error("[auth] state error:", err);
+      (u) => {
+        if (u) {
+          dispatch(userAuthed(shapeUser(u)));
+        } else {
+          dispatch(userSignedOut());
         }
       },
-      (error) => {
-        dispatch(userError(error?.message || "Auth listener error"));
-        if (import.meta.env.DEV) console.error("[auth] listener error:", error);
+      (err) => {
+        console.error("Auth listener error:", err);
+        dispatch(userError(err.message || "Auth listener failed"));
       }
     );
-
-    return () => {
-      unsub?.();
-      stopDog?.();
-      stopDog = null;
-    };
+    return () => unsub();
   }, [dispatch]);
 
-  return null;
+  return children;
 }

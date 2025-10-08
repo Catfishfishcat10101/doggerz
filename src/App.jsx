@@ -10,8 +10,8 @@ import RequireOnboarding from "@/routes/RequireOnboarding.jsx";
 
 // Lazy pages (faster TTI; swap to eager imports if you prefer)
 const Home        = lazy(() => import("@/pages/Home.jsx"));
-const Login       = lazy(() => import("@/pages/auth/Login.jsx"));
-const Signup      = lazy(() => import("@/pages/auth/Signup.jsx"));
+const Login       = lazy(() => import("@/pages/Login.jsx"));
+const Signup      = lazy(() => import("@/pages/Signup.jsx"));
 const Game        = lazy(() => import("@/pages/Game.jsx"));
 const Shop        = lazy(() => import("@/pages/Shop.jsx"));
 const Settings    = lazy(() => import("@/pages/Settings.jsx"));

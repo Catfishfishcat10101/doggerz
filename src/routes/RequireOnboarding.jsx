@@ -1,17 +1,17 @@
-// src/routes/RequireOnboarding.jsx
 import React from "react";
+import { Navigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { Navigate, useLocation } from "react-router-dom";
-import { selectDog } from "@/redux/dogSlice";
+
+// Adjust these selectors to your profile slice if different
+const selectProfile = (s) => s.profile?.data || { name: null, stage: null };
+const isComplete = (p) => Boolean(p?.name) && Boolean(p?.stage);
 
 export default function RequireOnboarding({ children }) {
-  const loc = useLocation();
-  const dog = useSelector(selectDog);
-  const hasName  = !!dog?.name && dog.name.trim().length >= 2;
-  const hasStage = !!dog?.stage;
-  if (!hasName || !hasStage) {
-    return <Navigate to="/onboarding" replace state={{ from: loc }} />;
-    // Optionally: if user not authed, bounce to /login first; then let login redirect here.
+  const profile = useSelector(selectProfile);
+
+  if (!isComplete(profile)) {
+    return <Navigate to="/onboarding" replace />;
   }
+
   return children;
 }

@@ -1,24 +1,27 @@
+// src/AppRoutes.jsx
 import React, { Suspense } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 
 import PublicLayout from "@/layout/PublicLayout.jsx";
 import AuthedLayout from "@/layout/AuthedLayout.jsx";
 import ProtectedRoute from "@/routes/ProtectedRoute.jsx";
+import RequireOnboarding from "@/routes/RequireOnboarding.jsx";
 
 import Home from "@/pages/Home.jsx";
 import Game from "@/pages/Game.jsx";
 import Login from "@/pages/Login.jsx";
 import Signup from "@/pages/Signup.jsx";
 import Profile from "@/pages/Profile.jsx";
+import Onboarding from "@/pages/Onboarding.jsx";
 
 import Privacy from "@/components/Legal/Privacy.jsx";
 import Terms from "@/components/Legal/Terms.jsx";
 
 export default function AppRoutes() {
   return (
-    <Suspense>
+    <Suspense fallback={<div className="p-6 text-zinc-300">Booting…</div>}>
       <Routes>
-        {/* Auth-first: land on login */}
+        {/* Public section */}
         <Route element={<PublicLayout />}>
           <Route index element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<Login />} />
@@ -27,7 +30,7 @@ export default function AppRoutes() {
           <Route path="/terms" element={<Terms />} />
         </Route>
 
-        {/* Signed-in app */}
+        {/* Authenticated section */}
         <Route
           element={
             <ProtectedRoute requireEmailVerified={false}>
@@ -35,11 +38,24 @@ export default function AppRoutes() {
             </ProtectedRoute>
           }
         >
-          <Route path="/game" element={<Game />} />
+          {/* Onboarding route for first-time authed users */}
+          <Route path="/onboarding" element={<Onboarding />} />
+
+          {/* Game gated behind onboarding completeness */}
+          <Route
+            path="/game"
+            element={
+              <RequireOnboarding>
+                <Game />
+              </RequireOnboarding>
+            }
+          />
+
           <Route path="/home" element={<Home />} />
           <Route path="/profile" element={<Profile />} />
         </Route>
 
+        {/* 404 */}
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Suspense>
