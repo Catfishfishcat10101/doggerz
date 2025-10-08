@@ -1,3 +1,4 @@
+// src/components/Auth/LogoutButton.jsx
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { signOut } from "firebase/auth";
@@ -12,7 +13,7 @@ export default function LogoutButton({ className = "" }) {
     } catch (e) {
       console.error("Logout error:", e);
     } finally {
-      nav("/"); // back to splash
+      nav("/");
     }
   }
 

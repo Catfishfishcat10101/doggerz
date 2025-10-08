@@ -1,4 +1,3 @@
-<<<<<<< Updated upstream
 import React, { useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { onAuthStateChanged } from "firebase/auth";
@@ -23,7 +22,6 @@ export default function AuthGate({ children }) {
   }
   return children;
 }
-=======
 // src/components/Auth/AuthGate.jsx
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -157,4 +155,4 @@ export default function AuthGate() {
     </div>
   );
 }
->>>>>>> Stashed changes
+

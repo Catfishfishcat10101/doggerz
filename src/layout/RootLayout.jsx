@@ -1,21 +1,17 @@
 // src/layout/RootLayout.jsx
 import React from "react";
 import { Outlet, useLocation } from "react-router-dom";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+
 import NavBar from "@/components/UI/NavBar.jsx";
 import ScrollRestorer from "@/layout/ScrollRestorer.jsx";
 import RouteFocus from "@/layout/RouteFocus.jsx";
 import RouteBoundary from "@/layout/RouteBoundary.jsx";
-import { AnimatePresence, motion } from "framer-motion";
+import Footer from "@/components/UI/Footer.jsx";
 
-/**
- * RootLayout
- * - Global shell (wraps both public and authed routes if you want).
- * - High-contrast dark UI for glare sensitivity (photophobia) and colorblind safety.
- * - Skip link, focus management, scroll restoration, and an error boundary per-route.
- * - Optional route transitions (respecting reduced-motion).
- */
 export default function RootLayout() {
   const location = useLocation();
+  const reduce = useReducedMotion(); // honors OS “Reduce motion”
 
   return (
     <div className="min-h-dvh flex flex-col bg-slate-900 text-white antialiased">
@@ -43,12 +39,11 @@ export default function RootLayout() {
           <RouteBoundary resetKey={location.pathname}>
             <AnimatePresence mode="wait" initial={false}>
               <motion.section
-                key={location.key || location.pathname}
-                // Respect reduced motion: our MotionSafe component will no-op if user prefers reduced motion
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.18, ease: "easeOut" }}
+                key={location.pathname} // stable across query/hash changes
+                initial={reduce ? false : { opacity: 0, y: 6 }}
+                animate={reduce ? { opacity: 1 } : { opacity: 1, y: 0 }}
+                exit={reduce ? { opacity: 0 } : { opacity: 0, y: -6 }}
+                transition={reduce ? undefined : { duration: 0.18, ease: "easeOut" }}
                 aria-live="polite"
               >
                 <Outlet />
@@ -58,9 +53,7 @@ export default function RootLayout() {
         </div>
       </main>
 
-      {/* TODO: Portals (toasts, modals, footers) can mount here */}
-      {/* <Footer /> */}
-      {/* <Toaster /> */}
+      <Footer />
     </div>
   );
 }

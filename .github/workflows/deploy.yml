@@ -1,37 +1,24 @@
-Catfishfishcat10101
-doggerz
-
-Type / to search
-Code
-Issues
-Pull requests
-2
-Discussions
-Actions
-Projects
-Wiki
-Security
-7
-Insights
-Settings
-Deploy Vite to GitHub Pages
-Update vite.config.js #25
-Jobs
-Run details
-Triggered via push 10 minutes ago
-@Catfishfishcat10101Catfishfishcat10101
-pushed
- a176b83
-main
-Status
-Failure
-Total duration
-1m 36s
-Artifacts
-–
-
-
-Annotations
-1 error
-build
-Process completed with exit code 1.
+name: Deploy Firebase Hosting
+on:
+  push:
+    branches: [ main ]
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm ci
+      - run: npm run build
+        env:
+          VITE_APP_NAME: Doggerz
+          VITE_ENV: prod
+          VITE_SITE_ORIGIN: https://dogger-a8021-site.web.app
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: "${{ secrets.GITHUB_TOKEN }}"
+          firebaseServiceAccount: "${{ secrets.FIREBASE_SERVICE_ACCOUNT_DOGGER_A8021 }}"
+          channelId: live
+          projectId: dogger-a8021
+          target: prod
