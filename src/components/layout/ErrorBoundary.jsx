@@ -1,29 +1,32 @@
-// src/layout/ErrorBoundary.jsx
+// src/components/UI/ErrorBoundary.jsx
 import React from "react";
+import PropTypes from "prop-types";
 
 export default class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { err: null };
+    this.state = { hasError: false, error: null };
   }
-  static getDerivedStateFromError(err) {
-    return { err };
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
   }
-  componentDidCatch(err, info) {
-    console.error("UI ErrorBoundary:", err, info);
+  componentDidCatch(error, info) {
+    console.error(`[ErrorBoundary:${this.props.name || "unnamed"}]`, error, info);
   }
+  reset = () => this.setState({ hasError: false, error: null });
+
   render() {
-    const { err } = this.state;
-    if (err) {
+    if (this.state.hasError) {
       return (
-        <div className="p-6 max-w-xl mx-auto">
-          <h1 className="text-xl font-bold mb-2">Something broke.</h1>
-          <p className="opacity-80 mb-4">{String(err?.message || err)}</p>
+        <div className="p-4 rounded-xl bg-red-600/20 border border-red-500/40 text-sm">
+          <div className="font-semibold mb-2">
+            Something went wrong{this.props.name ? ` in ${this.props.name}` : ""}.
+          </div>
           <button
-            className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20"
-            onClick={() => location.reload()}
+            onClick={this.reset}
+            className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20"
           >
-            Reload
+            Try again
           </button>
         </div>
       );
@@ -31,3 +34,4 @@ export default class ErrorBoundary extends React.Component {
     return this.props.children;
   }
 }
+
