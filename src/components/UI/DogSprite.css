@@ -1,3 +1,4 @@
+/* Dog sprite CSS */
 /* Container: position by world X (left) and worldBottomPct (bottom) */
 .dog-sprite-container {
   position: absolute;
@@ -7,8 +8,8 @@
   pointer-events: none; /* container is decorative; button handles input */
 }
 
-/* Core sprite button */
-/* We use CSS variables pushed from React:
+/* Core sprite button
+   Variables pushed from React:
    --sprite-w, --sprite-h: source frame size (sheet frame)
    --sprite-scale: integer scale (1,2,3…)
    --flipX: 1 or -1
@@ -30,10 +31,12 @@
 
   position: relative;
   display: inline-block;
+
   width: calc(var(--sprite-w) * var(--sprite-scale));
   height: calc(var(--sprite-h) * var(--sprite-scale));
+
   background-repeat: no-repeat;
-  background-position: 0 0;
+  background-position: 0 0; /* X animates; Y is set inline from React */
   background-size: calc(var(--sprite-w) * var(--frames)) var(--sprite-h);
 
   /* Keep pixels crisp even when scaled */
@@ -71,7 +74,11 @@
   transform: translateX(-50%);
   width: var(--shadow-width);
   height: var(--shadow-height);
-  background: radial-gradient(ellipse at center, rgba(0,0,0,var(--shadow-opacity)) 0%, rgba(0,0,0,0) 70%);
+  background: radial-gradient(
+    ellipse at center,
+    rgba(0, 0, 0, var(--shadow-opacity)) 0%,
+    rgba(0, 0, 0, 0) 70%
+  );
   filter: blur(1px);
   pointer-events: none;
 }
@@ -95,3 +102,4 @@
     background-position-x: calc(var(--sprite-w) * var(--frames) * -1);
   }
 }
+/* End of Dog sprite CSS */

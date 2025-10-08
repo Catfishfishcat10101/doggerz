@@ -15,8 +15,8 @@ import {
  * AuthButtons
  * Props:
  *  - mode: "login" | "signup"  (default: "login")
- *  - onSuccess?: (user) => void   // called after a successful auth
- *  - showForgot?: boolean         // login-only; default true
+ *  - onSuccess?: (user) => void
+ *  - showForgot?: boolean       (login-only; default true)
  */
 export default function AuthButtons({ mode = "login", onSuccess, showForgot = true }) {
   const [name, setName] = useState("");
@@ -71,7 +71,7 @@ export default function AuthButtons({ mode = "login", onSuccess, showForgot = tr
 
   async function onEmailLogin(e) {
     e.preventDefault();
-    const em = email.trim();
+    const em = email.trim().toLowerCase();
     if (!em || !pw) return;
     await withBusy(async () => {
       try {
@@ -85,7 +85,7 @@ export default function AuthButtons({ mode = "login", onSuccess, showForgot = tr
 
   async function onEmailSignup(e) {
     e.preventDefault();
-    const em = email.trim();
+    const em = email.trim().toLowerCase();
     const nm = name.trim();
     if (!em || !pw) return;
     await withBusy(async () => {
@@ -101,7 +101,7 @@ export default function AuthButtons({ mode = "login", onSuccess, showForgot = tr
 
   async function onForgot(e) {
     e.preventDefault();
-    const em = email.trim();
+    const em = email.trim().toLowerCase();
     if (!em) {
       setMsg("Enter your email first to receive a reset link.");
       return;
@@ -119,7 +119,6 @@ export default function AuthButtons({ mode = "login", onSuccess, showForgot = tr
   // --- UI --------------------------------------------------------------------
   return (
     <div className="space-y-4" id="auth-panel" aria-live="polite">
-      {/* Google only in Login mode */}
       {isLogin && (
         <button
           type="button"
@@ -134,16 +133,10 @@ export default function AuthButtons({ mode = "login", onSuccess, showForgot = tr
         </button>
       )}
 
-      <form
-        className="grid gap-3"
-        onSubmit={isLogin ? onEmailLogin : onEmailSignup}
-        noValidate
-      >
-        {/* Display name ONLY on signup */}
+      <form className="grid gap-3" onSubmit={isLogin ? onEmailLogin : onEmailSignup} noValidate>
         {!isLogin && (
           <input
-            className="rounded-lg bg-neutral-900 border border-neutral-700 px-3 py-2 text-white
-                       outline-none focus:ring-2 focus:ring-amber-300"
+            className="rounded-lg bg-neutral-900 border border-neutral-700 px-3 py-2 text-white outline-none focus:ring-2 focus:ring-amber-300"
             placeholder="Display name (optional)"
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -152,20 +145,18 @@ export default function AuthButtons({ mode = "login", onSuccess, showForgot = tr
         )}
 
         <input
-          className="rounded-lg bg-neutral-900 border border-neutral-700 px-3 py-2 text-white
-                     outline-none focus:ring-2 focus:ring-amber-300"
+          className="rounded-lg bg-neutral-900 border border-neutral-700 px-3 py-2 text-white outline-none focus:ring-2 focus:ring-amber-300"
           type="email"
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          autoComplete={isLogin ? "email" : "new-email"}
+          autoComplete="email"
           required
         />
 
         <div className="relative">
           <input
-            className="w-full rounded-lg bg-neutral-900 border border-neutral-700 px-3 py-2 text-white
-                       outline-none focus:ring-2 focus:ring-amber-300 pr-24"
+            className="w-full rounded-lg bg-neutral-900 border border-neutral-700 px-3 py-2 text-white outline-none focus:ring-2 focus:ring-amber-300 pr-24"
             type={showPw ? "text" : "password"}
             placeholder="Password"
             value={pw}
@@ -183,7 +174,6 @@ export default function AuthButtons({ mode = "login", onSuccess, showForgot = tr
           </button>
         </div>
 
-        {/* Buttons */}
         {isLogin ? (
           <div className="flex items-center justify-between">
             <button
@@ -214,7 +204,6 @@ export default function AuthButtons({ mode = "login", onSuccess, showForgot = tr
             >
               {busy ? "Creating…" : "Create account"}
             </button>
-            {/* Secondary “Sign in” CTA can be rendered by the parent near footer */}
           </div>
         )}
       </form>

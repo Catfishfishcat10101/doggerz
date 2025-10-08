@@ -1,40 +1,56 @@
 // src/App.jsx
-import React, { Suspense } from "react";
+import React, { Suspense, lazy } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
+
+// Shared shell + route guards
 import RootLayout from "@/layout/RootLayout.jsx";
 import RequireAuth from "@/layout/RequireAuth.jsx";
 import RequireGuest from "@/layout/RequireGuest.jsx";
 
-// Pages (eager or lazy – your call)
-import Home from "@/pages/Home.jsx";
-import Login from "@/pages/auth/Login.jsx";
-import Signup from "@/pages/auth/Signup.jsx";
-import Game from "@/pages/Game.jsx";
-import Shop from "@/pages/Shop.jsx";
-import Settings from "@/pages/Settings.jsx";
+// Lazy pages (faster TTI; swap to eager imports if you prefer)
+const Home     = lazy(() => import("@/pages/Home.jsx"));
+const Login    = lazy(() => import("@/pages/auth/Login.jsx"));
+const Signup   = lazy(() => import("@/pages/auth/Signup.jsx"));
+const Game     = lazy(() => import("@/pages/Game.jsx"));
+const Shop     = lazy(() => import("@/pages/Shop.jsx"));
+const Settings = lazy(() => import("@/pages/Settings.jsx"));
+const Privacy  = lazy(() => import("@/pages/Legal/Privacy.jsx").catch(() => ({ default: () => <div className="p-6">Privacy</div> })));
+const Terms    = lazy(() => import("@/pages/Legal/Terms.jsx").catch(() => ({ default: () => <div className="p-6">Terms</div> })));
+
+// Minimal 404 (use your NotFound.jsx if you have one)
+function NotFound() {
+  return <div className="p-6">Not found.</div>;
+}
 
 export default function App() {
   return (
     <Suspense fallback={<div className="p-6 text-zinc-300">Booting…</div>}>
       <Routes>
+        {/* Shared app chrome (header/nav/footer/scroll restore) */}
         <Route element={<RootLayout />}>
           {/* Public routes */}
           <Route index element={<Home />} />
+          <Route path="privacy" element={<Privacy />} />
+          <Route path="terms" element={<Terms />} />
 
-          <Route element={<RequireGuest.Outlet />}>
+          {/* Guest-only (redirects authed users away) */}
+          <Route element={<RequireGuest />}>
             <Route path="login" element={<Login />} />
             <Route path="signup" element={<Signup />} />
           </Route>
 
-          {/* Protected routes */}
-          <Route element={<RequireAuth.Outlet />}>
+          {/* Auth-required */}
+          <Route element={<RequireAuth />}>
             <Route path="game" element={<Game />} />
             <Route path="shop" element={<Shop />} />
             <Route path="settings" element={<Settings />} />
           </Route>
 
-          {/* Fallbacks */}
-          <Route path="404" element={<div className="p-6">Not found.</div>} />
+          {/* Legacy/cleanup routes */}
+          <Route path="new-pup" element={<Navigate to="/game" replace />} />
+
+          {/* 404 */}
+          <Route path="404" element={<NotFound />} />
           <Route path="*" element={<Navigate to="/404" replace />} />
         </Route>
       </Routes>

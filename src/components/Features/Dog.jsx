@@ -1,17 +1,6 @@
 // src/components/Features/Dog.jsx
 import React, { useEffect, useRef, useState } from "react";
 
-/**
- * Minimal-but-handy dog sprite placeholder.
- * Props:
- *  - x, y: numbers (position in px, relative to a positioned parent)
- *  - dir: "up" | "down" | "left" | "right"
- *  - moving: boolean (animates when true)
- *  - size: number (box size in px, default 28)
- *  - className: extra classes (e.g., "sprite-shadow")
- *
- * Replace the colored box with your sprite sheet later (see bgImage lines).
- */
 export default function Dog({
   x = 0,
   y = 0,
@@ -24,7 +13,7 @@ export default function Dog({
   const raf = useRef(0);
   const last = useRef(performance.now());
 
-  // Tiny walk animation loop (2 frames)
+
   useEffect(() => {
     if (!moving) {
       setFrame(0);
@@ -34,7 +23,7 @@ export default function Dog({
     const loop = (now) => {
       const dt = now - last.current;
       if (dt > 140) {
-        setFrame((f) => (f ^ 1)); // toggle 0/1
+        setFrame((f) => (f ^ 1));
         last.current = now;
       }
       raf.current = requestAnimationFrame(loop);
@@ -44,11 +33,6 @@ export default function Dog({
     return () => cancelAnimationFrame(raf.current);
   }, [moving]);
 
-  // Simple facing transform (flip for left)
-  const flip = dir === "left" ? "scaleX(-1)" : "none";
-
-  // Placeholder visual: rounded gradient box
-  // Swap to your sprite sheet by uncommenting bgImage and setting backgroundPosition by dir/frame.
   const style = {
     position: "absolute",
     left: x - size / 2,
@@ -62,14 +46,7 @@ export default function Dog({
       frame === 0
         ? "linear-gradient(180deg,#f472b6,#ef4444)"
         : "linear-gradient(180deg,#fca5a5,#ef4444)",
-    // Example for a spritesheet later:
-    // backgroundImage: "url(/assets/sprites/dog.png)",
-    // backgroundSize: "cover",
-    // backgroundPosition: getSpritePos(dir, frame),
   };
 
   return <div className={`sprite ${className}`} style={style} aria-label="Dog sprite" />;
 }
-
-// If you switch to a sprite sheet, map (dir, frame) -> backgroundPosition here.
-// function getSpritePos(dir, frame) { ... }

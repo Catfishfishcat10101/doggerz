@@ -1,35 +1,27 @@
-// src/config/app.js
-export const COPYRIGHT = "Doggerz © 2025 — No grind. Just vibes.";
-export const SUPPORT_EMAIL = "support@doggerz.app"; // change later
-export const MAX_USERNAME_LEN = 24;
-export const MIN_PASSWORD_LEN = 8;
-export const NETWORK_TIMEOUT_MS = 15_000;
+// src/config/app.js (compat shim) — will be removed later
+export { APP_COPYRIGHT as COPYRIGHT, SUPPORT_EMAIL } from "./seo.js";
+export { NETWORK_TIMEOUT_MS } from "./env.js";
 
-// Accessibility toggles (fallback defaults; UI can override)
-export const ACCESSIBILITY_DEFAULTS = Object.freeze({
-  reduceMotion: false,
-  highContrast: true,
-  focusVisibleAlways: true,
-});
-export const ACCESSIBILITY_LOCAL_STORAGE_KEY = "doggerz-accessibility";
+export {
+  ACCESSIBILITY_DEFAULTS,
+  loadAccessibility,
+  saveAccessibility,
+} from "./accessibility.js";
 
-// Local storage keys
-export const AUTH_LOCAL_STORAGE_KEY = "doggerz-auth";
-export const ONBOARDING_LOCAL_STORAGE_KEY = "doggerz-onboarding";
-export const THEME_LOCAL_STORAGE_KEY = "doggerz-theme";
-export const ANALYTICS_LOCAL_STORAGE_KEY = "doggerz-analytics";
+export {
+  LS as STORAGE_KEYS,
+  AUTH_LOCAL_STORAGE_KEY,
+  ONBOARDING_LOCAL_STORAGE_KEY,
+  THEME_LOCAL_STORAGE_KEY,
+  ANALYTICS_LOCAL_STORAGE_KEY,
+  ACCESSIBILITY_LOCAL_STORAGE_KEY,
+} from "./storageKeys.js";
 
-// Theme options
-export const THEMES = Object.freeze({
-	LIGHT: "light",
-	DARK: "dark",
-	SYSTEM: "system",
-});
-export const DEFAULT_THEME = THEMES.DARK;
+export { THEMES, DEFAULT_THEME } from "./theme.js";
 
-// Analytics options
-export const ANALYTICS_OPTIONS = Object.freeze({
-	ENABLED: "enabled",
-	DISABLED: "disabled",
-});
-export const DEFAULT_ANALYTICS = ANALYTICS_OPTIONS.ENABLED;
+export {
+  ANALYTICS_OPTIONS,
+  DEFAULT_ANALYTICS,
+  EVENTS,
+  track,
+} from "./analytics.js";

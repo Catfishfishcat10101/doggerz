@@ -1,13 +1,15 @@
-// All local/session storage keys in one place so they never collide.
+// src/config/storageKeys.js
 export const LS = Object.freeze({
-  theme: "doggerz:theme",
-  a11y: "doggerz:a11y",
-  scrollPrefix: "scroll:", // used by ScrollRestorer
+  AUTH: "doggerz-auth",
+  ONBOARDING: "doggerz-onboarding",
+  THEME: "doggerz-theme",
+  ANALYTICS: "doggerz-analytics",
+  ACCESSIBILITY: "doggerz-accessibility",
 });
 
-export const SS = Object.freeze({
-  returnTo: "doggerz:returnTo",
-});
-
-export const keyForScroll = (routeKey) => `${LS.scrollPrefix}${routeKey}`;
-// Usage: keyForScroll('someRouteKey') => 'scroll:someRouteKey'
+// Back-compat individual constants (same names you used before)
+export const AUTH_LOCAL_STORAGE_KEY = LS.AUTH;
+export const ONBOARDING_LOCAL_STORAGE_KEY = LS.ONBOARDING;
+export const THEME_LOCAL_STORAGE_KEY = LS.THEME;
+export const ANALYTICS_LOCAL_STORAGE_KEY = LS.ANALYTICS;
+export const ACCESSIBILITY_LOCAL_STORAGE_KEY = LS.ACCESSIBILITY;

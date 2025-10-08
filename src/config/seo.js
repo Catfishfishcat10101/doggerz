@@ -1,24 +1,20 @@
 // src/config/seo.js
-import * as ENV from "./env.js";
+export const APP_COPYRIGHT = "Doggerz © 2025 — No grind. Just vibes.";
+export const SUPPORT_EMAIL = "support@doggerz.app";
 
-
-export const SITE_NAME = ENV.APP_NAME || "Doggerz";
-export const ORIGIN = import.meta.env.VITE_SITE_ORIGIN || "http://localhost:5173";
-export const DEFAULT_TITLE = "Adopt your Doggerz!";
-export const DEFAULT_DESC =
-  "Raise your own pup! Feed, play, train, and make choices that shape behavior.";
-export const DEFAULT_IMAGE = `${ORIGIN}/icons/icon-512.png`;
-
-export function metaForRoute({ title, description, image, url, canonical } = {}) {
-  const t = title ? `${title} • ${SITE_NAME}` : DEFAULT_TITLE;
-  const d = description || DEFAULT_DESC;
-  const i = image || DEFAULT_IMAGE;
-  const u = url || ORIGIN;
-
+export function metaForRoute({ title, description, url, image } = {}) {
+  const t = title ? `${title} • Doggerz` : "Doggerz";
+  const d = description || "Adopt a pixel pup. Train, bond, and vibe — offline-ready PWA.";
+  const i = image || "/icons/icon-512.png";
+  const u = url || (typeof window !== "undefined" ? window.location.href : "");
   return {
     title: t,
     description: d,
-    og: { title: t, description: d, image: i, url: u, site_name: SITE_NAME, type: "website" },
-    canonical: canonical || u,
+    og: {
+      title: t, description: d, image: i, url: u,
+      site_name: "Doggerz", type: "website",
+    },
+    twitter: { card: "summary_large_image", title: t, description: d, image: i },
+    canonical: u,
   };
 }

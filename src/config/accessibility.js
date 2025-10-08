@@ -1,22 +1,21 @@
-// Accessibility affordances and key mapping centralization.
-export const ARIA = Object.freeze({
-  nav: "Primary Navigation",
-  gameCanvas: "Game Canvas",
-  statsBar: "Pup Stats",
+// src/config/accessibility.js
+import { LS } from "./storageKeys.js";
+
+export const ACCESSIBILITY_DEFAULTS = Object.freeze({
+  reduceMotion: false,
+  highContrast: true,
+  focusVisibleAlways: true,
 });
 
-export const KEYS = Object.freeze({
-  up: ["ArrowUp", "KeyW"],
-  down: ["ArrowDown", "KeyS"],
-  left: ["ArrowLeft", "KeyA"],
-  right: ["ArrowRight", "KeyD"],
-  interact: ["KeyE"],
-  pause: ["KeyP"],
-  action: ["Space"],
-});
+export function loadAccessibility() {
+  try {
+    const raw = localStorage.getItem(LS.ACCESSIBILITY);
+    return raw ? { ...ACCESSIBILITY_DEFAULTS, ...JSON.parse(raw) } : { ...ACCESSIBILITY_DEFAULTS };
+  } catch {
+    return { ...ACCESSIBILITY_DEFAULTS };
+  }
+}
 
-// Utility: check if an event matches a logical key
-export function isKey(evt, logical) {
-  const list = KEYS[logical] || [];
-  return list.includes(evt.code) || list.includes(evt.key);
+export function saveAccessibility(a11y) {
+  try { localStorage.setItem(LS.ACCESSIBILITY, JSON.stringify(a11y)); } catch {}
 }

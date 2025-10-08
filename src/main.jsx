@@ -6,11 +6,8 @@ import { BrowserRouter } from "react-router-dom";
 import store from "./redux/store";
 import App from "./App.jsx";
 
-// Tailwind entry + app styles (single source of truth)
+// Tailwind entry + app styles
 import "./styles.css";
-
-// Fonts (prefer local for privacy/CLS; enable if using @fontsource/inter)
-// import "@fontsource/inter/variable.css";
 
 // Initialize Firebase singletons (auth, db, storage, functions)
 import "@/lib/firebase";
@@ -18,24 +15,28 @@ import "@/lib/firebase";
 // ----- PWA: register service worker + surface updates -----
 let unregister = null;
 try {
-  const { registerSW } = await import("virtual:pwa-register");
-  unregister = registerSW({
-    immediate: true,
-    onRegisteredSW(swUrl, reg) {
-      if (import.meta.env.DEV) {
-        console.info("[pwa] SW registered:", swUrl, reg);
-      }
-    },
-    onRegisterError(err) {
-      if (import.meta.env.DEV) console.warn("[pwa] register error:", err);
-    },
-    onNeedRefresh() {
-      showUpdateToast();
-    },
-    onOfflineReady() {
-      if (import.meta.env.DEV) console.info("[pwa] offline ready");
-    },
-  });
+  if ("serviceWorker" in navigator) {
+    const { registerSW } = await import("virtual:pwa-register");
+    unregister = registerSW({
+      immediate: true,
+      onRegisteredSW(swUrl, reg) {
+        if (import.meta.env.DEV) {
+          console.info("[pwa] SW registered:", swUrl, reg);
+        }
+      },
+      onRegisterError(err) {
+        if (import.meta.env.DEV) console.warn("[pwa] register error:", err);
+      },
+      onNeedRefresh() {
+        showUpdateToast();
+      },
+      onOfflineReady() {
+        if (import.meta.env.DEV) console.info("[pwa] offline ready");
+      },
+    });
+  } else if (import.meta.env.DEV) {
+    console.info("[pwa] serviceWorker not supported; skipping SW registration");
+  }
 } catch (e) {
   // vite-plugin-pwa not present? Fine — no-op.
   if (import.meta.env.DEV) console.info("[pwa] plugin not active; skipping SW registration");
@@ -70,7 +71,6 @@ function showUpdateToast() {
   const remove = () => root.remove();
   root.querySelector("#pwa-reload")?.addEventListener("click", () => location.reload());
   root.querySelector("#pwa-later")?.addEventListener("click", remove);
-  // Auto-dismiss after 12s (still accessible via SW update heuristics later)
   setTimeout(remove, 12000);
 }
 
@@ -84,11 +84,10 @@ class RootErrorBoundary extends React.Component {
     return { hasError: true, err };
   }
   componentDidCatch(err, info) {
-    // TODO: wire telemetry
+    // TODO: telemetry hook
     // eslint-disable-next-line no-console
     console.error("RootErrorBoundary:", err, info);
     try {
-      // broadcast to any dev overlays
       window.dispatchEvent(new CustomEvent("doggerz:error", { detail: { err, info } }));
     } catch {}
   }
@@ -142,4 +141,3 @@ if (import.meta.hot && typeof unregister === "function") {
     try { unregister(); } catch {}
   });
 }
-// End src/main.jsx

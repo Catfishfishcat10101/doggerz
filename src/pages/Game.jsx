@@ -1,19 +1,27 @@
 // src/pages/Game.jsx
 import React, { useEffect, useState } from "react";
-import PupStage from "@/components/UI/PupStage.jsx";
 import { useDispatch, useSelector } from "react-redux";
-import { selectDog, takeOutside } from "@/redux/dogSlice.js";
+
+import BackgroundScene from "@/components/Features/BackgroundScene.jsx";
+import DogAIEngine from "@/components/Features/DogAIEngine.jsx";   // autonomous-only engine
+import DogStage from "@/components/game/DogStage.jsx";             // view-only renderer
+import NeedsHUD from "@/components/Features/NeedsHUD.jsx";
+
 import NamePupModal from "@/components/UI/NamePupModal.jsx";
 import { selectUser } from "@/redux/userSlice.js";
+import { selectDog, takeOutside } from "@/redux/dogSlice.js";
+
 import { ensureDogForUser } from "@/services/dogService.js";
 
 export default function Game() {
   const dispatch = useDispatch();
   const user = useSelector(selectUser);
-  const dog = useSelector(selectDog);
+  const dog  = useSelector(selectDog);
+
   const [nameOpen, setNameOpen] = useState(false);
   const [hint, setHint] = useState("");
 
+  // Ensure a dog exists for the user; open naming modal if needed
   useEffect(() => {
     let live = true;
     (async () => {
@@ -25,30 +33,45 @@ export default function Game() {
     return () => { live = false; };
   }, [user?.uid]);
 
+  // ——— Potty flow (autonomous) ———
+  // The AI uses a normalized world width; we mirror that here for a robust yard check.
+  // Keep this in sync with <DogAIEngine worldW={...} /> below.
+  const WORLD_W = 640;
+  const YARD_FRACTION = 0.18; // right-most 18% is the yard
+  const yardX = WORLD_W * (1 - YARD_FRACTION);
+
   function onPotty() {
-    // If not in yard, coach the player
-    if (dog.pos?.x < 1400) {
-      setHint("Move your pup to the right into the yard, then press Go Potty.");
+    // If pup is already in the yard, let them go outside now.
+    if ((dog?.pos?.x ?? 0) >= yardX) {
+      dispatch(takeOutside());
+      setHint("Nice! Going outside boosts happiness and XP.");
+      clearHintSoon();
       return;
     }
-    dispatch(takeOutside());
-    setHint("Nice! Going outside boosts happiness and XP.");
-    setTimeout(() => setHint(""), 2500);
+
+    // Autonomy-first UX: we don't let the player drive the dog.
+    // Instead, we inform them the pup will go when it wanders into the yard.
+    setHint("Your pup will go when it wanders into the yard on the right.");
+    clearHintSoon();
+  }
+
+  function clearHintSoon(ms = 2600) {
+    window.setTimeout(() => setHint(""), ms);
   }
 
   return (
-    <div className="space-y-4">
-      {/* Yard marker strip */}
-      <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-        <div className="relative">
-          {/* Visual yard zone on right */}
-          <div className="absolute inset-y-0 right-0 w-40 bg-emerald-700/20 border-l border-emerald-400/30 pointer-events-none flex items-center justify-center">
-            <span className="text-emerald-200/80 text-xs rotate-90">Yard</span>
-          </div>
-          <PupStage interactive className="min-h-[420px]" />
-        </div>
+    <div className="container mx-auto px-4 py-6 grid gap-6">
+      {/* Headless driver: mount once. The dog moves/acts on its own. */}
+      <DogAIEngine worldW={WORLD_W} worldH={360} debug={false} />
 
-        <div className="mt-4 flex flex-wrap gap-2">
+      {/* Scene shell + autonomous stage */}
+      <BackgroundScene skin="default" accent="#10b981">
+        <DogStage />
+      </BackgroundScene>
+
+      {/* Controls/HUD row (player cannot move the dog) */}
+      <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+        <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={onPotty}
             disabled={!dog.needToGo}
@@ -63,7 +86,7 @@ export default function Game() {
 
           {dog.needToGo ? (
             <span className="text-sm text-amber-300/90">
-              Your pup needs to go! Move to the yard on the right, then press the button.
+              Pup will handle it when it’s in the yard.
             </span>
           ) : (
             <span className="text-sm text-white/60">All good for now.</span>
@@ -73,6 +96,10 @@ export default function Game() {
         {hint && <div className="mt-2 text-sm text-white/80">{hint}</div>}
       </div>
 
+      {/* Needs overlay (or any other meta UI you already have) */}
+      <NeedsHUD />
+
+      {/* Name-onboarding */}
       {user?.uid && !dog?.name && (
         <NamePupModal open={nameOpen} onClose={() => setNameOpen(false)} />
       )}
