@@ -1,25 +1,98 @@
 <!-- public/offline.html -->
 <!doctype html>
-<html lang="en">
+<html lang="en" dir="ltr">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <meta name="color-scheme" content="dark" />
     <title>Doggerz — Offline</title>
     <style>
-      html,body{height:100%}body{margin:0;display:grid;place-items:center;font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;background:#0f172a;color:#e2e8f0}
-      .card{max-width:28rem;padding:1.25rem 1.5rem;border:1px solid #334155;border-radius:14px;background:#111827}
-      h1{margin:0 0 .5rem;font-weight:700;font-size:1.25rem}
-      p{margin:.25rem 0 .25rem;opacity:.9}
-      .hint{opacity:.7;font-size:.95rem}
-      .btn{display:inline-block;margin-top:.75rem;padding:.5rem .9rem;border-radius:10px;border:1px solid #334155;text-decoration:none;color:#e2e8f0}
+      :root { --bg:#0f172a; --card:#111827; --text:#e2e8f0; --muted:#cbd5e1; --border:#334155; --focus:#f59e0b; }
+      html,body{height:100%}
+      body{
+        margin:0;display:grid;place-items:center;background:var(--bg);color:var(--text);
+        font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Arial,sans-serif;
+      }
+      main{width:100%}
+      .card{
+        max-width:28rem;margin:2rem auto;padding:1.25rem 1.5rem;border:1px solid var(--border);
+        border-radius:14px;background:var(--card); box-shadow:0 1px 0 rgba(255,255,255,.03) inset;
+      }
+      h1{margin:0 0 .5rem;font-weight:800;font-size:1.25rem;letter-spacing:.2px}
+      p{margin:.25rem 0 .25rem}
+      .muted{opacity:.8;color:var(--muted)}
+      .row{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.75rem}
+      .btn{
+        display:inline-flex;align-items:center;gap:.4rem;
+        padding:.55rem .9rem;border-radius:10px;border:1px solid var(--border);
+        background:transparent;color:var(--text);text-decoration:none;cursor:pointer
+      }
+      .btn:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-color:var(--focus)}
+      .hint{font-size:.95rem}
+      .count { font-variant-numeric: tabular-nums; }
+      @media (prefers-reduced-motion: no-preference) {
+        .pulse { animation:pulse 1.4s ease-in-out infinite }
+        @keyframes pulse { 0%,100%{opacity:.6} 50%{opacity:1} }
+      }
     </style>
   </head>
   <body>
-    <div class="card">
-      <h1>You're offline</h1>
-      <p>Doggerz can’t reach the network right now.</p>
-      <p class="hint">We’ll auto-retry when you’re back online.</p>
-      <a class="btn" href="/">Reload</a>
-    </div>
+    <main role="main" aria-labelledby="title">
+      <section class="card" role="status" aria-live="polite">
+        <h1 id="title">You’re offline</h1>
+        <p>Doggerz can’t reach the network right now.</p>
+        <p class="muted hint">
+          We’ll try again in <span id="secs" class="count">10</span>s.
+          <span class="pulse" aria-hidden="true">●</span>
+        </p>
+        <div class="row">
+          <a class="btn" href="/" id="reloadBtn">Reload</a>
+          <button class="btn" id="backBtn" type="button">Go back</button>
+          <button class="btn" id="retryBtn" type="button">Retry now</button>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      (function () {
+        // Respect privacy modes: guard everything
+        var w = window, d = document;
+        var secsEl = d.getElementById('secs');
+        var reloadBtn = d.getElementById('reloadBtn');
+        var retryBtn = d.getElementById('retryBtn');
+        var backBtn = d.getElementById('backBtn');
+
+        // Back: if history has entries, go back; else go home.
+        backBtn.addEventListener('click', function () {
+          try {
+            if (w.history && w.history.length > 1) w.history.back();
+            else w.location.href = '/';
+          } catch { w.location.href = '/'; }
+        });
+
+        function online() { return ('onLine' in navigator) ? navigator.onLine : false; }
+        function retry() { try { w.location.reload(); } catch { w.location.href = '/'; } }
+
+        // Manual retry
+        retryBtn.addEventListener('click', retry);
+        reloadBtn.addEventListener('click', function (e) {
+          // If the root is precached this will often succeed; allow default.
+        });
+
+        // Auto retry countdown (10s)
+        var remaining = 10, timer = null;
+        function tick() {
+          if (online()) { retry(); return; }
+          remaining = Math.max(0, remaining - 1);
+          if (secsEl) secsEl.textContent = String(remaining);
+          if (remaining <= 0) retry();
+        }
+        // Kick off
+        try { timer = w.setInterval(tick, 1000); } catch {}
+
+        // If connection comes back early, reload
+        try { w.addEventListener('online', retry, { once: true }); } catch {}
+      })();
+    </script>
   </body>
 </html>

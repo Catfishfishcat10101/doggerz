@@ -3,26 +3,78 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { Provider } from "react-redux";
 import { BrowserRouter } from "react-router-dom";
-
-import App from "./App.jsx";
 import store from "./redux/store";
+import App from "./App.jsx";
 
 // Tailwind entry + app styles (single source of truth)
 import "./styles.css";
 
-// OPTIONAL: Inter font (uncomment only if you've installed @fontsource/inter)
+// Fonts (prefer local for privacy/CLS; enable if using @fontsource/inter)
 // import "@fontsource/inter/variable.css";
-// import "@fontsource/inter/400.css";
-// import "@fontsource/inter/600.css";
 
-// OPTIONAL: initialize Firebase once if your app exports configured clients
-// import "@/lib/firebase";
+// Initialize Firebase singletons (auth, db, storage, functions)
+import "@/lib/firebase";
 
-// OPTIONAL: PWA service worker registration (vite-plugin-pwa present in your build)
-import { registerSW } from "virtual:pwa-register";
-registerSW({ immediate: true });
+// ----- PWA: register service worker + surface updates -----
+let unregister = null;
+try {
+  const { registerSW } = await import("virtual:pwa-register");
+  unregister = registerSW({
+    immediate: true,
+    onRegisteredSW(swUrl, reg) {
+      if (import.meta.env.DEV) {
+        console.info("[pwa] SW registered:", swUrl, reg);
+      }
+    },
+    onRegisterError(err) {
+      if (import.meta.env.DEV) console.warn("[pwa] register error:", err);
+    },
+    onNeedRefresh() {
+      showUpdateToast();
+    },
+    onOfflineReady() {
+      if (import.meta.env.DEV) console.info("[pwa] offline ready");
+    },
+  });
+} catch (e) {
+  // vite-plugin-pwa not present? Fine — no-op.
+  if (import.meta.env.DEV) console.info("[pwa] plugin not active; skipping SW registration");
+}
 
-/** Minimal error boundary to avoid white screens on unexpected crashes */
+// Minimal in-DOM toast; no extra libs
+function showUpdateToast() {
+  const host = document.createElement("div");
+  host.style.position = "fixed";
+  host.style.insetInline = "0";
+  host.style.bottom = "1rem";
+  host.style.display = "grid";
+  host.style.placeItems = "center";
+  host.style.zIndex = "9999";
+  host.innerHTML = `
+    <div role="status" aria-live="polite"
+      style="background:rgba(17,24,39,.98);color:#e5e7eb;border:1px solid rgba(255,255,255,.12);
+             padding:.75rem 1rem;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.4);
+             display:flex;gap:.5rem;align-items:center;">
+      <span style="font-weight:600">Update available</span>
+      <span style="opacity:.8">Reload to apply?</span>
+      <button id="pwa-reload" style="margin-left:.75rem;background:#34d399;color:#0b1020;
+              border:none;border-radius:10px;padding:.4rem .7rem;font-weight:700;cursor:pointer">
+        Reload
+      </button>
+      <button id="pwa-later" style="margin-left:.25rem;background:transparent;color:#e5e7eb;
+              border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:.35rem .6rem;cursor:pointer">
+        Later
+      </button>
+    </div>`;
+  const root = document.body.appendChild(host);
+  const remove = () => root.remove();
+  root.querySelector("#pwa-reload")?.addEventListener("click", () => location.reload());
+  root.querySelector("#pwa-later")?.addEventListener("click", remove);
+  // Auto-dismiss after 12s (still accessible via SW update heuristics later)
+  setTimeout(remove, 12000);
+}
+
+// ----- Global error boundary -----
 class RootErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
@@ -32,8 +84,13 @@ class RootErrorBoundary extends React.Component {
     return { hasError: true, err };
   }
   componentDidCatch(err, info) {
-    // hook up to telemetry if desired
+    // TODO: wire telemetry
+    // eslint-disable-next-line no-console
     console.error("RootErrorBoundary:", err, info);
+    try {
+      // broadcast to any dev overlays
+      window.dispatchEvent(new CustomEvent("doggerz:error", { detail: { err, info } }));
+    } catch {}
   }
   render() {
     if (this.state.hasError) {
@@ -58,10 +115,19 @@ class RootErrorBoundary extends React.Component {
   }
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(
+// ----- Bootstrap -----
+const rootEl = document.getElementById("root");
+if (!rootEl) {
+  throw new Error("Missing #root element. Check index.html");
+}
+
+// Optional subpath deploys (e.g., GitHub Pages). Default = "/".
+const basename = import.meta.env.VITE_BASENAME || "/";
+
+ReactDOM.createRoot(rootEl).render(
   <React.StrictMode>
     <Provider store={store}>
-      <BrowserRouter>
+      <BrowserRouter basename={basename}>
         <RootErrorBoundary>
           <App />
         </RootErrorBoundary>
@@ -69,3 +135,11 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     </Provider>
   </React.StrictMode>
 );
+
+// Hot module cleanup for the PWA registration (dev nicety)
+if (import.meta.hot && typeof unregister === "function") {
+  import.meta.hot.dispose(() => {
+    try { unregister(); } catch {}
+  });
+}
+// End src/main.jsx
