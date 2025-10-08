@@ -6,10 +6,13 @@ import { selectUser } from "@/redux/userSlice";
 
 export default function RequireAuth({ children }) {
   const user = useSelector(selectUser);
-  const loc = useLocation();
+  const location = useLocation();
 
   if (!user?.uid) {
-    return <Navigate to="/login" replace state={{ from: loc }} />;
+    // Preserve where the user was headed, as a string the rest of the app can read
+    const from = `${location.pathname}${location.search}${location.hash}`;
+    return <Navigate to="/login" replace state={{ from }} />;
   }
-  return children;
+
+  return <>{children}</>;
 }

@@ -1,17 +1,26 @@
+// src/main.jsx
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { Provider } from "react-redux";
 import { BrowserRouter } from "react-router-dom";
+
 import App from "./App.jsx";
 import store from "./redux/store";
-import "./index.css";
+
+// Tailwind entry + app styles (single source of truth)
 import "./styles.css";
-import "@fontsource/inter/variable.css"; // or /400.css etc.
-import "@/styles.css"; // or index.css
 
+// OPTIONAL: Inter font (uncomment only if you've installed @fontsource/inter)
+// import "@fontsource/inter/variable.css";
+// import "@fontsource/inter/400.css";
+// import "@fontsource/inter/600.css";
 
-// If you have Firebase init, load it once here so providers are ready app-wide
+// OPTIONAL: initialize Firebase once if your app exports configured clients
 // import "@/lib/firebase";
+
+// OPTIONAL: PWA service worker registration (vite-plugin-pwa present in your build)
+import { registerSW } from "virtual:pwa-register";
+registerSW({ immediate: true });
 
 /** Minimal error boundary to avoid white screens on unexpected crashes */
 class RootErrorBoundary extends React.Component {
@@ -23,7 +32,7 @@ class RootErrorBoundary extends React.Component {
     return { hasError: true, err };
   }
   componentDidCatch(err, info) {
-    // TODO: wire to your telemetry if you want
+    // hook up to telemetry if desired
     console.error("RootErrorBoundary:", err, info);
   }
   render() {

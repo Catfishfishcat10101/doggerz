@@ -2,47 +2,112 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Dogs collection: doc id MUST be the owner's UID
+    // dogs collection: doc id MUST be the owner's UID
     match /dogs/{uid} {
 
-      allow read: if request.auth != null && request.auth.uid == uid;
+      // --- READ ---
+      // Only the owner can read (double check against the stored ownerId)
+      allow read: if isOwner(uid);
 
+      // --- CREATE ---
       allow create: if request.auth != null
         && request.auth.uid == uid
         && !exists(/databases/$(database)/documents/dogs/$(uid)) // one dog per user
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.keys().hasOnly([
+             'ownerId','name','stats','mood','createdAt','updatedAt',
+             // add optional fields here when you introduce them:
+             'pos','isPottyTrained','pottyLevel','poopCount','lastTrainedAt'
+           ])
         && isValidNewDog();
 
-      allow update: if request.auth != null
-        && request.auth.uid == uid
-        && isValidDogUpdate();
+      // --- UPDATE ---
+      allow update: if isOwner(uid) && isValidDogUpdate();
 
-      allow delete: if request.auth != null && request.auth.uid == uid;
+      // --- DELETE ---
+      allow delete: if isOwner(uid);
+
+      /* ---------------- helpers ---------------- */
+
+      function isOwner(uid) {
+        return request.auth != null
+          && request.auth.uid == uid
+          && resource.data.ownerId == request.auth.uid;
+      }
 
       function isValidNewDog() {
+        // Required keys present
         return request.resource.data.keys().hasAll(['ownerId','stats','mood','createdAt','updatedAt'])
-          && request.resource.data.ownerId == uid
-          && request.resource.data.stats.hunger is number
-          && request.resource.data.stats.energy is number
-          && request.resource.data.stats.cleanliness is number
-          && request.resource.data.stats.hunger >= 0 && request.resource.data.stats.hunger <= 100
-          && request.resource.data.stats.energy >= 0 && request.resource.data.stats.energy <= 100
-          && request.resource.data.stats.cleanliness >= 0 && request.resource.data.stats.cleanliness <= 100;
+          // Immutable invariants on create
+          && request.resource.data.ownerId == request.auth.uid
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.updatedAt == request.time
+          // Field-level validation
+          && isValidStats(request.resource.data.stats)
+          && isValidMood(request.resource.data.mood)
+          && (!('name' in request.resource.data) || isValidName(request.resource.data.name))
+          // Optional extras if you use them now or later
+          && (!('pos' in request.resource.data) || isValidPos(request.resource.data.pos))
+          && (!('isPottyTrained' in request.resource.data) || request.resource.data.isPottyTrained is bool)
+          && (!('pottyLevel' in request.resource.data) || isPercent(request.resource.data.pottyLevel))
+          && (!('poopCount' in request.resource.data) || (request.resource.data.poopCount is number && request.resource.data.poopCount >= 0))
+          && (!('lastTrainedAt' in request.resource.data) || request.resource.data.lastTrainedAt == request.time);
       }
 
       function isValidDogUpdate() {
-        // Name optional but constrained if present
-        return (!('name' in request.resource.data) ||
-                (request.resource.data.name is string &&
-                 request.resource.data.name.size() >= 1 &&
-                 request.resource.data.name.size() <= 24 &&
-                 request.resource.data.name.matches('^[\\p{L}\\p{N} .,\'-]{1,24}$')))
-          && (!('stats' in request.resource.data) ||
-              (request.resource.data.stats.hunger is number &&
-               request.resource.data.stats.energy is number &&
-               request.resource.data.stats.cleanliness is number &&
-               request.resource.data.stats.hunger >= 0 && request.resource.data.stats.hunger <= 100 &&
-               request.resource.data.stats.energy >= 0 && request.resource.data.stats.energy <= 100 &&
-               request.resource.data.stats.cleanliness >= 0 && request.resource.data.stats.cleanliness <= 100));
+        // Only allow the documented keys (block surprise fields)
+        return request.resource.data.keys().hasOnly([
+                 'ownerId','name','stats','mood','createdAt','updatedAt',
+                 'pos','isPottyTrained','pottyLevel','poopCount','lastTrainedAt'
+               ])
+          // Owner & createdAt immutable
+          && request.resource.data.ownerId == resource.data.ownerId
+          && request.resource.data.createdAt == resource.data.createdAt
+          // updatedAt must bump to now (works with serverTimestamp())
+          && request.resource.data.updatedAt == request.time
+          // Validate changed fields
+          && (!('name' in request.resource.data) || isValidName(request.resource.data.name))
+          && (!('stats' in request.resource.data) || isValidStats(request.resource.data.stats))
+          && (!('mood' in request.resource.data) || isValidMood(request.resource.data.mood))
+          && (!('pos' in request.resource.data) || isValidPos(request.resource.data.pos))
+          && (!('isPottyTrained' in request.resource.data) || request.resource.data.isPottyTrained is bool)
+          && (!('pottyLevel' in request.resource.data) || isPercent(request.resource.data.pottyLevel))
+          && (!('poopCount' in request.resource.data) || (request.resource.data.poopCount is number && request.resource.data.poopCount >= 0))
+          && (!('lastTrainedAt' in request.resource.data) || request.resource.data.lastTrainedAt == request.time);
+      }
+
+      /* --------- field validators ---------- */
+
+      function isValidStats(stats) {
+        return stats is map
+          && stats.keys().hasOnly(['hunger','energy','cleanliness'])
+          && isPercent(stats.hunger)
+          && isPercent(stats.energy)
+          && isPercent(stats.cleanliness);
+      }
+
+      function isPercent(n) {
+        return n is number && n >= 0 && n <= 100;
+      }
+
+      function isValidMood(m) {
+        // update this list as you add states
+        return m in ['idle','happy','sleep','sick','play','walk','bath'];
+      }
+
+      function isValidPos(pos) {
+        // Clamp to a reasonable playfield; adjust as needed
+        return pos is map
+          && pos.keys().hasOnly(['x','y'])
+          && pos.x is number && pos.y is number
+          && pos.x >= 0 && pos.x <= 2000
+          && pos.y >= 0 && pos.y <= 1200;
+      }
+
+      function isValidName(n) {
+        // Keep it simple in rules; do heavy validation client-side.
+        // Disallow empty or all-whitespace; limit length.
+        return n is string && n.size() >= 1 && n.size() <= 24;
       }
     }
   }

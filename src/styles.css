@@ -22,7 +22,7 @@
   --radius-xl: 1rem;
   --shadow-1: 0 1px 3px rgba(0,0,0,0.25), 0 6px 20px rgba(0,0,0,0.18);
 
-  /* Colors tuned for readability */
+  /* Colors tuned for readability (dark default) */
   --bg: #0b1220;           /* deep slate */
   --surf: #0f172a;         /* slate-900 */
   --surf-2: #111827;       /* near slate-900 */
@@ -33,13 +33,33 @@
   --accent-2: #cbd5e1;     /* slate-300 */
 }
 
+/* Dark/light theme variables (if you use darkMode: "class") */
+:root.dark {
+  --bg: #0b1220;
+  --surf: #0f172a;
+  --surf-2: #111827;
+  --text: #e5e7eb;
+  --text-muted: #cbd5e1;
+  --border: #334155;
+  --accent: #f8fafc;
+  --accent-2: #cbd5e1;
+}
+:root.light {
+  --bg: #ffffff;
+  --surf: #ffffff;
+  --surf-2: #f8fafc;
+  --text: #0b1220;
+  --text-muted: #334155;
+  --border: #e5e7eb;
+  --accent: #0b1220;
+  --accent-2: #334155;
+}
+
 /* -------------------------------------------------------
    Base reset + high-contrast foundation
 ------------------------------------------------------- */
 @layer base {
-  html, body, #root {
-    height: 100%;
-  }
+  html, body, #root { height: 100%; }
 
   body {
     @apply antialiased;
@@ -48,22 +68,19 @@
   }
 
   /* Better default focus visible */
-  :focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
   /* Accessible selection color */
-  ::selection {
-    background: #94a3b8; /* slate-400 */
-    color: #0b1220;
-  }
+  ::selection { background: #94a3b8; color: #0b1220; } /* slate-400 on dark */
 
-  /* Windows-friendly scrollbar (kept subtle but visible) */
+  /* Firefox scrollbars */
   * {
     scrollbar-width: thin;
     scrollbar-color: #475569 #0b1220; /* thumb track */
   }
+}
+/* WebKit scrollbars (feature-detected) */
+@supports selector(::-webkit-scrollbar) {
   *::-webkit-scrollbar { height: 12px; width: 12px; }
   *::-webkit-scrollbar-track { background: #0b1220; }
   *::-webkit-scrollbar-thumb {
@@ -83,9 +100,7 @@
     box-shadow: var(--shadow-1);
   }
 
-  .glass {
-    @apply bg-slate-800/50 backdrop-blur-md border border-white/10;
-  }
+  .glass { @apply bg-slate-800/50 backdrop-blur-md border border-white/10; }
 
   /* Button system with variants */
   .btn {
@@ -96,23 +111,19 @@
            active:scale-[0.98];
     background: var(--accent);
   }
-  .btn:hover { background: color-mix(in oklab, var(--accent), #cbd5e1 15%); }
-  .btn:disabled {
-    @apply opacity-60 pointer-events-none;
+  /* Safe hover fallback for older engines */
+  .btn:hover { background: #e5e7eb; }
+  /* Fancy mix when supported */
+  @supports (background: color-mix(in srgb, white 10%, black)) {
+    .btn:hover { background: color-mix(in oklab, var(--accent), #cbd5e1 15%); }
   }
+  .btn:disabled { @apply opacity-60 pointer-events-none; }
 
-  .btn--ghost {
-    @apply border border-white/20 text-white;
-    background: transparent;
-  }
+  .btn--ghost { @apply border border-white/20 text-white; background: transparent; }
   .btn--ghost:hover { background: rgba(255,255,255,0.06); }
 
-  .btn--warn {
-    @apply text-slate-900;
-    background: #fbbf24; /* amber-400 */
-    border-color: #fbbf24;
-  }
-  .btn--warn:hover { background: #f59e0b; } /* amber-500 */
+  .btn--warn { @apply text-slate-900; background: #fbbf24; border-color: #fbbf24; }
+  .btn--warn:hover { background: #f59e0b; }
 
   /* Badge / Pill */
   .badge {
@@ -132,21 +143,12 @@
   }
 
   /* Meter shell (use with inline fill) */
-  .meter {
-    @apply relative h-3 w-full overflow-hidden rounded-full bg-white/10;
-  }
-  .meter__fill {
-    @apply h-full bg-white/80;
-    width: 0%;
-  }
+  .meter { @apply relative h-3 w-full overflow-hidden rounded-full bg-white/10; }
+  .meter__fill { @apply h-full bg-white/80; width: 0%; }
 
   /* Modal shell (portal-less simple modal) */
-  .modal {
-    @apply fixed inset-0 z-50 grid place-items-center p-4 bg-black/70;
-  }
-  .modal__panel {
-    @apply w-full max-w-md rounded-2xl border border-white/15 bg-slate-900 p-5 shadow-xl;
-  }
+  .modal { @apply fixed inset-0 z-50 grid place-items-center p-4 bg-black/70; }
+  .modal__panel { @apply w-full max-w-md rounded-2xl border border-white/15 bg-slate-900 p-5 shadow-xl; }
 }
 
 /* -------------------------------------------------------
@@ -185,27 +187,20 @@
   .sprite--playing {
     animation: sprite-walk steps(var(--sprite-frames)) calc(1000ms / var(--sprite-fps)) infinite;
   }
-  .sprite--flip {
-    transform: scaleX(-1);
-  }
+  .sprite--flip { transform: scaleX(-1); }
 
   /* Focus ring alt (for elements without default outline) */
-  .focus-ring {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
+  .focus-ring { outline: 2px solid var(--accent); outline-offset: 2px; }
 
   /* Subtle divider */
-  .divider {
-    @apply h-px w-full bg-white/10;
-  }
+  .divider { @apply h-px w-full bg-white/10; }
 }
 
 /* -------------------------------------------------------
    Keyframes
 ------------------------------------------------------- */
 @keyframes sprite-walk {
-  from { background-position:    0 0; }
+  from { background-position: 0 0; }
   to   { background-position: calc(var(--sprite-size) * var(--sprite-frames) * -1) 0; }
 }
 
@@ -229,3 +224,4 @@
   body { background: #fff; color: #000; }
   .card, .glass { box-shadow: none; border-color: #000; }
 }
+@page { margin: 1cm; }

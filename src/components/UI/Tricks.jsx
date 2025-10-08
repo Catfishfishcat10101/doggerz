@@ -2,14 +2,16 @@
 import React, { Suspense, lazy, useEffect } from "react";
 import { Link } from "react-router-dom";
 
-// Prefer absolute alias so moves/renames don't break:
+// Prefer absolute alias so moves/renames don't break
 const TricksTrainer = lazy(() => import("@/components/Features/TricksTrainer.jsx"));
 
 export default function Tricks(props) {
   useEffect(() => {
     const prev = document.title;
     document.title = "Doggerz — Tricks Training";
-    return () => { document.title = prev; };
+    return () => {
+      document.title = prev;
+    };
   }, []);
 
   return (
@@ -18,7 +20,7 @@ export default function Tricks(props) {
         <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <Link
-              to="/play" {/* ← was /game */}
+              to="/game"  // back to the main game route
               className="px-3 py-1 rounded-xl text-sm bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-black/5 dark:border-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
               aria-label="Back to game"
             >
@@ -26,9 +28,7 @@ export default function Tricks(props) {
             </Link>
             <h1 className="text-lg font-semibold">Tricks Training</h1>
           </div>
-          <div className="text-xs text-slate-500 dark:text-slate-400">
-            Earn XP by practicing tricks
-          </div>
+          <div className="text-xs text-slate-500 dark:text-slate-400">Earn XP by practicing tricks</div>
         </div>
       </header>
 
@@ -38,7 +38,11 @@ export default function Tricks(props) {
             <div className="rounded-2xl border border-rose-300/50 bg-rose-50 text-rose-900 dark:bg-rose-900/20 dark:text-rose-100 p-4">
               <div className="font-semibold">Trainer failed to load</div>
               <div className="text-sm opacity-80">
-                Try refreshing, or head <Link to="/play" className="underline">back to the yard</Link>.
+                Try refreshing, or head{" "}
+                <Link to="/game" className="underline">
+                  back to the yard
+                </Link>
+                .
               </div>
             </div>
           }
@@ -73,8 +77,13 @@ class ErrorBoundary extends React.Component {
     super(props);
     this.state = { err: null };
   }
-  static getDerivedStateFromError(err) { return { err }; }
-  componentDidCatch(err, info) { console.error("[Tricks] crashed:", err, info); }
+  static getDerivedStateFromError(err) {
+    return { err };
+  }
+  componentDidCatch(err, info) {
+    // eslint-disable-next-line no-console
+    console.error("[Tricks] crashed:", err, info);
+  }
   render() {
     if (this.state.err) return this.props.fallback ?? null;
     return this.props.children;

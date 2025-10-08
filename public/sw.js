@@ -1,3 +1,4 @@
+/* public/sw.js */
 /* Doggerz Service Worker: offline fallback + light runtime caching */
 const CACHE_NAME = "doggerz-cache-v2";
 const OFFLINE_URL = "/offline.html";

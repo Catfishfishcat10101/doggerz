@@ -1,201 +1,248 @@
-/* --- Scene Core ---------------------------------------------------------- */
+/* src/components/Features/BackgroundScene.css */
 
+/* -------------
+   Core contract
+   ------------- */
 .bg-yard {
-  --scene-accent: #0ea5e9;               /* overridable via prop */
-  --sky-1: #cde7ff;
-  --sky-2: #87baff;
-  --ground-1: #d1fae5;
-  --ground-2: #a7f3d0;
-  --ground-line: #0d9488;
+  --scene-accent: #10b981; /* default accent (emerald-500) */
+
+  /* depth/parallax */
+  --z-back: -2;
+  --z-mid: -1;
+  --z-front: 0;
+
+  /* stage sizing (inherits parent width) */
+  --stage-height: 480px;
 
   position: relative;
-  min-height: 100%;
-  width: 100%;
   overflow: hidden;
-  background: linear-gradient(180deg, var(--sky-1) 0%, var(--sky-2) 60%);
-  isolation: isolate; /* ensure filters don’t bleed */
+  min-height: var(--stage-height);
+  width: 100%;
+
+  /* Enable 3D for children */
+  perspective: 800px;
+  transform-style: preserve-3d;
+
+  /* Rounded container looks nice inside cards */
+  border-radius: 1rem;
 }
 
-.scene-stage {
+/* Stage content (your game) sits above parallax layers */
+.bg-yard .scene-stage {
   position: relative;
   z-index: 10;
-  margin: 0 auto;
-  max-width: 960px;
-  min-height: 60vh;
-  padding: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  pointer-events: auto;
 }
 
-.scene-ground {
+/* Ground strip at bottom */
+.bg-yard .scene-ground {
   position: absolute;
-  inset-inline: 0;
+  left: 0;
+  right: 0;
   bottom: 0;
-  height: 22vh;
-  background:
-    linear-gradient(180deg, var(--ground-1), var(--ground-2)),
-    repeating-linear-gradient(
-      90deg,
-      transparent 0 28px,
-      color-mix(in oklab, var(--ground-line), transparent 70%) 28px 29px
-    );
+
+  height: 72px;
   z-index: 5;
-  box-shadow: 0 -12px 32px color-mix(in oklab, black, transparent 85%) inset;
+  background:
+    linear-gradient(to top, rgba(0,0,0,0.18), rgba(0,0,0,0) 60%),
+    linear-gradient(0deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03)),
+    var(--ground-fill, #2f3e46);
+  border-top: 1px solid rgba(255,255,255,0.12);
 }
 
-/* --- Parallax ------------------------------------------------------------ */
-
+/* -------------
+   Parallax layers
+   ------------- */
 .parallax.layer {
   position: absolute;
   inset: 0;
+  will-change: transform;
   pointer-events: none;
-  z-index: 1;
-  opacity: 0.7;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
+  filter: var(--layer-filter, none);
 }
 
+/* Back layer (sky, mountains) */
 .parallax.layer.back {
-  background:
-    radial-gradient(1200px 400px at 80% 10%, color-mix(in oklab, white, transparent 80%), transparent),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 60'%3E%3Cg fill='%23ffffff22'%3E%3Ccircle cx='40' cy='20' r='10'/%3E%3Ccircle cx='80' cy='24' r='14'/%3E%3Ccircle cx='120' cy='18' r='9'/%3E%3C/g%3E%3C/svg%3E") repeat-x;
-  background-size: auto 60px, 300px 60px;
-  background-position: 0 8%, 0 8%;
-  animation: clouds 60s linear infinite;
+  z-index: 1;
+  transform: translateZ(calc(var(--z-back) * 1px)) scale(1.02);
+  background-image: var(--back-image, none);
+  background: var(--back-gradient);
 }
 
+/* Mid layer (hills, trees, haze) */
 .parallax.layer.mid {
-  background:
-    radial-gradient(1000px 300px at 20% 14%, color-mix(in oklab, var(--scene-accent), transparent 85%), transparent);
-  mix-blend-mode: soft-light;
-  opacity: 0.6;
+  z-index: 3;
+  transform: translateZ(calc(var(--z-mid) * 1px)) scale(1.01);
+  background-image: var(--mid-image, none);
+  background: var(--mid-gradient);
+  opacity: var(--mid-opacity, 0.85);
 }
 
+/* Front layer (nearby plants, particles) */
 .parallax.layer.front {
-  background:
-    radial-gradient(600px 200px at 40% 0%, color-mix(in oklab, black, transparent 90%), transparent);
-  opacity: 0.6;
+  z-index: 7;
+  transform: translateZ(calc(var(--z-front) * 1px));
+  background-image: var(--front-image, none);
+  background: var(--front-gradient);
+  mix-blend-mode: var(--front-blend, normal);
+  opacity: var(--front-opacity, 0.9);
 }
 
-@keyframes clouds {
-  from { background-position: 0 8%, 0 8%; }
-  to   { background-position: 300px 8%, 300px 8%; }
-}
-
-/* Reduced motion: disable animations */
+/* -------------
+   Motion safety
+   ------------- */
 @media (prefers-reduced-motion: reduce) {
-  .parallax.layer.back { animation: none; }
-}
-
-/* --- Skins --------------------------------------------------------------- */
-
-/* Default */
-.skin-default {
-  --sky-1: #dff3ff;
-  --sky-2: #9fd0ff;
-  --ground-1: #d9fbe6;
-  --ground-2: #bff7d4;
-  --ground-line: #10b981;
-}
-
-/* Lawn (lush green) */
-.skin-lawn {
-  --sky-1: #cfe9ff;
-  --sky-2: #7ec4ff;
-  --ground-1: #c7f9cc;
-  --ground-2: #80ed99;
-  --ground-line: #2d6a4f;
-}
-
-/* Sunset (warm gradient, slight glow) */
-.skin-sunset {
-  --sky-1: #ffd0b3;
-  --sky-2: #ff7b7b;
-  --ground-1: #ffe0b2;
-  --ground-2: #ffcc80;
-  --ground-line: #f59e0b;
-}
-.skin-sunset .parallax.layer.mid {
-  background:
-    radial-gradient(900px 260px at 65% 16%, color-mix(in oklab, #ffb74d, transparent 50%), transparent);
-}
-
-/* Night (stars + fireflies) */
-.skin-night {
-  --sky-1: #0b1220;
-  --sky-2: #111e35;
-  --ground-1: #12242b;
-  --ground-2: #0d1b21;
-  --ground-line: #0ea5e9;
-}
-.skin-night .parallax.layer.back {
-  opacity: 0.9;
-  background:
-    radial-gradient(1000px 400px at 50% -5%, color-mix(in oklab, #0ea5e9, transparent 92%), transparent),
-    repeating-radial-gradient(circle at 30% 20%, #ffffff55 0 1px, transparent 1px 6px);
-  animation: twinkle 6s ease-in-out infinite alternate;
-}
-@keyframes twinkle {
-  0% { opacity: 0.75; }
-  100% { opacity: 0.95; }
-}
-.skin-night::after {
-  /* fireflies */
-  content: "";
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(2px 2px at 10% 80%, #d9f99d, transparent),
-    radial-gradient(2px 2px at 35% 70%, #bef264, transparent),
-    radial-gradient(2px 2px at 80% 85%, #fde68a, transparent),
-    radial-gradient(2px 2px at 65% 60%, #facc15, transparent);
-  opacity: 0.6;
-  z-index: 2;
-  animation: drift 12s linear infinite alternate;
-}
-@keyframes drift {
-  0%   { transform: translateY(0px); }
-  100% { transform: translateY(-8px); }
-}
-
-/* Neon (arcade vibe) */
-.skin-neon {
-  --sky-1: #15002b;
-  --sky-2: #3a094f;
-  --ground-1: #0b132b;
-  --ground-2: #1c2541;
-  --ground-line: #22d3ee;
-  --scene-accent: #22d3ee;
-}
-.skin-neon .scene-ground {
-  box-shadow:
-    0 -12px 32px color-mix(in oklab, #22d3ee, transparent 80%) inset,
-    0 -2px 0 #22d3ee inset;
-}
-
-/* Winter (cool whites) */
-.skin-winter {
-  --sky-1: #e6f3ff;
-  --sky-2: #bcdcff;
-  --ground-1: #eef6ff;
-  --ground-2: #dfefff;
-  --ground-line: #7dd3fc;
-}
-.skin-winter .scene-ground {
-  background:
-    linear-gradient(180deg, var(--ground-1), var(--ground-2)),
-    radial-gradient(600px 80px at 50% 0%, #ffffffcc, transparent);
-}
-
-/* --- Dark mode tuning ---------------------------------------------------- */
-@media (prefers-color-scheme: dark) {
-  .skin-default {
-    --sky-1: #0d1b2a;
-    --sky-2: #1b263b;
-    --ground-1: #102a24;
-    --ground-2: #0b221d;
-    --ground-line: #22c55e;
+  .parallax.layer {
+    transform: none !important;
   }
 }
 
-/* --- Utilities ----------------------------------------------------------- */
-.bg-yard::selection { background: color-mix(in oklab, var(--scene-accent), transparent 70%); }
+/* -------------
+   Skins
+   ------------- */
+
+/* DEFAULT: neutral blue hour */
+.bg-yard.skin-default {
+  --sky-top: #0b1020;
+  --sky-mid: #0f1730;
+  --sky-bot: #111a33;
+
+  --haze: rgba(148,163,184,0.10); /* slate-400/10 */
+  --haze-strong: rgba(148,163,184,0.16);
+
+  --ground-fill: #1f2937; /* gray-800 */
+
+  --back-gradient:
+    linear-gradient(180deg, var(--sky-top), var(--sky-mid) 55%, var(--sky-bot));
+  --mid-gradient:
+    radial-gradient(80% 60% at 50% 20%, var(--haze), transparent 70%);
+  --front-gradient:
+    radial-gradient(70% 40% at 50% 90%, rgba(255,255,255,0.06), transparent 60%);
+}
+
+/* LAWN: daylight greens */
+.bg-yard.skin-lawn {
+  --sky-top: #bce1ff;
+  --sky-mid: #d5ecff;
+  --sky-bot: #eef7ff;
+
+  --ground-fill: #3b7f4a;
+
+  --back-gradient:
+    linear-gradient(180deg, var(--sky-top), var(--sky-mid) 55%, var(--sky-bot));
+  --mid-gradient:
+    radial-gradient(80% 60% at 50% 25%, rgba(16,185,129,0.18), transparent 70%);
+  --front-gradient:
+    radial-gradient(80% 35% at 50% 90%, rgba(0,0,0,0.06), transparent 60%);
+}
+
+/* SUNSET: warm gradient with accent tint */
+.bg-yard.skin-sunset {
+  --sky-top: #3b0d47;  /* plum-900 */
+  --sky-mid: #7c2156;  /* magenta-700 */
+  --sky-bot: #f97316;  /* orange-500 */
+
+  --ground-fill: #3a2f3b;
+
+  --back-gradient:
+    linear-gradient(180deg, var(--sky-top), var(--sky-mid) 55%, var(--sky-bot));
+  --mid-gradient:
+    radial-gradient(90% 60% at 50% 20%, color-mix(in oklab, var(--scene-accent), #ffffff 70%) , transparent 70%);
+  --front-gradient:
+    radial-gradient(70% 40% at 50% 90%, rgba(255,255,255,0.08), transparent 60%);
+}
+
+/* NIGHT: deep blue with starlight speckle */
+.bg-yard.skin-night {
+  --sky-top: #050b19;
+  --sky-mid: #081125;
+  --sky-bot: #0a1530;
+
+  --ground-fill: #0f1a2b;
+
+  --back-gradient:
+    linear-gradient(180deg, var(--sky-top), var(--sky-mid) 55%, var(--sky-bot));
+  --mid-gradient:
+    radial-gradient(100% 70% at 50% 15%, rgba(147,197,253,0.12), transparent 70%);
+  --front-gradient:
+    radial-gradient(80% 40% at 50% 85%, rgba(255,255,255,0.06), transparent 60%);
+  --layer-filter: saturate(0.95);
+}
+
+/* NEON: cyber grid glow using accent */
+.bg-yard.skin-neon {
+  --sky-top: #070711;
+  --sky-mid: #0b0b1a;
+  --sky-bot: #0f0f24;
+
+  --ground-fill: #0c0c1a;
+
+  --back-gradient:
+    radial-gradient(120% 100% at 50% 10%, color-mix(in oklab, var(--scene-accent), #000 75%), #090914 70%);
+  --mid-gradient:
+    repeating-linear-gradient(
+      0deg,
+      color-mix(in oklab, var(--scene-accent), #000 80%) 0px,
+      color-mix(in oklab, var(--scene-accent), #000 80%) 1px,
+      transparent 1px,
+      transparent 18px
+    );
+  --front-gradient:
+    radial-gradient(70% 30% at 50% 90%, color-mix(in oklab, var(--scene-accent), #fff 85%) , transparent 60%);
+  --front-blend: screen;
+  --front-opacity: 0.7;
+}
+
+/* WINTER: cold sky + frosty ground */
+.bg-yard.skin-winter {
+  --sky-top: #e6f3ff;
+  --sky-mid: #f3f9ff;
+  --sky-bot: #ffffff;
+
+  --ground-fill: #b7c4cf;
+
+  --back-gradient:
+    linear-gradient(180deg, var(--sky-top), var(--sky-mid) 55%, var(--sky-bot));
+  --mid-gradient:
+    radial-gradient(75% 50% at 50% 20%, rgba(59,130,246,0.18), transparent 70%); /* blue-500/18 */
+  --front-gradient:
+    radial-gradient(70% 40% at 50% 90%, rgba(0,0,0,0.05), transparent 60%);
+}
+
+/* -------------
+   Responsiveness
+   ------------- */
+@media (max-width: 768px) {
+  .bg-yard { --stage-height: 380px; border-radius: 0.75rem; }
+  .bg-yard .scene-ground { height: 56px; }
+}
+
+@media (max-width: 480px) {
+  .bg-yard { --stage-height: 320px; border-radius: 0.75rem; }
+  .bg-yard .scene-ground { height: 48px; }
+}
+
+/* -------------
+   Fallbacks for older engines (color-mix)
+   ------------- */
+@supports not (background: color-mix(in srgb, white 10%, black)) {
+  .bg-yard.skin-sunset { --mid-gradient:
+    radial-gradient(90% 60% at 50% 20%, rgba(248, 113, 113, 0.2), transparent 70%); /* rose-ish fallback */
+  }
+  .bg-yard.skin-neon .parallax.layer.front { opacity: 0.75; }
+}
+
+/* -------------
+   Optional: simple hover parallax when mouse moves (progressive enhancement)
+   ------------- */
+.bg-yard:hover .parallax.layer.back { transform: translateZ(calc(var(--z-back) * 1px)) translateY(-2px) scale(1.02); }
+.bg-yard:hover .parallax.layer.mid  { transform: translateZ(calc(var(--z-mid) * 1px))  translateY(-1px) scale(1.01); }
+.bg-yard:hover .parallax.layer.front{ transform: translateZ(calc(var(--z-front) * 1px))              scale(1.00); }
+@media (hover: none) {
+  .bg-yard:hover .parallax.layer.back,
+  .bg-yard:hover .parallax.layer.mid,
+  .bg-yard:hover .parallax.layer.front { transform: none; }
+}
