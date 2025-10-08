@@ -19,7 +19,7 @@ logs/
 .parcel-cache/
 .turbo/
 .cache/
-.vite/                 # if configured to write here
+.vite/
 .pnp.*
 .pnpjs
 
@@ -45,6 +45,7 @@ emulator-data/
 # ------------------------
 dist/
 build/
+dist-ssr/
 storybook-static/
 
 # ------------------------
@@ -52,7 +53,7 @@ storybook-static/
 # ------------------------
 .env
 .env.*
-!.env.example         # keep a template only
+!.env.example
 
 # ------------------------
 # IDE / Editors
@@ -81,6 +82,8 @@ playwright-report/
 test-results/
 jest-html-reporters-*
 *.tsbuildinfo
+cypress/videos/
+cypress/screenshots/
 
 # ------------------------
 # App-specific junk you don’t want committed
@@ -97,14 +100,13 @@ src_backup/
 # ------------------------
 # Lockfiles (decide your manager; default npm)
 # ------------------------
-# Commit package-lock.json for deterministic installs:
-# (uncomment next line ONLY if you intentionally ignore lockfiles)
 # package-lock.json
 
 # ------------------------
 # Public artifacts you DO want tracked
 # ------------------------
-# Keep PWA icons, manifest, and README screenshots
 !public/manifest.webmanifest
 !public/icons/
 !public/screens/
+!public/offline.html
+!public/robots.txt
