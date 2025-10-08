@@ -1,5 +1,5 @@
-// src/components/UI/NavBar.jsx
-import React, { useEffect, useMemo, useState, useId } from "react";
+ // src/components/UI/NavBar.jsx
+import React, { useEffect, useMemo, useState, useId, useRef } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { selectUser, userSignedOut } from "@/redux/userSlice";
@@ -7,10 +7,12 @@ import { auth } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
 
 /**
- * Production-safe, accessible top nav.
- * - Desktop (public): Home + Privacy (left), Log in / Sign up (right)
- * - Desktop (authed): Game / Profile / Settings (left), User chip + Sign out (right)
- * - Mobile: drawer with everything; ESC/route-close + body scroll-lock
+ * Production-safe, accessible top nav with:
+ * - Brand scale (doggerz:brandScale -> sm|md|lg|xl)
+ * - Scroll shadow when content scrolls
+ * - Public vs Authed footprints
+ * - Mobile drawer with body scroll-lock
+ * - Offline status pill
  */
 export default function NavBar() {
   const user = useSelector(selectUser);
@@ -20,23 +22,59 @@ export default function NavBar() {
   const { pathname } = useLocation();
 
   const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [online, setOnline] = useState(navigator.onLine);
   const mobileId = useId();
+  const prevOverflow = useRef("");
 
+  // Public vs app routes
   const compact = useMemo(() => isPublicPath(pathname), [pathname]);
 
-  useEffect(() => setOpen(false), [pathname]); // close on route change
+  // Close mobile on route change
+  useEffect(() => setOpen(false), [pathname]);
+
+  // ESC closes drawer
   useEffect(() => {
     const onKey = (e) => e.key === "Escape" && setOpen(false);
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
+
+  // Body scroll lock for mobile drawer
   useEffect(() => {
-    // body scroll-lock for mobile drawer
     const { style } = document.body;
-    const prev = style.overflow;
-    style.overflow = open ? "hidden" : prev || "";
-    return () => { style.overflow = prev || ""; };
+    if (open) {
+      prevOverflow.current = style.overflow;
+      style.overflow = "hidden";
+    } else {
+      style.overflow = prevOverflow.current || "";
+    }
+    return () => { style.overflow = prevOverflow.current || ""; };
   }, [open]);
+
+  // Scroll shadow
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 4);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // Online/offline pill
+  useEffect(() => {
+    const on = () => setOnline(true);
+    const off = () => setOnline(false);
+    window.addEventListener("online", on);
+    window.addEventListener("offline", off);
+    return () => {
+      window.removeEventListener("online", on);
+      window.removeEventListener("offline", off);
+    };
+  }, []);
+
+  // Brand scale (persisted by SettingsModal)
+  const brandScale = readLocal("doggerz:brandScale", "lg");
+  const brandClass = brandSizeClass(brandScale);
 
   async function onLogout() {
     try {
@@ -51,7 +89,7 @@ export default function NavBar() {
   const linkBase =
     "px-3 py-2 rounded-xl text-sm font-medium transition-colors duration-150";
   const linkIdle = "text-white/90 hover:bg-white/10";
-  const linkActive = "bg-white/15 text-white"; // swap to /20 if your Tailwind config dislikes /15
+  const linkActive = "bg-white/15 text-white";
 
   const renderLink = (to, label) => (
     <NavLink
@@ -64,28 +102,32 @@ export default function NavBar() {
   );
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-white/10 bg-black/20 backdrop-blur supports-[backdrop-filter]:bg-black/30">
+    <header
+      className={[
+        "sticky top-0 z-40 w-full border-b border-white/10 bg-black/20 backdrop-blur",
+        "supports-[backdrop-filter]:bg-black/30",
+        scrolled ? "shadow-[0_6px_12px_-6px_rgba(0,0,0,0.45)]" : "shadow-none",
+      ].join(" ")}
+    >
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
-        {/* Brand */}
+        {/* Brand (scaled) */}
         <Link
           to="/"
           className="inline-flex items-center gap-2 rounded-xl focus:outline-none focus-visible:ring focus-visible:ring-amber-300/40"
           aria-label="Doggerz home"
         >
           <span className="h-7 w-7 rounded-xl bg-gradient-to-br from-amber-300 to-pink-400 shadow-inner" />
-          <span className="text-lg font-extrabold tracking-wide">Doggerz</span>
+          <span className={`${brandClass} font-extrabold tracking-wide leading-none`}>Doggerz</span>
         </Link>
 
         {/* Desktop nav */}
         <nav className="hidden items-center gap-2 sm:flex">
           {compact ? (
-            // PUBLIC: only Home + Privacy here (no duplicate auth links)
             <>
               {renderLink("/", "Home")}
               {renderLink("/privacy", "Privacy")}
             </>
           ) : (
-            // AUTHED: product nav
             <>
               {renderLink("/game", "Game")}
               {renderLink("/profile", "Profile")}
@@ -96,6 +138,7 @@ export default function NavBar() {
 
         {/* Right cluster: auth controls (desktop) */}
         <div className="hidden items-center gap-2 sm:flex">
+          {!online && <Pill className="mr-2">Offline</Pill>}
           {isAuthed ? (
             <>
               <UserChip
@@ -172,6 +215,7 @@ export default function NavBar() {
               )}
 
               <div className="mt-1 border-t border-white/10 pt-3">
+                {!online && <Pill className="mb-2">Offline</Pill>}
                 {isAuthed ? (
                   <button
                     type="button"
@@ -223,6 +267,24 @@ function isPublicPath(pathname = "/") {
   return pathname === "/" || pathname === "/login" || pathname === "/signup";
 }
 
+function readLocal(key, fallback) {
+  try {
+    const v = localStorage.getItem(key);
+    return v == null ? fallback : JSON.parse(v);
+  } catch {
+    return fallback;
+  }
+}
+
+function brandSizeClass(scale = "lg") {
+  switch (scale) {
+    case "xl": return "text-2xl sm:text-3xl md:text-4xl";
+    case "lg": return "text-xl sm:text-2xl md:text-3xl";
+    case "md": return "text-lg sm:text-xl md:text-2xl";
+    case "sm": default: return "text-base sm:text-lg md:text-xl";
+  }
+}
+
 function NavItem({ to, label, onClick }) {
   return (
     <NavLink
@@ -236,6 +298,14 @@ function NavItem({ to, label, onClick }) {
     >
       {label}
     </NavLink>
+  );
+}
+
+function Pill({ children, className = "" }) {
+  return (
+    <span className={`inline-flex items-center rounded-full bg-white/10 border border-white/15 px-2 py-0.5 text-[11px] text-white/90 ${className}`}>
+      {children}
+    </span>
   );
 }
 
