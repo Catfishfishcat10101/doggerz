@@ -1,4 +1,6 @@
+// src/components/UI/ErrorBoundary.jsx
 import React from "react";
+import PropTypes from "prop-types";
 
 export default class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -9,7 +11,6 @@ export default class ErrorBoundary extends React.Component {
     return { hasError: true, error };
   }
   componentDidCatch(error, info) {
-    // eslint-disable-next-line no-console
     console.error(`[ErrorBoundary:${this.props.name || "unnamed"}]`, error, info);
   }
   reset = () => this.setState({ hasError: false, error: null });
@@ -33,3 +34,4 @@ export default class ErrorBoundary extends React.Component {
     return this.props.children;
   }
 }
+

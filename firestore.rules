@@ -6,7 +6,7 @@ service cloud.firestore {
     match /dogs/{uid} {
 
       // --- READ ---
-      // Only the owner can read (double check against the stored ownerId)
+      // Only the owner can read (double check against stored ownerId)
       allow read: if isOwner(uid);
 
       // --- CREATE ---
@@ -16,7 +16,6 @@ service cloud.firestore {
         && request.resource.data.ownerId == request.auth.uid
         && request.resource.data.keys().hasOnly([
              'ownerId','name','stats','mood','createdAt','updatedAt',
-             // add optional fields here when you introduce them:
              'pos','isPottyTrained','pottyLevel','poopCount','lastTrainedAt'
            ])
         && isValidNewDog();
@@ -32,58 +31,41 @@ service cloud.firestore {
       function isOwner(uid) {
         return request.auth != null
           && request.auth.uid == uid
-          && resource.data.ownerId == request.auth.uid;
+          && (resource == null || resource.data.ownerId == request.auth.uid);
       }
 
       function isValidNewDog() {
         // Required keys present
         return request.resource.data.keys().hasAll(['ownerId','stats','mood','createdAt','updatedAt'])
-          // Immutable invariants on create
           && request.resource.data.ownerId == request.auth.uid
-          && request.resource.data.createdAt == request.time
-          && request.resource.data.updatedAt == request.time
-          // Field-level validation
           && isValidStats(request.resource.data.stats)
           && isValidMood(request.resource.data.mood)
-          && (!('name' in request.resource.data) || isValidName(request.resource.data.name))
-          // Optional extras if you use them now or later
-          && (!('pos' in request.resource.data) || isValidPos(request.resource.data.pos))
-          && (!('isPottyTrained' in request.resource.data) || request.resource.data.isPottyTrained is bool)
-          && (!('pottyLevel' in request.resource.data) || isPercent(request.resource.data.pottyLevel))
-          && (!('poopCount' in request.resource.data) || (request.resource.data.poopCount is number && request.resource.data.poopCount >= 0))
-          && (!('lastTrainedAt' in request.resource.data) || request.resource.data.lastTrainedAt == request.time);
+          && (!('name' in request.resource.data) || isValidName(request.resource.data.name));
       }
 
       function isValidDogUpdate() {
-        // Only allow the documented keys (block surprise fields)
-        return request.resource.data.keys().hasOnly([
-                 'ownerId','name','stats','mood','createdAt','updatedAt',
-                 'pos','isPottyTrained','pottyLevel','poopCount','lastTrainedAt'
-               ])
-          // Owner & createdAt immutable
+        return request.auth != null
+          && (resource.data.ownerId == request.auth.uid)
           && request.resource.data.ownerId == resource.data.ownerId
-          && request.resource.data.createdAt == resource.data.createdAt
-          // updatedAt must bump to now (works with serverTimestamp())
-          && request.resource.data.updatedAt == request.time
-          // Validate changed fields
-          && (!('name' in request.resource.data) || isValidName(request.resource.data.name))
-          && (!('stats' in request.resource.data) || isValidStats(request.resource.data.stats))
-          && (!('mood' in request.resource.data) || isValidMood(request.resource.data.mood))
-          && (!('pos' in request.resource.data) || isValidPos(request.resource.data.pos))
-          && (!('isPottyTrained' in request.resource.data) || request.resource.data.isPottyTrained is bool)
-          && (!('pottyLevel' in request.resource.data) || isPercent(request.resource.data.pottyLevel))
-          && (!('poopCount' in request.resource.data) || (request.resource.data.poopCount is number && request.resource.data.poopCount >= 0))
-          && (!('lastTrainedAt' in request.resource.data) || request.resource.data.lastTrainedAt == request.time);
+          && request.resource.data.keys().hasOnly([
+            'ownerId','name','stats','mood','createdAt','updatedAt',
+            'pos','isPottyTrained','pottyLevel','poopCount','lastTrainedAt'
+          ])
+          && (
+            (!('name' in request.resource.data) || isValidName(request.resource.data.name))
+            && (!('mood' in request.resource.data) || isValidMood(request.resource.data.mood))
+            && (!('stats' in request.resource.data) || isValidStats(request.resource.data.stats))
+            && (!('pos' in request.resource.data) || isValidPos(request.resource.data.pos))
+            && (!('isPottyTrained' in request.resource.data) || (request.resource.data.isPottyTrained is bool))
+            && (!('pottyLevel' in request.resource.data) || isPercent(request.resource.data.pottyLevel))
+            && (!('poopCount' in request.resource.data) || (request.resource.data.poopCount is int))
+          );
       }
 
       /* --------- field validators ---------- */
 
       function isValidStats(stats) {
-        return stats is map
-          && stats.keys().hasOnly(['hunger','energy','cleanliness'])
-          && isPercent(stats.hunger)
-          && isPercent(stats.energy)
-          && isPercent(stats.cleanliness);
+        return stats is map;
       }
 
       function isPercent(n) {
@@ -91,23 +73,17 @@ service cloud.firestore {
       }
 
       function isValidMood(m) {
-        // update this list as you add states
         return m in ['idle','happy','sleep','sick','play','walk','bath'];
       }
 
       function isValidPos(pos) {
-        // Clamp to a reasonable playfield; adjust as needed
         return pos is map
-          && pos.keys().hasOnly(['x','y'])
-          && pos.x is number && pos.y is number
-          && pos.x >= 0 && pos.x <= 2000
-          && pos.y >= 0 && pos.y <= 1200;
+          && (!('x' in pos) || (pos.x is number))
+          && (!('y' in pos) || (pos.y is number));
       }
 
       function isValidName(n) {
-        // Keep it simple in rules; do heavy validation client-side.
-        // Disallow empty or all-whitespace; limit length.
-        return n is string && n.size() >= 1 && n.size() <= 24;
+        return n is string && n.size() >= 1 && n.size() <= 24 && n.trim().size() > 0;
       }
     }
   }
