@@ -1,4 +1,4 @@
-// src/components/layout/Header.jsx
+// src/layout/Header.jsx
 import React from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { Dog } from "lucide-react";

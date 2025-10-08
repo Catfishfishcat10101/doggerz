@@ -12,43 +12,39 @@ logs/
 *.pid
 *.pid.lock
 
-# Speed-ups / caches
+# ------------------------
+# Caches / speed-ups
+# ------------------------
 .eslintcache
 .parcel-cache/
 .turbo/
 .cache/
-.vite/             # (Vite sometimes writes here if configured)
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/sdks
-!.yarn/versions
+.vite/                 # if configured to write here
 .pnp.*
 .pnpjs
 
 # ------------------------
-# Firebase
+# Firebase (local artifacts)
 # ------------------------
 firebase-debug.log
 .firebase/
 emulator-data/
 
-# Keep these in git (needed for deploy/emulators):
-# firebase.json
-# .firebaserc
+# Keep these (needed for deploy/emulators)
+!firebase.json
+!.firebaserc
 
 # ------------------------
-# Hosting providers
+# Hosting providers (local state)
 # ------------------------
-.vercel/           # local Vercel project state; do not commit
-.netlify/          # if you ever try Netlify locally
+.vercel/
+.netlify/
 
 # ------------------------
-# Build output (CRA & Vite)
+# Build output
 # ------------------------
-build/
 dist/
+build/
 storybook-static/
 
 # ------------------------
@@ -56,21 +52,21 @@ storybook-static/
 # ------------------------
 .env
 .env.*
-!.env.example      # keep a template for collaborators
+!.env.example         # keep a template only
 
 # ------------------------
-# IDE / Editor configs
+# IDE / Editors
 # ------------------------
+.DS_Store
 .vscode/
 .idea/
-.DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 
 # ------------------------
-# OS / misc
+# OS / misc (Windows)
 # ------------------------
 Thumbs.db
 Desktop.ini
@@ -89,27 +85,26 @@ jest-html-reporters-*
 # ------------------------
 # App-specific junk you don’t want committed
 # ------------------------
-src_backup/        # remove from tracking if it was committed before
+src_backup/
 *.local.*
 *.bak
 *.orig
 *.rej
 *.tmp
 *.swp
-*.tgz              # npm pack tarballs
-NUL
-CON
-PRN
-AUX
-COM1
-LPT
-NUL
-CON
-PRN
-AUX
-COM1
-LPT1
-node_modules/
-.dist/
-.env*
-.DS_Store
+*.tgz
+
+# ------------------------
+# Lockfiles (decide your manager; default npm)
+# ------------------------
+# Commit package-lock.json for deterministic installs:
+# (uncomment next line ONLY if you intentionally ignore lockfiles)
+# package-lock.json
+
+# ------------------------
+# Public artifacts you DO want tracked
+# ------------------------
+# Keep PWA icons, manifest, and README screenshots
+!public/manifest.webmanifest
+!public/icons/
+!public/screens/

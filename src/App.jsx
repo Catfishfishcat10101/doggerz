@@ -1,59 +1,41 @@
 // src/App.jsx
-import React, { Suspense, lazy } from "react";
+import React, { Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-
-// Layout + guards
 import RootLayout from "@/layout/RootLayout.jsx";
 import RequireAuth from "@/layout/RequireAuth.jsx";
+import RequireGuest from "@/layout/RequireGuest.jsx";
 
-// Lazy pages (ensure these files exist and default-export components)
-const Splash     = lazy(() => import("@/components/UI/Splash.jsx"));
-const GameScreen = lazy(() => import("@/components/UI/GameScreen.jsx"));
-const Shop       = lazy(() => import("@/components/Features/Shop.jsx"));
-const Login      = lazy(() => import("@/components/Auth/Login.jsx"));
-const Signup     = lazy(() => import("@/components/Auth/Signup.jsx"));
-
-function Fallback() {
-  return (
-    <div className="min-h-[50vh] grid place-items-center">
-      <div className="animate-pulse rounded-2xl border border-white/15 px-6 py-4">
-        Loading…
-      </div>
-    </div>
-  );
-}
+// Pages (eager or lazy – your call)
+import Home from "@/pages/Home.jsx";
+import Login from "@/pages/auth/Login.jsx";
+import Signup from "@/pages/auth/Signup.jsx";
+import Game from "@/pages/Game.jsx";
+import Shop from "@/pages/Shop.jsx";
+import Settings from "@/pages/Settings.jsx";
 
 export default function App() {
   return (
-    <Suspense fallback={<Fallback />}>
+    <Suspense fallback={<div className="p-6 text-zinc-300">Booting…</div>}>
       <Routes>
-        {/* All routes share RootLayout (NavBar, a11y helpers, boundary, etc.) */}
         <Route element={<RootLayout />}>
-          {/* Public */}
-          <Route index element={<Splash />} />
-          <Route path="login" element={<Login />} />
-          <Route path="signup" element={<Signup />} />
+          {/* Public routes */}
+          <Route index element={<Home />} />
 
-          {/* Protected app */}
-          <Route
-            path="game"
-            element={
-              <RequireAuth>
-                <GameScreen />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="shop"
-            element={
-              <RequireAuth>
-                <Shop />
-              </RequireAuth>
-            }
-          />
+          <Route element={<RequireGuest.Outlet />}>
+            <Route path="login" element={<Login />} />
+            <Route path="signup" element={<Signup />} />
+          </Route>
 
-          {/* 404 → home */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          {/* Protected routes */}
+          <Route element={<RequireAuth.Outlet />}>
+            <Route path="game" element={<Game />} />
+            <Route path="shop" element={<Shop />} />
+            <Route path="settings" element={<Settings />} />
+          </Route>
+
+          {/* Fallbacks */}
+          <Route path="404" element={<div className="p-6">Not found.</div>} />
+          <Route path="*" element={<Navigate to="/404" replace />} />
         </Route>
       </Routes>
     </Suspense>

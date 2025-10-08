@@ -1,6 +1,20 @@
-export * from "./constants";
-export * from "./env";
-export * from "./routes";
-export * from "./featureFlags";
-export * from "./theme";
-export * from "./pwa";
+// src/config/index.js
+export * as ENV from "./env.js";
+export * as APP from "./app.js";
+export * as ROUTES from "./routes.js";
+export * as FLAGS from "./featureFlags.js";
+export * as THEME from "./theme.js";
+export * as PWA from "./pwa.js";
+export * as GAME from "./game.js";
+export * as STORE from "./storageKeys.js";
+export * as A11Y from "./accessibility.js";
+export * as FIREBASE from "./firebase.js";
+export * as ANALYTICS from "./analytics.js";
+export * as SEO from "./seo.js";
+export * as ADS from "./ads.js";
+export * as IAP from "./inAppPurchases.js";
+export * as SOCIALS from "./socials.js";
+export * as HELPERS from "./configHelpers.js";
+export * as DIALOGS from "./dialogConfigs.js";
+export * as DND from "./dragAndDrop.js";
+export * as DATES from "./dateConfigs.js";
