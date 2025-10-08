@@ -1,4 +1,4 @@
-// App-wide constants that shouldn't live in components.
+// src/config/app.js
 export const COPYRIGHT = "Doggerz © 2025 — No grind. Just vibes.";
 export const SUPPORT_EMAIL = "support@doggerz.app"; // change later
 export const MAX_USERNAME_LEN = 24;

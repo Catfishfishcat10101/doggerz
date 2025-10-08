@@ -1,3 +1,4 @@
+// src/config/ads.js
 import { DEV } from "./env.js";
 
 // Ads are OFF by default. Only flip on when you have policy/compliance sorted.

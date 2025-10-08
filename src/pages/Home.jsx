@@ -3,16 +3,20 @@ import React, { useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { selectUser } from "@/redux/userSlice.js";
+
 import { PATHS } from "@/config/routes.js";
 import { metaForRoute } from "@/config/seo.js";
 import { track, EVENTS } from "@/config/analytics.js";
+import { canShowAds } from "@/config/ads.js";
+
+import AdSlot from "@/components/ads/AdSlot.jsx";
 
 export default function Home() {
   const user = useSelector(selectUser);
   const nav = useNavigate();
   const location = useLocation();
 
-  // --- Meta + analytics (no-ops in dev if not enabled) ---
+  // ----- Meta + analytics (no-ops in dev if you stubbed them) -----
   useEffect(() => {
     const m = metaForRoute({ title: "Home", url: window.location.href });
     document.title = m.title;
@@ -21,19 +25,15 @@ export default function Home() {
     track(EVENTS?.page_view || "page_view", { page: "home" });
   }, []);
 
-  // If the user came here after an auth redirect, we can offer a "continue" CTA
+  // If the user arrived here after a guarded route redirect, surface a “Continue” CTA
   const returnTo = location.state?.from;
 
   const authed = !!user?.uid;
   const welcomeName = user?.displayName?.trim() || null;
 
   return (
-    <section
-      className="max-w-3xl mx-auto"
-      aria-labelledby="home-title"
-      data-route-title="true"
-    >
-      {/* Title with subtle, motion-safe emphasis */}
+    <section className="max-w-3xl mx-auto" aria-labelledby="home-title" data-route-title="true">
+      {/* --------- Hero --------- */}
       <h1 id="home-title" className="text-4xl sm:text-5xl font-extrabold tracking-tight">
         <span className="inline-block">
           Welcome{welcomeName ? `, ${welcomeName}` : ""}!
@@ -48,7 +48,7 @@ export default function Home() {
         Needs are colorblind-safe and icon-labeled. Offline play is supported; installs as a PWA.
       </p>
 
-      {/* Primary CTAs */}
+      {/* --------- Primary CTAs --------- */}
       <div className="mt-6 flex flex-wrap gap-3">
         {authed ? (
           <>
@@ -99,7 +99,10 @@ export default function Home() {
         )}
       </div>
 
-      {/* Value props grid (icons replaced by text+shape to be color-independent) */}
+      {/* --------- Monetization rail (dev shows placeholder, prod obeys canShowAds) --------- */}
+      {canShowAds(location.pathname) && <AdSlot type="banner" className="my-6" />}
+
+      {/* --------- Value props --------- */}
       <ul className="mt-10 grid gap-4 sm:grid-cols-2">
         <Feature
           label="One dog per user"
@@ -119,17 +122,17 @@ export default function Home() {
         />
       </ul>
 
-      {/* Secondary actions */}
+      {/* --------- Secondary navigation --------- */}
       <div className="mt-10 flex flex-wrap gap-3 text-sm text-white/70">
         <Link to={PATHS.SHOP} className="underline underline-offset-4 hover:opacity-90">
           Browse Shop
         </Link>
         <span aria-hidden="true" className="mx-1 opacity-40">•</span>
-        <Link to="/privacy" className="underline underline-offset-4 hover:opacity-90">
+        <Link to={PATHS.PRIVACY} className="underline underline-offset-4 hover:opacity-90">
           Privacy
         </Link>
         <span aria-hidden="true" className="mx-1 opacity-40">•</span>
-        <Link to="/terms" className="underline underline-offset-4 hover:opacity-90">
+        <Link to={PATHS.TERMS} className="underline underline-offset-4 hover:opacity-90">
           Terms
         </Link>
       </div>
@@ -145,7 +148,7 @@ function Feature({ label, desc }) {
         aria-hidden="true"
         className="mt-1 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-white/20"
       >
-        {/* Using a geometric shape instead of color as the primary cue */}
+        {/* geometric tick instead of color-only cue */}
         <div className="h-2 w-3 border-b-2 border-r-2 rotate-45" />
       </span>
       <div>
@@ -156,7 +159,7 @@ function Feature({ label, desc }) {
   );
 }
 
-/* ---------- tiny utilities so we don't need react-helmet ---------- */
+/* -------------------- tiny meta utilities (no helmet) -------------------- */
 function ensureMeta(name, content) {
   let el = document.querySelector(`meta[name="${name}"]`);
   if (!el) {
@@ -175,11 +178,13 @@ function ensureOG({ og, twitter, canonical }) {
   setOG("og:url", og.url);
   setOG("og:site_name", og.site_name);
   setOG("og:type", og.type || "website");
+
   setTwitter("twitter:card", twitter?.card || "summary_large_image");
   setTwitter("twitter:site", twitter?.site || "");
   setTwitter("twitter:title", twitter?.title || og.title);
   setTwitter("twitter:description", twitter?.description || og.description);
   setTwitter("twitter:image", twitter?.image || og.image);
+
   if (canonical) {
     let link = document.querySelector('link[rel="canonical"]');
     if (!link) {
@@ -210,4 +215,3 @@ function setTwitter(name, content) {
   }
   el.setAttribute("content", content);
 }
-//src/pages/Home.jsx

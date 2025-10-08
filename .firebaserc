@@ -1,16 +1,5 @@
 {
   "projects": {
-    "default": "dogger-a8021",
-    "prod": "dogger-a8021"
-  },
-  "targets": {
-    "dogger-a8021": {
-      "hosting": {
-        "prod": [
-          "dogger-a8021-site"
-        ]
-      }
-    }
-  },
-  "etags": {}
+    "default": "YOUR_FIREBASE_PROJECT_ID"
+  }
 }

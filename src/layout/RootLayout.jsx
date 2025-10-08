@@ -3,16 +3,10 @@ import { Outlet, ScrollRestoration } from "react-router-dom";
 import NavBar from "@/components/layout/NavBar.jsx";
 import Footer from "@/components/layout/Footer.jsx";
 
-/**
- * RootLayout
- * - Page shell (header/nav, main, footer) with accessibility affordances.
- * - Colorblind- and glare-aware defaults (high contrast, no color-only cues).
- * - Keeps your “doggerz@2025 • No grind. Just vibes.” footer copy visible.
- */
 export default function RootLayout() {
   return (
     <div className="min-h-dvh flex flex-col bg-neutral-950 text-neutral-100">
-      {/* Skip link for keyboard / screen readers */}
+      {/* keyboard/screen-reader affordance */}
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:p-2 focus:rounded-md focus:bg-neutral-800"
@@ -32,7 +26,6 @@ export default function RootLayout() {
         <Footer brand="doggerz@2025 • No grind. Just vibes." />
       </footer>
 
-      {/* Restores scroll position between routes */}
       <ScrollRestoration />
     </div>
   );
