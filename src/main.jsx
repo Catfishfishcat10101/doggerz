@@ -1,49 +1,51 @@
-// src/main.jsx
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { Provider } from "react-redux";
 import { BrowserRouter } from "react-router-dom";
 import store from "./redux/store";
 import App from "./App.jsx";
-
-// Tailwind entry + app styles
+// Tailwind entry + app styles (adjust if yours is src/styles/index.css)
 import "./styles.css";
-
 // Initialize Firebase singletons (auth, db, storage, functions)
 import "@/lib/firebase";
-
 // ----- PWA: register service worker + surface updates -----
-let unregister = null;
-try {
-  if ("serviceWorker" in navigator) {
-    const { registerSW } = await import("virtual:pwa-register");
-    unregister = registerSW({
-      immediate: true,
-      onRegisteredSW(swUrl, reg) {
-        if (import.meta.env.DEV) {
-          console.info("[pwa] SW registered:", swUrl, reg);
-        }
-      },
-      onRegisterError(err) {
-        if (import.meta.env.DEV) console.warn("[pwa] register error:", err);
-      },
-      onNeedRefresh() {
-        showUpdateToast();
-      },
-      onOfflineReady() {
-        if (import.meta.env.DEV) console.info("[pwa] offline ready");
-      },
-    });
-  } else if (import.meta.env.DEV) {
-    console.info("[pwa] serviceWorker not supported; skipping SW registration");
+async function initPWA() {
+  try {
+    if ("serviceWorker" in navigator) {
+      // vite-plugin-pwa virtual module; safe to import dynamically
+      const { registerSW } = await import("virtual:pwa-register");
+      const updateSW = registerSW({
+        immediate: true,
+        onRegisteredSW(swUrl, reg) {
+          if (import.meta.env.DEV) {
+            console.info("[pwa] SW registered:", swUrl, reg);
+          }
+        },
+        onRegisterError(err) {
+          if (import.meta.env.DEV) console.warn("[pwa] register error:", err);
+        },
+        onNeedRefresh() {
+          showUpdateToast(() => {
+            // If you want to force-update immediately:
+            updateSW(); // will skip waiting and reload
+          });
+        },
+        onOfflineReady() {
+          if (import.meta.env.DEV) console.info("[pwa] offline ready");
+        },
+      });
+      // If you prefer to auto-update without prompting:
+      // updateSW();
+    } else if (import.meta.env.DEV) {
+      console.info("[pwa] serviceWorker not supported; skipping SW registration");
+    }
+  } catch {
+    // plugin not installed in this env — no-op
+    if (import.meta.env.DEV) console.info("[pwa] plugin not active; skipping SW registration");
   }
-} catch (e) {
-  // vite-plugin-pwa not present? Fine — no-op.
-  if (import.meta.env.DEV) console.info("[pwa] plugin not active; skipping SW registration");
 }
-
 // Minimal in-DOM toast; no extra libs
-function showUpdateToast() {
+function showUpdateToast(onReload) {
   const host = document.createElement("div");
   host.style.position = "fixed";
   host.style.insetInline = "0";
@@ -69,11 +71,12 @@ function showUpdateToast() {
     </div>`;
   const root = document.body.appendChild(host);
   const remove = () => root.remove();
-  root.querySelector("#pwa-reload")?.addEventListener("click", () => location.reload());
+  root.querySelector("#pwa-reload")?.addEventListener("click", () => {
+    try { onReload?.(); } finally { location.reload(); }
+  });
   root.querySelector("#pwa-later")?.addEventListener("click", remove);
   setTimeout(remove, 12000);
 }
-
 // ----- Global error boundary -----
 class RootErrorBoundary extends React.Component {
   constructor(props) {
@@ -84,8 +87,6 @@ class RootErrorBoundary extends React.Component {
     return { hasError: true, err };
   }
   componentDidCatch(err, info) {
-    // TODO: telemetry hook
-    // eslint-disable-next-line no-console
     console.error("RootErrorBoundary:", err, info);
     try {
       window.dispatchEvent(new CustomEvent("doggerz:error", { detail: { err, info } }));
@@ -113,16 +114,13 @@ class RootErrorBoundary extends React.Component {
     return this.props.children;
   }
 }
-
 // ----- Bootstrap -----
 const rootEl = document.getElementById("root");
-if (!rootEl) {
-  throw new Error("Missing #root element. Check index.html");
-}
-
+if (!rootEl) throw new Error("Missing #root element. Check index.html");
 // Optional subpath deploys (e.g., GitHub Pages). Default = "/".
 const basename = import.meta.env.VITE_BASENAME || "/";
 
+initPWA();
 ReactDOM.createRoot(rootEl).render(
   <React.StrictMode>
     <Provider store={store}>
@@ -135,9 +133,8 @@ ReactDOM.createRoot(rootEl).render(
   </React.StrictMode>
 );
 
-// Hot module cleanup for the PWA registration (dev nicety)
-if (import.meta.hot && typeof unregister === "function") {
-  import.meta.hot.dispose(() => {
-    try { unregister(); } catch {}
-  });
-}
+ if (import.meta.hot && typeof unregister === "function") {
+   import.meta.hot.dispose(() => {
+     try { unregister(); } catch {}
+   });
+ }

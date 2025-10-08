@@ -1,101 +1,110 @@
 // src/pages/Onboarding.jsx
-import React, { useState, useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { useDispatch } from "react-redux";
-import { useNavigate, useLocation } from "react-router-dom";
-import { setName, setStage } from "@/redux/dogSlice";
+import { useNavigate, useLocation, Link } from "react-router-dom";
+import { setName as setDogName, setStage as setDogStage } from "@/redux/dogSlice";
 
 const STAGES = [
-  { id: "puppy", label: "Puppy (quick, playful)" },
-  { id: "adult", label: "Adult (balanced)" },
-  { id: "senior", label: "Senior (wise, chill)" },
+  { id: "puppy",  label: "Puppy",  blurb: "Quick, playful, burns energy fast" },
+  { id: "adult",  label: "Adult",  blurb: "Balanced stats and decay rates" },
+  { id: "senior", label: "Senior", blurb: "Chill, slower, needs gentler play" },
 ];
 
 export default function Onboarding() {
   const dispatch = useDispatch();
   const nav = useNavigate();
   const loc = useLocation();
+
   const [step, setStep] = useState(1);
   const [name, setLocalName] = useState("");
   const [stage, setLocalStage] = useState("adult");
 
   const canContinue = useMemo(() => {
-    if (step === 1) return name.trim().length >= 2;
+    if (step === 1) return name.trim().length >= 2 && name.trim().length <= 20;
     if (step === 2) return Boolean(stage);
     return true;
   }, [step, name, stage]);
 
-  function next() {
-    if (step < 3) setStep((s) => s + 1);
-    else finish();
-  }
-  function back() {
-    if (step > 1) setStep((s) => s - 1);
-  }
+  function next() { setStep((s) => Math.min(3, s + 1)); }
+  function back() { setStep((s) => Math.max(1, s - 1)); }
 
   function finish() {
-    dispatch(setName(name.trim()));
-    dispatch(setStage(stage));
-    const to = (loc.state && loc.state.from && loc.state.from.pathname) || "/game";
+    const clean = name.trim();
+    if (!clean) return;
+    dispatch(setDogName(clean));
+    dispatch(setDogStage(stage));
+    const to = loc.state?.from?.pathname || "/game";
     nav(to, { replace: true });
   }
 
   return (
-    <section className="mx-auto max-w-xl px-4 sm:px-6 py-10">
-      <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-        <div className="text-sm uppercase tracking-widest text-white/60 mb-2">
-          Onboarding
-        </div>
-        <h1 className="text-2xl font-bold mb-6">Let’s set up your Pixel Pup</h1>
+    <section className="mx-auto max-w-xl px-4 sm:px-6 py-10 text-white">
+      <div className="bg-white/5 border border-white/10 rounded-2xl p-6 shadow-xl">
+        <div className="text-xs uppercase tracking-widest text-white/60 mb-2">Onboarding</div>
+        <h1 className="text-2xl font-bold mb-6">Let’s get your pup set up</h1>
 
+        {/* Step 1: Name */}
         {step === 1 && (
           <div>
-            <label className="block text-sm mb-2">Pup name</label>
+            <label htmlFor="pup-name" className="block text-sm mb-2">Pup Name</label>
             <input
+              id="pup-name"
               type="text"
               value={name}
               onChange={(e) => setLocalName(e.target.value)}
-              placeholder="e.g., Fireball"
+              placeholder="Name your pup"
+              maxLength={24}
               className="w-full px-3 py-2 rounded-lg bg-slate-800/70 border border-white/10 focus:border-white/30 outline-none"
             />
-            <p className="text-xs text-white/60 mt-2">
-              2–20 characters. You can change this later in Settings.
-            </p>
+            <p className="text-xs text-white/60 mt-2">2–20 characters. You can change this later in Settings.</p>
           </div>
         )}
 
+        {/* Step 2: Stage */}
         {step === 2 && (
           <div>
-            <div className="text-sm mb-2">Choose a life stage</div>
-            <div className="grid grid-cols-1 gap-2">
-              {STAGES.map((s) => (
-                <label
-                  key={s.id}
-                  className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer
-                    ${stage === s.id ? "border-amber-300 bg-amber-300/10" : "border-white/10 hover:border-white/20"}`}
-                >
-                  <input
-                    type="radio"
-                    name="stage"
-                    value={s.id}
-                    checked={stage === s.id}
-                    onChange={() => setLocalStage(s.id)}
-                  />
-                  <span>{s.label}</span>
-                </label>
-              ))}
+            <label className="block text-sm mb-2">Select stage of life</label>
+            <div className="grid gap-3">
+              {STAGES.map((s) => {
+                const active = stage === s.id;
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => setLocalStage(s.id)}
+                    className={[
+                      "w-full text-left rounded-xl border px-4 py-3 transition-colors",
+                      active
+                        ? "border-amber-400 bg-amber-400/10"
+                        : "border-white/10 bg-white/5 hover:bg-white/10",
+                    ].join(" ")}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-semibold">{s.label}</div>
+                        <div className="text-xs opacity-80">{s.blurb}</div>
+                      </div>
+                      <div className={active ? "text-amber-300" : "text-white/40"}>
+                        {active ? "✓" : "○"}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
 
+        {/* Step 3: Tips */}
         {step === 3 && (
           <div>
             <h2 className="text-xl font-semibold mb-3">Quick tips</h2>
-            <ul className="list-disc pl-6 space-y-1 opacity-90">
-              <li>Tap your pup to bark. WASD/Arrow keys move.</li>
-              <li>Keep hunger, energy, and cleanliness balanced.</li>
-              <li>Complete daily tasks to earn bones for the Shop.</li>
+            <ul className="list-disc pl-6 space-y-1 opacity-90 text-sm">
+              <li>Keep hunger, energy, fun, and hygiene in the green band.</li>
+              <li>Rest restores energy; play boosts fun; feeding counters hunger decay.</li>
+              <li>Scoop poop to avoid hygiene penalties and mood drops.</li>
             </ul>
-            <p className="mt-4 opacity-80">
+            <p className="mt-4 opacity-80 text-sm">
               You can revisit this in <span className="font-medium">Settings → Help</span>.
             </p>
           </div>
@@ -111,6 +120,7 @@ export default function Onboarding() {
           >
             Back
           </button>
+
           {step < 3 ? (
             <button
               type="button"
@@ -129,6 +139,10 @@ export default function Onboarding() {
               Start playing
             </button>
           )}
+        </div>
+
+        <div className="mt-6 text-xs text-white/50">
+          Changed your mind? <Link to="/" className="underline hover:text-white/80">Back to Home</Link>
         </div>
       </div>
     </section>

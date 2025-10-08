@@ -1,33 +1,44 @@
-// src/components/game/StatsBar.jsx
 import React from "react";
 
-export default function StatsBar() {
+function Bar({ label, value, srHint }) {
+  const pct = Math.round(value);
+  // high-contrast track + labeled value (no color-only encoding)
   return (
-    <div className="mb-3 grid grid-cols-3 gap-2 text-xs">
-      <Stat label="Hunger" value={95} icon="🍖" />
-      <Stat label="Energy" value={100} icon="⚡" />
-      <Stat label="Cleanliness" value={98} icon="🧼" />
+    <div className="mb-2">
+      <div className="flex justify-between text-xs text-zinc-300">
+        <span>{label}</span>
+        <span className="font-mono tabular-nums">{pct}%</span>
+      </div>
+      <div
+        className="h-3 rounded-md bg-zinc-800 border border-zinc-700 overflow-hidden"
+        role="progressbar"
+        aria-label={label}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={pct}
+        aria-describedby={srHint ? `${label}-hint` : undefined}
+      >
+        <div
+          className="h-full bg-white/80"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      {srHint && (
+        <div id={`${label}-hint`} className="sr-only">
+          {srHint}
+        </div>
+      )}
     </div>
   );
 }
 
-function Stat({ label, value, icon }) {
+export default function StatsBar({ stats }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-black/30 p-2">
-      <div className="flex items-center justify-between">
-        <span className="font-semibold">{label}</span>
-        <span aria-hidden="true">{icon}</span>
-      </div>
-      <div className="mt-1 flex items-center gap-2">
-        <div className="relative h-2 flex-1 rounded-full bg-white/10 overflow-hidden">
-          <div
-            className="absolute inset-y-0 left-0 rounded-full bg-white/70"
-            style={{ width: `${value}%` }}
-            aria-hidden="true"
-          />
-        </div>
-        <span className="w-10 text-right tabular-nums">{Math.round(value)}%</span>
-      </div>
-    </div>
+    <section className="w-full max-w-xl rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
+      <Bar label="Hunger"      value={stats.hunger}      srHint="Decreases over time; feed to restore." />
+      <Bar label="Energy"      value={stats.energy}      srHint="Decreases over time; resting restores." />
+      <Bar label="Cleanliness" value={stats.cleanliness} srHint="Decreases over time; washing restores." />
+      <Bar label="Happiness"   value={stats.happiness}   srHint="Impacted by other needs; play to restore." />
+    </section>
   );
 }

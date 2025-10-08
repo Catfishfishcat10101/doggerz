@@ -1,87 +1,48 @@
-<!doctype html>
-<html lang="en" dir="ltr">
-  <head>
-    <!-- Charset & viewport -->
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<!-- App identity -->
+<title>Doggerz</title>
+<meta name="application-name" content="Doggerz" />
+<meta name="apple-mobile-web-app-title" content="Doggerz" />
+<meta name="description" content="Doggerz — adopt your PixelPup, train, bond, and vibe. Offline-ready PWA with keyboard controls and high-contrast UI." />
 
-    <!-- App identity -->
-    <title>Doggerz</title>
-    <meta name="description" content="Doggerz — adopt your PixelPup, train, bond, and vibe. Offline-ready PWA with keyboard controls and high-contrast UI." />
+<!-- Color scheme -->
+<meta name="color-scheme" content="dark light" />
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0b1220" />
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
 
-    <!-- Color scheme -->
-    <meta name="color-scheme" content="dark light" />
-    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0b1220" />
-    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
+<!-- PWA manifest + icons -->
+<link rel="manifest" href="/manifest.webmanifest" />
+<link rel="icon" href="/favicon.ico" sizes="any" />
+<link rel="icon" type="image/svg+xml" href="/icon.svg" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />  <!-- 180×180 PNG -->
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#0ea5e9" />
 
-    <!-- PWA manifest + icons -->
-    <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="icon" href="/favicon.ico" sizes="any" />
-    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#0ea5e9" />
-    <!-- Maskable icon for Android -->
-    <link rel="apple-touch-icon" sizes="192x192" href="/icons/maskable-192.png" />
-    <link rel="apple-touch-icon" sizes="512x512" href="/icons/maskable-512.png" />
+<!-- iOS PWA polish -->
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="format-detection" content="telephone=no" />
 
-    <!-- iOS PWA polish -->
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="mobile-web-app-capable" content="yes" />
+<!-- Referrer policy -->
+<meta name="referrer" content="strict-origin-when-cross-origin" />
 
-    <!-- Preconnect: fonts + Firebase (Auth/Firestore) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="preconnect" href="https://www.googleapis.com" />
-    <link rel="preconnect" href="https://firestore.googleapis.com" />
-    <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
+<!-- Preconnect: fonts + Firebase (Auth/Firestore) -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="preconnect" href="https://www.googleapis.com" />
+<link rel="preconnect" href="https://firestore.googleapis.com" />
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin />
 
-    <!-- Fonts (consider self-hosting later to avoid CLS/privacy leakage) -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&display=swap" rel="stylesheet" />
+<!-- Fonts (consider self-hosting later) -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&display=swap" rel="stylesheet" />
 
-    <!-- Social (OG/Twitter) -->
-    <!-- Replace ORIGIN with your prod origin in your build step or via SEO config -->
-    <meta property="og:title" content="Doggerz" />
-    <meta property="og:description" content="Adopt your PixelPup. Train. Bond. No grind. Just vibes." />
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://doggerz.app/" />
-    <meta property="og:image" content="https://doggerz.app/og-image.png" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <link rel="canonical" href="https://doggerz.app/" />
+<!-- Social (OG/Twitter) -->
+<meta property="og:title" content="Doggerz" />
+<meta property="og:description" content="Adopt your PixelPup. Train. Bond. No grind. Just vibes." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://doggerz.app/" />
+<meta property="og:image" content="https://doggerz.app/og-image.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="canonical" href="https://doggerz.app/" />
 
-    <!-- Preload critical art (keep this tight) -->
-    <link rel="preload" href="/sprites/dog_walk.png" as="image" imagesrcset="/sprites/dog_walk.png 1x" />
-
-    <!-- Optional CSP (see notes below) -->
-    <!--
-      DEV (vite needs 'unsafe-eval'): 
-      <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self';
-                 script-src 'self' 'unsafe-inline' 'unsafe-eval';
-                 style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-                 img-src 'self' data:;
-                 font-src 'self' https://fonts.gstatic.com;
-                 connect-src 'self' https://firestore.googleapis.com https://www.googleapis.com http://127.0.0.1:* ws://127.0.0.1:*;">
-      PROD (no inline/eval): 
-      <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self';
-                 script-src 'self';
-                 style-src 'self' https://fonts.googleapis.com;
-                 img-src 'self' data:;
-                 font-src 'self' https://fonts.gstatic.com;
-                 connect-src 'self' https://firestore.googleapis.com https://www.googleapis.com;">
-    -->
-  </head>
-  <body class="min-h-dvh font-[Inter] antialiased">
-    <noscript>
-      <div style="padding:1rem;background:#111;color:#fff;text-align:center">
-        Doggerz requires JavaScript to run. Please enable it to continue.
-      </div>
-    </noscript>
-
-    <div id="root"></div>
-
-    <!-- Vite entry -->
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
-</html>
+<!-- Preload critical art (tight) -->
+<link rel="preload" href="/sprites/dog_walk.png" as="image" imagesrcset="/sprites/dog_walk.png 1x" />

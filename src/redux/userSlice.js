@@ -1,34 +1,53 @@
 // src/redux/userSlice.js
 import { createSlice } from "@reduxjs/toolkit";
 
-const initial = {
-  status: "idle", // idle | loading | authed | error
-  uid: null,
-  email: null,
-  displayName: null,
-  photoURL: null,
+const initialState = {
+  user: null,
+  status: "idle", // 'idle' | 'loading' | 'authed' | 'error'
   error: null,
 };
 
-const slice = createSlice({
+const userSlice = createSlice({
   name: "user",
-  initialState: initial,
+  initialState,
   reducers: {
-    userLoading(s) { s.status = "loading"; s.error = null; },
-    userAuthed(s, { payload }) {
-      s.status = "authed";
-      s.uid = payload?.uid ?? null;
-      s.email = payload?.email ?? null;
-      s.displayName = payload?.displayName ?? null;
-      s.photoURL = payload?.photoURL ?? null;
-      s.error = null;
+    userLoading(state) {
+      state.status = "loading";
+      state.error = null;
     },
-    userSignedOut() { return { ...initial, status: "idle" }; },
-    userError(s, { payload }) { s.status = "error"; s.error = payload || "Auth error"; },
-  }
+    userAuthed(state, action) {
+      state.user = action.payload; // { uid, email, displayName, photoURL }
+      state.status = "authed";
+      state.error = null;
+    },
+    userError(state, action) {
+      state.status = "error";
+      state.error = action.payload ?? "Unknown auth error";
+    },
+    userSignedOut(state) {
+      state.user = null;
+      state.status = "idle";
+      state.error = null;
+    },
+    // optional alias if some files import userCleared
+    userCleared(state) {
+      state.user = null;
+      state.status = "idle";
+      state.error = null;
+    },
+  },
 });
 
-export const { userLoading, userAuthed, userSignedOut, userError } = slice.actions;
-export const selectUser = (s) => (s?.user?.uid ? s.user : null);
-export const selectUserStatus = (s) => s?.user?.status ?? "idle";
-export default slice.reducer;
+export const {
+  userLoading,
+  userAuthed,
+  userError,
+  userSignedOut,
+  userCleared, // optional
+} = userSlice.actions;
+
+export const selectUser = (s) => s.user.user;
+export const selectUserStatus = (s) => s.user.status;
+export const selectUserError = (s) => s.user.error;
+
+export default userSlice.reducer;

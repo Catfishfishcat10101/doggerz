@@ -1,3 +1,4 @@
+// src/components/game/Dog.jsx
 import React, { useMemo } from "react";
 import DogSprite from "@/components/UI/DogSprite.jsx";
 
@@ -101,9 +102,3 @@ export default function Dog({
     </div>
   );
 }
-
-/* Notes:
- * - If your stage container is already `position: relative`, you can render <Dog /> directly inside it.
- * - Tune the row/frame mapping in spritePlan to match your actual sheet rows.
- * - For grid-based worlds, quantize x/y before passing to avoid subpixel jitter.
- */
