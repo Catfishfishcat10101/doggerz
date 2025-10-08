@@ -4,9 +4,9 @@ import { Outlet, Link } from "react-router-dom";
 function NavBar() {
   return (
     <header className="border-b border-zinc-800">
-      <div className="container mx-auto px-4 h-14 flex items-center justify-between">
-        <Link to="/" className="font-semibold tracking-wide">Doggerz</Link>
-        <nav className="flex gap-4 text-sm text-zinc-300">
+      <div className="container text-zinc-400 mx-auto px-4 py-4 flex justify-between items-center">
+        <Link to="/">Doggerz</Link>
+        <nav className="flex gap-4 text-zinc-600">
           <Link to="/game">Game</Link>
           <Link to="/shop">Shop</Link>
           <Link to="/settings">Settings</Link>
@@ -20,7 +20,7 @@ function Footer() {
   return (
     <footer className="border-t border-zinc-800 mt-8">
       <div className="container mx-auto px-4 py-6 text-xs text-zinc-400">
-        Doggerz © 2025 — No grind. Just vibes.
+        Doggerz © 2025 Copyright.
       </div>
     </footer>
   );
