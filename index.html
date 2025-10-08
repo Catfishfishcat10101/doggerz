@@ -1,48 +1,13 @@
-<!-- App identity -->
-<title>Doggerz</title>
-<meta name="application-name" content="Doggerz" />
-<meta name="apple-mobile-web-app-title" content="Doggerz" />
-<meta name="description" content="Doggerz — adopt your PixelPup, train, bond, and vibe. Offline-ready PWA with keyboard controls and high-contrast UI." />
-
-<!-- Color scheme -->
-<meta name="color-scheme" content="dark light" />
-<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0b1220" />
-<meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
-
-<!-- PWA manifest + icons -->
-<link rel="manifest" href="/manifest.webmanifest" />
-<link rel="icon" href="/favicon.ico" sizes="any" />
-<link rel="icon" type="image/svg+xml" href="/icon.svg" />
-<link rel="apple-touch-icon" href="/apple-touch-icon.png" />  <!-- 180×180 PNG -->
-<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#0ea5e9" />
-
-<!-- iOS PWA polish -->
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="mobile-web-app-capable" content="yes" />
-<meta name="format-detection" content="telephone=no" />
-
-<!-- Referrer policy -->
-<meta name="referrer" content="strict-origin-when-cross-origin" />
-
-<!-- Preconnect: fonts + Firebase (Auth/Firestore) -->
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link rel="preconnect" href="https://www.googleapis.com" />
-<link rel="preconnect" href="https://firestore.googleapis.com" />
-<link rel="preconnect" href="https://www.gstatic.com" crossorigin />
-
-<!-- Fonts (consider self-hosting later) -->
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&display=swap" rel="stylesheet" />
-
-<!-- Social (OG/Twitter) -->
-<meta property="og:title" content="Doggerz" />
-<meta property="og:description" content="Adopt your PixelPup. Train. Bond. No grind. Just vibes." />
-<meta property="og:type" content="website" />
-<meta property="og:url" content="https://doggerz.app/" />
-<meta property="og:image" content="https://doggerz.app/og-image.png" />
-<meta name="twitter:card" content="summary_large_image" />
-<link rel="canonical" href="https://doggerz.app/" />
-
-<!-- Preload critical art (tight) -->
-<link rel="preload" href="/sprites/dog_walk.png" as="image" imagesrcset="/sprites/dog_walk.png 1x" />
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <title>Doggerz</title>
+  </head>
+  <body class="bg-[#0b1220]">
+    <div id="root">Loading…</div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
