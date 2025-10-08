@@ -3,13 +3,11 @@ import React, { useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { selectUser } from "@/redux/userSlice.js";
-
-import { PATHS } from "@/config/routes.js";
+import { PATHS } from "@/routes.js";
 import { metaForRoute } from "@/config/seo.js";
-import { track, EVENTS } from "@/config/analytics.js";
-import { canShowAds } from "@/config/ads.js";
-
-import AdSlot from "@/components/ads/AdSlot.jsx";
+import { track, EVENTS } from "@/analytics.js";
+import { canShowAds } from "@/ads.js";
+import AdSlot from "@/AdSlot.jsx";
 
 // >>> these two make the dog visible <<<
 import BackgroundScene from "@/components/Features/BackgroundScene.jsx";

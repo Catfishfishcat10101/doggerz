@@ -4,13 +4,10 @@ import { Provider } from "react-redux";
 import { BrowserRouter } from "react-router-dom";
 import store from "./redux/store";
 import App from "./App.jsx";
-
 // Tailwind entry + app styles (adjust if yours is src/styles/index.css)
 import "./styles.css";
-
 // Initialize Firebase singletons (auth, db, storage, functions)
 import "@/lib/firebase";
-
 // ----- PWA: register service worker + surface updates -----
 async function initPWA() {
   try {
@@ -37,7 +34,6 @@ async function initPWA() {
           if (import.meta.env.DEV) console.info("[pwa] offline ready");
         },
       });
-
       // If you prefer to auto-update without prompting:
       // updateSW();
     } else if (import.meta.env.DEV) {
@@ -48,7 +44,6 @@ async function initPWA() {
     if (import.meta.env.DEV) console.info("[pwa] plugin not active; skipping SW registration");
   }
 }
-
 // Minimal in-DOM toast; no extra libs
 function showUpdateToast(onReload) {
   const host = document.createElement("div");
@@ -82,7 +77,6 @@ function showUpdateToast(onReload) {
   root.querySelector("#pwa-later")?.addEventListener("click", remove);
   setTimeout(remove, 12000);
 }
-
 // ----- Global error boundary -----
 class RootErrorBoundary extends React.Component {
   constructor(props) {
@@ -120,16 +114,13 @@ class RootErrorBoundary extends React.Component {
     return this.props.children;
   }
 }
-
 // ----- Bootstrap -----
 const rootEl = document.getElementById("root");
 if (!rootEl) throw new Error("Missing #root element. Check index.html");
-
 // Optional subpath deploys (e.g., GitHub Pages). Default = "/".
 const basename = import.meta.env.VITE_BASENAME || "/";
 
-initPWA(); // fire-and-forget; no top-level await needed
-
+initPWA();
 ReactDOM.createRoot(rootEl).render(
   <React.StrictMode>
     <Provider store={store}>
@@ -142,9 +133,8 @@ ReactDOM.createRoot(rootEl).render(
   </React.StrictMode>
 );
 
-// Remove this: HMR dispose calling the PWA updater isn’t a thing.
-// if (import.meta.hot && typeof unregister === "function") {
-//   import.meta.hot.dispose(() => {
-//     try { unregister(); } catch {}
-//   });
-// }
+ if (import.meta.hot && typeof unregister === "function") {
+   import.meta.hot.dispose(() => {
+     try { unregister(); } catch {}
+   });
+ }
