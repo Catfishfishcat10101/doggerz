@@ -1,4 +1,4 @@
-// src/AppRoutes.jsx
+// src/routes/AppRoutes.jsx
 import React, { Suspense } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 
@@ -13,9 +13,12 @@ import Login from "@/pages/Login.jsx";
 import Signup from "@/pages/Signup.jsx";
 import Profile from "@/pages/Profile.jsx";
 import Onboarding from "@/pages/Onboarding.jsx";
-
 import Privacy from "@/components/Legal/Privacy.jsx";
 import Terms from "@/components/Legal/Terms.jsx";
+
+import { useAuthState } from "@/state/useAuthState"; // or your selector/context
+import { useSelector } from "react-redux";
+import { PATHS } from "@/routes/paths.js";
 
 export default function AppRoutes() {
   return (
@@ -23,11 +26,12 @@ export default function AppRoutes() {
       <Routes>
         {/* Public section */}
         <Route element={<PublicLayout />}>
-          <Route index element={<Navigate to="/login" replace />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/privacy" element={<Privacy />} />
-          <Route path="/terms" element={<Terms />} />
+          {/* Smart index: if authed+onboarded → /game, if authed but not onboarded → /onboarding, else → /login */}
+          <Route index element={<SmartIndex />} />
+          <Route path={PATHS.LOGIN} element={<Login />} />
+          <Route path={PATHS.SIGNUP} element={<Signup />} />
+          <Route path={PATHS.PRIVACY} element={<Privacy />} />
+          <Route path={PATHS.TERMS} element={<Terms />} />
         </Route>
 
         {/* Authenticated section */}
@@ -38,12 +42,10 @@ export default function AppRoutes() {
             </ProtectedRoute>
           }
         >
-          {/* Onboarding route for first-time authed users */}
-          <Route path="/onboarding" element={<Onboarding />} />
+          <Route path={PATHS.ONBOARDING} element={<Onboarding />} />
 
-          {/* Game gated behind onboarding completeness */}
           <Route
-            path="/game"
+            path={PATHS.GAME}
             element={
               <RequireOnboarding>
                 <Game />
@@ -51,15 +53,28 @@ export default function AppRoutes() {
             }
           />
 
-          <Route path="/home" element={<Home />} />
-          <Route path="/profile" element={<Profile />} />
+          <Route path={PATHS.HOME} element={<Home />} />
+          <Route path={PATHS.PROFILE} element={<Profile />} />
         </Route>
 
         {/* 404 */}
-        <Route path="*" element={<NotFound />} />
+        <Route path={PATHS.NOT_FOUND} element={<NotFound />} />
       </Routes>
     </Suspense>
   );
+}
+
+/* ---------- helpers ---------- */
+
+function SmartIndex() {
+  // swap these to your actual auth/dog/onboarding sources
+  const user = useSelector((s) => s.auth?.user);
+  const dog = useSelector((s) => s.dog);
+  const isOnboarded = !!dog?.id;
+
+  if (!user) return <Navigate to={PATHS.LOGIN} replace />;
+  if (!isOnboarded) return <Navigate to={PATHS.ONBOARDING} replace />;
+  return <Navigate to={PATHS.GAME} replace />;
 }
 
 function NotFound() {

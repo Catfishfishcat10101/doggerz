@@ -1,16 +1,22 @@
+// src/routes/RequireOnboarding.jsx
 import React from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
-
-// Adjust these selectors to your profile slice if different
-const selectProfile = (s) => s.profile?.data || { name: null, stage: null };
-const isComplete = (p) => Boolean(p?.name) && Boolean(p?.stage);
+import { PATHS } from "@/routes/paths.js";
 
 export default function RequireOnboarding({ children }) {
-  const profile = useSelector(selectProfile);
+  const loc = useLocation();
+  // Consider “onboarded” when a dog exists (adjust if your state differs)
+  const hasDog = useSelector((s) => Boolean(s.dog?.id));
 
-  if (!isComplete(profile)) {
-    return <Navigate to="/onboarding" replace />;
+  // If no dog yet and we're not already on the onboarding page, redirect there
+  if (!hasDog && loc.pathname !== PATHS.ONBOARDING) {
+    return <Navigate to={PATHS.ONBOARDING} replace />;
+  }
+
+  // Optional: if they finished onboarding but are on /onboarding, bump them to /game
+  if (hasDog && loc.pathname === PATHS.ONBOARDING) {
+    return <Navigate to={PATHS.GAME} replace />;
   }
 
   return children;

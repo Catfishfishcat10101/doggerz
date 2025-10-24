@@ -1,3 +1,4 @@
+// src/services/dogService.js
 const KEY = "doggerz:dog";
 
 export async function ensureDogForUser(uid) {

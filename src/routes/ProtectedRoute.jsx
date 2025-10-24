@@ -2,16 +2,10 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { onIdTokenChanged, getIdTokenResult } from "firebase/auth";
-import { auth } from "@/lib/firebase"; // ← fixed path
+import { auth } from "@/lib/firebase";              // keep your path if that's where it is
+import { PATHS } from "@/routes/index.jsx";         // <-- add
+import { rememberReturnTo } from "@/utils/nextRouteAfterAuth.js"; // <-- add
 
-/**
- * ProtectedRoute
- * Props:
- * - children: ReactNode
- * - requireEmailVerified?: boolean (default false)
- * - requireClaims?: string[] (claim keys that must be truthy on the token)
- * - fallback?: ReactNode (rendered while authenticating)
- */
 export default function ProtectedRoute({
   children,
   requireEmailVerified = false,
@@ -50,8 +44,12 @@ export default function ProtectedRoute({
 
   if (state.loading) return fallback;
 
-  // Unauthed → login with redirect memory
-  if (!state.user) return <Navigate to="/login" replace state={{ from: loc }} />;
+  // Unauthed → remember where we were and send to /login?returnTo=...
+  if (!state.user) {
+    rememberReturnTo(loc);
+    const ret = encodeURIComponent(loc.pathname + (loc.search || ""));
+    return <Navigate to={`${PATHS.LOGIN}?returnTo=${ret}`} replace />;
+  }
 
   // Email verification gate
   if (requireEmailVerified && state.user.email && !state.user.emailVerified) {
@@ -65,36 +63,4 @@ export default function ProtectedRoute({
   }
 
   return children;
-}
-
-/* --------------------- helpers & UI bits --------------------- */
-
-function useMissingClaims(keys = [], claims) {
-  return useMemo(() => {
-    if (!keys?.length) return [];
-    if (!claims) return keys.slice();
-    return keys.filter((k) => !Boolean(claims?.[k]));
-  }, [keys, claims]);
-}
-
-function DefaultFallback() {
-  return (
-    <div className="min-h-screen grid place-items-center bg-white dark:bg-slate-950">
-      <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white dark:bg-slate-900 p-6 shadow">
-        <div className="h-5 w-40 rounded bg-slate-200 dark:bg-slate-800 animate-pulse" />
-        <div className="mt-3 h-3 w-64 rounded bg-slate-200 dark:bg-slate-800 animate-pulse" />
-      </div>
-    </div>
-  );
-}
-
-function GateMessage({ title, body }) {
-  return (
-    <div className="min-h-screen grid place-items-center bg-white dark:bg-slate-950">
-      <div className="max-w-md rounded-2xl border border-amber-300/50 bg-amber-50 text-amber-900 dark:bg-amber-900/20 dark:text-amber-100 p-6 shadow">
-        <div className="font-semibold">{title}</div>
-        <div className="text-sm opacity-80 mt-1">{body}</div>
-      </div>
-    </div>
-  );
 }
