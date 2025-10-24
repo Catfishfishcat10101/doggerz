@@ -110,3 +110,5 @@ src_backup/
 !public/screens/
 !public/offline.html
 !public/robots.txt
+.env*
+!.env.example
