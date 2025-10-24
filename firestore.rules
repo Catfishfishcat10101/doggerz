@@ -5,14 +5,11 @@ service cloud.firestore {
     // dogs collection: doc id MUST be the owner's UID
     match /dogs/{uid} {
 
-      // --- READ ---
-      // Only the owner can read (double check against stored ownerId)
       allow read: if isOwner(uid);
 
-      // --- CREATE ---
       allow create: if request.auth != null
         && request.auth.uid == uid
-        && !exists(/databases/$(database)/documents/dogs/$(uid)) // one dog per user
+        && !exists(/databases/$(database)/documents/dogs/$(uid))
         && request.resource.data.ownerId == request.auth.uid
         && request.resource.data.keys().hasOnly([
              'ownerId','name','stats','mood','createdAt','updatedAt',
@@ -20,13 +17,10 @@ service cloud.firestore {
            ])
         && isValidNewDog();
 
-      // --- UPDATE ---
-      allow update: if isOwner(uid) && isValidDogUpdate();
+      allow update: if isOwner(uid)
+        && isValidDogUpdate();
 
-      // --- DELETE ---
       allow delete: if isOwner(uid);
-
-      /* ---------------- helpers ---------------- */
 
       function isOwner(uid) {
         return request.auth != null
@@ -35,12 +29,12 @@ service cloud.firestore {
       }
 
       function isValidNewDog() {
-        // Required keys present
         return request.resource.data.keys().hasAll(['ownerId','stats','mood','createdAt','updatedAt'])
           && request.resource.data.ownerId == request.auth.uid
           && isValidStats(request.resource.data.stats)
           && isValidMood(request.resource.data.mood)
-          && (!('name' in request.resource.data) || isValidName(request.resource.data.name));
+          && (!('name' in request.resource.data) || isValidName(request.resource.data.name))
+          && isValidTimestamps();
       }
 
       function isValidDogUpdate() {
@@ -51,21 +45,24 @@ service cloud.firestore {
             'ownerId','name','stats','mood','createdAt','updatedAt',
             'pos','isPottyTrained','pottyLevel','poopCount','lastTrainedAt'
           ])
-          && (
-            (!('name' in request.resource.data) || isValidName(request.resource.data.name))
-            && (!('mood' in request.resource.data) || isValidMood(request.resource.data.mood))
-            && (!('stats' in request.resource.data) || isValidStats(request.resource.data.stats))
-            && (!('pos' in request.resource.data) || isValidPos(request.resource.data.pos))
-            && (!('isPottyTrained' in request.resource.data) || (request.resource.data.isPottyTrained is bool))
-            && (!('pottyLevel' in request.resource.data) || isPercent(request.resource.data.pottyLevel))
-            && (!('poopCount' in request.resource.data) || (request.resource.data.poopCount is int))
-          );
+          && (!('name' in request.resource.data) || isValidName(request.resource.data.name))
+          && (!('mood' in request.resource.data) || isValidMood(request.resource.data.mood))
+          && (!('stats' in request.resource.data) || isValidStats(request.resource.data.stats))
+          && (!('pos' in request.resource.data) || isValidPos(request.resource.data.pos))
+          && (!('isPottyTrained' in request.resource.data) || (request.resource.data.isPottyTrained is bool))
+          && (!('pottyLevel' in request.resource.data) || isPercent(request.resource.data.pottyLevel))
+          && (!('poopCount' in request.resource.data) || (request.resource.data.poopCount is int))
+          && isValidTimestamps();
       }
 
-      /* --------- field validators ---------- */
+      /* ---------- validators ---------- */
 
       function isValidStats(stats) {
-        return stats is map;
+        return stats is map
+          && (!('hunger' in stats) || isPercent(stats.hunger))
+          && (!('happiness' in stats) || isPercent(stats.happiness))
+          && (!('energy' in stats) || isPercent(stats.energy))
+          && (!('cleanliness' in stats) || isPercent(stats.cleanliness));
       }
 
       function isPercent(n) {
@@ -84,6 +81,12 @@ service cloud.firestore {
 
       function isValidName(n) {
         return n is string && n.size() >= 1 && n.size() <= 24 && n.trim().size() > 0;
+      }
+
+      function isValidTimestamps() {
+        return (!('createdAt' in request.resource.data) || request.resource.data.createdAt is timestamp)
+          && (!('updatedAt' in request.resource.data) || request.resource.data.updatedAt is timestamp)
+          && (!('lastTrainedAt' in request.resource.data) || request.resource.data.lastTrainedAt is timestamp);
       }
     }
   }

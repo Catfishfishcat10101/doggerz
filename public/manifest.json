@@ -1,0 +1,16 @@
+{
+  "name": "Doggerz",
+  "short_name": "Doggerz",
+  "description": "Adopt a pixel pup and raise it!",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
