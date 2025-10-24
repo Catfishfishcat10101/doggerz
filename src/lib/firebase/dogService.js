@@ -1,3 +1,4 @@
+// src/lib/firebase/dogService.js
 import {
   doc,
   getDoc,

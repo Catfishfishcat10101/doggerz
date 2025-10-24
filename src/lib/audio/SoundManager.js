@@ -1,25 +1,19 @@
-// src/components/Features/SoundManager.js
-// Tiny sound helper. Honors localStorage "doggerz_sound" = "on" | "off"
-
-const sounds = {
-  bark: new Audio("/sounds/bark.mp3"),   // add these files under /public/sounds if you have them
-  scoop: new Audio("/sounds/scoop.mp3"),
-  click: new Audio("/sounds/click.mp3"),
+const soundPaths = {
+  bark: "/sounds/bark.mp3",
+  scoop: "/sounds/scoop.mp3",
+  click: "/sounds/click.mp3",
 };
 
-function enabled() {
-  return (localStorage.getItem("doggerz_sound") ?? "on") === "on";
+const sounds = Object.fromEntries(
+  Object.entries(soundPaths).map(([name, path]) => [name, new Audio(path)])
+);
+class SoundManager {
+  static play(soundName) {
+    const sound = sounds[soundName];
+    if (!sound) return;
+    sound.currentTime = 0;
+    sound.play().catch(() => {});
+  }
 }
 
-export default {
-  play(name) {
-    try {
-      if (!enabled()) return;
-      const a = sounds[name];
-      if (a) {
-        a.currentTime = 0;
-        a.play().catch(() => {});
-      }
-    } catch {}
-  },
-};
+export default SoundManager;

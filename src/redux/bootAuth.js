@@ -1,3 +1,4 @@
+// src/redux/bootAuth.js
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { userAuthed, userSignedOut, userLoading } from "./userSlice";

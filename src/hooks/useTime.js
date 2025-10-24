@@ -1,35 +1,28 @@
-import { useState, useEffect } from "react";
+// src/hooks/useTime.js
+
+const DOG_DAY_MS = 1000 * 60 * 60 * 6; // 6 real hours = 1 dog day
+
+function getStoredTimestamp() {
+  const data = JSON.parse(localStorage.getItem("doggerz-time"));
+  return data?.baseTimestamp || Date.now();
+}
 
 export function useGameTime() {
-  const [gameTime, setGameTime] = useState(() => {
-    const saved = localStorage.getItem("doggerz-time");
-    return saved ? JSON.parse(saved) : { timestamp: Date.now(), ageDays: 0 };
-  });
+  const [baseTimestamp] = React.useState(getStoredTimestamp);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setGameTime((prev) => {
-        const now = Date.now();
-        const elapsed = now - prev.timestamp;
-        const gameElapsed = elapsed * 20; // 1 real minute = 20 minutes game time
-        const newAge = prev.ageDays + gameElapsed / (1000 * 60 * 60 * 24);
-        const updated = {
-          timestamp: now,
-          ageDays: newAge,
-        };
-        localStorage.setItem("doggerz-time", JSON.stringify(updated));
-        return updated;
-      });
-    }, 60000); // check every minute
-    return () => clearInterval(interval);
-  }, []);
+  React.useEffect(() => {
+    localStorage.setItem("doggerz-time", JSON.stringify({ baseTimestamp }));
+  }, [baseTimestamp]);
 
-  const hour = (new Date(gameTime.timestamp).getHours() + 2) % 24; // fake offset
+  const now = Date.now();
+  const ageDays = Math.floor((now - baseTimestamp) / DOG_DAY_MS);
+  const hour = (new Date(now).getHours() + 2) % 24; // fake offset for flavor
   const isDay = hour >= 6 && hour < 18;
 
   return {
-    ageDays: gameTime.ageDays,
+    ageDays,
     isDay,
     hour,
   };
 }
+export default useGameTime;

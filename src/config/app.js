@@ -1,4 +1,4 @@
-// src/config/app.js (compat shim) — will be removed later
+// src/config/app.js
 export { APP_COPYRIGHT as COPYRIGHT, SUPPORT_EMAIL } from "./seo.js";
 export { NETWORK_TIMEOUT_MS } from "./env.js";
 

@@ -1,4 +1,4 @@
-// src/lib/dialogs.js
+// src/config/dialogConfigs.js
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { getDialog } from "@/config/dialogConfigs.js";

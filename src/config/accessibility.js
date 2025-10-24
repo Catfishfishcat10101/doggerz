@@ -1,8 +1,4 @@
-/**
- * Doggerz – Accessibility config & helpers
- * Centralized A11y preferences (glare-safe, reduced motion, high contrast, text size)
- * Persists to localStorage and applies via utility classes / CSS vars.
- */
+/**src/config/accessibility.js */
 
 const STORE_KEY = "doggerz:accessibility";
 

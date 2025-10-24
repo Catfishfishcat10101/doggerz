@@ -30,3 +30,23 @@ pnpm-debug.log*
 
 # Misc
 *.local
+
+echo '
+# build
+dist/
+build/
+node_modules/
+
+# system
+.DS_Store
+Thumbs.db
+
+# logs
+npm-debug.log*
+
+# IDE
+.vscode/
+.idea/
+' >> .gitignore
+# environment variables
+.env*

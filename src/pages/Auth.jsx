@@ -1,3 +1,4 @@
+// src/pages/Auth.jsx
 import React, { useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import SignInForm from "@components/Auth/SignInForm";

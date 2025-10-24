@@ -10,6 +10,7 @@ export const bootstrapDog = createAsyncThunk(
   }
 );
 
+
 // elsewhere when the user is signed in:
 let unsubscribeDog = null;
 export function startDogWatch(uid, dispatch) {
@@ -21,3 +22,4 @@ export function startDogWatch(uid, dispatch) {
 export function stopDogWatch() {
   if (unsubscribeDog) { unsubscribeDog(); unsubscribeDog = null; }
 }
+

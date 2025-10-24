@@ -1,7 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 /** ===========================
- * Utilities
+ * src/redux/dogSlice.js
  * =========================== */
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const clamp01 = (v) => clamp(v, 0, 100);
@@ -21,7 +21,7 @@ function applyDecay(state, dtSec) {
     state.stage === "senior" ? 0.85 : 1.0;
 
   // Base decay per hour
-  const DECAY = { hunger: 10, energy: 7, cleanliness: 3, happiness: 2 };
+  const DECAY = { hunger: 10, energy: 7, cleanliness: 3, happiness: 2.5 };
 
   state.hunger      = clamp01(state.hunger      - DECAY.hunger * stageMul * hr);
   state.energy      = clamp01(state.energy      - DECAY.energy * stageMul * hr);
@@ -33,7 +33,7 @@ function applyDecay(state, dtSec) {
   const dirtyPenalty  = (100 - state.cleanliness) * 0.012 * hr;
   state.happiness = clamp01(state.happiness - (hapBase + hungerPenalty + dirtyPenalty));
 
-  // Bladder fill (0–100); goes faster if hydrated (future) or high hunger (eat more water?)
+  // Bladder fill (0–100); goes faster if hydrated (future) or high hunger
   const bladderRatePerHr = 22; // fills in ~4–5h baseline
   state.bladder = clamp01(state.bladder + bladderRatePerHr * hr);
   if (!state.needToGo && state.bladder >= 85) {
@@ -76,7 +76,7 @@ const initialState = {
   mute: false,
 
   // Lifecycle / stage
-  stage: "adult", // 'puppy' | 'adult' | 'senior'
+  stage: "adult",  // 'puppy' | 'adult' | 'senior'
   bornAt: nowMs(), // epoch ms; adjust when hydrating from storage/server
 
   // Core needs (0..100)
@@ -185,7 +185,7 @@ const dogSlice = createSlice({
     },
 
     takeOutside(state) {
-      // Only meaningful if they actually needed to go
+      // Only meaningful if they actually need to go
       if (!state.needToGo) return;
       state.needToGo = false;
       state.needToGoSince = 0;
