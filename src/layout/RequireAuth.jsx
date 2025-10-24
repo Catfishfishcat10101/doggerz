@@ -1,3 +1,4 @@
+// src/layout/RequireAuth.jsx
 import React from "react";
 import { useSelector } from "react-redux";
 import { Navigate, useLocation, Outlet } from "react-router-dom";

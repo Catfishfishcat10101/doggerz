@@ -1,4 +1,4 @@
-// src/components/UI/ErrorBoundary.jsx
+// src/layout/ErrorBoundary.jsx
 import React from "react";
 import PropTypes from "prop-types";
 

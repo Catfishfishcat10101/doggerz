@@ -1,3 +1,4 @@
+// src/routes.js
 export const PATHS = Object.freeze({
   HOME: "/", LOGIN: "/login", SIGNUP: "/signup",
   GAME: "/game", SHOP: "/shop", SETTINGS: "/settings",

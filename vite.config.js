@@ -14,7 +14,6 @@ const __dirname = path.dirname(__filename);
 const PWA_INCLUDE_ASSETS = [
   "offline.html",
   "favicon.ico",
-  "icons/icon-192.png",
   "icons/icon-512.png",
 ];
 
@@ -44,7 +43,6 @@ export default defineConfig({
         theme_color: "#0f172a",
         background_color: "#0f172a",
         icons: [
-          { src: "icons/icon-192.png", sizes: "192x192", type: "image/png" },
           { src: "icons/icon-512.png", sizes: "512x512", type: "image/png" },
         ],
       },

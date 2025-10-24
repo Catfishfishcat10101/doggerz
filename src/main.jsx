@@ -1,7 +1,9 @@
+// src/main.jsx
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { Provider } from "react-redux";
 import { BrowserRouter } from "react-router-dom";
+
 import store from "./redux/store";
 import App from "./App.jsx";
 // Tailwind entry + app styles (adjust if yours is src/styles/index.css)

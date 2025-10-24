@@ -1,3 +1,4 @@
+// src/layout/RootLayout.jsx
 import React from "react";
 import { Outlet, Link } from "react-router-dom";
 
@@ -19,12 +20,13 @@ function NavBar() {
 function Footer() {
   return (
     <footer className="border-t border-zinc-800 mt-8">
-      <div className="container mx-auto px-4 py-6 text-xs text-zinc-400">
-        Doggerz © 2025 Copyright.
+      <div className="container mx-auto px-4 py-6 text-xs text-zinc-400 text-center sm:text-left">
+        All rights reserved © 2025 CatfishFishcat
       </div>
     </footer>
   );
 }
+
 
 export default function RootLayout() {
   return (
