@@ -112,3 +112,5 @@ src_backup/
 !public/robots.txt
 .env*
 !.env.example
+.env*
+!.env.example
