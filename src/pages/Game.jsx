@@ -1,11 +1,11 @@
 // src/pages/Game.jsx
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-
-import BackgroundScene from "@/components/Features/BackgroundScene.jsx";
-import DogAIEngine from "@/components/Features/DogAIEngine.jsx";   // autonomous-only engine
-import DogStage from "@/components/game/DogStage.jsx";             // view-only renderer
-import NeedsHUD from "@/components/Features/NeedsHUD.jsx";
+ import { WORLD } from "../config/game";
+import BackgroundScene from "../components/Features/BackgroundScene.jsx";
+import DogAIEngine from "../components/Features/DogAIEngine.jsx";   // autonomous-only engine
+import DogStage from "../components/game/DogStage.jsx";             // view-only renderer
+import NeedsHUD from "../components/Features/NeedsHUD.jsx";
 
 import NamePupModal from "@/components/UI/NamePupModal.jsx";
 import { selectUser } from "@/redux/userSlice.js";
@@ -36,8 +36,11 @@ export default function Game() {
   // ——— Potty flow (autonomous) ———
   // The AI uses a normalized world width; we mirror that here for a robust yard check.
   // Keep this in sync with <DogAIEngine worldW={...} /> below.
-  const WORLD_W = 640;
-  const YARD_FRACTION = 0.18; // right-most 18% is the yard
+
+
+const WORLD_W = 640; // Optional override, but should probably match WORLD.DOG_W or similar
+const YARD_FRACTION = WORLD.YARD_FRACTION;
+
   const yardX = WORLD_W * (1 - YARD_FRACTION);
 
   function onPotty() {
