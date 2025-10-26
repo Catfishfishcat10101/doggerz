@@ -10,8 +10,8 @@ import Settings from "@/pages/Settings.jsx";
 import Shop from "@/pages/Shop.jsx";
 import NotFound from "@/pages/NotFound.jsx";
 import Leaderboard from "@/pages/Leaderboard.jsx";
-import NewDog from "@/pages/NewDog.jsx";      // make sure this exists
-import Profile from "@/pages/Profile.jsx";    // make sure this exists
+import NewDog from "@/pages/NewDog.jsx";
+import Profile from "@/pages/Profile.jsx";
 
 import ProtectedRoute from "./ProtectedRoute.jsx";
 import RequireOnboarding from "./RequireOnboarding.jsx";
@@ -33,11 +33,10 @@ export function startRouteAfterAuth({ hasDog }) {
   return hasDog ? PATHS.GAME : PATHS.NEW_DOG;
 }
 
-// child paths use no leading slash
 export const router = createBrowserRouter([
   {
     path: PATHS.HOME,
-    element: <App />,              // App should render <Outlet/>
+    element: <App />,
     errorElement: <NotFound />,
     children: [
       { index: true, element: <Home /> },

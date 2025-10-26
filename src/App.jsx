@@ -1,6 +1,6 @@
 // src/App.jsx
 import React, { Suspense, lazy } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 
 import RootLayout from "@/layout/RootLayout.jsx";
 import RequireAuth from "@/layout/RequireAuth.jsx";
@@ -31,23 +31,20 @@ export default function App() {
           </Route>
 
           <Route element={<RequireAuth />}>
-            <Route path="/game" element={<Game />} />
+            <Route element={<RequireOnboarding />}>
+              <Route path="/game" element={<Game />} />
+            </Route>
             <Route path="/shop" element={<Shop />} />
             <Route path="/settings" element={<Settings />} />
-          </Route>
-
-          <Route element={<RequireOnboarding />}>
             <Route path="/onboarding" element={<Onboarding />} />
           </Route>
 
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />
 
-          {/* Catch-all route */}
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
     </Suspense>
   );
 }
-// src/App.jsx

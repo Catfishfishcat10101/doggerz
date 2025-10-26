@@ -1,11 +1,13 @@
 // src/redux/dogThunks.js
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { ensureDogForUser, watchDog, nameDog } from "@/data/dogRepo";
+import { dogHydrated } from "@redux/dogSlice";
 
 export const bootstrapDog = createAsyncThunk(
   "dog/bootstrap",
   async (uid, { dispatch }) => {
     const dog = await ensureDogForUser(uid);
+    dispatch(dogHydrated(dog));
     return dog;
   }
 );

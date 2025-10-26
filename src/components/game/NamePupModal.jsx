@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { selectUser } from "@/redux/userSlice.js";
-import { nameDog } from "@/services/dogService.js";
+import { saveDogName } from "@/services/dogService";
 
 export default function NamePupModal({ open, onClose }) {
   const user = useSelector(selectUser);

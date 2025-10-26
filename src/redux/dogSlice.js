@@ -1,14 +1,12 @@
-import { createSlice } from "@reduxjs/toolkit";
-
 /** ===========================
  * src/redux/dogSlice.js
  * =========================== */
+ import { createSlice } from "@reduxjs/toolkit";
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const clamp01 = (v) => clamp(v, 0, 100);
 const nowMs = () => Date.now();
 
 function xpThresholdFor(level) {
-  // Curved but gentle: 100, 140, 190, 250, ...
   return Math.round(100 + Math.pow(level - 1, 1.25) * 40);
 }
 
@@ -17,33 +15,34 @@ function applyDecay(state, dtSec) {
 
   // Stage multipliers (puppy burns more, senior slows)
   const stageMul =
-    state.stage === "puppy" ? 1.15 :
-    state.stage === "senior" ? 0.85 : 1.0;
+    state.stage === "puppy" ? 1.25 :
+    state.stage === "senior" ? 0.60 : 0.85;
 
   // Base decay per hour
-  const DECAY = { hunger: 10, energy: 7, cleanliness: 3, happiness: 2.5 };
+  const DECAY = { hunger: 3, energy: 2, cleanliness: 1, happiness: 2 };
 
   state.hunger      = clamp01(state.hunger      - DECAY.hunger * stageMul * hr);
   state.energy      = clamp01(state.energy      - DECAY.energy * stageMul * hr);
   state.cleanliness = clamp01(state.cleanliness - DECAY.cleanliness * hr);
+  state.happiness   = clamp01(state.happiness   -DECAY.happiness * hr);
 
   // Happiness bleeds slowly + penalties for low hygiene/hunger
   const hapBase = DECAY.happiness * hr;
-  const hungerPenalty = (100 - state.hunger) * 0.015 * hr;
-  const dirtyPenalty  = (100 - state.cleanliness) * 0.012 * hr;
+  const hungerPenalty = (90 - state.hunger) * 0.015 * hr;
+  const dirtyPenalty  = (90 - state.cleanliness) * 0.012 * hr;
   state.happiness = clamp01(state.happiness - (hapBase + hungerPenalty + dirtyPenalty));
 
   // Bladder fill (0–100); goes faster if hydrated (future) or high hunger
-  const bladderRatePerHr = 22; // fills in ~4–5h baseline
+  const bladderRatePerHr = 15; // fills in ~4–5h baseline
   state.bladder = clamp01(state.bladder + bladderRatePerHr * hr);
-  if (!state.needToGo && state.bladder >= 85) {
+  if (!state.needToGo && state.bladder >= 95) {
     state.needToGo = true;
     state.needToGoSince = state.needToGoSince || nowMs();
   }
 
   // Passive drift up of training if high happiness & cleanliness (good environment)
-  if (state.happiness > 70 && state.cleanliness > 70) {
-    state.training = clamp01(state.training + 0.5 * hr); // tiny ambient “bonding”
+  if (state.happiness > 90 && state.cleanliness > 90) {
+    state.training = clamp01(state.training + 0.5 * hr); 
   }
 }
 
@@ -55,8 +54,8 @@ function gainXP(state, amount) {
     state.lvl += 1;
     state.xpToNext = xpThresholdFor(state.lvl);
     // small full-heal nudge on level-up
-    state.happiness = clamp01(state.happiness + 8);
-    state.energy    = clamp01(state.energy + 6);
+    state.happiness = clamp01(state.happiness + 2);
+    state.energy    = clamp01(state.energy + 2);
   }
 }
 
@@ -69,24 +68,25 @@ const initialState = {
 
   // World/render state
   pos: { x: 80, y: 260 },
-  direction: "right", // 'left' | 'right'
-  moving: false,
+  direction: "right",
 
-  // Audio / UX prefs
+  moving: true,
+
+  // Audio
   mute: false,
 
-  // Lifecycle / stage
-  stage: "adult",  // 'puppy' | 'adult' | 'senior'
-  bornAt: nowMs(), // epoch ms; adjust when hydrating from storage/server
+  // Lifecycle
+  stage: 'puppy',
+  bornAt: nowMs(),
 
   // Core needs (0..100)
-  hunger: 70,
-  energy: 82,
-  cleanliness: 90,
-  happiness: 78,
+  hunger: 100,
+  energy: 100,
+  cleanliness: 100,
+  happiness: 100,
 
   // Potty
-  bladder: 25,          // 0..100
+  bladder: 50,          // 0..100
   needToGo: false,
   needToGoSince: 0,     // ms since flag set
   lastPoopAt: 0,
