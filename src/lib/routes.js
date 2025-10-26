@@ -1,21 +1,3 @@
-/**
- * routes.js — robust public/private route detection
- *
- * Key features:
- * - Accepts raw paths OR full URLs (e.g. "https://example.com/privacy?id=1#t").
- * - Strips query/hash, normalizes trailing slashes, collapses double slashes.
- * - Handles a configurable base path (e.g. "/app" or Vite base).
- * - Supports both exact public paths AND "prefix" paths (entire subtree).
- * - Pure ESM with zero deps.
- *
- * Usage:
- *   isPublicPath("/login")                      // true
- *   isPublicPath("/privacy/policy")             // true (prefix rule)
- *   isPublicUrl("https://x/y#z?x=1")            // depends on path
- *   isPublicPath("/app/login", { base: "/app" })// true
- */
-
-/** Exact public routes (no trailing slash). */
 export const PUBLIC_STATIC = Object.freeze([
   "/",
   "/login",
@@ -27,17 +9,6 @@ export const PUBLIC_STATIC = Object.freeze([
 /** Public subtrees: any path that starts with one of these prefixes. */
 export const PUBLIC_PREFIXES = Object.freeze(["/privacy", "/terms"]);
 
-/**
- * Normalize an input path or URL to a canonical pathname:
- * - Removes origin, query, and hash
- * - Strips `base` prefix if provided
- * - Collapses duplicate slashes
- * - Removes trailing slash (except root)
- *
- * @param {string} input - pathname like "/foo/bar" OR full URL
- * @param {{ base?: string }} [opts]
- * @returns {string} normalized pathname
- */
 export function normalizePath(input = "/", opts = {}) {
   const { base = "" } = opts;
 
@@ -121,11 +92,6 @@ function toSet(arr) {
   return s;
 }
 
-/* ---------------------------
-   Examples / sanity checks
-   (delete if you don’t like inline docs)
------------------------------
-
 isPublicPath("/")                          // true
 isPublicPath("/login")                     // true
 isPublicPath("/privacy")                   // true
@@ -141,4 +107,4 @@ isPublicPath("/app/privacy/x", { base: "/app" }) // true
 isPublicUrl("https://ex.com/privacy?id=1#k") // true
 isPublicUrl("https://ex.com/game?t=1")       // false
 
-*/
+
