@@ -2,14 +2,12 @@
 import React from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import AuthButtons from "@/components/Auth/AuthButtons.jsx";
-import { rememberReturnTo, nextRouteAfterAuth, clearReturnTo } from "@/utils/nextRouteAfterAuth.js";
+import { rememberReturnTo, nextRouteAfterAuth, clearReturnTo } from "@/lib/utils/nextRouteAfterAuth.js";
 import { PATHS } from "@/config/routes.js";
 
 export default function Login() {
   const nav = useNavigate();
   const loc = useLocation();
-
-  // If a guard sent us here with a `from`, honor it
   const hintedFrom = loc.state?.from;
   const fallback = nextRouteAfterAuth() || PATHS.GAME;
 
@@ -25,13 +23,9 @@ export default function Login() {
       <p className="mt-2 text-slate-300">
         New here? <Link to={PATHS.SIGNUP} className="text-amber-300 hover:underline">Create an account</Link>.
       </p>
-
       <div className="mt-6">
         <AuthButtons mode="login" onSuccess={handleSuccess} />
       </div>
-
-      {/* optional: if arriving from a CTA, store the target before sending to login */}
-      {/* rememberReturnTo(PATHS.GAME);  -> call this in the place that redirects to /login */}
     </main>
   );
 }

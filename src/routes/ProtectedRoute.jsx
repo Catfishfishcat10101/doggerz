@@ -4,7 +4,7 @@ import { Navigate, useLocation } from "react-router-dom";
 import { onIdTokenChanged, getIdTokenResult } from "firebase/auth";
 import { auth } from "@/lib/firebase";              // keep your path if that's where it is
 import { PATHS } from "@/routes/index.jsx";         // <-- add
-import { rememberReturnTo } from "@/utils/nextRouteAfterAuth.js"; // <-- add
+import { rememberReturnTo } from "@/lib/utils/nextRouteAfterAuth.js"; // <-- add
 
 export default function ProtectedRoute({
   children,
