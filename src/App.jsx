@@ -5,7 +5,7 @@ import { Routes, Route } from "react-router-dom";
 import RootLayout from "@/layout/RootLayout.jsx";
 import RequireAuth from "@/layout/RequireAuth.jsx";
 import RequireGuest from "@/layout/RequireGuest.jsx";
-import RequireOnboarding from "@/routes/RequireOnboarding.jsx";
+import RequireOnboarding from "@/layout/RequireOnboarding.jsx"; // ✅ fixed path
 
 const Home = lazy(() => import("@/pages/Home.jsx"));
 const Game = lazy(() => import("@/pages/Game.jsx"));
@@ -41,7 +41,6 @@ export default function App() {
 
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />
-
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
