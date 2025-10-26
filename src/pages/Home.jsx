@@ -14,12 +14,13 @@ export default function Home() {
         onClick={() => navigate("/login")}
         className="px-6 py-3 rounded-2xl bg-violet-500 hover:bg-violet-400 text-white font-semibold text-lg shadow-lg hover:shadow-violet-500/40 transition"
       >
-        Start Game
+        Start
       </button>
 
       <p className="mt-8 text-sm text-slate-500">
-        Offline-ready PWA • Keyboard-friendly • Built by CatfishFishcat 2025
+        All Rights Reserved Doggerz @ 2025
       </p>
     </div>
+    
   );
 }
