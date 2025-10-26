@@ -1,1 +1,3 @@
-export default function NamePupModal() { return null; }
+export default function NamePupModal() {
+  return null;
+}

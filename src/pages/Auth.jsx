@@ -8,7 +8,7 @@ function useTab() {
   const { search } = useLocation();
   const params = useMemo(() => new URLSearchParams(search), [search]);
   const t = params.get("tab");
-  return t === "signin" ? "signin" : "signup";
+  return t === "signin" ? "signin" : "signup"; // default tab is signup
 }
 
 export default function AuthPage() {
@@ -20,14 +20,22 @@ export default function AuthPage() {
       <div className="card w-full max-w-xl p-8">
         <div className="flex gap-2 mb-6">
           <button
-            className={`btn flex-1 ${tab === "signup" ? "btn-primary" : "bg-white/10"}`}
-            onClick={() => nav("/auth?tab=signup")}
+            className={`btn flex-1 ${
+              tab === "signup"
+                ? "bg-emerald-400 text-slate-900"
+                : "bg-white/10 text-white"
+            }`}
+            onClick={() => nav("/auth?tab=signup", { replace: true })}
           >
             Create account
           </button>
           <button
-            className={`btn flex-1 ${tab === "signin" ? "btn-secondary" : "bg-white/10"}`}
-            onClick={() => nav("/auth?tab=signin")}
+            className={`btn flex-1 ${
+              tab === "signin"
+                ? "bg-emerald-400 text-slate-900"
+                : "bg-white/10 text-white"
+            }`}
+            onClick={() => nav("/auth?tab=signin", { replace: true })}
           >
             Sign in
           </button>

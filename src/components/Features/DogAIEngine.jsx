@@ -1,1 +1,3 @@
-export default function DogAIEngine() { return null; }
+export default function DogAIEngine() {
+  return null;
+}

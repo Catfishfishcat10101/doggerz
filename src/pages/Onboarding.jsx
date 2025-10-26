@@ -2,11 +2,14 @@
 import React, { useMemo, useState } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate, useLocation, Link } from "react-router-dom";
-import { setName as setDogName, setStage as setDogStage } from "@/redux/dogSlice";
+import {
+  dogNamed as setDogName,
+  setStage as setDogStage,
+} from "@/redux/dogSlice";
 
 const STAGES = [
-  { id: "puppy",  label: "Puppy",  blurb: "Quick, playful, burns energy fast" },
-  { id: "adult",  label: "Adult",  blurb: "Balanced stats and decay rates" },
+  { id: "puppy", label: "Puppy", blurb: "Quick, playful, burns energy fast" },
+  { id: "adult", label: "Adult", blurb: "Balanced stats and decay rates" },
   { id: "senior", label: "Senior", blurb: "Chill, slower, needs gentler play" },
 ];
 
@@ -25,8 +28,12 @@ export default function Onboarding() {
     return true;
   }, [step, name, stage]);
 
-  function next() { setStep((s) => Math.min(3, s + 1)); }
-  function back() { setStep((s) => Math.max(1, s - 1)); }
+  function next() {
+    setStep((s) => Math.min(3, s + 1));
+  }
+  function back() {
+    setStep((s) => Math.max(1, s - 1));
+  }
 
   function finish() {
     const clean = name.trim();
@@ -40,13 +47,17 @@ export default function Onboarding() {
   return (
     <section className="mx-auto max-w-xl px-4 sm:px-6 py-10 text-white">
       <div className="bg-white/5 border border-white/10 rounded-2xl p-6 shadow-xl">
-        <div className="text-xs uppercase tracking-widest text-white/60 mb-2">Onboarding</div>
+        <div className="text-xs uppercase tracking-widest text-white/60 mb-2">
+          Onboarding
+        </div>
         <h1 className="text-2xl font-bold mb-6">Let’s get your pup set up</h1>
 
         {/* Step 1: Name */}
         {step === 1 && (
           <div>
-            <label htmlFor="pup-name" className="block text-sm mb-2">Pup Name</label>
+            <label htmlFor="pup-name" className="block text-sm mb-2">
+              Pup Name
+            </label>
             <input
               id="pup-name"
               type="text"
@@ -56,7 +67,9 @@ export default function Onboarding() {
               maxLength={24}
               className="w-full px-3 py-2 rounded-lg bg-slate-800/70 border border-white/10 focus:border-white/30 outline-none"
             />
-            <p className="text-xs text-white/60 mt-2">2–20 characters. You can change this later in Settings.</p>
+            <p className="text-xs text-white/60 mt-2">
+              2–20 characters. You can change this later in Settings.
+            </p>
           </div>
         )}
 
@@ -84,7 +97,9 @@ export default function Onboarding() {
                         <div className="font-semibold">{s.label}</div>
                         <div className="text-xs opacity-80">{s.blurb}</div>
                       </div>
-                      <div className={active ? "text-amber-300" : "text-white/40"}>
+                      <div
+                        className={active ? "text-amber-300" : "text-white/40"}
+                      >
                         {active ? "✓" : "○"}
                       </div>
                     </div>
@@ -101,11 +116,15 @@ export default function Onboarding() {
             <h2 className="text-xl font-semibold mb-3">Quick tips</h2>
             <ul className="list-disc pl-6 space-y-1 opacity-90 text-sm">
               <li>Keep hunger, energy, fun, and hygiene in the green band.</li>
-              <li>Rest restores energy; play boosts fun; feeding counters hunger decay.</li>
+              <li>
+                Rest restores energy; play boosts fun; feeding counters hunger
+                decay.
+              </li>
               <li>Scoop poop to avoid hygiene penalties and mood drops.</li>
             </ul>
             <p className="mt-4 opacity-80 text-sm">
-              You can revisit this in <span className="font-medium">Settings → Help</span>.
+              You can revisit this in{" "}
+              <span className="font-medium">Settings → Help</span>.
             </p>
           </div>
         )}
@@ -142,7 +161,10 @@ export default function Onboarding() {
         </div>
 
         <div className="mt-6 text-xs text-white/50">
-          Changed your mind? <Link to="/" className="underline hover:text-white/80">Back to Home</Link>
+          Changed your mind?{" "}
+          <Link to="/" className="underline hover:text-white/80">
+            Back to Home
+          </Link>
         </div>
       </div>
     </section>

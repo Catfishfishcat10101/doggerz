@@ -31,7 +31,7 @@ export default function BackgroundScene({
       ...(midImage ? { ["--mid-image"]: `url(${midImage})` } : null),
       ...(frontImage ? { ["--front-image"]: `url(${frontImage})` } : null),
     }),
-    [accent, backImage, midImage, frontImage]
+    [accent, backImage, midImage, frontImage],
   );
 
   return (

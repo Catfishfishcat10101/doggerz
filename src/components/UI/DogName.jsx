@@ -32,10 +32,16 @@ export default memo(function DogName({
 
   /* ------------------------------ utilities ------------------------------ */
   const readLS = (key) => {
-    try { return localStorage.getItem(key) || null; } catch { return null; }
+    try {
+      return localStorage.getItem(key) || null;
+    } catch {
+      return null;
+    }
   };
   const writeLS = (key, v) => {
-    try { localStorage.setItem(key, v); } catch {}
+    try {
+      localStorage.setItem(key, v);
+    } catch {}
   };
   const normalize = (v) => {
     const trimmed = (v ?? "").replace(/\s+/g, " ").trim();
@@ -77,7 +83,10 @@ export default memo(function DogName({
   const commit = (raw) => {
     const next = normalize(raw);
     const err = validate(next);
-    if (err) { setError(err); return; }
+    if (err) {
+      setError(err);
+      return;
+    }
     setError("");
 
     writeLS(persistKey, next);
@@ -140,8 +149,13 @@ export default memo(function DogName({
         onChange={onChange}
         onKeyDown={onKeyDown}
         onBlur={() => commit(value)}
-        onCompositionStart={() => { composingRef.current = true; }}
-        onCompositionEnd={(e) => { composingRef.current = false; scheduleCommit(e.currentTarget.value); }}
+        onCompositionStart={() => {
+          composingRef.current = true;
+        }}
+        onCompositionEnd={(e) => {
+          composingRef.current = false;
+          scheduleCommit(e.currentTarget.value);
+        }}
         maxLength={Math.max(1, maxLen + 10)} // allow typing before normalize/trim caps it
         placeholder="Your dog's name"
         aria-describedby="dog-name-hint dog-name-status"
@@ -152,13 +166,13 @@ export default memo(function DogName({
       />
 
       {/* Inline error */}
-      {error && (
-        <span className="ml-1 text-[11px] text-rose-400">{error}</span>
-      )}
+      {error && <span className="ml-1 text-[11px] text-rose-400">{error}</span>}
 
       {/* Optional visual confirmation */}
       {!error && status && (
-        <span className="ml-2 text-[11px] text-emerald-300 italic">{status}</span>
+        <span className="ml-2 text-[11px] text-emerald-300 italic">
+          {status}
+        </span>
       )}
 
       {/* SR-only helpers */}

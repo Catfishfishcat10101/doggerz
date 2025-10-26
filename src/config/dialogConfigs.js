@@ -1,5 +1,12 @@
 // src/config/dialogConfigs.js
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { createPortal } from "react-dom";
 import { getDialog } from "@/config/dialogConfigs.js";
 
@@ -42,16 +49,17 @@ export function DialogProvider({ children }) {
   return (
     <DialogCtx.Provider value={value}>
       {children}
-      {mounted && stack.map((item, idx) => (
-        <DialogPortal key={`${item.key}-${idx}`}>
-          <ConfirmDialog
-            {...item.preset}
-            {...item.opts}
-            onConfirm={() => closeTop(true)}
-            onCancel={dismissTop}
-          />
-        </DialogPortal>
-      ))}
+      {mounted &&
+        stack.map((item, idx) => (
+          <DialogPortal key={`${item.key}-${idx}`}>
+            <ConfirmDialog
+              {...item.preset}
+              {...item.opts}
+              onConfirm={() => closeTop(true)}
+              onCancel={dismissTop}
+            />
+          </DialogPortal>
+        ))}
     </DialogCtx.Provider>
   );
 }

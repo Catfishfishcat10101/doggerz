@@ -1,4 +1,10 @@
-import React, { useMemo, useState, useEffect, useCallback, useRef } from "react";
+import React, {
+  useMemo,
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+} from "react";
 import { useSelector, useDispatch } from "react-redux";
 import {
   increasePottyLevel,
@@ -11,7 +17,13 @@ import {
 } from "@/redux/dogSlice.js";
 import { useNavigate } from "react-router-dom";
 import ProgressBar from "@/components/UI/ProgressBar.jsx";
-import { CheckCircle2, RotateCcw, ArrowLeft, Award, AlertTriangle } from "lucide-react";
+import {
+  CheckCircle2,
+  RotateCcw,
+  ArrowLeft,
+  Award,
+  AlertTriangle,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const COOLDOWN_MS = 600;
@@ -33,11 +45,15 @@ export default function PottyTraining() {
 
   const progressLabel = useMemo(
     () => (isPottyTrained ? "Fully potty trained" : "Training in progress"),
-    [isPottyTrained]
+    [isPottyTrained],
   );
 
   useEffect(() => {
-    setMessage(isPottyTrained ? "Your dog is fully potty trained! 🎉" : "Keep training to reach 100%!");
+    setMessage(
+      isPottyTrained
+        ? "Your dog is fully potty trained! 🎉"
+        : "Keep training to reach 100%!",
+    );
   }, [isPottyTrained]);
 
   useEffect(() => {
@@ -68,7 +84,8 @@ export default function PottyTraining() {
   useEffect(() => {
     const onKey = (e) => {
       const tag = (e.target?.tagName || "").toLowerCase();
-      if (tag === "input" || tag === "textarea" || e.target?.isContentEditable) return;
+      if (tag === "input" || tag === "textarea" || e.target?.isContentEditable)
+        return;
 
       // Prefer e.code for space to avoid IME/locale weirdness
       if ((e.code === "Space" || e.key === "Enter") && !cooldown) {
@@ -100,7 +117,9 @@ export default function PottyTraining() {
       <div className="bg-white/95 dark:bg-slate-900/90 backdrop-blur-sm rounded-2xl shadow-xl p-6 md:p-8 max-w-lg w-full ring-1 ring-black/5 dark:ring-white/10">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl md:text-3xl font-extrabold text-green-900 dark:text-emerald-300 tracking-tight">🚽 Potty Training</h2>
+          <h2 className="text-2xl md:text-3xl font-extrabold text-green-900 dark:text-emerald-300 tracking-tight">
+            🚽 Potty Training
+          </h2>
           <button
             onClick={onBack}
             className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
@@ -115,23 +134,39 @@ export default function PottyTraining() {
         {/* Progress */}
         <div className="mt-5">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-semibold text-gray-700 dark:text-white/80">Progress</span>
-            <span className="font-mono text-sm text-gray-600 dark:text-white/70">{Math.round(pottyLevel)}%</span>
+            <span className="text-sm font-semibold text-gray-700 dark:text-white/80">
+              Progress
+            </span>
+            <span className="font-mono text-sm text-gray-600 dark:text-white/70">
+              {Math.round(pottyLevel)}%
+            </span>
           </div>
 
-          <ProgressBar value={pottyLevel} max={100} label={progressLabel} success={isPottyTrained} />
+          <ProgressBar
+            value={pottyLevel}
+            max={100}
+            label={progressLabel}
+            success={isPottyTrained}
+          />
 
-          <div className="mt-3 text-gray-700 dark:text-white/80" role="status" aria-live="polite">
+          <div
+            className="mt-3 text-gray-700 dark:text-white/80"
+            role="status"
+            aria-live="polite"
+          >
             {message}
           </div>
 
           <div className="mt-2 flex items-center gap-2 text-sm text-gray-600 dark:text-white/70">
             <Award size={16} className="opacity-80" />
             <span>
-              Daily streak: <b>{pottyStreak}</b> day{pottyStreak === 1 ? "" : "s"}
+              Daily streak: <b>{pottyStreak}</b> day
+              {pottyStreak === 1 ? "" : "s"}
             </span>
           </div>
-          <div className="text-xs text-gray-500 dark:text-white/60 mt-1">{lastTrainedLabel}</div>
+          <div className="text-xs text-gray-500 dark:text-white/60 mt-1">
+            {lastTrainedLabel}
+          </div>
         </div>
 
         {/* Actions */}
@@ -141,10 +176,16 @@ export default function PottyTraining() {
             onClick={onTrain}
             disabled={isPottyTrained || cooldown}
             className={`px-4 py-2 rounded-lg font-semibold text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 ${
-              isPottyTrained ? "bg-green-500 cursor-not-allowed" : cooldown ? "bg-yellow-400/70 cursor-wait" : "bg-yellow-500 hover:bg-yellow-600"
+              isPottyTrained
+                ? "bg-green-500 cursor-not-allowed"
+                : cooldown
+                  ? "bg-yellow-400/70 cursor-wait"
+                  : "bg-yellow-500 hover:bg-yellow-600"
             }`}
             aria-disabled={isPottyTrained || cooldown}
-            title={isPottyTrained ? "Already fully trained" : "Train (Space/Enter)"}
+            title={
+              isPottyTrained ? "Already fully trained" : "Train (Space/Enter)"
+            }
           >
             Train Potty 🚾
           </motion.button>
@@ -194,9 +235,12 @@ export default function PottyTraining() {
               exit={{ scale: 0.92, opacity: 0 }}
             >
               <CheckCircle2 className="mx-auto text-green-600" size={64} />
-              <h3 className="text-2xl font-bold mt-3">Potty Training Complete! 🎉</h3>
+              <h3 className="text-2xl font-bold mt-3">
+                Potty Training Complete! 🎉
+              </h3>
               <p className="text-gray-700 dark:text-white/80 mt-2">
-                Your dog mastered potty training. Keep up daily reinforcement to maintain the habit.
+                Your dog mastered potty training. Keep up daily reinforcement to
+                maintain the habit.
               </p>
               <div className="mt-5 flex gap-2 justify-center">
                 <button

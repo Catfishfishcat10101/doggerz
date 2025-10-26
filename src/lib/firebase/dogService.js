@@ -30,7 +30,9 @@ export async function ensureDogForUser(uid) {
 }
 
 export async function nameDog(uid, name) {
-  const trimmed = String(name || "").trim().slice(0, 24);
+  const trimmed = String(name || "")
+    .trim()
+    .slice(0, 24);
   if (!trimmed) throw new Error("Name required");
   const ref = doc(db, "dogs", uid);
   await updateDoc(ref, { name: trimmed, updatedAt: serverTimestamp() });

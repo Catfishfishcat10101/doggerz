@@ -11,7 +11,11 @@ export default class ErrorBoundary extends React.Component {
     return { hasError: true, error };
   }
   componentDidCatch(error, info) {
-    console.error(`[ErrorBoundary:${this.props.name || "unnamed"}]`, error, info);
+    console.error(
+      `[ErrorBoundary:${this.props.name || "unnamed"}]`,
+      error,
+      info,
+    );
   }
   reset = () => this.setState({ hasError: false, error: null });
 
@@ -20,7 +24,8 @@ export default class ErrorBoundary extends React.Component {
       return (
         <div className="p-4 rounded-xl bg-red-600/20 border border-red-500/40 text-sm">
           <div className="font-semibold mb-2">
-            Something went wrong{this.props.name ? ` in ${this.props.name}` : ""}.
+            Something went wrong
+            {this.props.name ? ` in ${this.props.name}` : ""}.
           </div>
           <button
             onClick={this.reset}
@@ -34,4 +39,3 @@ export default class ErrorBoundary extends React.Component {
     return this.props.children;
   }
 }
-

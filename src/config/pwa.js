@@ -11,7 +11,7 @@ export const PRECACHE = Object.freeze([
 export const RUNTIME = Object.freeze({
   imageMaxEntries: 60,
   imageMaxAgeSeconds: 7 * 24 * 60 * 60, // 7 days
-  apiMaxAgeSeconds: 60,                 // 1 minute for live game state, if you ever fetch
+  apiMaxAgeSeconds: 60, // 1 minute for live game state, if you ever fetch
 });
 export const OFFLINE_FALLBACKS = Object.freeze({
   document: OFFLINE_URL,

@@ -82,7 +82,7 @@ function safeSessionRemove(key) {
 }
 function safeLocalGet(key) {
   try {
-    if (typeof localStorage === "undefined") return null
+    if (typeof localStorage === "undefined") return null;
     return localStorage.getItem(key);
   } catch {
     return null;

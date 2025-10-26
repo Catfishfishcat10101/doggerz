@@ -12,12 +12,18 @@ export const TIME_FMT = Object.freeze({
 
 export function fmtDate(d, style = "medium", locale = undefined) {
   const dt = d instanceof Date ? d : new Date(d);
-  return new Intl.DateTimeFormat(locale, DATE_FMT[style] || DATE_FMT.medium).format(dt);
+  return new Intl.DateTimeFormat(
+    locale,
+    DATE_FMT[style] || DATE_FMT.medium,
+  ).format(dt);
 }
 
 export function fmtTime(d, style = "short", locale = undefined) {
   const dt = d instanceof Date ? d : new Date(d);
-  return new Intl.DateTimeFormat(locale, TIME_FMT[style] || TIME_FMT.short).format(dt);
+  return new Intl.DateTimeFormat(
+    locale,
+    TIME_FMT[style] || TIME_FMT.short,
+  ).format(dt);
 }
 
 export function fmtDateTime(d, locale = undefined) {

@@ -43,11 +43,20 @@ function applyCSSVars(state) {
   if (!root) return;
 
   // Large text: bump base font size slightly (works well with Tailwind rems)
-  root.style.setProperty("--doggerz-fontScale", state.largeText ? "1.125" : "1");
+  root.style.setProperty(
+    "--doggerz-fontScale",
+    state.largeText ? "1.125" : "1",
+  );
 
   // Glare-safe: slightly lower max luminance & saturation you can use in Tailwind via var()
-  root.style.setProperty("--doggerz-contrastBoost", state.highContrast ? "1.2" : "1");
-  root.style.setProperty("--doggerz-glareFilter", state.glareSafe ? "contrast(0.95) brightness(0.95)" : "none");
+  root.style.setProperty(
+    "--doggerz-contrastBoost",
+    state.highContrast ? "1.2" : "1",
+  );
+  root.style.setProperty(
+    "--doggerz-glareFilter",
+    state.glareSafe ? "contrast(0.95) brightness(0.95)" : "none",
+  );
 }
 
 /** Apply classes that Tailwind can key on via `@layer utilities` (optional) */
@@ -60,7 +69,11 @@ function applyUtilityClasses(state) {
 
 /** Merge, persist, and apply */
 export function initAccessibility(partial = {}) {
-  const state = { ...ACCESSIBILITY_DEFAULTS, ...(readStore() || {}), ...(partial || {}) };
+  const state = {
+    ...ACCESSIBILITY_DEFAULTS,
+    ...(readStore() || {}),
+    ...(partial || {}),
+  };
   applyCSSVars(state);
   applyUtilityClasses(state);
   writeStore(state);
@@ -80,10 +93,12 @@ export function updateAccessibility(patch) {
 }
 
 /** Convenience toggles */
-export const setReducedMotion = (v) => updateAccessibility({ reducedMotion: !!v });
-export const setHighContrast  = (v) => updateAccessibility({ highContrast: !!v });
-export const setGlareSafe     = (v) => updateAccessibility({ glareSafe: !!v });
-export const setLargeText     = (v) => updateAccessibility({ largeText: !!v });
+export const setReducedMotion = (v) =>
+  updateAccessibility({ reducedMotion: !!v });
+export const setHighContrast = (v) =>
+  updateAccessibility({ highContrast: !!v });
+export const setGlareSafe = (v) => updateAccessibility({ glareSafe: !!v });
+export const setLargeText = (v) => updateAccessibility({ largeText: !!v });
 
 /**
  * Hook helper (no React import here): call in your app entry, e.g. in main.jsx:

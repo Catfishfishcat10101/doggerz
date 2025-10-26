@@ -3,7 +3,8 @@ import forms from "@tailwindcss/forms";
 import typography from "@tailwindcss/typography";
 
 export default {
-  content: ["./index.html", "./public/**/*.html", "./src/**/*.{js,jsx,ts,tsx}"],
+  content: ["./index.html", "./public/**/*.html", "./src/**/*.{js,jsx,ts,tsx}", "./src/assets/**/*.{svg}",
+  ],
   darkMode: "class",
   theme: {
     container: { center: true, padding: "1rem" },

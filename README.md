@@ -34,8 +34,8 @@
 
 ## 🚀 Quick Start
 
-### 1) Clone & install
+### 1. Clone & Install
 ```bash
 git clone https://github.com/<your-username>/doggerz.git
 cd doggerz
-npm i
+npm install

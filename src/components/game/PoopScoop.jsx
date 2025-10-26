@@ -3,16 +3,16 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 
 export default function PoopScoop({
   poopCount = 0,
-  onScoop = () => {},     // called once per scoop
-  onScoopAll,             // optional: if provided, used when holding to drain faster
+  onScoop = () => {}, // called once per scoop
+  onScoopAll, // optional: if provided, used when holding to drain faster
   className = "",
-  optimistic = true,      // optimistic decrement for instant feedback
+  optimistic = true, // optimistic decrement for instant feedback
 }) {
   // Local optimistic counter (snaps to prop when it changes)
   const [localCount, setLocalCount] = useState(poopCount);
   useEffect(() => setLocalCount(poopCount), [poopCount]);
 
-  const [flash, setFlash] = useState(0);        // increments to retrigger +1 badge
+  const [flash, setFlash] = useState(0); // increments to retrigger +1 badge
   const liveRef = useRef(null);
   const holdTimer = useRef(null);
   const startupTimer = useRef(null);
@@ -20,11 +20,13 @@ export default function PoopScoop({
 
   const plural = useMemo(
     () => (localCount === 1 ? "1 pile" : `${localCount} piles`),
-    [localCount]
+    [localCount],
   );
 
   const doHaptic = () => {
-    try { "vibrate" in navigator && navigator.vibrate?.(8); } catch {}
+    try {
+      "vibrate" in navigator && navigator.vibrate?.(8);
+    } catch {}
   };
 
   const announce = (msg) => {
@@ -77,8 +79,14 @@ export default function PoopScoop({
 
   const stopHold = () => {
     running.current = false;
-    if (startupTimer.current) { clearTimeout(startupTimer.current); startupTimer.current = null; }
-    if (holdTimer.current) { clearInterval(holdTimer.current); holdTimer.current = null; }
+    if (startupTimer.current) {
+      clearTimeout(startupTimer.current);
+      startupTimer.current = null;
+    }
+    if (holdTimer.current) {
+      clearInterval(holdTimer.current);
+      holdTimer.current = null;
+    }
   };
 
   useEffect(() => () => stopHold(), []); // cleanup on unmount
@@ -111,7 +119,10 @@ export default function PoopScoop({
               : "bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400 cursor-not-allowed",
           ].join(" ")}
           onClick={performScoop}
-          onPointerDown={(e) => { e.preventDefault(); startHold(); }}
+          onPointerDown={(e) => {
+            e.preventDefault();
+            startHold();
+          }}
           onPointerUp={stopHold}
           onPointerLeave={stopHold}
           onPointerCancel={stopHold}

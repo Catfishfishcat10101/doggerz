@@ -11,10 +11,10 @@ function CleanlinessBar() {
     pct === 100
       ? "bg-green-500"
       : pct >= 60
-      ? "bg-yellow-400"
-      : pct >= 25
-      ? "bg-orange-500"
-      : "bg-red-600";
+        ? "bg-yellow-400"
+        : pct >= 25
+          ? "bg-orange-500"
+          : "bg-red-600";
 
   return (
     <div className="w-64">

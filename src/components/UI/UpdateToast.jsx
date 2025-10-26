@@ -40,7 +40,8 @@ export default function UpdateToast() {
       if (e?.data === "SW_WAITING") setWaiting(true);
     };
     navigator.serviceWorker.addEventListener("message", handler);
-    return () => navigator.serviceWorker.removeEventListener("message", handler);
+    return () =>
+      navigator.serviceWorker.removeEventListener("message", handler);
   }, []);
 
   if (!waiting) return null;

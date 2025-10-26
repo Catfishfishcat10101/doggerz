@@ -39,11 +39,14 @@ async function initPWA() {
       // If you prefer to auto-update without prompting:
       // updateSW();
     } else if (import.meta.env.DEV) {
-      console.info("[pwa] serviceWorker not supported; skipping SW registration");
+      console.info(
+        "[pwa] serviceWorker not supported; skipping SW registration",
+      );
     }
   } catch {
     // plugin not installed in this env — no-op
-    if (import.meta.env.DEV) console.info("[pwa] plugin not active; skipping SW registration");
+    if (import.meta.env.DEV)
+      console.info("[pwa] plugin not active; skipping SW registration");
   }
 }
 // Minimal in-DOM toast; no extra libs
@@ -74,7 +77,11 @@ function showUpdateToast(onReload) {
   const root = document.body.appendChild(host);
   const remove = () => root.remove();
   root.querySelector("#pwa-reload")?.addEventListener("click", () => {
-    try { onReload?.(); } finally { location.reload(); }
+    try {
+      onReload?.();
+    } finally {
+      location.reload();
+    }
   });
   root.querySelector("#pwa-later")?.addEventListener("click", remove);
   setTimeout(remove, 12000);
@@ -91,7 +98,9 @@ class RootErrorBoundary extends React.Component {
   componentDidCatch(err, info) {
     console.error("RootErrorBoundary:", err, info);
     try {
-      window.dispatchEvent(new CustomEvent("doggerz:error", { detail: { err, info } }));
+      window.dispatchEvent(
+        new CustomEvent("doggerz:error", { detail: { err, info } }),
+      );
     } catch {}
   }
   render() {
@@ -101,7 +110,8 @@ class RootErrorBoundary extends React.Component {
           <div className="max-w-lg w-full space-y-4">
             <h1 className="text-2xl font-bold">Something broke.</h1>
             <p className="opacity-80">
-              The UI crashed. Check the console for details. A hard refresh usually clears transient state issues.
+              The UI crashed. Check the console for details. A hard refresh
+              usually clears transient state issues.
             </p>
             <button
               className="rounded-xl bg-emerald-500 px-4 py-2 font-semibold text-zinc-900 hover:bg-emerald-400"
@@ -132,11 +142,13 @@ ReactDOM.createRoot(rootEl).render(
         </RootErrorBoundary>
       </BrowserRouter>
     </Provider>
-  </React.StrictMode>
+  </React.StrictMode>,
 );
 
- if (import.meta.hot && typeof unregister === "function") {
-   import.meta.hot.dispose(() => {
-     try { unregister(); } catch {}
-   });
- }
+if (import.meta.hot && typeof unregister === "function") {
+  import.meta.hot.dispose(() => {
+    try {
+      unregister();
+    } catch {}
+  });
+}

@@ -15,8 +15,8 @@ export default function Affection() {
   const dispatch = useDispatch();
 
   // UI state
-  const [pets, setPets] = useState(0);               // total pets this session/view
-  const [streak, setStreak] = useState(0);           // visual mini-combo meter (0..4 then reset)
+  const [pets, setPets] = useState(0); // total pets this session/view
+  const [streak, setStreak] = useState(0); // visual mini-combo meter (0..4 then reset)
   const [coinFlash, setCoinFlash] = useState(false); // transient “+1 coin!” signal
   const liveRegionRef = useRef(null);
 
@@ -25,9 +25,9 @@ export default function Affection() {
   const lastPetAt = useRef(0);
 
   // CONFIG: adjust feel here
-  const PET_THROTTLE_MS = 120;       // minimum interval between pets
-  const HOLD_START_DELAY = 260;      // delay before auto-repeat kicks in
-  const HOLD_REPEAT_MS = 110;        // interval while holding (will be clamped by throttle)
+  const PET_THROTTLE_MS = 120; // minimum interval between pets
+  const HOLD_START_DELAY = 260; // delay before auto-repeat kicks in
+  const HOLD_REPEAT_MS = 110; // interval while holding (will be clamped by throttle)
   const MAX_HOLD_PETS_PER_PRESS = 50; // safety cap vs. “infinite” holds
 
   const performPet = useCallback(() => {
@@ -115,9 +115,12 @@ export default function Affection() {
 
   return (
     <div className="bg-white rounded-2xl shadow p-6 border border-black/5 dark:bg-slate-900 dark:text-slate-100 dark:border-white/10">
-      <h3 className="text-lg font-semibold text-rose-900 dark:text-rose-200">Affection</h3>
+      <h3 className="text-lg font-semibold text-rose-900 dark:text-rose-200">
+        Affection
+      </h3>
       <p className="text-sm text-rose-900/70 dark:text-rose-300/70">
-        Tap or press-and-hold to pet your dog. Every <b>5</b> pets → <b>+1</b> coin.
+        Tap or press-and-hold to pet your dog. Every <b>5</b> pets → <b>+1</b>{" "}
+        coin.
       </p>
 
       {/* Streak meter & counters */}

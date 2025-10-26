@@ -30,16 +30,18 @@ const quest = createSlice({
       }
     },
     progress: (s, { payload: key }) => {
-      const q = s.dailies.find(q => q.label.toLowerCase().includes(key));
+      const q = s.dailies.find((q) => q.label.toLowerCase().includes(key));
       if (!q || q.done) return;
       q.progress = Math.min(q.goal, q.progress + 1);
       if (q.progress >= q.goal) q.done = true;
     },
     claim: (s, { payload: id }) => {
-      const q = s.dailies.find(x => x.id === id);
-      if (q && q.done) { q.rewardClaimed = true; }
-    }
-  }
+      const q = s.dailies.find((x) => x.id === id);
+      if (q && q.done) {
+        q.rewardClaimed = true;
+      }
+    },
+  },
 });
 
 export const { resetForNewDay, progress, claim } = quest.actions;

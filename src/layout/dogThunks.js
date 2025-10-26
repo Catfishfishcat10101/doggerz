@@ -9,9 +9,8 @@ export const bootstrapDog = createAsyncThunk(
     const dog = await ensureDogForUser(uid);
     dispatch(dogHydrated(dog));
     return dog;
-  }
+  },
 );
-
 
 // elsewhere when the user is signed in:
 let unsubscribeDog = null;
@@ -22,6 +21,8 @@ export function startDogWatch(uid, dispatch) {
   });
 }
 export function stopDogWatch() {
-  if (unsubscribeDog) { unsubscribeDog(); unsubscribeDog = null; }
+  if (unsubscribeDog) {
+    unsubscribeDog();
+    unsubscribeDog = null;
+  }
 }
-

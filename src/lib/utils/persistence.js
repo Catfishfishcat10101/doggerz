@@ -12,7 +12,7 @@ async function getFirebase() {
   try {
     const mod = await import("@/lib/firebase"); // resolves only if your module exists
     cached.auth = mod?.auth ?? null;
-    cached.db   = mod?.db ?? null;
+    cached.db = mod?.db ?? null;
   } catch {
     // stay local-only
   }

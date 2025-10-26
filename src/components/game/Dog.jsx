@@ -70,10 +70,7 @@ export default function Dog({
       {/* The DogSprite uses absolute positioning via its own container.
           worldBottomPct expects % of parent height; we convert y px -> % using CSS var if you have one,
           but the simplest path: give worldBottomPct as 0 and pass y as part of the container offset. */}
-      <div
-        className="relative"
-        style={{ height: 0 }}
-      >
+      <div className="relative" style={{ height: 0 }}>
         <DogSprite
           // placement
           x={x}

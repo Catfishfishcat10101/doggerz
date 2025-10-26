@@ -46,7 +46,9 @@ function PottyTrainingPanel() {
           className="meter__fill transition-[width] duration-300"
           style={{
             width: `${Math.min(100, Math.max(0, level))}%`,
-            backgroundColor: trained ? "rgb(34 197 94 / 0.9)" : "rgb(250 204 21 / 0.9)",
+            backgroundColor: trained
+              ? "rgb(34 197 94 / 0.9)"
+              : "rgb(250 204 21 / 0.9)",
           }}
         />
       </div>
@@ -88,9 +90,15 @@ export default function MainGame() {
   const doPlay = useCallback(() => dispatch(playDog()), [dispatch]);
   const doTrain = useCallback(() => dispatch(trainDog()), [dispatch]);
   const doRest = useCallback(() => dispatch(restDog()), [dispatch]);
-  const doUseToy = useCallback((toy) => dispatch(useToyAction({ toy })), [dispatch]);
+  const doUseToy = useCallback(
+    (toy) => dispatch(useToyAction({ toy })),
+    [dispatch],
+  );
   const doScoop = useCallback(() => dispatch(scoopPoopAction()), [dispatch]);
-  const doLearnTrick = useCallback((trick) => dispatch(learnTrickAction({ trick })), [dispatch]);
+  const doLearnTrick = useCallback(
+    (trick) => dispatch(learnTrickAction({ trick })),
+    [dispatch],
+  );
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100">
@@ -164,14 +172,45 @@ export default function MainGame() {
 
           {/* Side panel */}
           <aside className="rounded-2xl bg-slate-800/60 shadow-xl p-4 md:p-6 space-y-4 border border-white/10">
-            {showToys && <ToyBox toys={toys} onUseToy={doUseToy} happiness={happiness} />}
-            {showTricks && <TrickList learnedTricks={learnedTricks} onLearnTrick={doLearnTrick} />}
+            {showToys && (
+              <ToyBox toys={toys} onUseToy={doUseToy} happiness={happiness} />
+            )}
+            {showTricks && (
+              <TrickList
+                learnedTricks={learnedTricks}
+                onLearnTrick={doLearnTrick}
+              />
+            )}
             {/* Optional quick actions (kept off the HUD) */}
             <div className="grid grid-cols-2 gap-2">
-              <button className="btn" onClick={doFeed} title="Feed to reduce hunger decay">Feed</button>
-              <button className="btn" onClick={doPlay} title="Play to raise fun">Play</button>
-              <button className="btn" onClick={doTrain} title="Train to improve skills">Train</button>
-              <button className="btn" onClick={doRest} title="Rest to restore energy">Rest</button>
+              <button
+                className="btn"
+                onClick={doFeed}
+                title="Feed to reduce hunger decay"
+              >
+                Feed
+              </button>
+              <button
+                className="btn"
+                onClick={doPlay}
+                title="Play to raise fun"
+              >
+                Play
+              </button>
+              <button
+                className="btn"
+                onClick={doTrain}
+                title="Train to improve skills"
+              >
+                Train
+              </button>
+              <button
+                className="btn"
+                onClick={doRest}
+                title="Rest to restore energy"
+              >
+                Rest
+              </button>
             </div>
             <ResetGame />
           </aside>

@@ -1,4 +1,4 @@
-import React from 'react'
+import React from "react";
 export default function Settings() {
   return (
     <div className="mx-auto max-w-3xl p-6">
@@ -9,5 +9,5 @@ export default function Settings() {
         <li>High contrast: on/off</li>
       </ul>
     </div>
-  )
+  );
 }

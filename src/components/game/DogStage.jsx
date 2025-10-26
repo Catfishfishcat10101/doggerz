@@ -73,10 +73,14 @@ export default function DogStage() {
 
   // Visual rails (right-side yard)
   const yardFraction = 0.18;
-  const yardStyle = useMemo(() => ({ width: `${Math.round(yardFraction * 100)}%` }), []);
+  const yardStyle = useMemo(
+    () => ({ width: `${Math.round(yardFraction * 100)}%` }),
+    [],
+  );
 
   // Perf/motion toggles from <html data-*>, set by SettingsModal
-  const docEl = typeof document !== "undefined" ? document.documentElement : null;
+  const docEl =
+    typeof document !== "undefined" ? document.documentElement : null;
   const perfMode = docEl?.dataset?.dzPerfMode === "true";
   const reduceMotion = docEl?.dataset?.dzReduceMotion === "true";
 
@@ -91,7 +95,9 @@ export default function DogStage() {
   const speedMs = dog.moving ? 1200 : 1600;
 
   // Shadow intensity scales with proximity to the “ground plane”
-  const shadowOpacity = perfMode ? 0.12 : 0.18 + (1 - worldBottomPct / 100) * 0.12;
+  const shadowOpacity = perfMode
+    ? 0.12
+    : 0.18 + (1 - worldBottomPct / 100) * 0.12;
 
   return (
     <div
@@ -177,8 +183,18 @@ function DebugOverlay({ rect, x, y }) {
       {/* grid */}
       <svg width="100%" height="100%" aria-hidden="true">
         <defs>
-          <pattern id="dz-grid" width={cell} height={cell} patternUnits="userSpaceOnUse">
-            <path d={`M ${cell} 0 L 0 0 0 ${cell}`} fill="none" stroke="rgba(255,255,255,.06)" strokeWidth="1" />
+          <pattern
+            id="dz-grid"
+            width={cell}
+            height={cell}
+            patternUnits="userSpaceOnUse"
+          >
+            <path
+              d={`M ${cell} 0 L 0 0 0 ${cell}`}
+              fill="none"
+              stroke="rgba(255,255,255,.06)"
+              strokeWidth="1"
+            />
           </pattern>
         </defs>
         <rect width="100%" height="100%" fill="url(#dz-grid)" />
@@ -187,7 +203,10 @@ function DebugOverlay({ rect, x, y }) {
       {/* crosshair + coords */}
       <div
         className="absolute rounded bg-black/60 text-white text-[11px] px-2 py-1 border border-white/10"
-        style={{ left: clamp(x + 10, 6, rect.w - 110), top: clamp(y + 10, 6, rect.h - 28) }}
+        style={{
+          left: clamp(x + 10, 6, rect.w - 110),
+          top: clamp(y + 10, 6, rect.h - 28),
+        }}
       >
         x:{Math.round(x)} y:{Math.round(y)} • {cols}×{rows}
       </div>

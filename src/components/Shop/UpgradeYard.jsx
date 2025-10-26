@@ -12,7 +12,7 @@ export default function UpgradeYard() {
   const dispatch = useDispatch();
   const coins = useSelector(selectCoins);
   const [owned, setOwned] = useState(
-    JSON.parse(sessionStorage.getItem("ownedSkins") || "[]")
+    JSON.parse(sessionStorage.getItem("ownedSkins") || "[]"),
   );
   const active = sessionStorage.getItem("yardSkin") || "default";
 
@@ -33,8 +33,12 @@ export default function UpgradeYard() {
   return (
     <div className="bg-white rounded-2xl shadow p-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-rose-900">Upgrade Backyard</h3>
-        <div className="text-sm px-2 py-1 rounded bg-rose-100 text-rose-900">💰 {coins}</div>
+        <h3 className="text-lg font-semibold text-rose-900">
+          Upgrade Backyard
+        </h3>
+        <div className="text-sm px-2 py-1 rounded bg-rose-100 text-rose-900">
+          💰 {coins}
+        </div>
       </div>
 
       <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -43,12 +47,17 @@ export default function UpgradeYard() {
           const isActive = active === s.id;
           const canBuy = coins >= s.cost;
           return (
-            <div key={s.id} className="rounded-xl border border-rose-100 p-4 flex items-center justify-between">
+            <div
+              key={s.id}
+              className="rounded-xl border border-rose-100 p-4 flex items-center justify-between"
+            >
               <div>
                 <div className="font-semibold text-rose-900 flex items-center gap-2">
                   <span className="text-xl">{s.preview}</span> {s.title}
                 </div>
-                <div className="text-xs text-rose-900/60">{has ? "Owned" : `Cost ${s.cost}`}</div>
+                <div className="text-xs text-rose-900/60">
+                  {has ? "Owned" : `Cost ${s.cost}`}
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 {!has && (

@@ -17,7 +17,9 @@ function useLocalStorageState(key, initialValue) {
     try {
       localStorage.setItem(key, JSON.stringify(value));
       // cross-tab sync
-      window.dispatchEvent(new StorageEvent("storage", { key, newValue: JSON.stringify(value) }));
+      window.dispatchEvent(
+        new StorageEvent("storage", { key, newValue: JSON.stringify(value) }),
+      );
     } catch {}
   }, [key, value]);
 
@@ -50,7 +52,9 @@ function useSessionStorageState(key, initialValue) {
   useEffect(() => {
     try {
       sessionStorage.setItem(key, JSON.stringify(value));
-      window.dispatchEvent(new StorageEvent("storage", { key, newValue: JSON.stringify(value) }));
+      window.dispatchEvent(
+        new StorageEvent("storage", { key, newValue: JSON.stringify(value) }),
+      );
     } catch {}
   }, [key, value]);
 
@@ -61,7 +65,10 @@ function useSessionStorageState(key, initialValue) {
 export default function SettingsModal({ onClose }) {
   // settings
   const [soundOn, setSoundOn] = useLocalStorageState("doggerz_sound_on", true);
-  const [themeDark, setThemeDark] = useLocalStorageState("doggerz_theme_dark", false);
+  const [themeDark, setThemeDark] = useLocalStorageState(
+    "doggerz_theme_dark",
+    false,
+  );
   const [, setBuff] = useSessionStorageState("buff", null);
   const [, setYardSkin] = useSessionStorageState("yardSkin", "default");
 
@@ -87,16 +94,18 @@ export default function SettingsModal({ onClose }) {
       if (e.key === "Tab") {
         // basic trap
         const focusables = containerRef.current?.querySelectorAll(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
         );
         if (!focusables?.length) return;
         const list = Array.from(focusables);
         const first = list[0];
         const last = list[list.length - 1];
         if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault(); last.focus();
+          e.preventDefault();
+          last.focus();
         } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault(); first.focus();
+          e.preventDefault();
+          first.focus();
         }
       }
     };
@@ -108,7 +117,9 @@ export default function SettingsModal({ onClose }) {
     const next = !soundOn;
     setSoundOn(next);
     try {
-      window.dispatchEvent(new CustomEvent("doggerz:soundchange", { detail: { enabled: next } }));
+      window.dispatchEvent(
+        new CustomEvent("doggerz:soundchange", { detail: { enabled: next } }),
+      );
     } catch {}
   };
 
@@ -137,7 +148,10 @@ export default function SettingsModal({ onClose }) {
         onMouseDown={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3">
-          <h3 id="settings-title" className="text-lg font-semibold text-rose-900 dark:text-rose-100">
+          <h3
+            id="settings-title"
+            className="text-lg font-semibold text-rose-900 dark:text-rose-100"
+          >
             Settings
           </h3>
           <button
@@ -151,10 +165,7 @@ export default function SettingsModal({ onClose }) {
         </div>
 
         <div className="mt-4 space-y-3 text-slate-900 dark:text-slate-100">
-          <button
-            className="w-full btn"
-            onClick={toggleSound}
-          >
+          <button className="w-full btn" onClick={toggleSound}>
             Sound: {soundOn ? "On 🔊" : "Off 🔇"}
           </button>
 
@@ -178,7 +189,11 @@ export default function SettingsModal({ onClose }) {
           <button
             className="w-full btn"
             onClick={() => {
-              if (confirm("Clear local data (sounds/theme/memory log)? This cannot be undone.")) {
+              if (
+                confirm(
+                  "Clear local data (sounds/theme/memory log)? This cannot be undone.",
+                )
+              ) {
                 try {
                   localStorage.removeItem("doggerz_sound_on");
                   localStorage.removeItem("doggerz_theme_dark");

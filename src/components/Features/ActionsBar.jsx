@@ -7,7 +7,13 @@ import PropTypes from "prop-types";
  * A compact command surface for dog interactions.
  * Expects callbacks (feed, play, wash, rest) from the parent.
  */
-export default function ActionsBar({ feed, play, wash, rest, disabled = false }) {
+export default function ActionsBar({
+  feed,
+  play,
+  wash,
+  rest,
+  disabled = false,
+}) {
   // Factory: wrap an action with a semantic label for analytics/logging if you want
   const action = useCallback(
     (fn, label) => () => {
@@ -19,15 +25,19 @@ export default function ActionsBar({ feed, play, wash, rest, disabled = false })
         console.error(`[ActionsBar] ${label} failed:`, err);
       }
     },
-    [disabled]
+    [disabled],
   );
 
   return (
     <div className="w-full flex flex-wrap gap-2 items-center justify-center">
-      <Btn label="Feed"       onClick={action(feed, "feed")}  disabled={disabled} />
-      <Btn label="Play"       onClick={action(play, "play")}  disabled={disabled} />
-      <Btn label="Wash/Scoop" onClick={action(wash, "wash")}  disabled={disabled} />
-      <Btn label="Rest"       onClick={action(rest, "rest")}  disabled={disabled} />
+      <Btn label="Feed" onClick={action(feed, "feed")} disabled={disabled} />
+      <Btn label="Play" onClick={action(play, "play")} disabled={disabled} />
+      <Btn
+        label="Wash/Scoop"
+        onClick={action(wash, "wash")}
+        disabled={disabled}
+      />
+      <Btn label="Rest" onClick={action(rest, "rest")} disabled={disabled} />
     </div>
   );
 }
@@ -53,7 +63,7 @@ function Btn({ label, onClick, disabled }) {
         "bg-white/10 hover:bg-white/20 active:translate-y-px",
         "backdrop-blur transition",
         "disabled:opacity-50 disabled:cursor-not-allowed",
-        "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50",
       ].join(" ")}
       aria-label={label}
     >

@@ -13,10 +13,22 @@ import {
 } from "@/redux/dogSlice.js";
 
 const ACCESSORIES = [
-  { id: "collar_red",  slot: "collar", title: "Red Collar",  cost: 30,  icon: "🟥" },
-  { id: "collar_blue", slot: "collar", title: "Blue Collar", cost: 30,  icon: "🟦" },
-  { id: "hat_party",   slot: "hat",    title: "Party Hat",   cost: 60,  icon: "🥳" },
-  { id: "hat_crown",   slot: "hat",    title: "Crown",       cost: 120, icon: "👑" },
+  {
+    id: "collar_red",
+    slot: "collar",
+    title: "Red Collar",
+    cost: 30,
+    icon: "🟥",
+  },
+  {
+    id: "collar_blue",
+    slot: "collar",
+    title: "Blue Collar",
+    cost: 30,
+    icon: "🟦",
+  },
+  { id: "hat_party", slot: "hat", title: "Party Hat", cost: 60, icon: "🥳" },
+  { id: "hat_crown", slot: "hat", title: "Crown", cost: 120, icon: "👑" },
 ];
 
 export default function Accessories() {
@@ -37,7 +49,9 @@ export default function Accessories() {
         <div className="max-w-4xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-semibold text-rose-900">Accessories</h1>
-            <Link className="bg-white px-3 py-2 rounded-xl shadow" to="/play">← Back</Link>
+            <Link className="bg-white px-3 py-2 rounded-xl shadow" to="/play">
+              ← Back
+            </Link>
           </div>
           <div className="bg-white rounded-2xl shadow p-6 mt-4 text-rose-900">
             Reach <b>Level 8</b> to unlock Accessories.
@@ -53,8 +67,12 @@ export default function Accessories() {
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-semibold text-rose-900">Accessories</h1>
           <div className="flex items-center gap-2">
-            <span className="bg-white px-3 py-1 rounded-lg shadow">💰 {coins}</span>
-            <Link className="bg-white px-3 py-2 rounded-xl shadow" to="/play">← Back</Link>
+            <span className="bg-white px-3 py-1 rounded-lg shadow">
+              💰 {coins}
+            </span>
+            <Link className="bg-white px-3 py-2 rounded-xl shadow" to="/play">
+              ← Back
+            </Link>
           </div>
         </div>
 
@@ -65,12 +83,17 @@ export default function Accessories() {
             const canBuy = coins >= a.cost;
 
             return (
-              <div key={a.id} className="bg-white rounded-2xl shadow p-5 flex items-center justify-between">
+              <div
+                key={a.id}
+                className="bg-white rounded-2xl shadow p-5 flex items-center justify-between"
+              >
                 <div className="flex items-center gap-3">
                   <div className="text-2xl">{a.icon}</div>
                   <div>
                     <div className="font-semibold text-rose-900">{a.title}</div>
-                    <div className="text-xs text-rose-900/60">Slot: {a.slot}</div>
+                    <div className="text-xs text-rose-900/60">
+                      Slot: {a.slot}
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -89,7 +112,12 @@ export default function Accessories() {
                     <button
                       className={`px-3 py-1 rounded-lg ${isEquipped ? "bg-rose-600 text-white" : "bg-rose-100 text-rose-700 hover:shadow"}`}
                       onClick={() =>
-                        dispatch(equipAccessory({ slot: a.slot, id: isEquipped ? null : a.id }))
+                        dispatch(
+                          equipAccessory({
+                            slot: a.slot,
+                            id: isEquipped ? null : a.id,
+                          }),
+                        )
                       }
                     >
                       {isEquipped ? "Equipped ✓" : "Equip"}

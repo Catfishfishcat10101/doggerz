@@ -25,10 +25,7 @@ export const PUBLIC_STATIC = Object.freeze([
 ]);
 
 /** Public subtrees: any path that starts with one of these prefixes. */
-export const PUBLIC_PREFIXES = Object.freeze([
-  "/privacy",
-  "/terms",
-]);
+export const PUBLIC_PREFIXES = Object.freeze(["/privacy", "/terms"]);
 
 /**
  * Normalize an input path or URL to a canonical pathname:
@@ -91,8 +88,8 @@ export function normalizePath(input = "/", opts = {}) {
 export function isPublicPath(pathname = "/", opts = {}) {
   const p = normalizePath(pathname, { base: opts.base });
 
-  const staticList = (opts.static ?? PUBLIC_STATIC);
-  const prefixList = (opts.prefixes ?? PUBLIC_PREFIXES);
+  const staticList = opts.static ?? PUBLIC_STATIC;
+  const prefixList = opts.prefixes ?? PUBLIC_PREFIXES;
 
   // Prebuild sets for O(1) exact checks
   // (for small arrays this is negligible, but future-proof)

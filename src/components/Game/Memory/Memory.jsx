@@ -1,7 +1,11 @@
 // src/components/Features/Memory.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import { selectDogLevel, selectCoins, selectAccessories } from "@/../redux/dogSlice";
+import {
+  selectDogLevel,
+  selectCoins,
+  selectAccessories,
+} from "@/../redux/dogSlice";
 
 /* ----------------------------- tiny hooks ------------------------------ */
 function useIsBrowser() {
@@ -31,7 +35,9 @@ function useSessionStorage(key, initialValue) {
     if (!isBrowser) return;
     const onStorage = (e) => {
       if (e.key === key) {
-        try { setValue(e.newValue != null ? JSON.parse(e.newValue) : initialValue); } catch {}
+        try {
+          setValue(e.newValue != null ? JSON.parse(e.newValue) : initialValue);
+        } catch {}
       }
     };
     window.addEventListener("storage", onStorage);
@@ -82,26 +88,48 @@ export default function Memory() {
 
   // append helper
   const pushEvent = (e) =>
-    setEvents((list) => [{ id: crypto.randomUUID?.() || String(Date.now()), ts: Date.now(), ...e }, ...list].slice(0, 300));
+    setEvents((list) =>
+      [
+        {
+          id: crypto.randomUUID?.() || String(Date.now()),
+          ts: Date.now(),
+          ...e,
+        },
+        ...list,
+      ].slice(0, 300),
+    );
 
   // auto-log key milestones
   useEffect(() => {
     if (prev.current.level !== level) {
       const delta = level - prev.current.level;
       if (!Number.isNaN(delta) && prev.current.level !== undefined) {
-        pushEvent({ type: "level", title: delta > 0 ? `Level Up → ${level}` : `Level Changed → ${level}`, meta: { from: prev.current.level, to: level } });
+        pushEvent({
+          type: "level",
+          title: delta > 0 ? `Level Up → ${level}` : `Level Changed → ${level}`,
+          meta: { from: prev.current.level, to: level },
+        });
       }
     }
     if (prev.current.coins !== coins) {
       const d = coins - (prev.current.coins ?? 0);
       if (prev.current.coins !== undefined && d !== 0) {
-        pushEvent({ type: "coins", title: d > 0 ? `Coins +${d}` : `Coins ${d}`, meta: { from: prev.current.coins, to: coins } });
+        pushEvent({
+          type: "coins",
+          title: d > 0 ? `Coins +${d}` : `Coins ${d}`,
+          meta: { from: prev.current.coins, to: coins },
+        });
       }
     }
     if (prev.current.ownedCount !== ownedCount) {
       const d = ownedCount - (prev.current.ownedCount ?? 0);
       if (prev.current.ownedCount !== undefined && d !== 0) {
-        pushEvent({ type: "accessories", title: d > 0 ? `Accessory acquired (+${d})` : `Accessory removed (${d})`, meta: { from: prev.current.ownedCount, to: ownedCount } });
+        pushEvent({
+          type: "accessories",
+          title:
+            d > 0 ? `Accessory acquired (+${d})` : `Accessory removed (${d})`,
+          meta: { from: prev.current.ownedCount, to: ownedCount },
+        });
       }
     }
     prev.current = { level, coins, ownedCount };
@@ -117,7 +145,9 @@ export default function Memory() {
   const clearLog = () => setEvents([]);
   const exportLog = () => {
     try {
-      const blob = new Blob([JSON.stringify(events, null, 2)], { type: "application/json" });
+      const blob = new Blob([JSON.stringify(events, null, 2)], {
+        type: "application/json",
+      });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -131,7 +161,9 @@ export default function Memory() {
     <div className="bg-white dark:bg-slate-900 rounded-2xl shadow p-6 border border-black/5 dark:border-white/10">
       <header className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-lg font-semibold text-rose-900 dark:text-rose-200">Doggerz Memory</h3>
+          <h3 className="text-lg font-semibold text-rose-900 dark:text-rose-200">
+            Doggerz Memory
+          </h3>
           <p className="text-sm text-rose-900/70 dark:text-rose-300/70">
             Lightweight event feed. Auto-logs key milestones; persists locally.
           </p>
@@ -149,8 +181,12 @@ export default function Memory() {
             <option value="accessories">Accessories</option>
             <option value="system">System</option>
           </select>
-          <button className="btn" onClick={exportLog} title="Export JSON">Export</button>
-          <button className="btn" onClick={clearLog} title="Clear log">Clear</button>
+          <button className="btn" onClick={exportLog} title="Export JSON">
+            Export
+          </button>
+          <button className="btn" onClick={clearLog} title="Clear log">
+            Clear
+          </button>
         </div>
       </header>
 
@@ -166,20 +202,25 @@ export default function Memory() {
       {/* Event list */}
       <div className="mt-5">
         {filtered.length === 0 ? (
-          <div className="text-sm opacity-70">No events yet. Play a bit and come back!</div>
+          <div className="text-sm opacity-70">
+            No events yet. Play a bit and come back!
+          </div>
         ) : (
           <ol className="space-y-2">
             {filtered.map((e) => (
               <li key={e.id} className="flex items-start gap-3">
-                <span className="mt-1 inline-block h-2.5 w-2.5 rounded-full"
+                <span
+                  className="mt-1 inline-block h-2.5 w-2.5 rounded-full"
                   style={{ background: dotColor(e.type) }}
-                  aria-hidden />
+                  aria-hidden
+                />
                 <div className="flex-1">
                   <div className="text-sm">
                     <b>{e.title}</b>
                   </div>
                   <div className="text-xs opacity-70">
-                    {formatTs(e.ts)}{e.meta ? ` · ${metaText(e.meta)}` : ""}
+                    {formatTs(e.ts)}
+                    {e.meta ? ` · ${metaText(e.meta)}` : ""}
                   </div>
                 </div>
               </li>
@@ -195,10 +236,14 @@ export default function Memory() {
 
 function dotColor(type) {
   switch (type) {
-    case "level": return "#f97316";       // orange-500
-    case "coins": return "#10b981";       // emerald-500
-    case "accessories": return "#6366f1"; // indigo-500
-    default: return "#94a3b8";            // slate-400
+    case "level":
+      return "#f97316"; // orange-500
+    case "coins":
+      return "#10b981"; // emerald-500
+    case "accessories":
+      return "#6366f1"; // indigo-500
+    default:
+      return "#94a3b8"; // slate-400
   }
 }
 

@@ -1,1 +1,3 @@
-export default function NeedsHUD() { return null; }
+export default function NeedsHUD() {
+  return null;
+}

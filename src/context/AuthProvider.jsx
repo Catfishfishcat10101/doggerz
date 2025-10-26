@@ -1,24 +1,22 @@
 // src/context/AuthProvider.jsx
 import React, {
-  createContext, useContext, useEffect, useMemo, useRef, useState,
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
 } from "react";
-import { onIdTokenChanged, getIdToken, getIdTokenResult, signOut } from "firebase/auth";
+import {
+  onIdTokenChanged,
+  getIdToken,
+  getIdTokenResult,
+  signOut,
+} from "firebase/auth";
 import { auth } from "@/firebase";
 import { useDispatch } from "react-redux";
 import { setUser, clearUser } from "@/redux/userSlice";
 
-/**
- * Context shape
- * {
- *   user: { id, email, displayName, photoURL } | null,
- *   claims: object | null,
- *   token: string | null,
- *   loading: boolean,
- *   error: string | null,
- *   refresh: () => Promise<void>,
- *   signOutAndClear: () => Promise<void>,
- * }
- */
 const AuthCtx = createContext({
   user: null,
   claims: null,
@@ -123,7 +121,7 @@ export default function AuthProvider({ children }) {
       refresh,
       signOutAndClear,
     }),
-    [user, claims, token, loading, err]
+    [user, claims, token, loading, err],
   );
 
   return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>;
@@ -135,7 +133,11 @@ export function useAuthCtx() {
 }
 
 /** Optional gate to protect subtrees/routes */
-export function AuthGate({ children, fallback = null, unauthenticated = null }) {
+export function AuthGate({
+  children,
+  fallback = null,
+  unauthenticated = null,
+}) {
   const { user, loading } = useAuthCtx();
   if (loading) return fallback;
   if (!user) return unauthenticated;

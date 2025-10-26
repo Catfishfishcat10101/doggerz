@@ -18,7 +18,11 @@ import {
  *  - onSuccess?: (user) => void
  *  - showForgot?: boolean       (login-only; default true)
  */
-export default function AuthButtons({ mode = "login", onSuccess, showForgot = true }) {
+export default function AuthButtons({
+  mode = "login",
+  onSuccess,
+  showForgot = true,
+}) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
@@ -60,7 +64,10 @@ export default function AuthButtons({ mode = "login", onSuccess, showForgot = tr
         finish(cred.user);
       } catch (err) {
         // Fallback for popup-blocked environments
-        if (err?.code === "auth/popup-blocked" || err?.code === "auth/popup-closed-by-user") {
+        if (
+          err?.code === "auth/popup-blocked" ||
+          err?.code === "auth/popup-closed-by-user"
+        ) {
           await signInWithRedirect(auth, provider);
           return;
         }
@@ -133,7 +140,11 @@ export default function AuthButtons({ mode = "login", onSuccess, showForgot = tr
         </button>
       )}
 
-      <form className="grid gap-3" onSubmit={isLogin ? onEmailLogin : onEmailSignup} noValidate>
+      <form
+        className="grid gap-3"
+        onSubmit={isLogin ? onEmailLogin : onEmailSignup}
+        noValidate
+      >
         {!isLogin && (
           <input
             className="rounded-lg bg-neutral-900 border border-neutral-700 px-3 py-2 text-white outline-none focus:ring-2 focus:ring-amber-300"
@@ -209,7 +220,10 @@ export default function AuthButtons({ mode = "login", onSuccess, showForgot = tr
       </form>
 
       {msg && (
-        <p role="alert" className="text-sm text-rose-200 bg-rose-950/40 border border-rose-500/30 rounded-lg px-3 py-2">
+        <p
+          role="alert"
+          className="text-sm text-rose-200 bg-rose-950/40 border border-rose-500/30 rounded-lg px-3 py-2"
+        >
           {msg}
         </p>
       )}

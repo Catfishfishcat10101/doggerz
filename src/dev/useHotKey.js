@@ -11,10 +11,10 @@ export function useHotkey(combo, handler) {
       const key = combo.key.toLowerCase();
 
       if (
-        (!!e.ctrlKey === wantCtrl) &&
-        (!!e.altKey === wantAlt) &&
-        (!!e.metaKey === wantMeta) &&
-        (!!e.shiftKey === wantShift) &&
+        !!e.ctrlKey === wantCtrl &&
+        !!e.altKey === wantAlt &&
+        !!e.metaKey === wantMeta &&
+        !!e.shiftKey === wantShift &&
         e.key.toLowerCase() === key
       ) {
         e.preventDefault();

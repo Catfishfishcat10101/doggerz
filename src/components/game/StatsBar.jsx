@@ -18,10 +18,7 @@ function Bar({ label, value, srHint }) {
         aria-valuenow={pct}
         aria-describedby={srHint ? `${label}-hint` : undefined}
       >
-        <div
-          className="h-full bg-white/80"
-          style={{ width: `${pct}%` }}
-        />
+        <div className="h-full bg-white/80" style={{ width: `${pct}%` }} />
       </div>
       {srHint && (
         <div id={`${label}-hint`} className="sr-only">
@@ -35,10 +32,26 @@ function Bar({ label, value, srHint }) {
 export default function StatsBar({ stats }) {
   return (
     <section className="w-full max-w-xl rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
-      <Bar label="Hunger"      value={stats.hunger}      srHint="Decreases over time; feed to restore." />
-      <Bar label="Energy"      value={stats.energy}      srHint="Decreases over time; resting restores." />
-      <Bar label="Cleanliness" value={stats.cleanliness} srHint="Decreases over time; washing restores." />
-      <Bar label="Happiness"   value={stats.happiness}   srHint="Impacted by other needs; play to restore." />
+      <Bar
+        label="Hunger"
+        value={stats.hunger}
+        srHint="Decreases over time; feed to restore."
+      />
+      <Bar
+        label="Energy"
+        value={stats.energy}
+        srHint="Decreases over time; resting restores."
+      />
+      <Bar
+        label="Cleanliness"
+        value={stats.cleanliness}
+        srHint="Decreases over time; washing restores."
+      />
+      <Bar
+        label="Happiness"
+        value={stats.happiness}
+        srHint="Impacted by other needs; play to restore."
+      />
     </section>
   );
 }

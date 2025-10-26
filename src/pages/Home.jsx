@@ -21,6 +21,5 @@ export default function Home() {
         All Rights Reserved Doggerz @ 2025
       </p>
     </div>
-    
   );
 }

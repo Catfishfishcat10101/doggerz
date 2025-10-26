@@ -5,7 +5,7 @@ const soundPaths = {
 };
 
 const sounds = Object.fromEntries(
-  Object.entries(soundPaths).map(([name, path]) => [name, new Audio(path)])
+  Object.entries(soundPaths).map(([name, path]) => [name, new Audio(path)]),
 );
 class SoundManager {
   static play(soundName) {

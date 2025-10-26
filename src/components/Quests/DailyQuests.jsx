@@ -7,7 +7,9 @@ export default function DailyQuests() {
   const d = useDispatch();
   const dailies = useSelector(selectDailies);
 
-  useEffect(() => { d(resetForNewDay()); }, [d]);
+  useEffect(() => {
+    d(resetForNewDay());
+  }, [d]);
 
   const onClaim = (q) => {
     if (!q.done || q.rewardClaimed) return;
@@ -23,14 +25,21 @@ export default function DailyQuests() {
           <div className="text-white/80">{q.label}</div>
           <div className="flex items-center gap-3">
             <div className="h-2 w-36 bg-white/10 rounded">
-              <div className="h-2 bg-emerald-400 rounded" style={{ width: `${(q.progress/q.goal)*100}%` }} />
+              <div
+                className="h-2 bg-emerald-400 rounded"
+                style={{ width: `${(q.progress / q.goal) * 100}%` }}
+              />
             </div>
             <button
               onClick={() => onClaim(q)}
               disabled={!q.done || q.rewardClaimed}
               className={`px-3 py-1 rounded text-sm ${q.done && !q.rewardClaimed ? "bg-emerald-600 text-white" : "bg-white/10 text-white/40"}`}
             >
-              {q.rewardClaimed ? "Claimed" : q.done ? `Claim +${q.reward}` : `${q.progress}/${q.goal}`}
+              {q.rewardClaimed
+                ? "Claimed"
+                : q.done
+                  ? `Claim +${q.reward}`
+                  : `${q.progress}/${q.goal}`}
             </button>
           </div>
         </div>

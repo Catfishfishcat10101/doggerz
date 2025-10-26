@@ -12,7 +12,7 @@ function clamp(n) {
 
 function formatEta(minutes) {
   if (!isFinite(minutes) || minutes < 0) return "—";
-  if (minutes < 1) return `${Math.max(5, Math.round(minutes * 60 / 5) * 5)}s`;
+  if (minutes < 1) return `${Math.max(5, Math.round((minutes * 60) / 5) * 5)}s`;
   if (minutes < 60) return `${Math.round(minutes)}m`;
   const h = Math.floor(minutes / 60);
   const m = Math.round(minutes % 60);
@@ -54,10 +54,9 @@ function Eta({ label, v, slope }) {
   // Default target bands: deplete to 25% if slope negative; recover to 90% if positive.
   const target = slope < 0 ? 25 : 90;
   const minutes = etaMinutes(v, target, slope);
-  const text =
-    !isFinite(minutes)
-      ? "stable"
-      : slope < 0
+  const text = !isFinite(minutes)
+    ? "stable"
+    : slope < 0
       ? `~${formatEta(minutes)} to ${target}%`
       : `~${formatEta(minutes)} to ${target}%`;
   return (
@@ -86,7 +85,9 @@ function Bar({ label, value, gradient = "from-emerald-400 to-cyan-400" }) {
           style={{ width: `${v}%` }}
         />
       </div>
-      <span className="w-12 text-xs text-white/70 text-right tabular-nums">{v}%</span>
+      <span className="w-12 text-xs text-white/70 text-right tabular-nums">
+        {v}%
+      </span>
     </div>
   );
 }
@@ -105,14 +106,21 @@ function LogoDoggerz({ className = "" }) {
       <span className="text-2xl sm:text-3xl font-extrabold tracking-wide text-white drop-shadow">
         Doggerz
       </span>
-      <span className="ml-2 text-xs sm:text-sm text-white/70 align-super">No grind. Just vibes.</span>
+      <span className="ml-2 text-xs sm:text-sm text-white/70 align-super">
+        No grind. Just vibes.
+      </span>
     </div>
   );
 }
 
 /** ---------- component ---------- */
 export default function NeedsHUD() {
-  const stats = useSelector(selectStats) || { hunger: 0, energy: 0, fun: 0, hygiene: 0 };
+  const stats = useSelector(selectStats) || {
+    hunger: 0,
+    energy: 0,
+    fun: 0,
+    hygiene: 0,
+  };
   const mood = useSelector(selectMood) || "Neutral";
   const dog = useSelector(selectDog) || { name: "Your Pup", level: 1 };
   const { coins = 0, gems = 0 } = useSelector(selectWallet) || {};
@@ -125,7 +133,7 @@ export default function NeedsHUD() {
 
   const title = useMemo(
     () => `${dog?.name ?? "Your Pup"} • Lv.${dog?.level ?? 1}`,
-    [dog?.name, dog?.level]
+    [dog?.name, dog?.level],
   );
 
   return (
@@ -140,7 +148,9 @@ export default function NeedsHUD() {
       <div className="mb-4 flex items-start justify-between">
         <LogoDoggerz className="mr-3" />
         <div className="text-right">
-          <div className="text-white font-semibold text-base sm:text-lg">{title}</div>
+          <div className="text-white font-semibold text-base sm:text-lg">
+            {title}
+          </div>
           <div className="mt-1 flex items-center justify-end gap-2">
             <Pill>{mood}</Pill>
             <Pill>Auto-simulated</Pill>
@@ -151,19 +161,35 @@ export default function NeedsHUD() {
       {/* Bars + ETAs */}
       <div className="space-y-4">
         <div>
-          <Bar label="Hunger" value={stats.hunger} gradient="from-rose-400 to-orange-400" />
+          <Bar
+            label="Hunger"
+            value={stats.hunger}
+            gradient="from-rose-400 to-orange-400"
+          />
           <Eta label="Hunger" v={stats.hunger} slope={slopeHunger} />
         </div>
         <div>
-          <Bar label="Energy" value={stats.energy} gradient="from-yellow-300 to-lime-400" />
+          <Bar
+            label="Energy"
+            value={stats.energy}
+            gradient="from-yellow-300 to-lime-400"
+          />
           <Eta label="Energy" v={stats.energy} slope={slopeEnergy} />
         </div>
         <div>
-          <Bar label="Fun" value={stats.fun} gradient="from-sky-400 to-indigo-400" />
+          <Bar
+            label="Fun"
+            value={stats.fun}
+            gradient="from-sky-400 to-indigo-400"
+          />
           <Eta label="Fun" v={stats.fun} slope={slopeFun} />
         </div>
         <div>
-          <Bar label="Hygiene" value={stats.hygiene} gradient="from-fuchsia-400 to-pink-400" />
+          <Bar
+            label="Hygiene"
+            value={stats.hygiene}
+            gradient="from-fuchsia-400 to-pink-400"
+          />
           <Eta label="Hygiene" v={stats.hygiene} slope={slopeHygiene} />
         </div>
       </div>

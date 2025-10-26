@@ -1,11 +1,7 @@
 // src/components/UI/Status.jsx
 import React, { memo, useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import {
-  selectDog,
-  selectDogLevel,
-  selectCoins
-} from "@/../redux/dogSlice";
+import { selectDog, selectDogLevel, selectCoins } from "@/../redux/dogSlice";
 
 /**
  * Status
@@ -20,7 +16,11 @@ function Status({ className = "", onRename }) {
   const level = useSelector(selectDogLevel);
 
   const lsName = (() => {
-    try { return localStorage.getItem("doggerz_name"); } catch { return null; }
+    try {
+      return localStorage.getItem("doggerz_name");
+    } catch {
+      return null;
+    }
   })();
 
   const derivedName = dog?.name || lsName || "Your Pup";
@@ -57,7 +57,9 @@ function Status({ className = "", onRename }) {
   const commitName = (next) => {
     const trimmed = next.trim() || "Your Pup";
     setName(trimmed);
-    try { localStorage.setItem("doggerz_name", trimmed); } catch {}
+    try {
+      localStorage.setItem("doggerz_name", trimmed);
+    } catch {}
     onRename?.(trimmed);
   };
 
@@ -70,7 +72,7 @@ function Status({ className = "", onRename }) {
       className={[
         "rounded-2xl shadow p-4 border border-black/5 dark:border-white/10",
         "bg-white dark:bg-slate-900 flex items-center justify-between gap-3",
-        className
+        className,
       ].join(" ")}
     >
       {/* Left: avatar + name + level */}
@@ -97,11 +99,17 @@ function Status({ className = "", onRename }) {
                 autoFocus
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                onBlur={() => { commitName(name); setEditing(false); }}
+                onBlur={() => {
+                  commitName(name);
+                  setEditing(false);
+                }}
                 maxLength={32}
                 aria-label="Dog name"
               />
-              <button type="submit" className="text-xs px-2 py-1 rounded-lg bg-rose-600 text-white">
+              <button
+                type="submit"
+                className="text-xs px-2 py-1 rounded-lg bg-rose-600 text-white"
+              >
                 Save
               </button>
             </form>
@@ -121,7 +129,9 @@ function Status({ className = "", onRename }) {
               </button>
             </div>
           )}
-          <div className="text-xs text-rose-900/60 dark:text-rose-200/60">Level {safeLevel}</div>
+          <div className="text-xs text-rose-900/60 dark:text-rose-200/60">
+            Level {safeLevel}
+          </div>
         </div>
       </div>
 
@@ -131,7 +141,7 @@ function Status({ className = "", onRename }) {
           className={[
             "px-3 py-1 rounded-lg text-sm font-semibold",
             "bg-rose-100 text-rose-900 dark:bg-rose-800/40 dark:text-rose-100",
-            "border border-black/5 dark:border-white/10"
+            "border border-black/5 dark:border-white/10",
           ].join(" ")}
           aria-live="polite"
           aria-label={`Coins: ${safeCoins}`}
@@ -145,7 +155,7 @@ function Status({ className = "", onRename }) {
             className={[
               "absolute -top-4 right-0 text-xs font-bold",
               coinDelta > 0 ? "text-emerald-500" : "text-rose-500",
-              "animate-[rise_800ms_ease-out_forwards]"
+              "animate-[rise_800ms_ease-out_forwards]",
             ].join(" ")}
             aria-hidden
           >

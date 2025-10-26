@@ -2,7 +2,11 @@
 import React from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import AuthButtons from "@/components/Auth/AuthButtons.jsx";
-import { rememberReturnTo, nextRouteAfterAuth, clearReturnTo } from "@/lib/utils/nextRouteAfterAuth.js";
+import {
+  rememberReturnTo,
+  nextRouteAfterAuth,
+  clearReturnTo,
+} from "@/lib/utils/nextRouteAfterAuth.js";
 import { PATHS } from "@/config/routes.js";
 
 export default function Login() {
@@ -21,7 +25,11 @@ export default function Login() {
     <main className="mx-auto max-w-md px-4 py-10">
       <h1 className="text-3xl font-extrabold">Log in</h1>
       <p className="mt-2 text-slate-300">
-        New here? <Link to={PATHS.SIGNUP} className="text-amber-300 hover:underline">Create an account</Link>.
+        New here?{" "}
+        <Link to={PATHS.SIGNUP} className="text-amber-300 hover:underline">
+          Create an account
+        </Link>
+        .
       </p>
       <div className="mt-6">
         <AuthButtons mode="login" onSuccess={handleSuccess} />

@@ -14,7 +14,9 @@ export default function DevMenu() {
   if (!isDev || !open) return null;
 
   const Box = ({ children }) => (
-    <div className="p-3 rounded-xl border border-zinc-700 bg-zinc-900/90">{children}</div>
+    <div className="p-3 rounded-xl border border-zinc-700 bg-zinc-900/90">
+      {children}
+    </div>
   );
 
   return (
@@ -47,9 +49,18 @@ export default function DevMenu() {
 
         <Box>
           <div className="opacity-80">
-            <div>Build: <span className="font-mono">{import.meta.env.MODE}</span></div>
-            <div>Base: <span className="font-mono">{import.meta.env.BASE}</span></div>
-            <div>Vite: <span className="font-mono">{__vite__mapDeps ? "HMR" : "Prod"}</span></div>
+            <div>
+              Build: <span className="font-mono">{import.meta.env.MODE}</span>
+            </div>
+            <div>
+              Base: <span className="font-mono">{import.meta.env.BASE}</span>
+            </div>
+            <div>
+              Vite:{" "}
+              <span className="font-mono">
+                {__vite__mapDeps ? "HMR" : "Prod"}
+              </span>
+            </div>
           </div>
         </Box>
 

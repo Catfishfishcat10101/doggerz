@@ -22,7 +22,9 @@ export default function ToyBox() {
     <div className="bg-white rounded-2xl shadow p-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-rose-900">Toy Box</h3>
-        <div className="text-sm px-2 py-1 rounded bg-rose-100 text-rose-900">💰 {coins}</div>
+        <div className="text-sm px-2 py-1 rounded bg-rose-100 text-rose-900">
+          💰 {coins}
+        </div>
       </div>
 
       <div className="grid grid-cols-3 gap-2 mt-3">

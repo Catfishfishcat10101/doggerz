@@ -7,7 +7,9 @@ import { loadState, selectDog } from "../redux/dogSlice";
 export default function FirebaseAutoSave() {
   const dispatch = useDispatch();
   const dog = useSelector(selectDog);
-  const clientIdRef = useRef(crypto?.randomUUID?.() || `c_${Math.random().toString(36).slice(2)}`);
+  const clientIdRef = useRef(
+    crypto?.randomUUID?.() || `c_${Math.random().toString(36).slice(2)}`,
+  );
   const lastSavedJsonRef = useRef("");
   const debounceRef = useRef(null);
   const unsubRef = useRef(null);
@@ -24,14 +26,24 @@ export default function FirebaseAutoSave() {
     const ref = doc(db, "dogs", user.uid);
 
     unsubRef.current = onSnapshot(ref, (snap) => {
-      if (!snap.exists()) { readyRef.current = true; return; }
+      if (!snap.exists()) {
+        readyRef.current = true;
+        return;
+      }
       const data = snap.data() || {};
-      if (data.clientId && data.clientId === clientIdRef.current) { readyRef.current = true; return; }
-      if (data.state) dispatch(loadState({ ...data.state, _version: data.version || 1 }));
+      if (data.clientId && data.clientId === clientIdRef.current) {
+        readyRef.current = true;
+        return;
+      }
+      if (data.state)
+        dispatch(loadState({ ...data.state, _version: data.version || 1 }));
       readyRef.current = true;
     });
 
-    return () => { unsubRef.current?.(); unsubRef.current = null; };
+    return () => {
+      unsubRef.current?.();
+      unsubRef.current = null;
+    };
   }, [dispatch]);
 
   useEffect(() => {
@@ -44,20 +56,41 @@ export default function FirebaseAutoSave() {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(async () => {
       const ref = doc(db, "dogs", user.uid);
-      await setDoc(ref, { version: 1, clientId: clientIdRef.current, updatedAt: serverTimestamp(), state: stateForSave }, { merge: true });
+      await setDoc(
+        ref,
+        {
+          version: 1,
+          clientId: clientIdRef.current,
+          updatedAt: serverTimestamp(),
+          state: stateForSave,
+        },
+        { merge: true },
+      );
       lastSavedJsonRef.current = json;
     }, 400);
 
-    return () => { debounceRef.current && clearTimeout(debounceRef.current); };
+    return () => {
+      debounceRef.current && clearTimeout(debounceRef.current);
+    };
   }, [stateForSave]);
 
   useEffect(() => {
     const flush = async () => {
-      const user = auth.currentUser; if (!user) return;
+      const user = auth.currentUser;
+      if (!user) return;
       const json = JSON.stringify(stateForSave);
       if (json === lastSavedJsonRef.current) return;
       const ref = doc(db, "dogs", user.uid);
-      await setDoc(ref, { version: 1, clientId: clientIdRef.current, updatedAt: serverTimestamp(), state: stateForSave }, { merge: true });
+      await setDoc(
+        ref,
+        {
+          version: 1,
+          clientId: clientIdRef.current,
+          updatedAt: serverTimestamp(),
+          state: stateForSave,
+        },
+        { merge: true },
+      );
       lastSavedJsonRef.current = json;
     };
     const onHide = () => flush();

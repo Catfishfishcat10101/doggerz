@@ -2,7 +2,8 @@
 export const EPS = 1e-6;
 
 // Scalars
-export const clamp = (v, min = 0, max = 1) => (v > max ? max : v < min ? min : v);
+export const clamp = (v, min = 0, max = 1) =>
+  v > max ? max : v < min ? min : v;
 export const lerp = (a, b, t) => a + (b - a) * t;
 export const invLerp = (a, b, v) => {
   const d = b - a;
@@ -30,7 +31,8 @@ export const rectClamp = (p, r) => ({
   y: clamp(p.y, r.y, r.y + r.h),
 });
 export const withinRect = (p, r, inclusive = true) => {
-  const x2 = r.x + r.w, y2 = r.y + r.h;
+  const x2 = r.x + r.w,
+    y2 = r.y + r.h;
   return inclusive
     ? p.x >= r.x && p.x <= x2 && p.y >= r.y && p.y <= y2
     : p.x > r.x && p.x < x2 && p.y > r.y && p.y < y2;

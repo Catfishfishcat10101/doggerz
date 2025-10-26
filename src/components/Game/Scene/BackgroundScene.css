@@ -44,10 +44,10 @@
   height: 72px;
   z-index: 5;
   background:
-    linear-gradient(to top, rgba(0,0,0,0.18), rgba(0,0,0,0) 60%),
-    linear-gradient(0deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03)),
+    linear-gradient(to top, rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0) 60%),
+    linear-gradient(0deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.03)),
     var(--ground-fill, #2f3e46);
-  border-top: 1px solid rgba(255,255,255,0.12);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 /* -------------
@@ -110,17 +110,27 @@
   --sky-mid: #0f1730;
   --sky-bot: #111a33;
 
-  --haze: rgba(148,163,184,0.10); /* slate-400/10 */
-  --haze-strong: rgba(148,163,184,0.16);
+  --haze: rgba(148, 163, 184, 0.1); /* slate-400/10 */
+  --haze-strong: rgba(148, 163, 184, 0.16);
 
   --ground-fill: #1f2937; /* gray-800 */
 
-  --back-gradient:
-    linear-gradient(180deg, var(--sky-top), var(--sky-mid) 55%, var(--sky-bot));
-  --mid-gradient:
-    radial-gradient(80% 60% at 50% 20%, var(--haze), transparent 70%);
-  --front-gradient:
-    radial-gradient(70% 40% at 50% 90%, rgba(255,255,255,0.06), transparent 60%);
+  --back-gradient: linear-gradient(
+    180deg,
+    var(--sky-top),
+    var(--sky-mid) 55%,
+    var(--sky-bot)
+  );
+  --mid-gradient: radial-gradient(
+    80% 60% at 50% 20%,
+    var(--haze),
+    transparent 70%
+  );
+  --front-gradient: radial-gradient(
+    70% 40% at 50% 90%,
+    rgba(255, 255, 255, 0.06),
+    transparent 60%
+  );
 }
 
 /* LAWN: daylight greens */
@@ -131,28 +141,48 @@
 
   --ground-fill: #3b7f4a;
 
-  --back-gradient:
-    linear-gradient(180deg, var(--sky-top), var(--sky-mid) 55%, var(--sky-bot));
-  --mid-gradient:
-    radial-gradient(80% 60% at 50% 25%, rgba(16,185,129,0.18), transparent 70%);
-  --front-gradient:
-    radial-gradient(80% 35% at 50% 90%, rgba(0,0,0,0.06), transparent 60%);
+  --back-gradient: linear-gradient(
+    180deg,
+    var(--sky-top),
+    var(--sky-mid) 55%,
+    var(--sky-bot)
+  );
+  --mid-gradient: radial-gradient(
+    80% 60% at 50% 25%,
+    rgba(16, 185, 129, 0.18),
+    transparent 70%
+  );
+  --front-gradient: radial-gradient(
+    80% 35% at 50% 90%,
+    rgba(0, 0, 0, 0.06),
+    transparent 60%
+  );
 }
 
 /* SUNSET: warm gradient with accent tint */
 .bg-yard.skin-sunset {
-  --sky-top: #3b0d47;  /* plum-900 */
-  --sky-mid: #7c2156;  /* magenta-700 */
-  --sky-bot: #f97316;  /* orange-500 */
+  --sky-top: #3b0d47; /* plum-900 */
+  --sky-mid: #7c2156; /* magenta-700 */
+  --sky-bot: #f97316; /* orange-500 */
 
   --ground-fill: #3a2f3b;
 
-  --back-gradient:
-    linear-gradient(180deg, var(--sky-top), var(--sky-mid) 55%, var(--sky-bot));
-  --mid-gradient:
-    radial-gradient(90% 60% at 50% 20%, color-mix(in oklab, var(--scene-accent), #ffffff 70%) , transparent 70%);
-  --front-gradient:
-    radial-gradient(70% 40% at 50% 90%, rgba(255,255,255,0.08), transparent 60%);
+  --back-gradient: linear-gradient(
+    180deg,
+    var(--sky-top),
+    var(--sky-mid) 55%,
+    var(--sky-bot)
+  );
+  --mid-gradient: radial-gradient(
+    90% 60% at 50% 20%,
+    color-mix(in oklab, var(--scene-accent), #ffffff 70%),
+    transparent 70%
+  );
+  --front-gradient: radial-gradient(
+    70% 40% at 50% 90%,
+    rgba(255, 255, 255, 0.08),
+    transparent 60%
+  );
 }
 
 /* NIGHT: deep blue with starlight speckle */
@@ -163,12 +193,22 @@
 
   --ground-fill: #0f1a2b;
 
-  --back-gradient:
-    linear-gradient(180deg, var(--sky-top), var(--sky-mid) 55%, var(--sky-bot));
-  --mid-gradient:
-    radial-gradient(100% 70% at 50% 15%, rgba(147,197,253,0.12), transparent 70%);
-  --front-gradient:
-    radial-gradient(80% 40% at 50% 85%, rgba(255,255,255,0.06), transparent 60%);
+  --back-gradient: linear-gradient(
+    180deg,
+    var(--sky-top),
+    var(--sky-mid) 55%,
+    var(--sky-bot)
+  );
+  --mid-gradient: radial-gradient(
+    100% 70% at 50% 15%,
+    rgba(147, 197, 253, 0.12),
+    transparent 70%
+  );
+  --front-gradient: radial-gradient(
+    80% 40% at 50% 85%,
+    rgba(255, 255, 255, 0.06),
+    transparent 60%
+  );
   --layer-filter: saturate(0.95);
 }
 
@@ -180,18 +220,23 @@
 
   --ground-fill: #0c0c1a;
 
-  --back-gradient:
-    radial-gradient(120% 100% at 50% 10%, color-mix(in oklab, var(--scene-accent), #000 75%), #090914 70%);
-  --mid-gradient:
-    repeating-linear-gradient(
-      0deg,
-      color-mix(in oklab, var(--scene-accent), #000 80%) 0px,
-      color-mix(in oklab, var(--scene-accent), #000 80%) 1px,
-      transparent 1px,
-      transparent 18px
-    );
-  --front-gradient:
-    radial-gradient(70% 30% at 50% 90%, color-mix(in oklab, var(--scene-accent), #fff 85%) , transparent 60%);
+  --back-gradient: radial-gradient(
+    120% 100% at 50% 10%,
+    color-mix(in oklab, var(--scene-accent), #000 75%),
+    #090914 70%
+  );
+  --mid-gradient: repeating-linear-gradient(
+    0deg,
+    color-mix(in oklab, var(--scene-accent), #000 80%) 0px,
+    color-mix(in oklab, var(--scene-accent), #000 80%) 1px,
+    transparent 1px,
+    transparent 18px
+  );
+  --front-gradient: radial-gradient(
+    70% 30% at 50% 90%,
+    color-mix(in oklab, var(--scene-accent), #fff 85%),
+    transparent 60%
+  );
   --front-blend: screen;
   --front-opacity: 0.7;
 }
@@ -204,45 +249,79 @@
 
   --ground-fill: #b7c4cf;
 
-  --back-gradient:
-    linear-gradient(180deg, var(--sky-top), var(--sky-mid) 55%, var(--sky-bot));
-  --mid-gradient:
-    radial-gradient(75% 50% at 50% 20%, rgba(59,130,246,0.18), transparent 70%); /* blue-500/18 */
-  --front-gradient:
-    radial-gradient(70% 40% at 50% 90%, rgba(0,0,0,0.05), transparent 60%);
+  --back-gradient: linear-gradient(
+    180deg,
+    var(--sky-top),
+    var(--sky-mid) 55%,
+    var(--sky-bot)
+  );
+  --mid-gradient: radial-gradient(
+    75% 50% at 50% 20%,
+    rgba(59, 130, 246, 0.18),
+    transparent 70%
+  ); /* blue-500/18 */
+  --front-gradient: radial-gradient(
+    70% 40% at 50% 90%,
+    rgba(0, 0, 0, 0.05),
+    transparent 60%
+  );
 }
 
 /* -------------
    Responsiveness
    ------------- */
 @media (max-width: 768px) {
-  .bg-yard { --stage-height: 380px; border-radius: 0.75rem; }
-  .bg-yard .scene-ground { height: 56px; }
+  .bg-yard {
+    --stage-height: 380px;
+    border-radius: 0.75rem;
+  }
+  .bg-yard .scene-ground {
+    height: 56px;
+  }
 }
 
 @media (max-width: 480px) {
-  .bg-yard { --stage-height: 320px; border-radius: 0.75rem; }
-  .bg-yard .scene-ground { height: 48px; }
+  .bg-yard {
+    --stage-height: 320px;
+    border-radius: 0.75rem;
+  }
+  .bg-yard .scene-ground {
+    height: 48px;
+  }
 }
 
 /* -------------
    Fallbacks for older engines (color-mix)
    ------------- */
 @supports not (background: color-mix(in srgb, white 10%, black)) {
-  .bg-yard.skin-sunset { --mid-gradient:
-    radial-gradient(90% 60% at 50% 20%, rgba(248, 113, 113, 0.2), transparent 70%); /* rose-ish fallback */
+  .bg-yard.skin-sunset {
+    --mid-gradient: radial-gradient(
+      90% 60% at 50% 20%,
+      rgba(248, 113, 113, 0.2),
+      transparent 70%
+    ); /* rose-ish fallback */
   }
-  .bg-yard.skin-neon .parallax.layer.front { opacity: 0.75; }
+  .bg-yard.skin-neon .parallax.layer.front {
+    opacity: 0.75;
+  }
 }
 
 /* -------------
    Optional: simple hover parallax when mouse moves (progressive enhancement)
    ------------- */
-.bg-yard:hover .parallax.layer.back { transform: translateZ(calc(var(--z-back) * 1px)) translateY(-2px) scale(1.02); }
-.bg-yard:hover .parallax.layer.mid  { transform: translateZ(calc(var(--z-mid) * 1px))  translateY(-1px) scale(1.01); }
-.bg-yard:hover .parallax.layer.front{ transform: translateZ(calc(var(--z-front) * 1px))              scale(1.00); }
+.bg-yard:hover .parallax.layer.back {
+  transform: translateZ(calc(var(--z-back) * 1px)) translateY(-2px) scale(1.02);
+}
+.bg-yard:hover .parallax.layer.mid {
+  transform: translateZ(calc(var(--z-mid) * 1px)) translateY(-1px) scale(1.01);
+}
+.bg-yard:hover .parallax.layer.front {
+  transform: translateZ(calc(var(--z-front) * 1px)) scale(1);
+}
 @media (hover: none) {
   .bg-yard:hover .parallax.layer.back,
   .bg-yard:hover .parallax.layer.mid,
-  .bg-yard:hover .parallax.layer.front { transform: none; }
+  .bg-yard:hover .parallax.layer.front {
+    transform: none;
+  }
 }

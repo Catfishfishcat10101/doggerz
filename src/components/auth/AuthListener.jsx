@@ -3,7 +3,12 @@ import { useEffect } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useDispatch } from "react-redux";
-import { userLoading, userAuthed, userError, userSignedOut } from "@/redux/userSlice";
+import {
+  userLoading,
+  userAuthed,
+  userError,
+  userSignedOut,
+} from "@/redux/userSlice";
 
 function shapeUser(u) {
   if (!u) return null;
@@ -28,7 +33,7 @@ export default function AuthListener({ children }) {
       (err) => {
         console.error("Auth listener error:", err);
         dispatch(userError(err.message || "Auth listener failed"));
-      }
+      },
     );
     return () => unsub();
   }, [dispatch]);

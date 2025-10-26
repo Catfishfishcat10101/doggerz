@@ -9,12 +9,20 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'robots.txt'], // whatever assets you're using
+      includeAssets: [
+        'favicon.svg',
+        'favicon.ico',
+        'robots.txt',
+        'apple-touch-icon.png',
+      ],
       manifest: {
         name: 'Doggerz',
         short_name: 'Doggerz',
-        description: 'Your app description here, assuming it has one.',
-        theme_color: '#ffffff',
+        description: 'Adopt a pixel pup and shape its life with your choices!',
+        start_url: '/',
+        display: 'standalone',
+        background_color: '#0b1220', // match your :root --bg
+        theme_color: '#fbbf24', // amber-400 (you use this a lot)
         icons: [
           {
             src: 'pwa-192x192.png',
@@ -26,7 +34,16 @@ export default defineConfig({
             sizes: '512x512',
             type: 'image/png',
           },
+          {
+            src: 'pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any maskable', // for Android/iOS adaptive icons
+          },
         ],
+      },
+      devOptions: {
+        enabled: true, // enables service worker in dev for testing
       },
     }),
   ],

@@ -8,7 +8,9 @@ export default function PoopRenderer({ poops = [], onScoop }) {
   return (
     <div className="grid grid-cols-6 gap-2">
       {poops.length === 0 && (
-        <div className="col-span-6 text-center text-rose-900/60">No poop in the yard. Nice! ✨</div>
+        <div className="col-span-6 text-center text-rose-900/60">
+          No poop in the yard. Nice! ✨
+        </div>
       )}
       {poops.map((p) => (
         <button

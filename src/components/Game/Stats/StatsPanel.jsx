@@ -81,7 +81,9 @@ function ProgressBar({ pct, label, color = "#0ea5e9" }) {
 }
 
 function Sparkline({ data = [], className = "" }) {
-  const w = 160, h = 36, pad = 2;
+  const w = 160,
+    h = 36,
+    pad = 2;
   const points = data.length ? data : [0];
   const min = Math.min(...points);
   const max = Math.max(...points);
@@ -95,8 +97,20 @@ function Sparkline({ data = [], className = "" }) {
     })
     .join(" ");
   return (
-    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className={className} aria-hidden>
-      <path d={d} fill="none" stroke="currentColor" strokeWidth="2" opacity="0.85" />
+    <svg
+      width={w}
+      height={h}
+      viewBox={`0 0 ${w} ${h}`}
+      className={className}
+      aria-hidden
+    >
+      <path
+        d={d}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        opacity="0.85"
+      />
     </svg>
   );
 }
@@ -110,9 +124,9 @@ export default function StatsPanel() {
 
   // Optional selectors (if your slice has them)
   const happiness = useSafeSelector(dog.selectHappiness, 0.66); // 0..1
-  const energy = useSafeSelector(dog.selectEnergy, 0.6);        // 0..1
-  const xp = useSafeSelector(dog.selectXp, null);               // current xp
-  const xpToNext = useSafeSelector(dog.selectXpToNext, null);   // required xp
+  const energy = useSafeSelector(dog.selectEnergy, 0.6); // 0..1
+  const xp = useSafeSelector(dog.selectXp, null); // current xp
+  const xpToNext = useSafeSelector(dog.selectXpToNext, null); // required xp
 
   // XP model fallback: quadratic-ish per level (clean and predictable)
   const fallbackNeeded = 50 + Math.floor(level ** 1.5 * 25);
@@ -121,23 +135,51 @@ export default function StatsPanel() {
   const xpPct = clamp01(currXp / Math.max(1, needXp));
 
   // Color zones for bars
-  const happyColor = happiness > 0.66 ? "#10b981" : happiness > 0.33 ? "#f59e0b" : "#ef4444";
-  const energyColor = energy > 0.66 ? "#22d3ee" : energy > 0.33 ? "#f59e0b" : "#ef4444";
+  const happyColor =
+    happiness > 0.66 ? "#10b981" : happiness > 0.33 ? "#f59e0b" : "#ef4444";
+  const energyColor =
+    energy > 0.66 ? "#22d3ee" : energy > 0.33 ? "#f59e0b" : "#ef4444";
 
   // Coin series sparkline (persists in localStorage)
   const series = useCoinSeries(coins);
 
   const ownedCount = accessories?.owned?.length ?? 0;
   const yardSkin = (() => {
-    try { return JSON.parse(sessionStorage.getItem("yardSkin") ?? "\"default\""); } catch { return "default"; }
+    try {
+      return JSON.parse(sessionStorage.getItem("yardSkin") ?? '"default"');
+    } catch {
+      return "default";
+    }
   })();
   const buff = (() => {
-    try { return JSON.parse(sessionStorage.getItem("buff") ?? "null"); } catch { return null; }
+    try {
+      return JSON.parse(sessionStorage.getItem("buff") ?? "null");
+    } catch {
+      return null;
+    }
   })();
 
   // Derived labels
-  const moodLabel = happiness > 0.8 ? "Ecstatic" : happiness > 0.6 ? "Happy" : happiness > 0.4 ? "Content" : happiness > 0.2 ? "Restless" : "Sad";
-  const energyLabel = energy > 0.8 ? "Energized" : energy > 0.6 ? "Good" : energy > 0.4 ? "Okay" : energy > 0.2 ? "Tired" : "Exhausted";
+  const moodLabel =
+    happiness > 0.8
+      ? "Ecstatic"
+      : happiness > 0.6
+        ? "Happy"
+        : happiness > 0.4
+          ? "Content"
+          : happiness > 0.2
+            ? "Restless"
+            : "Sad";
+  const energyLabel =
+    energy > 0.8
+      ? "Energized"
+      : energy > 0.6
+        ? "Good"
+        : energy > 0.4
+          ? "Okay"
+          : energy > 0.2
+            ? "Tired"
+            : "Exhausted";
 
   // Smooth announce on updates (SR-friendly)
   useEffect(() => {
@@ -208,12 +250,12 @@ export default function StatsPanel() {
       {/* Tips / next actions */}
       <div className="mt-6 card p-4">
         <div className="text-sm opacity-80">
-          Pro tip: keep <b>happiness</b> above 70% to gain a +10% XP multiplier on trick training. Drop below 30% and coin rewards taper.
+          Pro tip: keep <b>happiness</b> above 70% to gain a +10% XP multiplier
+          on trick training. Drop below 30% and coin rewards taper.
         </div>
       </div>
     </div>
   );
 }
-      window.removeEventListener("beforeunload", onHide);
-      window.removeEventListener("offline", onOffline);
-    
+window.removeEventListener("beforeunload", onHide);
+window.removeEventListener("offline", onOffline);
