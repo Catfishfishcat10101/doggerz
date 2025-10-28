@@ -2,10 +2,10 @@
 import React, { Suspense, lazy } from "react";
 import { Routes, Route } from "react-router-dom";
 
-import RootLayout from "@/layout/RootLayout.jsx";
-import RequireAuth from "@/layout/RequireAuth.jsx";
-import RequireGuest from "@/layout/RequireGuest.jsx";
-import RequireOnboarding from "@/layout/RequireOnboarding.jsx"; // ✅ fixed path
+import RootLayout from "@/hooks/layout/RootLayout.jsx";
+import RequireAuth from "@/hooks/layout/RequireAuth.jsx";
+import RequireGuest from "@/hooks/layout/RequireGuest.jsx";
+import RequireOnboarding from "@/hooks/layout/RequireOnboarding.jsx"; // ✅ fixed path
 
 const Home = lazy(() => import("@/pages/Home.jsx"));
 const Game = lazy(() => import("@/pages/Game.jsx"));

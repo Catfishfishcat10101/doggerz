@@ -1,16 +1,9 @@
-// src/components/Features/Affection.jsx
+// src/components/Affection.jsx
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
 import { grantCoins } from "@/redux/dogSlice.js";
 import SoundManager from "./SoundManager";
 
-/**
- * Affection
- * - Tap or press/hold to pet the dog.
- * - Every 5 pets → +1 coin (with animated feedback).
- * - Throttled to avoid audio spam + accidental macros.
- * - A11y: keyboard operable, live region for coin gains.
- */
 export default function Affection() {
   const dispatch = useDispatch();
 
@@ -84,8 +77,6 @@ export default function Affection() {
     if (!t) return;
     if (t.__isStartup) {
       window.clearTimeout(t.id);
-    } else {
-      window.clearInterval(t);
     }
     repeatTimer.current = null;
   }, []);
