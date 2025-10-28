@@ -20,7 +20,7 @@ export default function InstallPrompt() {
   return (
     <div className="sticky top-0 z-40">
       <div className="m-2 rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 flex items-center justify-between">
-        <span>Install Doggerz for faster access?</span>
+        <span>Install Doggerz?</span>
         <div className="flex gap-2">
           <button
             className="rounded-md bg-emerald-600 hover:bg-emerald-500 text-zinc-900 px-2 py-1"

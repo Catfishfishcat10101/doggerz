@@ -1,4 +1,4 @@
-// src/components/UI/PoopScoop.jsx
+// src/components/game/PoopScoop.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
 export default function PoopScoop({

@@ -3,14 +3,6 @@ import React, { memo, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { setName as setDogName } from "@/redux/dogSlice";
 
-/**
- * DogName
- * - Single source of truth: Redux (dog.name)
- * - Hydrates from localStorage once if Redux has no name yet
- * - Debounced commit on change, immediate commit on Enter/blur
- * - IME-friendly via composition events
- * - Visual + SR status feedback
- */
 export default memo(function DogName({
   maxLen = 20,
   className = "",

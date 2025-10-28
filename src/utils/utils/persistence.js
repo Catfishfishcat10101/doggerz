@@ -1,4 +1,4 @@
-// src/lib/persistence.js
+// src/lib/utils/persistence.js
 // Local-first saves; Firebase optional (lazy import). Zero build-time coupling.
 
 const STORAGE_KEY = "doggerz:save:v1";
