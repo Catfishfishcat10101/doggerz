@@ -5,7 +5,7 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import {
   dogNamed as setDogName,
   setStage as setDogStage,
-} from "@/redux/dogSlice";
+} from "@/redux/dogSlice.js";
 
 const STAGES = [
   { id: "puppy", label: "Puppy", blurb: "Quick, playful, burns energy fast" },

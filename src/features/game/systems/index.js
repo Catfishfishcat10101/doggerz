@@ -1,2 +1,2 @@
-export { default as Training } from './Training.jsx';
-export { default as Memory } from './Memory.jsx';
+export { default as PottyTraining } from './PottyTraining.jsx';
+export { default as ResetGame } from './ResetGame.jsx';

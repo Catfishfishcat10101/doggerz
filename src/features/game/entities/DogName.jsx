@@ -1,7 +1,7 @@
 // src/components/UI/DogName.jsx
 import React, { memo, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { setName as setDogName } from "@/redux/dogSlice";
+import { setName as setDogName } from "@/redux/dogSlice.js";
 
 export default memo(function DogName({
   maxLen = 20,

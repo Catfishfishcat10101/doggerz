@@ -1,6 +1,6 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { earnCoins, selectCoins } from "@/../redux/dogSlice";
+import { earnCoins, selectCoins } from "@/redux/dogSlice.js";
 import SoundManager from "@/Features/SoundManager";
 
 const TOYS = [

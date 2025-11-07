@@ -1,7 +1,7 @@
 // src/components/UI/Status.jsx
 import React, { memo, useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import { selectDog, selectDogLevel, selectCoins } from "@/../redux/dogSlice";
+import { selectDog, selectDogLevel, selectCoins } from "@/redux/dogSlice.js";
 
 /**
  * Status

@@ -1,7 +1,7 @@
 // src/components/Features/UpgradeYard.jsx
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { selectCoins, spendCoins } from "@/../redux/dogSlice";
+import { selectCoins, spendCoins } from "@/redux/dogSlice.js";
 
 const SKINS = [
   { id: "lawn", title: "Green Lawn", cost: 100, preview: "🌿" },

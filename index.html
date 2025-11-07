@@ -1,40 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <!-- All your meticulous meta tags and PWA wizardry -->
     <meta charset="UTF-8" />
     <title>Doggerz</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" href="/favicon.ico" />
-    <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#000000" />
-    <meta name="description" content="Doggerz" />
-    <meta name="keywords" content="Doggerz" />
-    <meta name="author" content="William Johnson" />
-    <meta name="robots" content="index, follow" />
-    <meta name="googlebot" content="index, follow" />
-    
 
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="description" content="Doggerz — virtual dog simulator" />
+    <meta name="color-scheme" content="dark light" />
+
+    <!-- Favicon & PWA assets -->
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+    <!-- If your manifest file is in /public/manifest.webmanifest this path is correct -->
+    <link rel="manifest" href="/manifest.webmanifest" />
   </head>
+
   <body>
     <div id="root"></div>
-
-    <!-- Boot up the app -->
     <script type="module" src="/src/main.jsx"></script>
-
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function () {
-          navigator.serviceWorker.register('/sw.js').then(
-            function (registration) {
-              console.log('ServiceWorker registration successful with scope: ', registration.scope);
-            },
-            function (err) {
-              console.log('ServiceWorker registration failed: ', err);
-            }
-          );
-        });
-      }
-    </script>
   </body>
 </html>

@@ -3,7 +3,11 @@ import forms from "@tailwindcss/forms";
 import typography from "@tailwindcss/typography";
 
 export default {
-  content: ["./index.html", "./public/**/*.html", "./src/**/*.{js,jsx,ts,tsx}", "./src/assets/**/*.{svg}",
+  content: [
+    "./index.html",
+    "./public/**/*.html",
+    "./src/**/*.{js,jsx,ts,tsx}",
+    "./src/assets/**/*.svg", // <-- fixed
   ],
   darkMode: "class",
   theme: {
@@ -42,8 +46,7 @@ export default {
     },
   },
   safelist: [
-    // Add any dynamic classes here to prevent purge
-    // "bg-emerald-700/20", "border-emerald-400/30", "text-emerald-200/80",
+    // put any dynamic class names you compose at runtime here
   ],
   plugins: [
     forms,
