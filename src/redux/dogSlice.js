@@ -13,6 +13,7 @@ const initialState = {
 };
 
 const slice = createSlice({
+
   name: 'dog',
   initialState,
   reducers: {
@@ -53,3 +54,7 @@ export const selectDog = (s) => s.dog;
 export const selectDogLevel = (s) => s.dog.level;
 export const selectCoins = (s) => s.dog.coins;
 export const selectPottyLastTrainedAt = (s) => s.dog.lastTrainedAt;
+
+// ---- potty helpers (added) ----
+export const selectPottyLevel = (state) => state.dog?.pottyLevel ?? 0;
+
