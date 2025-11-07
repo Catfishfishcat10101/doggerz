@@ -49,4 +49,20 @@ npm-debug.log*
 .idea/
 ' >> .gitignore
 # environment variables
-.env*
+.env*node_modules/
+dist/
+.vite/
+*.log
+npm.debug.log*
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+.eslintcache
+dev-dist/
+workbox-*.js
+sw.js
+build.log
+.env
+.env.* !.env.example
+.vscode/
+.idea/
