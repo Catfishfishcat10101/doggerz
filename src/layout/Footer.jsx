@@ -1,4 +1,3 @@
-// src/layout/Footer.jsx
 import { Link } from "react-router-dom";
 
 export default function Footer() {
@@ -22,12 +21,12 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link to="/about" className="hover:text-white focus-ring">
+                <Link to="/not-found" className="hover:text-white focus-ring">
                   About Us
                 </Link>
               </li>
               <li>
-                <Link to="/contact" className="hover:text-white focus-ring">
+                <Link to="/not-found" className="hover:text-white focus-ring">
                   Contact Us
                 </Link>
               </li>
