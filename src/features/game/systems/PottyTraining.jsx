@@ -68,7 +68,7 @@ export default function PottyTraining() {
   }, [cooldown, isPottyTrained, dispatch]);
 
   const onReset = useCallback(() => {
-    dispatch(());
+    dispatch(resetPottyLevel());
     setShowCongrats(false);
   }, [dispatch]);
 
