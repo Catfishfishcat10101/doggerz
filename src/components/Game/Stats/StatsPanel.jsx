@@ -1,5 +1,5 @@
 // src/components/Features/StatsPanel.jsx
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect } from "react";
 import { useSelector } from "react-redux";
 import * as dog from "@/redux/dogSlice.js";
 
@@ -13,7 +13,7 @@ import * as dog from "@/redux/dogSlice.js";
  */
 
 function useSafeSelector(selector, fallback) {
-  // If a selector is provided, use it; otherwise use a stable fallback function.
+  // If a selector is provided, use it; otherwise use a stable fallback fn.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const sel = selector || (() => fallback);
   return useSelector(sel);
@@ -81,9 +81,7 @@ function ProgressBar({ pct, label, color = "#0ea5e9" }) {
 }
 
 function Sparkline({ data = [], className = "" }) {
-  const w = 160,
-    h = 36,
-    pad = 2;
+  const w = 160, h = 36, pad = 2;
   const points = data.length ? data : [0];
   const min = Math.min(...points);
   const max = Math.max(...points);
@@ -97,20 +95,8 @@ function Sparkline({ data = [], className = "" }) {
     })
     .join(" ");
   return (
-    <svg
-      width={w}
-      height={h}
-      viewBox={`0 0 ${w} ${h}`}
-      className={className}
-      aria-hidden
-    >
-      <path
-        d={d}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        opacity="0.85"
-      />
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className={className} aria-hidden>
+      <path d={d} fill="none" stroke="currentColor" strokeWidth="2" opacity="0.85" />
     </svg>
   );
 }
@@ -124,64 +110,47 @@ export default function StatsPanel() {
 
   // Optional selectors (if your slice has them)
   const happiness = useSafeSelector(dog.selectHappiness, 0.66); // 0..1
-  const energy = useSafeSelector(dog.selectEnergy, 0.6); // 0..1
-  const xp = useSafeSelector(dog.selectXp, null); // current xp
-  const xpToNext = useSafeSelector(dog.selectXpToNext, null); // required xp
+  const energy = useSafeSelector(dog.selectEnergy, 0.6);        // 0..1
+  const xp = useSafeSelector(dog.selectXp, null);               // current xp
+  const xpToNext = useSafeSelector(dog.selectXpToNext, null);   // required xp
 
-  // XP model fallback: quadratic-ish per level (clean and predictable)
-  const fallbackNeeded = 50 + Math.floor(level ** 1.5 * 25);
-  const currXp = Number(xp ?? Math.min(fallbackNeeded, Math.floor(coins / 2))); // tie to coins loosely if xp absent
+  // XP model fallback: quadratic-ish per level
+  const fallbackNeeded = 50 + Math.floor((level ** 1.5) * 25);
+  const currXp = Number(xp ?? Math.min(fallbackNeeded, Math.floor(coins / 2)));
   const needXp = Number(xpToNext ?? fallbackNeeded);
   const xpPct = clamp01(currXp / Math.max(1, needXp));
 
-  // Color zones for bars
-  const happyColor =
-    happiness > 0.66 ? "#10b981" : happiness > 0.33 ? "#f59e0b" : "#ef4444";
-  const energyColor =
-    energy > 0.66 ? "#22d3ee" : energy > 0.33 ? "#f59e0b" : "#ef4444";
+  // Color zones
+  const happyColor  = happiness > 0.66 ? "#10b981" : happiness > 0.33 ? "#f59e0b" : "#ef4444";
+  const energyColor = energy     > 0.66 ? "#22d3ee" : energy     > 0.33 ? "#f59e0b" : "#ef4444";
 
-  // Coin series sparkline (persists in localStorage)
+  // Coin series sparkline (persist)
   const series = useCoinSeries(coins);
 
   const ownedCount = accessories?.owned?.length ?? 0;
   const yardSkin = (() => {
-    try {
-      return JSON.parse(sessionStorage.getItem("yardSkin") ?? '"default"');
-    } catch {
-      return "default";
-    }
+    try { return JSON.parse(sessionStorage.getItem("yardSkin") ?? '"default"'); }
+    catch { return "default"; }
   })();
   const buff = (() => {
-    try {
-      return JSON.parse(sessionStorage.getItem("buff") ?? "null");
-    } catch {
-      return null;
-    }
+    try { return JSON.parse(sessionStorage.getItem("buff") ?? "null"); }
+    catch { return null; }
   })();
 
   // Derived labels
   const moodLabel =
-    happiness > 0.8
-      ? "Ecstatic"
-      : happiness > 0.6
-        ? "Happy"
-        : happiness > 0.4
-          ? "Content"
-          : happiness > 0.2
-            ? "Restless"
-            : "Sad";
-  const energyLabel =
-    energy > 0.8
-      ? "Energized"
-      : energy > 0.6
-        ? "Good"
-        : energy > 0.4
-          ? "Okay"
-          : energy > 0.2
-            ? "Tired"
-            : "Exhausted";
+    happiness > 0.8 ? "Ecstatic" :
+    happiness > 0.6 ? "Happy" :
+    happiness > 0.4 ? "Content" :
+    happiness > 0.2 ? "Restless" : "Sad";
 
-  // Smooth announce on updates (SR-friendly)
+  const energyLabel =
+    energy > 0.8 ? "Energized" :
+    energy > 0.6 ? "Good" :
+    energy > 0.4 ? "Okay" :
+    energy > 0.2 ? "Tired" : "Exhausted";
+
+  // SR-friendly live region update
   useEffect(() => {
     const msg = `Level ${level}, ${coins} coins, happiness ${Math.round(happiness * 100)} percent, energy ${Math.round(energy * 100)} percent.`;
     try {
@@ -203,29 +172,17 @@ export default function StatsPanel() {
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {/* Level / XP */}
-        <StatCard
-          title="Level"
-          value={level}
-          sub={`${currXp}/${needXp} XP to next`}
-        >
+        <StatCard title="Level" value={level} sub={`${currXp}/${needXp} XP to next`}>
           <ProgressBar pct={xpPct} color="#0ea5e9" label="XP Progress" />
         </StatCard>
 
         {/* Happiness */}
-        <StatCard
-          title="Happiness"
-          value={`${Math.round(happiness * 100)}%`}
-          sub={moodLabel}
-        >
+        <StatCard title="Happiness" value={`${Math.round(happiness * 100)}%`} sub={moodLabel}>
           <ProgressBar pct={happiness} color={happyColor} />
         </StatCard>
 
         {/* Energy */}
-        <StatCard
-          title="Energy"
-          value={`${Math.round(energy * 100)}%`}
-          sub={energyLabel}
-        >
+        <StatCard title="Energy" value={`${Math.round(energy * 100)}%`} sub={energyLabel}>
           <ProgressBar pct={energy} color={energyColor} />
         </StatCard>
 
@@ -257,5 +214,3 @@ export default function StatsPanel() {
     </div>
   );
 }
-window.removeEventListener("beforeunload", onHide);
-window.removeEventListener("offline", onOffline);
