@@ -1,12 +1,10 @@
-import { configureStore } from '@reduxjs/toolkit';
-import user from './userSlice.js';
-import dog from './dogSlice.js';
+// src/redux/store.js
+import { configureStore } from "@reduxjs/toolkit";
+import dog from "./dogSlice";
 
 const store = configureStore({
-  reducer: { user, dog },
-  devTools: import.meta.env.DEV,
+  reducer: { dog },
+  devTools: true,
 });
 
 export default store;
-export * from './userSlice.js';
-export * from './dogSlice.js';
