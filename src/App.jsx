@@ -1,25 +1,31 @@
-import { lazy, Suspense } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
-import RequireAuth from "@/layout/RequireAuth.jsx";
-import RequireGuest from "@/layout/RequireGuest.jsx";
-import RootLayout from "@/layout/RootLayout.jsx"; // header/footer; or replace with a fragment
-import { GameScreen } from "@/features/game";     // feature barrel
+import React, { Suspense } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import RootLayout from '@/layout/RootLayout.jsx';
+import RequireAuth from '@/layout/RequireAuth.jsx';
+import { GameScreen } from '@/features/game';
 
-// Code-split the light pages
-const Home   = lazy(() => import("@/pages/Home.jsx"));
-const Login  = lazy(() => import("@/pages/Login.jsx"));
-const Signup = lazy(() => import("@/pages/Signup.jsx"));
-const NotFound = lazy(() => import("@/pages/NotFound.jsx")); // optional
+function Home() {
+  return (
+    <main className="min-h-screen grid place-items-center text-center">
+      <div>
+        <h1 className="text-4xl font-bold mb-4">Doggerz</h1>
+        <p className="opacity-80 mb-6">Landing screen.</p>
+        <div className="flex gap-3 justify-center">
+          <a className="px-4 py-2 rounded bg-blue-600 text-white" href="/login">Login</a>
+          <a className="px-4 py-2 rounded bg-slate-700" href="/signup">Signup</a>
+          <a className="px-4 py-2 rounded bg-slate-800 pointer-events-none opacity-50">Play</a>
+        </div>
+      </div>
+    </main>
+  );
+}
 
 export default function App() {
   return (
-    <Suspense fallback={<div style={{ padding: 24 }}>Loading…</div>}>
+    <Suspense fallback={<div style={{padding:24}}>Loading…</div>}>
       <Routes>
         <Route element={<RootLayout />}>
-          {/* Landing */}
           <Route index element={<Home />} />
-
-          {/* Auth-only route */}
           <Route
             path="/game"
             element={
@@ -28,30 +34,7 @@ export default function App() {
               </RequireAuth>
             }
           />
-
-          {/* Guests only */}
-          <Route
-            path="/login"
-            element={
-              <RequireGuest>
-                <Login />
-              </RequireGuest>
-            }
-          />
-          <Route
-            path="/signup"
-            element={
-              <RequireGuest>
-                <Signup />
-              </RequireGuest>
-            }
-          />
-
-          {/* Utility redirects */}
-          <Route path="/play" element={<Navigate to="/game" replace />} />
-
-          {/* 404 */}
-          <Route path="*" element={<NotFound />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
     </Suspense>
