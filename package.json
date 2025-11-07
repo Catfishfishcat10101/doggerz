@@ -7,10 +7,10 @@
     "node": ">=18.18"
   },
   "scripts": {
-    "prepare": "husky",
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview --strictPort --port 5173",
+  "dev": "node --max-old-space-size=4096 node_modules/vite/bin/vite.js",
+  "build": "vite build",
+  "preview": "vite preview"
+}
     "clean": "rimraf dist .vite",
     "format": "prettier --write .",
     "lint": "eslint .",
@@ -67,4 +67,3 @@
     "maintained node versions"
   ],
   "packageManager": "npm@10"
-}
