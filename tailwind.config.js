@@ -7,7 +7,7 @@ export default {
     "./index.html",
     "./public/**/*.html",
     "./src/**/*.{js,jsx,ts,tsx}",
-    "./src/assets/**/*.svg", // <-- fixed
+    "./src/assets/**/*.svg",
   ],
   darkMode: "class",
   theme: {
@@ -45,16 +45,25 @@ export default {
       },
     },
   },
+  // Only needed if you ever generate class names dynamically at runtime.
+  // Remove if all class strings are static.
   safelist: [
-    // put any dynamic class names you compose at runtime here
+    "bg-amber-400",
+    "bg-pink-500",
+    "bg-sky-500",
+    "bg-lime-400",
+    "bg-yellow-300",
+    "bg-amber-500",
+    "bg-yellow-400",
   ],
   plugins: [
     forms,
     typography,
-    // compact, high-contrast form fields by default
+    // compact, high-contrast form fields + theme-aware color-scheme
     ({ addBase }) => {
       addBase({
-        ":root": { colorScheme: "dark" },
+        "html.dark": { colorScheme: "dark" },
+        "html.light": { colorScheme: "light" },
         "input, select, textarea": {
           backgroundColor: "rgba(255,255,255,0.06)",
           borderColor: "rgba(255,255,255,0.15)",
