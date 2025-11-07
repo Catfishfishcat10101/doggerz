@@ -1,16 +1,20 @@
-import { Link } from "react-router-dom";
+import React from "react";
+import { useNavigate } from "react-router-dom";
+
 export default function Home() {
+  const nav = useNavigate();
   return (
-    <main className="min-h-screen grid place-items-center p-10">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Doggerz</h1>
-        <p className="text-zinc-400 mb-6">Landing screen.</p>
-        <div className="flex gap-3 justify-center">
-          <Link className="px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-500" to="/login">Login</Link>
-          <Link className="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700" to="/signup">Signup</Link>
-          <Link className="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700" to="/game">Play</Link>
+    <div className="min-h-[calc(100dvh-3.5rem-3rem)] grid place-items-center bg-[#0b1020] text-white">
+      <div className="text-center px-6">
+        <h1 className="text-5xl sm:text-6xl font-extrabold tracking-tight">DOGGERZ</h1>
+        <p className="mt-3 text-white/70 max-w-xl mx-auto">
+          Feed, play, train. Virtual dog chaos, minus the chewed cables.
+        </p>
+        <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+          <button className="btn text-black" onClick={() => nav("/")}>Go to Splash</button>
+          <button className="btn btn--ghost" onClick={() => nav("/game")}>Jump to Game</button>
         </div>
       </div>
-    </main>
+    </div>
   );
 }
