@@ -1,15 +1,17 @@
-import { Link } from "react-router-dom";
+import React from "react";
+import { useNavigate } from "react-router-dom";
+
 export default function Signup() {
+  const nav = useNavigate();
   return (
-    <main className="min-h-screen grid place-items-center p-6">
-      <div className="max-w-sm w-full rounded-2xl border border-zinc-800 p-6">
-        <h1 className="text-2xl font-semibold mb-2">Signup</h1>
-        <p className="text-sm text-zinc-400 mb-6">Stub page — wiring Firebase next.</p>
-        <div className="flex gap-3">
-          <Link className="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700" to="/login">Back to Login</Link>
-          <Link className="px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-500" to="/game">Enter Game</Link>
+    <div className="min-h-[calc(100dvh-3.5rem-3rem)] grid place-items-center bg-[#0b1020] text-white">
+      <div className="card max-w-md w-full text-center">
+        <h1 className="text-2xl font-bold">Create account</h1>
+        <p className="mt-2 text-white/70">We use Google sign-in. It’s one tap.</p>
+        <div className="mt-4">
+          <button className="btn" onClick={() => nav("/login")}>Continue with Google</button>
         </div>
       </div>
-    </main>
+    </div>
   );
 }
