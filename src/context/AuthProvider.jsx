@@ -11,16 +11,23 @@ import {
   onIdTokenChanged,
   getIdToken,
   getIdTokenResult,
-  signOut,
+  signOut as fbSignOut,
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useDispatch } from "react-redux";
 import { setUser, clearUser } from "@/redux/userSlice";
 
+function toErr(e) {
+  return (e && (e.message || e.code)) || String(e);
+}
+
 const AuthCtx = createContext({
   user: null,
+  userId: null,
+  displayName: null,
   claims: null,
   token: null,
+  isAuthed: false,
   loading: true,
   error: null,
   refresh: async () => {},
@@ -41,12 +48,10 @@ export default function AuthProvider({ children }) {
 
     const unsub = onIdTokenChanged(auth, async (fbUser) => {
       if (!mounted.current) return;
-
       try {
         setErr(null);
 
         if (fbUser) {
-          // Pull fresh token + claims (non-blocking UX)
           const [idToken, result] = await Promise.all([
             getIdToken(fbUser, /* forceRefresh */ false),
             getIdTokenResult(fbUser),
@@ -70,15 +75,35 @@ export default function AuthProvider({ children }) {
           setToken(null);
         }
       } catch (e) {
-        setErr(e?.message || String(e));
+        setErr(toErr(e));
       } finally {
         if (mounted.current) setLoading(false);
       }
     });
 
+    // Opportunistic refresh when tab gains focus – cheap and fixes stale-claim edges
+    const onVisible = async () => {
+      if (!mounted.current) return;
+      if (document.visibilityState === "visible" && auth.currentUser) {
+        try {
+          const [idToken, result] = await Promise.all([
+            getIdToken(auth.currentUser, /* forceRefresh */ false),
+            getIdTokenResult(auth.currentUser),
+          ]);
+          if (!mounted.current) return;
+          setToken(idToken);
+          setClaims(result?.claims || null);
+        } catch (e) {
+          if (mounted.current) setErr(toErr(e));
+        }
+      }
+    };
+    document.addEventListener("visibilitychange", onVisible);
+
     return () => {
       mounted.current = false;
       unsub?.();
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, [dispatch]);
 
@@ -93,29 +118,31 @@ export default function AuthProvider({ children }) {
       setToken(idToken);
       setClaims(result?.claims || null);
     } catch (e) {
-      if (!mounted.current) return;
-      setErr(e?.message || String(e));
+      if (mounted.current) setErr(toErr(e));
     }
   };
 
   const signOutAndClear = async () => {
     try {
-      await signOut(auth);
-      // Listener clears Redux, but we defensively clear local state as well
+      await fbSignOut(auth);
+      // listener will clear Redux; these lines make it instantaneous
       dispatch(clearUser());
       setLocalUser(null);
       setClaims(null);
       setToken(null);
     } catch (e) {
-      setErr(e?.message || String(e));
+      setErr(toErr(e));
     }
   };
 
   const value = useMemo(
     () => ({
       user,
+      userId: user?.id ?? null,
+      displayName: user?.displayName ?? null,
       claims,
       token,
+      isAuthed: !!user,
       loading,
       error: err,
       refresh,
@@ -127,19 +154,14 @@ export default function AuthProvider({ children }) {
   return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>;
 }
 
-/** Hook */
 export function useAuthCtx() {
   return useContext(AuthCtx);
 }
 
-/** Optional gate to protect subtrees/routes */
-export function AuthGate({
-  children,
-  fallback = null,
-  unauthenticated = null,
-}) {
-  const { user, loading } = useAuthCtx();
+// Optional subtree gate (kept for ergonomics)
+export function AuthGate({ children, fallback = null, unauthenticated = null }) {
+  const { isAuthed, loading } = useAuthCtx();
   if (loading) return fallback;
-  if (!user) return unauthenticated;
+  if (!isAuthed) return unauthenticated;
   return children;
 }
