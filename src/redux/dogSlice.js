@@ -1,6 +1,8 @@
 // src/redux/dogSlice.js
 import { createSlice } from "@reduxjs/toolkit";
 
+const clamp = (n, lo = 0, hi = 100) => Math.max(lo, Math.min(hi, Number(n) || 0));
+
 const initialState = {
   name: "Pup",
   level: 1,
@@ -17,6 +19,33 @@ const slice = createSlice({
   name: "dog",
   initialState,
   reducers: {
+    // --- hydration (load everything from Firestore) ---
+    hydrateDog(state, { payload }) {
+      if (!payload || typeof payload !== "object") return;
+      const next = { ...state, ...payload };
+
+      // defensively normalize nested shapes
+      next.stats = {
+        hunger: clamp(payload?.stats?.hunger ?? state.stats.hunger),
+        happiness: clamp(payload?.stats?.happiness ?? state.stats.happiness),
+        energy: clamp(payload?.stats?.energy ?? state.stats.energy),
+        cleanliness: clamp(payload?.stats?.cleanliness ?? state.stats.cleanliness),
+      };
+      next.pos = {
+        x: Number(payload?.pos?.x ?? state.pos.x) || 0,
+        y: Number(payload?.pos?.y ?? state.pos.y) || 0,
+      };
+      next.level = Number(payload?.level ?? state.level) || 1;
+      next.coins = Math.max(0, Number(payload?.coins ?? state.coins) || 0);
+      next.name = String(payload?.name ?? state.name).slice(0, 24);
+      next.pottyLevel = clamp(payload?.pottyLevel ?? state.pottyLevel);
+      next.isPottyTrained = !!(payload?.isPottyTrained ?? state.isPottyTrained);
+      next.poopCount = Math.max(0, Number(payload?.poopCount ?? state.poopCount) || 0);
+      next.lastTrainedAt = payload?.lastTrainedAt ?? state.lastTrainedAt;
+
+      return next;
+    },
+
     setName(state, action) {
       state.name = String(action.payload ?? "").slice(0, 24);
     },
@@ -26,8 +55,7 @@ const slice = createSlice({
     setStat(state, action) {
       const { key, value } = action.payload || {};
       if (state.stats[key] !== undefined) {
-        const v = Math.max(0, Math.min(100, Number(value) || 0));
-        state.stats[key] = v;
+        state.stats[key] = clamp(value);
       }
     },
     move(state, action) {
@@ -38,13 +66,13 @@ const slice = createSlice({
     // --- potty training ---
     increasePottyLevel(state, action) {
       const inc = Number(action.payload) || 10;
-      state.pottyLevel = Math.min(100, state.pottyLevel + inc);
+      state.pottyLevel = clamp(state.pottyLevel + inc);
       if (state.pottyLevel >= 100) state.isPottyTrained = true;
       state.lastTrainedAt = new Date().toISOString();
     },
     markAccident(state) {
       state.poopCount += 1;
-      state.pottyLevel = Math.max(0, state.pottyLevel - 20);
+      state.pottyLevel = clamp(state.pottyLevel - 20);
       state.isPottyTrained = state.pottyLevel >= 100;
     },
     resetPottyLevel(state) {
@@ -58,12 +86,14 @@ const slice = createSlice({
       state.level += 1;
     },
     resetDogState() {
-      return { ...initialState };
+      // return a fresh copy (avoid object reference reuse)
+      return JSON.parse(JSON.stringify(initialState));
     },
   },
 });
 
 export const {
+  hydrateDog,
   setName,
   awardCoins,
   setStat,
