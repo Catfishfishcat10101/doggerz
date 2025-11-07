@@ -70,7 +70,7 @@ export const {
   move,
   increasePottyLevel,
   markAccident,
-  resetPottyLevel, // <-- added
+  resetPottyLevel,
   levelUp,
   resetDogState,
 } = slice.actions;
@@ -83,4 +83,8 @@ export const selectDogLevel = (s) => s.dog.level;
 export const selectCoins = (s) => s.dog.coins;
 export const selectPottyLevel = (s) => s.dog?.pottyLevel ?? 0;
 export const selectPottyLastTrainedAt = (s) => s.dog.lastTrainedAt;
-export const selectIsPottyTrained = (s) => !!s.dog?.isPottyTrained; // <-- added
+export const selectIsPottyTrained = (s) => !!s.dog?.isPottyTrained;
+
+// --- compatibility shims (to satisfy existing imports) ---
+export const grantCoins = awardCoins;        // used by Affection.jsx
+export const selectPottyStreak = (s) => 0;   // TODO: implement real streak logic
