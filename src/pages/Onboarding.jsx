@@ -1,172 +1,97 @@
-// src/pages/Onboarding.jsx
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
+import { auth } from "../utils/firebase";
+import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { useNavigate, useLocation, Link } from "react-router-dom";
-import {
-  dogNamed as setDogName,
-  setStage as setDogStage,
-} from "@/redux/dogSlice.js";
+import { setName } from "../redux/dogSlice";
 
-const STAGES = [
-  { id: "puppy", label: "Puppy", blurb: "Quick, playful, burns energy fast" },
-  { id: "adult", label: "Adult", blurb: "Balanced stats and decay rates" },
-  { id: "senior", label: "Senior", blurb: "Chill, slower, needs gentler play" },
-];
-
+/** 3-step lightweight wizard: username → optional bio → dog name */
 export default function Onboarding() {
-  const dispatch = useDispatch();
   const nav = useNavigate();
-  const loc = useLocation();
+  const dispatch = useDispatch();
+  const [step, setStep] = useState(0);
+  const [username, setUsername] = useState("");
+  const [bio, setBio] = useState("");
+  const [dogName, setDogName] = useState("");
 
-  const [step, setStep] = useState(1);
-  const [name, setLocalName] = useState("");
-  const [stage, setLocalStage] = useState("adult");
+  const authed = !!auth.currentUser;
 
-  const canContinue = useMemo(() => {
-    if (step === 1) return name.trim().length >= 2 && name.trim().length <= 20;
-    if (step === 2) return Boolean(stage);
-    return true;
-  }, [step, name, stage]);
+  function next() { setStep((s) => Math.min(2, s + 1)); }
+  function prev() { setStep((s) => Math.max(0, s - 1)); }
 
-  function next() {
-    setStep((s) => Math.min(3, s + 1));
-  }
-  function back() {
-    setStep((s) => Math.max(1, s - 1));
+  async function finish(e) {
+    e?.preventDefault?.();
+    if (dogName.trim()) dispatch(setName(dogName.trim()));
+    nav("/game", { replace: true });
   }
 
-  function finish() {
-    const clean = name.trim();
-    if (!clean) return;
-    dispatch(setDogName(clean));
-    dispatch(setDogStage(stage));
-    const to = loc.state?.from?.pathname || "/game";
-    nav(to, { replace: true });
+  if (!authed) {
+    return (
+      <div className="min-h-[calc(100dvh-3.5rem-3rem)] grid place-items-center bg-[#0b1020] text-white">
+        <div className="card max-w-md w-full text-center">
+          <h1 className="text-2xl font-bold">You’re not signed in</h1>
+          <p className="mt-2 text-white/70">Sign in to continue onboarding.</p>
+          <div className="mt-4">
+            <button className="btn" onClick={() => nav("/login")}>Sign in</button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <section className="mx-auto max-w-xl px-4 sm:px-6 py-10 text-white">
-      <div className="bg-white/5 border border-white/10 rounded-2xl p-6 shadow-xl">
-        <div className="text-xs uppercase tracking-widest text-white/60 mb-2">
-          Onboarding
-        </div>
-        <h1 className="text-2xl font-bold mb-6">Let’s get your pup set up</h1>
+    <div className="min-h-[calc(100dvh-3.5rem-3rem)] grid place-items-center bg-[#0b1020] text-white">
+      <form onSubmit={finish} className="card max-w-md w-full">
+        <div className="text-sm opacity-70">Step {step + 1} / 3</div>
 
-        {/* Step 1: Name */}
-        {step === 1 && (
-          <div>
-            <label htmlFor="pup-name" className="block text-sm mb-2">
-              Pup Name
-            </label>
+        {step === 0 && (
+          <>
+            <h2 className="mt-1 text-xl font-semibold">Pick a username</h2>
             <input
-              id="pup-name"
-              type="text"
-              value={name}
-              onChange={(e) => setLocalName(e.target.value)}
-              placeholder="Name your pup"
-              maxLength={24}
-              className="w-full px-3 py-2 rounded-lg bg-slate-800/70 border border-white/10 focus:border-white/30 outline-none"
+              value={username}
+              onChange={(e) => setUsername(e.target.value.slice(0, 24))}
+              className="mt-4 w-full rounded-xl border border-white/15 bg-white/10 px-4 py-2"
+              placeholder="e.g., pixelPupDad"
             />
-            <p className="text-xs text-white/60 mt-2">
-              2–20 characters. You can change this later in Settings.
-            </p>
-          </div>
+          </>
         )}
 
-        {/* Step 2: Stage */}
+        {step === 1 && (
+          <>
+            <h2 className="mt-1 text-xl font-semibold">Tell us about you (optional)</h2>
+            <textarea
+              rows={4}
+              value={bio}
+              onChange={(e) => setBio(e.target.value.slice(0, 280))}
+              className="mt-4 w-full rounded-xl border border-white/15 bg-white/10 px-4 py-2"
+              placeholder="Trainer, treat dealer, chaos enjoyer…"
+            />
+          </>
+        )}
+
         {step === 2 && (
-          <div>
-            <label className="block text-sm mb-2">Select stage of life</label>
-            <div className="grid gap-3">
-              {STAGES.map((s) => {
-                const active = stage === s.id;
-                return (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => setLocalStage(s.id)}
-                    className={[
-                      "w-full text-left rounded-xl border px-4 py-3 transition-colors",
-                      active
-                        ? "border-amber-400 bg-amber-400/10"
-                        : "border-white/10 bg-white/5 hover:bg-white/10",
-                    ].join(" ")}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="font-semibold">{s.label}</div>
-                        <div className="text-xs opacity-80">{s.blurb}</div>
-                      </div>
-                      <div
-                        className={active ? "text-amber-300" : "text-white/40"}
-                      >
-                        {active ? "✓" : "○"}
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          <>
+            <h2 className="mt-1 text-xl font-semibold">Name your pup</h2>
+            <input
+              value={dogName}
+              onChange={(e) => setDogName(e.target.value.slice(0, 24))}
+              className="mt-4 w-full rounded-xl border border-white/15 bg-white/10 px-4 py-2"
+              placeholder="Fireball"
+              required
+            />
+          </>
         )}
 
-        {/* Step 3: Tips */}
-        {step === 3 && (
-          <div>
-            <h2 className="text-xl font-semibold mb-3">Quick tips</h2>
-            <ul className="list-disc pl-6 space-y-1 opacity-90 text-sm">
-              <li>Keep hunger, energy, fun, and hygiene in the green band.</li>
-              <li>
-                Rest restores energy; play boosts fun; feeding counters hunger
-                decay.
-              </li>
-              <li>Scoop poop to avoid hygiene penalties and mood drops.</li>
-            </ul>
-            <p className="mt-4 opacity-80 text-sm">
-              You can revisit this in{" "}
-              <span className="font-medium">Settings → Help</span>.
-            </p>
-          </div>
-        )}
-
-        {/* Controls */}
-        <div className="mt-8 flex items-center justify-between">
-          <button
-            type="button"
-            onClick={back}
-            disabled={step === 1}
-            className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 disabled:opacity-40"
-          >
+        <div className="mt-6 flex justify-between">
+          <button type="button" className="btn btn--ghost" onClick={prev} disabled={step === 0}>
             Back
           </button>
-
-          {step < 3 ? (
-            <button
-              type="button"
-              onClick={next}
-              disabled={!canContinue}
-              className="px-4 py-2 rounded-xl bg-amber-400/90 hover:bg-amber-300 text-slate-900 disabled:opacity-50"
-            >
-              Continue
-            </button>
+          {step < 2 ? (
+            <button type="button" className="btn" onClick={next}>Next</button>
           ) : (
-            <button
-              type="button"
-              onClick={finish}
-              className="px-4 py-2 rounded-xl bg-emerald-400/90 hover:bg-emerald-300 text-slate-900"
-            >
-              Start playing
-            </button>
+            <button type="submit" className="btn">Finish</button>
           )}
         </div>
-
-        <div className="mt-6 text-xs text-white/50">
-          Changed your mind?{" "}
-          <Link to="/" className="underline hover:text-white/80">
-            Back to Home
-          </Link>
-        </div>
-      </div>
-    </section>
+      </form>
+    </div>
   );
 }
