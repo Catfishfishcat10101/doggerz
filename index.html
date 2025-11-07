@@ -1,23 +1,72 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
-    <title>Doggerz</title>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
 
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
+    <title>Doggerz</title>
     <meta name="description" content="Doggerz — virtual dog simulator" />
+    <meta name="robots" content="index,follow" />
     <meta name="color-scheme" content="dark light" />
 
-    <!-- Favicon & PWA assets -->
+    <!-- Theme colors per scheme -->
+    <meta name="theme-color" content="#0b1020" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+
+    <!-- iOS/PWA chrome -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Doggerz" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+    <!-- Icons & Manifest -->
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
-    <!-- If your manifest file is in /public/manifest.webmanifest this path is correct -->
     <link rel="manifest" href="/manifest.webmanifest" />
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Preload the first sprite so the dog always renders -->
+    <link rel="preload" as="image" href="/sprites/jackrussell/idle.svg" />
+    <!-- Optional: preload yard bg -->
+    <!-- <link rel="preload" as="image" href="/backgrounds/yard_day.png" /> -->
+
+    <!-- No-FOUC theme bootstrap -->
+    <script>
+      (() => {
+        const root = document.documentElement;
+        const saved = localStorage.getItem("theme"); // "dark" | "light" | null
+        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        const next = saved || (prefersDark ? "dark" : "light");
+        root.classList.toggle("dark", next === "dark");
+        root.classList.toggle("light", next === "light");
+      })();
+    </script>
   </head>
 
   <body>
+    <noscript
+      >Doggerz requires JavaScript. Please enable it to play with your pup.</noscript
+    >
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+
+    <!-- If you are NOT using vite-plugin-pwa and have /public/sw.js, uncomment to register:
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register("/sw.js").catch(() => {});
+        });
+      }
+    </script>
+    -->
   </body>
 </html>
