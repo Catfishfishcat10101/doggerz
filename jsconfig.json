@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "jsx": "react",
+    "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"]
@@ -17,9 +17,9 @@
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
 
-    /* Global types for Vite/Node (and Vitest if you add tests) */
+    /* Global types for Vite/Node (and Vitest if/when you add tests) */
     "types": ["vite/client", "node"]
-    /* For tests later: add "vitest/globals" here */
+    /* Later: add "vitest/globals" here when you enable tests */
   },
   "include": ["src/**/*", "vite.config.*", "tailwind.config.*", "postcss.config.js"],
   "exclude": ["node_modules", "dist", "build"]
