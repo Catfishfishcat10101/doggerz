@@ -1,221 +1,158 @@
 // src/components/UI/MainGame.jsx
-import React, { useCallback, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import React from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { Link } from "react-router-dom";
 
-// Playfield UI
-import DogSprite from "./DogSprite.jsx";
-import DogName from "./DogName.jsx";
-import ToyBox from "./ToyBox.jsx";
-import TrickList from "./TrickList.jsx";
-import PoopScoop from "./PoopScoop.jsx";
-import ResetGame from "./ResetGame.jsx";
+import Dog from "@/components/Features/Dog"; // the interactive dog we made (WASD + Space)
+import LogoutButton from "@/components/Auth/LogoutButton";
 
-// Engines & background
-import DogAIEngine from "./DogAIEngine.jsx";
-import FirebaseAutoSave from "@/components/common/FirebaseAutoSave.jsx";
-import BackgroundScene from "@/components/Features/BackgroundScene.jsx";
-import NeedsHUD from "@/components/Features/NeedsHUD.jsx";
-
-// If your slice exposes creators, prefer importing them over string types.
 import {
-  feed as feedDog,
-  play as playDog,
-  train as trainDog,
-  rest as restDog,
-  useToy as useToyAction,
-  scoopPoop as scoopPoopAction,
-  learnTrick as learnTrickAction,
-  selectDog,
-} from "@/redux/dogSlice.js";
+  feedDog,
+  playWithDog,
+  batheDog,
+  increasePottyLevel,
+} from "@/redux/dogSlice";
 
-/* ------------------------------ Potty panel ------------------------------ */
-// Adapter panel so we don’t pass props to the Redux-connected page component
-function PottyTrainingPanel() {
-  const level = useSelector((s) => s.dog?.pottyLevel ?? 0);
-  const trained = useSelector((s) => s.dog?.isPottyTrained ?? false);
-  const dispatch = useDispatch();
-  const onTrain = () => dispatch(trainDog());
+// --- Small reusable bar for stats ---
+function StatBar({ label, value, color = "bg-emerald-500" }) {
+  const pct = Math.max(0, Math.min(100, value ?? 0));
   return (
-    <div className="rounded-xl bg-slate-900/40 p-4 border border-white/10">
-      <div className="flex items-center justify-between">
-        <div className="font-semibold">Potty Training</div>
-        <div className="text-sm opacity-80">{Math.round(level)}%</div>
+    <div className="mb-3">
+      <div className="flex justify-between text-xs text-white/70 mb-1">
+        <span>{label}</span>
+        <span className="tabular-nums">{pct}%</span>
       </div>
-      <div className="meter mt-2">
-        <div
-          className="meter__fill transition-[width] duration-300"
-          style={{
-            width: `${Math.min(100, Math.max(0, level))}%`,
-            backgroundColor: trained
-              ? "rgb(34 197 94 / 0.9)"
-              : "rgb(250 204 21 / 0.9)",
-          }}
-        />
+      <div className="h-2 rounded bg-white/10 overflow-hidden">
+        <div className={`h-full ${color}`} style={{ width: `${pct}%` }} />
       </div>
-      <button
-        onClick={onTrain}
-        disabled={trained}
-        className={`mt-3 btn ${trained ? "opacity-60 cursor-not-allowed" : ""}`}
-      >
-        {trained ? "Fully Trained 🎉" : "Train Potty"}
-      </button>
     </div>
   );
 }
 
-/* ------------------------------- Main game ------------------------------- */
 export default function MainGame() {
+  const dog = useSelector((s) => s.dog);
   const dispatch = useDispatch();
-  const dog = useSelector(selectDog) ?? {};
-  const {
-    name = "Pupper",
-    happiness = 100,
-    energy = 100,
-    hunger = 100,
-    cleanliness = 100,
-    mood = "idle",
-    poopCount = 0,
-    isPottyTrained = false,
-    toys = ["Ball", "Rope", "Bone"],
-    learnedTricks = [],
-    pos = { x: 24, y: 24 },
-  } = dog;
-
-  // simple UI panel toggles
-  const [showToys, setShowToys] = useState(false);
-  const [showTricks, setShowTricks] = useState(false);
-
-  // Action creators for side-panel components (kept; HUD is non-interactive)
-  const doFeed = useCallback(() => dispatch(feedDog()), [dispatch]);
-  const doPlay = useCallback(() => dispatch(playDog()), [dispatch]);
-  const doTrain = useCallback(() => dispatch(trainDog()), [dispatch]);
-  const doRest = useCallback(() => dispatch(restDog()), [dispatch]);
-  const doUseToy = useCallback(
-    (toy) => dispatch(useToyAction({ toy })),
-    [dispatch],
-  );
-  const doScoop = useCallback(() => dispatch(scoopPoopAction()), [dispatch]);
-  const doLearnTrick = useCallback(
-    (trick) => dispatch(learnTrickAction({ trick })),
-    [dispatch],
-  );
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100">
-      {/* NavBar is already rendered by RootLayout; do not mount it again here. */}
+    <div className="min-h-screen bg-[#0b1020] text-white flex flex-col items-center">
+      {/* Top bar */}
+      <header className="w-full max-w-5xl px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <h1 className="text-xl font-extrabold tracking-wide">🐾 Doggerz</h1>
+          <span className="text-white/70">
+            {dog.name ? `• ${dog.name}` : null}
+          </span>
+          <span className="text-white/70">
+            Lv {dog.level} • XP {dog.xp}/{dog.level * 100}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Link
+            to="/shop"
+            className="px-3 py-1 rounded bg-amber-500 hover:bg-amber-600 text-black font-semibold"
+          >
+            Shop
+          </Link>
+          <LogoutButton className="ml-2" />
+        </div>
+      </header>
 
-      {/* Background engine & autosave */}
-      <DogAIEngine />
-      <FirebaseAutoSave />
-
-      <main className="mx-auto max-w-6xl p-4 md:p-6 grid gap-4 md:gap-6">
-        <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Playfield + HUD */}
-          <div className="lg:col-span-2 rounded-2xl bg-slate-800/60 shadow-xl p-4 md:p-6 border border-white/10">
-            {/* Header row */}
-            <div className="flex items-center justify-between gap-3 mb-4">
-              <DogName defaultName={name} />
-              <div className="flex gap-2">
-                <button
-                  className="rounded-xl border border-slate-600 px-3 py-1 text-xs md:text-sm hover:bg-slate-700"
-                  onClick={() => {
-                    setShowToys((v) => !v);
-                    setShowTricks(false);
-                  }}
-                >
-                  {showToys ? "Hide Toys" : "Show Toys"}
-                </button>
-                <button
-                  className="rounded-xl border border-slate-600 px-3 py-1 text-xs md:text-sm hover:bg-slate-700"
-                  onClick={() => {
-                    setShowTricks((v) => !v);
-                    setShowToys(false);
-                  }}
-                >
-                  {showTricks ? "Hide Tricks" : "Show Tricks"}
-                </button>
-              </div>
-            </div>
-
-            {/* Stage + HUD */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Stage */}
-              <BackgroundScene skin="default" className="rounded-xl">
-                <div
-                  className="relative h-[420px] md:h-[460px] rounded-xl border border-white/10 bg-slate-900/30 overflow-hidden"
-                  aria-label="Playfield"
-                >
-                  {/* Helper */}
-                  <div className="absolute left-3 top-3 text-xs px-2 py-1 rounded bg-black/30 border border-white/10">
-                    Move: WASD / Arrows • Rest: idle
-                  </div>
-
-                  {/* Dog sprite (uses your AI engine to update pos/mood) */}
-                  <div className="absolute" style={{ left: pos.x, top: pos.y }}>
-                    <DogSprite mood={mood} poopCount={poopCount} />
-                  </div>
-                </div>
-              </BackgroundScene>
-
-              {/* HUD: non-interactive, realistic, with ETAs and big brand */}
-              <div className="rounded-xl bg-slate-900/40 p-4 border border-white/10">
-                <NeedsHUD />
-              </div>
-            </div>
-
-            {/* Sim affordances */}
-            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-              <PoopScoop poopCount={poopCount} onScoop={doScoop} />
-              <PottyTrainingPanel />
-            </div>
+      {/* Main layout */}
+      <main className="w-full max-w-5xl px-4 grid lg:grid-cols-[2fr_1fr] gap-6 pb-8">
+        {/* Yard + Dog */}
+        <section className="space-y-3">
+          {/* Background yard (no extra component needed) */}
+          <div
+            className="relative w-full h-80 rounded-2xl shadow overflow-hidden bg-cover bg-center"
+            style={{ backgroundImage: "url(/backgrounds/yard_day.png)" }}
+          >
+            {/* Interactive dog renders inside its own focusable stage */}
+            <Dog />
           </div>
 
-          {/* Side panel */}
-          <aside className="rounded-2xl bg-slate-800/60 shadow-xl p-4 md:p-6 space-y-4 border border-white/10">
-            {showToys && (
-              <ToyBox toys={toys} onUseToy={doUseToy} happiness={happiness} />
-            )}
-            {showTricks && (
-              <TrickList
-                learnedTricks={learnedTricks}
-                onLearnTrick={doLearnTrick}
-              />
-            )}
-            {/* Optional quick actions (kept off the HUD) */}
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                className="btn"
-                onClick={doFeed}
-                title="Feed to reduce hunger decay"
-              >
-                Feed
-              </button>
-              <button
-                className="btn"
-                onClick={doPlay}
-                title="Play to raise fun"
-              >
-                Play
-              </button>
-              <button
-                className="btn"
-                onClick={doTrain}
-                title="Train to improve skills"
-              >
-                Train
-              </button>
-              <button
-                className="btn"
-                onClick={doRest}
-                title="Rest to restore energy"
-              >
-                Rest
-              </button>
-            </div>
-            <ResetGame />
-          </aside>
+          {/* Quick controls row */}
+          <div className="bg-white/5 rounded-xl p-4 flex flex-wrap gap-2">
+            <button
+              className="px-3 py-2 rounded bg-amber-500 hover:bg-amber-600 text-black font-semibold"
+              onClick={() => dispatch(feedDog())}
+            >
+              🍖 Feed
+            </button>
+            <button
+              className="px-3 py-2 rounded bg-sky-500 hover:bg-sky-600 text-black font-semibold"
+              onClick={() => dispatch(playWithDog())}
+            >
+              🦴 Play
+            </button>
+            <button
+              className="px-3 py-2 rounded bg-yellow-400 hover:bg-yellow-500 text-black font-semibold"
+              onClick={() => dispatch(batheDog())}
+            >
+              🛁 Bathe
+            </button>
+            <button
+              className="px-3 py-2 rounded bg-lime-400 hover:bg-lime-500 text-black font-semibold"
+              onClick={() => dispatch(increasePottyLevel(10))}
+            >
+              🚽 Potty Train
+            </button>
+          </div>
         </section>
+
+        {/* Right rail: HUD + links */}
+        <aside className="space-y-3">
+          <div className="bg-white/5 rounded-xl p-4">
+            <h3 className="font-semibold mb-3">Dog Needs</h3>
+            <StatBar label="Hunger" value={dog.hunger} color="bg-amber-400" />
+            <StatBar
+              label="Happiness"
+              value={dog.happiness}
+              color="bg-pink-500"
+            />
+            <StatBar label="Energy" value={dog.energy} color="bg-sky-500" />
+            <StatBar
+              label={`Potty ${dog.isPottyTrained ? "(Trained!)" : "Training"}`}
+              value={dog.pottyLevel}
+              color="bg-lime-400"
+            />
+          </div>
+
+          <div className="bg-white/5 rounded-xl p-4">
+            <h3 className="font-semibold mb-2">Quick Links</h3>
+            <div className="flex flex-wrap gap-2">
+              <Link
+                to="/affection"
+                className="px-3 py-1 rounded bg-pink-400 hover:bg-pink-500 text-black font-semibold"
+              >
+                Affection
+              </Link>
+              <Link
+                to="/memory"
+                className="px-3 py-1 rounded bg-blue-400 hover:bg-blue-500 text-black font-semibold"
+              >
+                Memories
+              </Link>
+              <Link
+                to="/potty"
+                className="px-3 py-1 rounded bg-lime-400 hover:bg-lime-500 text-black font-semibold"
+              >
+                Potty
+              </Link>
+              <Link
+                to="/upgrade"
+                className="px-3 py-1 rounded bg-green-400 hover:bg-green-500 text-black font-semibold"
+              >
+                Yard Upgrades
+              </Link>
+            </div>
+          </div>
+        </aside>
       </main>
+
+      {/* Controls hint */}
+      <p className="text-xs text-white/50 mt-2">
+        Use <b>WASD / Arrow keys</b> to move. Press <b>Space</b> to 💩.
+      </p>
     </div>
   );
 }

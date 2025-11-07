@@ -1,4 +1,4 @@
-// src/config/game.js
+// src/features/game/config.js
 export const WORLD = Object.freeze({
   PADDING: 16,
   YARD_FRACTION: 0.18,
