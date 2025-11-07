@@ -1,40 +1,29 @@
-// src/lib/firebase/dogService.js
-import {
-  doc,
-  getDoc,
-  setDoc,
-  updateDoc,
-  serverTimestamp,
-  runTransaction,
-} from "firebase/firestore";
-import { db } from "@/lib/firebase";
+// Firestore helpers for one-dog-per-user
+import { auth, db } from "./firebase";
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 
-/** One-dog-per-user; create if missing, return the doc */
-export async function ensureDogForUser(uid) {
-  const ref = doc(db, "dogs", uid);
-  await runTransaction(db, async (tx) => {
-    const snap = await tx.get(ref);
-    if (snap.exists()) return;
-    tx.set(ref, {
-      ownerId: uid,
-      name: null,
-      mood: "idle",
-      stats: { hunger: 100, energy: 100, cleanliness: 100 },
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-      schemaVersion: 1,
-    });
-  });
+export async function getMyDog() {
+  const u = auth.currentUser;
+  if (!u) return null;
+  const ref = doc(db, "dogs", u.uid);
   const snap = await getDoc(ref);
-  return { id: ref.id, ...(snap.data() || {}) };
+  return snap.exists() ? snap.data() : null;
 }
 
-export async function nameDog(uid, name) {
-  const trimmed = String(name || "")
-    .trim()
-    .slice(0, 24);
-  if (!trimmed) throw new Error("Name required");
-  const ref = doc(db, "dogs", uid);
-  await updateDoc(ref, { name: trimmed, updatedAt: serverTimestamp() });
-  return trimmed;
+export async function adoptDog(name) {
+  const u = auth.currentUser;
+  if (!u) throw new Error("Not signed in.");
+  const ref = doc(db, "dogs", u.uid);
+  await setDoc(
+    ref,
+    {
+      id: u.uid,
+      name: name.trim(),
+      level: 1,
+      sprite: "/sprites/jackrussell/idle.svg",
+      createdAt: serverTimestamp(),
+    },
+    { merge: true }
+  );
+  return (await getDoc(ref)).data();
 }
