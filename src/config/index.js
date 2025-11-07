@@ -1,3 +1,5 @@
-// src/config/index.js
-export * from "./accessibility";
-export * from "./ads";
+export * as ENV   from './env'
+export * as PATHS from './paths'
+export * as THEME from './theme'
+export * as SEO   from './seo'
+export * as KEYS  from './storageKeys'

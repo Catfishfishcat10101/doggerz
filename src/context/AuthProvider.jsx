@@ -13,7 +13,7 @@ import {
   getIdTokenResult,
   signOut,
 } from "firebase/auth";
-import { auth } from "@/firebase";
+import { auth } from "@/lib/firebase";
 import { useDispatch } from "react-redux";
 import { setUser, clearUser } from "@/redux/userSlice";
 

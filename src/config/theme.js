@@ -1,7 +1,1 @@
-// src/config/theme.js
-export const THEMES = Object.freeze({
-  LIGHT: "light",
-  DARK: "dark",
-  SYSTEM: "system",
-});
-export const DEFAULT_THEME = THEMES.DARK;
+export const COLORS = { bg:'#0b0b0b', text:'#e5e7eb', brand:'#0284c7' }

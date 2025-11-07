@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { PATHS } from "@/config/routes.js";
+import { PATHS } from "@/config/paths.js";
 
 export default function NavBar() {
   return (

@@ -1,11 +1,9 @@
-// src/config/env.js
-export const DEV = import.meta.env.DEV;
-export const PROD = import.meta.env.PROD;
-
-export const APP_NAME = import.meta.env.VITE_APP_NAME || "Doggerz";
-export const BASENAME = import.meta.env.VITE_BASENAME || "/";
-
-// Network timeout (override with VITE_NETWORK_TIMEOUT_MS)
-export const NETWORK_TIMEOUT_MS = Number(
-  import.meta.env.VITE_NETWORK_TIMEOUT_MS ?? 15000,
-);
+export const FIREBASE = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  senderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
+}
+export const APP = { name: 'Doggerz', version: (typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.0.0') }

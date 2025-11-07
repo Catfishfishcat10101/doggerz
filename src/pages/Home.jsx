@@ -1,25 +1,16 @@
-import { useNavigate } from "react-router-dom";
-
+import { Link } from "react-router-dom";
 export default function Home() {
-  const navigate = useNavigate();
-
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-slate-900 to-slate-950 text-center text-white">
-      <h1 className="text-4xl md:text-6xl font-extrabold mb-4">
-        Welcome to <span className="text-emerald-400">Doggerz</span>
-      </h1>
-      <p className="text-lg mb-8 text-slate-300">Adopt. Train. Bond.</p>
-
-      <button
-        onClick={() => navigate("/login")}
-        className="px-6 py-3 rounded-2xl bg-violet-500 hover:bg-violet-400 text-white font-semibold text-lg shadow-lg hover:shadow-violet-500/40 transition"
-      >
-        Start
-      </button>
-
-      <p className="mt-8 text-sm text-slate-500">
-        All Rights Reserved Doggerz @ 2025
-      </p>
-    </div>
+    <main className="min-h-screen grid place-items-center p-10">
+      <div className="text-center">
+        <h1 className="text-4xl font-bold mb-4">Doggerz</h1>
+        <p className="text-zinc-400 mb-6">Landing screen.</p>
+        <div className="flex gap-3 justify-center">
+          <Link className="px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-500" to="/login">Login</Link>
+          <Link className="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700" to="/signup">Signup</Link>
+          <Link className="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700" to="/game">Play</Link>
+        </div>
+      </div>
+    </main>
   );
 }

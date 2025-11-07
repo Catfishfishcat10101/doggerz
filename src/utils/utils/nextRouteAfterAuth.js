@@ -1,5 +1,5 @@
 // src/utils/nextRouteAfterAuth.js
-import { PATHS } from "@/config/routes.js";
+import { PATHS } from "@/config/paths.js";
 import { SS, LS } from "@/config/storageKeys.js";
 
 /**
