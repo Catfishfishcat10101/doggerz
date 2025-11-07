@@ -135,3 +135,13 @@ export const selectIsPottyTrained = (s) => !!s.dog?.isPottyTrained;
 // compatibility shims
 export const grantCoins = awardCoins;        // Affection.jsx
 export const selectPottyStreak = (s) => 0;   // TODO: real streak logic later
+
+// --- extra selectors used by StatsPanel ---
+export const selectAccessories = (s) => s.dog?.accessories ?? { owned: [] };
+export const selectHappiness  = (s) => ((s.dog?.stats?.happiness ?? 0) / 100);
+export const selectEnergy     = (s) => ((s.dog?.stats?.energy ?? 0) / 100);
+export const selectXp         = (s) => s.dog?.xp ?? 0;
+export const selectXpToNext   = (s) => {
+  const lvl = Number(s.dog?.level ?? 1) || 1;
+  return 50 + Math.floor(lvl ** 1.5 * 25);
+};
