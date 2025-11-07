@@ -1,46 +1,47 @@
-// src/layout/InstallPrompt.jsx
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
+/** PWA install banner (for Chromium-based browsers). */
 export default function InstallPrompt() {
   const [deferred, setDeferred] = useState(null);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    function onBIP(e) {
+    const onBeforeInstall = (e) => {
       e.preventDefault();
       setDeferred(e);
       setVisible(true);
-    }
-    window.addEventListener("beforeinstallprompt", onBIP);
-    return () => window.removeEventListener("beforeinstallprompt", onBIP);
+    };
+    window.addEventListener("beforeinstallprompt", onBeforeInstall);
+    return () => window.removeEventListener("beforeinstallprompt", onBeforeInstall);
   }, []);
 
   if (!visible || !deferred) return null;
 
+  const install = async () => {
+    setVisible(false);
+    try {
+      await deferred.prompt();
+      await deferred.userChoice;
+    } catch {}
+    setDeferred(null);
+  };
+
   return (
-    <div className="sticky top-0 z-40">
-      <div className="m-2 rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 flex items-center justify-between">
-        <span>Install Doggerz?</span>
-        <div className="flex gap-2">
-          <button
-            className="rounded-md bg-emerald-600 hover:bg-emerald-500 text-zinc-900 px-2 py-1"
-            onClick={async () => {
-              const e = deferred;
-              setVisible(false);
-              setDeferred(null);
-              const choice = await e.prompt();
-              console.info("[pwa] install choice:", choice?.outcome);
-            }}
-          >
-            Install
-          </button>
-          <button
-            className="rounded-md border border-zinc-700 hover:border-zinc-500 px-2 py-1"
-            onClick={() => setVisible(false)}
-          >
-            Later
-          </button>
-        </div>
+    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50">
+      <div className="rounded-2xl bg-white text-black shadow px-4 py-2 flex items-center gap-3">
+        <span className="font-semibold">Install Doggerz?</span>
+        <button
+          onClick={install}
+          className="px-3 py-1 rounded bg-black text-white hover:bg-black/80"
+        >
+          Install
+        </button>
+        <button
+          onClick={() => setVisible(false)}
+          className="px-3 py-1 rounded bg-black/10 hover:bg-black/20"
+        >
+          Not now
+        </button>
       </div>
     </div>
   );
