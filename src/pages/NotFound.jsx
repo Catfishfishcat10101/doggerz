@@ -1,18 +1,18 @@
-// src/pages/NotFound.jsx
 import React from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 export default function NotFound() {
+  const nav = useNavigate();
   return (
-    <div className="mx-auto max-w-xl p-8 text-center">
-      <h1 className="text-3xl font-bold mb-2">404</h1>
-      <p className="mb-6 opacity-80">That route doesn’t exist.</p>
-      <Link
-        to="/"
-        className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20"
-      >
-        Back to Home
-      </Link>
+    <div className="min-h-[calc(100dvh-3.5rem-3rem)] grid place-items-center bg-[#0b1020] text-white">
+      <div className="text-center">
+        <h1 className="text-6xl font-extrabold">404</h1>
+        <p className="mt-2 text-white/70">This route doesn’t exist.</p>
+        <div className="mt-6 flex items-center justify-center gap-3">
+          <button className="btn text-black" onClick={() => nav("/")}>Splash</button>
+          <button className="btn btn--ghost" onClick={() => nav(-1)}>Back</button>
+        </div>
+      </div>
     </div>
   );
 }
