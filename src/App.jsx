@@ -1,42 +1,22 @@
-import React, { Suspense } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import RootLayout from '@/layout/RootLayout.jsx';
-import RequireAuth from '@/layout/RequireAuth.jsx';
-import { GameScreen } from '@/features/game';
-
-function Home() {
-  return (
-    <main className="min-h-screen grid place-items-center text-center">
-      <div>
-        <h1 className="text-4xl font-bold mb-4">Doggerz</h1>
-        <p className="opacity-80 mb-6">Landing screen.</p>
-        <div className="flex gap-3 justify-center">
-          <a className="px-4 py-2 rounded bg-blue-600 text-white" href="/login">Login</a>
-          <a className="px-4 py-2 rounded bg-slate-700" href="/signup">Signup</a>
-          <a className="px-4 py-2 rounded bg-slate-800 pointer-events-none opacity-50">Play</a>
-        </div>
-      </div>
-    </main>
-  );
-}
+// src/App.jsx (example)
+import { Routes, Route } from "react-router-dom";
+import RootLayout from "./layout/RootLayout";
+import RequireAuth from "./layout/RequireAuth";
+import RequireGuest from "./layout/RequireGuest";
+import Splash from "./pages/Splash";
+import Login from "./pages/Login";
+import Game from "./pages/Game";
+import Adopt from "./pages/Adopt";
 
 export default function App() {
   return (
-    <Suspense fallback={<div style={{padding:24}}>Loading…</div>}>
-      <Routes>
-        <Route element={<RootLayout />}>
-          <Route index element={<Home />} />
-          <Route
-            path="/game"
-            element={
-              <RequireAuth>
-                <GameScreen />
-              </RequireAuth>
-            }
-          />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Route>
-      </Routes>
-    </Suspense>
+    <Routes>
+      <Route element={<RootLayout />}>
+        <Route index element={<Splash />} />
+        <Route path="login" element={<RequireGuest><Login /></RequireGuest>} />
+        <Route path="adopt" element={<RequireAuth><Adopt /></RequireAuth>} />
+        <Route path="game" element={<RequireAuth><Game /></RequireAuth>} />
+      </Route>
+    </Routes>
   );
 }
