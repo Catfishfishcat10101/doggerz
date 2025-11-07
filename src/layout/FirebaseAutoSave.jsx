@@ -1,109 +1,76 @@
-import React, { useEffect, useMemo, useRef } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { auth, db } from "../firebase";
-import { doc, setDoc, onSnapshot, serverTimestamp } from "firebase/firestore";
-import { loadState, selectDog } from "../redux/dogSlice";
+import { useEffect, useRef } from "react";
+import { useSelector } from "react-redux";
+import { auth, db } from "../utils/firebase";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 
+/**
+ * FirebaseAutoSave
+ * Watches the dog slice and debounced-writes to Firestore: dogs/{uid}
+ * Safe to mount globally (no-op if not authed).
+ */
 export default function FirebaseAutoSave() {
-  const dispatch = useDispatch();
-  const dog = useSelector(selectDog);
-  const clientIdRef = useRef(
-    crypto?.randomUUID?.() || `c_${Math.random().toString(36).slice(2)}`,
-  );
-  const lastSavedJsonRef = useRef("");
-  const debounceRef = useRef(null);
-  const unsubRef = useRef(null);
-  const readyRef = useRef(false);
-
-  const stateForSave = useMemo(() => {
-    const { _meta, _version, ...rest } = dog || {};
-    return rest;
-  }, [dog]);
+  const dog = useSelector((s) => s.dog);
+  const tRef = useRef(null);
+  const lastPayloadRef = useRef("");
 
   useEffect(() => {
-    const user = auth.currentUser;
-    if (!user) return;
-    const ref = doc(db, "dogs", user.uid);
+    if (!auth.currentUser) return; // guest
+    const uid = auth.currentUser.uid;
+    if (!uid) return;
 
-    unsubRef.current = onSnapshot(ref, (snap) => {
-      if (!snap.exists()) {
-        readyRef.current = true;
-        return;
-      }
-      const data = snap.data() || {};
-      if (data.clientId && data.clientId === clientIdRef.current) {
-        readyRef.current = true;
-        return;
-      }
-      if (data.state)
-        dispatch(loadState({ ...data.state, _version: data.version || 1 }));
-      readyRef.current = true;
-    });
-
-    return () => {
-      unsubRef.current?.();
-      unsubRef.current = null;
+    const payload = {
+      // Write only game-relevant fields (avoid auth-only stuff)
+      name: dog.name,
+      level: dog.level,
+      xp: dog.xp ?? 0,
+      coins: dog.coins ?? 0,
+      stats: dog.stats,
+      pos: dog.pos,
+      isPottyTrained: dog.isPottyTrained,
+      pottyLevel: dog.pottyLevel,
+      poopCount: dog.poopCount,
+      lastTrainedAt: dog.lastTrainedAt ?? null,
+      updatedAt: serverTimestamp(),
     };
-  }, [dispatch]);
 
-  useEffect(() => {
-    const user = auth.currentUser;
-    if (!user || !readyRef.current) return;
+    const serialized = JSON.stringify(payload);
+    if (serialized === lastPayloadRef.current) return; // no change
 
-    const json = JSON.stringify(stateForSave);
-    if (json === lastSavedJsonRef.current) return;
+    // Debounce writes (800ms after last change)
+    clearTimeout(tRef.current);
+    tRef.current = setTimeout(async () => {
+      try {
+        await setDoc(doc(db, "dogs", uid), payload, { merge: true });
+        lastPayloadRef.current = serialized;
+      } catch (e) {
+        // console.warn("AutoSave failed:", e);
+      }
+    }, 800);
 
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(async () => {
-      const ref = doc(db, "dogs", user.uid);
-      await setDoc(
-        ref,
-        {
-          version: 1,
-          clientId: clientIdRef.current,
-          updatedAt: serverTimestamp(),
-          state: stateForSave,
-        },
-        { merge: true },
-      );
-      lastSavedJsonRef.current = json;
-    }, 400);
-
-    return () => {
-      debounceRef.current && clearTimeout(debounceRef.current);
-    };
-  }, [stateForSave]);
-
-  useEffect(() => {
     const flush = async () => {
-      const user = auth.currentUser;
-      if (!user) return;
-      const json = JSON.stringify(stateForSave);
-      if (json === lastSavedJsonRef.current) return;
-      const ref = doc(db, "dogs", user.uid);
-      await setDoc(
-        ref,
-        {
-          version: 1,
-          clientId: clientIdRef.current,
-          updatedAt: serverTimestamp(),
-          state: stateForSave,
-        },
-        { merge: true },
-      );
-      lastSavedJsonRef.current = json;
+      clearTimeout(tRef.current);
+      try {
+        await setDoc(doc(db, "dogs", uid), payload, { merge: true });
+        lastPayloadRef.current = serialized;
+      } catch {}
     };
+
+    // Flush on tab hide/close/offline
     const onHide = () => flush();
+    const onUnload = () => flush();
     const onOffline = () => flush();
-    window.addEventListener("pagehide", onHide);
-    window.addEventListener("beforeunload", onHide);
+
+    document.addEventListener("visibilitychange", onHide);
+    window.addEventListener("beforeunload", onUnload);
     window.addEventListener("offline", onOffline);
+
     return () => {
-      window.removeEventListener("pagehide", onHide);
-      window.removeEventListener("beforeunload", onHide);
+      clearTimeout(tRef.current);
+      document.removeEventListener("visibilitychange", onHide);
+      window.removeEventListener("beforeunload", onUnload);
       window.removeEventListener("offline", onOffline);
     };
-  }, [stateForSave]);
+  }, [dog]);
 
   return null;
 }
