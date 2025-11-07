@@ -8,7 +8,6 @@ import React, {
 import { useSelector, useDispatch } from "react-redux";
 import {
   increasePottyLevel,
-  resetPottyLevel,
   selectPottyLevel,
   selectIsPottyTrained,
   selectPottyStreak,
@@ -69,7 +68,7 @@ export default function PottyTraining() {
   }, [cooldown, isPottyTrained, dispatch]);
 
   const onReset = useCallback(() => {
-    dispatch(resetPottyLevel());
+    dispatch(());
     setShowCongrats(false);
   }, [dispatch]);
 
