@@ -1,1 +1,1 @@
-export { default as Scene } from './Scene.jsx';
+export { default as GameScreen } from "./GameScreen.jsx";
