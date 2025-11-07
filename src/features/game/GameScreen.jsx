@@ -80,11 +80,45 @@ export default function GameScreen() {
           </div>
         </header>
 
-        {/* Game scene */}
-        <section className="grid grid-cols-1 lg:grid-cols-[2fr,1fr] gap-6">
-          {/* Left: Dog/Scene */}
-          <div className="relative aspect-video rounded-xl border border-white/10 bg-zinc-800/40 backdrop-blur-sm flex items-center justify-center">
-            <div className="text-7xl">🐕</div>
+      {/* Yard + dog */}
+      <main className="w-full max-w-5xl px-4 grid lg:grid-cols-[2fr_1fr] gap-6">
+        <section className="space-y-3">
+          <BackgroundScene scene="yard_day" />
+          {/* Dog renders on its own yard container (internal) */}
+          <Dog />
+        </section>
+
+        {/* Right rail: HUD + actions/links */}
+        <aside className="space-y-3">
+          <NeedsHUD />
+          <div className="bg-white/5 rounded-xl p-4">
+            <h3 className="font-semibold mb-2">Quick Links</h3>
+            <div className="flex flex-wrap gap-2">
+              <Link
+                to="/affection"
+                className="px-3 py-1 rounded bg-pink-400 hover:bg-pink-500 text-black font-semibold"
+              >
+                Affection
+              </Link>
+              <Link
+                to="/memory"
+                className="px-3 py-1 rounded bg-blue-400 hover:bg-blue-500 text-black font-semibold"
+              >
+                Memories
+              </Link>
+              <Link
+                to="/potty"
+                className="px-3 py-1 rounded bg-lime-400 hover:bg-lime-500 text-black font-semibold"
+              >
+                Potty
+              </Link>
+              <Link
+                to="/upgrade"
+                className="px-3 py-1 rounded bg-green-400 hover:bg-green-500 text-black font-semibold"
+              >
+                Yard Upgrades
+              </Link>
+            </div>
           </div>
 
           {/* Right: HUD */}
