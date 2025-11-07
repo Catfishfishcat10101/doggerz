@@ -1,7 +1,8 @@
-import { createSlice } from '@reduxjs/toolkit';
+// src/redux/dogSlice.js
+import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
-  name: 'Pup',
+  name: "Pup",
   level: 1,
   coins: 0,
   stats: { hunger: 50, happiness: 60, energy: 60, cleanliness: 60 },
@@ -13,12 +14,15 @@ const initialState = {
 };
 
 const slice = createSlice({
-
-  name: 'dog',
+  name: "dog",
   initialState,
   reducers: {
-    setName(state, action) { state.name = String(action.payload ?? '').slice(0, 24); },
-    awardCoins(state, action) { state.coins += Math.max(0, Number(action.payload) || 0); },
+    setName(state, action) {
+      state.name = String(action.payload ?? "").slice(0, 24);
+    },
+    awardCoins(state, action) {
+      state.coins += Math.max(0, Number(action.payload) || 0);
+    },
     setStat(state, action) {
       const { key, value } = action.payload || {};
       if (state.stats[key] !== undefined) {
@@ -30,31 +34,53 @@ const slice = createSlice({
       const { x = 0, y = 0 } = action.payload || {};
       state.pos = { x: Number(x) || 0, y: Number(y) || 0 };
     },
+
+    // --- potty training ---
     increasePottyLevel(state, action) {
       const inc = Number(action.payload) || 10;
       state.pottyLevel = Math.min(100, state.pottyLevel + inc);
       if (state.pottyLevel >= 100) state.isPottyTrained = true;
       state.lastTrainedAt = new Date().toISOString();
     },
-    markAccident(state) { state.poopCount += 1; state.pottyLevel = Math.max(0, state.pottyLevel - 20); },
-    levelUp(state) { state.level += 1; },
-    resetDogState() { return { ...initialState }; },
+    markAccident(state) {
+      state.poopCount += 1;
+      state.pottyLevel = Math.max(0, state.pottyLevel - 20);
+      state.isPottyTrained = state.pottyLevel >= 100;
+    },
+    resetPottyLevel(state) {
+      state.pottyLevel = 0;
+      state.isPottyTrained = false;
+      state.lastTrainedAt = null;
+    },
+
+    // --- misc ---
+    levelUp(state) {
+      state.level += 1;
+    },
+    resetDogState() {
+      return { ...initialState };
+    },
   },
 });
 
 export const {
-  setName, awardCoins, setStat, move,
-  increasePottyLevel, markAccident, levelUp, resetDogState,
+  setName,
+  awardCoins,
+  setStat,
+  move,
+  increasePottyLevel,
+  markAccident,
+  resetPottyLevel, // <-- added
+  levelUp,
+  resetDogState,
 } = slice.actions;
 
 export default slice.reducer;
 
-// selectors
+// --- selectors ---
 export const selectDog = (s) => s.dog;
 export const selectDogLevel = (s) => s.dog.level;
 export const selectCoins = (s) => s.dog.coins;
+export const selectPottyLevel = (s) => s.dog?.pottyLevel ?? 0;
 export const selectPottyLastTrainedAt = (s) => s.dog.lastTrainedAt;
-
-// ---- potty helpers (added) ----
-export const selectPottyLevel = (state) => state.dog?.pottyLevel ?? 0;
-
+export const selectIsPottyTrained = (s) => !!s.dog?.isPottyTrained; // <-- added
