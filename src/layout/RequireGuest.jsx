@@ -1,3 +1,4 @@
+// src/layout/RequireGuest.jsx
 import { useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { Navigate } from "react-router-dom";
@@ -16,6 +17,11 @@ export default function RequireGuest({ children }) {
   }, []);
 
   if (!ready) return null;
-  if (user) return <Navigate to="/game" replace />;
+
+  // If already logged in, send them to the game
+  if (user) {
+    return <Navigate to="/game" replace />;
+  }
+
   return children;
 }
