@@ -5,25 +5,15 @@ import path from "node:path";
 
 export default defineConfig({
   plugins: [react()],
-
-  // So imports like "@/redux/store.js" resolve to ./src/redux/store.js
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
-    },
-  },
-
   server: {
     watch: {
       ignored: [
         "**/public/sprites/**",
         "**/public/assets/raw/**",
         "**/.vercel/**",
-        "**/.git/**",
-      ],
+        "**/.git/**"
+      ]
     },
-    hmr: {
-      overlay: false, // less noisy; fewer full-screen error overlays
-    },
-  },
+    hmr: { overlay: false } // less noisy; fewer full reloads
+  }
 });
