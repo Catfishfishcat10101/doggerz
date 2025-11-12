@@ -32,7 +32,6 @@ const Adopt = lazy(() => import("./pages/Adopt.jsx"));
 const Game = lazy(() => import("./pages/Game.jsx"));
 
 const Shop = lazy(() => import("./pages/Shop.jsx"));
-const Affection = lazy(() => import("./pages/Affection.jsx"));
 const Memory = lazy(() => import("./pages/Memory.jsx"));
 const Potty = lazy(() => import("./pages/Potty.jsx"));
 const Upgrade = lazy(() => import("./pages/Upgrade.jsx"));
@@ -100,14 +99,6 @@ export default function App() {
               element={
                 <RequireAuth>
                   <Shop />
-                </RequireAuth>
-              }
-            />
-            <Route
-              path="affection"
-              element={
-                <RequireAuth>
-                  <Affection />
                 </RequireAuth>
               }
             />
