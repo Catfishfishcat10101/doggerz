@@ -1,3 +1,4 @@
+// src/layout/RequireAuth.jsx
 import { useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { Navigate, useLocation } from "react-router-dom";
@@ -18,11 +19,15 @@ export default function RequireAuth({ children }) {
 
   if (!ready) {
     return (
-      <div className="min-h-dvh grid place-items-center bg-stone-950 text-white">
-        <div className="animate-pulse text-stone-300">Loading…</div>
+      <div className="p-8 text-center text-sm text-zinc-400">
+        Checking your session…
       </div>
     );
   }
-  if (!user) return <Navigate to="/login" state={{ from: loc }} replace />;
+
+  if (!user) {
+    return <Navigate to="/login" replace state={{ from: loc }} />;
+  }
+
   return children;
 }
