@@ -160,4 +160,4 @@ export default function App() {
     </Suspense>
   );
 }
-```0
+export default App;
