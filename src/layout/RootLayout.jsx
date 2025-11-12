@@ -1,24 +1,29 @@
+// src/layout/RootLayout.jsx
 import { Outlet } from "react-router-dom";
-import ErrorBoundary from "./ErrorBoundary";
-import NavBar from "./NavBar";
-import Footer from "./Footer";
-import FirebaseAutoSave from "./FirebaseAutoSave";
-import InstallPrompt from "./InstallPrompt";
+
+import ErrorBoundary from "./ErrorBoundary.jsx";
+import NavBar from "./NavBar.jsx";
+import Footer from "./Footer.jsx";
+import FirebaseAutoSave from "./FirebaseAutoSave.jsx";
+import InstallPrompt from "./InstallPrompt.jsx";
 
 export default function RootLayout() {
   return (
-    <>
-      <ErrorBoundary>
-        <NavBar />
-        <main className="min-h-[calc(100dvh-3.5rem-3rem)] bg-[#0b1020]">
-          {/* Autosave while the app runs */}
-          <FirebaseAutoSave />
-          {/* PWA CTA */}
-          <InstallPrompt />
+    <div className="min-h-screen flex flex-col bg-bgd-900 text-zinc-100">
+      {/* Autosave while the app runs */}
+      <FirebaseAutoSave />
+      {/* PWA install CTA */}
+      <InstallPrompt />
+
+      <NavBar />
+
+      <main className="flex-1">
+        <ErrorBoundary>
           <Outlet />
-        </main>
-        <Footer />
-      </ErrorBoundary>
-    </>
+        </ErrorBoundary>
+      </main>
+
+      <Footer />
+    </div>
   );
 }
