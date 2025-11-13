@@ -17,3 +17,6 @@ pnpm-debug.log*
 };
 node_modules
 .env.local
+.env
+env.local
+analytics.js

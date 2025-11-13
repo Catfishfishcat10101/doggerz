@@ -1,140 +1,78 @@
-import React, { useEffect, useRef } from "react";
+// src/features/game/DogSpriteView.jsx
+import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { selectDog } from "@/redux/dogSlice.js";
 
-export default function DogSpriteView({
-  src = "/sprites/jrt_4x4.png",
-  columns = 4,
-  rows = 4,
-  fps = 8,
-  renderSize = 160,
-  worldW = 480,
-  worldH = 320,
-  rowDown = 0,
-  rowLeft = 1,
-  rowRight = 2,
-  rowUp = 3,
-}) {
-  const dog = useSelector(selectDog) || {};
+import jackSheet from "@/assets/sprites/jack_russell_directions.png";
+import {
+  SPRITE_COLS,
+  SPRITE_ROWS,
+  nextFrame,
+  getAnimationMeta,
+} from "./DogAnimator.js";
 
-  const pos = dog.pos ?? {
-    x: (worldW - renderSize) / 2,
-    y: (worldH - renderSize) / 2,
+export default function DogSpriteView() {
+  const dog = useSelector(selectDog);
+
+  const [frameIndex, setFrameIndex] = useState(0);
+
+  /** Dynamic animation selection */
+  let animation = "idle";
+
+  if (dog.isAsleep) animation = "sleep";
+  else if (dog.lastAction === "play") animation = "playing";
+  else if (dog.lastAction === "feed") animation = "eating";
+  else if (dog.stats.happiness < 25) animation = "sad";
+  else if (dog.stats.energy < 20) animation = "sleep";
+  else animation = "idle";
+
+  /** Get frame metadata */
+  const { frame, row, fps } = getAnimationMeta(animation, frameIndex);
+
+  /** Animation clock */
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setFrameIndex((i) => nextFrame(animation, i));
+    }, 1000 / fps);
+
+    return () => clearInterval(interval);
+  }, [animation, fps]);
+
+  /** CSS background-position math */
+  const backgroundPosX = -(frame * (100 / (SPRITE_COLS - 1)));
+  const backgroundPosY = -(row * (100 / (SPRITE_ROWS - 1)));
+
+  const style = {
+    width: "128px",
+    height: "128px",
+    backgroundImage: `url(${jackSheet})`,
+    backgroundSize: `${SPRITE_COLS * 100}% ${SPRITE_ROWS * 100}%`,
+    backgroundPosition: `${backgroundPosX}% ${backgroundPosY}%`,
+    imageRendering: "pixelated",
+    transition: "transform 200ms, opacity 200ms",
+    transform: dog.isAsleep ? "scale(0.94)" : "scale(1)",
+    opacity: dog.isAsleep ? 0.65 : 1,
   };
 
-  const canvasRef = useRef(null);
-  const imgRef = useRef(null);
-
-  const frameRef = useRef(0);
-  const accumRef = useRef(0);
-  const lastTsRef = useRef(0);
-  const lastPosRef = useRef(pos);
-  const dirRef = useRef("down");
-
-  useEffect(() => {
-    lastPosRef.current = pos;
-  }, [pos.x, pos.y]);
-
-  useEffect(() => {
-    const img = new Image();
-    img.src = src;
-    img.onload = () => {
-      imgRef.current = img;
-    };
-    return () => {
-      imgRef.current = null;
-    };
-  }, [src]);
-
-  useEffect(() => {
-    let raf = 0;
-
-    const loop = (ts) => {
-      const c = canvasRef.current;
-      const img = imgRef.current;
-
-      if (!c || !img) {
-        raf = requestAnimationFrame(loop);
-        return;
-      }
-
-      const ctx = c.getContext("2d", { alpha: true });
-      const lastTs = lastTsRef.current || ts;
-      const dt = Math.min(0.05, (ts - lastTs) / 1000);
-      lastTsRef.current = ts;
-
-      const lastPos = lastPosRef.current;
-      const dx = pos.x - lastPos.x;
-      const dy = pos.y - lastPos.y;
-      const speed = Math.hypot(dx, dy);
-
-      if (speed > 0.2) {
-        const ax = Math.abs(dx);
-        const ay = Math.abs(dy);
-        if (ax > ay) {
-          dirRef.current = dx < 0 ? "left" : "right";
-        } else {
-          dirRef.current = dy < 0 ? "up" : "down";
-        }
-      }
-
-      const fw = img.width / columns;
-      const fh = img.height / rows;
-
-      if (speed > 0.2) {
-        accumRef.current += dt;
-        const step = 1 / fps;
-        while (accumRef.current >= step) {
-          frameRef.current = (frameRef.current + 1) % columns;
-          accumRef.current -= step;
-        }
-      } else {
-        frameRef.current = 0;
-        accumRef.current = 0;
-      }
-
-      let row = rowDown;
-      const dir = dirRef.current;
-      if (dir === "left") row = rowLeft;
-      else if (dir === "right") row = rowRight;
-      else if (dir === "up") row = rowUp;
-
-      ctx.clearRect(0, 0, c.width, c.height);
-      ctx.imageSmoothingEnabled = true;
-
-      const sx = Math.floor(frameRef.current * fw);
-      const sy = Math.floor(row * fh);
-      const px = Math.round(pos.x);
-      const py = Math.round(pos.y);
-
-      ctx.drawImage(img, sx, sy, fw, fh, px, py, renderSize, renderSize);
-
-      lastPosRef.current = { ...pos };
-      raf = requestAnimationFrame(loop);
-    };
-
-    raf = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(raf);
-  }, [
-    pos.x,
-    pos.y,
-    columns,
-    rows,
-    fps,
-    renderSize,
-    rowDown,
-    rowLeft,
-    rowRight,
-    rowUp,
-  ]);
-
   return (
-    <canvas
-      ref={canvasRef}
-      width={worldW}
-      height={worldH}
-      className="mx-auto block rounded-lg bg-zinc-900/60 shadow-inner"
-      style={{ imageRendering: "auto" }}
-    />
+    <div className="flex flex-col items-center gap-3">
+      <div style={style} />
+
+      <div className="text-center space-y-1">
+        <p className="text-xs uppercase tracking-[0.25em] text-emerald-300/80">
+          {dog.isAsleep
+            ? "Power Nap Mode"
+            : dog.lastAction === "play"
+            ? "Having Fun!"
+            : dog.lastAction === "feed"
+            ? "Nom Nom!"
+            : "Ready To Play"}
+        </p>
+
+        <p className="text-lg sm:text-xl font-semibold tracking-wide">
+          {dog.name ?? "Pup"}
+        </p>
+      </div>
+    </div>
   );
 }

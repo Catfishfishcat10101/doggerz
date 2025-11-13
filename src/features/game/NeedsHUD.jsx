@@ -1,92 +1,47 @@
 import React from "react";
 import { useSelector } from "react-redux";
-import DogSprite from "@/components/UI/DogSprite.jsx";
 import { selectDog } from "@/redux/dogSlice.js";
 
-export default function NeedsHUD() {
-  const dog = useSelector(selectDog) || {};
-
-  const name = dog.name || "Pup";
-  const coins = dog.coins ?? 0;
-
-  const stats = dog.stats || {
-    hunger: 0,
-    happiness: 0,
-    energy: 0,
-    cleanliness: 0,
-  };
-
-  const clamp = (v) => Math.min(100, Math.max(0, Number(v) || 0));
+function StatBar({ label, value, accent = "bg-emerald-500" }) {
+  const pct = Math.max(0, Math.min(100, Number(value ?? 0)));
 
   return (
-    <div className="w-full rounded-2xl bg-slate-900/80 border border-white/10 px-4 py-3 shadow-xl backdrop-blur-sm">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-3">
-          <DogSprite
-            direction="down"
-            speed={260}
-            scale={1.4}
-            className="rounded-md shadow-md"
-            aria-label="Dog avatar"
-          />
-          <div className="flex flex-col leading-tight">
-            <span className="text-[0.65rem] uppercase tracking-wide text-slate-400">
-              Dogger
-            </span>
-            <span className="text-sm font-semibold text-slate-100">
-              {name}
-            </span>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-1 text-amber-300 font-semibold">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="w-4 h-4"
-            fill="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <circle cx="12" cy="12" r="10" />
-          </svg>
-          <span>{coins}</span>
-        </div>
+    <div className="space-y-1">
+      <div className="flex justify-between text-[0.65rem] sm:text-xs text-slate-400">
+        <span>{label}</span>
+        <span>{pct}%</span>
       </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <StatBar label="Hunger" value={clamp(stats.hunger)} color="emerald" />
-        <StatBar label="Happiness" value={clamp(stats.happiness)} color="cyan" />
-        <StatBar label="Energy" value={clamp(stats.energy)} color="violet" />
-        <StatBar
-          label="Cleanliness"
-          value={clamp(stats.cleanliness)}
-          color="amber"
+      <div className="h-2.5 rounded-full bg-slate-800 overflow-hidden">
+        <div
+          className={`h-full ${accent} transition-[width] duration-300`}
+          style={{ width: `${pct}%` }}
         />
       </div>
     </div>
   );
 }
 
-function StatBar({ label, value, color }) {
-  const colors = {
-    emerald: "bg-emerald-500",
-    cyan: "bg-cyan-500",
-    violet: "bg-violet-500",
-    amber: "bg-amber-400",
-  };
+export default function NeedsHUD() {
+  const dog = useSelector(selectDog);
+  const stats = dog?.stats || {};
 
   return (
-    <div className="flex flex-col gap-1">
-      <div className="flex justify-between text-[0.65rem] text-slate-400">
-        <span>{label}</span>
-        <span>{value}%</span>
+    <section className="rounded-2xl bg-slate-900/70 border border-slate-800/80 shadow-xl shadow-slate-950/60 p-4 sm:p-5 space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
+          Pup Status
+        </p>
+        <p className="text-xs text-slate-400">
+          Lv. {dog?.level ?? 1} · {dog?.coins ?? 0} coins
+        </p>
       </div>
 
-      <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
-        <div
-          className={`h-full ${colors[color]}`}
-          style={{ width: `${value}%` }}
-        />
+      <div className="space-y-3">
+        <StatBar label="Hunger" value={stats.hunger} accent="bg-amber-400" />
+        <StatBar label="Happiness" value={stats.happiness} accent="bg-pink-500" />
+        <StatBar label="Energy" value={stats.energy} accent="bg-sky-400" />
+        <StatBar label="Cleanliness" value={stats.cleanliness} accent="bg-emerald-400" />
       </div>
-    </div>
+    </section>
   );
 }

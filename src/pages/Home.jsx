@@ -3,6 +3,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { PATHS } from "@/routes.js";
 
+
 export default function Home() {
   const nav = useNavigate();
 
