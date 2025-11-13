@@ -1,6 +1,5 @@
-// src/lib/firebase.js
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -12,24 +11,9 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
-let app = null;
-let auth = null;
-let db = null;
+const app = initializeApp(firebaseConfig);
 
-try {
-  if (!firebaseConfig.apiKey) {
-    throw new Error("Missing VITE_FIREBASE_API_KEY");
-  }
-
-  app = initializeApp(firebaseConfig);
-  auth = getAuth(app);
-  db = getFirestore(app);
-} catch (error) {
-  console.warn("[firebase] disabled – bad config or invalid key:", error);
-  // App should still run without hard crashing.
-  app = null;
-  auth = null;
-  db = null;
-}
-
-export { app, auth, db };
+export const auth = getAuth(app);
+export const db = getFirestore(app);
+export const googleProvider = new GoogleAuthProvider();
+export default app;
