@@ -34,9 +34,31 @@ function awardXp(state, amount = 5) {
 
 function randomIdleVariant() {
   const roll = Math.random();
-  if (roll < 0.33) return "idle_scratch";
-  if (roll < 0.66) return "idle_tail";
+  if (roll < 0.33) return "idle_bark";
+  if (roll < 0.66) return "idle_scratch";
   return "idle";
+}
+
+// Shared helper used by tickStats / tickNeeds
+function applyNeedsTick(state, delta = 1) {
+  const s = state.stats;
+
+  s.hunger = clamp(s.hunger - 0.05 * delta);
+  s.energy = clamp(s.energy - 0.03 * delta);
+  s.cleanliness = clamp(s.cleanliness - 0.02 * delta);
+
+  // Mood / animation based on needs
+  if (s.hunger < 25 || s.energy < 20) {
+    state.animation = "tired";
+  } else if (s.cleanliness < 25) {
+    state.animation = "dirty";
+  } else if (s.happiness < 30) {
+    state.animation = "sad";
+  } else {
+    ensureAnimation(state);
+  }
+
+  state.lastUpdatedAt = Date.now();
 }
 
 const initialState = {
@@ -57,11 +79,17 @@ const initialState = {
 
   // Animation / behavior
   animation: "idle",
-  lastAction: "feed" | "play" | "rest" | "poop" | "scoop" | etc.
+  lastAction: null, // "feed" | "play" | "rest" | "poop" | "scoop" | etc.
 
   isAsleep: false,
   debug: false,
   lastUpdatedAt: null,
+
+  // World position for DogAIEngine + GameScene
+  pos: { x: 160, y: 0 },
+
+  // Current room / scene
+  scene: "yard",
 };
 
 const dogSlice = createSlice({
@@ -78,6 +106,8 @@ const dogSlice = createSlice({
           ...state.stats,
           ...(payload.stats || {}),
         },
+        pos: payload.pos || state.pos,
+        scene: payload.scene || state.scene,
       };
     },
 
@@ -105,14 +135,14 @@ const dogSlice = createSlice({
       state.lastAction = payload || null;
     },
 
-    // Fancy idle variants to keep the dog from looking dead
     triggerIdleScratch(state) {
       state.animation = "idle_scratch";
       state.lastAction = "idle_scratch";
     },
 
     triggerIdleTail(state) {
-      state.animation = "idle_tail";
+      // alias: just use idle
+      state.animation = "idle";
       state.lastAction = "idle_tail";
     },
 
@@ -134,7 +164,8 @@ const dogSlice = createSlice({
       if (payload.hunger != null) s.hunger = clamp(payload.hunger);
       if (payload.happiness != null) s.happiness = clamp(payload.happiness);
       if (payload.energy != null) s.energy = clamp(payload.energy);
-      if (payload.cleanliness != null) s.cleanliness = clamp(payload.cleanliness);
+      if (payload.cleanliness != null)
+        s.cleanliness = clamp(payload.cleanliness);
     },
 
     /* ---------- game actions (used by UI) ---------- */
@@ -150,7 +181,6 @@ const dogSlice = createSlice({
       state.animation = "eat";
       state.lastUpdatedAt = Date.now();
 
-      // Coins optional here; core loop uses XP
       awardXp(state, 12);
     },
 
@@ -223,6 +253,17 @@ const dogSlice = createSlice({
       state.lastUpdatedAt = Date.now();
     },
 
+    // Explicit accident event if you ever call it
+    markAccident(state) {
+      state.poopCount += 1;
+      const s = state.stats;
+      s.cleanliness = clamp(s.cleanliness - 10);
+      s.happiness = clamp(s.happiness - 4);
+      state.animation = "poop";
+      state.lastAction = "poop";
+      state.lastUpdatedAt = Date.now();
+    },
+
     // Scoop Poop button
     scoopPoop(state) {
       const piles = state.poopCount;
@@ -234,12 +275,10 @@ const dogSlice = createSlice({
         return;
       }
 
-      // Reward cleaning up
       const s = state.stats;
       s.cleanliness = clamp(s.cleanliness + 15 + piles * 5);
       s.happiness = clamp(s.happiness + 5);
 
-      // Reward player with coins & XP
       const coinReward = 2 * piles;
       state.coins = Math.max(0, state.coins + coinReward);
       awardXp(state, 10 + 5 * piles);
@@ -251,42 +290,56 @@ const dogSlice = createSlice({
       state.lastUpdatedAt = Date.now();
     },
 
-    // Generic tick from DogAIEngine (background decay etc.)
-    tickNeeds(state, { payload }) {
-      const delta = payload && Number.isFinite(payload.delta) ? payload.delta : 1;
-      const s = state.stats;
+    /* ---------- movement & scene ---------- */
 
-      s.hunger = clamp(s.hunger - 0.05 * delta);
-      s.energy = clamp(s.energy - 0.03 * delta);
-      s.cleanliness = clamp(s.cleanliness - 0.02 * delta);
+    move(state, { payload }) {
+      if (!payload) return;
+      const { x, y } = payload;
+      if (Number.isFinite(x)) state.pos.x = x;
+      if (Number.isFinite(y)) state.pos.y = y;
+    },
 
-      // Mood based on needs
-      if (s.hunger < 25 || s.energy < 20) {
-        state.animation = "tired";
-      } else if (s.cleanliness < 25) {
-        state.animation = "dirty";
-      } else if (s.happiness < 30) {
-        state.animation = "sad";
-      } else {
-        // Let the animator pick an idle variant
-        ensureAnimation(state);
+    setScene(state, { payload }) {
+      if (typeof payload === "string") {
+        state.scene = payload;
       }
+    },
 
-      state.lastUpdatedAt = Date.now();
+    /* ---------- generic ticks ---------- */
+
+    // used by DogAIEngine (dt in payload.dt or payload.delta)
+    tickStats(state, { payload }) {
+      const dt =
+        (payload && (payload.dt ?? payload.delta)) != null
+          ? Number(payload.dt ?? payload.delta)
+          : 1;
+      applyNeedsTick(state, dt);
+    },
+
+    // legacy name; same behavior as tickStats
+    tickNeeds(state, { payload }) {
+      const dt =
+        (payload && (payload.delta ?? payload.dt)) != null
+          ? Number(payload.delta ?? payload.dt)
+          : 1;
+      applyNeedsTick(state, dt);
     },
   },
 });
 
 /* ---------- selectors ---------- */
 
-export const selectDog = (state) => state.dog;
-export const selectDogStats = (state) => state.dog.stats;
-export const selectDogCoins = (state) => state.dog.coins;
-export const selectDogLevel = (state) => ({
-  level: state.dog.level,
-  xp: state.dog.xp,
-  threshold: levelThreshold(state.dog.level),
-});
+export const selectDog = (state) => state.dog || initialState;
+export const selectDogStats = (state) => (state.dog || initialState).stats;
+export const selectDogCoins = (state) => (state.dog || initialState).coins;
+export const selectDogLevel = (state) => {
+  const d = state.dog || initialState;
+  return {
+    level: d.level,
+    xp: d.xp,
+    threshold: levelThreshold(d.level),
+  };
+};
 
 /* ---------- actions / aliases ---------- */
 
@@ -308,7 +361,11 @@ export const {
   rest,
   increasePottyLevel,
   scoopPoop,
+  markAccident,
+  tickStats,
   tickNeeds,
+  move,
+  setScene,
 } = dogSlice.actions;
 
 // Old names used in some components
