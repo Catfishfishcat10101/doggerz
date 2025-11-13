@@ -4,12 +4,7 @@ import { useSelector } from "react-redux";
 import { selectDog } from "@/redux/dogSlice.js";
 
 import spriteSheet from "@/assets/sprites/jack_russell_directions.png";
-import {
-  SPRITE_COLS,
-  SPRITE_ROWS,
-  getAnimationMeta,
-  nextFrame
-} from "./DogAnimator.js";
+import { getAnimationMeta, nextFrame } from "./DogAnimator.js";
 
 export default function DogSpriteView() {
   const dog = useSelector(selectDog);
@@ -19,7 +14,7 @@ export default function DogSpriteView() {
   const [attention, setAttention] = useState(false);
 
   /* ---------------------------------------------------------
-   * RANDOM IDLE BEHAVIOR (bark / scratch)
+   * RANDOM IDLE VARIANTS
    * --------------------------------------------------------- */
   useEffect(() => {
     if (dog.isAsleep) return;
@@ -37,7 +32,6 @@ export default function DogSpriteView() {
 
   /* ---------------------------------------------------------
    * ATTENTION TRIGGER
-   * dog.lastAction fires → perk animation
    * --------------------------------------------------------- */
   useEffect(() => {
     if (dog.lastAction) {
@@ -48,79 +42,71 @@ export default function DogSpriteView() {
   }, [dog.lastAction]);
 
   /* ---------------------------------------------------------
-   * DECIDE WHICH ANIMATION TO USE
+   * PICK ANIMATION
    * --------------------------------------------------------- */
   let animation = idleVariant;
 
-  if (attention) {
-    animation = "attention";
-  } else if (dog.isAsleep) {
-    animation = "sleep_breath";
-  }
+  if (attention) animation = "attention";
+  else if (dog.isAsleep) animation = "sleep";
 
   /* ---------------------------------------------------------
-   * Get animation metadata
+   * FETCH METADATA FROM ANIMATOR
    * --------------------------------------------------------- */
-  const { row, frame, fps } = getAnimationMeta(animation, frameIndex);
+  const meta = getAnimationMeta(animation);
+  const { row, frameWidth, frameHeight, sheetWidth, sheetHeight, fps } = meta;
 
   /* ---------------------------------------------------------
-   * Frame Interval Clock
+   * UPDATE FRAME CLOCK
    * --------------------------------------------------------- */
   useEffect(() => {
     setFrameIndex(0);
-    const timer = setInterval(() => {
-      setFrameIndex((i) => nextFrame(animation, i));
-    }, 1000 / fps);
+    const timer = setInterval(
+      () => setFrameIndex((i) => nextFrame(animation, i)),
+      1000 / fps
+    );
     return () => clearInterval(timer);
   }, [animation, fps]);
 
   /* ---------------------------------------------------------
-   * Frame Cropping Math (128×128 frame)
+   * CROP POSITION (px-based)
    * --------------------------------------------------------- */
-  const col = frame;
-  const backgroundPosX = -(col * (100 / (SPRITE_COLS - 1)));
-  const backgroundPosY = -(row * (100 / (SPRITE_ROWS - 1)));
+  const frameX = -(frameIndex * frameWidth);
+  const frameY = -(row * frameHeight);
 
   /* ---------------------------------------------------------
-   * Sleep Breathing Scale
+   * SLEEP BREATHING EFFECT
    * --------------------------------------------------------- */
   const breathingScale =
-    animation === "sleep_breath"
-      ? 1 + Math.sin(Date.now() / 900) * 0.05
-      : 1;
+    animation === "sleep" ? 1 + Math.sin(Date.now() / 900) * 0.05 : 1;
 
   /* ---------------------------------------------------------
-   * Style Object
+   * STYLE
    * --------------------------------------------------------- */
   const style = {
-    width: "128px",
-    height: "128px",
+    width: `${frameWidth}px`,
+    height: `${frameHeight}px`,
     backgroundImage: `url(${spriteSheet})`,
-    backgroundSize: `${SPRITE_COLS * 100}% ${SPRITE_ROWS * 100}%`,
-    backgroundPosition: `${backgroundPosX}% ${backgroundPosY}%`,
+    backgroundSize: `${sheetWidth}px ${sheetHeight}px`,
+    backgroundPosition: `${frameX}px ${frameY}px`,
 
     imageRendering: "pixelated",
 
     transform: `scale(${breathingScale})`,
     transition: "transform 0.2s ease-out, opacity 0.2s ease-out",
-
     opacity: dog.isAsleep ? 0.65 : 1,
 
     filter: `
       drop-shadow(0px 6px 3px rgba(0,0,0,0.5))
-      brightness(${attention ? 1.4 : 1})
+      brightness(${attention ? 1.35 : 1})
       contrast(1.1)
     `,
   };
 
-  /* ---------------------------------------------------------
-   * Ground Shadow
-   * --------------------------------------------------------- */
   const shadowStyle = {
     position: "absolute",
     bottom: "-4px",
     left: "50%",
-    width: 128 * 0.55 + "px",
+    width: frameWidth * 0.55 + "px",
     height: "12px",
     transform: "translateX(-50%)",
     background: "rgba(0,0,0,0.35)",
@@ -130,7 +116,7 @@ export default function DogSpriteView() {
   };
 
   /* ---------------------------------------------------------
-   * Render
+   * RENDER
    * --------------------------------------------------------- */
   return (
     <div className="relative flex flex-col items-center gap-3">
@@ -142,7 +128,7 @@ export default function DogSpriteView() {
       <div className="text-center space-y-1">
         <p className="text-xs uppercase tracking-[0.25em] text-emerald-300/80">
           {attention
-            ? "Hey! Listening!"
+            ? "Listening!"
             : animation === "idle_bark"
             ? "Woof!"
             : animation === "idle_scratch"
