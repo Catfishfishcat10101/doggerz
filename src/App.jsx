@@ -2,8 +2,8 @@
 import React from "react";
 import { Routes, Route, Link } from "react-router-dom";
 
-// 👉 this is your REAL game screen, not a placeholder
-import MainGame from "./features/game/MainGame.jsx";
+// ✅ Your REAL MainGame file based on your folder tree:
+import MainGame from "@/components/UI/MainGame.jsx";
 
 function Splash() {
   return (
@@ -12,9 +12,10 @@ function Splash() {
         <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">
           Doggerz
         </h1>
+
         <p className="text-zinc-400">
           Adopt your virtual pup and keep their stats up. This splash is real
-          now, not a throwaway.
+          now — no more throwaway screens.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6">
@@ -27,8 +28,8 @@ function Splash() {
         </div>
 
         <p className="text-xs text-zinc-500 mt-4">
-          We&apos;ll plug auth and the rest of your layout back in after the
-          main game screen is solid.
+          We&apos;ll wire authentication and your full layout back in after the
+          main game screen is stable.
         </p>
       </div>
     </div>
@@ -40,7 +41,6 @@ export default function App() {
     <Routes>
       <Route path="/" element={<Splash />} />
       <Route path="/game" element={<MainGame />} />
-      {/* anything unknown kicks back to splash */}
       <Route path="*" element={<Splash />} />
     </Routes>
   );
