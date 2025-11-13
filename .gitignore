@@ -14,39 +14,5 @@ pnpm-debug.log*
 .idea/
 *.suo
 *.sln
-
-# Misc
-*.local
-
-echo '
-# build
-dist/
-build/
-node_modules/
-
-# system
-.DS_Store
-Thumbs.db
-
-# logs
-npm-debug.log*
-
-# IDE
-.vscode/
-.idea/
-' >> .gitignore
-# environment variables
-.env*node_modules/
-dist/
-*.log
-npm.debug.log*
-npm-debug.log*
-yarn-debug.log*
-dev-dist/
-workbox-*.js
-sw.js
-build.log
-.env
-.env.* !.env.example
-.vscode/
-.idea/
+};
+node_modules

@@ -2,7 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
-:root { color-scheme: dark; } 
+@layer base {
+:root { color-scheme: dark;} 
 html, body, #root { height: 100%; }
 body { @apply bg-zinc-950 text-zinc-100; }
-a { @apply text-sky-400 hover:text-sky-300; }
+
+a { @apply text-sky-400; }
+a:hover { @apply text-sky-300; }
+};
