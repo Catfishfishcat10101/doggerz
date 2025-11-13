@@ -1,4 +1,4 @@
-// src/layout/RootLayout.jsx
+// src/components/layout/RootLayout.jsx
 import React from "react";
 import { Outlet, Link } from "react-router-dom";
 

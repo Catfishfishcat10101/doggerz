@@ -1,16 +1,9 @@
-// src/components/Features/StatsPanel.jsx
+// src/components/Game/Stats/StatsPanel.jsx
 import React, { useEffect } from "react";
 import { useSelector } from "react-redux";
 import * as dog from "@/redux/dogSlice.js";
 
-/**
- * StatsPanel
- * - Pulls from Redux selectors if they exist; otherwise uses safe fallbacks.
- * - XP progress bar (estimates if xp selectors are missing).
- * - Happiness/Energy meters with color zones.
- * - Coins with a mini sparkline persisted in localStorage.
- * - Session snapshot (owned accessories, yard skin, buff).
- */
+
 
 function useSafeSelector(selector, fallback) {
   // If a selector is provided, use it; otherwise use a stable fallback fn.

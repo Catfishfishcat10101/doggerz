@@ -1,54 +1,60 @@
+// src/components/UI/DogSprite.jsx
 import React, { useEffect, useState } from "react";
 import jackSprite from "@/assets/sprites/jack_russell_directions.png";
 
-/**
- * DogSprite
- * -----------------------------------------------
- * Handles:
- * - Directional sprite selection (left/right/front/back)
- * - Animation stepping between frame 0 and 1
- * - Pixel-perfect crisp rendering
- *
- * Directions recognized:
- * "left", "right", "down", "up"
- */
-
+// Size of a single frame in the sprite sheet (source pixels)
 const FRAME_WIDTH = 64;
 const FRAME_HEIGHT = 64;
 
+// Row index per facing direction (0-based)
 const SPRITE_MAP = {
   left: 0,   // row 0
   right: 1,  // row 1
   down: 2,   // row 2
-  up: 3,     // row 3 (your sheet has 1 frame, but this engine supports 2)
+  up: 3,     // row 3
 };
 
-export default function DogSprite({ direction = "down", speed = 300 }) {
+export default function DogSprite({
+  direction = "down",
+  speed = 300,
+  scale = 1,
+  className = "",
+  "aria-label": ariaLabel = "Dog sprite",
+}) {
   const [frame, setFrame] = useState(0);
 
   useEffect(() => {
-    // simple 2-frame flip animation
+    // Clamp speed so we don't accidentally fry the CPU
+    const interval = Math.max(80, Number(speed) || 300);
+
     const id = setInterval(() => {
       setFrame((prev) => (prev === 0 ? 1 : 0));
-    }, speed);
+    }, interval);
 
     return () => clearInterval(id);
   }, [speed]);
 
-  const row = SPRITE_MAP[direction] ?? 0;
+  const row = SPRITE_MAP[direction] ?? SPRITE_MAP.down;
   const col = frame;
 
   const offsetX = -col * FRAME_WIDTH;
   const offsetY = -row * FRAME_HEIGHT;
 
+  const width = FRAME_WIDTH * scale;
+  const height = FRAME_HEIGHT * scale;
+
   return (
     <div
-      className="w-16 h-16 bg-no-repeat image-render-pixel"
+      role="img"
+      aria-label={ariaLabel}
+      className={["sprite-dog", "bg-no-repeat", className].filter(Boolean).join(" ")}
       style={{
         backgroundImage: `url(${jackSprite})`,
         backgroundPosition: `${offsetX}px ${offsetY}px`,
-        width: FRAME_WIDTH,
-        height: FRAME_HEIGHT,
+        width,
+        height,
+        // Make it chunky pixel art instead of blurry scaling
+        imageRendering: "pixelated",
       }}
     />
   );
