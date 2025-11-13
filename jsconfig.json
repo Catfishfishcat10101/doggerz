@@ -22,5 +22,4 @@
     /* Later: add "vitest/globals" here when you enable tests */
   },
   "include": ["src/**/*", "vite.config.*", "tailwind.config.*", "postcss.config.js"],
-  "exclude": ["node_modules", "dist", "build"]
 }

@@ -1,10 +1,10 @@
 // src/App.jsx
 import React, { Suspense, lazy, useEffect } from "react";
-import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation, Link } from "react-router-dom";
 
-import RootLayout from "./layout/RootLayout.jsx";
-import RequireAuth from "./layout/RequireAuth.jsx";
-import RequireGuest from "./layout/RequireGuest.jsx";
+import RootLayout from "@/layout/RootLayout.jsx";
+import RequireAuth from "@/layout/RequireAuth.jsx";
+import RequireGuest from "@/layout/RequireGuest.jsx";
 
 /* ----------------------------- UX helpers ----------------------------- */
 
@@ -26,15 +26,15 @@ function ScrollToTop() {
 
 /* ------------------------------- Pages -------------------------------- */
 
-const Splash = lazy(() => import("./pages/Splash.jsx"));
-const Login = lazy(() => import("./pages/Login.jsx"));
-const Adopt = lazy(() => import("./pages/Adopt.jsx"));
-const Game = lazy(() => import("./pages/Game.jsx"));
+const Splash = lazy(() => import("@/pages/Splash.jsx"));
+const Login = lazy(() => import("@/pages/Login.jsx"));
+const Adopt = lazy(() => import("@/pages/Adopt.jsx"));
+const Game = lazy(() => import("@/pages/Game.jsx"));
 
-const Shop = lazy(() => import("./pages/Shop.jsx"));
-const Memory = lazy(() => import("./pages/Memory.jsx"));
-const Potty = lazy(() => import("./pages/Potty.jsx"));
-const Upgrade = lazy(() => import("./pages/Upgrade.jsx"));
+const Shop = lazy(() => import("@/pages/Shop.jsx"));
+const Memory = lazy(() => import("@/pages/Memory.jsx"));
+const Potty = lazy(() => import("@/pages/Potty.jsx"));
+const Upgrade = lazy(() => import("@/pages/Upgrade.jsx"));
 
 /* ------------------------------ Not Found ----------------------------- */
 
@@ -44,9 +44,9 @@ function NotFound() {
       <h1 className="text-2xl font-bold">404</h1>
       <p className="text-sm text-zinc-400">
         This route doesn’t exist.{" "}
-        <a href="/" className="underline text-sky-400">
+        <Link to="/" className="underline text-sky-400">
           Go back home
-        </a>
+        </Link>
         .
       </p>
     </div>
