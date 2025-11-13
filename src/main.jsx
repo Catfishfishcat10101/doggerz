@@ -1,19 +1,25 @@
 // src/main.jsx
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { BrowserRouter } from "react-router-dom";
-import { Provider } from "react-redux";
 
-import store from "@/redux/store.js";
-import App from "./App.jsx";
-import "./index.css";
+const rootElement = document.getElementById("root");
 
-ReactDOM.createRoot(document.getElementById("root")).render(
+ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
-    <Provider store={store}>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-    </Provider>
+    <div
+      style={{
+        minHeight: "100vh",
+        backgroundColor: "#020617",
+        color: "#f9fafb",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        fontFamily: "system-ui, sans-serif",
+      }}
+    >
+      <h1 style={{ fontSize: "2.5rem", marginBottom: "1rem" }}>Doggerz test</h1>
+      <p>If you can read this, React is rendering correctly.</p>
+    </div>
   </React.StrictMode>
 );
