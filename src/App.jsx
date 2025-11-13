@@ -1,4 +1,3 @@
-// src/App.jsx
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { PATHS } from "@/routes.js";
@@ -26,7 +25,7 @@ export default function App() {
       <Route path={PATHS.LOGIN} element={<LoginPage />} />
       <Route path={PATHS.SIGNUP} element={<SignupPage />} />
       {/* catch-all */}
-      <Route path="*" element={<Navigate to={PATHS.HOME} replace />} />
+      <Route path="*" element={<Navigate to={PATHS.SPLASH} replace />} />
     </Routes>
   );
 }

@@ -1,3 +1,4 @@
+//src/layout/Footer.jsx
 import { Link } from "react-router-dom";
 
 export default function Footer() {

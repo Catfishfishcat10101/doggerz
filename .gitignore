@@ -16,3 +16,4 @@ pnpm-debug.log*
 *.sln
 };
 node_modules
+.env.local
