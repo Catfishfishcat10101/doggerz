@@ -1,16 +1,12 @@
-// src/components/Features/BackgroundScene.jsx
 import React from "react";
 
 export default function BackgroundScene({ width = 480, height = 320 }) {
-  const corner = 14;
-
   return (
     <svg
       width={width}
       height={height}
       className="block mx-auto rounded-xl shadow-inner"
     >
-      {/* Background gradient */}
       <defs>
         <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#0c0d11" />
@@ -18,13 +14,11 @@ export default function BackgroundScene({ width = 480, height = 320 }) {
           <stop offset="1" stopColor="#0b0c10" />
         </linearGradient>
 
-        {/* Soft spotlight */}
         <radialGradient id="spot" cx="50%" cy="40%" r="65%">
           <stop offset="0%" stopColor="rgba(255,255,255,0.06)" />
           <stop offset="100%" stopColor="rgba(0,0,0,0)" />
         </radialGradient>
 
-        {/* Zone glow */}
         <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
           <feGaussianBlur stdDeviation="6" result="blur" />
           <feMerge>
@@ -34,13 +28,9 @@ export default function BackgroundScene({ width = 480, height = 320 }) {
         </filter>
       </defs>
 
-      {/* Background */}
       <rect width={width} height={height} fill="url(#bg)" />
-
-      {/* Ambient spotlight */}
       <rect width={width} height={height} fill="url(#spot)" />
 
-      {/* Zones */}
       <Zone
         x={16}
         y={height - 58}
@@ -81,7 +71,6 @@ export default function BackgroundScene({ width = 480, height = 320 }) {
 function Zone({ x, y, w, h, color, label, labelDark }) {
   return (
     <>
-      {/* glow behind zone */}
       <rect
         x={x}
         y={y}
@@ -92,8 +81,6 @@ function Zone({ x, y, w, h, color, label, labelDark }) {
         opacity="0.14"
         filter="url(#glow)"
       />
-
-      {/* actual zone card */}
       <rect
         x={x}
         y={y}
@@ -103,8 +90,6 @@ function Zone({ x, y, w, h, color, label, labelDark }) {
         fill={color}
         opacity="0.32"
       />
-
-      {/* label */}
       <text
         x={x + w / 2}
         y={y + h / 2 + 4}

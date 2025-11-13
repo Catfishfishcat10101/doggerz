@@ -1,8 +1,7 @@
-// src/components/Features/GameScene.jsx
 import React from "react";
-import BackgroundScene from "@/components/Features/BackgroundScene.jsx";
-import DogSpriteView from "@/components/Features/DogSpriteView.jsx";
-import DogAIEngine from "@/components/Features/DogAIEngine.jsx";
+import BackgroundScene from "./BackgroundScene.jsx";
+import DogSpriteView from "./DogSpriteView.jsx";
+import DogAIEngine from "./DogAIEngine.jsx";
 
 export default function GameScene() {
   return (
@@ -23,8 +22,6 @@ export default function GameScene() {
       <div className="absolute inset-0">
         <DogSpriteView />
       </div>
-
-      {/* headless game loop */}
       <DogAIEngine />
     </div>
   );

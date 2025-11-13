@@ -1,4 +1,3 @@
-// src/components/Features/DogSpriteView.jsx
 import React, { useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 import { selectDog } from "@/redux/dogSlice.js";
@@ -16,11 +15,9 @@ export default function DogSpriteView({
   rowRight = 2,
   rowUp = 3,
 }) {
-  // ----- SAFE STATE -----
-  const dogState = useSelector(selectDog) || {};
+  const dog = useSelector(selectDog) || {};
 
-  // Fallback to centered position if dog.pos is missing
-  const pos = dogState.pos ?? {
+  const pos = dog.pos ?? {
     x: (worldW - renderSize) / 2,
     y: (worldH - renderSize) / 2,
   };
@@ -31,16 +28,13 @@ export default function DogSpriteView({
   const frameRef = useRef(0);
   const accumRef = useRef(0);
   const lastTsRef = useRef(0);
-
   const lastPosRef = useRef(pos);
   const dirRef = useRef("down");
 
-  // keep lastPos in sync when pos changes abruptly (e.g. teleport, load)
   useEffect(() => {
     lastPosRef.current = pos;
   }, [pos.x, pos.y]);
 
-  // ----- LOAD SPRITESHEET -----
   useEffect(() => {
     const img = new Image();
     img.src = src;
@@ -52,7 +46,6 @@ export default function DogSpriteView({
     };
   }, [src]);
 
-  // ----- ANIMATION LOOP -----
   useEffect(() => {
     let raf = 0;
 
@@ -75,7 +68,6 @@ export default function DogSpriteView({
       const dy = pos.y - lastPos.y;
       const speed = Math.hypot(dx, dy);
 
-      // choose facing direction based on movement
       if (speed > 0.2) {
         const ax = Math.abs(dx);
         const ay = Math.abs(dy);
@@ -89,7 +81,6 @@ export default function DogSpriteView({
       const fw = img.width / columns;
       const fh = img.height / rows;
 
-      // animate only while moving
       if (speed > 0.2) {
         accumRef.current += dt;
         const step = 1 / fps;
@@ -113,8 +104,6 @@ export default function DogSpriteView({
 
       const sx = Math.floor(frameRef.current * fw);
       const sy = Math.floor(row * fh);
-
-      // draw with pos as top-left of sprite
       const px = Math.round(pos.x);
       const py = Math.round(pos.y);
 

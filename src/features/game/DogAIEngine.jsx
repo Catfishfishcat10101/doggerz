@@ -1,54 +1,64 @@
-// src/features/game/DogAIEngine.jsx
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { selectDog } from "@/redux/dogSlice.js";
+import { move, selectDog } from "@/redux/dogSlice.js";
 
-/**
- * Headless engine:
- * - Mounts once on the game screen
- * - Dispatches a small, regular "aiTick" with delta time
- * - Your slice can use this to:
- *   - decay needs (hunger, energy, cleanliness, happiness)
- *   - move the dog position (free-will wandering)
- *   - spawn poop, give coins over time, etc.
- */
+const WORLD_W = 480;
+const WORLD_H = 320;
+const SPRITE_SIZE = 160;
+const STEP = 12;
 
-const TICK_INTERVAL_MS = 1000; // 1s tick – easy on CPU, good enough for sim
-
-export default function DogAIEngine() {
+export default function DogAIEngine({
+  worldW = WORLD_W,
+  worldH = WORLD_H,
+  spriteSize = SPRITE_SIZE,
+}) {
   const dispatch = useDispatch();
-  const dog = useSelector(selectDog);
+  const dog = useSelector(selectDog) || {};
+
+  const pos = dog.pos || {
+    x: (worldW - spriteSize) / 2,
+    y: (worldH - spriteSize) / 2,
+  };
 
   useEffect(() => {
-    let lastNow = performance.now();
+    if (!dog.pos) {
+      dispatch(move({ x: pos.x, y: pos.y }));
+    }
+  }, [dog.pos, dispatch, pos.x, pos.y]);
 
-    const id = setInterval(() => {
-      const now = performance.now();
-      const dt = (now - lastNow) / 1000; // seconds since last tick
-      lastNow = now;
+  useEffect(() => {
+    let cancelled = false;
 
-      // Soft action name – implement this in dogSlice if you want the AI.
-      // Example reducer signature:
-      // aiTick(state, action) { const { dt } = action.payload; ... }
-      dispatch({
-        type: "dog/aiTick",
-        payload: {
-          dt,
-          // you can read this in the reducer if needed:
-          snapshot: {
-            // be careful to treat this as read-only in reducer; it’s just context.
-            mood: dog?.mood,
-            stats: dog?.stats,
-            coins: dog?.coins,
-            poopCount: dog?.poopCount,
-          },
-        },
-      });
-    }, TICK_INTERVAL_MS);
+    const tick = () => {
+      if (cancelled) return;
 
-    return () => clearInterval(id);
-  }, [dispatch, dog?.coins, dog?.mood, dog?.poopCount, dog?.stats]);
+      const angle = Math.random() * Math.PI * 2;
+      const distance = STEP * (0.5 + Math.random());
+      const dx = Math.cos(angle) * distance;
+      const dy = Math.sin(angle) * distance;
 
-  // Nothing to render – pure logic engine.
+      let nx = pos.x + dx;
+      let ny = pos.y + dy;
+
+      nx = Math.max(0, Math.min(worldW - spriteSize, nx));
+      ny = Math.max(0, Math.min(worldH - spriteSize, ny));
+
+      dispatch(move({ x: nx, y: ny }));
+
+      const delay = 300 + Math.random() * 500;
+      if (!cancelled) {
+        setTimeout(tick, delay);
+      }
+    };
+
+    const delay = 300 + Math.random() * 500;
+    const id = setTimeout(tick, delay);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(id);
+    };
+  }, [dispatch, pos.x, pos.y, worldW, worldH, spriteSize]);
+
   return null;
 }
