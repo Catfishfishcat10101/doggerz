@@ -1,30 +1,102 @@
 // src/features/game/DogAnimator.js
 
-export const SPRITE_COLS = 3;
-export const SPRITE_ROWS = 3;
+// Your spritesheet is 1024x1024 → 8 columns, 8 rows → 128px per frame.
+const SHEET_WIDTH = 1024;
+const SHEET_HEIGHT = 1024;
 
-/** FRAME SEQUENCES **/
-export const Animations = {
-  idle: { row: 2, frames: [0, 0, 0, 1], fps: 2 }, // subtle wag + blink
-  walkRight: { row: 0, frames: [0, 1, 2, 1], fps: 6 },
-  walkLeft: { row: 1, frames: [0, 1, 2, 1], fps: 6 },
-  sleep: { row: 2, frames: [1], fps: 1 }, // back-facing frame
-  happy: { row: 2, frames: [0, 0, 1, 0], fps: 4 },
-  sad: { row: 2, frames: [1], fps: 1 },
-  eating: { row: 2, frames: [0, 1, 0, 1], fps: 8 },
-  playing: { row: 0, frames: [1, 2, 1, 0], fps: 8 },
+export const FRAME_WIDTH = SHEET_WIDTH / 8;   // 128px
+export const FRAME_HEIGHT = SHEET_HEIGHT / 8; // 128px
+
+/**
+ * Animation atlas for each dog behavior.
+ * All rows and frames correspond directly to jack_russell_directions.png
+ */
+export const animations = {
+  idle: {
+    row: 0,
+    frames: 4,
+    fps: 4,
+    frameWidth: FRAME_WIDTH,
+    frameHeight: FRAME_HEIGHT,
+    sheetWidth: SHEET_WIDTH,
+    sheetHeight: SHEET_HEIGHT,
+  },
+
+  idle_bark: {
+    row: 1,
+    frames: 4,
+    fps: 6,
+    frameWidth: FRAME_WIDTH,
+    frameHeight: FRAME_HEIGHT,
+    sheetWidth: SHEET_WIDTH,
+    sheetHeight: SHEET_HEIGHT,
+  },
+
+  idle_scratch: {
+    row: 2,
+    frames: 4,
+    fps: 6,
+    frameWidth: FRAME_WIDTH,
+    frameHeight: FRAME_HEIGHT,
+    sheetWidth: SHEET_WIDTH,
+    sheetHeight: SHEET_HEIGHT,
+  },
+
+  walk_left: {
+    row: 3,
+    frames: 6,
+    fps: 10,
+    frameWidth: FRAME_WIDTH,
+    frameHeight: FRAME_HEIGHT,
+    sheetWidth: SHEET_WIDTH,
+    sheetHeight: SHEET_HEIGHT,
+  },
+
+  walk_right: {
+    row: 4,
+    frames: 6,
+    fps: 10,
+    frameWidth: FRAME_WIDTH,
+    frameHeight: FRAME_HEIGHT,
+    sheetWidth: SHEET_WIDTH,
+    sheetHeight: SHEET_HEIGHT,
+  },
+
+  sleep: {
+    row: 5,
+    frames: 3,
+    fps: 2,
+    frameWidth: FRAME_WIDTH,
+    frameHeight: FRAME_HEIGHT,
+    sheetWidth: SHEET_WIDTH,
+    sheetHeight: SHEET_HEIGHT,
+  },
+
+  attention: {
+    row: 6,
+    frames: 5,
+    fps: 5,
+    frameWidth: FRAME_WIDTH,
+    frameHeight: FRAME_HEIGHT,
+    sheetWidth: SHEET_WIDTH,
+    sheetHeight: SHEET_HEIGHT,
+  },
+
+  // Optional row 7 reserved for future animations
 };
 
-export function nextFrame(animationName, frameIndex) {
-  const anim = Animations[animationName] ?? Animations.idle;
-  const frames = anim.frames;
-  const next = (frameIndex + 1) % frames.length;
-  return next;
+/**
+ * Returns animation data for a given name.
+ */
+export function getAnimationMeta(name) {
+  return animations[name] ?? animations.idle;
 }
 
-export function getAnimationMeta(animationName, frameIndex) {
-  const anim = Animations[animationName] ?? Animations.idle;
-  const frame = anim.frames[frameIndex];
-  const row = anim.row;
-  return { frame, row, fps: anim.fps };
+/**
+ * Moves animation forward.
+ * Automatically loops based on animation's frame count.
+ */
+export function nextFrame(animName, current) {
+  const meta = getAnimationMeta(animName);
+  return (current + 1) % meta.frames;
 }
