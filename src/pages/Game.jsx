@@ -1,43 +1,52 @@
 // src/pages/Game.jsx
 import React from "react";
 import { Link } from "react-router-dom";
-import DogSprite from "@/components/UI/DogSprite.jsx";
+import { PATHS } from "@/routes.js";
+import GameScreen from "@/features/game/scene/GameScreen.jsx";
 
 export default function GamePage() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-zinc-950 text-zinc-50 gap-8">
-      <header className="text-center space-y-2">
-        <h1 className="text-3xl md:text-4xl font-bold">Doggerz Game (Shell)</h1>
-        <p className="text-zinc-400 max-w-xl">
-          This is your temporary game screen. Sprite is live. Next step is to
-          drop in the full HUD, DogAIEngine, and Firestore autosave.
-        </p>
+    <main className="min-h-screen bg-bgd-950 text-white flex flex-col">
+      {/* Thin top shell nav */}
+      <header className="w-full border-b border-zinc-900/80 bg-zinc-950/90 backdrop-blur-sm">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between text-sm">
+          <div className="font-semibold tracking-tight">Doggerz</div>
+          <nav className="flex items-center gap-3">
+            <Link
+              to={PATHS.HOME}
+              className="text-zinc-400 hover:text-zinc-100"
+            >
+              Home
+            </Link>
+            <Link
+              to={PATHS.SPLASH}
+              className="text-zinc-400 hover:text-zinc-100"
+            >
+              Splash
+            </Link>
+            <Link
+              to={PATHS.ADOPT}
+              className="inline-flex items-center rounded-lg px-3 py-1.5 bg-emerald-500 text-emerald-950 font-medium hover:bg-emerald-400"
+            >
+              Adopt / Rename Pup
+            </Link>
+            <Link
+  to={PATHS.PROFILE}
+  className="text-zinc-400 hover:text-zinc-100"
+>
+  Profile
+</Link>
+
+          </nav>
+        </div>
       </header>
 
-      <section className="flex flex-col items-center gap-4">
-        {/* í´¥ Fireball on stage */}
-        <DogSprite direction="down" />
-
-        <p className="text-xs text-zinc-500">
-          Direction prop can be: <code>left</code>, <code>right</code>,{" "}
-          <code>up</code>, <code>down</code>. We&apos;ll wire this to AI later.
-        </p>
+      {/* Core gameplay surface */}
+      <section className="flex-1 flex items-stretch justify-center px-4 sm:px-6 lg:px-8 py-6">
+        <div className="w-full max-w-5xl">
+          <GameScreen />
+        </div>
       </section>
-
-      <nav className="flex gap-3 mt-8">
-        <Link
-          to="/splash"
-          className="inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium border border-zinc-600 text-zinc-200 hover:bg-zinc-800"
-        >
-          â¬… Back to Splash
-        </Link>
-        <Link
-          to="/adopt"
-          className="inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium bg-emerald-500 text-emerald-950 hover:bg-emerald-400"
-        >
-          Adopt / Rename Pup
-        </Link>
-      </nav>
-    </div>
+    </main>
   );
 }

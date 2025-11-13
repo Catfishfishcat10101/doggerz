@@ -1,12 +1,13 @@
 // src/pages/Home.jsx
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { PATHS } from "@/routes.js";
 
 export default function Home() {
   const nav = useNavigate();
 
   return (
-    <div className="min-h-[calc(100dvh-3.5rem-3rem)] grid place-items-center bg-[#0b1020] text-white">
+    <div className="min-h-screen grid place-items-center bg-[#0b1020] text-white">
       <div className="text-center px-6">
         <h1 className="text-5xl sm:text-6xl font-extrabold tracking-tight">
           DOGGERZ
@@ -17,17 +18,16 @@ export default function Home() {
         </p>
 
         <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
-          {/* FIXED: this must go to /splash, not "/" */}
           <button
             className="btn text-black"
-            onClick={() => nav("/splash")}
+            onClick={() => nav(PATHS.SPLASH)}
           >
             Go to Splash
           </button>
 
           <button
             className="btn btn--ghost"
-            onClick={() => nav("/game")}
+            onClick={() => nav(PATHS.GAME)}
           >
             Jump to Game
           </button>

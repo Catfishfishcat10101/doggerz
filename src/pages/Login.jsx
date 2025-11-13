@@ -1,6 +1,7 @@
 // src/pages/Login.jsx
 import React from "react";
 import { Link } from "react-router-dom";
+import { PATHS } from "@/routes.js";
 
 export default function LoginPage() {
   return (
@@ -40,7 +41,10 @@ export default function LoginPage() {
 
         <p className="text-xs text-zinc-400 text-center">
           Need an account?{" "}
-          <Link to="/signup" className="text-sky-400 hover:text-sky-300">
+          <Link
+            to={PATHS.SIGNUP}
+            className="text-sky-400 hover:text-sky-300"
+          >
             Sign up
           </Link>
         </p>
