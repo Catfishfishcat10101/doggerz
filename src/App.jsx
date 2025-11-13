@@ -2,6 +2,7 @@
 import React from "react";
 import { Routes, Route, Link } from "react-router-dom";
 
+import MainGame from "./components/MainGame";
 // ✅ Your REAL MainGame file based on your folder tree:
 import MainGame from "@/components/UI/MainGame.jsx";
 
