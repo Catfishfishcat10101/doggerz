@@ -1,4 +1,3 @@
-<<<<<<< Updated upstream
 // src/redux/dogSlice.js
 import { createSlice } from "@reduxjs/toolkit";
 
@@ -150,5 +149,3 @@ export const resetDogState = resetDog;
 export const selectDog = (state) => state.dog;
 
 export default dogSlice.reducer;
-=======
->>>>>>> Stashed changes

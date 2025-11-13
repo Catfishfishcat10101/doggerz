@@ -1,13 +1,14 @@
-// src/components/UI/Status.jsx
+// src/features/game/hud/Status.jsx
 import React, { memo, useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { selectDog, selectDogLevel, selectCoins } from "@/redux/dogSlice.js";
 
 /**
- * Status
- * - Shows dog name (inline editable), level, and coin balance with delta animation
+ * Status HUD
+ * - Dog name (inline editable)
+ * - Level
+ * - Coin balance with delta animation
  * - Persists name to localStorage under "doggerz_name"
- * - No new dependencies; purely presentational
  */
 function Status({ className = "", onRename }) {
   // ---------- Safe state reads ----------
@@ -41,25 +42,28 @@ function Status({ className = "", onRename }) {
     const curr = Number(coins ?? 0);
     const prev = Number(prevCoinsRef.current ?? 0);
     const diff = curr - prev;
+
     if (diff !== 0) {
       setCoinDelta(diff);
       setFlash(true);
       const t = setTimeout(() => setFlash(false), 800);
       return () => clearTimeout(t);
     }
-  }, [coins]);
 
-  useEffect(() => {
-    prevCoinsRef.current = Number(coins ?? 0);
+    prevCoinsRef.current = curr;
   }, [coins]);
 
   // ---------- Save name ----------
   const commitName = (next) => {
     const trimmed = next.trim() || "Your Pup";
     setName(trimmed);
+
     try {
       localStorage.setItem("doggerz_name", trimmed);
-    } catch {}
+    } catch {
+      // non-fatal if LS explodes
+    }
+
     onRename?.(trimmed);
   };
 
@@ -129,6 +133,7 @@ function Status({ className = "", onRename }) {
               </button>
             </div>
           )}
+
           <div className="text-xs text-rose-900/60 dark:text-rose-200/60">
             Level {safeLevel}
           </div>

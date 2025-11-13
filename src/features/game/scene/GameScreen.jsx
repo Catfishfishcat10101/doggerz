@@ -1,3 +1,4 @@
+//src/features/game/scene/GameScreen.jsx
 import React from "react";
 import Dog from "../entities/Dog.jsx";
 import StatsBar from "../hud/StatsBar.jsx";
