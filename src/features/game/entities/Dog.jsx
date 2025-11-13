@@ -1,7 +1,7 @@
 // src/features/game/entities/Dog.jsx
 import React, { useMemo } from "react";
 import { useSelector } from "react-redux";
-import DogSprite from "@/components/UI/DogSprite.jsx";
+import DogSprite from "@/UI/DogSprite.jsx";
 import { selectDog, selectDogLevel } from "@/redux/dogSlice.js";
 
 /**

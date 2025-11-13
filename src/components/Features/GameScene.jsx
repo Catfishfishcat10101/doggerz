@@ -1,7 +1,7 @@
 import React from "react";
-import BackgroundScene from "@/components/Features/BackgroundScene.jsx";
-import DogSpriteView from "@/components/Features/DogSpriteView.jsx";
-import DogAIEngine from "@/components/Features/DogAIEngine.jsx";
+import BackgroundScene from "@/Features/BackgroundScene.jsx";
+import DogSpriteView from "@/Features/DogSpriteView.jsx";
+import DogAIEngine from "@/Features/DogAIEngine.jsx";
 
 export default function GameScene() {
   return (

@@ -15,7 +15,7 @@ import {
   markAccident,
 } from "@/redux/dogSlice.js";
 import { useNavigate } from "react-router-dom";
-import ProgressBar from "@/components/UI/ProgressBar.jsx";
+import ProgressBar from "@/UI/ProgressBar.jsx";
 import {
   CheckCircle2,
   RotateCcw,
