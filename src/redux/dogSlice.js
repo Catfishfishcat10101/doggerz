@@ -57,7 +57,7 @@ const initialState = {
 
   // Animation / behavior
   animation: "idle",
-  lastAction: null, // "feed" | "play" | "rest" | "poop" | "scoop" | etc.
+  lastAction: "feed" | "play" | "rest" | "poop" | "scoop" | etc.
 
   isAsleep: false,
   debug: false,
