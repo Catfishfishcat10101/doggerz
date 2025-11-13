@@ -11,6 +11,7 @@ import "./index.css";
 const rootElement = document.getElementById("root");
 
 ReactDOM.createRoot(rootElement).render(
+<<<<<<< Updated upstream
   <React.StrictMode>
     <Provider store={store}>
       <BrowserRouter>
@@ -19,3 +20,9 @@ ReactDOM.createRoot(rootElement).render(
     </Provider>
   </React.StrictMode>
 );
+=======
+  <React.StrictMode></React.StrictMode>
+
+
+)
+>>>>>>> Stashed changes
