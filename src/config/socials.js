@@ -1,3 +1,4 @@
+// src/config/socials.js
 export const LINKS = Object.freeze({
   twitter: "https://x.com/doggerz_app",
   github: "https://github.com/<your-username>/doggerz",

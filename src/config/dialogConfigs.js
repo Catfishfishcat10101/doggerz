@@ -8,19 +8,59 @@ import React, {
   useState,
 } from "react";
 import { createPortal } from "react-dom";
-import { getDialog } from "@/config/dialogConfigs.js";
+
+/* ------------------------------------------------------------------ */
+/* DIALOG PRESET REGISTRY                                             */
+/* ------------------------------------------------------------------ */
+
+// All your dialog presets live here.
+// You can add/rename keys as you grow the app.
+const DIALOG_PRESETS = {
+  // Example: confirm resetting dog progress
+  RESET_DOG_PROGRESS: {
+    title: "Reset Dog?",
+    body: "This will clear your current Dogger and start from scratch. Coins, stats, and progress may be lost.",
+    confirmLabel: "Reset",
+    cancelLabel: "Cancel",
+    variant: "danger",
+  },
+
+  // Example: confirm logout
+  LOG_OUT: {
+    title: "Sign out?",
+    body: "You can sign back in later and your Doggerz data will still be here.",
+    confirmLabel: "Sign out",
+    cancelLabel: "Stay",
+    variant: "primary",
+  },
+
+  // Add more presets as needed:
+  // DELETE_ACCOUNT: { ... },
+  // ADOPT_DOG_CONFIRM: { ... },
+};
+
+export function getDialog(key) {
+  return DIALOG_PRESETS[key] || null;
+}
+
+/* ------------------------------------------------------------------ */
+/* CONTEXT + PROVIDER                                                 */
+/* ------------------------------------------------------------------ */
 
 const DialogCtx = createContext(null);
 
 export function DialogProvider({ children }) {
-  const [stack, setStack] = useState([]); // [{key, resolve, reject, opts}]
+  const [stack, setStack] = useState([]); // [{key, preset, resolve, reject, opts}]
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
 
   const open = useCallback((key, opts = {}) => {
     const preset = getDialog(key);
-    if (!preset) return Promise.reject(new Error(`Unknown dialog key: ${key}`));
+    if (!preset) {
+      return Promise.reject(new Error(`Unknown dialog key: ${key}`));
+    }
+
     return new Promise((resolve, reject) => {
       setStack((s) => [...s, { key, preset, resolve, reject, opts }]);
     });
@@ -44,7 +84,10 @@ export function DialogProvider({ children }) {
     });
   }, []);
 
-  const value = useMemo(() => ({ open, dismissTop }), [open, dismissTop]);
+  const value = useMemo(
+    () => ({ open, dismissTop }),
+    [open, dismissTop],
+  );
 
   return (
     <DialogCtx.Provider value={value}>
@@ -64,11 +107,21 @@ export function DialogProvider({ children }) {
   );
 }
 
+/* ------------------------------------------------------------------ */
+/* HOOK                                                               */
+/* ------------------------------------------------------------------ */
+
 export function useDialog() {
   const ctx = useContext(DialogCtx);
-  if (!ctx) throw new Error("useDialog must be used within <DialogProvider/>");
+  if (!ctx) {
+    throw new Error("useDialog must be used within <DialogProvider/>");
+  }
   return ctx.open;
 }
+
+/* ------------------------------------------------------------------ */
+/* PORTAL + PRESENTATION                                              */
+/* ------------------------------------------------------------------ */
 
 function DialogPortal({ children }) {
   return createPortal(children, document.body);
@@ -116,7 +169,11 @@ function ConfirmDialog({
       {/* card */}
       <div className="relative w-full max-w-md rounded-2xl border border-white/10 bg-slate-900/95 p-5 shadow-2xl">
         <h2 className="text-lg font-semibold">{title}</h2>
-        <p className="mt-2 text-sm text-white/80">{body}</p>
+        {body && (
+          <p className="mt-2 text-sm text-white/80">
+            {body}
+          </p>
+        )}
         <div className="mt-5 flex items-center justify-end gap-2">
           <button
             type="button"

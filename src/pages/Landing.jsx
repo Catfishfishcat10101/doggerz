@@ -25,6 +25,12 @@ export default function Landing() {
               </span>
             </p>
           </div>
+          <img
+  src="/assets/dog-silhouette.svg"
+  alt="Dog Silhouette"
+  className="w-40 h-40 mx-auto animate-float opacity-80"
+/>
+
 
           {/* Primary CTA buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
