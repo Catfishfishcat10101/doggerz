@@ -1,0 +1,309 @@
+
+/* src/features/game/scene/BackgroundScene.css */
+
+/* Palette + knobs */
+:root {
+  --bg-scene-radius: 1.5rem;
+
+  --bg-sky-top: #020617;        /* zinc-950 */
+  --bg-sky-bottom: #0b1120;     /* slate-950 */
+  --bg-horizon: #0f172a;        /* slate-900 */
+
+  --bg-ground: #14532d;         /* green-900-ish */
+  --bg-ground-highlight: #166534;
+
+  --bg-sun: #fbbf24;            /* warm yellow */
+  --bg-sun-glow: rgba(251, 191, 36, 0.25);
+
+  --bg-cloud: rgba(248, 250, 252, 0.9);
+  --bg-cloud-shadow: rgba(15, 23, 42, 0.35);
+
+  --bg-tree-trunk: #78350f;
+  --bg-tree-foliage: #0f766e;
+
+  --bg-fence: rgba(248, 250, 252, 0.09);
+  --bg-fence-border: rgba(15, 23, 42, 0.65);
+
+  --bg-grass-stripe-dark: rgba(15, 118, 110, 0.25);
+  --bg-grass-stripe-light: rgba(34, 197, 94, 0.2);
+}
+
+/* Root container */
+.background-scene {
+  position: relative;
+  width: 100%;
+  border-radius: var(--bg-scene-radius);
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 0% 0%, #1f2937 0, var(--bg-sky-top) 40%),
+    linear-gradient(to bottom, var(--bg-sky-top), var(--bg-sky-bottom));
+  box-shadow:
+    0 18px 45px rgba(0, 0, 0, 0.65),
+    0 0 0 1px rgba(148, 163, 184, 0.25);
+  isolation: isolate;
+}
+
+
+/* Maintain nice height without hard-coding */
+.background-scene__inner {
+  position: relative;
+  width: 100%;
+  padding-top: min(52%, 18rem); /* responsive 16:9-ish */
+}
+
+/* Shared layer styles */
+.background-scene__layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Sky gradient */
+.background-scene__sky {
+  background:
+    radial-gradient(circle at 10% -10%, #22c55e33 0, transparent 55%),
+    radial-gradient(circle at 90% -15%, #f9731633 0, transparent 55%),
+    linear-gradient(to bottom, var(--bg-sky-top), var(--bg-horizon));
+}
+
+/* Sun */
+.background-scene__sun {
+  position: absolute;
+  top: 8%;
+  left: 7%;
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: 999px;
+  background: radial-gradient(circle at 30% 30%, #fef9c3 0, var(--bg-sun) 55%);
+  box-shadow:
+    0 0 25px var(--bg-sun-glow),
+    0 0 80px var(--bg-sun-glow);
+  opacity: 0.95;
+}
+
+/* Ground / yard base */
+.background-scene__ground {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 40%;
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(15, 23, 42, 0.5),
+      rgba(15, 23, 42, 0.8)
+    ),
+    linear-gradient(
+      to top,
+      var(--bg-ground),
+      var(--bg-ground-highlight)
+    );
+}
+
+/* Subtle grass stripes */
+.background-scene__ground::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    -10deg,
+    var(--bg-grass-stripe-dark) 0,
+    var(--bg-grass-stripe-dark) 4px,
+    transparent 4px,
+    transparent 8px
+  );
+  opacity: 0.9;
+}
+
+/* Fence line */
+.background-scene__fence-row {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 42%;
+  height: 0.8rem;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 0.25rem;
+  transform: translateZ(0);
+}
+
+.background-scene__fence-post {
+  width: 0.25rem;
+  height: 0.9rem;
+  border-radius: 999px;
+  background: var(--bg-fence);
+  box-shadow: 0 0 0 1px var(--bg-fence-border);
+}
+
+.background-scene__fence-rail {
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  height: 0.18rem;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    rgba(15, 23, 42, 0.85),
+    var(--bg-fence),
+    rgba(15, 23, 42, 0.85)
+  );
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.8);
+}
+
+/* Tree cluster (left) */
+.background-scene__tree-cluster {
+  position: absolute;
+  left: 7%;
+  bottom: 32%;
+  display: flex;
+  flex-direction: row;
+  gap: 0.25rem;
+  transform-origin: bottom center;
+  animation: bg-tree-sway 6s ease-in-out infinite alternate;
+}
+
+.background-scene__tree {
+  position: relative;
+  width: 1.25rem;
+  height: 2.75rem;
+}
+
+.background-scene__tree-trunk {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0.28rem;
+  height: 1rem;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: linear-gradient(to bottom, #b45309, var(--bg-tree-trunk));
+}
+
+.background-scene__tree-foliage {
+  position: absolute;
+  bottom: 0.9rem;
+  left: 50%;
+  width: 150%;
+  height: 1.8rem;
+  transform: translateX(-50%);
+  border-radius: 999px 999px 70% 70%;
+  background:
+    radial-gradient(circle at 20% 10%, #a7f3d0 0, transparent 55%),
+    radial-gradient(circle at 80% 20%, #22c55e 0, transparent 55%),
+    linear-gradient(to bottom, #0f766e, var(--bg-tree-foliage));
+  box-shadow: 0 10px 15px rgba(15, 23, 42, 0.7);
+}
+
+/* Bushes on right */
+.background-scene__bush-row {
+  position: absolute;
+  right: 5%;
+  bottom: 30%;
+  display: flex;
+  gap: 0.35rem;
+}
+
+.background-scene__bush {
+  width: 1.75rem;
+  height: 1.15rem;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 30% 15%, #bbf7d0 0, transparent 55%),
+    linear-gradient(to bottom, #16a34a, #15803d);
+  box-shadow: 0 8px 12px rgba(15, 23, 42, 0.7);
+}
+
+/* Clouds */
+
+.background-scene__cloud {
+  position: absolute;
+  top: 9%;
+  width: 5rem;
+  height: 2.3rem;
+  background: var(--bg-cloud);
+  border-radius: 999px;
+  box-shadow:
+    0 0.25rem 0.6rem var(--bg-cloud-shadow),
+    -1.8rem 0.35rem 0 -0.4rem var(--bg-cloud),
+    1.7rem 0.4rem 0 -0.6rem var(--bg-cloud);
+  opacity: 0.95;
+}
+
+.background-scene__cloud--left {
+  left: -20%;
+  animation: bg-cloud-drift-left 52s linear infinite;
+}
+
+.background-scene__cloud--right {
+  right: -25%;
+  top: 18%;
+  transform: scale(1.25);
+  animation: bg-cloud-drift-right 64s linear infinite;
+}
+
+/* Foreground vignette / subtle focus */
+.background-scene__vignette {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 90%, transparent 0, rgba(0, 0, 0, 0.45) 75%),
+    radial-gradient(circle at 50% 15%, transparent 0, rgba(0, 0, 0, 0.65) 90%);
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+/* DOG SLOT
+   This is where the React Dog sprite container can anchor itself with a class
+   if you want a stable placement reference.
+*/
+
+.background-scene__dog-slot {
+  position: absolute;
+  left: 50%;
+  bottom: 18%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: min(60%, 18rem);
+  pointer-events: none; /* Dog sprite wrapper can override this */
+}
+
+/* ----------------------- Animations & motion safety ---------------------- */
+
+@keyframes bg-cloud-drift-left {
+  0% {
+    transform: translateX(0) translateY(0) scale(1);
+  }
+  100% {
+    transform: translateX(140%) translateY(3px) scale(1.02);
+  }
+}
+
+@keyframes bg-cloud-drift-right {
+  0% {
+    transform: translateX(0) translateY(0) scale(1.25);
+  }
+  100% {
+    transform: translateX(-150%) translateY(-2px) scale(1.3);
+  }
+}
+
+@keyframes bg-tree-sway {
+  0% {
+    transform: rotate(-1deg) translateY(0);
+  }
+  100% {
+    transform: rotate(1.6deg) translateY(-1px);
+  }
+}
+
+/* Respect system reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .background-scene__cloud--left,
+  .background-scene__cloud--right,
+  .background-scene__tree-cluster {
+    animation: none;
+  }
+}

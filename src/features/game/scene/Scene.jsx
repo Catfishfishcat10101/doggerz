@@ -1,9 +1,8 @@
-//src/features/game/scene/Scene.jsx
+// src/features/game/scene/Scene.jsx
+import React from "react";
+import BackgroundScene from "./BackgroundScene.jsx";
+
 export default function Scene({ children }) {
-  return (
-    <div style={{ minHeight: 280, display: 'grid', placeItems: 'center', border: '1px dashed #333' }}>
-      <em>Scene stub</em>
-      {children}
-    </div>
-  );
+  // One abstraction for “the play yard”
+  return <BackgroundScene>{children}</BackgroundScene>;
 }
