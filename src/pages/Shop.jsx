@@ -1,3 +1,4 @@
+//src/pages/Shop.jsx
 export default function Shop() {
   return (
     <div className="p-8">

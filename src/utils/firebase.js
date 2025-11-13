@@ -1,4 +1,4 @@
-// src/lib/firebase.js
+// src/utils/firebase.js
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
@@ -12,9 +12,14 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
-const app = initializeApp(firebaseConfig);
+// basic guard so dev doesn’t implode
+if (!firebaseConfig.apiKey) {
+  console.warn(
+    "[Doggerz] Firebase API key missing. Check your .env.local (VITE_FIREBASE_API_KEY)."
+  );
+}
 
+const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const googleProvider = new GoogleAuthProvider();
-export default app;

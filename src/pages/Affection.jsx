@@ -1,3 +1,4 @@
+//src/pages/Affection.jsx
 export default function Affection() {
   return (
     <div className="p-8">

@@ -1,3 +1,4 @@
+// src/pages/Potty.jsx
 export default function Potty() {
   return (
     <div className="p-8">
