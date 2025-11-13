@@ -1,8 +1,7 @@
 // src/utils/firebase/dogService.js
-import { auth, db } from "./firebase";
+import { auth, db } from "@/lib/firebase.js";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 
-// Shape aligned to redux initialState so Firestore → Redux is 1:1
 const DEFAULT_DOG_DOC = {
   name: "Pup",
   level: 1,
@@ -34,7 +33,6 @@ export async function adoptDog(name) {
   const payload = {
     ...DEFAULT_DOG_DOC,
     name: String(name || "Pup").slice(0, 24),
-    // if a doc exists, we won’t overwrite progress; just set missing fields
     updatedAt: serverTimestamp(),
   };
 

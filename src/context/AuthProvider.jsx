@@ -84,4 +84,3 @@ export function AuthGate({ children, fallback = null }) {
   }
   return children;
 }
-```0
