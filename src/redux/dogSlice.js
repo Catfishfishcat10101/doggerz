@@ -1,3 +1,4 @@
+// src/redux/dogSlice.js
 import { createSlice } from "@reduxjs/toolkit";
 
 const clamp = (n, lo = 0, hi = 100) =>
@@ -16,6 +17,7 @@ const initialState = {
   },
   poopCount: 0,
   pottyLevel: 0,
+  isPottyTrained: false, // 🔥 actually tracked now
   isAsleep: false,
   debug: false,
   lastUpdatedAt: null,
@@ -89,6 +91,11 @@ const dogSlice = createSlice({
     increasePottyLevel(state, { payload }) {
       const step = Number(payload) || 10;
       state.pottyLevel = clamp(state.pottyLevel + step);
+
+      // Auto-train when pottyLevel hits 100
+      if (state.pottyLevel >= 100) {
+        state.isPottyTrained = true;
+      }
     },
 
     grantCoins(state, { payload }) {
@@ -131,10 +138,13 @@ export const {
   resetDog,
 } = dogSlice.actions;
 
-// Alias exports for older components (Game.jsx, NeedsHUD, etc.)
+// ✅ Alias exports for older components (Game.jsx, NeedsHUD, etc.)
 export const feedDog = feed;
 export const playWithDog = play;
 export const batheDog = bathe;
+
+// ✅ Alias for Settings page / anything expecting resetDogState
+export const resetDogState = resetDog;
 
 export const selectDog = (state) => state.dog;
 
