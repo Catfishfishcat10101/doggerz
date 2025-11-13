@@ -6,20 +6,24 @@
       "@/*": ["src/*"]
     },
 
-    /* JS project ergonomics */
     "checkJs": true,
     "noEmit": true,
 
-    /* Modern ESM + Vite */
     "module": "esnext",
-    "target": "es2022",
+    "target": "ES2022",
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
 
-    /* Global types for Vite/Node (and Vitest if/when you add tests) */
     "types": ["vite/client", "node"]
-    /* Later: add "vitest/globals" here when you enable tests */
   },
-  "include": ["src/**/*", "vite.config.*", "tailwind.config.*", "postcss.config.js"],
+
+  "include": [
+    "src/**/*",
+    "vite.config.js",
+    "postcss.config.js",
+    "tailwind.config.js"
+  ],
+
+  "exclude": ["node_modules", "dist"]
 }
