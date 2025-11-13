@@ -1,107 +1,115 @@
 import { createSlice } from "@reduxjs/toolkit";
 
-const clamp = (n, lo = 0, hi = 100) => Math.max(lo, Math.min(hi, Number(n) || 0));
+const clamp = (n, lo = 0, hi = 100) =>
+  Math.max(lo, Math.min(hi, Number.isFinite(n) ? n : 0));
 
 const initialState = {
   name: "Pup",
   level: 1,
   xp: 0,
   coins: 0,
-  stats: { hunger: 50, happiness: 60, energy: 60, cleanliness: 60 },
-  pos: { x: 0, y: 0 },
-  isPottyTrained: false,
-  pottyLevel: 0,
+  stats: {
+    hunger: 50,
+    happiness: 60,
+    energy: 60,
+    cleanliness: 60,
+  },
   poopCount: 0,
-  lastTrainedAt: null,
+  pottyLevel: 0,
+  isAsleep: false,
+  debug: false,
+  lastUpdatedAt: null,
 };
 
-const slice = createSlice({
+const dogSlice = createSlice({
   name: "dog",
   initialState,
   reducers: {
-    // hydration (Firestore -> Redux)
     hydrateDog(state, { payload }) {
       if (!payload || typeof payload !== "object") return;
-      const next = { ...state, ...payload };
-      next.stats = {
-        hunger: clamp(payload?.stats?.hunger ?? state.stats.hunger),
-        happiness: clamp(payload?.stats?.happiness ?? state.stats.happiness),
-        energy: clamp(payload?.stats?.energy ?? state.stats.energy),
-        cleanliness: clamp(payload?.stats?.cleanliness ?? state.stats.cleanliness),
+      return {
+        ...state,
+        ...payload,
+        stats: {
+          ...state.stats,
+          ...(payload.stats || {}),
+        },
       };
-      next.pos = {
-        x: Number(payload?.pos?.x ?? state.pos.x) || 0,
-        y: Number(payload?.pos?.y ?? state.pos.y) || 0,
-      };
-      next.level = Number(payload?.level ?? state.level) || 1;
-      next.xp = Math.max(0, Number(payload?.xp ?? state.xp) || 0);
-      next.coins = Math.max(0, Number(payload?.coins ?? state.coins) || 0);
-      next.name = String(payload?.name ?? state.name).slice(0, 24);
-      next.pottyLevel = clamp(payload?.pottyLevel ?? state.pottyLevel);
-      next.isPottyTrained = !!(payload?.isPottyTrained ?? state.isPottyTrained);
-      next.poopCount = Math.max(0, Number(payload?.poopCount ?? state.poopCount) || 0);
-      next.lastTrainedAt = payload?.lastTrainedAt ?? state.lastTrainedAt;
-      return next;
     },
 
-    setName(state, action) {
-      state.name = String(action.payload ?? "").slice(0, 24);
-    },
-    awardCoins(state, action) {
-      state.coins += Math.max(0, Number(action.payload) || 0);
-    },
-    setStat(state, action) {
-      const { key, value } = action.payload || {};
-      if (state.stats[key] !== undefined) {
-        state.stats[key] = clamp(value);
-      }
-    },
-    move(state, action) {
-      const { x = 0, y = 0 } = action.payload || {};
-      state.pos = { x: Number(x) || 0, y: Number(y) || 0 };
+    setName(state, { payload }) {
+      state.name = String(payload || "Pup").slice(0, 24);
     },
 
-    // --- core interactions used by your Game UI ---
-    feedDog(state) {
-      state.stats.hunger = clamp(state.stats.hunger + 18);
-      state.stats.cleanliness = clamp(state.stats.cleanliness - 2);
-      state.xp = Math.min(999999, state.xp + 4);
-    },
-    playWithDog(state) {
-      state.stats.happiness = clamp(state.stats.happiness + 16);
-      state.stats.energy = clamp(state.stats.energy - 8);
-      state.xp = Math.min(999999, state.xp + 6);
-    },
-    batheDog(state) {
-      state.stats.cleanliness = clamp(state.stats.cleanliness + 22);
-      state.stats.happiness = clamp(state.stats.happiness - 2); // some dogs hate baths 🤷
-      state.xp = Math.min(999999, state.xp + 3);
+    // ---- Core game actions ----
+
+    feed(state, { payload }) {
+      const amount = Number(payload) || 20;
+      state.stats.hunger = clamp(state.stats.hunger + amount);
+      state.stats.happiness = clamp(state.stats.happiness + 5);
+      state.xp += 1;
     },
 
-    // --- potty training ---
-    increasePottyLevel(state, action) {
-      const inc = Number(action.payload) || 10;
-      state.pottyLevel = clamp(state.pottyLevel + inc);
-      if (state.pottyLevel >= 100) state.isPottyTrained = true;
-      state.lastTrainedAt = new Date().toISOString();
+    play(state, { payload }) {
+      const intensity = Number(payload) || 15;
+      state.stats.happiness = clamp(state.stats.happiness + intensity);
+      state.stats.energy = clamp(state.stats.energy - 10);
+      state.stats.cleanliness = clamp(state.stats.cleanliness - 5);
+      state.xp += 2;
     },
-    markAccident(state) {
+
+    rest(state, { payload }) {
+      const amount = Number(payload) || 20;
+      state.isAsleep = true;
+      state.stats.energy = clamp(state.stats.energy + amount);
+      state.stats.hunger = clamp(state.stats.hunger - 5);
+    },
+
+    wake(state) {
+      state.isAsleep = false;
+    },
+
+    bathe(state, { payload }) {
+      const amount = Number(payload) || 30;
+      state.stats.cleanliness = clamp(state.stats.cleanliness + amount);
+      state.stats.happiness = clamp(state.stats.happiness + 3);
+    },
+
+    scoopPoop(state) {
+      state.poopCount = 0;
+      state.stats.cleanliness = clamp(state.stats.cleanliness + 10);
+      state.xp += 1;
+    },
+
+    dropPoop(state) {
       state.poopCount += 1;
-      state.pottyLevel = clamp(state.pottyLevel - 20);
-      state.isPottyTrained = state.pottyLevel >= 100;
-    },
-    resetPottyLevel(state) {
-      state.pottyLevel = 0;
-      state.isPottyTrained = false;
-      state.lastTrainedAt = null;
+      state.stats.cleanliness = clamp(state.stats.cleanliness - 10);
     },
 
-    // --- misc ---
-    levelUp(state) {
-      state.level += 1;
+    increasePottyLevel(state, { payload }) {
+      const step = Number(payload) || 10;
+      state.pottyLevel = clamp(state.pottyLevel + step);
     },
-    resetDogState() {
-      return JSON.parse(JSON.stringify(initialState));
+
+    grantCoins(state, { payload }) {
+      const amount = Number(payload) || 1;
+      state.coins = Math.max(0, state.coins + amount);
+    },
+
+    tick(state, { payload }) {
+      const dt = Number(payload) || 1;
+      state.stats.hunger = clamp(state.stats.hunger - 0.5 * dt);
+      state.stats.energy = clamp(state.stats.energy - 0.4 * dt);
+      state.stats.happiness = clamp(state.stats.happiness - 0.3 * dt);
+      state.stats.cleanliness = clamp(state.stats.cleanliness - 0.2 * dt);
+    },
+
+    setDebug(state, { payload }) {
+      state.debug = Boolean(payload);
+    },
+
+    resetDog() {
+      return initialState;
     },
   },
 });
@@ -109,39 +117,25 @@ const slice = createSlice({
 export const {
   hydrateDog,
   setName,
-  awardCoins,
-  setStat,
-  move,
-  feedDog,
-  playWithDog,
-  batheDog,
+  feed,
+  play,
+  rest,
+  wake,
+  bathe,
+  scoopPoop,
+  dropPoop,
   increasePottyLevel,
-  markAccident,
-  resetPottyLevel,
-  levelUp,
-  resetDogState,
-} = slice.actions;
+  grantCoins,
+  tick,
+  setDebug,
+  resetDog,
+} = dogSlice.actions;
 
-export default slice.reducer;
+// Alias exports for older components (Game.jsx, NeedsHUD, etc.)
+export const feedDog = feed;
+export const playWithDog = play;
+export const batheDog = bathe;
 
-// selectors
-export const selectDog = (s) => s.dog;
-export const selectDogLevel = (s) => s.dog.level;
-export const selectCoins = (s) => s.dog.coins;
-export const selectPottyLevel = (s) => s.dog?.pottyLevel ?? 0;
-export const selectPottyLastTrainedAt = (s) => s.dog.lastTrainedAt;
-export const selectIsPottyTrained = (s) => !!s.dog?.isPottyTrained;
+export const selectDog = (state) => state.dog;
 
-// compatibility shims
-export const grantCoins = awardCoins;        // Affection.jsx
-export const selectPottyStreak = (s) => 0;   // TODO: real streak logic later
-
-// --- extra selectors used by StatsPanel ---
-export const selectAccessories = (s) => s.dog?.accessories ?? { owned: [] };
-export const selectHappiness  = (s) => ((s.dog?.stats?.happiness ?? 0) / 100);
-export const selectEnergy     = (s) => ((s.dog?.stats?.energy ?? 0) / 100);
-export const selectXp         = (s) => s.dog?.xp ?? 0;
-export const selectXpToNext   = (s) => {
-  const lvl = Number(s.dog?.level ?? 1) || 1;
-  return 50 + Math.floor(lvl ** 1.5 * 25);
-};
+export default dogSlice.reducer;

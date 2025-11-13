@@ -1,27 +1,55 @@
-// src/components/UI/DogSprite.jsx
-const FALLBACK =
-  "data:image/svg+xml;utf8," +
-  encodeURIComponent(`
-  <svg xmlns='http://www.w3.org/2000/svg' width='192' height='192' viewBox='0 0 192 192'>
-    <rect width='100%' height='100%' fill='#0c0a09'/>
-    <g transform='translate(16,16)'>
-      <circle cx='80' cy='80' r='60' fill='#fde68a'/>
-      <circle cx='65' cy='80' r='8' fill='#111827'/>
-      <circle cx='95' cy='80' r='8' fill='#111827'/>
-      <circle cx='80' cy='100' r='6' fill='#7f1d1d'/>
-    </g>
-  </svg>`);
+import React, { useEffect, useState } from "react";
+import jackSprite from "@/assets/sprites/jack_russell_directions.png";
 
-export default function DogSprite({ src = "/sprites/jackrussell/idle.svg", alt = "Dog" }) {
+/**
+ * DogSprite
+ * -----------------------------------------------
+ * Handles:
+ * - Directional sprite selection (left/right/front/back)
+ * - Animation stepping between frame 0 and 1
+ * - Pixel-perfect crisp rendering
+ *
+ * Directions recognized:
+ * "left", "right", "down", "up"
+ */
+
+const FRAME_WIDTH = 64;
+const FRAME_HEIGHT = 64;
+
+const SPRITE_MAP = {
+  left: 0,   // row 0
+  right: 1,  // row 1
+  down: 2,   // row 2
+  up: 3,     // row 3 (your sheet has 1 frame, but this engine supports 2)
+};
+
+export default function DogSprite({ direction = "down", speed = 300 }) {
+  const [frame, setFrame] = useState(0);
+
+  useEffect(() => {
+    // simple 2-frame flip animation
+    const id = setInterval(() => {
+      setFrame((prev) => (prev === 0 ? 1 : 0));
+    }, speed);
+
+    return () => clearInterval(id);
+  }, [speed]);
+
+  const row = SPRITE_MAP[direction] ?? 0;
+  const col = frame;
+
+  const offsetX = -col * FRAME_WIDTH;
+  const offsetY = -row * FRAME_HEIGHT;
+
   return (
-    <img
-      src={src}
-      alt={alt}
-      className="w-[192px] h-[192px] object-contain drop-shadow-[0_0_20px_rgba(255,255,255,0.15)]"
-      onError={(e) => {
-        if (e.currentTarget.src !== FALLBACK) e.currentTarget.src = FALLBACK;
+    <div
+      className="w-16 h-16 bg-no-repeat image-render-pixel"
+      style={{
+        backgroundImage: `url(${jackSprite})`,
+        backgroundPosition: `${offsetX}px ${offsetY}px`,
+        width: FRAME_WIDTH,
+        height: FRAME_HEIGHT,
       }}
-      draggable={false}
     />
   );
 }

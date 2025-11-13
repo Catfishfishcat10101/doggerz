@@ -1,7 +1,49 @@
+#!/usr/bin/env bash
+set -e
+
+cd "$(dirname "$0")"
+
+echo "í´§ Cleaning node_modules and lockfile..."
+rm -rf node_modules package-lock.json || true
+npm cache clean --force
+
+echo "í³¦ Installing dependencies..."
+npm install
+
+echo "í·© Writing vite.config.js..."
+cat > vite.config.js << 'CFG'
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import path from "path";
+
+export default defineConfig({
+  plugins: [react()],
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src")
+    }
+  }
+});
+CFG
+
+echo "í·­ Writing jsconfig.json..."
+cat > jsconfig.json << 'CFG'
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
+  },
+  "include": ["src"]
+}
+CFG
+
+echo "í·± Writing src/App.jsx..."
+cat > src/App.jsx << 'CFG'
 import React from "react";
 import { Routes, Route, Link } from "react-router-dom";
-import MainGame from "./components/UI/MainGame.jsx";
-import DogSprite from "./components/DogSprite.jsx";
+import MainGame from "@/components/UI/MainGame.jsx";
 
 function Splash() {
   return (
@@ -33,7 +75,6 @@ function Splash() {
     </div>
   );
 }
-<DogSpritedirection='down' />
 
 export default function App() {
   return (
@@ -44,3 +85,7 @@ export default function App() {
     </Routes>
   );
 }
+CFG
+
+echo "íº€ Starting dev server..."
+npm run dev
