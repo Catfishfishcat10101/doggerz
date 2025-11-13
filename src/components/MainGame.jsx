@@ -3,7 +3,6 @@ import React, { useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 // --- Redux: import only what we know you've used before ---
-// If any of these don’t exist in your slice, the imports can be trimmed safely.
 import {
   selectDog,                 // selector for full dog state
   feed as feedDog,           // action: feed
@@ -12,18 +11,12 @@ import {
   scoopPoop as scoopPoopAction, // action: scoop poop
 } from "@/redux/dogSlice.js";
 
-// HUD that lives in this feature slice per your screenshot
+// HUD that lives in this feature slice
 import NeedsHUD from "@/features/game/NeedsHUD.jsx";
 
 // Headless game loop / timers
 import DogAIEngine from "@/features/game/DogAIEngine.jsx";
 
-/**
- * Minimal, battle-tested game screen:
- * - No fragile imports (Bg scenes, Firebase, etc.)
- * - Works with or without advanced slice actions
- * - Renders even if parts of state are missing
- */
 export default function MainGame() {
   const dispatch = useDispatch();
   const dog = useSelector(selectDog) || {};
@@ -37,12 +30,29 @@ export default function MainGame() {
     poopCount = 0,
   } = dog;
 
-  const { hunger = 50, energy = 50, cleanliness = 50, happiness = 50 } = stats;
+  const {
+    hunger = 50,
+    energy = 50,
+    cleanliness = 50,
+    happiness = 50,
+  } = stats;
 
   // Handlers are intentionally payload-free (most Doggerz actions didn’t need payloads)
-  const onFeed = useCallback(() => dispatch(feedDog?.() ?? { type: "dog/feed" }), [dispatch]);
-  const onPlay = useCallback(() => dispatch(playDog?.() ?? { type: "dog/play" }), [dispatch]);
-  const onRest = useCallback(() => dispatch(restDog?.() ?? { type: "dog/rest" }), [dispatch]);
+  const onFeed = useCallback(
+    () => dispatch(feedDog?.() ?? { type: "dog/feed" }),
+    [dispatch]
+  );
+
+  const onPlay = useCallback(
+    () => dispatch(playDog?.() ?? { type: "dog/play" }),
+    [dispatch]
+  );
+
+  const onRest = useCallback(
+    () => dispatch(restDog?.() ?? { type: "dog/rest" }),
+    [dispatch]
+  );
+
   const onScoop = useCallback(
     () => dispatch(scoopPoopAction?.() ?? { type: "dog/scoopPoop" }),
     [dispatch]
@@ -50,7 +60,7 @@ export default function MainGame() {
 
   return (
     <div className="min-h-dvh bg-zinc-950 text-zinc-100">
-      {/* Headless engine mounts once and runs timers */}
+      {/* Headless engine mounts once and runs timers / AI */}
       <DogAIEngine />
 
       <main className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-8">
@@ -69,24 +79,28 @@ export default function MainGame() {
           {/* Quick actions */}
           <div className="flex flex-wrap items-center gap-2">
             <button
+              type="button"
               onClick={onFeed}
               className="rounded-xl bg-emerald-600 hover:bg-emerald-500 px-3 py-2 text-sm font-semibold"
             >
               Feed
             </button>
             <button
+              type="button"
               onClick={onPlay}
               className="rounded-xl bg-sky-600 hover:bg-sky-500 px-3 py-2 text-sm font-semibold"
             >
               Play
             </button>
             <button
+              type="button"
               onClick={onRest}
               className="rounded-xl bg-indigo-600 hover:bg-indigo-500 px-3 py-2 text-sm font-semibold"
             >
               Rest
             </button>
             <button
+              type="button"
               onClick={onScoop}
               disabled={poopCount <= 0}
               className="rounded-xl bg-amber-600 hover:bg-amber-500 disabled:opacity-40 px-3 py-2 text-sm font-semibold"
@@ -114,7 +128,7 @@ export default function MainGame() {
             {/* Contextual tips */}
             <p className="mt-3 text-sm text-zinc-400">
               Tip: use the buttons above to interact. This stage is intentionally
-              minimal so the screen **renders** even if other components are missing.
+              minimal so the screen always renders even if other components are missing.
             </p>
           </div>
 
