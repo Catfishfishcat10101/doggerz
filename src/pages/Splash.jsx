@@ -1,4 +1,3 @@
-// src/pages/Splash.jsx
 import React from "react";
 import { Link } from "react-router-dom";
 import { PATHS } from "@/routes.js";
