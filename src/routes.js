@@ -1,6 +1,7 @@
+// src/routes.js
 export const PATHS = {
   SPLASH: "/",          // splash is now root
-  HOME: "/home",        // optional home dashboard
+  HOME: "/home",
   GAME: "/game",
   ADOPT: "/adopt",
   MEMORY: "/memory",

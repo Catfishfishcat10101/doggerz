@@ -5,12 +5,10 @@ import { Provider } from "react-redux";
 import { BrowserRouter } from "react-router-dom";
 
 import App from "./App.jsx";
-import store from "./redux/store.js";
+import { store } from "./redux/store.js";
 import "./index.css";
 
-const rootElement = document.getElementById("root");
-
-ReactDOM.createRoot(rootElement).render(
+ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <Provider store={store}>
       <BrowserRouter>

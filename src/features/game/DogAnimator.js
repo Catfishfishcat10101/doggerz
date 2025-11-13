@@ -5,7 +5,7 @@ const SHEET_WIDTH = 1024;
 const SHEET_HEIGHT = 1024;
 
 export const FRAME_WIDTH = SHEET_WIDTH / 8;   // 128px
-export const FRAME_HEIGHT = SHEET_HEIGHT / 8; // 128px
+export const FRAME_HEIGHT = SHEET_HEIGHT / 8; // 128px;
 
 /**
  * Animation atlas for each dog behavior.
@@ -86,7 +86,7 @@ export const animations = {
 };
 
 /**
- * Returns animation data for a given name.
+ * Returns animation metadata for a given name.
  */
 export function getAnimationMeta(name) {
   return animations[name] ?? animations.idle;
@@ -98,5 +98,7 @@ export function getAnimationMeta(name) {
  */
 export function nextFrame(animName, current) {
   const meta = getAnimationMeta(animName);
-  return (current + 1) % meta.frames;
+  const total = meta.frames || 1;
+  const idx = Number.isFinite(current) ? current : 0;
+  return (idx + 1) % total;
 }

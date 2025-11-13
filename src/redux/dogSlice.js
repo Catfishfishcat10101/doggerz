@@ -4,99 +4,39 @@ import { createSlice } from "@reduxjs/toolkit";
 const clamp = (n, lo = 0, hi = 100) =>
   Math.max(lo, Math.min(hi, Number.isFinite(n) ? n : 0));
 
-function levelThreshold(level) {
-  // Simple curve: gets a bit harder each level
-  const base = 100;
-  const step = 25;
-  return base + (Math.max(1, level) - 1) * step;
-}
-
-function ensureAnimation(state) {
-  if (!state.animation) {
-    state.animation = "idle";
-  }
-}
-
-function awardXp(state, amount = 5) {
-  const gain = Number.isFinite(amount) ? amount : 0;
-  if (gain <= 0) return;
-
-  state.xp += gain;
-
-  // Handle multiple level-ups if XP jumps a lot
-  // but cap to something sane
-  let safety = 20;
-  while (state.xp >= levelThreshold(state.level) && safety-- > 0) {
-    state.xp -= levelThreshold(state.level);
-    state.level += 1;
-  }
-}
-
-function randomIdleVariant() {
-  const roll = Math.random();
-  if (roll < 0.33) return "idle_bark";
-  if (roll < 0.66) return "idle_scratch";
-  return "idle";
-}
-
-// Shared helper used by tickStats / tickNeeds
-function applyNeedsTick(state, delta = 1) {
-  const s = state.stats;
-
-  s.hunger = clamp(s.hunger - 0.05 * delta);
-  s.energy = clamp(s.energy - 0.03 * delta);
-  s.cleanliness = clamp(s.cleanliness - 0.02 * delta);
-
-  // Mood / animation based on needs
-  if (s.hunger < 25 || s.energy < 20) {
-    state.animation = "tired";
-  } else if (s.cleanliness < 25) {
-    state.animation = "dirty";
-  } else if (s.happiness < 30) {
-    state.animation = "sad";
-  } else {
-    ensureAnimation(state);
-  }
-
-  state.lastUpdatedAt = Date.now();
-}
-
 const initialState = {
   name: "Pup",
   level: 1,
   xp: 0,
   coins: 0,
-
   stats: {
     hunger: 50,
     happiness: 60,
     energy: 60,
     cleanliness: 60,
   },
-
   poopCount: 0,
   pottyLevel: 0,
-
-  // Animation / behavior
-  animation: "idle",
-  lastAction: null, // "feed" | "play" | "rest" | "poop" | "scoop" | etc.
-
   isAsleep: false,
   debug: false,
   lastUpdatedAt: null,
 
-  // World position for DogAIEngine + GameScene
-  pos: { x: 160, y: 0 },
-
-  // Current room / scene
-  scene: "yard",
+  // NEW: position + animation for DogAIEngine / DogSpriteView
+  pos: {
+    x: 160,
+    y: 0,
+  },
+  currentAnimation: "idle",
+  lastAction: null,
 };
 
 const dogSlice = createSlice({
   name: "dog",
   initialState,
   reducers: {
-    /* ---------- hydration / debug ---------- */
+    /* ---------------------------------------------------------
+     * HYDRATION / RESET
+     * --------------------------------------------------------- */
     hydrateDog(state, { payload }) {
       if (!payload || typeof payload !== "object") return;
       return {
@@ -106,274 +46,150 @@ const dogSlice = createSlice({
           ...state.stats,
           ...(payload.stats || {}),
         },
-        pos: payload.pos || state.pos,
-        scene: payload.scene || state.scene,
+        pos: {
+          ...state.pos,
+          ...(payload.pos || {}),
+        },
       };
     },
-
     resetDog() {
-      return { ...initialState, animation: "idle" };
+      return initialState;
     },
 
-    setDebug(state, { payload }) {
-      state.debug = Boolean(payload);
-    },
-
-    setName(state, { payload }) {
-      if (typeof payload === "string" && payload.trim()) {
-        state.name = payload.trim();
-      }
-    },
-
-    /* ---------- core animation helpers ---------- */
-    setAnimation(state, { payload }) {
-      // payload: one of the animation strings
-      state.animation = payload || "idle";
-    },
-
-    setLastAction(state, { payload }) {
-      state.lastAction = payload || null;
-    },
-
-    triggerIdleScratch(state) {
-      state.animation = "idle_scratch";
-      state.lastAction = "idle_scratch";
-    },
-
-    triggerIdleTail(state) {
-      // alias: just use idle
-      state.animation = "idle";
-      state.lastAction = "idle_tail";
-    },
-
-    triggerIdle(state) {
-      state.animation = randomIdleVariant();
-      state.lastAction = "idle";
-    },
-
-    /* ---------- stat & progression helpers ---------- */
-    grantCoins(state, { payload }) {
-      const amount = Number.isFinite(payload) ? payload : 0;
-      if (amount <= 0) return;
-      state.coins = Math.max(0, state.coins + amount);
-    },
-
-    setStats(state, { payload }) {
-      if (!payload || typeof payload !== "object") return;
-      const s = state.stats;
-      if (payload.hunger != null) s.hunger = clamp(payload.hunger);
-      if (payload.happiness != null) s.happiness = clamp(payload.happiness);
-      if (payload.energy != null) s.energy = clamp(payload.energy);
-      if (payload.cleanliness != null)
-        s.cleanliness = clamp(payload.cleanliness);
-    },
-
-    /* ---------- game actions (used by UI) ---------- */
-
-    // Feed button
+    /* ---------------------------------------------------------
+     * CORE GAME ACTIONS
+     * --------------------------------------------------------- */
     feed(state) {
-      const s = state.stats;
-      s.hunger = clamp(s.hunger + 20);
-      s.happiness = clamp(s.happiness + 5);
-      s.energy = clamp(s.energy + 5);
-
+      state.stats.hunger = clamp(state.stats.hunger + 18);
+      state.stats.happiness = clamp(state.stats.happiness + 4);
+      state.pottyLevel = clamp(state.pottyLevel + 8);
       state.lastAction = "feed";
-      state.animation = "eat";
-      state.lastUpdatedAt = Date.now();
-
-      awardXp(state, 12);
     },
-
-    // Play button
     play(state) {
-      const s = state.stats;
-      s.happiness = clamp(s.happiness + 18);
-      s.energy = clamp(s.energy - 10);
-      s.hunger = clamp(s.hunger - 5);
-
+      state.stats.happiness = clamp(state.stats.happiness + 14);
+      state.stats.energy = clamp(state.stats.energy - 10);
+      state.stats.cleanliness = clamp(state.stats.cleanliness - 5);
       state.lastAction = "play";
-      state.animation = "play";
-      state.lastUpdatedAt = Date.now();
-
-      awardXp(state, 15);
     },
-
-    // Bath / clean button
-    bathe(state) {
-      const s = state.stats;
-      s.cleanliness = clamp(s.cleanliness + 25);
-      s.happiness = clamp(s.happiness - 5); // some dogs hate baths
-
-      state.lastAction = "bathe";
-      state.animation = "dirty"; // shows dirty → then idle in animator
-      state.lastUpdatedAt = Date.now();
-
-      awardXp(state, 10);
-    },
-
-    // Rest / sleep button
     rest(state) {
-      const s = state.stats;
-
-      if (state.isAsleep) {
-        // Wake up
-        state.isAsleep = false;
-        s.energy = clamp(s.energy + 15);
-        state.animation = randomIdleVariant();
-        state.lastAction = "wake";
-      } else {
-        // Go to sleep
-        state.isAsleep = true;
-        state.animation = "sleep";
-        state.lastAction = "sleep";
-      }
-
-      state.lastUpdatedAt = Date.now();
-      awardXp(state, 8);
+      state.isAsleep = !state.isAsleep;
+      state.lastAction = state.isAsleep ? "sleep_start" : "sleep_end";
     },
-
-    // AI or button can drive potty level
-    increasePottyLevel(state, { payload }) {
-      const delta = Number.isFinite(payload) ? payload : 5;
-      state.pottyLevel = clamp(state.pottyLevel + delta, 0, 100);
-
-      // Auto-poop if over threshold
-      if (state.pottyLevel >= 75) {
-        state.pottyLevel = 0;
-        state.poopCount += 1;
-
-        const s = state.stats;
-        s.cleanliness = clamp(s.cleanliness - 10);
-        s.happiness = clamp(s.happiness - 5);
-
-        state.animation = "poop";
-        state.lastAction = "poop";
-      }
-
-      state.lastUpdatedAt = Date.now();
+    bathe(state) {
+      state.stats.cleanliness = clamp(state.stats.cleanliness + 25);
+      state.lastAction = "bathe";
     },
-
-    // Explicit accident event if you ever call it
-    markAccident(state) {
-      state.poopCount += 1;
-      const s = state.stats;
-      s.cleanliness = clamp(s.cleanliness - 10);
-      s.happiness = clamp(s.happiness - 4);
-      state.animation = "poop";
-      state.lastAction = "poop";
-      state.lastUpdatedAt = Date.now();
-    },
-
-    // Scoop Poop button
     scoopPoop(state) {
-      const piles = state.poopCount;
-      if (piles <= 0) {
-        // No poop: just a tiny “scoop” wobble
-        state.animation = "scoop";
-        state.lastAction = "scoop_empty";
-        state.lastUpdatedAt = Date.now();
-        return;
+      if (state.poopCount > 0) {
+        state.poopCount -= 1;
+        state.stats.cleanliness = clamp(state.stats.cleanliness + 6);
+        state.lastAction = "scoop_poop";
       }
-
-      const s = state.stats;
-      s.cleanliness = clamp(s.cleanliness + 15 + piles * 5);
-      s.happiness = clamp(s.happiness + 5);
-
-      const coinReward = 2 * piles;
-      state.coins = Math.max(0, state.coins + coinReward);
-      awardXp(state, 10 + 5 * piles);
-
-      state.poopCount = 0;
-      state.pottyLevel = 0;
-      state.animation = "scoop";
-      state.lastAction = "scoop";
-      state.lastUpdatedAt = Date.now();
+    },
+    grantCoins(state, { payload }) {
+      const amount = Number(payload ?? 1);
+      state.coins += Number.isFinite(amount) ? amount : 0;
     },
 
-    /* ---------- movement & scene ---------- */
+    /* ---------------------------------------------------------
+     * POTTY / XP / LEVEL
+     * --------------------------------------------------------- */
+    increasePottyLevel(state, { payload }) {
+      const delta = Number(payload ?? 4);
+      state.pottyLevel = clamp(state.pottyLevel + delta, 0, 100);
+      if (state.pottyLevel >= 100) {
+        state.poopCount += 1;
+        state.pottyLevel = 0;
+      }
+    },
+    grantXP(state, { payload }) {
+      const amount = Number(payload ?? 5);
+      state.xp += Number.isFinite(amount) ? amount : 0;
+      while (state.xp >= 100) {
+        state.xp -= 100;
+        state.level += 1;
+      }
+    },
 
+    /* ---------------------------------------------------------
+     * MOVEMENT + ANIMATION (for DogAIEngine / DogSpriteView)
+     * --------------------------------------------------------- */
     move(state, { payload }) {
       if (!payload) return;
       const { x, y } = payload;
       if (Number.isFinite(x)) state.pos.x = x;
       if (Number.isFinite(y)) state.pos.y = y;
     },
-
-    setScene(state, { payload }) {
-      if (typeof payload === "string") {
-        state.scene = payload;
-      }
+    setAnimation(state, { payload }) {
+      state.currentAnimation = payload || "idle";
+    },
+    setLastAction(state, { payload }) {
+      state.lastAction = payload ?? null;
     },
 
-    /* ---------- generic ticks ---------- */
-
-    // used by DogAIEngine (dt in payload.dt or payload.delta)
+    /* ---------------------------------------------------------
+     * PASSIVE STAT DECAY (AI tick)
+     * --------------------------------------------------------- */
     tickStats(state, { payload }) {
-      const dt =
-        (payload && (payload.dt ?? payload.delta)) != null
-          ? Number(payload.dt ?? payload.delta)
-          : 1;
-      applyNeedsTick(state, dt);
+      const dt = Number(payload?.dt ?? 1);
+
+      // Small decay per tick
+      const hungerDelta = -0.6 * dt;
+      const happinessDelta = -0.4 * dt;
+      const energyDelta = state.isAsleep ? +0.8 * dt : -0.5 * dt;
+      const cleanlinessDelta = -0.2 * dt;
+
+      state.stats.hunger = clamp(state.stats.hunger + hungerDelta);
+      state.stats.happiness = clamp(state.stats.happiness + happinessDelta);
+      state.stats.energy = clamp(state.stats.energy + energyDelta);
+      state.stats.cleanliness = clamp(
+        state.stats.cleanliness + cleanlinessDelta
+      );
+
+      // Auto-sleep if exhausted
+      if (state.stats.energy < 10 && !state.isAsleep) {
+        state.isAsleep = true;
+        state.currentAnimation = "sleep";
+      }
+
+      state.lastUpdatedAt = Date.now();
     },
 
-    // legacy name; same behavior as tickStats
-    tickNeeds(state, { payload }) {
-      const dt =
-        (payload && (payload.delta ?? payload.dt)) != null
-          ? Number(payload.delta ?? payload.dt)
-          : 1;
-      applyNeedsTick(state, dt);
+    /* ---------------------------------------------------------
+     * DEBUG
+     * --------------------------------------------------------- */
+    setDebug(state, { payload }) {
+      state.debug = Boolean(payload);
     },
   },
 });
 
-/* ---------- selectors ---------- */
+/* -------------------------------------------------------------
+ * SELECTORS
+ * ------------------------------------------------------------- */
+export const selectDog = (state) => state.dog ?? initialState;
+export const selectCoins = (state) => (state.dog ?? initialState).coins;
+export const selectDogStats = (state) => (state.dog ?? initialState).stats;
 
-export const selectDog = (state) => state.dog || initialState;
-export const selectDogStats = (state) => (state.dog || initialState).stats;
-export const selectDogCoins = (state) => (state.dog || initialState).coins;
-export const selectDogLevel = (state) => {
-  const d = state.dog || initialState;
-  return {
-    level: d.level,
-    xp: d.xp,
-    threshold: levelThreshold(d.level),
-  };
-};
-
-/* ---------- actions / aliases ---------- */
-
+/* -------------------------------------------------------------
+ * ACTIONS / REDUCER
+ * ------------------------------------------------------------- */
 export const {
   hydrateDog,
   resetDog,
-  setDebug,
-  setName,
-  setAnimation,
-  setLastAction,
-  triggerIdleScratch,
-  triggerIdleTail,
-  triggerIdle,
-  grantCoins,
-  setStats,
   feed,
   play,
-  bathe,
   rest,
-  increasePottyLevel,
+  bathe,
   scoopPoop,
-  markAccident,
-  tickStats,
-  tickNeeds,
+  grantCoins,
+  increasePottyLevel,
+  grantXP,
   move,
-  setScene,
+  setAnimation,
+  setLastAction,
+  tickStats,
+  setDebug,
 } = dogSlice.actions;
-
-// Old names used in some components
-export const feedDog = feed;
-export const playWithDog = play;
-export const batheDog = bathe;
-
-// For components expecting scoopPoopAction etc.
-export const scoopPoopAction = scoopPoop;
 
 export default dogSlice.reducer;

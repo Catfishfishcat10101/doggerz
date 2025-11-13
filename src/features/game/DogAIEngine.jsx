@@ -28,21 +28,16 @@ export default function DogAIEngine() {
   const dispatch = useDispatch();
 
   // Movement state (local component refs, NOT Redux)
-  const velocityRef = useRef(0);      // current movement speed (px/frame)
-  const targetXRef = useRef(null);    // target position AI wants to move to
-  const idleTimerRef = useRef(0);     // counts how long dog is idle
+  const velocityRef = useRef(0); // current movement speed (px/frame)
+  const targetXRef = useRef(null); // target position AI wants to move to
+  const idleTimerRef = useRef(0); // counts how long dog is idle
   const attentionCooldownRef = useRef(0);
 
-  /* ---------------------------------------------------------
-   * UTILS
-   * --------------------------------------------------------- */
-
   const randomRange = (min, max) => Math.random() * (max - min) + min;
-
   const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
   const sceneWidth = 320; // your GameScene width in pixels; adjust as needed
-  const walkSpeed = 1.1;  // pixels per frame
+  const walkSpeed = 1.1; // pixels per frame
 
   /* ---------------------------------------------------------
    * BEHAVIOR LOOP (2Hz)
@@ -57,7 +52,7 @@ export default function DogAIEngine() {
 
       // Sleep handling
       if (dog.isAsleep) {
-        dispatch(setAnimation("sleep_breath"));
+        dispatch(setAnimation("sleep")); // matches DogAnimator + DogSpriteView
         velocityRef.current = 0;
         return;
       }
@@ -65,16 +60,16 @@ export default function DogAIEngine() {
       /* ----------------------- Wandering logic ----------------------- */
       idleTimerRef.current += 1;
 
-      // If long idle → random bark or scratch handled by DogSpriteView
+      // If long idle → random bark/scratch handled visually in DogSpriteView
       if (idleTimerRef.current > 10 && Math.random() < 0.05) {
-        dispatch(setAnimation("idle")); // DogSpriteView decides idle variant
+        dispatch(setAnimation("idle"));
       }
 
       // Trigger attention-seeking gesture
-      if (attentionCooldownRef.current <= 0 && dog.stats.happiness < 30) {
+      if (attentionCooldownRef.current <= 0 && dog.stats?.happiness < 30) {
         dispatch(setAnimation("attention"));
         dispatch(setLastAction("attention"));
-        attentionCooldownRef.current = 12; // 6 seconds cooldown
+        attentionCooldownRef.current = 12; // ~6 seconds cooldown at 2Hz
       } else {
         attentionCooldownRef.current -= 1;
       }
@@ -83,7 +78,7 @@ export default function DogAIEngine() {
       if (Math.random() < 0.15) {
         targetXRef.current = randomRange(20, sceneWidth - 20);
       }
-    }, 500);
+    }, 500); // 2Hz
 
     return () => clearInterval(behaviorLoop);
   }, [dog, dispatch]);
@@ -96,10 +91,13 @@ export default function DogAIEngine() {
     const movementLoop = setInterval(() => {
       if (!dog) return;
 
+      // Ensure we have a position
+      const pos = dog.pos || { x: 160, y: 0 };
+
       // If asleep → no movement
       if (dog.isAsleep || targetXRef.current == null) return;
 
-      const { x } = dog.pos;
+      const { x } = pos;
       const targetX = targetXRef.current;
 
       const diff = targetX - x;
@@ -122,13 +120,12 @@ export default function DogAIEngine() {
       dispatch(
         move({
           x: newX,
-          y: dog.pos.y,
+          y: pos.y,
         })
       );
 
       // Set walk animation
       dispatch(setAnimation(direction > 0 ? "walk_right" : "walk_left"));
-
     }, 1000 / 60); // 60 FPS internal engine
 
     return () => clearInterval(movementLoop);
