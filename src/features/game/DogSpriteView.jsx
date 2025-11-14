@@ -23,7 +23,7 @@ export default function DogSpriteView() {
       const roll = Math.random();
 
       if (roll < 0.05) setIdleVariant("idle_bark");
-      else if (roll < 0.1) setIdleVariant("idle_scratch");
+      else if (roll < 0.10) setIdleVariant("idle_scratch");
       else setIdleVariant("idle");
     }, 3000);
 
@@ -86,13 +86,15 @@ export default function DogSpriteView() {
     width: `${frameWidth}px`,
     height: `${frameHeight}px`,
     backgroundImage: `url(${spriteSheet})`,
-    backgroundSize: `${SPRITE_COLS * 100}% ${SPRITE_ROWS * 100}%`,
-    backgroundPosition: `${backgroundPosX}% ${backgroundPosY}%`,
+    backgroundSize: `${sheetWidth}px ${sheetHeight}px`,
+    backgroundPosition: `${frameX}px ${frameY}px`,
 
     imageRendering: "pixelated",
+
     transform: `scale(${breathingScale})`,
     transition: "transform 0.2s ease-out, opacity 0.2s ease-out",
     opacity: dog.isAsleep ? 0.65 : 1,
+
     filter: `
       drop-shadow(0px 6px 3px rgba(0,0,0,0.5))
       brightness(${attention ? 1.35 : 1})

@@ -2,21 +2,19 @@
 import React, { useEffect, useState } from "react";
 import jackSprite from "@/assets/sprites/jack_russell_directions.png";
 
-// Size of a single frame in the sprite sheet (source pixels)
 const FRAME_WIDTH = 64;
 const FRAME_HEIGHT = 64;
 
-// Row index per facing direction (0-based)
 const SPRITE_MAP = {
-  left: 0,   // row 0
-  right: 1,  // row 1
-  down: 2,   // row 2
-  up: 3,     // row 3
+  left: 0,   
+  right: 1, 
+  down: 2,   
+  up: 3,     
 };
 
 export default function DogSprite({
   direction = "down",
-  speed = 300,
+  speed = 3000,
   scale = 1,
   className = "",
   "aria-label": ariaLabel = "Dog sprite",
@@ -24,8 +22,7 @@ export default function DogSprite({
   const [frame, setFrame] = useState(0);
 
   useEffect(() => {
-    // Clamp speed so we don't accidentally fry the CPU
-    const interval = Math.max(80, Number(speed) || 300);
+    const interval = Math.max(80, Number(speed) || 3000);
 
     const id = setInterval(() => {
       setFrame((prev) => (prev === 0 ? 1 : 0));
@@ -53,7 +50,6 @@ export default function DogSprite({
         backgroundPosition: `${offsetX}px ${offsetY}px`,
         width,
         height,
-        // Make it chunky pixel art instead of blurry scaling
         imageRendering: "pixelated",
       }}
     />
