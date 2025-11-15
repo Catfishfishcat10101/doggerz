@@ -15,7 +15,6 @@ pnpm-debug.log*
 *.suo
 *.sln
 };
-node_modules
 .env.local
 .env
 env.local

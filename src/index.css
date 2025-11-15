@@ -1,12 +1,48 @@
+/* src/index.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-:root { color-scheme: dark;} 
-html, body, #root { height: 100%; }
-body { @apply bg-zinc-950 text-zinc-100; }
+/* Global app baseline */
+:root {
+  color-scheme: dark;
+  --bg-body: #020617;      /* zinc-950-ish */
+  --bg-panel: #09090b;
+  --fg-primary: #f9fafb;
+  --accent: #22c55e;       /* emerald-500 */
+}
 
-a { @apply text-sky-400; }
-a:hover { @apply text-sky-300; }
-};
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+  background-color: var(--bg-body);
+  color: var(--fg-primary);
+}
+
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+button {
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}

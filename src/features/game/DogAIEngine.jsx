@@ -1,135 +1,83 @@
 // src/features/game/DogAIEngine.jsx
-import React, { useEffect, useRef } from "react";
+import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { hydrateDog, tick, selectDog } from "@/redux/dogSlice.js";
 
-import {
-  move,
-  setAnimation,
-  setLastAction,
-  tickStats,
-  selectDog,
-} from "@/redux/dogSlice.js";
+const STORAGE_KEY = "doggerz:dog";
 
-/**
- * DogAIEngine
- *
- * Behavioral engine that simulates:
- * - wandering left/right
- * - boredom → idle variants
- * - attention-seeking
- * - sleep conditions
- * - automatic state decay (tickStats)
- *
- * Runs internally at 60Hz movement loop
- * and a slower 2Hz behavior loop.
- */
 export default function DogAIEngine() {
-  const dog = useSelector(selectDog);
   const dispatch = useDispatch();
+  const dog = useSelector(selectDog);
 
-  // Movement state (local component refs, NOT Redux)
-  const velocityRef = useRef(0); // current movement speed (px/frame)
-  const targetXRef = useRef(null); // target position AI wants to move to
-  const idleTimerRef = useRef(0); // counts how long dog is idle
-  const attentionCooldownRef = useRef(0);
-
-  const randomRange = (min, max) => Math.random() * (max - min) + min;
-  const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
-
-  const sceneWidth = 320; // your GameScene width in pixels; adjust as needed
-  const walkSpeed = 1.1; // pixels per frame
-
-  /* ---------------------------------------------------------
-   * BEHAVIOR LOOP (2Hz)
-   * Drives decisions: wander, sleep, attention, mood.
-   * --------------------------------------------------------- */
+  // 1) Hydrate from localStorage and apply offline time
   useEffect(() => {
-    const behaviorLoop = setInterval(() => {
-      if (!dog) return;
+    if (typeof window === "undefined") return;
 
-      // Tick stats slowly over time.
-      dispatch(tickStats({ dt: 1 }));
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
 
-      // Sleep handling
-      if (dog.isAsleep) {
-        dispatch(setAnimation("sleep")); // matches DogAnimator + DogSpriteView
-        velocityRef.current = 0;
-        return;
-      }
+      const parsed = JSON.parse(raw);
+      const lastUpdatedAt =
+        typeof parsed.lastUpdatedAt === "number"
+          ? parsed.lastUpdatedAt
+          : Date.now();
 
-      /* ----------------------- Wandering logic ----------------------- */
-      idleTimerRef.current += 1;
-
-      // If long idle → random bark/scratch handled visually in DogSpriteView
-      if (idleTimerRef.current > 10 && Math.random() < 0.05) {
-        dispatch(setAnimation("idle"));
-      }
-
-      // Trigger attention-seeking gesture
-      if (attentionCooldownRef.current <= 0 && dog.stats?.happiness < 30) {
-        dispatch(setAnimation("attention"));
-        dispatch(setLastAction("attention"));
-        attentionCooldownRef.current = 12; // ~6 seconds cooldown at 2Hz
-      } else {
-        attentionCooldownRef.current -= 1;
-      }
-
-      // Decide new wander target occasionally
-      if (Math.random() < 0.15) {
-        targetXRef.current = randomRange(20, sceneWidth - 20);
-      }
-    }, 500); // 2Hz
-
-    return () => clearInterval(behaviorLoop);
-  }, [dog, dispatch]);
-
-  /* ---------------------------------------------------------
-   * MOVEMENT LOOP (60Hz)
-   * Moves dog toward targetXRef.
-   * --------------------------------------------------------- */
-  useEffect(() => {
-    const movementLoop = setInterval(() => {
-      if (!dog) return;
-
-      // Ensure we have a position
-      const pos = dog.pos || { x: 160, y: 0 };
-
-      // If asleep → no movement
-      if (dog.isAsleep || targetXRef.current == null) return;
-
-      const { x } = pos;
-      const targetX = targetXRef.current;
-
-      const diff = targetX - x;
-
-      if (Math.abs(diff) < 2) {
-        // Reached target
-        velocityRef.current = 0;
-        dispatch(setAnimation("idle"));
-        targetXRef.current = null;
-        return;
-      }
-
-      // Move left or right
-      const direction = diff > 0 ? 1 : -1;
-
-      velocityRef.current = direction * walkSpeed;
-
-      const newX = clamp(x + velocityRef.current, 0, sceneWidth - 20);
-
+      // Bring saved state into Redux
       dispatch(
-        move({
-          x: newX,
-          y: pos.y,
+        hydrateDog({
+          ...parsed,
+          lastUpdatedAt,
         })
       );
 
-      // Set walk animation
-      dispatch(setAnimation(direction > 0 ? "walk_right" : "walk_left"));
-    }, 1000 / 60); // 60 FPS internal engine
+      // Apply offline decay once on load
+      const now = Date.now();
+      if (now > lastUpdatedAt) {
+        dispatch(
+          tick({
+            now,
+          })
+        );
+      }
+    } catch (err) {
+      console.warn("[Doggerz] Failed to hydrate dog from localStorage", err);
+    }
+  }, [dispatch]);
 
-    return () => clearInterval(movementLoop);
-  }, [dog, dispatch]);
+  // 2) Persist to localStorage whenever dog changes
+  useEffect(() => {
+    if (typeof window === "undefined" || !dog) return;
 
+    try {
+      const withTimestamp = {
+        ...dog,
+        lastUpdatedAt: Date.now(),
+      };
+      window.localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(withTimestamp)
+      );
+    } catch (err) {
+      console.warn("[Doggerz] Failed to persist dog to localStorage", err);
+    }
+  }, [dog]);
+
+  // 3) Soft game loop: tick every 60 seconds
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const id = window.setInterval(() => {
+      dispatch(
+        tick({
+          now: Date.now(),
+        })
+      );
+    }, 60 * 1000); // 1 minute
+
+    return () => window.clearInterval(id);
+  }, [dispatch]);
+
+  // Headless component – nothing to render
   return null;
 }

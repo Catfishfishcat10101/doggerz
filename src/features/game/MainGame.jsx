@@ -1,13 +1,12 @@
 // src/features/game/MainGame.jsx
-import React from "react";
+import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   selectDog,
   feed as feedDog,
   play as playDog,
-  rest as restDog,
   bathe as batheDog,
-  scoopPoop as scoopPoopAction,
+  goPotty as goPottyAction,
 } from "@/redux/dogSlice.js";
 import DogAIEngine from "@/features/game/DogAIEngine.jsx";
 
@@ -50,6 +49,7 @@ function Pill({ label, value, tone = "default" }) {
 export default function MainGame() {
   const dispatch = useDispatch();
   const dog = useSelector(selectDog);
+  const [showHelp, setShowHelp] = useState(false);
 
   if (!dog) {
     return (
@@ -84,8 +84,7 @@ export default function MainGame() {
   const fullHours = Math.floor(ageHours || 0);
   const days = Math.floor(fullHours / 24);
   const hours = fullHours % 24;
-  const ageLabel =
-    days > 0 ? `${days}d ${hours}h` : `${hours}h`;
+  const ageLabel = days > 0 ? `${days}d ${hours}h` : `${hours}h`;
 
   let conditionLabel = "Clean";
   let conditionTone = "default";
@@ -103,17 +102,35 @@ export default function MainGame() {
   const healthTone =
     health < 30 ? "danger" : health < 60 ? "warn" : "default";
 
+  const pottyTrainedLabel = `${Math.round(pottyLevel || 0)}%`;
+
+  let statusLabel = "Awake";
+  if (!isAlive) {
+    statusLabel = "Has passed on";
+  } else if (isAsleep) {
+    statusLabel = "Sleeping (recharging)";
+  } else if (hunger < 25) {
+    statusLabel = "Hungry";
+  } else if (cleanliness < 25) {
+    statusLabel = "Needs a bath";
+  } else if (happiness < 25) {
+    statusLabel = "Bored";
+  }
+
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-50 flex flex-col">
+      {/* Invisible engine */}
       <DogAIEngine />
 
+      {/* Top header for the game screen */}
       <header className="border-b border-zinc-800 px-6 py-4 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-black tracking-tight">
-            Doggerz <span className="text-emerald-400">Main Game</span>
+            Doggerz <span className="text-emerald-400">Pup Care</span>
           </h1>
           <p className="text-xs text-zinc-400">
-            Keep {name}&apos;s hunger, happiness, energy, and cleanliness up.
+            Keep {name}&apos;s hunger, happiness, energy, and cleanliness up
+            over real time.
           </p>
         </div>
 
@@ -129,7 +146,9 @@ export default function MainGame() {
               <span className="text-xs uppercase tracking-wide text-zinc-400">
                 XP
               </span>
-              <span className="text-lg font-semibold">{xp.toFixed(0)}</span>
+              <span className="text-lg font-semibold">
+                {Math.floor(xp)}
+              </span>
             </div>
             <div className="flex flex-col items-end">
               <span className="text-xs uppercase tracking-wide text-zinc-400">
@@ -154,6 +173,7 @@ export default function MainGame() {
       </header>
 
       <main className="flex-1 flex flex-col lg:flex-row gap-8 px-6 py-6">
+        {/* LEFT: dog + interactions */}
         <section className="flex-1 rounded-2xl border border-zinc-800 bg-gradient-to-b from-zinc-900/80 to-zinc-950 p-6 flex flex-col">
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -170,9 +190,9 @@ export default function MainGame() {
               </p>
             </div>
             <div className="flex flex-col items-end text-xs text-zinc-400">
-              <span>Poops on ground: {poopCount}</span>
-              <span>Potty level: {pottyLevel}</span>
-              <span>Status: {isAsleep ? "Sleeping" : "Awake"}</span>
+              <span>Poops in yard: {poopCount}</span>
+              <span>Potty trained: {pottyTrainedLabel}</span>
+              <span>Status: {statusLabel}</span>
             </div>
           </div>
 
@@ -184,7 +204,8 @@ export default function MainGame() {
             </div>
           </div>
 
-          <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3">
+          {/* Interaction buttons */}
+          <div className="mt-6 grid grid-cols-2 md:grid-cols-3 gap-3">
             <button
               type="button"
               onClick={() => dispatch(feedDog())}
@@ -205,37 +226,36 @@ export default function MainGame() {
 
             <button
               type="button"
-              onClick={() => dispatch(restDog())}
-              className="rounded-xl bg-violet-500 hover:bg-violet-400 text-zinc-950 text-sm font-semibold py-2.5 px-4 transition disabled:opacity-40 disabled:cursor-not-allowed"
-              disabled={!isAlive}
-            >
-              {isAsleep ? "Wake Up" : "Rest"}
-            </button>
-
-            <button
-              type="button"
               onClick={() => dispatch(batheDog())}
               className="rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 text-sm font-semibold py-2.5 px-4 transition disabled:opacity-40 disabled:cursor-not-allowed"
               disabled={!isAlive}
             >
               Bathe
             </button>
+          </div>
 
+          <div className="mt-4 flex justify-center">
             <button
               type="button"
-              onClick={() => dispatch(scoopPoopAction())}
-              className="col-span-2 md:col-span-4 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-100 text-sm font-semibold py-2.5 px-4 transition disabled:opacity-40 disabled:cursor-not-allowed"
-              disabled={!isAlive || poopCount === 0}
+              onClick={() => dispatch(goPottyAction())}
+              className="inline-flex items-center justify-center rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-100 text-xs font-semibold py-2 px-5 transition disabled:opacity-40 disabled:cursor-not-allowed"
+              disabled={!isAlive}
             >
-              Scoop Poop
+              Go potty
             </button>
           </div>
+
+          <p className="mt-3 text-[0.7rem] text-zinc-500 text-center">
+            Your pup will curl up and sleep automatically when energy runs low,
+            and slowly wake back up as they rest.
+          </p>
         </section>
 
+        {/* RIGHT: needs + help */}
         <section className="w-full lg:w-80 space-y-4">
           <div className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-5">
             <p className="text-xs uppercase tracking-wide text-zinc-400 mb-3">
-              Pup Needs
+              Pup needs
             </p>
             <div className="space-y-3">
               <StatBar
@@ -261,15 +281,37 @@ export default function MainGame() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-4 text-xs text-zinc-400 space-y-1.5">
-            <p className="font-semibold text-zinc-200 text-sm">
-              Care guidelines
-            </p>
-            <p>• Feed periodically; don&apos;t let hunger drop too low.</p>
-            <p>• Play to keep happiness up, but watch energy.</p>
-            <p>• Rest to recover energy; overdoing it can hurt happiness.</p>
-            <p>• Bathe before cleanliness falls too low to avoid fleas/mange.</p>
-            <p>• Scoop poop to keep the yard clean and bump cleanliness.</p>
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-4 text-xs text-zinc-400 space-y-2">
+            <div className="flex items-center justify-between">
+              <p className="font-semibold text-zinc-200 text-sm">
+                Need help?
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowHelp((v) => !v)}
+                className="rounded-full border border-zinc-600 px-3 py-1 text-[0.7rem] uppercase tracking-wide hover:border-emerald-400 hover:text-emerald-300 transition"
+              >
+                {showHelp ? "Hide tips" : "Show tips"}
+              </button>
+            </div>
+
+            {showHelp && (
+              <div className="space-y-1.5 mt-1">
+                <p>• Feed periodically; don&apos;t let hunger drop too low.</p>
+                <p>• Play to keep happiness up, but watch energy.</p>
+                <p>
+                  • Your pup auto-sleeps when tired; give them time to fully
+                  recharge.
+                </p>
+                <p>
+                  • Bathe before cleanliness falls too low to avoid fleas/mange.
+                </p>
+                <p>
+                  • Take potty breaks to keep the yard clean and improve potty
+                  training.
+                </p>
+              </div>
+            )}
           </div>
         </section>
       </main>

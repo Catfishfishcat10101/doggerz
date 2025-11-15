@@ -1,12 +1,15 @@
 // src/App.jsx
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Routes,
   Route,
   Link,
+  useLocation,
   useNavigate,
 } from "react-router-dom";
 import {
+  onAuthStateChanged,
+  signOut,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   updateProfile,
@@ -16,60 +19,90 @@ import MainGame from "@/features/game/MainGame.jsx";
 
 /* ---------- Layout shell (header + footer) ---------- */
 
-function AppShell({ children }) {
+function AppShell({ children, currentUser, onLogout }) {
+  const displayName =
+    currentUser?.displayName ||
+    currentUser?.email?.split("@")[0] ||
+    "";
+
   return (
     <div className="min-h-screen flex flex-col bg-zinc-950 text-zinc-50">
+      {/* Header */}
       <header className="border-b border-zinc-800 bg-zinc-950/90 backdrop-blur">
-        <div className="mx-auto max-w-5xl px-4 py-3 flex items-center justify-between">
+        <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between gap-4">
           <Link to="/" className="flex items-baseline gap-2">
-            <span className="text-2xl font-black tracking-tight">
+            <span className="text-2xl font-black tracking-tight text-white">
               Doggerz
             </span>
-            <span className="text-xs uppercase tracking-[0.2em] text-zinc-400">
+            <span className="text-xs uppercase tracking-[0.25em] text-zinc-400">
               Virtual Pup Simulator
             </span>
           </Link>
 
-          <nav className="flex items-center gap-4 text-sm">
-            <Link
-              to="/"
-              className="text-zinc-300 hover:text-white transition"
-            >
-              Home
-            </Link>
-            <Link
-              to="/about"
-              className="text-zinc-300 hover:text-white transition"
-            >
-              About
-            </Link>
-            <Link
-              to="/contact"
-              className="text-zinc-300 hover:text-white transition"
-            >
-              Contact
-            </Link>
-            <div className="w-px h-5 bg-zinc-700 mx-1" />
-            <Link
-              to="/login"
-              className="text-zinc-300 hover:text-white transition"
-            >
-              Log in
-            </Link>
-            <Link
-              to="/signup"
-              className="rounded-full bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold px-3 py-1.5 transition"
-            >
-              Sign up
-            </Link>
-          </nav>
+          <div className="flex items-center gap-6">
+            <nav className="hidden sm:flex items-center gap-4 text-sm">
+              <Link
+                to="/"
+                className="text-zinc-300 hover:text-white transition"
+              >
+                Home
+              </Link>
+              <Link
+                to="/about"
+                className="text-zinc-300 hover:text-white transition"
+              >
+                About
+              </Link>
+              <Link
+                to="/contact"
+                className="text-zinc-300 hover:text-white transition"
+              >
+                Contact
+              </Link>
+            </nav>
+
+            {currentUser ? (
+              <div className="flex items-center gap-3 text-sm">
+                <span className="hidden sm:inline text-zinc-300">
+                  Hi,{" "}
+                  <span className="font-semibold text-white">
+                    {displayName}
+                  </span>
+                </span>
+                <button
+                  type="button"
+                  onClick={onLogout}
+                  className="rounded-full border border-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-200 hover:bg-zinc-800 transition"
+                >
+                  Log out
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 text-sm">
+                <Link
+                  to="/login"
+                  className="text-zinc-300 hover:text-white transition"
+                >
+                  Log in
+                </Link>
+                <Link
+                  to="/signup"
+                  className="rounded-full bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold px-3 py-1.5 transition"
+                >
+                  Sign up
+                </Link>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
+      {/* Page content */}
       <main className="flex-1">{children}</main>
 
+      {/* Global footer */}
       <footer className="border-t border-zinc-800 bg-zinc-950/90">
-        <div className="mx-auto max-w-5xl px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-zinc-400">
+        <div className="mx-auto max-w-6xl px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-zinc-400">
           <span>
             Doggerz – Created by William Johnson – 2025. All Rights Reserved.
           </span>
@@ -90,20 +123,24 @@ function AppShell({ children }) {
   );
 }
 
-/* ---------- Pages ---------- */
+/* ---------- Splash / marketing page ---------- */
 
-function SplashPage() {
+function SplashPage({ currentUser, onLogout }) {
+  const primaryLabel = currentUser ? "Resume your pup" : "Adopt your pup";
+  const primaryHref = currentUser ? "/game" : "/signup";
+
   return (
-    <AppShell>
-      <section className="mx-auto max-w-5xl px-4 py-16 lg:py-24 flex flex-col lg:flex-row items-center gap-12">
+    <AppShell currentUser={currentUser} onLogout={onLogout}>
+      <section className="mx-auto max-w-6xl px-4 py-16 lg:py-24 flex flex-col lg:flex-row items-center gap-12">
+        {/* Left: hero copy */}
         <div className="flex-1 space-y-6">
           <div className="space-y-2">
             <p className="text-xs uppercase tracking-[0.3em] text-emerald-400">
               Adopt. Care. Level up.
             </p>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight">
-              Your <span className="text-emerald-400">virtual pup</span>,
-              always one tap away.
+              Your <span className="text-emerald-400">virtual pup</span>, always
+              one tap away.
             </h1>
           </div>
 
@@ -115,34 +152,50 @@ function SplashPage() {
 
           <div className="flex flex-wrap items-center gap-3">
             <Link
-              to="/signup"
+              to={primaryHref}
               className="inline-flex items-center justify-center rounded-full bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold px-6 py-3 text-sm sm:text-base transition"
             >
-              Adopt your pup
+              {primaryLabel}
             </Link>
+
+            {!currentUser && (
+              <Link
+                to="/login"
+                className="text-sm text-zinc-300 hover:text-white transition"
+              >
+                Already have an account?{" "}
+                <span className="text-emerald-400 font-medium">
+                  Log in
+                </span>
+              </Link>
+            )}
           </div>
 
-          <p className="text-xs text-zinc-400">
-            Already have an account?{" "}
-            <Link
-              to="/login"
-              className="text-emerald-400 hover:text-emerald-300 font-medium"
-            >
-              Log in
-            </Link>
-          </p>
+          {currentUser && (
+            <p className="text-xs text-emerald-400 mt-4">
+              Logged in as{" "}
+              <span className="font-semibold">
+                {currentUser.displayName || currentUser.email}
+              </span>
+              .{" "}
+              <Link
+                to="/game"
+                className="underline underline-offset-2 hover:text-emerald-300"
+              >
+                Jump back into the yard.
+              </Link>
+            </p>
+          )}
         </div>
 
-        {/* Right-hand card: explain the aging/condition system instead of fake preview */}
+        {/* Right: explainer card */}
         <div className="flex-1">
           <div className="relative rounded-3xl border border-zinc-800 bg-gradient-to-br from-zinc-900 to-zinc-950 p-6 shadow-xl">
             <div className="text-xs uppercase tracking-[0.25em] text-zinc-500 mb-4">
               How Doggerz works
             </div>
             <div className="rounded-2xl border border-zinc-800 bg-zinc-900/70 px-4 py-5 space-y-3 text-sm text-zinc-300">
-              <p>
-                • Your dog slowly ages even while you&apos;re logged out.
-              </p>
+              <p>• Your dog slowly ages even while you&apos;re logged out.</p>
               <p>
                 • Hunger, boredom, and dirtiness creep up over real hours, not
                 button mashing.
@@ -152,8 +205,8 @@ function SplashPage() {
                 mange, so regular baths matter.
               </p>
               <p>
-                • Taking good care of your dog extends their life; ignoring
-                them shortens it.
+                • Taking good care of your dog extends their life; ignoring them
+                shortens it.
               </p>
             </div>
           </div>
@@ -163,14 +216,21 @@ function SplashPage() {
   );
 }
 
-/* ---------- Auth pages (Firebase wired) ---------- */
+/* ---------- Auth pages ---------- */
 
-function LoginPage() {
+function LoginPage({ currentUser, onLogout }) {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // If already logged in, bounce to game
+  useEffect(() => {
+    if (currentUser) {
+      navigate("/game");
+    }
+  }, [currentUser, navigate]);
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -188,12 +248,13 @@ function LoginPage() {
   };
 
   return (
-    <AppShell>
+    <AppShell currentUser={currentUser} onLogout={onLogout}>
       <section className="mx-auto max-w-md px-4 py-16">
         <h2 className="text-3xl font-bold mb-2">Log in</h2>
         <p className="text-sm text-zinc-400 mb-8">
           Welcome back. Your pup has been waiting.
         </p>
+
         <form className="space-y-4" onSubmit={onSubmit}>
           <div className="space-y-1">
             <label className="text-xs text-zinc-400">Email</label>
@@ -205,6 +266,7 @@ function LoginPage() {
               autoComplete="email"
             />
           </div>
+
           <div className="space-y-1">
             <label className="text-xs text-zinc-400">Password</label>
             <input
@@ -229,6 +291,7 @@ function LoginPage() {
           >
             {loading ? "Logging in..." : "Log in"}
           </button>
+
           <p className="text-xs text-zinc-400 text-center">
             Don&apos;t have an account?{" "}
             <Link
@@ -244,7 +307,7 @@ function LoginPage() {
   );
 }
 
-function SignupPage() {
+function SignupPage({ currentUser, onLogout }) {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -252,10 +315,17 @@ function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  useEffect(() => {
+    if (currentUser) {
+      navigate("/game");
+    }
+  }, [currentUser, navigate]);
+
   const onSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
+
     try {
       const cred = await createUserWithEmailAndPassword(
         auth,
@@ -269,7 +339,6 @@ function SignupPage() {
         });
       }
 
-      // TODO: also create initial dog document in Firestore later.
       navigate("/game");
     } catch (err) {
       console.error(err);
@@ -280,13 +349,14 @@ function SignupPage() {
   };
 
   return (
-    <AppShell>
+    <AppShell currentUser={currentUser} onLogout={onLogout}>
       <section className="mx-auto max-w-md px-4 py-16">
         <h2 className="text-3xl font-bold mb-2">Adopt your pup</h2>
         <p className="text-sm text-zinc-400 mb-8">
           Create your Doggerz profile and claim your first pup. They&apos;ll
           age and need care even while you&apos;re away.
         </p>
+
         <form className="space-y-4" onSubmit={onSubmit}>
           <div className="space-y-1">
             <label className="text-xs text-zinc-400">Email</label>
@@ -298,6 +368,7 @@ function SignupPage() {
               autoComplete="email"
             />
           </div>
+
           <div className="space-y-1">
             <label className="text-xs text-zinc-400">Password</label>
             <input
@@ -308,6 +379,7 @@ function SignupPage() {
               autoComplete="new-password"
             />
           </div>
+
           <div className="space-y-1">
             <label className="text-xs text-zinc-400">Pup name</label>
             <input
@@ -332,6 +404,7 @@ function SignupPage() {
           >
             {loading ? "Creating account..." : "Create account & adopt"}
           </button>
+
           <p className="text-xs text-zinc-400 text-center">
             Already have an account?{" "}
             <Link
@@ -347,16 +420,16 @@ function SignupPage() {
   );
 }
 
-// For now, adopt just reuses signup flow.
-function AdoptPage() {
-  return <SignupPage />;
+// /adopt just reuses the signup flow
+function AdoptPage(props) {
+  return <SignupPage {...props} />;
 }
 
 /* ---------- Info pages ---------- */
 
-function AboutPage() {
+function AboutPage({ currentUser, onLogout }) {
   return (
-    <AppShell>
+    <AppShell currentUser={currentUser} onLogout={onLogout}>
       <section className="mx-auto max-w-3xl px-4 py-16 space-y-6">
         <h2 className="text-3xl font-bold">About Doggerz</h2>
         <p className="text-sm text-zinc-300">
@@ -376,9 +449,9 @@ function AboutPage() {
   );
 }
 
-function ContactPage() {
+function ContactPage({ currentUser, onLogout }) {
   return (
-    <AppShell>
+    <AppShell currentUser={currentUser} onLogout={onLogout}>
       <section className="mx-auto max-w-3xl px-4 py-16 space-y-6">
         <h2 className="text-3xl font-bold">Contact</h2>
         <p className="text-sm text-zinc-300">
@@ -397,9 +470,9 @@ function ContactPage() {
   );
 }
 
-function LegalPage() {
+function LegalPage({ currentUser, onLogout }) {
   return (
-    <AppShell>
+    <AppShell currentUser={currentUser} onLogout={onLogout}>
       <section className="mx-auto max-w-3xl px-4 py-16 space-y-4 text-sm text-zinc-300">
         <h2 className="text-2xl font-bold">Legal</h2>
         <p>
@@ -412,20 +485,115 @@ function LegalPage() {
   );
 }
 
-/* ---------- Router ---------- */
+/* ---------- Root App (router + auth wiring) ---------- */
 
 export default function App() {
+  const [currentUser, setCurrentUser] = useState(null);
+  const [authReady, setAuthReady] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+      setAuthReady(true);
+    });
+    return () => unsub();
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+    } catch (err) {
+      console.error("[Doggerz] Failed to log out", err);
+    } finally {
+      navigate("/");
+    }
+  };
+
+  if (!authReady) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-zinc-950 text-zinc-200">
+        <p className="text-sm text-zinc-400">Loading your pup…</p>
+      </div>
+    );
+  }
+
   return (
-    <Routes>
-      <Route path="/" element={<SplashPage />} />
+    <Routes location={location}>
+      <Route
+        path="/"
+        element={
+          <SplashPage
+            currentUser={currentUser}
+            onLogout={handleLogout}
+          />
+        }
+      />
       <Route path="/game" element={<MainGame />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/signup" element={<SignupPage />} />
-      <Route path="/adopt" element={<AdoptPage />} />
-      <Route path="/about" element={<AboutPage />} />
-      <Route path="/contact" element={<ContactPage />} />
-      <Route path="/legal" element={<LegalPage />} />
-      <Route path="*" element={<SplashPage />} />
+      <Route
+        path="/login"
+        element={
+          <LoginPage
+            currentUser={currentUser}
+            onLogout={handleLogout}
+          />
+        }
+      />
+      <Route
+        path="/signup"
+        element={
+          <SignupPage
+            currentUser={currentUser}
+            onLogout={handleLogout}
+          />
+        }
+      />
+      <Route
+        path="/adopt"
+        element={
+          <AdoptPage
+            currentUser={currentUser}
+            onLogout={handleLogout}
+          />
+        }
+      />
+      <Route
+        path="/about"
+        element={
+          <AboutPage
+            currentUser={currentUser}
+            onLogout={handleLogout}
+          />
+        }
+      />
+      <Route
+        path="/contact"
+        element={
+          <ContactPage
+            currentUser={currentUser}
+            onLogout={handleLogout}
+          />
+        }
+      />
+      <Route
+        path="/legal"
+        element={
+          <LegalPage
+            currentUser={currentUser}
+            onLogout={handleLogout}
+          />
+        }
+      />
+      <Route
+        path="*"
+        element={
+          <SplashPage
+            currentUser={currentUser}
+            onLogout={handleLogout}
+          />
+        }
+      />
     </Routes>
   );
 }
