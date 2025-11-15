@@ -1,48 +1,65 @@
 /* src/index.css */
+
+/* Tailwind reset + utilities */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Global app baseline */
-:root {
-  color-scheme: dark;
-  --bg-body: #020617;      /* zinc-950-ish */
-  --bg-panel: #09090b;
-  --fg-primary: #f9fafb;
-  --accent: #22c55e;       /* emerald-500 */
-}
-
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
+/* Global layout */
 html,
 body,
 #root {
-  margin: 0;
-  padding: 0;
   height: 100%;
 }
 
 body {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
-  background-color: var(--bg-body);
-  color: var(--fg-primary);
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Inter",
+    "Segoe UI", sans-serif;
+  background-color: #020617; /* zinc-950-ish */
+  color: #f9fafb; /* zinc-50-ish */
 }
 
-.app-shell {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+/* Smooth fonts */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-button {
-  cursor: pointer;
+/* Links */
+a {
+  text-decoration: none;
 }
 
-:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+/* Optional: subtle custom scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #020617;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  background: #27272a; /* zinc-800 */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46; /* zinc-700 */
+}
+
+/* Utility class for "pill" text (if you ever need outside Tailwind) */
+.text-pill {
+  border-radius: 9999px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+}
+
+/* Root-level background helper if needed */
+.doggerz-bg {
+  background: radial-gradient(circle at top left, #10b981 0, transparent 55%),
+    radial-gradient(circle at bottom right, #0ea5e9 0, transparent 55%),
+    #020617;
 }

@@ -1,18 +1,47 @@
 // src/firebase.js
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getAnalytics } from "firebase/analytics";
+import {
+  getAuth,
+  GoogleAuthProvider,
+  FacebookAuthProvider,
+} from "firebase/auth";
 
+// Pull config from Vite env vars
 const firebaseConfig = {
-  apiKey: "AIzaSyBYN6XJEAiw6eVIChByegk9xcGLWIA0C1E",
-  authDomain: "dogger-a8021.firebaseapp.com",
-  projectId: "dogger-a8021",
-  storageBucket: "dogger-a8021.firebasestorage.app",
-  messagingSenderId: "1014835520506",
-  appId: "1:1014835520506:web:6dc75cbe987d1dc10a3a43",
-  measurementId: "G-VM8P3108DN"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
+// Safety check in dev so we don’t silently run with junk config
+if (import.meta.env.DEV) {
+  if (!firebaseConfig.apiKey) {
+    console.warn(
+      "[Doggerz] Firebase API key missing. Check your .env.local (VITE_FIREBASE_API_KEY)."
+    );
+  } else {
+    console.info("[Doggerz] Firebase configured for project:", {
+      projectId: firebaseConfig.projectId,
+      authDomain: firebaseConfig.authDomain,
+    });
+  }
+}
+
+// Initialize Firebase app (singleton)
 const app = initializeApp(firebaseConfig);
-const analtics = getAnalytics(app);
+
+// Auth + providers
 export const auth = getAuth(app);
+
+export const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({
+  prompt: "select_account",
+});
+
+export const facebookProvider = new FacebookAuthProvider();
+
+// Default export if you ever need the raw app
+export default app;

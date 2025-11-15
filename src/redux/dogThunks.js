@@ -1,47 +1,60 @@
-import { createAsyncThunk } from "@reduxjs/toolkit";
-import { auth, db } from "@/utils/firebase.js";
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
-import { hydrateDog } from "@/redux/dogSlice.js";
+// src/redux/dogThunks.js
+import {
+  hydrateDog,
+  tick,
+  feed,
+  play,
+  rest,
+  bathe,
+  scoopPoop,
+} from "./dogSlice.js";
 
-/** Fetch the current user's dog and hydrate Redux. */
-export const fetchDog = createAsyncThunk(
-  "dog/fetch",
-  async (_, { dispatch }) => {
-    const u = auth.currentUser;
-    if (!u) return null;
+const STORAGE_KEY = "doggerz:dog";
 
-    const ref = doc(db, "dogs", u.uid);
-    const snap = await getDoc(ref);
-
-    if (snap.exists()) {
-      const data = snap.data();
-      dispatch(hydrateDog(data));
-      return data;
+/**
+ * Hard reset the local pup state:
+ * - Clears localStorage
+ * - Re-hydrates Redux with an empty object (dogSlice will merge with defaults)
+ */
+export const hardResetDog = () => (dispatch) => {
+  if (typeof window !== "undefined") {
+    try {
+      window.localStorage.removeItem(STORAGE_KEY);
+    } catch (err) {
+      console.warn("[Doggerz] Failed to clear dog localStorage", err);
     }
-
-    return null;
   }
-);
 
-/** Persist a partial update to the dog doc and hydrate Redux with the result. */
-export const saveDog = createAsyncThunk(
-  "dog/save",
-  async (patch, { dispatch }) => {
-    const u = auth.currentUser;
-    if (!u) throw new Error("Not authenticated");
+  // Hydrate with empty object; dogSlice will fallback to its own initialState.
+  dispatch(
+    hydrateDog({
+      // deliberately minimal – slice will overlay its defaults
+    })
+  );
+};
 
-    const ref = doc(db, "dogs", u.uid);
-    const payload = { ...patch, updatedAt: serverTimestamp() };
+/**
+ * Apply an artificial "offline" window in minutes.
+ * Useful for testing: e.g. simulate 6 hours away from app.
+ */
+export const simulateOfflineMinutes = (minutes = 60) => (dispatch) => {
+  const ms = Math.max(0, minutes) * 60 * 1000;
+  const fakeNow = Date.now() + ms;
+  dispatch(
+    tick({
+      now: fakeNow,
+    })
+  );
+};
 
-    await setDoc(ref, payload, { merge: true });
-
-    const snap = await getDoc(ref);
-    const data = snap.exists() ? snap.data() : null;
-
-    if (data) {
-      dispatch(hydrateDog(data));
-    }
-
-    return data;
-  }
-);
+/**
+ * Quick-care helper: feed, play, rest, bathe, and clean up poop once.
+ * Not used in UI yet, but handy for dev tools or future "Auto-care" feature.
+ */
+export const quickCarePass = () => (dispatch) => {
+  dispatch(feed());
+  dispatch(play());
+  dispatch(rest());
+  dispatch(bathe());
+  dispatch(scoopPoop());
+};
