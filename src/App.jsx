@@ -4,26 +4,33 @@ import {
   Routes,
   Route,
   Link,
-  useNavigate,
   useLocation,
+  useNavigate,
 } from "react-router-dom";
 import {
+  onAuthStateChanged,
+  signOut,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   updateProfile,
-  signInWithPopup,
-  onAuthStateChanged,
-  signOut,
 } from "firebase/auth";
-import {
-  auth,
-  googleProvider,
-  facebookProvider,
-} from "@/firebase.js";
+import { auth } from "@/firebase.js";
+import MainGame from "@/features/game/MainGame.jsx";
 
-/* ---------- Layout shell (header + footer) ---------- */
+/* ---------- Layout: header + footer wrapper ---------- */
 
-function AppShell({ children, currentUser, onLogout }) {
+function AppLayout({ currentUser, children }) {
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate("/");
+    } catch (err) {
+      console.error("[Doggerz] Failed to log out", err);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-zinc-950 text-zinc-50">
       <header className="border-b border-zinc-800 bg-zinc-950/90 backdrop-blur">
@@ -62,16 +69,14 @@ function AppShell({ children, currentUser, onLogout }) {
               <>
                 <span className="hidden sm:inline text-xs text-zinc-400">
                   Hi,&nbsp;
-                  <span className="font-semibold text-zinc-200">
-                    {currentUser.displayName ||
-                      currentUser.email ||
-                      "Pup Parent"}
+                  <span className="font-semibold">
+                    {currentUser.displayName || currentUser.email}
                   </span>
                 </span>
                 <button
                   type="button"
-                  onClick={onLogout}
-                  className="rounded-full border border-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-200 hover:bg-zinc-800 transition"
+                  onClick={handleLogout}
+                  className="text-zinc-300 hover:text-white text-sm"
                 >
                   Log out
                 </button>
@@ -120,11 +125,11 @@ function AppShell({ children, currentUser, onLogout }) {
   );
 }
 
-/* ---------- Splash / marketing page ---------- */
+/* ---------- Splash / Home ---------- */
 
 function SplashPage({ currentUser }) {
   return (
-    <AppShell currentUser={currentUser}>
+    <AppLayout currentUser={currentUser}>
       <section className="mx-auto max-w-5xl px-4 py-16 lg:py-24 flex flex-col lg:flex-row items-center gap-12">
         <div className="flex-1 space-y-6">
           <div className="space-y-2">
@@ -132,8 +137,8 @@ function SplashPage({ currentUser }) {
               Adopt. Care. Level up.
             </p>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight">
-              Your <span className="text-emerald-400">virtual pup</span>,
-              always one tap away.
+              Your <span className="text-emerald-400">virtual pup</span>, always
+              one tap away.
             </h1>
           </div>
 
@@ -152,10 +157,10 @@ function SplashPage({ currentUser }) {
             </Link>
           </div>
 
-          {currentUser ? (
+          {currentUser && (
             <p className="text-xs text-zinc-400">
               Logged in as{" "}
-              <span className="font-semibold text-zinc-200">
+              <span className="font-semibold">
                 {currentUser.displayName || currentUser.email}
               </span>
               .{" "}
@@ -164,16 +169,6 @@ function SplashPage({ currentUser }) {
                 className="text-emerald-400 hover:text-emerald-300 font-medium"
               >
                 Jump back into the yard.
-              </Link>
-            </p>
-          ) : (
-            <p className="text-xs text-zinc-400">
-              Already have an account?{" "}
-              <Link
-                to="/login"
-                className="text-emerald-400 hover:text-emerald-300 font-medium"
-              >
-                Log in
               </Link>
             </p>
           )}
@@ -191,8 +186,8 @@ function SplashPage({ currentUser }) {
                 button mashing.
               </p>
               <p>
-                • As cleanliness drops, your pup goes from dirty → fleas → mange,
-                so regular baths matter.
+                • As cleanliness drops, your pup goes from dirty → fleas →
+                mange, so regular baths matter.
               </p>
               <p>
                 • Taking good care of your dog extends their life; ignoring them
@@ -202,36 +197,23 @@ function SplashPage({ currentUser }) {
           </div>
         </div>
       </section>
-    </AppShell>
+    </AppLayout>
   );
 }
 
-/* ---------- Game page shell (MainGame component already exists) ---------- */
-
-import MainGame from "@/features/game/MainGame.jsx";
-
-/* ---------- Auth pages: LOGIN + SIGNUP (with social login) ---------- */
+/* ---------- Auth pages ---------- */
 
 function LoginPage({ currentUser }) {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loadingEmail, setLoadingEmail] = useState(false);
-  const [loadingSocial, setLoadingSocial] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [socialError, setSocialError] = useState("");
-
-  useEffect(() => {
-    if (currentUser) {
-      navigate("/game");
-    }
-  }, [currentUser, navigate]);
 
   const onSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    setSocialError("");
-    setLoadingEmail(true);
+    setLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email.trim(), password);
       navigate("/game");
@@ -239,43 +221,17 @@ function LoginPage({ currentUser }) {
       console.error(err);
       setError(err.message || "Failed to log in.");
     } finally {
-      setLoadingEmail(false);
-    }
-  };
-
-  const handleSocialLogin = async (providerName) => {
-    setError("");
-    setSocialError("");
-    setLoadingSocial(true);
-
-    try {
-      const provider =
-        providerName === "google" ? googleProvider : facebookProvider;
-
-      await signInWithPopup(auth, provider);
-      navigate("/game");
-    } catch (err) {
-      console.error(err);
-      setSocialError(
-        err.code === "auth/popup-closed-by-user"
-          ? "Login popup was closed before completing."
-          : err.message || "Social login failed."
-      );
-    } finally {
-      setLoadingSocial(false);
+      setLoading(false);
     }
   };
 
   return (
-    <AppShell currentUser={currentUser}>
-      <section className="mx-auto max-w-md px-4 py-16 space-y-6">
-        <div>
-          <h2 className="text-3xl font-bold mb-2">Log in</h2>
-          <p className="text-sm text-zinc-400">
-            Welcome back. Your pup has been waiting.
-          </p>
-        </div>
-
+    <AppLayout currentUser={currentUser}>
+      <section className="mx-auto max-w-md px-4 py-16">
+        <h2 className="text-3xl font-bold mb-2">Log in</h2>
+        <p className="text-sm text-zinc-400 mb-8">
+          Welcome back. Your pup has been waiting.
+        </p>
         <form className="space-y-4" onSubmit={onSubmit}>
           <div className="space-y-1">
             <label className="text-xs text-zinc-400">Email</label>
@@ -306,60 +262,23 @@ function LoginPage({ currentUser }) {
 
           <button
             type="submit"
-            disabled={loadingEmail || loadingSocial}
+            disabled={loading}
             className="w-full rounded-full bg-emerald-500 hover:bg-emerald-400 disabled:opacity-60 disabled:cursor-not-allowed text-zinc-950 font-semibold py-2.5 text-sm transition"
           >
-            {loadingEmail ? "Logging in..." : "Log in"}
+            {loading ? "Logging in..." : "Log in"}
           </button>
-        </form>
-
-        <div className="flex items-center gap-3 text-xs text-zinc-500">
-          <div className="h-px flex-1 bg-zinc-800" />
-          <span>Or continue with</span>
-          <div className="h-px flex-1 bg-zinc-800" />
-        </div>
-
-        <div className="flex flex-col gap-3">
-          <button
-            type="button"
-            disabled={loadingSocial}
-            onClick={() => handleSocialLogin("google")}
-            className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-zinc-700 bg-zinc-900 hover:bg-zinc-800 text-sm py-2.5 disabled:opacity-60 disabled:cursor-not-allowed transition"
-          >
-            {/* You can swap this for a real Google icon later */}
-            <span className="text-lg">G</span>
-            <span>Continue with Google</span>
-          </button>
-
-          <button
-            type="button"
-            disabled={loadingSocial}
-            onClick={() => handleSocialLogin("facebook")}
-            className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-zinc-700 bg-zinc-900 hover:bg-zinc-800 text-sm py-2.5 disabled:opacity-60 disabled:cursor-not-allowed transition"
-          >
-            {/* You can swap this for a real Facebook icon later */}
-            <span className="text-lg">f</span>
-            <span>Continue with Facebook</span>
-          </button>
-        </div>
-
-        {socialError && (
-          <p className="text-xs text-red-400 bg-red-950/40 border border-red-900 rounded-lg px-3 py-2">
-            {socialError}
+          <p className="text-xs text-zinc-400 text-center">
+            Don&apos;t have an account?{" "}
+            <Link
+              to="/signup"
+              className="text-emerald-400 hover:text-emerald-300 font-medium"
+            >
+              Adopt your pup
+            </Link>
           </p>
-        )}
-
-        <p className="text-xs text-zinc-400 text-center pt-2">
-          Don&apos;t have an account?{" "}
-          <Link
-            to="/signup"
-            className="text-emerald-400 hover:text-emerald-300 font-medium"
-          >
-            Adopt your pup
-          </Link>
-        </p>
+        </form>
       </section>
-    </AppShell>
+    </AppLayout>
   );
 }
 
@@ -370,12 +289,6 @@ function SignupPage({ currentUser }) {
   const [pupName, setPupName] = useState("Fireball");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
-  useEffect(() => {
-    if (currentUser) {
-      navigate("/game");
-    }
-  }, [currentUser, navigate]);
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -404,7 +317,7 @@ function SignupPage({ currentUser }) {
   };
 
   return (
-    <AppShell currentUser={currentUser}>
+    <AppLayout currentUser={currentUser}>
       <section className="mx-auto max-w-md px-4 py-16">
         <h2 className="text-3xl font-bold mb-2">Adopt your pup</h2>
         <p className="text-sm text-zinc-400 mb-8">
@@ -456,7 +369,7 @@ function SignupPage({ currentUser }) {
           >
             {loading ? "Creating account..." : "Create account & adopt"}
           </button>
-          <p className="text-xs text-zinc-400 text-center pt-2">
+          <p className="text-xs text-zinc-400 text-center">
             Already have an account?{" "}
             <Link
               to="/login"
@@ -467,20 +380,20 @@ function SignupPage({ currentUser }) {
           </p>
         </form>
       </section>
-    </AppShell>
+    </AppLayout>
   );
 }
 
-// For now, adopt just reuses signup flow.
-function AdoptPage({ currentUser }) {
-  return <SignupPage currentUser={currentUser} />;
+// Simple alias: Adopt route just reuses Signup flow for now
+function AdoptPage(props) {
+  return <SignupPage {...props} />;
 }
 
 /* ---------- Info pages ---------- */
 
 function AboutPage({ currentUser }) {
   return (
-    <AppShell currentUser={currentUser}>
+    <AppLayout currentUser={currentUser}>
       <section className="mx-auto max-w-3xl px-4 py-16 space-y-6">
         <h2 className="text-3xl font-bold">About Doggerz</h2>
         <p className="text-sm text-zinc-300">
@@ -496,13 +409,13 @@ function AboutPage({ currentUser }) {
           thriving.
         </p>
       </section>
-    </AppShell>
+    </AppLayout>
   );
 }
 
 function ContactPage({ currentUser }) {
   return (
-    <AppShell currentUser={currentUser}>
+    <AppLayout currentUser={currentUser}>
       <section className="mx-auto max-w-3xl px-4 py-16 space-y-6">
         <h2 className="text-3xl font-bold">Contact</h2>
         <p className="text-sm text-zinc-300">
@@ -517,13 +430,13 @@ function ContactPage({ currentUser }) {
           </p>
         </div>
       </section>
-    </AppShell>
+    </AppLayout>
   );
 }
 
 function LegalPage({ currentUser }) {
   return (
-    <AppShell currentUser={currentUser}>
+    <AppLayout currentUser={currentUser}>
       <section className="mx-auto max-w-3xl px-4 py-16 space-y-4 text-sm text-zinc-300">
         <h2 className="text-2xl font-bold">Legal</h2>
         <p>
@@ -532,21 +445,42 @@ function LegalPage({ currentUser }) {
           Service and Privacy Policy will be added before public release.
         </p>
       </section>
-    </AppShell>
+    </AppLayout>
   );
 }
 
-/* ---------- Router + auth state wiring ---------- */
+/* ---------- Root App / Router ---------- */
 
-function AppRoutes({ currentUser }) {
+export default function App() {
   const location = useLocation();
+  const [currentUser, setCurrentUser] = useState(null);
+  const [authReady, setAuthReady] = useState(false);
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+      setAuthReady(true);
+    });
+    return unsub;
+  }, []);
+
+  if (!authReady) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-zinc-950 text-zinc-50">
+        <p className="text-sm text-zinc-400">Loading your pup…</p>
+      </div>
+    );
+  }
 
   return (
     <Routes location={location}>
       <Route path="/" element={<SplashPage currentUser={currentUser} />} />
       <Route path="/game" element={<MainGame />} />
       <Route path="/login" element={<LoginPage currentUser={currentUser} />} />
-      <Route path="/signup" element={<SignupPage currentUser={currentUser} />} />
+      <Route
+        path="/signup"
+        element={<SignupPage currentUser={currentUser} />}
+      />
       <Route path="/adopt" element={<AdoptPage currentUser={currentUser} />} />
       <Route path="/about" element={<AboutPage currentUser={currentUser} />} />
       <Route
@@ -556,43 +490,5 @@ function AppRoutes({ currentUser }) {
       <Route path="/legal" element={<LegalPage currentUser={currentUser} />} />
       <Route path="*" element={<SplashPage currentUser={currentUser} />} />
     </Routes>
-  );
-}
-
-export default function App() {
-  const [currentUser, setCurrentUser] = useState(null);
-  const [initializing, setInitializing] = useState(true);
-
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user || null);
-      setInitializing(false);
-    });
-
-    return () => unsub();
-  }, []);
-
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-    } catch (err) {
-      console.error("Failed to log out", err);
-    }
-  };
-
-  if (initializing) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-950 text-zinc-200">
-        <p className="text-sm text-zinc-400">Booting Doggerz…</p>
-      </div>
-    );
-  }
-
-  // Wrap routes in AppShell to pass logout handler (header/footer) from here
-  return (
-    <AppShell currentUser={currentUser} onLogout={handleLogout}>
-      {/* We render routes *inside* the shell's main slot */}
-      <AppRoutes currentUser={currentUser} />
-    </AppShell>
   );
 }

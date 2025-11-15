@@ -6,7 +6,7 @@ import {
   play,
   rest,
   bathe,
-  scoopPoop,
+
 } from "./dogSlice.js";
 
 const STORAGE_KEY = "doggerz:dog";
@@ -56,5 +56,4 @@ export const quickCarePass = () => (dispatch) => {
   dispatch(play());
   dispatch(rest());
   dispatch(bathe());
-  dispatch(scoopPoop());
 };
