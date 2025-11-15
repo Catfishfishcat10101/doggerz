@@ -4,77 +4,46 @@ import { createSlice } from "@reduxjs/toolkit";
 const clamp = (n, lo = 0, hi = 100) =>
   Math.max(lo, Math.min(hi, Number.isFinite(n) ? n : 0));
 
-/* ------------ Real-time design constants ------------ */
+const MS_PER_HOUR = 1000 * 60 * 60;
 
-const REAL_HOURS_PER_DAY = 24;
+// --- Design constants (tunable knobs) ---
+//
+// These control how fast the sim drifts vs real time. If you want
+// Doggerz to feel slower or faster, tweak these numbers.
 
-// Hunger / starvation
-const HUNGER_25PCT_HOURS = 12;          // 12h → 25% hunger bar
-const HUNGER_ZERO_START_HOURS = 24;     // after 24h, you’re “fully starving”
-const STARVATION_DEATH_DAYS = 4;        // 4 real days → death
-const STARVATION_DEATH_HOURS = STARVATION_DEATH_DAYS * REAL_HOURS_PER_DAY; // 96h
+// Dog ages 6 hours per 1 real hour
+// → about 6 in-game months per real month.
+const AGE_RATE = 6;
 
-// Cleanliness / condition thresholds (since last bath)
-const CLEAN_DIRTY_DAYS = 2;
-const CLEAN_FLEAS_DAYS = 5;
-const CLEAN_MANGE_DAYS = 10;
+// From "full" hunger (100) to zero in ~16 real hours.
+// At ~5h => ~70% (we call that "hungry" in status), at ~12h => ~25%.
+const HUNGER_HOURS_TO_ZERO = 16;
 
-const CLEAN_DIRTY_HOURS = CLEAN_DIRTY_DAYS * REAL_HOURS_PER_DAY;  // 48h
-const CLEAN_FLEAS_HOURS = CLEAN_FLEAS_DAYS * REAL_HOURS_PER_DAY;  // 120h
-const CLEAN_MANGE_HOURS = CLEAN_MANGE_DAYS * REAL_HOURS_PER_DAY;  // 240h
+// Happiness / boredom drift – slower than hunger.
+const HAPPINESS_HOURS_TO_ZERO = 36;
 
-// Potty: how long from “empty” to “really needs to go”
-const POTTY_FULL_MINUTES = 120; // 2 real hours to 100% need
+// Cleanliness drops to zero over ~10 days.
+const CLEAN_HOURS_TO_ZERO = 240; // 10 days
 
-// Aging: 60 in-game minutes per 30 real minutes ⇒ 2x speed
-const AGE_SPEED_MULTIPLIER = 2;
+// Energy: awake drains, sleeping fills.
+const ENERGY_AWAKE_HOURS_TO_ZERO = 12; // 12h awake -> 0
+const ENERGY_SLEEP_HOURS_TO_FULL = 4; // 4h good sleep -> full
 
-const nowMs = () => Date.now();
+// Potty meter: how fast it fills. Here ~8h from empty to full.
+const POTTY_HOURS_TO_FULL = 8;
 
-/* ------------ Helpers ------------ */
+// Four days of full starvation (0 hunger) = death.
+const STARVATION_HOURS_TO_DEATH = 96; // 4 days
 
-function computeHunger(hoursSinceFed) {
-  if (!Number.isFinite(hoursSinceFed) || hoursSinceFed <= 0) {
-    return 100;
-  }
+// Condition stages based on time since last bath.
+const HOURS_UNTIL_DIRTY = 48; // 2 days
+const HOURS_UNTIL_FLEAS = 120; // 5 days
+const HOURS_UNTIL_MANGE = 240; // 10 days
 
-  // 0–12h: 100% → 25%
-  if (hoursSinceFed <= HUNGER_25PCT_HOURS) {
-    const rate = 75 / HUNGER_25PCT_HOURS; // points/hour
-    return clamp(100 - rate * hoursSinceFed);
-  }
+// LocalStorage key
+const STORAGE_KEY = "doggerz:dog";
 
-  // 12–24h: 25% → 0%
-  if (hoursSinceFed <= HUNGER_ZERO_START_HOURS) {
-    const extra = hoursSinceFed - HUNGER_25PCT_HOURS;
-    const rate = 25 / (HUNGER_ZERO_START_HOURS - HUNGER_25PCT_HOURS);
-    return clamp(25 - rate * extra);
-  }
-
-  // 24h+ with no food ⇒ bar is empty
-  return 0;
-}
-
-function deriveCondition(hoursSinceBath) {
-  if (!Number.isFinite(hoursSinceBath) || hoursSinceBath <= 0) {
-    return "clean";
-  }
-  if (hoursSinceBath >= CLEAN_MANGE_HOURS) return "mange";
-  if (hoursSinceBath >= CLEAN_FLEAS_HOURS) return "fleas";
-  if (hoursSinceBath >= CLEAN_DIRTY_HOURS) return "dirty";
-  return "clean";
-}
-
-function computeCleanliness(hoursSinceBath) {
-  if (!Number.isFinite(hoursSinceBath) || hoursSinceBath <= 0) {
-    return 100;
-  }
-  // Linearly slide to 0 by 10 days (mange)
-  const frac = Math.min(1, hoursSinceBath / CLEAN_MANGE_HOURS);
-  return clamp(100 - frac * 100);
-}
-
-/* ------------ Initial state ------------ */
+// --- Initial state ---
 
 const initialState = {
   name: "Pup",
@@ -82,248 +51,314 @@ const initialState = {
   xp: 0,
   coins: 0,
 
+  // Core stats (0–100)
   stats: {
-    hunger: 80,
-    happiness: 70,
-    energy: 70,
-    cleanliness: 80,
+    hunger: 60,
+    happiness: 60,
+    energy: 60,
+    cleanliness: 60,
+    thirst: 60,
   },
 
-  poopCount: 0,          // # accidents / unscooped poops in yard (future UX)
-  pottyLevel: 0,         // 0–100: current “need to go” urge
-  pottyTraining: 0,      // 0–100: training progress
-  isPottyTrained: false, // badge when pottyTraining hits 100
+  // Yard & potty
+  poopCount: 0,
+  pottyLevel: 0, // 0–100 "needs to go"
+  pottyTrainingProgress: 0, // 0–100 training completion
+  isPottyTrained: false,
 
+  // Lifecycle
   isAsleep: false,
-  ageHours: 0,           // in-game hours, scaled via AGE_SPEED_MULTIPLIER
-  condition: "clean",    // clean | dirty | fleas | mange
-  health: 100,
   isAlive: true,
+  health: 100, // 0–100
+  ageHours: 0, // total in-game hours lived
+  lifeStage: "puppy", // "puppy" | "adult" | "senior"
 
-  // timestamps (ms since epoch) for real-time tracking
+  // Timeline markers
+  createdAt: null,
   lastUpdatedAt: null,
   lastFedAt: null,
-  lastBathedAt: null,
+  lastBathAt: null,
   lastPottyAt: null,
+
+  // Condition: "clean" | "dirty" | "fleas" | "mange"
+  condition: "clean",
 
   debug: false,
 };
 
-/* ------------ Slice ------------ */
+// Helper: recompute life stage from age hours
+function computeLifeStage(ageHours) {
+  const days = ageHours / 24;
+  if (days < 120) return "puppy"; // ~4 months
+  if (days < 365 * 3) return "adult"; // up to ~3 years
+  return "senior";
+}
 
 const dogSlice = createSlice({
   name: "dog",
   initialState,
   reducers: {
-    hydrateDog(state, { payload }) {
-      if (!payload || typeof payload !== "object") return;
-
-      const merged = {
-        ...state,
-        ...payload,
-        stats: { ...state.stats, ...(payload.stats || {}) },
+    // Initialize a new pup when we have no saved state
+    initDog(state, { payload }) {
+      const now = payload?.now ?? Date.now();
+      return {
+        ...initialState,
+        createdAt: now,
+        lastUpdatedAt: now,
+        lastBathAt: now,
+        lastFedAt: now,
       };
-
-      // Backfill timestamps if you’re loading older saves
-      if (merged.lastUpdatedAt == null) merged.lastUpdatedAt = nowMs();
-      if (merged.lastFedAt == null) merged.lastFedAt = merged.lastUpdatedAt;
-      if (merged.lastBathedAt == null) merged.lastBathedAt = merged.lastUpdatedAt;
-      if (merged.lastPottyAt == null) merged.lastPottyAt = merged.lastUpdatedAt;
-      if (merged.pottyTraining == null) merged.pottyTraining = 0;
-      if (merged.isPottyTrained == null) merged.isPottyTrained = false;
-
-      return merged;
     },
 
-    tick(state, { payload }) {
-      const now = payload?.now ?? nowMs();
+    // Hydrate from saved data (localStorage / cloud)
+    hydrateDog(state, { payload }) {
+      if (!payload || typeof payload !== "object") return;
+      const now = Date.now();
+      return {
+        ...state,
+        ...payload,
+        createdAt: payload.createdAt ?? now,
+        lastUpdatedAt: payload.lastUpdatedAt ?? now,
+        lastBathAt: payload.lastBathAt ?? payload.createdAt ?? now,
+        lastFedAt: payload.lastFedAt ?? payload.createdAt ?? now,
+        pottyTrainingProgress: payload.pottyTrainingProgress ?? 0,
+        isPottyTrained: payload.isPottyTrained ?? false,
+      };
+    },
 
-      if (!state.lastUpdatedAt) {
-        // First tick after startup / install: set baselines
+    // Main game loop – apply real-time drift based on elapsed time.
+    tick(state, { payload }) {
+      const now = payload?.now ?? Date.now();
+      const last = state.lastUpdatedAt ?? now;
+      const dtMs = Math.max(0, now - last);
+
+      if (!Number.isFinite(dtMs) || dtMs <= 0) {
         state.lastUpdatedAt = now;
-        if (!state.lastFedAt) state.lastFedAt = now;
-        if (!state.lastBathedAt) state.lastBathedAt = now;
-        if (!state.lastPottyAt) state.lastPottyAt = now;
         return;
       }
 
-      const diffMs = Math.max(0, now - state.lastUpdatedAt);
-      if (diffMs === 0) return;
-
-      const diffMinutes = diffMs / 60000;
-      const diffHours = diffMinutes / 60;
-
-      state.lastUpdatedAt = now;
-
-      if (!state.isAlive) return;
-
-      /* ---- Aging (2x speed) ---- */
-      const gameMinutes = diffMinutes * AGE_SPEED_MULTIPLIER;
-      const gameHours = gameMinutes / 60;
-      state.ageHours += gameHours;
-
-      /* ---- Hunger & starvation ---- */
-
-      const lastFedAt = state.lastFedAt ?? now;
-      const hoursSinceFed = (now - lastFedAt) / 3600000;
-
-      state.stats.hunger = computeHunger(hoursSinceFed);
-
-      // After 24h of no food, start draining health; at 4 days, the dog dies.
-      if (hoursSinceFed > HUNGER_ZERO_START_HOURS) {
-        const maxStarvingHours =
-          STARVATION_DEATH_HOURS - HUNGER_ZERO_START_HOURS; // 72h “death window”
-        const healthLossRatePerHour = 100 / maxStarvingHours; // lose 100hp across window
-        const healthLoss = healthLossRatePerHour * diffHours;
-
-        state.health = clamp(state.health - healthLoss, 0, 100);
-
-        if (hoursSinceFed >= STARVATION_DEATH_HOURS || state.health <= 0) {
-          state.health = 0;
-          state.isAlive = false;
-        }
+      const realHours = dtMs / MS_PER_HOUR;
+      if (realHours <= 0) {
+        state.lastUpdatedAt = now;
+        return;
       }
 
-      /* ---- Cleanliness / condition (time since last bath) ---- */
+      // If the pup has passed, freeze stats but still track lastUpdatedAt
+      if (!state.isAlive) {
+        state.lastUpdatedAt = now;
+        return;
+      }
 
-      const lastBathedAt = state.lastBathedAt ?? now;
-      const hoursSinceBath = (now - lastBathedAt) / 3600000;
+      // --- Age & life stage ---
+      state.ageHours += realHours * AGE_RATE;
+      state.lifeStage = computeLifeStage(state.ageHours);
 
-      state.condition = deriveCondition(hoursSinceBath);
-      state.stats.cleanliness = computeCleanliness(hoursSinceBath);
+      // --- Stats drift ---
 
-      /* ---- Happiness & energy drift ---- */
+      // Hunger decays from current value toward 0 over HUNGER_HOURS_TO_ZERO.
+      const hungerDrop = (realHours / HUNGER_HOURS_TO_ZERO) * 100;
+      state.stats.hunger = clamp(state.stats.hunger - hungerDrop);
 
-      // Slow baseline decay; actual actions will push these up/down more.
+      // Happiness drifts down more slowly.
+      const happinessDrop = (realHours / HAPPINESS_HOURS_TO_ZERO) * 100;
       state.stats.happiness = clamp(
-        state.stats.happiness - diffHours * 0.5 // ~12 points / day
-      );
-      state.stats.energy = clamp(
-        state.stats.energy - diffHours * 1.0 // ~24 points / day
+        state.stats.happiness - happinessDrop
       );
 
-      // Auto-sleep when exhausted
-      if (state.stats.energy <= 10 && !state.isAsleep) {
-        state.isAsleep = true;
-      }
+      // Cleanliness decays
+      const cleanDrop = (realHours / CLEAN_HOURS_TO_ZERO) * 100;
+      state.stats.cleanliness = clamp(
+        state.stats.cleanliness - cleanDrop
+      );
 
-      // While asleep, recharge quickly; wake up around 80% energy
-      if (state.isAsleep) {
-        state.stats.energy = clamp(
-          state.stats.energy + diffHours * 8 // “night” ~8h → +64 energy
-        );
-        if (state.stats.energy >= 80) {
+      // Thirst – simple linear drop toward 0 over 24h.
+      const THIRST_HOURS_TO_ZERO = 24;
+      const thirstDrop = (realHours / THIRST_HOURS_TO_ZERO) * 100;
+      state.stats.thirst = clamp(state.stats.thirst - thirstDrop);
+
+      // Energy: awake drains, sleeping recovers
+      if (!state.isAsleep) {
+        const energyDrop =
+          (realHours / ENERGY_AWAKE_HOURS_TO_ZERO) * 100;
+        state.stats.energy = clamp(state.stats.energy - energyDrop);
+
+        // Auto-sleep if very tired
+        if (state.stats.energy <= 10) {
+          state.isAsleep = true;
+        }
+      } else {
+        const energyGain =
+          (realHours / ENERGY_SLEEP_HOURS_TO_FULL) * 100;
+        state.stats.energy = clamp(state.stats.energy + energyGain);
+
+        // Wake when mostly rested
+        if (state.stats.energy >= 90) {
           state.isAsleep = false;
         }
       }
 
-      /* ---- Potty need (time since last potty) ---- */
+      // Potty meter fills over time
+      const pottyGain = (realHours / POTTY_HOURS_TO_FULL) * 100;
+      state.pottyLevel = clamp(state.pottyLevel + pottyGain);
 
-      const lastPottyAt = state.lastPottyAt ?? now;
-      const minutesSincePotty = (now - lastPottyAt) / 60000;
-      const pottyFrac = Math.min(1, minutesSincePotty / POTTY_FULL_MINUTES);
+      // --- Condition based on time since last bath ---
 
-      state.pottyLevel = clamp(pottyFrac * 100);
+      const lastBath = state.lastBathAt ?? state.createdAt ?? now;
+      const hoursSinceBath = (now - lastBath) / MS_PER_HOUR;
 
-      // If you leave the dog way past “I really gotta go”, penalize cleanliness
-      if (minutesSincePotty > POTTY_FULL_MINUTES * 1.5) {
-        state.poopCount += 1;
-        state.stats.cleanliness = clamp(state.stats.cleanliness - 5);
+      if (hoursSinceBath < HOURS_UNTIL_DIRTY) {
+        state.condition = "clean";
+      } else if (hoursSinceBath < HOURS_UNTIL_FLEAS) {
+        state.condition = "dirty";
+      } else if (hoursSinceBath < HOURS_UNTIL_MANGE) {
+        state.condition = "fleas";
+      } else {
+        state.condition = "mange";
       }
+
+      // --- Health & death ---
+
+      // Starvation: 0 hunger is worst, 100 hunger is best
+      const hungerFactor = 1 - state.stats.hunger / 100; // 0–1
+      const healthDropFromHunger =
+        hungerFactor *
+        (realHours / STARVATION_HOURS_TO_DEATH) *
+        100;
+
+      // Condition penalty
+      const condPenalty =
+        state.condition === "clean"
+          ? 0
+          : state.condition === "dirty"
+          ? 0.1
+          : state.condition === "fleas"
+          ? 0.3
+          : 0.6; // mange is rough
+
+      const healthDropFromCondition = condPenalty * realHours; // % per hour
+
+      state.health = clamp(
+        state.health -
+          healthDropFromHunger -
+          healthDropFromCondition
+      );
+
+      if (state.health <= 0) {
+        state.isAlive = false;
+        state.health = 0;
+      }
+
+      // --- XP / level / coins over time alive ---
+      const xpGain = realHours * 2; // 2 XP per real hour of survival
+      state.xp += xpGain;
+
+      while (state.xp >= state.level * 100) {
+        state.xp -= state.level * 100;
+        state.level += 1;
+        state.coins += 5; // small level-up bonus
+      }
+
+      state.lastUpdatedAt = now;
     },
 
-    /* ---- Player actions ---- */
+    // --- Player actions ---
 
     feed(state, { payload }) {
       if (!state.isAlive) return;
-      const now = payload?.now ?? nowMs();
-      state.lastFedAt = now;
-      state.stats.hunger = clamp(state.stats.hunger + 35);
+      const now = payload?.now ?? Date.now();
+
+      // Big hunger bump, small happiness bump
+      state.stats.hunger = clamp(state.stats.hunger + 40);
       state.stats.happiness = clamp(state.stats.happiness + 5);
-      state.health = clamp(state.health + 5);
+
+      state.lastFedAt = now;
     },
 
     play(state) {
       if (!state.isAlive) return;
-      state.stats.happiness = clamp(state.stats.happiness + 15);
-      state.stats.energy = clamp(state.stats.energy - 10);
-      state.xp += 5;
-    },
 
-    rest(state) {
-      if (!state.isAlive) return;
-      // Manual rest just nudges toward sleep; full sleep is handled in tick()
-      state.isAsleep = true;
-      state.stats.energy = clamp(state.stats.energy + 10);
+      // Fun: more happiness, some energy cost
+      state.stats.happiness = clamp(state.stats.happiness + 20);
+      state.stats.energy = clamp(state.stats.energy - 10);
     },
 
     bathe(state, { payload }) {
       if (!state.isAlive) return;
-      const now = payload?.now ?? nowMs();
-      state.lastBathedAt = now;
+      const now = payload?.now ?? Date.now();
+
       state.stats.cleanliness = 100;
       state.condition = "clean";
-      state.xp += 5;
+      state.lastBathAt = now;
+
+      // Slight happiness boost for feeling fresh
+      state.stats.happiness = clamp(state.stats.happiness + 5);
     },
 
-    // This reducer is named "scoopPoop" to match existing imports,
-    // but conceptually it’s "Go Potty / Take Pup Outside".
-    scoopPoop(state, { payload }) {
+    goPotty(state, { payload }) {
       if (!state.isAlive) return;
-      const now = payload?.now ?? nowMs();
+      const now = payload?.now ?? Date.now();
 
-      const lastPottyAt = state.lastPottyAt ?? now;
-      const minutesSincePotty = (now - lastPottyAt) / 60000;
+      // Only meaningful if they actually need to go
+      if (state.pottyLevel < 40) return;
 
-      const goodTimingThreshold = POTTY_FULL_MINUTES * 0.75; // 90 minutes
-      const didWaitUntilReallyNeeded = minutesSincePotty >= goodTimingThreshold;
-
-      const trainingGain = didWaitUntilReallyNeeded ? 6 : 3;
-      state.pottyTraining = clamp(state.pottyTraining + trainingGain);
-
-      if (state.pottyTraining >= 100) {
-        state.pottyTraining = 100;
-        state.isPottyTrained = true; // badge unlocked
-      }
-
-      // Reset the “need to go” meter and timestamp
-      state.lastPottyAt = now;
+      // They go potty outside: empty the meter, clear one "house accident" if any.
       state.pottyLevel = 0;
-
-      // Yard cleanliness & minor reward
       if (state.poopCount > 0) {
         state.poopCount -= 1;
       }
-      state.stats.cleanliness = clamp(state.stats.cleanliness + 4);
-      state.coins += didWaitUntilReallyNeeded ? 2 : 1;
-    },
 
-    renameDog(state, { payload }) {
-      if (typeof payload === "string" && payload.trim()) {
-        state.name = payload.trim();
+      state.lastPottyAt = now;
+
+      // Potty training: faster while puppy, slower after.
+      const trainingDelta =
+        state.lifeStage === "puppy" ? 10 : 4;
+
+      if (!state.isPottyTrained) {
+        const prev = state.pottyTrainingProgress ?? 0;
+        const next = clamp(prev + trainingDelta);
+        state.pottyTrainingProgress = next;
+
+        // When they finally hit 100, lock it in and reward
+        if (next >= 100) {
+          state.pottyTrainingProgress = 100;
+          state.isPottyTrained = true;
+
+          // Tiny celebration reward
+          state.coins += 10;
+          state.stats.happiness = clamp(
+            state.stats.happiness + 10
+          );
+        }
       }
     },
 
-    setDebug(state, { payload }) {
-      state.debug = Boolean(payload);
+    // Manual poop (e.g., if we ever add random accidents)
+    addPoop(state) {
+      if (!state.isAlive) return;
+      state.poopCount += 1;
+    },
+
+    toggleDebug(state) {
+      state.debug = !state.debug;
     },
   },
 });
 
-/* ------------ Exports ------------ */
+// --- Selectors ---
+export const selectDog = (state) => state.dog;
+export const DOG_STORAGE_KEY = STORAGE_KEY;
 
+// --- Exports ---
 export const {
+  initDog,
   hydrateDog,
   tick,
   feed,
   play,
-  rest,
   bathe,
-  scoopPoop,
-  renameDog,
-  setDebug,
+  goPotty,
+  addPoop,
+  toggleDebug,
 } = dogSlice.actions;
-
-export const selectDog = (state) => state.dog;
 
 export default dogSlice.reducer;

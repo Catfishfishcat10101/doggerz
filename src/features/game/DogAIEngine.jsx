@@ -1,90 +1,109 @@
 // src/features/game/DogAIEngine.jsx
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { hydrateDog, tick, selectDog } from "@/redux/dogSlice.js";
-
-const STORAGE_KEY = "doggerz:dog";
+import {
+  selectDog,
+  initDog,
+  hydrateDog,
+  tick,
+  DOG_STORAGE_KEY,
+} from "@/redux/dogSlice.js";
+import { auth } from "@/firebase.js";
+import { onAuthStateChanged } from "firebase/auth";
+import {
+  loadDogFromCloud,
+  saveDogToCloud,
+} from "@/redux/dogThunks.js";
 
 export default function DogAIEngine() {
   const dispatch = useDispatch();
   const dog = useSelector(selectDog);
 
-  // 1) Hydrate from localStorage on mount + apply offline time
+  // On mount: hydrate from localStorage or initialize new dog
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
+    const now = Date.now();
 
-      if (!raw) {
-        // First run: just stamp a lastUpdatedAt
+    try {
+      const raw = window.localStorage.getItem(DOG_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
         dispatch(
           hydrateDog({
-            lastUpdatedAt: Date.now(),
+            ...parsed,
+            lastUpdatedAt: parsed.lastUpdatedAt ?? now,
           })
         );
-        return;
+        // Immediately apply any offline time since lastUpdatedAt
+        dispatch(tick({ now }));
+      } else {
+        // No save – start a fresh pup
+        dispatch(initDog({ now }));
       }
-
-      const parsed = JSON.parse(raw);
-
-      dispatch(
-        hydrateDog({
-          ...parsed,
-        })
-      );
-
-      // Immediately apply any offline drift with now
-      dispatch(tick({ now: Date.now() }));
     } catch (err) {
-      console.warn("[Doggerz] Failed to hydrate dog from localStorage", err);
-      dispatch(
-        hydrateDog({
-          lastUpdatedAt: Date.now(),
-        })
+      console.warn(
+        "[Doggerz] Failed to read dog from localStorage",
+        err
       );
+      dispatch(initDog({ now }));
     }
   }, [dispatch]);
 
-  // 2) Persist to localStorage when dog changes
+  // Persist to localStorage & cloud whenever dog changes
   useEffect(() => {
-    if (typeof window === "undefined" || !dog) return;
+    if (!dog) return;
+    if (typeof window === "undefined") return;
 
+    // Local
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(dog));
+      window.localStorage.setItem(
+        DOG_STORAGE_KEY,
+        JSON.stringify(dog)
+      );
     } catch (err) {
-      console.warn("[Doggerz] Failed to persist dog to localStorage", err);
+      console.warn(
+        "[Doggerz] Failed to persist dog to localStorage",
+        err
+      );
     }
-  }, [dog]);
 
-  // 3) Soft game loop: tick every 60 seconds
+    // Cloud (if logged in)
+    const user = auth.currentUser;
+    if (user) {
+      // fire-and-forget; we don't care about the return in the UI
+      dispatch(saveDogToCloud({ uid: user.uid, dog }));
+    }
+  }, [dog, dispatch]);
+
+  // Soft game loop: tick every 60 seconds
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     const id = window.setInterval(() => {
-      try {
-        dispatch(tick({ now: Date.now() }));
-      } catch (err) {
-        console.warn("[Doggerz] tick() loop failed", err);
-      }
-    }, 60 * 1000);
+      dispatch(tick({ now: Date.now() }));
+    }, 60_000); // 60s
 
-    return () => window.clearInterval(id);
+    return () => {
+      window.clearInterval(id);
+    };
   }, [dispatch]);
 
-  // 4) Debug hook (does nothing if it fails)
+  // Listen for auth changes and pull cloud dog when a user logs in
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      if (!window.__DOGGERZ_DEBUG) {
-        window.__DOGGERZ_DEBUG = {};
-      }
-      window.__DOGGERZ_DEBUG.dog = dog;
-    } catch {
-      // ignore
-    }
-  }, [dog]);
+    const unsub =
+      auth &&
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          dispatch(loadDogFromCloud({ uid: user.uid }));
+        }
+      });
 
-  // Headless engine: no visible UI
+    return () => {
+      if (unsub) unsub();
+    };
+  }, [dispatch]);
+
+  // This component renders nothing – it just runs effects.
   return null;
 }

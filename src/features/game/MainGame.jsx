@@ -1,14 +1,18 @@
 // src/features/game/MainGame.jsx
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+
 import {
   selectDog,
   feed as feedDog,
   play as playDog,
   bathe as batheDog,
-  goPotty as goPottyAction,
+  // goPotty as goPottyAction, // we'll wire a toast later
 } from "@/redux/dogSlice.js";
+
 import DogAIEngine from "@/features/game/DogAIEngine.jsx";
+
+/* ---------- Small UI helpers ---------- */
 
 function StatBar({ label, value = 0, color = "bg-emerald-500" }) {
   const pct = Math.max(0, Math.min(100, Number(value) || 0));
@@ -46,6 +50,23 @@ function Pill({ label, value, tone = "default" }) {
   );
 }
 
+/* ---------- Age helper: months / years ---------- */
+
+function formatAge(ageHours = 0) {
+  const days = Math.floor(ageHours / 24);
+  const months = Math.floor(days / 30);
+  const years = Math.floor(months / 12);
+  const remainingMonths = months % 12;
+
+  if (years <= 0) {
+    return `${months}mo`;
+  }
+
+  return `${years}y ${remainingMonths}mo`;
+}
+
+/* ---------- Main game screen ---------- */
+
 export default function MainGame() {
   const dispatch = useDispatch();
   const dog = useSelector(selectDog);
@@ -63,15 +84,18 @@ export default function MainGame() {
     name = "Pup",
     level = 1,
     xp = 0,
-    coins = 0,
+    coins = 0, // keeping coins in state for later shop
     stats = {},
     poopCount = 0,
     pottyLevel = 0,
+    pottyTrainingProgress = 0,
+    isPottyTrained = false,
     isAsleep = false,
     ageHours = 0,
     condition = "clean",
     health = 100,
     isAlive = true,
+    lifeStage = "puppy",
   } = dog;
 
   const {
@@ -79,13 +103,12 @@ export default function MainGame() {
     happiness = 0,
     energy = 0,
     cleanliness = 0,
+    thirst = 0,
   } = stats;
 
-  const fullHours = Math.floor(ageHours || 0);
-  const days = Math.floor(fullHours / 24);
-  const hours = fullHours % 24;
-  const ageLabel = days > 0 ? `${days}d ${hours}h` : `${hours}h`;
+  const ageLabel = formatAge(ageHours);
 
+  // condition pill
   let conditionLabel = "Clean";
   let conditionTone = "default";
   if (condition === "dirty") {
@@ -102,8 +125,10 @@ export default function MainGame() {
   const healthTone =
     health < 30 ? "danger" : health < 60 ? "warn" : "default";
 
-  const pottyTrainedLabel = `${Math.round(pottyLevel || 0)}%`;
+  const pottyTrainedPct = Math.round(pottyTrainingProgress || 0);
+  const pottyBadgeLabel = isPottyTrained ? "Potty trained" : "In training";
 
+  // status text
   let statusLabel = "Awake";
   if (!isAlive) {
     statusLabel = "Has passed on";
@@ -115,54 +140,45 @@ export default function MainGame() {
     statusLabel = "Needs a bath";
   } else if (happiness < 25) {
     statusLabel = "Bored";
+  } else if (thirst < 25) {
+    statusLabel = "Thirsty";
   }
 
+  const lifeStageLabel =
+    lifeStage === "adult"
+      ? "Adult"
+      : lifeStage === "senior"
+      ? "Senior"
+      : "Puppy";
+
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-50 flex flex-col">
-      {/* Invisible engine */}
+    <div className="min-h-[calc(100vh-4rem)] bg-zinc-950 text-zinc-50 flex flex-col">
+      {/* headless engine for time drift + saving */}
       <DogAIEngine />
 
-      {/* Top header for the game screen */}
+      {/* Top bar */}
       <header className="border-b border-zinc-800 px-6 py-4 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-black tracking-tight">
-            Doggerz <span className="text-emerald-400">Pup Care</span>
-          </h1>
-          <p className="text-xs text-zinc-400">
+          <p className="text-xs uppercase tracking-wide text-zinc-400">
+            Care dashboard
+          </p>
+          <p className="text-sm text-zinc-500">
             Keep {name}&apos;s hunger, happiness, energy, and cleanliness up
             over real time.
           </p>
         </div>
 
-        <div className="flex flex-col items-end gap-1 text-sm">
-          <div className="flex gap-3">
-            <div className="flex flex-col items-end">
-              <span className="text-xs uppercase tracking-wide text-zinc-400">
-                Level
-              </span>
-              <span className="text-lg font-bold">{level}</span>
-            </div>
-            <div className="flex flex-col items-end">
-              <span className="text-xs uppercase tracking-wide text-zinc-400">
-                XP
-              </span>
-              <span className="text-lg font-semibold">
-                {Math.floor(xp)}
-              </span>
-            </div>
-            <div className="flex flex-col items-end">
-              <span className="text-xs uppercase tracking-wide text-zinc-400">
-                Coins
-              </span>
-              <span className="text-lg font-bold text-amber-300">
-                {coins}
-              </span>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-2 mt-1">
+        <div className="flex flex-col items-end gap-2 text-sm">
+          <div className="flex flex-wrap gap-2 justify-end">
+            <Pill label="Level" value={level} />
+            <Pill label="XP" value={Math.floor(xp)} />
             <Pill label="Age" value={ageLabel} />
-            <Pill label="Condition" value={conditionLabel} tone={conditionTone} />
+            <Pill label="Stage" value={lifeStageLabel} />
+            <Pill
+              label="Condition"
+              value={conditionLabel}
+              tone={conditionTone}
+            />
             <Pill
               label="Health"
               value={`${health.toFixed(0)}%`}
@@ -173,7 +189,7 @@ export default function MainGame() {
       </header>
 
       <main className="flex-1 flex flex-col lg:flex-row gap-8 px-6 py-6">
-        {/* LEFT: dog + interactions */}
+        {/* LEFT: dog + main actions */}
         <section className="flex-1 rounded-2xl border border-zinc-800 bg-gradient-to-b from-zinc-900/80 to-zinc-950 p-6 flex flex-col">
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -191,7 +207,7 @@ export default function MainGame() {
             </div>
             <div className="flex flex-col items-end text-xs text-zinc-400">
               <span>Poops in yard: {poopCount}</span>
-              <span>Potty trained: {pottyTrainedLabel}</span>
+              <span>Potty trained: {pottyTrainedPct}%</span>
               <span>Status: {statusLabel}</span>
             </div>
           </div>
@@ -204,7 +220,7 @@ export default function MainGame() {
             </div>
           </div>
 
-          {/* Interaction buttons */}
+          {/* Actions */}
           <div className="mt-6 grid grid-cols-2 md:grid-cols-3 gap-3">
             <button
               type="button"
@@ -232,55 +248,56 @@ export default function MainGame() {
             >
               Bathe
             </button>
-          </div>
 
-          <div className="mt-4 flex justify-center">
-            <button
-              type="button"
-              onClick={() => dispatch(goPottyAction())}
-              className="inline-flex items-center justify-center rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-100 text-xs font-semibold py-2 px-5 transition disabled:opacity-40 disabled:cursor-not-allowed"
-              disabled={!isAlive}
-            >
-              Go potty
-            </button>
+            {/* no giant "Go potty" button – we'll do a toast later */}
           </div>
-
-          <p className="mt-3 text-[0.7rem] text-zinc-500 text-center">
-            Your pup will curl up and sleep automatically when energy runs low,
-            and slowly wake back up as they rest.
-          </p>
         </section>
 
-        {/* RIGHT: needs + help */}
+        {/* RIGHT: meters + potty training + tips */}
         <section className="w-full lg:w-80 space-y-4">
+          {/* core needs */}
           <div className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-5">
             <p className="text-xs uppercase tracking-wide text-zinc-400 mb-3">
               Pup needs
             </p>
             <div className="space-y-3">
-              <StatBar
-                label="Hunger"
-                value={hunger}
-                color="bg-emerald-500"
-              />
-              <StatBar
-                label="Happiness"
-                value={happiness}
-                color="bg-sky-500"
-              />
-              <StatBar
-                label="Energy"
-                value={energy}
-                color="bg-violet-500"
-              />
+              <StatBar label="Hunger" value={hunger} color="bg-emerald-500" />
+              <StatBar label="Happiness" value={happiness} color="bg-sky-500" />
+              <StatBar label="Energy" value={energy} color="bg-violet-500" />
               <StatBar
                 label="Cleanliness"
                 value={cleanliness}
                 color="bg-amber-400"
               />
+              <StatBar label="Thirst" value={thirst} color="bg-cyan-400" />
             </div>
           </div>
 
+          {/* potty training module */}
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="text-xs uppercase tracking-wide text-zinc-400">
+                Potty training
+              </p>
+              <Pill
+                label="Badge"
+                value={pottyBadgeLabel}
+                tone={isPottyTrained ? "default" : "warn"}
+              />
+            </div>
+            <StatBar
+              label="Progress"
+              value={pottyTrainingProgress}
+              color={isPottyTrained ? "bg-emerald-500" : "bg-amber-400"}
+            />
+            <p className="text-[0.7rem] text-zinc-500">
+              Guide your pup to go outside when they really need to go. Each
+              successful bathroom break raises this bar. At 100%, they earn a
+              permanent potty-trained badge.
+            </p>
+          </div>
+
+          {/* help card */}
           <div className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-4 text-xs text-zinc-400 space-y-2">
             <div className="flex items-center justify-between">
               <p className="font-semibold text-zinc-200 text-sm">
@@ -300,15 +317,16 @@ export default function MainGame() {
                 <p>• Feed periodically; don&apos;t let hunger drop too low.</p>
                 <p>• Play to keep happiness up, but watch energy.</p>
                 <p>
-                  • Your pup auto-sleeps when tired; give them time to fully
-                  recharge.
+                  • Your pup will curl up and sleep automatically when energy
+                  runs low, and slowly wake back up as they rest.
                 </p>
                 <p>
-                  • Bathe before cleanliness falls too low to avoid fleas/mange.
+                  • Bathe before cleanliness falls too low to avoid fleas and
+                  mange.
                 </p>
                 <p>
-                  • Take potty breaks to keep the yard clean and improve potty
-                  training.
+                  • Help them go potty outside; good habits raise the potty
+                  training bar faster.
                 </p>
               </div>
             )}

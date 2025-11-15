@@ -1,59 +1,53 @@
 // src/redux/dogThunks.js
-import {
-  hydrateDog,
-  tick,
-  feed,
-  play,
-  rest,
-  bathe,
+import { createAsyncThunk } from "@reduxjs/toolkit";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { db } from "@/firebase.js";
+import { hydrateDog } from "./dogSlice.js";
 
-} from "./dogSlice.js";
+const DOG_COLLECTION = "dogs";
 
-const STORAGE_KEY = "doggerz:dog";
-
-/**
- * Hard reset the local pup state:
- * - Clears localStorage
- * - Re-hydrates Redux with an empty object (dogSlice will merge with defaults)
- */
-export const hardResetDog = () => (dispatch) => {
-  if (typeof window !== "undefined") {
+// Load dog state for a given user id from Firestore
+export const loadDogFromCloud = createAsyncThunk(
+  "dog/loadDogFromCloud",
+  async ({ uid }, { dispatch, rejectWithValue }) => {
     try {
-      window.localStorage.removeItem(STORAGE_KEY);
+      if (!uid) {
+        return rejectWithValue("Missing uid");
+      }
+
+      const ref = doc(db, DOG_COLLECTION, uid);
+      const snap = await getDoc(ref);
+
+      if (!snap.exists()) {
+        // No cloud dog yet – nothing to hydrate
+        return null;
+      }
+
+      const data = snap.data();
+      dispatch(hydrateDog(data));
+      return data;
     } catch (err) {
-      console.warn("[Doggerz] Failed to clear dog localStorage", err);
+      console.error("[Doggerz] Failed to load dog from cloud", err);
+      return rejectWithValue(err.message || "loadDogFromCloud failed");
     }
   }
+);
 
-  // Hydrate with empty object; dogSlice will fallback to its own initialState.
-  dispatch(
-    hydrateDog({
-      // deliberately minimal – slice will overlay its defaults
-    })
-  );
-};
+// Save dog state for a given user id to Firestore
+export const saveDogToCloud = createAsyncThunk(
+  "dog/saveDogToCloud",
+  async ({ uid, dog }, { rejectWithValue }) => {
+    try {
+      if (!uid || !dog) {
+        return rejectWithValue("Missing uid or dog");
+      }
 
-/**
- * Apply an artificial "offline" window in minutes.
- * Useful for testing: e.g. simulate 6 hours away from app.
- */
-export const simulateOfflineMinutes = (minutes = 60) => (dispatch) => {
-  const ms = Math.max(0, minutes) * 60 * 1000;
-  const fakeNow = Date.now() + ms;
-  dispatch(
-    tick({
-      now: fakeNow,
-    })
-  );
-};
-
-/**
- * Quick-care helper: feed, play, rest, bathe, and clean up poop once.
- * Not used in UI yet, but handy for dev tools or future "Auto-care" feature.
- */
-export const quickCarePass = () => (dispatch) => {
-  dispatch(feed());
-  dispatch(play());
-  dispatch(rest());
-  dispatch(bathe());
-};
+      const ref = doc(db, DOG_COLLECTION, uid);
+      await setDoc(ref, dog, { merge: true });
+      return true;
+    } catch (err) {
+      console.error("[Doggerz] Failed to save dog to cloud", err);
+      return rejectWithValue(err.message || "saveDogToCloud failed");
+    }
+  }
+);
