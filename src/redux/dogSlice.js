@@ -320,9 +320,13 @@ function updateTemperamentReveal(state, now = nowMs()) {
 }
 
 /**
- * Evaluate temperament daily and nudge trait intensities based on
- * recent interactions and stats. This is intentionally lightweight
- * and runs from `tickDog` so it can be tested easily.
+ * Evaluate temperament daily and nudge trait intensities based on:
+ * - Current stats (hunger, happiness, energy, cleanliness)
+ * - Recent activity patterns (play, feed, training frequency)
+ * - Skill levels (obedience training shows discipline/bonding)
+ * - Mood history sentiment (happy/sleepy/hungry patterns)
+ * - Journal insights (training entries, neglect strikes)
+ * - Neglect & absence patterns (clinginess boost)
  */
 function evaluateTemperament(state, now = nowMs()) {
   const t = state.temperament;
@@ -342,47 +346,105 @@ function evaluateTemperament(state, now = nowMs()) {
   // Defensive: ensure traits exist
   if (!clingy || !toyObsessed || !foodMotivated) return;
 
-  // derive simple signals from state
+  // === SIGNALS FROM STATE ===
   const hunger = state.stats.hunger; // 0-100 (higher = hungrier)
   const happiness = state.stats.happiness; // higher = happier
   const energy = state.stats.energy;
+  const cleanliness = state.stats.cleanliness;
   const neglect = state.memory.neglectStrikes || 0;
 
-  // Recent activity boosts
+  // === RECENT ACTIVITY (look back 7 days) ===
+  const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
   const playedRecently =
-    state.memory.lastPlayedAt && now - state.memory.lastPlayedAt < 7 * 24 * 60 * 60 * 1000;
+    state.memory.lastPlayedAt && now - state.memory.lastPlayedAt < sevenDaysMs;
   const fedRecently =
-    state.memory.lastFedAt && now - state.memory.lastFedAt < 12 * 60 * 60 * 1000;
+    state.memory.lastFedAt &&
+    now - state.memory.lastFedAt < 12 * 60 * 60 * 1000;
+  const trainedRecently =
+    state.memory.lastTrainedAt &&
+    now - state.memory.lastTrainedAt < 3 * 24 * 60 * 60 * 1000;
 
-  // Compute soft targets for each trait (0-100)
+  // === SKILL LEVEL SIGNALS (obedience = bonding/discipline) ===
+  const obedienceSkills = state.skills?.obedience || {};
+  const avgObedienceLevel = (() => {
+    const vals = Object.values(obedienceSkills).map((s) => s.level || 0);
+    return vals.length > 0
+      ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length)
+      : 0;
+  })();
+
+  // === MOOD HISTORY SENTIMENT (last 10 recent moods) ===
+  const recentMoods = (state.mood?.history || []).slice(0, 10);
+  const happyMoodCount = recentMoods.filter((m) => m.tag === "HAPPY").length;
+  const sleepyMoodCount = recentMoods.filter((m) => m.tag === "SLEEPY").length;
+  const hungryMoodCount = recentMoods.filter((m) => m.tag === "HUNGRY").length;
+  const moodSentiment = {
+    happy: happyMoodCount,
+    sleepy: sleepyMoodCount,
+    hungry: hungryMoodCount,
+  };
+
+  // === JOURNAL INSIGHTS (look for training & neglect patterns) ===
+  const recentJournal = (state.journal?.entries || []).slice(0, 20);
+  const trainingEntries = recentJournal.filter(
+    (e) => e.type === "TRAINING"
+  ).length;
+  const neglectEntries = recentJournal.filter(
+    (e) => e.type === "NEGLECT"
+  ).length;
+
+  // === COMPUTE SOFT TARGETS FOR TRAITS ===
+
+  // CLINGY: increases with neglect, unhappiness, absence, lack of training
   const targetClingy = clamp(
-    Math.round(clingy.intensity * 0.75 + (100 - happiness) * 0.2 + neglect * 5),
+    Math.round(
+      clingy.intensity * 0.65 +
+        (100 - happiness) * 0.15 +
+        neglect * 8 +
+        neglectEntries * 5 +
+        (trainedRecently ? -5 : 10)
+    ),
     0,
     100
   );
 
+  // TOY_OBSESSED: increases with play frequency, happiness, good energy, and obedience
   const targetToy = clamp(
     Math.round(
-      toyObsessed.intensity * 0.75 + (happiness - 50) * 0.25 + (playedRecently ? 8 : 0)
+      toyObsessed.intensity * 0.65 +
+        (happiness - 50) * 0.2 +
+        (playedRecently ? 12 : 0) +
+        moodSentiment.happy * 3 +
+        avgObedienceLevel * 0.5
     ),
     0,
     100
   );
 
+  // FOOD_MOTIVATED: increases with hunger levels, feed frequency, and happy mood from food
   const targetFood = clamp(
     Math.round(
-      foodMotivated.intensity * 0.75 + (hunger - 50) * 0.3 + (fedRecently ? 6 : 0)
+      foodMotivated.intensity * 0.65 +
+        (hunger - 50) * 0.25 +
+        (fedRecently ? 10 : 0) +
+        moodSentiment.hungry * 2 +
+        (avgObedienceLevel > 0 ? -3 : 0) // obedience training reduces pure food focus
     ),
     0,
     100
   );
 
-  // Apply gentle smoothing toward targets
-  clingy.intensity = Math.round(clingy.intensity * 0.7 + targetClingy * 0.3);
-  toyObsessed.intensity = Math.round(toyObsessed.intensity * 0.7 + targetToy * 0.3);
-  foodMotivated.intensity = Math.round(foodMotivated.intensity * 0.7 + targetFood * 0.3);
+  // === APPLY GENTLE SMOOTHING TOWARD TARGETS ===
+  // Weight current heavily (0.65) so changes are gradual, not jarring
+  clingy.intensity = Math.round(clingy.intensity * 0.65 + targetClingy * 0.35);
+  toyObsessed.intensity = Math.round(
+    toyObsessed.intensity * 0.65 + targetToy * 0.35
+  );
+  foodMotivated.intensity = Math.round(
+    foodMotivated.intensity * 0.65 + targetFood * 0.35
+  );
 
-  // Compute primary/secondary temperament by top traits
+  // === COMPUTE PRIMARY/SECONDARY TEMPERAMENT ===
   const sorted = [...t.traits].sort((a, b) => b.intensity - a.intensity);
   const top = sorted[0];
   const second = sorted[1] || top;

@@ -1,13 +1,17 @@
 // src/features/game/MainGame.jsx
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 
 import {
   selectDog,
+  selectDogTemperament,
   feed as feedDog,
   play as playDog,
   bathe as batheDog,
+  markTemperamentRevealed,
 } from "@/redux/dogSlice.js";
+import { PATHS } from "@/routes.js";
 import ObedienceDrill from '@/features/game/ObedienceDrill.jsx';
 
 import DogAIEngine from "@/features/game/DogAIEngine.jsx";
@@ -69,8 +73,13 @@ function formatAge(ageHours = 0) {
 
 export default function MainGame() {
   const dispatch = useDispatch();
+  const nav = useNavigate();
   const dog = useSelector(selectDog);
+  const temperament = useSelector(selectDogTemperament);
   const [showHelp, setShowHelp] = useState(false);
+
+  // Auto-show reveal modal if ready
+  const shouldShowReveal = temperament?.revealReady && !temperament?.revealedAt;
 
   if (!dog) {
     return (
@@ -156,7 +165,70 @@ export default function MainGame() {
       {/* headless engine for time drift + saving */}
       <DogAIEngine />
 
-      {/* Top bar */}
+      {/* ========== TEMPERAMENT REVEAL MODAL ========== */}
+      {shouldShowReveal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl max-w-md w-full space-y-4 p-6">
+            <div className="text-center space-y-2">
+              <h2 className="text-2xl font-bold">Personality Report</h2>
+              <p className="text-sm text-zinc-400">
+                After a few days together, {dog?.name || "your pup"}&apos;s true personality shines through!
+              </p>
+            </div>
+
+            <div className="bg-zinc-950/40 rounded-lg p-4 space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="text-center p-3 bg-zinc-800/50 rounded">
+                  <div className="text-xs text-zinc-400">Primary</div>
+                  <div className="text-lg font-bold text-emerald-400">{temperament?.primary}</div>
+                </div>
+                <div className="text-center p-3 bg-zinc-800/50 rounded">
+                  <div className="text-xs text-zinc-400">Secondary</div>
+                  <div className="text-lg font-bold text-sky-400">{temperament?.secondary}</div>
+                </div>
+              </div>
+
+              <div className="space-y-2 pt-2">
+                {temperament?.traits?.map((t) => (
+                  <div key={t.id} className="flex items-center justify-between text-sm">
+                    <span className="text-zinc-300">{t.label}</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-20 h-1.5 bg-zinc-700 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-emerald-500 to-sky-400"
+                          style={{ width: `${t.intensity}%` }}
+                        />
+                      </div>
+                      <span className="text-xs text-zinc-400 w-8 text-right">{t.intensity}%</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                onClick={() => {
+                  dispatch(markTemperamentRevealed());
+                }}
+                className="flex-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold py-2 transition"
+              >
+                Got it!
+              </button>
+              <button
+                onClick={() => nav(PATHS.TEMPERAMENT)}
+                className="flex-1 rounded-lg border border-zinc-700 text-zinc-300 hover:border-zinc-500 py-2 transition text-sm"
+              >
+                Full Report
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================
+          MAIN GAME CONTENT
+      ============================ */}
       <header className="border-b border-zinc-800 px-6 py-4 flex items-center justify-between">
         <div>
           <p className="text-xs uppercase tracking-wide text-zinc-400">
