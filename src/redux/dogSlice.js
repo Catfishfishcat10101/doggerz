@@ -1,11 +1,13 @@
 // src/redux/dogSlice.js
 import { createSlice } from "@reduxjs/toolkit";
+
 export const DOG_STORAGE_KEY = "doggerz:dogState";
 
 const clamp = (n, lo = 0, hi = 100) =>
   Math.max(lo, Math.min(hi, Number.isFinite(n) ? n : 0));
+
 const DECAY_PER_HOUR = {
-  hunger: 8,
+  hunger: 8, // higher = hungrier, so hunger should go UP over time
   happiness: 6,
   energy: 5,
   cleanliness: 3,
@@ -14,7 +16,9 @@ const DECAY_PER_HOUR = {
 const MOOD_SAMPLE_MINUTES = 60;
 const LEVEL_XP_STEP = 100;
 const SKILL_LEVEL_STEP = 50;
+
 const nowMs = () => Date.now();
+
 const getDaysBetween = (fromMs, toMs) => {
   if (!fromMs) return Infinity;
   return (toMs - fromMs) / (1000 * 60 * 60 * 24);
@@ -99,6 +103,7 @@ const initialState = {
   xp: 0,
   coins: 0,
   stats: {
+    // NOTE: higher hunger = more hungry
     hunger: 50,
     happiness: 60,
     energy: 60,
@@ -120,6 +125,25 @@ const initialState = {
 
 /* ---------- helpers that mutate the draft state safely ---------- */
 
+function pushJournalEntry(state, entry) {
+  const ts = entry.timestamp ?? nowMs();
+  const id = `${ts}-${state.journal.entries.length + 1}`;
+
+  state.journal.entries.unshift({
+    id,
+    timestamp: ts,
+    type: entry.type || "INFO",
+    moodTag: entry.moodTag || null,
+    summary: entry.summary || "",
+    body: entry.body || "",
+  });
+
+  // Cap journal
+  if (state.journal.entries.length > 200) {
+    state.journal.entries.length = 200;
+  }
+}
+
 function applyDecay(state, now = nowMs()) {
   if (!state.lastUpdatedAt) {
     state.lastUpdatedAt = now;
@@ -129,17 +153,21 @@ function applyDecay(state, now = nowMs()) {
   const diffHours = Math.max(0, (now - state.lastUpdatedAt) / (1000 * 60 * 60));
   if (diffHours <= 0) return;
 
-  const mult = state.career.perks?.hungerDecayMultiplier || 1.0;
+  const hungerMult = state.career.perks?.hungerDecayMultiplier || 1.0;
 
   // Apply stat decay
   Object.entries(state.stats).forEach(([key, value]) => {
     const rate = DECAY_PER_HOUR[key] || 0;
     let delta = rate * diffHours;
 
-    // simple career perk application
-    if (key === "hunger") delta *= mult;
-
-    state.stats[key] = clamp(value - delta, 0, 100);
+    if (key === "hunger") {
+      // hunger goes UP over time (more hungry)
+      delta *= hungerMult;
+      state.stats[key] = clamp(value + delta, 0, 100);
+    } else {
+      // other stats decay down
+      state.stats[key] = clamp(value - delta, 0, 100);
+    }
   });
 
   // Neglect check: if gone >= 24h, increment strike and journal
@@ -190,25 +218,6 @@ function maybeSampleMood(state, now = nowMs(), reason = "TICK") {
   state.mood.lastSampleAt = now;
 }
 
-function pushJournalEntry(state, entry) {
-  const ts = entry.timestamp ?? nowMs();
-  const id = `${ts}-${state.journal.entries.length + 1}`;
-
-  state.journal.entries.unshift({
-    id,
-    timestamp: ts,
-    type: entry.type || "INFO",
-    moodTag: entry.moodTag || null,
-    summary: entry.summary || "",
-    body: entry.body || "",
-  });
-
-  // Cap journal
-  if (state.journal.entries.length > 200) {
-    state.journal.entries.length = 200;
-  }
-}
-
 function applyXp(state, amount = 10) {
   state.xp += amount;
   const targetLevel = 1 + Math.floor(state.xp / LEVEL_XP_STEP);
@@ -240,6 +249,9 @@ function applySkillXp(skillBranch, skillId, skillState, amount = 5) {
  */
 function updateStreak(streakState, isoDate) {
   const { currentStreakDays, bestStreakDays, lastActiveDate } = streakState;
+
+  if (!isoDate) return;
+
   if (!lastActiveDate) {
     streakState.currentStreakDays = 1;
     streakState.bestStreakDays = Math.max(bestStreakDays, 1);
@@ -254,7 +266,8 @@ function updateStreak(streakState, isoDate) {
 
   const prev = new Date(lastActiveDate);
   const curr = new Date(isoDate);
-  const diffDays = Math.round((curr - prev) / (1000 * 60 * 60 * 24));
+  const diffMs = curr - prev;
+  const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
 
   if (diffDays === 1) {
     // continues streak
@@ -324,8 +337,7 @@ function evaluateTemperament(state, now = nowMs()) {
   const playedRecently =
     state.memory.lastPlayedAt && now - state.memory.lastPlayedAt < sevenDaysMs;
   const fedRecently =
-    state.memory.lastFedAt &&
-    now - state.memory.lastFedAt < 12 * 60 * 60 * 1000;
+    state.memory.lastFedAt && now - state.memory.lastFedAt < 12 * 60 * 60 * 1000;
   const trainedRecently =
     state.memory.lastTrainedAt &&
     now - state.memory.lastTrainedAt < 3 * 24 * 60 * 60 * 1000;
@@ -477,6 +489,7 @@ const dogSlice = createSlice({
       applyDecay(state, now); // apply catch-up decay first
 
       const amount = payload?.amount ?? 20;
+      // higher hunger = more hungry → feeding reduces number
       state.stats.hunger = clamp(state.stats.hunger - amount, 0, 100);
       state.stats.happiness = clamp(state.stats.happiness + 5, 0, 100);
 

@@ -1,4 +1,4 @@
-// src/features/game/DogAnimator.js
+// src/pages/DogAnimator.js
 
 // Your spritesheet is 1024x1024 → 8 columns, 8 rows → 128px per frame.
 const SHEET_WIDTH = 1024;
