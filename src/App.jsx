@@ -19,6 +19,7 @@ import LoginPage from "@/pages/Login.jsx";
 import AboutPage from "@/pages/About.jsx";
 import ContactPage from "@/pages/Contact.jsx";
 import LegalPage from "@/pages/Legal.jsx";
+import TemperamentReveal from "@/pages/TemperamentReveal.jsx";
 
 // Firebase sign-out so the auth listener in your user slice can pick it up
 import { auth } from "@/firebase.js";
@@ -195,6 +196,7 @@ export default function App() {
 
         <Route path="/about" element={<AboutPage />} />
         <Route path="/contact" element={<ContactPage />} />
+        <Route path="/temperament" element={<TemperamentReveal />} />
         <Route path="/legal" element={<LegalPage />} />
 
         {/* Fallback */}

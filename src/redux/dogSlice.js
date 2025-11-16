@@ -319,6 +319,87 @@ function updateTemperamentReveal(state, now = nowMs()) {
   }
 }
 
+/**
+ * Evaluate temperament daily and nudge trait intensities based on
+ * recent interactions and stats. This is intentionally lightweight
+ * and runs from `tickDog` so it can be tested easily.
+ */
+function evaluateTemperament(state, now = nowMs()) {
+  const t = state.temperament;
+
+  // Only evaluate at most once per day
+  const lastEval = t.lastEvaluatedAt || t.adoptedAt || 0;
+  const days = getDaysBetween(lastEval, now);
+  if (days < 1) return; // wait until at least one day passed
+
+  // helpers to find trait by id
+  const findTrait = (id) => t.traits.find((x) => x.id === id);
+
+  const clingy = findTrait("clingy");
+  const toyObsessed = findTrait("toyObsessed");
+  const foodMotivated = findTrait("foodMotivated");
+
+  // Defensive: ensure traits exist
+  if (!clingy || !toyObsessed || !foodMotivated) return;
+
+  // derive simple signals from state
+  const hunger = state.stats.hunger; // 0-100 (higher = hungrier)
+  const happiness = state.stats.happiness; // higher = happier
+  const energy = state.stats.energy;
+  const neglect = state.memory.neglectStrikes || 0;
+
+  // Recent activity boosts
+  const playedRecently =
+    state.memory.lastPlayedAt && now - state.memory.lastPlayedAt < 7 * 24 * 60 * 60 * 1000;
+  const fedRecently =
+    state.memory.lastFedAt && now - state.memory.lastFedAt < 12 * 60 * 60 * 1000;
+
+  // Compute soft targets for each trait (0-100)
+  const targetClingy = clamp(
+    Math.round(clingy.intensity * 0.75 + (100 - happiness) * 0.2 + neglect * 5),
+    0,
+    100
+  );
+
+  const targetToy = clamp(
+    Math.round(
+      toyObsessed.intensity * 0.75 + (happiness - 50) * 0.25 + (playedRecently ? 8 : 0)
+    ),
+    0,
+    100
+  );
+
+  const targetFood = clamp(
+    Math.round(
+      foodMotivated.intensity * 0.75 + (hunger - 50) * 0.3 + (fedRecently ? 6 : 0)
+    ),
+    0,
+    100
+  );
+
+  // Apply gentle smoothing toward targets
+  clingy.intensity = Math.round(clingy.intensity * 0.7 + targetClingy * 0.3);
+  toyObsessed.intensity = Math.round(toyObsessed.intensity * 0.7 + targetToy * 0.3);
+  foodMotivated.intensity = Math.round(foodMotivated.intensity * 0.7 + targetFood * 0.3);
+
+  // Compute primary/secondary temperament by top traits
+  const sorted = [...t.traits].sort((a, b) => b.intensity - a.intensity);
+  const top = sorted[0];
+  const second = sorted[1] || top;
+
+  // Map trait -> temperament label
+  const traitToLabel = {
+    clingy: "SWEET",
+    toyObsessed: "SPICY",
+    foodMotivated: "CHILL",
+  };
+
+  t.primary = traitToLabel[top.id] || t.primary || "SPICY";
+  t.secondary = traitToLabel[second.id] || t.secondary || "SWEET";
+
+  t.lastEvaluatedAt = now;
+}
+
 /* ---------------------- slice definition ---------------------- */
 
 const dogSlice = createSlice({
@@ -472,6 +553,7 @@ const dogSlice = createSlice({
       applyDecay(state, now);
       maybeSampleMood(state, now, "TICK");
       updateTemperamentReveal(state, now);
+      evaluateTemperament(state, now);
     },
 
     registerSessionStart(state, { payload }) {
@@ -483,6 +565,7 @@ const dogSlice = createSlice({
       const date = new Date(now).toISOString().slice(0, 10);
       updateStreak(state.streak, date);
       updateTemperamentReveal(state, now);
+      evaluateTemperament(state, now);
     },
 
     /* ------------------ obedience / skills ------------------ */

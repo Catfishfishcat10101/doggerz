@@ -8,6 +8,7 @@ export const PATHS = {
   GAME: "/game",
   ABOUT: "/about",
   CONTACT: "/contact",
+  TEMPERAMENT: "/temperament",
   LEGAL: "/legal",
 };
 
