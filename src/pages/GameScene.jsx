@@ -4,8 +4,8 @@ import { useSelector } from "react-redux";
 import { selectDog } from "@/redux/dogSlice.js";
 
 import DogSpriteView from "./DogSpriteView.jsx";
-import DogAIEngine from "../features/game/DogAIEngine.js";
-import NeedsHUD from "./NeedsHUD.jsx"
+import DogAIEngine from "@/features/game/DogAIEngine.jsx";
+import NeedsHUD from "@/features/game/NeedsHUD.jsx";
 
 /**
  * GameScene

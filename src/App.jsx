@@ -14,6 +14,8 @@ import MainGame from "@/features/game/MainGame.jsx";
 
 // Simple static pages (we'll create these next)
 import SplashPage from "@/pages/Splash.jsx";
+import SignupPage from "@/pages/Signup.jsx";
+import LoginPage from "@/pages/Login.jsx";
 import AboutPage from "@/pages/About.jsx";
 import ContactPage from "@/pages/Contact.jsx";
 import LegalPage from "@/pages/Legal.jsx";
@@ -175,8 +177,9 @@ export default function App() {
 
         {/* Simple auth routes – you can keep your existing Login/Signup components
             if you already have them wired; just ensure the files exist. */}
-        <Route path="/login" element={<SplashPage mode="login" />} />
+        <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SplashPage mode="signup" />} />
+        <Route path="/signup/new" element={<SignupPage />} />
 
         {/* If you have a dedicated Adopt page, you can swap this out later */}
         <Route

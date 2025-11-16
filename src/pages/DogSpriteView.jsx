@@ -9,6 +9,8 @@ import { getAnimationMeta, nextFrame } from "./DogAnimator.js";
 export default function DogSpriteView() {
   const dog = useSelector(selectDog);
 
+  if (!dog) return null;
+
   const [frameIndex, setFrameIndex] = useState(0);
   const [idleVariant, setIdleVariant] = useState("idle");
   const [attention, setAttention] = useState(false);
@@ -17,29 +19,30 @@ export default function DogSpriteView() {
    * RANDOM IDLE VARIANTS
    * --------------------------------------------------------- */
   useEffect(() => {
-    if (dog.isAsleep) return;
+    if (!dog || dog.isAsleep) return;
 
     const timer = setInterval(() => {
       const roll = Math.random();
 
       if (roll < 0.05) setIdleVariant("idle_bark");
-      else if (roll < 0.10) setIdleVariant("idle_scratch");
+      else if (roll < 0.1) setIdleVariant("idle_scratch");
       else setIdleVariant("idle");
     }, 3000);
 
     return () => clearInterval(timer);
-  }, [dog.isAsleep]);
+  }, [dog]);
 
   /* ---------------------------------------------------------
    * ATTENTION TRIGGER
    * --------------------------------------------------------- */
   useEffect(() => {
+    if (!dog) return;
     if (dog.lastAction) {
       setAttention(true);
       const t = setTimeout(() => setAttention(false), 900);
       return () => clearTimeout(t);
     }
-  }, [dog.lastAction]);
+  }, [dog]);
 
   /* ---------------------------------------------------------
    * PICK ANIMATION
@@ -121,8 +124,8 @@ export default function DogSpriteView() {
   return (
     <div className="relative flex flex-col items-center gap-3">
       <div className="relative">
-        <div style={shadowStyle} />
-        <div style={style} />
+        <div style={/** @type {any} */ (shadowStyle)} />
+        <div style={/** @type {any} */ (style)} />
       </div>
 
       <div className="text-center space-y-1">

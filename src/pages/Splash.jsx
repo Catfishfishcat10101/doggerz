@@ -22,6 +22,12 @@ export default function SplashPage(props) {
   });
 
   const primaryCta = () => {
+    if (mode === "signup") {
+      // If we're already on the signup intro, go to the actual signup form
+      navigate("/signup/new");
+      return;
+    }
+
     if (currentUser && hasDog) {
       navigate("/game");
     } else if (currentUser && !hasDog) {

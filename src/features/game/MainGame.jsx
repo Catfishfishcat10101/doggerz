@@ -7,8 +7,8 @@ import {
   feed as feedDog,
   play as playDog,
   bathe as batheDog,
-  // goPotty as goPottyAction, // we'll wire a toast later
 } from "@/redux/dogSlice.js";
+import ObedienceDrill from '@/features/game/ObedienceDrill.jsx';
 
 import DogAIEngine from "@/features/game/DogAIEngine.jsx";
 

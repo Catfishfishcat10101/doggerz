@@ -1,13 +1,18 @@
 // src/pages/Adopt.jsx
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { auth } from "../utils/firebase";
-import { getMyDogDoc, adoptDog } from "../utils/firebase/dogService";
+import { useDispatch } from "react-redux";
+import { auth } from "@/firebase.js";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/firebase.js";
+import { setDogName, setAdoptedAt } from "@/redux/dogSlice.js";
 
 export default function Adopt() {
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const nav = useNavigate();
+
+  const dispatch = useDispatch();
 
   useEffect(() => {
     (async () => {
@@ -15,16 +20,27 @@ export default function Adopt() {
         nav("/login", { replace: true, state: { from: { pathname: "/adopt" } } });
         return;
       }
-      const existing = await getMyDogDoc();
-      if (existing) nav("/game", { replace: true });
+
+      // Check cloud for an existing dog for this user; if present, send them to the game
+      try {
+        const ref = doc(db, "dogs", auth.currentUser.uid);
+        const snap = await getDoc(ref);
+        if (snap.exists()) {
+          nav("/game", { replace: true });
+        }
+      } catch (err) {
+        // ignore; user can adopt
+      }
     })();
-  }, [nav]);
+  }, [nav, dispatch]);
 
   async function handleSubmit(e) {
     e.preventDefault();
     if (!name.trim()) return;
     setBusy(true);
-    await adoptDog(name.trim());
+    // Update redux dog state; DogAIEngine will persist to localStorage and cloud
+    dispatch(setDogName(name.trim()));
+    dispatch(setAdoptedAt(Date.now()));
     nav("/game");
   }
 

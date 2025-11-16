@@ -3,9 +3,10 @@ import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   selectDog,
-  initDog,
   hydrateDog,
-  tick,
+  tickDog,
+  registerSessionStart,
+  resetDogState,
   DOG_STORAGE_KEY,
 } from "@/redux/dogSlice.js";
 import { auth } from "@/firebase.js";
@@ -36,17 +37,19 @@ export default function DogAIEngine() {
           })
         );
         // Immediately apply any offline time since lastUpdatedAt
-        dispatch(tick({ now }));
+        dispatch(tickDog({ now }));
       } else {
         // No save – start a fresh pup
-        dispatch(initDog({ now }));
+        dispatch(resetDogState());
+        dispatch(registerSessionStart({ now }));
       }
     } catch (err) {
       console.warn(
         "[Doggerz] Failed to read dog from localStorage",
         err
       );
-      dispatch(initDog({ now }));
+      dispatch(resetDogState());
+      dispatch(registerSessionStart({ now }));
     }
   }, [dispatch]);
 
@@ -81,7 +84,7 @@ export default function DogAIEngine() {
     if (typeof window === "undefined") return;
 
     const id = window.setInterval(() => {
-      dispatch(tick({ now: Date.now() }));
+      dispatch(tickDog({ now: Date.now() }));
     }, 60_000); // 60s
 
     return () => {
