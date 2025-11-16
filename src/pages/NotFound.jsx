@@ -1,7 +1,7 @@
 // src/pages/NotFound.jsx
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { PATHS } from "@/routes.js";
+import { PATHS } from "src/routes.js";
 
 export default function NotFound() {
   const nav = useNavigate();

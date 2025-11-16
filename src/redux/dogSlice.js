@@ -1,22 +1,9 @@
 // src/redux/dogSlice.js
 import { createSlice } from "@reduxjs/toolkit";
-
-/**
- * Key used by DogAIEngine to persist dog state in localStorage.
- * Keep this stable so users don't lose their save.
- */
 export const DOG_STORAGE_KEY = "doggerz:dogState";
 
-/**
- * Utility: clamp a value into range [lo, hi]
- */
 const clamp = (n, lo = 0, hi = 100) =>
   Math.max(lo, Math.min(hi, Number.isFinite(n) ? n : 0));
-
-/**
- * Stat decay per *hour* of real time.
- * Tune these later once you feel the pacing.
- */
 const DECAY_PER_HOUR = {
   hunger: 8,
   happiness: 6,
@@ -24,30 +11,15 @@ const DECAY_PER_HOUR = {
   cleanliness: 3,
 };
 
-/**
- * Mood sampling cadence in minutes.
- */
 const MOOD_SAMPLE_MINUTES = 60;
-
-/**
- * XP thresholds for dog level and skills
- */
 const LEVEL_XP_STEP = 100;
 const SKILL_LEVEL_STEP = 50;
-
-/**
- * Small helper for date math.
- */
 const nowMs = () => Date.now();
-
 const getDaysBetween = (fromMs, toMs) => {
   if (!fromMs) return Infinity;
   return (toMs - fromMs) / (1000 * 60 * 60 * 24);
 };
 
-/**
- * Initial temperament scaffold. You can randomize this later in onboarding.
- */
 const initialTemperament = {
   primary: "SPICY", // e.g. SPICY / SWEET / CHILL / CHAOS
   secondary: "SWEET",
@@ -56,14 +28,8 @@ const initialTemperament = {
     { id: "toyObsessed", label: "Toy-Obsessed", intensity: 60 },
     { id: "foodMotivated", label: "Food-Motivated", intensity: 55 },
   ],
-  adoptedAt: null, // ms
-  revealedAt: null, // ms when report card was shown
-  revealReady: false, // flag for UI to show temperament card
 };
 
-/**
- * Initial memory: what the dog "remembers"
- */
 const initialMemory = {
   favoriteToyId: null,
   lastFedAt: null,

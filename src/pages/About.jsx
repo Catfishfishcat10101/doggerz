@@ -9,15 +9,13 @@ export default function AboutPage() {
           How Doggerz works
         </h1>
         <p className="text-sm text-zinc-300">
-          Doggerz is a real-time virtual pup simulator. Your dog doesn&apos;t
-          freeze when you close the app — their stats drift based on actual
-          time, even while you&apos;re away.
+          Doggerz is a real-time virtual pup simulator. Their stats drift based on actual
+          time, even while you are gone.
         </p>
 
         <section className="space-y-2 text-sm text-zinc-300">
           <h2 className="font-semibold text-zinc-100">Core loop</h2>
           <ul className="list-disc list-inside space-y-1">
-            <li>Feed your pup so hunger doesn&apos;t crash.</li>
             <li>Play to keep happiness up (but watch energy).</li>
             <li>Bathe regularly to avoid fleas and mange.</li>
             <li>They auto-sleep when exhausted; let them recharge.</li>
