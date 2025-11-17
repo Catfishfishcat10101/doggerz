@@ -1,29 +1,49 @@
 // src/redux/dogThunks.js
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/firebase.js";
 import { hydrateDog } from "./dogSlice.js";
 
 const DOG_COLLECTION = "dogs";
+const CLOUD_DOG_VERSION = 1;
 
-// Load dog state for a given user id from Firestore
+// ensure we only save plain JSON + meta
+const buildCloudDogPayload = (dog) => ({
+  ...dog,
+  meta: {
+    version: CLOUD_DOG_VERSION,
+    updatedAt: serverTimestamp(),
+  },
+});
+
+// defensively unwrap data from Firestore for the client
+const parseCloudDog = (raw) => {
+  if (!raw) return null;
+  const { meta, ...rest } = raw;
+  return {
+    ...rest,
+    meta: {
+      version: meta?.version ?? 1,
+      updatedAt: meta?.updatedAt ?? null,
+    },
+  };
+};
+
 export const loadDogFromCloud = createAsyncThunk(
   "dog/loadDogFromCloud",
   async ({ uid }, { dispatch, rejectWithValue }) => {
     try {
-      if (!uid) {
-        return rejectWithValue("Missing uid");
-      }
+      if (!uid) return rejectWithValue("Missing uid");
 
       const ref = doc(db, DOG_COLLECTION, uid);
       const snap = await getDoc(ref);
 
       if (!snap.exists()) {
-        // No cloud dog yet – nothing to hydrate
+        // no cloud dog yet – caller can decide what to do
         return null;
       }
 
-      const data = snap.data();
+      const data = parseCloudDog(snap.data());
       dispatch(hydrateDog(data));
       return data;
     } catch (err) {
@@ -33,17 +53,16 @@ export const loadDogFromCloud = createAsyncThunk(
   }
 );
 
-// Save dog state for a given user id to Firestore
 export const saveDogToCloud = createAsyncThunk(
   "dog/saveDogToCloud",
   async ({ uid, dog }, { rejectWithValue }) => {
     try {
-      if (!uid || !dog) {
-        return rejectWithValue("Missing uid or dog");
-      }
+      if (!uid || !dog) return rejectWithValue("Missing uid or dog");
 
       const ref = doc(db, DOG_COLLECTION, uid);
-      await setDoc(ref, dog, { merge: true });
+      const payload = buildCloudDogPayload(dog);
+
+      await setDoc(ref, payload, { merge: true });
       return true;
     } catch (err) {
       console.error("[Doggerz] Failed to save dog to cloud", err);

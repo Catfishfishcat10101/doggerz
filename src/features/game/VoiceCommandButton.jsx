@@ -38,6 +38,7 @@ export default function VoiceCommandButton() {
     if (!hasSpeech) return;
 
     const SpeechRecognition =
+      // @ts-ignore
       window.SpeechRecognition || window.webkitSpeechRecognition;
 
     const recognition = new SpeechRecognition();

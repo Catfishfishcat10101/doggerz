@@ -1,410 +1,96 @@
 // src/features/game/MainGame.jsx
-import React, { useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import React from "react";
+import { useSelector } from "react-redux";
+import { selectDog } from "@/redux/dogSlice.js";
 
-import {
-  selectDog,
-  selectDogTemperament,
-  feed as feedDog,
-  play as playDog,
-  bathe as batheDog,
-  markTemperamentRevealed,
-} from "@/redux/dogSlice.js";
-import { PATHS } from "@/routes.js";
-import ObedienceDrill from '@/features/game/ObedienceDrill.jsx';
 
-import DogAIEngine from "@/features/game/DogAIEngine.jsx";
-
-/* ---------- Small UI helpers ---------- */
-
-function StatBar({ label, value = 0, color = "bg-emerald-500" }) {
-  const pct = Math.max(0, Math.min(100, Number(value) || 0));
-
-  return (
-    <div className="space-y-1">
-      <div className="flex justify-between text-xs text-zinc-400">
-        <span>{label}</span>
-        <span>{pct.toFixed(0)}%</span>
-      </div>
-      <div className="h-2 rounded-full bg-zinc-800 overflow-hidden">
-        <div className={`h-full ${color}`} style={{ width: `${pct}%` }} />
-      </div>
-    </div>
-  );
-}
-
-function Pill({ label, value, tone = "default" }) {
-  const toneClasses =
-    tone === "danger"
-      ? "bg-red-950/40 border-red-900 text-red-300"
-      : tone === "warn"
-      ? "bg-amber-950/40 border-amber-900 text-amber-200"
-      : "bg-zinc-900/70 border-zinc-700 text-zinc-200";
-
-  return (
-    <div
-      className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs ${toneClasses}`}
-    >
-      <span className="uppercase tracking-wide text-[0.65rem] text-zinc-400">
-        {label}
-      </span>
-      <span className="font-semibold">{value}</span>
-    </div>
-  );
-}
-
-/* ---------- Age helper: months / years ---------- */
-
-function formatAge(ageHours = 0) {
-  const days = Math.floor(ageHours / 24);
-  const months = Math.floor(days / 30);
-  const years = Math.floor(months / 12);
-  const remainingMonths = months % 12;
-
-  if (years <= 0) {
-    return `${months}mo`;
-  }
-
-  return `${years}y ${remainingMonths}mo`;
-}
-
-/* ---------- Main game screen ---------- */
-
+/**
+ * MainGame is the core “in-yard” experience:
+ * - Left: animated yard & dog movement
+ * - Right: stats + actions (via StatsPanel)
+ */
 export default function MainGame() {
-  const dispatch = useDispatch();
-  const nav = useNavigate();
   const dog = useSelector(selectDog);
-  const temperament = useSelector(selectDogTemperament);
-  const [showHelp, setShowHelp] = useState(false);
 
-  // Auto-show reveal modal if ready
-  const shouldShowReveal = temperament?.revealReady && !temperament?.revealedAt;
-
+  // Hard-guard for when Redux isn't hydrated yet
   if (!dog) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-950 text-zinc-50">
-        <p className="text-zinc-400 text-sm">Loading pup state…</p>
-      </div>
+      <main className="min-h-screen flex items-center justify-center bg-zinc-950 text-zinc-100">
+        <div className="space-y-3 text-center max-w-sm px-4">
+          <h1 className="text-lg font-semibold tracking-tight">
+            Loading your pup…
+          </h1>
+          <p className="text-xs text-zinc-400">
+            If this screen is stuck, use the back button and go through the
+            Adopt flow again so Doggerz can create your save file.
+          </p>
+        </div>
+      </main>
     );
   }
 
-  const {
-    name = "Pup",
-    level = 1,
-    xp = 0,
-    coins = 0, // keeping coins in state for later shop
-    stats = {},
-    poopCount = 0,
-    pottyLevel = 0,
-    pottyTrainingProgress = 0,
-    isPottyTrained = false,
-    isAsleep = false,
-    ageHours = 0,
-    condition = "clean",
-    health = 100,
-    isAlive = true,
-    lifeStage = "puppy",
-  } = dog;
+  const dogName = dog.name || "Pup";
+  const level = Number.isFinite(dog.level) ? dog.level : 1;
+  const coins = Number.isFinite(dog.coins) ? dog.coins : 0;
 
-  const {
-    hunger = 0,
-    happiness = 0,
-    energy = 0,
-    cleanliness = 0,
-    thirst = 0,
-  } = stats;
+  const hunger = Math.round(dog.stats?.hunger ?? 0);
+  const happiness = Math.round(dog.stats?.happiness ?? 0);
+  const energy = Math.round(dog.stats?.energy ?? 0);
+  const cleanliness = Math.round(dog.stats?.cleanliness ?? 0);
 
-  const ageLabel = formatAge(ageHours);
-
-  // condition pill
-  let conditionLabel = "Clean";
-  let conditionTone = "default";
-  if (condition === "dirty") {
-    conditionLabel = "Dirty";
-    conditionTone = "warn";
-  } else if (condition === "fleas") {
-    conditionLabel = "Fleas";
-    conditionTone = "warn";
-  } else if (condition === "mange") {
-    conditionLabel = "Mange";
-    conditionTone = "danger";
-  }
-
-  const healthTone =
-    health < 30 ? "danger" : health < 60 ? "warn" : "default";
-
-  const pottyTrainedPct = Math.round(pottyTrainingProgress || 0);
-  const pottyBadgeLabel = isPottyTrained ? "Potty trained" : "In training";
-
-  // status text
-  let statusLabel = "Awake";
-  if (!isAlive) {
-    statusLabel = "Has passed on";
-  } else if (isAsleep) {
-    statusLabel = "Sleeping (recharging)";
-  } else if (hunger < 25) {
-    statusLabel = "Hungry";
-  } else if (cleanliness < 25) {
-    statusLabel = "Needs a bath";
-  } else if (happiness < 25) {
-    statusLabel = "Bored";
-  } else if (thirst < 25) {
-    statusLabel = "Thirsty";
-  }
-
-  const lifeStageLabel =
-    lifeStage === "adult"
-      ? "Adult"
-      : lifeStage === "senior"
-      ? "Senior"
-      : "Puppy";
+  const moodLabel = dog.mood?.label || "Calibrating vibe…";
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-zinc-950 text-zinc-50 flex flex-col">
-      {/* headless engine for time drift + saving */}
-      <DogAIEngine />
-
-      {/* ========== TEMPERAMENT REVEAL MODAL ========== */}
-      {shouldShowReveal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl max-w-md w-full space-y-4 p-6">
-            <div className="text-center space-y-2">
-              <h2 className="text-2xl font-bold">Personality Report</h2>
-              <p className="text-sm text-zinc-400">
-                After a few days together, {dog?.name || "your pup"}&apos;s true personality shines through!
-              </p>
-            </div>
-
-            <div className="bg-zinc-950/40 rounded-lg p-4 space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="text-center p-3 bg-zinc-800/50 rounded">
-                  <div className="text-xs text-zinc-400">Primary</div>
-                  <div className="text-lg font-bold text-emerald-400">{temperament?.primary}</div>
-                </div>
-                <div className="text-center p-3 bg-zinc-800/50 rounded">
-                  <div className="text-xs text-zinc-400">Secondary</div>
-                  <div className="text-lg font-bold text-sky-400">{temperament?.secondary}</div>
-                </div>
-              </div>
-
-              <div className="space-y-2 pt-2">
-                {temperament?.traits?.map((t) => (
-                  <div key={t.id} className="flex items-center justify-between text-sm">
-                    <span className="text-zinc-300">{t.label}</span>
-                    <div className="flex items-center gap-2">
-                      <div className="w-20 h-1.5 bg-zinc-700 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-gradient-to-r from-emerald-500 to-sky-400"
-                          style={{ width: `${t.intensity}%` }}
-                        />
-                      </div>
-                      <span className="text-xs text-zinc-400 w-8 text-right">{t.intensity}%</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex gap-2 pt-2">
-              <button
-                onClick={() => {
-                  dispatch(markTemperamentRevealed());
-                }}
-                className="flex-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold py-2 transition"
-              >
-                Got it!
-              </button>
-              <button
-                onClick={() => nav(PATHS.TEMPERAMENT)}
-                className="flex-1 rounded-lg border border-zinc-700 text-zinc-300 hover:border-zinc-500 py-2 transition text-sm"
-              >
-                Full Report
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ============================
-          MAIN GAME CONTENT
-      ============================ */}
-      <header className="border-b border-zinc-800 px-6 py-4 flex items-center justify-between">
-        <div>
-          <p className="text-xs uppercase tracking-wide text-zinc-400">
-            Care dashboard
-          </p>
-          <p className="text-sm text-zinc-500">
-            Keep {name}&apos;s hunger, happiness, energy, and cleanliness up
-            over real time.
-          </p>
-        </div>
-
-        <div className="flex flex-col items-end gap-2 text-sm">
-          <div className="flex flex-wrap gap-2 justify-end">
-            <Pill label="Level" value={level} />
-            <Pill label="XP" value={Math.floor(xp)} />
-            <Pill label="Age" value={ageLabel} />
-            <Pill label="Stage" value={lifeStageLabel} />
-            <Pill
-              label="Condition"
-              value={conditionLabel}
-              tone={conditionTone}
-            />
-            <Pill
-              label="Health"
-              value={`${health.toFixed(0)}%`}
-              tone={healthTone}
-            />
-          </div>
-        </div>
-      </header>
-
-      <main className="flex-1 flex flex-col lg:flex-row gap-8 px-6 py-6">
-        {/* LEFT: dog + main actions */}
-        <section className="flex-1 rounded-2xl border border-zinc-800 bg-gradient-to-b from-zinc-900/80 to-zinc-950 p-6 flex flex-col">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <p className="text-xs uppercase tracking-wide text-zinc-400">
-                Pup
-              </p>
-              <p className="text-xl font-semibold">
-                {name}{" "}
-                {!isAlive && (
-                  <span className="ml-2 text-xs text-red-400 uppercase tracking-wide">
-                    Deceased
-                  </span>
-                )}
-              </p>
-            </div>
-            <div className="flex flex-col items-end text-xs text-zinc-400">
-              <span>Poops in yard: {poopCount}</span>
-              <span>Potty trained: {pottyTrainedPct}%</span>
-              <span>Status: {statusLabel}</span>
-            </div>
-          </div>
-
-          <div className="flex-1 flex items-center justify-center">
-            <div className="h-40 w-40 rounded-full border border-zinc-700 bg-zinc-900 flex items-center justify-center">
-              <span className="text-xs text-zinc-400 text-center px-4">
-                Dog sprite / yard scene goes here.
-              </span>
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="mt-6 grid grid-cols-2 md:grid-cols-3 gap-3">
-            <button
-              type="button"
-              onClick={() => dispatch(feedDog())}
-              className="rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 text-sm font-semibold py-2.5 px-4 transition disabled:opacity-40 disabled:cursor-not-allowed"
-              disabled={!isAlive}
-            >
-              Feed
-            </button>
-
-            <button
-              type="button"
-              onClick={() => dispatch(playDog())}
-              className="rounded-xl bg-sky-500 hover:bg-sky-400 text-zinc-950 text-sm font-semibold py-2.5 px-4 transition disabled:opacity-40 disabled:cursor-not-allowed"
-              disabled={!isAlive}
-            >
-              Play
-            </button>
-
-            <button
-              type="button"
-              onClick={() => dispatch(batheDog())}
-              className="rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 text-sm font-semibold py-2.5 px-4 transition disabled:opacity-40 disabled:cursor-not-allowed"
-              disabled={!isAlive}
-            >
-              Bathe
-            </button>
-
-            {/* no giant "Go potty" button – we'll do a toast later */}
-          </div>
-        </section>
-
-        {/* RIGHT: meters + potty training + tips */}
-        <section className="w-full lg:w-80 space-y-4">
-          {/* core needs */}
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-5">
-            <p className="text-xs uppercase tracking-wide text-zinc-400 mb-3">
-              Pup needs
-            </p>
-            <div className="space-y-3">
-              <StatBar label="Hunger" value={hunger} color="bg-emerald-500" />
-              <StatBar label="Happiness" value={happiness} color="bg-sky-500" />
-              <StatBar label="Energy" value={energy} color="bg-violet-500" />
-              <StatBar
-                label="Cleanliness"
-                value={cleanliness}
-                color="bg-amber-400"
-              />
-              <StatBar label="Thirst" value={thirst} color="bg-cyan-400" />
-            </div>
-          </div>
-
-          {/* potty training module */}
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-5 space-y-3">
-            <div className="flex items-center justify-between">
-              <p className="text-xs uppercase tracking-wide text-zinc-400">
-                Potty training
-              </p>
-              <Pill
-                label="Badge"
-                value={pottyBadgeLabel}
-                tone={isPottyTrained ? "default" : "warn"}
-              />
-            </div>
-            <StatBar
-              label="Progress"
-              value={pottyTrainingProgress}
-              color={isPottyTrained ? "bg-emerald-500" : "bg-amber-400"}
-            />
-            <p className="text-[0.7rem] text-zinc-500">
-              Guide your pup to go outside when they really need to go. Each
-              successful bathroom break raises this bar. At 100%, they earn a
-              permanent potty-trained badge.
+    <main className="min-h-screen bg-gradient-to-b from-sky-950 via-sky-900 to-slate-950 text-zinc-50">
+      <div className="mx-auto max-w-5xl px-4 py-4 lg:py-6 space-y-4">
+        {/* ---------- Top Bar / Meta HUD ---------- */}
+        <header className="flex items-center justify-between gap-4">
+          <div className="space-y-1">
+            <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
+              {dogName}
+            </h1>
+            <p className="text-[0.7rem] uppercase tracking-[0.2em] text-sky-300">
+              Level {level} • {coins} coins
             </p>
           </div>
 
-          {/* help card */}
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-4 text-xs text-zinc-400 space-y-2">
-            <div className="flex items-center justify-between">
+          <div className="text-right text-xs text-zinc-300 space-y-1">
+            <p className="font-medium text-sky-200">Mood: {moodLabel}</p>
+            <p className="text-[0.7rem] text-zinc-400">
+              H {hunger} • Ha {happiness} • En {energy} • Cl {cleanliness}
+            </p>
+          </div>
+        </header>
+
+        {/* ---------- Main Layout ---------- */}
+        <section className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(260px,1fr)] items-start">
+          {/* Yard / Dog / World */}
+          <div className="bg-sky-950/40 border border-sky-800/70 rounded-2xl shadow-xl shadow-sky-950/70 overflow-hidden">
+            
+          </div>
+
+          {/* Right rail: stats + helper copy */}
+          <aside className="space-y-4">
+            <div className="bg-zinc-900/80 border border-zinc-700/80 rounded-2xl p-3 lg:p-4 shadow-lg shadow-black/50">
+              
+            </div>
+
+            <div className="bg-zinc-900/70 border border-zinc-700/60 rounded-2xl p-3 lg:p-4 text-xs text-zinc-400 space-y-2">
               <p className="font-semibold text-zinc-200 text-sm">
-                Need help?
+                How to grind XP & coins
               </p>
-              <button
-                type="button"
-                onClick={() => setShowHelp((v) => !v)}
-                className="rounded-full border border-zinc-600 px-3 py-1 text-[0.7rem] uppercase tracking-wide hover:border-emerald-400 hover:text-emerald-300 transition"
-              >
-                {showHelp ? "Hide tips" : "Show tips"}
-              </button>
+              <ul className="list-disc list-inside space-y-1">
+                <li>Keep all four needs (H / Ha / En / Cl) out of the red.</li>
+                <li>Use care actions in the stats panel to recover needs.</li>
+                <li>
+                  The better you maintain your pup, the faster XP and coins
+                  accrue in the background.
+                </li>
+              </ul>
             </div>
-
-            {showHelp && (
-              <div className="space-y-1.5 mt-1">
-                <p>• Feed periodically; don&apos;t let hunger drop too low.</p>
-                <p>• Play to keep happiness up, but watch energy.</p>
-                <p>
-                  • Your pup will curl up and sleep automatically when energy
-                  runs low, and slowly wake back up as they rest.
-                </p>
-                <p>
-                  • Bathe before cleanliness falls too low to avoid fleas and
-                  mange.
-                </p>
-                <p>
-                  • Help them go potty outside; good habits raise the potty
-                  training bar faster.
-                </p>
-              </div>
-            )}
-          </div>
+          </aside>
         </section>
-      </main>
-    </div>
+      </div>
+    </main>
   );
 }

@@ -7,7 +7,7 @@ const clamp = (n, lo = 0, hi = 100) =>
   Math.max(lo, Math.min(hi, Number.isFinite(n) ? n : 0));
 
 const DECAY_PER_HOUR = {
-  hunger: 8, // higher = hungrier, so hunger should go UP over time
+  hunger: 8,
   happiness: 6,
   energy: 5,
   cleanliness: 3,
@@ -25,7 +25,7 @@ const getDaysBetween = (fromMs, toMs) => {
 };
 
 const initialTemperament = {
-  primary: "SPICY", // e.g. SPICY / SWEET / CHILL / CHAOS
+  primary: "SPICY",
   secondary: "SWEET",
   traits: [
     { id: "clingy", label: "Clingy", intensity: 70 },
@@ -40,15 +40,12 @@ const initialMemory = {
   lastPlayedAt: null,
   lastBathedAt: null,
   lastTrainedAt: null,
-  lastSeenAt: null, // last time user opened game screen
-  neglectStrikes: 0, // increments for long absences
+  lastSeenAt: null,
+  neglectStrikes: 0,
 };
 
-/**
- * Career / Lifestyle
- */
 const initialCareer = {
-  lifestyle: null, // "ADVENTURE" | "SERVICE" | "CHAOS" | "FIREHOUSE" | null
+  lifestyle: null,
   chosenAt: null,
   perks: {
     hungerDecayMultiplier: 1.0,
@@ -57,9 +54,6 @@ const initialCareer = {
   },
 };
 
-/**
- * Skill tree: start with obedience
- */
 const initialSkills = {
   obedience: {
     sit: { level: 0, xp: 0 },
@@ -67,43 +61,29 @@ const initialSkills = {
     rollOver: { level: 0, xp: 0 },
     speak: { level: 0, xp: 0 },
   },
-  // future: agility, affection, mischief
 };
 
-/**
- * Mood timeline
- */
 const initialMood = {
   lastSampleAt: null,
-  history: [], // newest first: [{ timestamp, tag, happiness, hunger, energy, cleanliness }]
+  history: [],
 };
 
-/**
- * Dog journal
- */
 const initialJournal = {
-  entries: [], // newest first: { id, timestamp, type, moodTag, summary, body }
+  entries: [],
 };
 
-/**
- * Streak
- */
 const initialStreak = {
   currentStreakDays: 0,
   bestStreakDays: 0,
-  lastActiveDate: null, // "YYYY-MM-DD"
+  lastActiveDate: null,
 };
 
-/**
- * Core dog state
- */
 const initialState = {
   name: "Pup",
   level: 1,
   xp: 0,
   coins: 0,
   stats: {
-    // NOTE: higher hunger = more hungry
     hunger: 50,
     happiness: 60,
     energy: 60,
@@ -113,7 +93,7 @@ const initialState = {
   pottyLevel: 0,
   isAsleep: false,
   debug: false,
-  lastUpdatedAt: null, // ms timestamp for decay
+  lastUpdatedAt: null,
   temperament: initialTemperament,
   memory: initialMemory,
   career: initialCareer,
@@ -123,7 +103,7 @@ const initialState = {
   streak: initialStreak,
 };
 
-/* ---------- helpers that mutate the draft state safely ---------- */
+/* ---------- helpers ---------- */
 
 function pushJournalEntry(state, entry) {
   const ts = entry.timestamp ?? nowMs();
@@ -138,7 +118,6 @@ function pushJournalEntry(state, entry) {
     body: entry.body || "",
   });
 
-  // Cap journal
   if (state.journal.entries.length > 200) {
     state.journal.entries.length = 200;
   }
@@ -153,26 +132,21 @@ function applyDecay(state, now = nowMs()) {
   const diffHours = Math.max(0, (now - state.lastUpdatedAt) / (1000 * 60 * 60));
   if (diffHours <= 0) return;
 
-  const hungerMult = state.career.perks?.hungerDecayMultiplier || 1.0;
+  const hungerMultiplier = state.career.perks?.hungerDecayMultiplier || 1.0;
 
-  // Apply stat decay
   Object.entries(state.stats).forEach(([key, value]) => {
     const rate = DECAY_PER_HOUR[key] || 0;
     let delta = rate * diffHours;
 
     if (key === "hunger") {
-      // hunger goes UP over time (more hungry)
-      delta *= hungerMult;
+      delta *= hungerMultiplier;
       state.stats[key] = clamp(value + delta, 0, 100);
     } else {
-      // other stats decay down
       state.stats[key] = clamp(value - delta, 0, 100);
     }
   });
 
-  // Neglect check: if gone >= 24h, increment strike and journal
-  const hours = diffHours;
-  if (hours >= 24) {
+  if (diffHours >= 24) {
     state.memory.neglectStrikes += 1;
     pushJournalEntry(state, {
       type: "NEGLECT",
@@ -210,7 +184,6 @@ function maybeSampleMood(state, now = nowMs(), reason = "TICK") {
     cleanliness: Math.round(cleanliness),
   });
 
-  // Cap history size
   if (state.mood.history.length > 100) {
     state.mood.history.length = 100;
   }
@@ -244,9 +217,6 @@ function applySkillXp(skillBranch, skillId, skillState, amount = 5) {
   }
 }
 
-/**
- * Streak update: pass a YYYY-MM-DD string
- */
 function updateStreak(streakState, isoDate) {
   const { currentStreakDays, bestStreakDays, lastActiveDate } = streakState;
 
@@ -260,20 +230,18 @@ function updateStreak(streakState, isoDate) {
   }
 
   if (lastActiveDate === isoDate) {
-    // already counted today
     return;
   }
 
   const prev = new Date(lastActiveDate);
   const curr = new Date(isoDate);
+  // @ts-ignore
   const diffMs = curr - prev;
   const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
 
   if (diffDays === 1) {
-    // continues streak
     streakState.currentStreakDays = currentStreakDays + 1;
   } else {
-    // reset
     streakState.currentStreakDays = 1;
   }
 
@@ -284,9 +252,6 @@ function updateStreak(streakState, isoDate) {
   streakState.lastActiveDate = isoDate;
 }
 
-/**
- * Temperament reveal flagging
- */
 function updateTemperamentReveal(state, now = nowMs()) {
   const adoptedAt = state.temperament.adoptedAt;
   if (!adoptedAt) return;
@@ -298,51 +263,35 @@ function updateTemperamentReveal(state, now = nowMs()) {
   }
 }
 
-/**
- * Evaluate temperament daily and nudge trait intensities based on:
- * - Current stats (hunger, happiness, energy, cleanliness)
- * - Recent activity patterns (play, feed, training frequency)
- * - Skill levels (obedience training shows discipline/bonding)
- * - Mood history sentiment (happy/sleepy/hungry patterns)
- * - Journal insights (training entries, neglect strikes)
- * - Neglect & absence patterns (clinginess boost)
- */
 function evaluateTemperament(state, now = nowMs()) {
   const t = state.temperament;
 
-  // Only evaluate at most once per day
   const lastEval = t.lastEvaluatedAt || t.adoptedAt || 0;
   const days = getDaysBetween(lastEval, now);
-  if (days < 1) return; // wait until at least one day passed
+  if (days < 1) return;
 
-  // helpers to find trait by id
   const findTrait = (id) => t.traits.find((x) => x.id === id);
 
   const clingy = findTrait("clingy");
   const toyObsessed = findTrait("toyObsessed");
   const foodMotivated = findTrait("foodMotivated");
 
-  // Defensive: ensure traits exist
   if (!clingy || !toyObsessed || !foodMotivated) return;
 
-  // === SIGNALS FROM STATE ===
-  const hunger = state.stats.hunger; // 0-100 (higher = hungrier)
-  const happiness = state.stats.happiness; // higher = happier
-  const energy = state.stats.energy;
-  const cleanliness = state.stats.cleanliness;
+  const hunger = state.stats.hunger;
+  const happiness = state.stats.happiness;
   const neglect = state.memory.neglectStrikes || 0;
 
-  // === RECENT ACTIVITY (look back 7 days) ===
   const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
   const playedRecently =
     state.memory.lastPlayedAt && now - state.memory.lastPlayedAt < sevenDaysMs;
   const fedRecently =
-    state.memory.lastFedAt && now - state.memory.lastFedAt < 12 * 60 * 60 * 1000;
+    state.memory.lastFedAt &&
+    now - state.memory.lastFedAt < 12 * 60 * 60 * 1000;
   const trainedRecently =
     state.memory.lastTrainedAt &&
     now - state.memory.lastTrainedAt < 3 * 24 * 60 * 60 * 1000;
 
-  // === SKILL LEVEL SIGNALS (obedience = bonding/discipline) ===
   const obedienceSkills = state.skills?.obedience || {};
   const avgObedienceLevel = (() => {
     const vals = Object.values(obedienceSkills).map((s) => s.level || 0);
@@ -351,18 +300,14 @@ function evaluateTemperament(state, now = nowMs()) {
       : 0;
   })();
 
-  // === MOOD HISTORY SENTIMENT (last 10 recent moods) ===
   const recentMoods = (state.mood?.history || []).slice(0, 10);
   const happyMoodCount = recentMoods.filter((m) => m.tag === "HAPPY").length;
-  const sleepyMoodCount = recentMoods.filter((m) => m.tag === "SLEEPY").length;
   const hungryMoodCount = recentMoods.filter((m) => m.tag === "HUNGRY").length;
   const moodSentiment = {
     happy: happyMoodCount,
-    sleepy: sleepyMoodCount,
     hungry: hungryMoodCount,
   };
 
-  // === JOURNAL INSIGHTS (look for training & neglect patterns) ===
   const recentJournal = (state.journal?.entries || []).slice(0, 20);
   const trainingEntries = recentJournal.filter(
     (e) => e.type === "TRAINING"
@@ -371,9 +316,6 @@ function evaluateTemperament(state, now = nowMs()) {
     (e) => e.type === "NEGLECT"
   ).length;
 
-  // === COMPUTE SOFT TARGETS FOR TRAITS ===
-
-  // CLINGY: increases with neglect, unhappiness, absence, lack of training
   const targetClingy = clamp(
     Math.round(
       clingy.intensity * 0.65 +
@@ -386,7 +328,6 @@ function evaluateTemperament(state, now = nowMs()) {
     100
   );
 
-  // TOY_OBSESSED: increases with play frequency, happiness, good energy, and obedience
   const targetToy = clamp(
     Math.round(
       toyObsessed.intensity * 0.65 +
@@ -399,21 +340,18 @@ function evaluateTemperament(state, now = nowMs()) {
     100
   );
 
-  // FOOD_MOTIVATED: increases with hunger levels, feed frequency, and happy mood from food
   const targetFood = clamp(
     Math.round(
       foodMotivated.intensity * 0.65 +
         (hunger - 50) * 0.25 +
         (fedRecently ? 10 : 0) +
         moodSentiment.hungry * 2 +
-        (avgObedienceLevel > 0 ? -3 : 0) // obedience training reduces pure food focus
+        (avgObedienceLevel > 0 ? -3 : 0)
     ),
     0,
     100
   );
 
-  // === APPLY GENTLE SMOOTHING TOWARD TARGETS ===
-  // Weight current heavily (0.65) so changes are gradual, not jarring
   clingy.intensity = Math.round(clingy.intensity * 0.65 + targetClingy * 0.35);
   toyObsessed.intensity = Math.round(
     toyObsessed.intensity * 0.65 + targetToy * 0.35
@@ -422,12 +360,10 @@ function evaluateTemperament(state, now = nowMs()) {
     foodMotivated.intensity * 0.65 + targetFood * 0.35
   );
 
-  // === COMPUTE PRIMARY/SECONDARY TEMPERAMENT ===
   const sorted = [...t.traits].sort((a, b) => b.intensity - a.intensity);
   const top = sorted[0];
   const second = sorted[1] || top;
 
-  // Map trait -> temperament label
   const traitToLabel = {
     clingy: "SWEET",
     toyObsessed: "SPICY",
@@ -440,7 +376,7 @@ function evaluateTemperament(state, now = nowMs()) {
   t.lastEvaluatedAt = now;
 }
 
-/* ---------------------- slice definition ---------------------- */
+/* ---------------------- slice ---------------------- */
 
 const dogSlice = createSlice({
   name: "dog",
@@ -448,7 +384,6 @@ const dogSlice = createSlice({
   reducers: {
     hydrateDog(state, { payload }) {
       if (!payload || typeof payload !== "object") return;
-      // Shallow merge with safety – you can make this smarter later.
       return {
         ...state,
         ...payload,
@@ -461,6 +396,7 @@ const dogSlice = createSlice({
     },
 
     setAdoptedAt(state, { payload }) {
+      // @ts-ignore
       state.temperament.adoptedAt = payload ?? nowMs();
     },
 
@@ -474,7 +410,9 @@ const dogSlice = createSlice({
     },
 
     markTemperamentRevealed(state) {
+      // @ts-ignore
       state.temperament.revealedAt = nowMs();
+      // @ts-ignore
       state.temperament.revealReady = false;
     },
 
@@ -482,14 +420,13 @@ const dogSlice = createSlice({
       state.memory.favoriteToyId = payload || null;
     },
 
-    /* ------------- main care actions (buttons) ------------- */
+    /* ------------- care actions ------------- */
 
     feed(state, { payload }) {
       const now = payload?.now ?? nowMs();
-      applyDecay(state, now); // apply catch-up decay first
+      applyDecay(state, now);
 
       const amount = payload?.amount ?? 20;
-      // higher hunger = more hungry → feeding reduces number
       state.stats.hunger = clamp(state.stats.hunger - amount, 0, 100);
       state.stats.happiness = clamp(state.stats.happiness + 5, 0, 100);
 
@@ -587,7 +524,7 @@ const dogSlice = createSlice({
       state.memory.lastSeenAt = now;
     },
 
-    /* ------------- core time tick / login sync ------------- */
+    /* ------------- time / login ------------- */
 
     tickDog(state, { payload }) {
       const now = payload?.now ?? nowMs();
@@ -609,11 +546,11 @@ const dogSlice = createSlice({
       evaluateTemperament(state, now);
     },
 
-    /* ------------------ obedience / skills ------------------ */
+    /* ------------- skills ------------- */
 
     trainObedience(state, { payload }) {
       const {
-        commandId, // "sit" | "stay" | "rollOver" | "speak"
+        commandId,
         success = true,
         xp = 6,
         now: payloadNow,
@@ -628,7 +565,6 @@ const dogSlice = createSlice({
       state.memory.lastTrainedAt = now;
       state.memory.lastSeenAt = now;
 
-      // obedience training is low-energy, high-bonding
       state.stats.happiness = clamp(state.stats.happiness + 8, 0, 100);
       state.stats.energy = clamp(state.stats.energy - 5, 0, 100);
 
@@ -648,13 +584,9 @@ const dogSlice = createSlice({
       updateTemperamentReveal(state, now);
     },
 
-    /* ---------------- manual journal hook ---------------- */
-
     addJournalEntry(state, { payload }) {
       pushJournalEntry(state, payload || {});
     },
-
-    /* ---------------- debug / dev ---------------- */
 
     toggleDebug(state) {
       state.debug = !state.debug;
