@@ -2,10 +2,11 @@
 import React from "react";
 import { useSelector } from "react-redux";
 import { selectDogSkills } from "@/redux/dogSlice.js";
+import { SKILL_LEVEL_STEP } from "@/constants/game.js";
 import VoiceCommandButton from "./VoiceCommandButton.jsx";
 
 function SkillRow({ label, node }) {
-  const pct = Math.min(100, (node.xp / 50) * 100); // SKILL_LEVEL_STEP mirror
+  const pct = Math.min(100, (node.xp / SKILL_LEVEL_STEP) * 100); // SKILL_LEVEL_STEP mirror
   return (
     <div className="space-y-1">
       <div className="flex justify-between text-xs text-zinc-400">

@@ -1,15 +1,16 @@
 // src/routes.js
 export const PATHS = {
   HOME: "/",
-  SPLASH: "/",
-  LOGIN: "/login",
-  SIGNUP: "/signup",
   ADOPT: "/adopt",
   GAME: "/game",
+  PLAY: "/play",
+  LOGIN: "/login",
+  SIGNUP: "/signup",
   ABOUT: "/about",
-  CONTACT: "/contact",
-  TEMPERAMENT: "/temperament",
+  SETTINGS: "/settings",
   LEGAL: "/legal",
+  MEMORY: "/memory",
+  POTTY: "/potty",
 };
 
 export default PATHS;

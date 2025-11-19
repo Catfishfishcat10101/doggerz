@@ -23,77 +23,7 @@ export default function Home() {
             <span className="hidden text-[11px] font-medium uppercase tracking-[0.18em] text-zinc-500 sm:inline">
               Virtual pup simulator
             </span>
-          </Link>
-
-          <div className="flex items-center gap-6">
-            {/* Main nav – no Home, no Legal */}
-            <nav className="hidden items-center gap-4 md:flex">
-              <Link
-                to={PATHS.ABOUT}
-                className="text-sm font-medium text-zinc-300 hover:text-white transition-colors"
-              >
-                About
-              </Link>
-              <Link
-                to={PATHS.CONTACT}
-                className="text-sm font-medium text-zinc-300 hover:text-white transition-colors"
-              >
-                Contact
-              </Link>
-            </nav>
-
-            {/* Auth actions */}
-            <div className="flex items-center gap-2">
-              <Link
-                to={PATHS.LOGIN}
-                className="text-sm font-medium text-zinc-300 hover:text-white transition-colors"
-              >
-                Log in
-              </Link>
-              <Link
-                to={PATHS.SIGNUP}
-                className="inline-flex items-center rounded-full bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-emerald-50 shadow-sm hover:bg-emerald-500 active:scale-[0.97] transition"
-              >
-                Sign up
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* MAIN HERO */}
-      <main className="flex-1">
-        <section className="mx-auto flex max-w-6xl flex-col gap-10 px-4 py-10 lg:flex-row lg:items-center lg:justify-between lg:py-16">
-          {/* Left: headline */}
-          <div className="max-w-xl space-y-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-400">
-              Adopt. Care. Level up.
-            </p>
-            <h1 className="text-3xl font-extrabold leading-tight tracking-tight text-zinc-50 sm:text-4xl md:text-5xl">
-              Your{" "}
-              <span className="text-emerald-400">virtual pup,</span>
-              <br />
-              always one tap away.
-            </h1>
-            <p className="text-sm leading-relaxed text-zinc-400 sm:text-base">
-              Adopt your pup and take care of them over real time. Keep them fed,
-              entertained, rested, and clean. How you treat your dog determines
-              how long they thrive — no click-spamming, no idle mining.
-            </p>
-
-            <div className="flex flex-wrap items-center gap-3 text-sm">
-              <Link
-                to={PATHS.ADOPT}
-                className="inline-flex items-center rounded-full bg-emerald-600 px-4 py-2 font-semibold text-emerald-50 shadow-sm hover:bg-emerald-500 active:scale-[0.97] transition"
-              >
-                Get started
-              </Link>
-              <p className="text-xs text-zinc-400 sm:text-sm">
-                Already have an account?{" "}
-                <Link
-                  to={PATHS.LOGIN}
-                  className="font-medium text-emerald-400 hover:text-emerald-300"
-                >
+xxxxxxxxxxxxxxxxxx                >
                   Log in.
                 </Link>
               </p>

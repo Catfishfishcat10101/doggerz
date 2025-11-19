@@ -6,14 +6,17 @@ import {
   tickDog,
   selectDogTemperament,
 } from "@/redux/dogSlice.js";
+import { DEFAULT_TICK_INTERVAL } from "@/constants/game.js";
 
 /**
  * Hook that:
  * - Registers a session start (streak, mood, decay catch-up).
  * - Runs a periodic tick to decay stats & sample mood.
  * - Exposes whether temperament reveal is ready.
+ * @param {Object} options
+ * @param {number} [options.tickSeconds] - Seconds between ticks (default: 120)
  */
-export function useDogLifecycle({ tickSeconds = 120 } = {}) {
+export function useDogLifecycle({ tickSeconds = DEFAULT_TICK_INTERVAL } = {}) {
   const dispatch = useDispatch();
   const temperament = useSelector(selectDogTemperament);
 

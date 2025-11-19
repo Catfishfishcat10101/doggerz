@@ -1,5 +1,5 @@
 // src/features/game/DogAIEngine.jsx
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   selectDog,
@@ -15,10 +15,12 @@ import {
   loadDogFromCloud,
   saveDogToCloud,
 } from "@/redux/dogThunks.js";
+import { CLOUD_SAVE_DEBOUNCE } from "@/constants/game.js";
 
 export default function DogAIEngine() {
   const dispatch = useDispatch();
   const dog = useSelector(selectDog);
+  const saveTimeoutRef = useRef(null);
 
   // On mount: hydrate from localStorage or initialize new dog
   useEffect(() => {
@@ -58,7 +60,7 @@ export default function DogAIEngine() {
     if (!dog) return;
     if (typeof window === "undefined") return;
 
-    // Local
+    // Local (immediate)
     try {
       window.localStorage.setItem(
         DOG_STORAGE_KEY,
@@ -71,12 +73,23 @@ export default function DogAIEngine() {
       );
     }
 
-    // Cloud (if logged in)
+    // Cloud (debounced to avoid excessive writes)
     const user = auth.currentUser;
     if (user) {
-      // fire-and-forget; we don't care about the return in the UI
-      dispatch(saveDogToCloud({ uid: user.uid, dog }));
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+
+      saveTimeoutRef.current = setTimeout(() => {
+        dispatch(saveDogToCloud({ uid: user.uid, dog }));
+      }, CLOUD_SAVE_DEBOUNCE);
     }
+
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
   }, [dog, dispatch]);
 
   // Soft game loop: tick every 60 seconds

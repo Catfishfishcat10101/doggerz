@@ -27,6 +27,7 @@ function findCommandFromTranscript(text) {
 export default function VoiceCommandButton() {
   const dispatch = useDispatch();
   const recognitionRef = useRef(null);
+  const timeoutRef = useRef(null);
 
   const [isListening, setIsListening] = useState(false);
   const [lastTranscript, setLastTranscript] = useState("");
@@ -49,6 +50,18 @@ export default function VoiceCommandButton() {
     recognition.onstart = () => {
       setIsListening(true);
       setError(null);
+
+      // Timeout after 10 seconds to prevent infinite listening
+      timeoutRef.current = setTimeout(() => {
+        if (recognitionRef.current) {
+          try {
+            recognitionRef.current.stop();
+            setError("Listening timeout. Try again.");
+          } catch (e) {
+            console.warn("[Voice] timeout stop error:", e);
+          }
+        }
+      }, 10000);
     };
 
     recognition.onerror = (event) => {
@@ -99,11 +112,18 @@ export default function VoiceCommandButton() {
 
     recognition.onend = () => {
       setIsListening(false);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
     };
 
     recognitionRef.current = recognition;
 
     return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
       try {
         recognition.stop();
       } catch {
@@ -148,7 +168,7 @@ export default function VoiceCommandButton() {
           Voice Training Not Supported
         </button>
         <p className="text-xs text-zinc-500">
-          Your browser  support in-browser speech recognition. Try
+          Your browser doesn't support in-browser speech recognition. Try
           Chrome on desktop for voice commands.
         </p>
       </div>
