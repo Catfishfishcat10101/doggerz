@@ -16,6 +16,8 @@ import {
   scoopPoop,
   trainObedience,
   respondToDogPoll,
+  setAdoptedAt,
+  setDogName,
 } from "@/redux/dogSlice.js";
 import EnhancedDogSprite from "@/features/game/EnhancedDogSprite.jsx";
 import WeatherWidget from "@/components/WeatherWidget.jsx";
@@ -197,6 +199,33 @@ export default function MainGame() {
           </p>
         </div>
       </main>
+    );
+  }
+
+  // Quick adopt button for testing
+  const handleQuickAdopt = () => {
+    dispatch(setDogName("Buddy"));
+    dispatch(setAdoptedAt(Date.now()));
+  };
+
+  if (!dog.adoptedAt) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-zinc-950">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-zinc-50 mb-4">
+            No Dog Adopted
+          </h2>
+          <p className="text-zinc-400 mb-6">
+            Adopt a dog to get started!
+          </p>
+          <button
+            onClick={handleQuickAdopt}
+            className="px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-black font-semibold rounded-full transition"
+          >
+            Quick Adopt (Test)
+          </button>
+        </div>
+      </div>
     );
   }
 
@@ -400,5 +429,33 @@ export default function MainGame() {
         </section>
       </div>
     </main>
+  );
+}
+
+function StatBar({ label, value, color, inverse = false }) {
+  const colorMap = {
+    amber: "bg-amber-500",
+    emerald: "bg-emerald-500",
+    blue: "bg-blue-500",
+    cyan: "bg-cyan-500",
+  };
+
+  const barColor = colorMap[color] || "bg-zinc-500";
+  const displayValue = inverse ? 100 - value : value;
+  const percentage = Math.max(0, Math.min(100, displayValue));
+
+  return (
+    <div>
+      <div className="flex justify-between text-xs text-zinc-400 mb-1">
+        <span>{label}</span>
+        <span>{Math.round(value)}</span>
+      </div>
+      <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+        <div
+          className={`h-full ${barColor} transition-all duration-500`}
+          style={{ width: `${percentage}%` }}
+        />
+      </div>
+    </div>
   );
 }

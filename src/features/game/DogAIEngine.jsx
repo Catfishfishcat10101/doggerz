@@ -1,125 +1,109 @@
 // src/features/game/DogAIEngine.jsx
 import React, { useEffect, useRef } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { auth, firebaseReady } from "@/firebase.js";
 import {
-  selectDog,
   hydrateDog,
   tickDog,
   registerSessionStart,
-  resetDogState,
+  tickDogPolls,
+  selectDog,
   DOG_STORAGE_KEY,
 } from "@/redux/dogSlice.js";
-import { auth } from "@/firebase.js";
-import { onAuthStateChanged } from "firebase/auth";
-import {
-  loadDogFromCloud,
-  saveDogToCloud,
-} from "@/redux/dogThunks.js";
-import { CLOUD_SAVE_DEBOUNCE } from "@/constants/game.js";
+import { loadDogFromCloud, saveDogToCloud } from "@/redux/dogThunks.js";
+
+const TICK_INTERVAL_MS = 60_000; // 60 seconds
+const CLOUD_SAVE_DEBOUNCE = 3_000; // 3 seconds
 
 export default function DogAIEngine() {
   const dispatch = useDispatch();
-  const dog = useSelector(selectDog);
-  const saveTimeoutRef = useRef(null);
+  const dogState = useSelector(selectDog);
 
-  // On mount: hydrate from localStorage or initialize new dog
+  const hasHydratedRef = useRef(false);
+  const cloudSaveTimeoutRef = useRef(null);
+
+  // 1. Hydrate on mount (localStorage → Redux + optional cloud)
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (hasHydratedRef.current) return;
+    hasHydratedRef.current = true;
 
-    const now = Date.now();
-
+    // LocalStorage hydrate
     try {
-      const raw = window.localStorage.getItem(DOG_STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        dispatch(
-          hydrateDog({
-            ...parsed,
-            lastUpdatedAt: parsed.lastUpdatedAt ?? now,
-          })
-        );
-        // Immediately apply any offline time since lastUpdatedAt
-        dispatch(tickDog({ now }));
-      } else {
-        // No save – start a fresh pup
-        dispatch(resetDogState());
-        dispatch(registerSessionStart({ now }));
+      const localData = localStorage.getItem(DOG_STORAGE_KEY);
+      if (localData) {
+        const parsed = JSON.parse(localData);
+        dispatch(hydrateDog(parsed));
+        console.log("[Doggerz] Hydrated dog from localStorage");
       }
     } catch (err) {
-      console.warn(
-        "[Doggerz] Failed to read dog from localStorage",
-        err
-      );
-      dispatch(resetDogState());
-      dispatch(registerSessionStart({ now }));
+      console.error("[Doggerz] Failed to parse localStorage dog data", err);
     }
+
+    // Cloud hydrate if logged in
+    if (firebaseReady && auth?.currentUser) {
+      const thunkPromise = dispatch(loadDogFromCloud());
+
+      // RTK's unwrap if available; fall back to normal Promise catch
+      if (thunkPromise && typeof thunkPromise.unwrap === "function") {
+        thunkPromise.unwrap().catch((err) => {
+          console.error("[Doggerz] Failed to load dog from cloud", err);
+        });
+      } else if (thunkPromise?.catch) {
+        thunkPromise.catch((err) => {
+          console.error("[Doggerz] Failed to load dog from cloud", err);
+        });
+      }
+    }
+
+    // Register session start (handles catch-up decay, penalties, etc.)
+    dispatch(registerSessionStart({ now: Date.now() }));
   }, [dispatch]);
 
-  // Persist to localStorage & cloud whenever dog changes
+  // 2. Save to localStorage on every dog state change
   useEffect(() => {
-    if (!dog) return;
-    if (typeof window === "undefined") return;
+    if (!dogState || !dogState.adoptedAt) return; // no dog yet
 
-    // Local (immediate)
     try {
-      window.localStorage.setItem(
-        DOG_STORAGE_KEY,
-        JSON.stringify(dog)
-      );
+      localStorage.setItem(DOG_STORAGE_KEY, JSON.stringify(dogState));
     } catch (err) {
-      console.warn(
-        "[Doggerz] Failed to persist dog to localStorage",
-        err
-      );
+      console.error("[Doggerz] Failed to save to localStorage", err);
+    }
+  }, [dogState]);
+
+  // 3. Debounced cloud save
+  useEffect(() => {
+    if (!dogState || !dogState.adoptedAt) return;
+    if (!firebaseReady || !auth?.currentUser) return;
+
+    // Clear existing timeout if any
+    if (cloudSaveTimeoutRef.current) {
+      clearTimeout(cloudSaveTimeoutRef.current);
     }
 
-    // Cloud (debounced to avoid excessive writes)
-    const user = auth?.currentUser;
-    if (user) {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
+    // Set new timeout
+    cloudSaveTimeoutRef.current = setTimeout(() => {
+      dispatch(saveDogToCloud());
+    }, CLOUD_SAVE_DEBOUNCE);
 
-      saveTimeoutRef.current = setTimeout(() => {
-        dispatch(saveDogToCloud({ uid: user.uid, dog }));
-      }, CLOUD_SAVE_DEBOUNCE);
-    }
-
+    // Cleanup if deps change / unmount
     return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
+      if (cloudSaveTimeoutRef.current) {
+        clearTimeout(cloudSaveTimeoutRef.current);
       }
     };
-  }, [dog, dispatch]);
+  }, [dogState, dispatch]);
 
-  // Soft game loop: tick every 60 seconds
+  // 4. Game loop tick (every 60 seconds)
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    const intervalId = setInterval(() => {
+      const now = Date.now();
+      dispatch(tickDog({ now }));
+      dispatch(tickDogPolls({ now }));
+    }, TICK_INTERVAL_MS);
 
-    const id = window.setInterval(() => {
-      dispatch(tickDog({ now: Date.now() }));
-    }, 60_000); // 60s
-
-    return () => {
-      window.clearInterval(id);
-    };
+    return () => clearInterval(intervalId);
   }, [dispatch]);
 
-  // Listen for auth changes and pull cloud dog when a user logs in
-  useEffect(() => {
-    const unsub =
-      auth &&
-      onAuthStateChanged(auth, (user) => {
-        if (user) {
-          dispatch(loadDogFromCloud({ uid: user.uid }));
-        }
-      });
-
-    return () => {
-      if (unsub) unsub();
-    };
-  }, [dispatch]);
-
-  // This component renders nothing – it just runs effects.
+  // This is a headless "brain" component: no UI
   return null;
 }

@@ -1,67 +1,213 @@
 # Doggerz Monetization Strategy
 
-## Revenue Streams
+## Revenue Model Overview
 
-### 1. Premium Subscriptions ($4.99/month or $39.99/year)
+Doggerz uses a **freemium + IAP + ads** hybrid model to maximize accessibility while generating sustainable revenue.
+
+### Core Philosophy
+- **Free tier must be genuinely fun** (1 dog, core gameplay intact)
+- **Premium feels like a quality-of-life upgrade**, not a paywall
+- **Ads are opt-in for rewards**, never forced interruptions
+
+---
+
+## Tier Breakdown
+
+### Free Tier (Always Free)
 **Features:**
-- Adopt up to 5 dogs simultaneously
-- Exclusive rare breeds (Husky, Shiba Inu, Golden Retriever)
-- Custom accessories & outfits
-- Cloud save with unlimited storage
-- Ad-free experience
-- Priority support
+- Adopt and care for **1 dog**
+- Access to **3 basic breeds** (Jack Russell, Beagle, Labrador)
+- Full lifecycle gameplay (puppy → adult → senior)
+- Core stats system (hunger, happiness, energy, cleanliness)
+- Training & skill progression
+- Mood & temperament evolution
+- Daily streaks & XP system
+- Local save (localStorage)
+- **Ads:** Banner ads on game screen + rewarded video option
 
-### 2. In-App Purchases
-- **Coin Packs**: $0.99 (500 coins), $4.99 (3000 coins), $9.99 (7500 coins)
-- **Breed Unlocks**: $1.99-$4.99 per breed
-- **Accessory Packs**: $0.99-$2.99 (collars, toys, outfits)
-- **Boost Items**: $0.99 (2x XP for 24 hours)
+**Monetization Touch Points:**
+- Banner ad impressions (~$2-5 CPM)
+- Rewarded video ads (watch = 100 coins or 30min boost)
+- "Upgrade to Premium" prompts on multi-dog/rare breed features
 
-### 3. Rewarded Ads
-- Watch ad → Get 100 coins or 30min XP boost
-- Cooldown: 5 minutes between ads
-- Daily cap: 10 ads
+---
 
-### 4. Interstitial Ads (Free Users Only)
-- Show after 5 minutes of gameplay
-- Skip if user made purchase in last 30 days
+### Premium Subscription ($4.99/month or $39.99/year)
 
-### 5. Affiliate Partnerships
-- Partner with pet supply brands
-- "Shop for real dog supplies" section
-- Earn 5-10% commission
+**Unlocks:**
+- **Up to 5 dogs simultaneously** (switch between them)
+- **15+ rare breeds** (Corgi, Shiba Inu, Husky, Pug, etc.)
+- **Ad-free experience** (no banners, keep rewarded videos optional)
+- **Cloud sync** (Firebase backup across devices)
+- **Early access** to new features/breeds
+- **Exclusive cosmetics** (collars, backgrounds, sprite variations)
+- **2x coin earning rate**
 
-## Pricing Psychology
-- Free tier: Generous enough to be fun, limited enough to want premium
-- Premium: Priced at "impulse buy" level ($4.99)
-- Coin packs: Middle tier has "best value" badge
-- Limited-time offers: "Black Friday: 50% off Premium!"
+**Retention Hooks:**
+- Monthly "Premium Pup Pack" (new breed + cosmetics)
+- Premium-only events (seasonal challenges)
+- Family plan option ($7.99/mo for up to 3 accounts)
 
-## Conversion Funnel
-1. **Download** → Free experience, no paywall
-2. **Day 3** → "Unlock rare breeds" prompt
-3. **Day 7** → "Premium trial: 7 days free"
-4. **Day 14** → "Your pup misses you!" push notification
-5. **Day 30** → "Become a VIP owner" offer
+---
 
-## Target Metrics
-- Free-to-paid conversion: 3-5%
-- Average revenue per user (ARPU): $0.50/month
-- Lifetime value (LTV): $12-15
-- Daily active users (DAU): 10,000 (Year 1 goal)
-- Monthly revenue: $5,000-10,000 (Year 1 goal)
+## In-App Purchases (IAP)
 
-## Growth Strategy
-1. **Soft launch** on TestFlight/Google Play Beta
-2. **Viral loop**: Share pup photos to social media for bonus coins
-3. **Referral program**: Invite friends → Both get 500 coins
-4. **App Store Optimization**: Target "virtual pet", "tamagotchi", "dog simulator"
-5. **Content marketing**: TikTok videos showing cute dog behaviors
-6. **Influencer partnerships**: Pet YouTubers/TikTokers
+### Coin Packs (Consumable)
+- **Small:** 500 coins - $0.99
+- **Medium:** 1,200 coins - $1.99 (20% bonus)
+- **Large:** 3,000 coins - $3.99 (50% bonus)
+- **Mega:** 10,000 coins - $9.99 (100% bonus)
 
-## Next Steps
-- [ ] Integrate RevenueCat for subscription management
-- [ ] Add Google AdMob / Facebook Audience Network
-- [ ] Build coin economy spreadsheet
-- [ ] Create promotional artwork for App Store
-- [ ] Set up analytics (Mixpanel / Amplitude)
+**Coin Uses:**
+- Premium food items (instant +50 happiness)
+- Toys (unlock new play animations)
+- Grooming services (instant cleanliness boost)
+- Training accelerators (2x skill XP for 1 hour)
+- Breed unlock (one-time purchase for non-Premium users)
+
+### One-Time Unlocks (Non-Consumable)
+- **Individual Rare Breeds:** $1.99 each (alternative to subscription)
+- **Legendary Breeds:** $4.99 (ultra-rare, exclusive animations)
+- **Multi-Dog Slots:** $2.99 per additional slot (max 3 for free users)
+- **Remove Ads Forever:** $9.99 (one-time, alternative to subscription)
+
+---
+
+## Rewarded Ads Strategy
+
+**User-Controlled, Never Intrusive:**
+
+### Reward Options
+1. **100 Coins** (1 ad watch, 5x daily limit)
+2. **30-Minute Stat Freeze** (needs don't decay, 2x daily limit)
+3. **Instant Energy Refill** (3x daily limit)
+4. **Mystery Gift** (random cosmetic/coins, 1x daily)
+
+**Ad Placement:**
+- Button in shop UI ("Watch Ad for Coins")
+- Popup when coins < 50 (optional, dismissible)
+- Daily login bonus screen (optional boost)
+
+**Expected Revenue:**
+- Avg $10-25 eCPM for rewarded video
+- ~30% of free users watch 2-3 ads/day
+- Monthly revenue: ~$0.50-1.50 per active free user
+
+---
+
+## Projected Revenue (Year 1)
+
+### Assumptions
+- 10,000 monthly active users (MAU) by month 6
+- 5% conversion to Premium ($4.99/mo)
+- 15% make at least 1 IAP ($2.50 avg)
+- 40% of free users generate ad revenue ($1/mo avg)
+
+### Monthly Revenue (Steady State)
+| Source | Users | Rev/User | Total |
+|--------|-------|----------|-------|
+| Premium | 500 | $4.99 | $2,495 |
+| IAP | 1,500 | $2.50 | $3,750 |
+| Ads | 4,000 | $1.00 | $4,000 |
+| **TOTAL** | | | **$10,245/mo** |
+
+**Year 1 Target:** $80,000-120,000 (accounting for growth curve)
+
+---
+
+## Premium Features Flag System
+
+### Implementation
+Constants defined in `src/constants/game.js`:
+
+```js
+export const PREMIUM_FEATURES = {
+  MAX_DOGS_FREE: 1,
+  MAX_DOGS_PREMIUM: 5,
+  RARE_BREEDS: ['corgi', 'shiba', 'husky', 'pug', 'frenchie'],
+  LEGENDARY_BREEDS: ['dingo', 'wolf'],
+  COIN_MULTIPLIER_PREMIUM: 2,
+  CLOUD_SYNC_REQUIRED_FOR_PREMIUM: true
+};
+```
+
+### Usage Example
+```js
+// In AdoptScreen.jsx
+const canAdoptMore = isPremium 
+  ? dogState.adoptedDogs?.length < PREMIUM_FEATURES.MAX_DOGS_PREMIUM
+  : dogState.adoptedDogs?.length < PREMIUM_FEATURES.MAX_DOGS_FREE;
+
+// In BreedSelector.jsx
+const isBreedLocked = !isPremium && PREMIUM_FEATURES.RARE_BREEDS.includes(breedId);
+```
+
+---
+
+## Ethical Considerations
+
+### What We DON'T Do
+- ❌ Energy systems that force waiting (stats decay is time-based, not blocking)
+- ❌ Loot boxes or gacha mechanics
+- ❌ Pay-to-win mechanics (Premium doesn't make dogs "better")
+- ❌ Aggressive interstitial ads
+- ❌ Dark patterns or confusing pricing
+
+### What We DO
+- ✅ Transparent pricing (no hidden costs)
+- ✅ Free tier is fully playable indefinitely
+- ✅ Premium is optional quality-of-life
+- ✅ All ads are opt-in (except passive banners)
+- ✅ Refund policy clearly stated
+- ✅ Parental controls for IAP (coming in v1.1)
+
+---
+
+## Future Expansion Ideas (Post-Launch)
+
+### Phase 2 (Months 6-12)
+- **Gift subscriptions** (give Premium to friends)
+- **Seasonal battle passes** ($4.99, cosmetics + coins)
+- **Pet accessories shop** (hats, bandanas, seasonal items)
+- **Photo mode** (export dog images, share to social)
+
+### Phase 3 (Year 2+)
+- **Community marketplace** (user-created cosmetics, revenue share)
+- **Breeding system** (Premium feature, combine traits)
+- **Competitive leaderboards** (skill rankings, seasonal rewards)
+- **Story DLC packs** (new locations, special events)
+
+---
+
+## Analytics Tracking
+
+### Key Metrics to Monitor
+- **Conversion rate** (free → Premium)
+- **ARPU** (Average Revenue Per User)
+- **LTV** (Lifetime Value by cohort)
+- **Churn rate** (Premium cancellations)
+- **Ad engagement** (rewarded video completion rate)
+- **IAP funnel** (shop visit → purchase conversion)
+
+### A/B Testing Roadmap
+- Premium pricing ($3.99 vs $4.99 vs $5.99)
+- Coin pack sizing/pricing
+- Rewarded ad reward amounts
+- Free tier breed selection (3 vs 5 breeds)
+- Banner ad placement (bottom vs top)
+
+---
+
+## Legal & Compliance
+
+- **GDPR/CCPA:** User data controls in Settings
+- **COPPA:** Age gate on signup (13+ required)
+- **App Store Guidelines:** No misleading "free" claims
+- **Subscription Auto-Renewal:** Clear disclosure before purchase
+- **Refund Policy:** 7-day no-questions-asked for Premium
+
+---
+
+**Last Updated:** 2024-01-15  
+**Version:** 1.0  
+**Owner:** Product Team

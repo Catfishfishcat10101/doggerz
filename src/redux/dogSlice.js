@@ -164,6 +164,9 @@ function pushJournalEntry(state, entry) {
   }
 }
 
+// Add type guard for better safety
+const isValidStat = (key) => ['hunger', 'happiness', 'energy', 'cleanliness'].includes(key);
+
 function applyDecay(state, now = nowMs()) {
   if (!state.lastUpdatedAt) {
     state.lastUpdatedAt = now;
@@ -176,6 +179,8 @@ function applyDecay(state, now = nowMs()) {
   const hungerMultiplier = state.career.perks?.hungerDecayMultiplier || 1.0;
 
   Object.entries(state.stats).forEach(([key, value]) => {
+    if (!isValidStat(key)) return; // Skip invalid stats
+
     const rate = DECAY_PER_HOUR[key] || 0;
     const stageMultiplier = getStageMultiplier(state, key);
     let delta = rate * DECAY_SPEED * diffHours * stageMultiplier;
@@ -188,8 +193,12 @@ function applyDecay(state, now = nowMs()) {
     }
   });
 
+  // Add cap for neglect strikes to prevent integer overflow
   if (diffHours >= 24) {
-    state.memory.neglectStrikes += 1;
+    state.memory.neglectStrikes = Math.min(
+      (state.memory.neglectStrikes || 0) + 1,
+      999
+    );
     pushJournalEntry(state, {
       type: "NEGLECT",
       moodTag: "LONELY",
@@ -318,7 +327,11 @@ function evaluateTemperament(state, now = nowMs()) {
   const toyObsessed = findTrait("toyObsessed");
   const foodMotivated = findTrait("foodMotivated");
 
-  if (!clingy || !toyObsessed || !foodMotivated) return;
+  // Early exit if traits are missing
+  if (!clingy || !toyObsessed || !foodMotivated) {
+    console.warn("[Doggerz] Missing temperament traits, skipping evaluation");
+    return;
+  }
 
   const hunger = state.stats.hunger;
   const happiness = state.stats.happiness;
@@ -723,24 +736,72 @@ const dogSlice = createSlice({
   reducers: {
     hydrateDog(state, { payload }) {
       if (!payload || typeof payload !== "object") return;
+
+      // Validate critical fields
+      const adoptedAt = payload.adoptedAt || state.adoptedAt || nowMs();
+
       const merged = {
         ...state,
         ...payload,
-        stats: { ...state.stats, ...(payload.stats || {}) },
+        stats: {
+          ...initialState.stats, // Start with defaults
+          ...state.stats,
+          ...(payload.stats || {}),
+        },
+        adoptedAt,
       };
 
       merged.lifeStage = payload.lifeStage ||
-        state.lifeStage || {
-          ...DEFAULT_LIFE_STAGE,
-        };
+        state.lifeStage || { ...DEFAULT_LIFE_STAGE };
       merged.training = {
         ...createInitialTrainingState(),
         ...(payload.training || state.training || {}),
       };
+
+      // Ensure nested objects exist
+      merged.temperament = {
+        ...initialTemperament,
+        ...(payload.temperament || state.temperament || {}),
+        adoptedAt, // Sync temperament adoptedAt
+      };
+
+      merged.memory = {
+        ...initialMemory,
+        ...(payload.memory || state.memory || {}),
+      };
+
+      merged.career = {
+        ...initialCareer,
+        ...(payload.career || state.career || {}),
+      };
+
+      merged.skills = {
+        obedience: {
+          ...initialSkills.obedience,
+          ...(payload.skills?.obedience || state.skills?.obedience || {}),
+        },
+      };
+
+      merged.mood = {
+        ...initialMood,
+        ...(payload.mood || state.mood || {}),
+      };
+
+      merged.journal = {
+        ...initialJournal,
+        ...(payload.journal || state.journal || {}),
+      };
+
+      merged.streak = {
+        ...initialStreak,
+        ...(payload.streak || state.streak || {}),
+      };
+
       ensureTrainingState(merged);
+      ensurePollState(merged);
+
       merged.cleanlinessTier =
         payload.cleanlinessTier || state.cleanlinessTier || "FRESH";
-      merged.adoptedAt = payload.adoptedAt || state.adoptedAt || nowMs();
 
       finalizeDerivedState(merged, nowMs());
       return merged;
@@ -786,8 +847,15 @@ const dogSlice = createSlice({
       applyDecay(state, now);
 
       const amount = payload?.amount ?? 20;
+      const careerMultiplier =
+        state.career.perks?.happinessGainMultiplier || 1.0;
+
       state.stats.hunger = clamp(state.stats.hunger - amount, 0, 100);
-      state.stats.happiness = clamp(state.stats.happiness + 5, 0, 100);
+      state.stats.happiness = clamp(
+        state.stats.happiness + 5 * careerMultiplier,
+        0,
+        100
+      );
 
       state.memory.lastFedAt = now;
       state.memory.lastSeenAt = now;
@@ -795,7 +863,7 @@ const dogSlice = createSlice({
       applyXp(state, 5);
       maybeSampleMood(state, now, "FEED");
 
-      const date = new Date(now).toISOString().slice(0, 10);
+      const date = getIsoDate(now); // Use helper instead of inline
       updateStreak(state.streak, date);
       updateTemperamentReveal(state, now);
       finalizeDerivedState(state, now);
@@ -806,9 +874,12 @@ const dogSlice = createSlice({
       applyDecay(state, now);
 
       const zoomiesMultiplier = payload?.timeOfDay === "MORNING" ? 2 : 1;
+      const careerMultiplier =
+        state.career.perks?.happinessGainMultiplier || 1.0;
 
       const baseHappiness = payload?.happinessGain ?? 15;
-      const gain = baseHappiness * zoomiesMultiplier;
+      const gain = baseHappiness * zoomiesMultiplier * careerMultiplier;
+      
       state.stats.happiness = clamp(state.stats.happiness + gain, 0, 100);
       state.stats.energy = clamp(state.stats.energy - 10, 0, 100);
 
@@ -818,7 +889,7 @@ const dogSlice = createSlice({
       applyXp(state, 8);
       maybeSampleMood(state, now, "PLAY");
 
-      const date = new Date(now).toISOString().slice(0, 10);
+      const date = getIsoDate(now);
       updateStreak(state.streak, date);
       updateTemperamentReveal(state, now);
       finalizeDerivedState(state, now);
@@ -966,7 +1037,11 @@ const dogSlice = createSlice({
       const now = payloadNow ?? nowMs();
       applyDecay(state, now);
 
-      applySkillXp("obedience", commandId, state.skills, xp);
+      const trainingMultiplier =
+        state.career.perks?.trainingXpMultiplier || 1.0;
+      const adjustedXp = Math.round(xp * trainingMultiplier);
+
+      applySkillXp("obedience", commandId, state.skills, adjustedXp);
       state.memory.lastTrainedAt = now;
       state.memory.lastSeenAt = now;
 
@@ -985,7 +1060,7 @@ const dogSlice = createSlice({
         timestamp: now,
       });
 
-      const date = new Date(now).toISOString().slice(0, 10);
+      const date = getIsoDate(now);
       updateStreak(state.streak, date);
       updateTemperamentReveal(state, now);
       finalizeDerivedState(state, now);

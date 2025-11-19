@@ -1,56 +1,58 @@
 // src/redux/dogThunks.js
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
-import { db, firebaseReady } from "@/firebase.js";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { auth, db, firebaseReady } from "@/firebase.js";
 import { hydrateDog } from "./dogSlice.js";
 
-const DOG_COLLECTION = "dogs";
 const CLOUD_DOG_VERSION = 1;
 
 // ensure we only save plain JSON + meta
 const buildCloudDogPayload = (dog) => ({
   ...dog,
-  meta: {
-    version: CLOUD_DOG_VERSION,
-    updatedAt: serverTimestamp(),
-  },
+  lastCloudSyncAt: Date.now(),
+  version: CLOUD_DOG_VERSION,
 });
 
 // defensively unwrap data from Firestore for the client
 const parseCloudDog = (raw) => {
   if (!raw) return null;
-  const { meta, ...rest } = raw;
+  const { version, lastCloudSyncAt, userId, ...rest } = raw;
   return {
     ...rest,
-    meta: {
-      version: meta?.version ?? 1,
-      updatedAt: meta?.updatedAt ?? null,
-    },
+    lastCloudSyncAt: lastCloudSyncAt ?? null,
   };
 };
 
 export const loadDogFromCloud = createAsyncThunk(
   "dog/loadDogFromCloud",
-  async ({ uid }, { dispatch, rejectWithValue }) => {
+  async (_, { dispatch, rejectWithValue }) => {
     try {
-      if (!firebaseReady || !db) {
+      if (!firebaseReady || !db || !auth?.currentUser) {
         return rejectWithValue(
-          "Cloud sync disabled until Firebase is configured."
+          "Cloud sync disabled: Firebase not configured or user not logged in"
         );
       }
-      if (!uid) return rejectWithValue("Missing uid");
 
-      const ref = doc(db, DOG_COLLECTION, uid);
-      const snap = await getDoc(ref);
+      const userId = auth.currentUser.uid;
+      const dogRef = doc(db, "users", userId, "dog", "state");
+      const docSnap = await getDoc(dogRef);
 
-      if (!snap.exists()) {
-        // no cloud dog yet – caller can decide what to do
+      if (!docSnap.exists()) {
+        console.log("[Doggerz] No cloud save found for this user");
         return null;
       }
 
-      const data = parseCloudDog(snap.data());
-      dispatch(hydrateDog(data));
-      return data;
+      const cloudData = parseCloudDog(docSnap.data());
+
+      // Automatically hydrate the dog state
+      if (cloudData) {
+        dispatch(hydrateDog(cloudData));
+        console.log(
+          "[Doggerz] Dog loaded from cloud and hydrated successfully"
+        );
+      }
+
+      return cloudData;
     } catch (err) {
       console.error("[Doggerz] Failed to load dog from cloud", err);
       return rejectWithValue(err.message || "loadDogFromCloud failed");
@@ -60,22 +62,42 @@ export const loadDogFromCloud = createAsyncThunk(
 
 export const saveDogToCloud = createAsyncThunk(
   "dog/saveDogToCloud",
-  async ({ uid, dog }, { rejectWithValue }) => {
+  async (_, { getState, rejectWithValue }) => {
     try {
-      if (!firebaseReady || !db) {
+      if (!firebaseReady || !db || !auth?.currentUser) {
         return rejectWithValue(
-          "Cloud sync disabled until Firebase is configured."
+          "Cloud sync disabled: Firebase not configured or user not logged in"
         );
       }
-      if (!uid || !dog) return rejectWithValue("Missing uid or dog");
 
-      const ref = doc(db, DOG_COLLECTION, uid);
-      const payload = buildCloudDogPayload(dog);
+      const userId = auth.currentUser.uid;
+      if (!userId) {
+        return rejectWithValue("User ID is missing");
+      }
 
-      await setDoc(ref, payload, { merge: true });
-      return true;
+      // Get current dog state from Redux
+      /** @type {any} */
+      const state = getState();
+      const dogState = state?.dog;
+
+      if (!dogState) {
+        console.warn("[Doggerz] saveDogToCloud called with no dog state");
+        return rejectWithValue("No dog state to sync");
+      }
+
+      const dogRef = doc(db, "users", userId, "dog", "state");
+      const payload = buildCloudDogPayload({
+        ...dogState,
+        userId,
+      });
+
+      await setDoc(dogRef, payload, { merge: true });
+      console.log("[Doggerz] Dog saved to cloud successfully");
+      return { success: true, timestamp: Date.now() };
     } catch (err) {
       console.error("[Doggerz] Failed to save dog to cloud", err);
+      console.error("[Doggerz] Error code:", err.code);
+      console.error("[Doggerz] Error message:", err.message);
       return rejectWithValue(err.message || "saveDogToCloud failed");
     }
   }
