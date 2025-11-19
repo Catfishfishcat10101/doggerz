@@ -75,14 +75,14 @@ export const saveDogToCloud = createAsyncThunk(
         return rejectWithValue("User ID is missing");
       }
 
-      // Get current dog state from Redux
       /** @type {any} */
       const state = getState();
       const dogState = state?.dog;
 
-      if (!dogState) {
-        console.warn("[Doggerz] saveDogToCloud called with no dog state");
-        return rejectWithValue("No dog state to sync");
+      // Don't sync if no dog adopted
+      if (!dogState || !dogState.adoptedAt) {
+        console.warn("[Doggerz] No dog to sync");
+        return { success: false, reason: "no_dog" };
       }
 
       const dogRef = doc(db, "users", userId, "dog", "state");
@@ -96,8 +96,6 @@ export const saveDogToCloud = createAsyncThunk(
       return { success: true, timestamp: Date.now() };
     } catch (err) {
       console.error("[Doggerz] Failed to save dog to cloud", err);
-      console.error("[Doggerz] Error code:", err.code);
-      console.error("[Doggerz] Error message:", err.message);
       return rejectWithValue(err.message || "saveDogToCloud failed");
     }
   }

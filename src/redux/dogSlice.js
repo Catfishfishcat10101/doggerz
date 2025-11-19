@@ -40,6 +40,10 @@ const initialTemperament = {
     { id: "toyObsessed", label: "Toy-Obsessed", intensity: 60 },
     { id: "foodMotivated", label: "Food-Motivated", intensity: 55 },
   ],
+  revealedAt: null,
+  revealReady: false,
+  adoptedAt: null,
+  lastEvaluatedAt: null,
 };
 
 const initialMemory = {
@@ -164,8 +168,8 @@ function pushJournalEntry(state, entry) {
   }
 }
 
-// Add type guard for better safety
-const isValidStat = (key) => ['hunger', 'happiness', 'energy', 'cleanliness'].includes(key);
+const isValidStat = (key) =>
+  ["hunger", "happiness", "energy", "cleanliness"].includes(key);
 
 function applyDecay(state, now = nowMs()) {
   if (!state.lastUpdatedAt) {
@@ -179,7 +183,7 @@ function applyDecay(state, now = nowMs()) {
   const hungerMultiplier = state.career.perks?.hungerDecayMultiplier || 1.0;
 
   Object.entries(state.stats).forEach(([key, value]) => {
-    if (!isValidStat(key)) return; // Skip invalid stats
+    if (!isValidStat(key)) return;
 
     const rate = DECAY_PER_HOUR[key] || 0;
     const stageMultiplier = getStageMultiplier(state, key);
@@ -193,7 +197,6 @@ function applyDecay(state, now = nowMs()) {
     }
   });
 
-  // Add cap for neglect strikes to prevent integer overflow
   if (diffHours >= 24) {
     state.memory.neglectStrikes = Math.min(
       (state.memory.neglectStrikes || 0) + 1,
@@ -286,7 +289,6 @@ function updateStreak(streakState, isoDate) {
 
   const prev = new Date(lastActiveDate);
   const curr = new Date(isoDate);
-  // @ts-ignore
   const diffMs = curr - prev;
   const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
 
@@ -327,7 +329,6 @@ function evaluateTemperament(state, now = nowMs()) {
   const toyObsessed = findTrait("toyObsessed");
   const foodMotivated = findTrait("foodMotivated");
 
-  // Early exit if traits are missing
   if (!clingy || !toyObsessed || !foodMotivated) {
     console.warn("[Doggerz] Missing temperament traits, skipping evaluation");
     return;
@@ -737,14 +738,13 @@ const dogSlice = createSlice({
     hydrateDog(state, { payload }) {
       if (!payload || typeof payload !== "object") return;
 
-      // Validate critical fields
       const adoptedAt = payload.adoptedAt || state.adoptedAt || nowMs();
 
       const merged = {
         ...state,
         ...payload,
         stats: {
-          ...initialState.stats, // Start with defaults
+          ...initialState.stats,
           ...state.stats,
           ...(payload.stats || {}),
         },
@@ -753,16 +753,16 @@ const dogSlice = createSlice({
 
       merged.lifeStage = payload.lifeStage ||
         state.lifeStage || { ...DEFAULT_LIFE_STAGE };
+
       merged.training = {
         ...createInitialTrainingState(),
         ...(payload.training || state.training || {}),
       };
 
-      // Ensure nested objects exist
       merged.temperament = {
         ...initialTemperament,
         ...(payload.temperament || state.temperament || {}),
-        adoptedAt, // Sync temperament adoptedAt
+        adoptedAt,
       };
 
       merged.memory = {
@@ -812,9 +812,7 @@ const dogSlice = createSlice({
     },
 
     setAdoptedAt(state, { payload }) {
-      // @ts-ignore
       const adoptedAt = payload ?? nowMs();
-      // @ts-ignore
       state.temperament.adoptedAt = adoptedAt;
       state.adoptedAt = adoptedAt;
       finalizeDerivedState(state, adoptedAt);
@@ -830,9 +828,7 @@ const dogSlice = createSlice({
     },
 
     markTemperamentRevealed(state) {
-      // @ts-ignore
       state.temperament.revealedAt = nowMs();
-      // @ts-ignore
       state.temperament.revealReady = false;
     },
 
@@ -863,7 +859,7 @@ const dogSlice = createSlice({
       applyXp(state, 5);
       maybeSampleMood(state, now, "FEED");
 
-      const date = getIsoDate(now); // Use helper instead of inline
+      const date = getIsoDate(now);
       updateStreak(state.streak, date);
       updateTemperamentReveal(state, now);
       finalizeDerivedState(state, now);
@@ -879,7 +875,7 @@ const dogSlice = createSlice({
 
       const baseHappiness = payload?.happinessGain ?? 15;
       const gain = baseHappiness * zoomiesMultiplier * careerMultiplier;
-      
+
       state.stats.happiness = clamp(state.stats.happiness + gain, 0, 100);
       state.stats.energy = clamp(state.stats.energy - 10, 0, 100);
 

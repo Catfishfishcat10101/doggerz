@@ -1,8 +1,16 @@
+// src/utils/weather.js
 import { WEATHER_API_KEY, WEATHER_CACHE_DURATION } from "@/constants/game.js";
 
 const WEATHER_CACHE_KEY = "doggerz_weather_cache";
+const isBrowser = typeof window !== "undefined";
 
 export async function getWeatherByZip(zipCode, countryCode = "US") {
+  // If no API key configured, just fall back to default weather
+  if (!WEATHER_API_KEY) {
+    console.warn("[Weather] No WEATHER_API_KEY configured; using defaults.");
+    return getDefaultWeather();
+  }
+
   // Check cache first
   const cached = getCachedWeather();
   if (cached && cached.zipCode === zipCode) {
@@ -51,6 +59,7 @@ export function getMoonPhase() {
   const e = 30.6 * month;
   let jd = c + e + day - 694039.09;
   jd /= 29.5305882;
+
   const b = Math.round((jd - Math.floor(jd)) * 8);
 
   const phases = [
@@ -88,8 +97,10 @@ export function shouldHowlAtMoon() {
 }
 
 function getCachedWeather() {
+  if (!isBrowser) return null;
+
   try {
-    const raw = localStorage.getItem(WEATHER_CACHE_KEY);
+    const raw = window.localStorage.getItem(WEATHER_CACHE_KEY);
     if (!raw) return null;
 
     const cached = JSON.parse(raw);
@@ -105,8 +116,10 @@ function getCachedWeather() {
 }
 
 function cacheWeather(zipCode, data) {
+  if (!isBrowser) return;
+
   try {
-    localStorage.setItem(
+    window.localStorage.setItem(
       WEATHER_CACHE_KEY,
       JSON.stringify({
         zipCode,
@@ -120,13 +133,14 @@ function cacheWeather(zipCode, data) {
 }
 
 function getDefaultWeather() {
+  const now = Date.now();
   return {
     condition: "clear",
     temp: 72,
     description: "Pleasant day",
     icon: "01d",
-    sunrise: Date.now(),
-    sunset: Date.now() + 12 * 60 * 60 * 1000,
-    timestamp: Date.now(),
+    sunrise: now,
+    sunset: now + 12 * 60 * 60 * 1000,
+    timestamp: now,
   };
 }

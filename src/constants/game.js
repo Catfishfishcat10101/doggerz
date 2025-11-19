@@ -1,123 +1,162 @@
-export const SKILL_LEVEL_STEP = 50;
-export const DEFAULT_TICK_INTERVAL = 120; // seconds
-export const CLOUD_SAVE_DEBOUNCE = 3000; // milliseconds
-export const GAME_DAYS_PER_REAL_DAY = 4;
+// src/utils/weather.js
+// @ts-nocheck
 
-// Life stages (in game days)
-export const LIFE_STAGES = {
-  PUPPY: { min: 0, max: 180, label: "Puppy" }, // 0-6 months
-  ADULT: { min: 181, max: 2555, label: "Adult" }, // 6mo-7yrs
-  SENIOR: { min: 2556, max: 5475, label: "Senior" }, // 7-15yrs
-};
+import {
+  WEATHER_API_KEY,
+  WEATHER_CACHE_DURATION,
+  TIME_PERIODS,
+} from "@/constants/game.js";
 
-export const LIFECYCLE_STAGE_MODIFIERS = {
-  PUPPY: {
-    hunger: 1.15,
-    happiness: 1,
-    energy: 0.85,
-    cleanliness: 0.95,
-  },
-  ADULT: {
-    hunger: 1,
-    happiness: 1,
-    energy: 1,
-    cleanliness: 1,
-  },
-  SENIOR: {
-    hunger: 0.9,
-    happiness: 1.05,
-    energy: 1.2,
-    cleanliness: 1.15,
-  },
-};
+const WEATHER_CACHE_KEY = "doggerz_weather_cache";
+const isBrowser = typeof window !== "undefined";
 
-export const CLEANLINESS_THRESHOLDS = {
-  FRESH: 75,
-  DIRTY: 50,
-  FLEAS: 25,
-  MANGE: 0,
-};
+export async function getWeatherByZip(zipCode, countryCode = "US") {
+  // If no API key configured, just fall back to default weather
+  if (!WEATHER_API_KEY) {
+    console.warn("[Weather] No WEATHER_API_KEY configured; using defaults.");
+    return getDefaultWeather();
+  }
 
-export const CLEANLINESS_TIER_EFFECTS = {
-  FRESH: {
-    label: "Fresh",
-    pottyGainMultiplier: 1,
-  },
-  DIRTY: {
-    label: "Dirty",
-    happinessTickPenalty: 1,
-    pottyGainMultiplier: 1.1,
-    journalSummary: "Needs bath soon.",
-  },
-  FLEAS: {
-    label: "Fleas",
-    happinessTickPenalty: 2,
-    energyTickPenalty: 1,
-    pottyGainMultiplier: 1.25,
-    journalSummary: "Scratching nonstop!",
-  },
-  MANGE: {
-    label: "Mange",
-    happinessTickPenalty: 3,
-    energyTickPenalty: 2,
-    pottyGainMultiplier: 1.5,
-    journalSummary: "Health is declining!",
-  },
-};
+  // Check cache first
+  const cached = getCachedWeather();
+  if (cached && cached.zipCode === zipCode) {
+    return cached.data;
+  }
 
-export const DOG_POLL_CONFIG = {
-  intervalMs: 5 * 60 * 1000,
-  timeoutMs: 90 * 1000,
-  prompts: [
-    {
-      id: "snack",
-      prompt: "Offer a crunchy snack?",
-      effects: { hunger: -12, happiness: 6 },
-    },
-    {
-      id: "play",
-      prompt: "Start a quick fetch session?",
-      effects: { happiness: 10, energy: -8 },
-    },
-    {
-      id: "nap",
-      prompt: "Guide them into a power nap?",
-      effects: { energy: 15, happiness: -3 },
-    },
-    {
-      id: "bath",
-      prompt: "Give a rinse before dirt gets worse?",
-      effects: { cleanliness: 18, happiness: -4 },
-    },
-  ],
-};
+  try {
+    const url = `https://api.openweathermap.org/data/2.5/weather?zip=${zipCode},${countryCode}&appid=${WEATHER_API_KEY}&units=imperial`;
+    const response = await fetch(url);
 
-// Weather API
-export const WEATHER_API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY || "";
-export const WEATHER_CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
-export const DEFAULT_WEATHER_ZIP =
-  import.meta.env.VITE_WEATHER_DEFAULT_ZIP || "10001";
+    if (!response.ok) {
+      throw new Error("Weather API failed");
+    }
 
-// Time of day thresholds (hours)
-export const TIME_PERIODS = {
-  DAWN: { start: 5, end: 7, label: "Dawn" },
-  MORNING: { start: 7, end: 12, label: "Morning" },
-  AFTERNOON: { start: 12, end: 17, label: "Afternoon" },
-  DUSK: { start: 17, end: 19, label: "Dusk" },
-  EVENING: { start: 19, end: 22, label: "Evening" },
-  NIGHT: { start: 22, end: 5, label: "Night" },
-};
+    const data = await response.json();
+    const weather = {
+      condition: data.weather[0].main.toLowerCase(), // "clear", "rain", "snow", etc
+      temp: Math.round(data.main.temp),
+      description: data.weather[0].description,
+      icon: data.weather[0].icon,
+      sunrise: data.sys.sunrise * 1000,
+      sunset: data.sys.sunset * 1000,
+      timestamp: Date.now(),
+    };
 
-// Monetization
-export const PREMIUM_FEATURES = {
-  MULTI_DOGS: { price: 4.99, coins: 0 },
-  RARE_BREEDS: { price: 2.99, coins: 5000 },
-  CUSTOM_ACCESSORIES: { price: 1.99, coins: 2000 },
-  LIFETIME_PREMIUM: { price: 19.99, coins: 0 },
-};
+    // Cache it
+    cacheWeather(zipCode, weather);
+    return weather;
+  } catch (error) {
+    console.error("[Weather] Failed to fetch:", error);
+    return getDefaultWeather();
+  }
+}
 
-export const AD_PLACEMENT = {
-  INTERSTITIAL_COOLDOWN: 5 * 60 * 1000, // 5 minutes
-  REWARDED_COIN_BONUS: 100,
-  REWARDED_XP_BOOST: 1.5,
-};
+export function getMoonPhase() {
+  const date = new Date();
+  const year = date.getFullYear();
+  let month = date.getMonth() + 1;
+  let day = date.getDate();
+
+  if (month < 3) {
+    month += 12;
+  }
+
+  const c = 365.25 * year;
+  const e = 30.6 * month;
+  let jd = c + e + day - 694039.09;
+  jd /= 29.5305882;
+
+  const b = Math.round((jd - Math.floor(jd)) * 8);
+
+  const phases = [
+    "new",
+    "waxing_crescent",
+    "first_quarter",
+    "waxing_gibbous",
+    "full",
+    "waning_gibbous",
+    "last_quarter",
+    "waning_crescent",
+  ];
+
+  return {
+    phase: phases[b >= 8 ? 0 : b],
+    isFull: b === 4,
+    illumination: jd - Math.floor(jd),
+  };
+}
+
+// Use TIME_PERIODS from constants so everything stays in sync
+export function getTimeOfDay() {
+  const hour = new Date().getHours();
+
+  for (const [key, { start, end }] of Object.entries(TIME_PERIODS)) {
+    // Normal ranges (e.g. 7–12)
+    if (start < end && hour >= start && hour < end) {
+      return key.toLowerCase(); // "dawn", "morning", etc.
+    }
+
+    // Wrap-around ranges (e.g. NIGHT: 22 → 5)
+    if (start > end && (hour >= start || hour < end)) {
+      return key.toLowerCase();
+    }
+  }
+
+  // Fallback if config is ever weird
+  return "night";
+}
+
+export function shouldHowlAtMoon() {
+  const moon = getMoonPhase();
+  const time = getTimeOfDay();
+  return moon.isFull && time === "night";
+}
+
+function getCachedWeather() {
+  if (!isBrowser) return null;
+
+  try {
+    const raw = window.localStorage.getItem(WEATHER_CACHE_KEY);
+    if (!raw) return null;
+
+    const cached = JSON.parse(raw);
+    const age = Date.now() - cached.timestamp;
+
+    if (age < WEATHER_CACHE_DURATION) {
+      return cached;
+    }
+  } catch (e) {
+    // ignore cache errors
+  }
+  return null;
+}
+
+function cacheWeather(zipCode, data) {
+  if (!isBrowser) return;
+
+  try {
+    window.localStorage.setItem(
+      WEATHER_CACHE_KEY,
+      JSON.stringify({
+        zipCode,
+        data,
+        timestamp: Date.now(),
+      })
+    );
+  } catch (e) {
+    // ignore
+  }
+}
+
+function getDefaultWeather() {
+  const now = Date.now();
+  return {
+    condition: "clear",
+    temp: 72,
+    description: "Pleasant day",
+    icon: "01d",
+    sunrise: now,
+    sunset: now + 12 * 60 * 60 * 1000,
+    timestamp: now,
+  };
+}
