@@ -1,89 +1,85 @@
-// DogAnimator.jsx
-const SHEET_WIDTH = 1024;
-const SHEET_HEIGHT = 1024;
+// src/DogAnimator.jsx
+// @ts-nocheck
 
-export const FRAME_WIDTH = SHEET_WIDTH / 8;
-export const FRAME_HEIGHT = SHEET_HEIGHT / 8;
+// Sprite sheet config:
+//  - each frame is 64x64
+//  - sheet is 256x320 → 4 columns x 5 rows
+const FRAME_WIDTH = 64;
+const FRAME_HEIGHT = 64;
+const COLUMNS = 4;
+const ROWS = 5;
 
-export const animations = {
+const SHEET_WIDTH = FRAME_WIDTH * COLUMNS;   // 256
+const SHEET_HEIGHT = FRAME_HEIGHT * ROWS;    // 320
+
+/**
+ * Define animations and which row they use.
+ * Adjust row/frames to match your actual sprite layout.
+ */
+const ANIMATIONS = {
   idle: {
-    row: 0,
-    frames: 4,
-    fps: 4,
-    frameWidth: FRAME_WIDTH,
-    frameHeight: FRAME_HEIGHT,
-    sheetWidth: SHEET_WIDTH,
-    sheetHeight: SHEET_HEIGHT,
+    name: "idle",
+    row: 0,       // row 0
+    frames: 4,    // 4 frames across
+    fps: 6,
   },
-
   idle_bark: {
-    row: 1,
+    name: "idle_bark",
+    row: 1,       // row 1
     frames: 4,
-    fps: 6,
-    frameWidth: FRAME_WIDTH,
-    frameHeight: FRAME_HEIGHT,
-    sheetWidth: SHEET_WIDTH,
-    sheetHeight: SHEET_HEIGHT,
+    fps: 10,
   },
-
   idle_scratch: {
-    row: 2,
+    name: "idle_scratch",
+    row: 2,       // row 2
     frames: 4,
-    fps: 6,
-    frameWidth: FRAME_WIDTH,
-    frameHeight: FRAME_HEIGHT,
-    sheetWidth: SHEET_WIDTH,
-    sheetHeight: SHEET_HEIGHT,
+    fps: 8,
   },
-
-  walk_left: {
-    row: 3,
-    frames: 6,
-    fps: 10,
-    frameWidth: FRAME_WIDTH,
-    frameHeight: FRAME_HEIGHT,
-    sheetWidth: SHEET_WIDTH,
-    sheetHeight: SHEET_HEIGHT,
-  },
-
-  walk_right: {
-    row: 4,
-    frames: 6,
-    fps: 10,
-    frameWidth: FRAME_WIDTH,
-    frameHeight: FRAME_HEIGHT,
-    sheetWidth: SHEET_WIDTH,
-    sheetHeight: SHEET_HEIGHT,
-  },
-
-  sleep: {
-    row: 5,
-    frames: 3,
-    fps: 2,
-    frameWidth: FRAME_WIDTH,
-    frameHeight: FRAME_HEIGHT,
-    sheetWidth: SHEET_WIDTH,
-    sheetHeight: SHEET_HEIGHT,
-  },
-
   attention: {
-    row: 6,
-    frames: 5,
-    fps: 5,
-    frameWidth: FRAME_WIDTH,
-    frameHeight: FRAME_HEIGHT,
-    sheetWidth: SHEET_WIDTH,
-    sheetHeight: SHEET_HEIGHT,
+    name: "attention",
+    row: 3,       // row 3
+    frames: 4,
+    fps: 10,
+  },
+  sleep: {
+    name: "sleep",
+    row: 4,       // row 4 (last row)
+    frames: 4,    // change to 2 if last 2 frames are empty
+    fps: 4,
   },
 };
 
+/**
+ * Return metadata the view needs:
+ *  - row
+ *  - frameWidth / frameHeight
+ *  - sheetWidth / sheetHeight
+ *  - fps
+ */
 export function getAnimationMeta(name) {
-  return animations[name] ?? animations.idle;
+  const key = typeof name === "string" ? name : "idle";
+  const def = ANIMATIONS[key] || ANIMATIONS.idle;
+
+  return {
+    name: def.name,
+    row: def.row,
+    frames: def.frames,
+    fps: def.fps,
+
+    frameWidth: FRAME_WIDTH,
+    frameHeight: FRAME_HEIGHT,
+    sheetWidth: SHEET_WIDTH,
+    sheetHeight: SHEET_HEIGHT,
+  };
 }
 
-export function nextFrame(animName, current) {
-  const meta = getAnimationMeta(animName);
+/**
+ * Advance to the next frame index for the animation.
+ */
+export function nextFrame(name, currentIndex) {
+  const meta = getAnimationMeta(name);
   const total = meta.frames || 1;
-  const idx = Number.isFinite(current) ? current : 0;
+
+  const idx = Number.isFinite(currentIndex) ? currentIndex : 0;
   return (idx + 1) % total;
 }

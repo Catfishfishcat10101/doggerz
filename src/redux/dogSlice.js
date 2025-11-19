@@ -1,4 +1,6 @@
 // src/redux/dogSlice.js
+// @ts-nocheck
+
 import { createSlice } from "@reduxjs/toolkit";
 import { calculateDogAge } from "@/utils/lifecycle.js";
 import {
@@ -131,6 +133,10 @@ const initialState = {
   isAsleep: false,
   debug: false,
   lastUpdatedAt: null,
+
+  // Used by EnhancedDogSprite / animations
+  lastAction: null,
+
   temperament: initialTemperament,
   memory: initialMemory,
   career: initialCareer,
@@ -797,6 +803,10 @@ const dogSlice = createSlice({
         ...(payload.streak || state.streak || {}),
       };
 
+      // Keep lastAction if present, otherwise reset
+      merged.lastAction =
+        payload.lastAction ?? state.lastAction ?? initialState.lastAction;
+
       ensureTrainingState(merged);
       ensurePollState(merged);
 
@@ -856,6 +866,8 @@ const dogSlice = createSlice({
       state.memory.lastFedAt = now;
       state.memory.lastSeenAt = now;
 
+      state.lastAction = "feed";
+
       applyXp(state, 5);
       maybeSampleMood(state, now, "FEED");
 
@@ -882,6 +894,8 @@ const dogSlice = createSlice({
       state.memory.lastPlayedAt = now;
       state.memory.lastSeenAt = now;
 
+      state.lastAction = "play";
+
       applyXp(state, 8);
       maybeSampleMood(state, now, "PLAY");
 
@@ -901,6 +915,8 @@ const dogSlice = createSlice({
 
       state.memory.lastSeenAt = now;
 
+      state.lastAction = "rest";
+
       applyXp(state, 3);
       maybeSampleMood(state, now, "REST");
       updateTemperamentReveal(state, now);
@@ -909,6 +925,7 @@ const dogSlice = createSlice({
 
     wakeUp(state) {
       state.isAsleep = false;
+      state.lastAction = "wake";
     },
 
     bathe(state, { payload }) {
@@ -920,6 +937,8 @@ const dogSlice = createSlice({
 
       state.memory.lastBathedAt = now;
       state.memory.lastSeenAt = now;
+
+      state.lastAction = "bathe";
 
       applyXp(state, 4);
       maybeSampleMood(state, now, "BATHE");
@@ -941,6 +960,9 @@ const dogSlice = createSlice({
       state.poopCount += 1;
       state.stats.happiness = clamp(state.stats.happiness + 3, 0, 100);
       state.memory.lastSeenAt = now;
+
+      state.lastAction = "potty";
+
       applyXp(state, 2);
       maybeSampleMood(state, now, "POTTY");
       recordPuppyPottySuccess(state, now);
@@ -957,6 +979,9 @@ const dogSlice = createSlice({
         maybeSampleMood(state, now, "SCOOP");
       }
       state.memory.lastSeenAt = now;
+
+      state.lastAction = "scoop";
+
       finalizeDerivedState(state, now);
     },
 
@@ -979,6 +1004,8 @@ const dogSlice = createSlice({
       applyCleanlinessPenalties(state, tier);
       maybeSampleMood(state, now, "SESSION_START");
       state.memory.lastSeenAt = now;
+
+      state.lastAction = "session_start";
 
       const date = new Date(now).toISOString().slice(0, 10);
       updateStreak(state.streak, date);
@@ -1040,6 +1067,8 @@ const dogSlice = createSlice({
       applySkillXp("obedience", commandId, state.skills, adjustedXp);
       state.memory.lastTrainedAt = now;
       state.memory.lastSeenAt = now;
+
+      state.lastAction = "train";
 
       state.stats.happiness = clamp(state.stats.happiness + 8, 0, 100);
       state.stats.energy = clamp(state.stats.energy - 5, 0, 100);

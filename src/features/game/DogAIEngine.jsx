@@ -1,5 +1,5 @@
 // src/features/game/DogAIEngine.jsx
-// @ts-nocheck  // remove this line if you want TS to type-check this file
+// @ts-nocheck
 
 import React, { useEffect, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
@@ -14,8 +14,8 @@ import {
 } from "@/redux/dogSlice.js";
 import { loadDogFromCloud, saveDogToCloud } from "@/redux/dogThunks.js";
 
-const TICK_INTERVAL_MS = 60_000; // 60 seconds
-const CLOUD_SAVE_DEBOUNCE = 3_000; // 3 seconds
+const TICK_INTERVAL_MS = 60_000;    // 60 seconds
+const CLOUD_SAVE_DEBOUNCE = 3_000;  // 3 seconds
 
 export default function DogAIEngine() {
   const dispatch = useDispatch();
@@ -24,7 +24,7 @@ export default function DogAIEngine() {
   const hasHydratedRef = useRef(false);
   const cloudSaveTimeoutRef = useRef(null);
 
-  // 1. Hydrate on mount (localStorage → Redux + optional cloud)
+  // 1. Hydrate on first mount (localStorage → Redux, then optional cloud)
   useEffect(() => {
     if (hasHydratedRef.current) return;
     hasHydratedRef.current = true;
@@ -41,11 +41,11 @@ export default function DogAIEngine() {
       console.error("[Doggerz] Failed to parse localStorage dog data", err);
     }
 
-    // Cloud hydrate if logged in
+    // Cloud hydrate if logged in at mount time
     if (firebaseReady && auth?.currentUser) {
       const thunkPromise = dispatch(loadDogFromCloud());
 
-      // RTK's unwrap if available; fall back to plain catch
+      // RTK's unwrap if available; fall back to raw promise
       if (thunkPromise && typeof thunkPromise.unwrap === "function") {
         thunkPromise.unwrap().catch((err) => {
           console.error("[Doggerz] Failed to load dog from cloud", err);
@@ -57,13 +57,35 @@ export default function DogAIEngine() {
       }
     }
 
-    // Register session start (handles catch-up decay, penalties, etc.)
+    // Register session start (catch-up decay, penalties, streak, etc.)
     dispatch(registerSessionStart({ now: Date.now() }));
   }, [dispatch]);
 
+  // 1b. If user logs in *after* mount, pull from cloud once
+  useEffect(() => {
+    if (!firebaseReady) return;
+    if (!auth?.currentUser) return;
+    if (!hasHydratedRef.current) return; // let the first effect run first
+
+    const thunkPromise = dispatch(loadDogFromCloud());
+
+    if (thunkPromise && typeof thunkPromise.unwrap === "function") {
+      thunkPromise.unwrap().catch((err) => {
+        console.error("[Doggerz] Late cloud load failed", err);
+      });
+    } else if (thunkPromise?.catch) {
+      thunkPromise.catch((err) => {
+        console.error("[Doggerz] Late cloud load failed", err);
+      });
+    }
+
+    // Also count this as a fresh session for decay/streaks
+    dispatch(registerSessionStart({ now: Date.now() }));
+  }, [dispatch, firebaseReady, auth?.currentUser]);
+
   // 2. Save to localStorage on every dog state change
   useEffect(() => {
-    if (!dogState || !dogState.adoptedAt) return; // no dog yet
+    if (!dogState || !dogState.adoptedAt) return; // no adopted dog yet
 
     try {
       localStorage.setItem(DOG_STORAGE_KEY, JSON.stringify(dogState));
@@ -72,7 +94,7 @@ export default function DogAIEngine() {
     }
   }, [dogState]);
 
-  // 3. Debounced cloud save
+  // 3. Debounced cloud save whenever dogState changes while logged in
   useEffect(() => {
     if (!dogState || !dogState.adoptedAt) return;
     if (!firebaseReady || !auth?.currentUser) return;
@@ -82,20 +104,20 @@ export default function DogAIEngine() {
       clearTimeout(cloudSaveTimeoutRef.current);
     }
 
-    // Set new timeout
+    // Schedule new debounced save
     cloudSaveTimeoutRef.current = setTimeout(() => {
       dispatch(saveDogToCloud());
     }, CLOUD_SAVE_DEBOUNCE);
 
-    // Cleanup if deps change / unmount
+    // Cleanup on dependency change / unmount
     return () => {
       if (cloudSaveTimeoutRef.current) {
         clearTimeout(cloudSaveTimeoutRef.current);
       }
     };
-  }, [dogState, dispatch]);
+  }, [dogState, dispatch, firebaseReady, auth?.currentUser]);
 
-  // 4. Game loop tick (every 60 seconds)
+  // 4. Game loop tick (every 60 seconds → decay + polls)
   useEffect(() => {
     const intervalId = setInterval(() => {
       const now = Date.now();
@@ -106,6 +128,6 @@ export default function DogAIEngine() {
     return () => clearInterval(intervalId);
   }, [dispatch]);
 
-  // This is a headless "brain" component: no UI
+  // Headless "brain" component: never renders UI
   return null;
 }

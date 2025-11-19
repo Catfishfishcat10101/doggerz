@@ -1,146 +1,86 @@
 // src/utils/weather.js
-import { WEATHER_API_KEY, WEATHER_CACHE_DURATION } from "@/constants/game.js";
+// @ts-nocheck
 
-const WEATHER_CACHE_KEY = "doggerz_weather_cache";
-const isBrowser = typeof window !== "undefined";
-
-export async function getWeatherByZip(zipCode, countryCode = "US") {
-  // If no API key configured, just fall back to default weather
-  if (!WEATHER_API_KEY) {
-    console.warn("[Weather] No WEATHER_API_KEY configured; using defaults.");
-    return getDefaultWeather();
-  }
-
-  // Check cache first
-  const cached = getCachedWeather();
-  if (cached && cached.zipCode === zipCode) {
-    return cached.data;
-  }
-
+/**
+ * Simple time-of-day bucketing based on local time.
+ * Returns: "night" | "morning" | "day" | "evening"
+ */
+export function getTimeOfDay(dateLike) {
   try {
-    const url = `https://api.openweathermap.org/data/2.5/weather?zip=${zipCode},${countryCode}&appid=${WEATHER_API_KEY}&units=imperial`;
-    const response = await fetch(url);
+    const d = dateLike instanceof Date ? dateLike : new Date();
+    const hour = d.getHours();
 
-    if (!response.ok) {
-      throw new Error("Weather API failed");
-    }
-
-    const data = await response.json();
-    const weather = {
-      condition: data.weather[0].main.toLowerCase(), // "clear", "rain", "snow", etc
-      temp: Math.round(data.main.temp),
-      description: data.weather[0].description,
-      icon: data.weather[0].icon,
-      sunrise: data.sys.sunrise * 1000,
-      sunset: data.sys.sunset * 1000,
-      timestamp: Date.now(),
-    };
-
-    // Cache it
-    cacheWeather(zipCode, weather);
-    return weather;
-  } catch (error) {
-    console.error("[Weather] Failed to fetch:", error);
-    return getDefaultWeather();
+    if (hour < 5) return "night";
+    if (hour < 11) return "morning";
+    if (hour < 17) return "day";
+    if (hour < 21) return "evening";
+    return "night";
+  } catch (err) {
+    console.error("[Doggerz] getTimeOfDay failed:", err);
+    return "day";
   }
 }
 
-export function getMoonPhase() {
-  const date = new Date();
-  const year = date.getFullYear();
-  let month = date.getMonth() + 1;
-  let day = date.getDate();
+/**
+ * Extremely fake “moon” logic, tuned for vibes not astronomy:
+ * - More likely to howl late at night.
+ * - Slightly rarer by default so it feels special.
+ *
+ * You can replace this later with a real moon-phase API
+ * and keep the interface the same.
+ */
+export function shouldHowlAtMoon(timeOfDay) {
+  const tod = timeOfDay || getTimeOfDay();
 
-  if (month < 3) {
-    month += 12;
+  // Base probabilities
+  let baseChance = 0.02; // 2%
+
+  if (tod === "night") {
+    baseChance = 0.18; // 18% at night
+  } else if (tod === "evening") {
+    baseChance = 0.08;
+  } else if (tod === "morning") {
+    baseChance = 0.03;
   }
 
-  const c = 365.25 * year;
-  const e = 30.6 * month;
-  let jd = c + e + day - 694039.09;
-  jd /= 29.5305882;
-
-  const b = Math.round((jd - Math.floor(jd)) * 8);
-
-  const phases = [
-    "new",
-    "waxing_crescent",
-    "first_quarter",
-    "waxing_gibbous",
-    "full",
-    "waning_gibbous",
-    "last_quarter",
-    "waning_crescent",
-  ];
-
-  return {
-    phase: phases[b >= 8 ? 0 : b],
-    isFull: b === 4,
-    illumination: jd - Math.floor(jd),
-  };
-}
-
-export function getTimeOfDay() {
-  const hour = new Date().getHours();
-  if (hour >= 5 && hour < 7) return "dawn";
-  if (hour >= 7 && hour < 12) return "morning";
-  if (hour >= 12 && hour < 17) return "afternoon";
-  if (hour >= 17 && hour < 19) return "dusk";
-  if (hour >= 19 && hour < 22) return "evening";
-  return "night";
-}
-
-export function shouldHowlAtMoon() {
-  const moon = getMoonPhase();
-  const time = getTimeOfDay();
-  return moon.isFull && time === "night";
-}
-
-function getCachedWeather() {
-  if (!isBrowser) return null;
-
+  // Add a soft “full moon every ~14 days” vibe using the day of month
   try {
-    const raw = window.localStorage.getItem(WEATHER_CACHE_KEY);
-    if (!raw) return null;
-
-    const cached = JSON.parse(raw);
-    const age = Date.now() - cached.timestamp;
-
-    if (age < WEATHER_CACHE_DURATION) {
-      return cached;
-    }
-  } catch (e) {
-    // ignore
-  }
-  return null;
-}
-
-function cacheWeather(zipCode, data) {
-  if (!isBrowser) return;
-
-  try {
-    window.localStorage.setItem(
-      WEATHER_CACHE_KEY,
-      JSON.stringify({
-        zipCode,
-        data,
-        timestamp: Date.now(),
-      })
+    const today = new Date();
+    const day = today.getDate(); // 1–31
+    const distFromFakeFull = Math.min(
+      Math.abs(day - 1),
+      Math.abs(day - 15),
+      Math.abs(day - 29)
     );
-  } catch (e) {
-    // ignore
+
+    // Closer to 1 / 15 / 29 → slightly higher chance
+    const moonBoost = Math.max(0, 0.12 - distFromFakeFull * 0.01); // up to +12%
+    baseChance += moonBoost;
+  } catch {
+    // ignore, keep baseChance
   }
+
+  // Clamp between 0 and 0.4 so it never goes insane
+  baseChance = Math.max(0, Math.min(baseChance, 0.4));
+
+  return Math.random() < baseChance;
 }
 
-function getDefaultWeather() {
-  const now = Date.now();
-  return {
-    condition: "clear",
-    temp: 72,
-    description: "Pleasant day",
-    icon: "01d",
-    sunrise: now,
-    sunset: now + 12 * 60 * 60 * 1000,
-    timestamp: now,
-  };
+/**
+ * Optional helper if later you want ambient weather state.
+ * For now it's just a placeholder for future expansion.
+ */
+export function getAmbientWeatherHint() {
+  const tod = getTimeOfDay();
+  switch (tod) {
+    case "morning":
+      return "Soft morning light, perfect for a walk.";
+    case "day":
+      return "Bright and lively. Your pup’s ready for action.";
+    case "evening":
+      return "Golden hour zoomies are online.";
+    case "night":
+    default:
+      return "Quiet night. Ideal for howls and naps.";
+  }
 }

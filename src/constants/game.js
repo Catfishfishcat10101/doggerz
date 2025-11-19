@@ -1,162 +1,150 @@
-// src/utils/weather.js
-// @ts-nocheck
+// src/constants/game.js
 
-import {
-  WEATHER_API_KEY,
-  WEATHER_CACHE_DURATION,
-  TIME_PERIODS,
-} from "@/constants/game.js";
+// Core tuning knobs
+export const SKILL_LEVEL_STEP = 50;
+export const DEFAULT_TICK_INTERVAL = 120; // seconds
+export const CLOUD_SAVE_DEBOUNCE = 3000;
+export const GAME_DAYS_PER_REAL_DAY = 4;
 
-const WEATHER_CACHE_KEY = "doggerz_weather_cache";
-const isBrowser = typeof window !== "undefined";
+// Lifecycle / age stages (in-game days)
+export const LIFE_STAGES = {
+  PUPPY: { min: 0, max: 180, label: "Puppy" },
+  ADULT: { min: 181, max: 2555, label: "Adult" },
+  SENIOR: { min: 2556, max: 5475, label: "Senior" },
+};
 
-export async function getWeatherByZip(zipCode, countryCode = "US") {
-  // If no API key configured, just fall back to default weather
-  if (!WEATHER_API_KEY) {
-    console.warn("[Weather] No WEATHER_API_KEY configured; using defaults.");
-    return getDefaultWeather();
-  }
+// How each life stage tweaks stat decay
+export const LIFECYCLE_STAGE_MODIFIERS = {
+  PUPPY: {
+    hunger: 1.15, // gets hungry faster
+    happiness: 1,
+    energy: 0.85, // burns less energy
+    cleanliness: 0.95,
+  },
+  ADULT: {
+    hunger: 1,
+    happiness: 1,
+    energy: 1,
+    cleanliness: 1,
+  },
+  SENIOR: {
+    hunger: 0.9, // eats a bit less
+    happiness: 1.05,
+    energy: 1.2, // tires more quickly
+    cleanliness: 1.15,
+  },
+};
 
-  // Check cache first
-  const cached = getCachedWeather();
-  if (cached && cached.zipCode === zipCode) {
-    return cached.data;
-  }
+// Cleanliness thresholds → tiers
+export const CLEANLINESS_THRESHOLDS = {
+  FRESH: 75,
+  DIRTY: 50,
+  FLEAS: 25,
+  MANGE: 0,
+};
 
-  try {
-    const url = `https://api.openweathermap.org/data/2.5/weather?zip=${zipCode},${countryCode}&appid=${WEATHER_API_KEY}&units=imperial`;
-    const response = await fetch(url);
+// Per-tier effects on gameplay
+export const CLEANLINESS_TIER_EFFECTS = {
+  FRESH: {
+    label: "Fresh",
+    pottyGainMultiplier: 1,
+  },
+  DIRTY: {
+    label: "Dirty",
+    happinessTickPenalty: 1,
+    pottyGainMultiplier: 1.1,
+    journalSummary: "Your pup is tracking in a little dirt. Bath soon?",
+  },
+  FLEAS: {
+    label: "Fleas",
+    happinessTickPenalty: 2,
+    energyTickPenalty: 1,
+    cleanlinessTickPenalty: 1,
+    pottyGainMultiplier: 1.25,
+    journalSummary:
+      "Scratching nonstop. Looks like your pup picked up some hitchhikers.",
+  },
+  MANGE: {
+    label: "Mange",
+    happinessTickPenalty: 4,
+    energyTickPenalty: 2,
+    cleanlinessTickPenalty: 2,
+    pottyGainMultiplier: 1.5,
+    journalSummary:
+      "Skin is irritated and patchy. Needs a vet visit and serious TLC.",
+  },
+};
 
-    if (!response.ok) {
-      throw new Error("Weather API failed");
-    }
+/**
+ * Mini “what does your dog want?” system.
+ * dogSlice’s polls use this to spawn prompts & apply effects.
+ */
+export const DOG_POLL_CONFIG = {
+  // How often to consider spawning a poll (ms)
+  intervalMs: 1000 * 60 * 25, // ~25 minutes
 
-    const data = await response.json();
-    const weather = {
-      condition: data.weather[0].main.toLowerCase(), // "clear", "rain", "snow", etc
-      temp: Math.round(data.main.temp),
-      description: data.weather[0].description,
-      icon: data.weather[0].icon,
-      sunrise: data.sys.sunrise * 1000,
-      sunset: data.sys.sunset * 1000,
-      timestamp: Date.now(),
-    };
+  // How long the player has to respond (ms)
+  timeoutMs: 1000 * 60 * 2, // 2 minutes
 
-    // Cache it
-    cacheWeather(zipCode, weather);
-    return weather;
-  } catch (error) {
-    console.error("[Weather] Failed to fetch:", error);
-    return getDefaultWeather();
-  }
+  prompts: [
+    {
+      id: "walk_outside",
+      prompt: "Could we go outside for a quick walk?",
+      effects: {
+        happiness: +10,
+        energy: -5,
+        cleanliness: -3,
+      },
+    },
+    {
+      id: "play_fetch",
+      prompt: "I brought you a toy. Want to play fetch?",
+      effects: {
+        happiness: +12,
+        energy: -8,
+      },
+    },
+    {
+      id: "snack_time",
+      prompt: "I’m feeling snacky. Maybe a small treat?",
+      effects: {
+        hunger: -15,
+        happiness: +6,
+      },
+    },
+    {
+      id: "bath_suggestion",
+      prompt: "I feel kind of grimy. Is it bath time?",
+      effects: {
+        cleanliness: +25,
+        happiness: -4, // baths are betrayal
+      },
+    },
+  ],
+};
+
+/**
+ * Resolve cleanliness tier key ("FRESH" | "DIRTY" | "FLEAS" | "MANGE")
+ * from a cleanliness value (0–100).
+ */
+export function resolveCleanlinessTier(cleanliness) {
+  const v = Number.isFinite(cleanliness) ? cleanliness : 0;
+
+  if (v >= CLEANLINESS_THRESHOLDS.FRESH) return "FRESH";
+  if (v >= CLEANLINESS_THRESHOLDS.DIRTY) return "DIRTY";
+  if (v >= CLEANLINESS_THRESHOLDS.FLEAS) return "FLEAS";
+  return "MANGE";
 }
 
-export function getMoonPhase() {
-  const date = new Date();
-  const year = date.getFullYear();
-  let month = date.getMonth() + 1;
-  let day = date.getDate();
-
-  if (month < 3) {
-    month += 12;
-  }
-
-  const c = 365.25 * year;
-  const e = 30.6 * month;
-  let jd = c + e + day - 694039.09;
-  jd /= 29.5305882;
-
-  const b = Math.round((jd - Math.floor(jd)) * 8);
-
-  const phases = [
-    "new",
-    "waxing_crescent",
-    "first_quarter",
-    "waxing_gibbous",
-    "full",
-    "waning_gibbous",
-    "last_quarter",
-    "waning_crescent",
-  ];
-
+/**
+ * Get cleanliness tier key + effect descriptor in one shot.
+ * Returns: { tier, label, ...effectFields }
+ */
+export function getCleanlinessEffects(cleanliness) {
+  const tier = resolveCleanlinessTier(cleanliness);
+  const base = CLEANLINESS_TIER_EFFECTS[tier] || CLEANLINESS_TIER_EFFECTS.FRESH;
   return {
-    phase: phases[b >= 8 ? 0 : b],
-    isFull: b === 4,
-    illumination: jd - Math.floor(jd),
-  };
-}
-
-// Use TIME_PERIODS from constants so everything stays in sync
-export function getTimeOfDay() {
-  const hour = new Date().getHours();
-
-  for (const [key, { start, end }] of Object.entries(TIME_PERIODS)) {
-    // Normal ranges (e.g. 7–12)
-    if (start < end && hour >= start && hour < end) {
-      return key.toLowerCase(); // "dawn", "morning", etc.
-    }
-
-    // Wrap-around ranges (e.g. NIGHT: 22 → 5)
-    if (start > end && (hour >= start || hour < end)) {
-      return key.toLowerCase();
-    }
-  }
-
-  // Fallback if config is ever weird
-  return "night";
-}
-
-export function shouldHowlAtMoon() {
-  const moon = getMoonPhase();
-  const time = getTimeOfDay();
-  return moon.isFull && time === "night";
-}
-
-function getCachedWeather() {
-  if (!isBrowser) return null;
-
-  try {
-    const raw = window.localStorage.getItem(WEATHER_CACHE_KEY);
-    if (!raw) return null;
-
-    const cached = JSON.parse(raw);
-    const age = Date.now() - cached.timestamp;
-
-    if (age < WEATHER_CACHE_DURATION) {
-      return cached;
-    }
-  } catch (e) {
-    // ignore cache errors
-  }
-  return null;
-}
-
-function cacheWeather(zipCode, data) {
-  if (!isBrowser) return;
-
-  try {
-    window.localStorage.setItem(
-      WEATHER_CACHE_KEY,
-      JSON.stringify({
-        zipCode,
-        data,
-        timestamp: Date.now(),
-      })
-    );
-  } catch (e) {
-    // ignore
-  }
-}
-
-function getDefaultWeather() {
-  const now = Date.now();
-  return {
-    condition: "clear",
-    temp: 72,
-    description: "Pleasant day",
-    icon: "01d",
-    sunrise: now,
-    sunset: now + 12 * 60 * 60 * 1000,
-    timestamp: now,
+    tier,
+    ...base,
   };
 }

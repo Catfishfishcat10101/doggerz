@@ -1,4 +1,4 @@
-<!-- index.html-->
+<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en" class="dark">
   <head>
@@ -9,23 +9,35 @@
     />
 
     <title>Doggerz</title>
-    <meta name="description" content="Doggerz — virtual dog simulator" />
+    <meta name="description" content="Doggerz — a moody virtual dog simulator with real-time care, training, and streaks." />
     <meta name="robots" content="index,follow" />
     <meta name="color-scheme" content="dark light" />
 
     <!-- Theme colors per scheme -->
-    <meta name="theme-color" content="#0b1020" media="(prefers-color-scheme: dark)" />
-    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta
+      name="theme-color"
+      content="#0b1020"
+      media="(prefers-color-scheme: dark)"
+    />
+    <meta
+      name="theme-color"
+      content="#ffffff"
+      media="(prefers-color-scheme: light)"
+    />
 
-    <!-- iOS/PWA chrome -->
+    <!-- iOS / PWA chrome -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Doggerz" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
 
     <!-- Icons & Manifest -->
     <link rel="icon" href="/favicon.ico" sizes="any" />
-    <link rel="apple-touch-icon" href="/icons/icon-192x192.svg" />
+    <!-- Tip: use a PNG here for widest iOS support -->
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
 
     <!-- Fonts -->
@@ -36,10 +48,13 @@
       rel="stylesheet"
     />
 
-    <!-- Preload the first sprite so the dog always renders -->
-    <link rel="preload" as="image" href="/sprites/jackrussell/idle.svg" />
-    <!-- Optional: preload yard bg -->
-    <!-- <link rel="preload" as="image" href="/backgrounds/yard_day.png" /> -->
+    <!-- Preload sprite sheet (served from /public/sprites) -->
+    <!-- Make sure you have: public/sprites/jack_russell_directions.png -->
+    <link
+      rel="preload"
+      href="/sprites/jack_russell_directions.png"
+      as="image"
+    />
 
     <!-- No-FOUC theme bootstrap -->
     <script>
@@ -55,16 +70,22 @@
   </head>
 
   <body>
-    <noscript
-      >Doggerz requires JavaScript. Please enable it to play with your pup.</noscript
-    >
+    <noscript>
+      Doggerz requires JavaScript. Please enable it to play with your pup.
+    </noscript>
+
     <div id="root"></div>
+
+    <!-- Vite entry -->
     <script type="module" src="/src/main.jsx"></script>
 
-     <script>
+    <!-- Service worker (PWA shell) -->
+    <script>
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => {
-          navigator.serviceWorker.register("/sw.js").catch(() => {});
+          navigator.serviceWorker.register("/sw.js").catch(() => {
+            // swallow errors; app should still run fine without SW
+          });
         });
       }
     </script>

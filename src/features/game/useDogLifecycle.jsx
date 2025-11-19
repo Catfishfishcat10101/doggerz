@@ -1,4 +1,4 @@
-// src/features/game/useDogLifecycle.js
+// src/features/game/useDogLifecycle.jsx
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {

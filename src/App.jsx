@@ -22,6 +22,9 @@ import NotFound from "@/pages/NotFound.jsx";
 import Memory from "@/pages/Memory.jsx";
 import Potty from "@/pages/Potty.jsx";
 
+// Headless game brain (ticks, decay, polls, cloud sync)
+import DogAIEngine from "@/features/game/DogAIEngine.jsx";
+
 // ---------------------------
 // Layout pieces
 // ---------------------------
@@ -103,6 +106,9 @@ function AppFooter() {
 function AppShell() {
   return (
     <div className="min-h-screen flex flex-col bg-zinc-950 text-zinc-50">
+      {/* Headless game engine: runs ticks, decay, polls, cloud sync */}
+      <DogAIEngine />
+
       <AppHeader />
 
       <main className="flex-1">
@@ -152,3 +158,4 @@ export default function App() {
     </BrowserRouter>
   );
 }
+// End of src/App.jsx

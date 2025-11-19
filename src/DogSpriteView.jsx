@@ -1,4 +1,6 @@
 // src/DogSpriteView.jsx
+// @ts-nocheck
+
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { selectDog } from "@/redux/dogSlice.js";
@@ -33,6 +35,8 @@ export default function DogSpriteView() {
   // ATTENTION TRIGGER
   useEffect(() => {
     if (!dog) return;
+    // NOTE: right now dog.lastAction is never set in state,
+    // so this will never fire until we wire that up in the UI/slice.
     if (dog.lastAction) {
       setAttention(true);
       const t = setTimeout(() => setAttention(false), 900);
@@ -45,7 +49,7 @@ export default function DogSpriteView() {
   if (attention) animation = "attention";
   else if (dog.isAsleep) animation = "sleep";
 
-  // METADATA
+  // METADATA FROM ANIMATOR
   const meta = getAnimationMeta(animation);
   const { row, frameWidth, frameHeight, sheetWidth, sheetHeight, fps } = meta;
 
@@ -100,8 +104,8 @@ export default function DogSpriteView() {
   return (
     <div className="relative flex flex-col items-center gap-3">
       <div className="relative">
-        <div style={/** @type {any} */ (shadowStyle)} />
-        <div style={/** @type {any} */ (style)} />
+        <div style={shadowStyle} />
+        <div style={style} />
       </div>
 
       <div className="text-center space-y-1">
@@ -109,12 +113,12 @@ export default function DogSpriteView() {
           {attention
             ? "Listening!"
             : animation === "idle_bark"
-            ? "Woof!"
-            : animation === "idle_scratch"
-            ? "Scratch Scratch"
-            : dog.isAsleep
-            ? "Sleeping…"
-            : "Ready To Play"}
+              ? "Woof!"
+              : animation === "idle_scratch"
+                ? "Scratch Scratch"
+                : dog.isAsleep
+                  ? "Sleeping…"
+                  : "Ready To Play"}
         </p>
 
         <p className="text-lg sm:text-xl font-semibold tracking-wide">

@@ -27,13 +27,15 @@ import {
   setAdoptedAt,
   setDogName,
 } from "@/redux/dogSlice.js";
+
 import EnhancedDogSprite from "@/features/game/EnhancedDogSprite.jsx";
 import { getTimeOfDay } from "@/utils/weather.js";
 import { CLEANLINESS_TIER_EFFECTS } from "@/constants/game.js";
-import yardDay from "@/assets/backgrounds/yard_day.png";
 import { useDogLifecycle } from "@/features/game/useDogLifecycle.jsx";
+
+import yardDay from "@/assets/backgrounds/yard_day.png";
 import GameTopBar from "@/features/game/components/GameTopBar.jsx";
-// These are ready for future wiring; keeping imports commented until used.
+// Future wiring (keep imports commented until used)
 // import NeedsDashboard from "@/features/game/components/NeedsDashboard.jsx";
 // import PottyTrackerCard from "@/features/game/components/PottyTrackerCard.jsx";
 // import CareActionsPanel from "@/features/game/components/CareActionsPanel.jsx";
@@ -53,11 +55,6 @@ const TIME_OVERLAY = {
     "linear-gradient(180deg, rgba(2,6,23,0.4) 0%, rgba(0,0,0,0.9) 100%)",
 };
 
-/**
- * MainGame is the core “in-yard” experience:
- * - Left: animated yard & dog sprite
- * - Right: stats + basic care actions
- */
 export default function MainGame() {
   const dispatch = useDispatch();
   const { temperamentRevealReady } = useDogLifecycle();
@@ -81,27 +78,20 @@ export default function MainGame() {
 
   // Time-of-day ticker
   useEffect(() => {
-    const id = setInterval(
-      () => setTimeOfDay(getTimeOfDay()),
-      60 * 1000
-    );
+    const id = setInterval(() => setTimeOfDay(getTimeOfDay()), 60 * 1000);
     return () => clearInterval(id);
   }, []);
 
   // Cleanup toasts on unmount
   useEffect(
     () => () => {
-      if (toastTimeoutRef.current) {
-        clearTimeout(toastTimeoutRef.current);
-      }
-      if (reminderTimeoutRef.current) {
-        clearTimeout(reminderTimeoutRef.current);
-      }
+      if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+      if (reminderTimeoutRef.current) clearTimeout(reminderTimeoutRef.current);
     },
     []
   );
 
-  // Poll countdown (not yet rendered, but logic preserved)
+  // Poll countdown (logic wired, UI can later show seconds left)
   useEffect(() => {
     if (!activePoll) {
       setPollCountdown(0);
@@ -126,10 +116,7 @@ export default function MainGame() {
       clearTimeout(toastTimeoutRef.current);
     }
     setActionToast(message);
-    toastTimeoutRef.current = setTimeout(
-      () => setActionToast(null),
-      2500
-    );
+    toastTimeoutRef.current = setTimeout(() => setActionToast(null), 2500);
   }, []);
 
   const handleCareAction = useCallback(
@@ -142,6 +129,7 @@ export default function MainGame() {
           dispatch(feed({ now }));
           acknowledge("Nom nom nom.");
           break;
+
         case "play":
           dispatch(
             play({
@@ -151,6 +139,7 @@ export default function MainGame() {
           );
           acknowledge("Zoomies achieved!");
           break;
+
         case "rest":
           if (dog.isAsleep) {
             dispatch(wakeUp());
@@ -160,10 +149,12 @@ export default function MainGame() {
             acknowledge("Settling in for a nap…");
           }
           break;
+
         case "bathe":
           dispatch(bathe({ now }));
           acknowledge("Scrub-a-dub-dub.");
           break;
+
         case "potty":
           if ((dog.pottyLevel ?? 0) < 25) {
             acknowledge("Not urgent yet.");
@@ -172,6 +163,7 @@ export default function MainGame() {
           dispatch(goPotty({ now }));
           acknowledge("Potty break complete.");
           break;
+
         case "scoop":
           if ((dog.poopCount ?? 0) <= 0) {
             acknowledge("Yard is already spotless.");
@@ -180,6 +172,7 @@ export default function MainGame() {
           dispatch(scoopPoop({ now }));
           acknowledge("Yard cleaned up.");
           break;
+
         case "train":
           dispatch(
             trainObedience({
@@ -191,6 +184,7 @@ export default function MainGame() {
           );
           acknowledge("Practiced SIT command.");
           break;
+
         default:
           break;
       }
@@ -220,8 +214,8 @@ export default function MainGame() {
             Loading your pup…
           </h1>
           <p className="text-xs text-zinc-400">
-            If this screen is stuck, use the back button and go through
-            the Adopt flow again so Doggerz can create your save file.
+            If this screen is stuck, use the back button and go through the
+            Adopt flow again so Doggerz can create your save file.
           </p>
         </div>
       </main>
@@ -483,7 +477,7 @@ export default function MainGame() {
                 <button
                   onClick={() => handleCareAction("rest")}
                   className="px-4 py-3 bg-blue-600 hover:bg-blue-500 rounded-lg font-semibold transition text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={dog.isAsleep || lowEnergy}
+                  disabled={dog.isAsleep}
                 >
                   😴 Rest
                 </button>

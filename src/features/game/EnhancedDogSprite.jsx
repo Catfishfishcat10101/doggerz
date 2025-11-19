@@ -1,5 +1,5 @@
 // src/features/game/EnhancedDogSprite.jsx
-// @ts-nocheck  // remove this line if you want TS checking here
+// @ts-nocheck
 
 import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useSelector } from "react-redux";
