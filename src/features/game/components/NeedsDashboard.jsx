@@ -1,3 +1,4 @@
+// src/features/game/components/NeedsDashboard.jsx
 import React from "react";
 
 const NEEDS_CONFIG = [

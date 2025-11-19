@@ -1,9 +1,11 @@
 {
   "version": "0.2",
   "words": [
-    "spritesheets",
-    "Shiba",
+    "firestore",
+    "getfilestore",
     "shiba",
-    "Sploot"
+    "Shiba",
+    "Sploot",
+    "spritesheets"
   ]
 }

@@ -1,5 +1,4 @@
 // src/features/game/MainGame.jsx
-// @ts-nocheck
 
 import React, {
   useEffect,
@@ -31,16 +30,13 @@ import {
 import EnhancedDogSprite from "@/features/game/EnhancedDogSprite.jsx";
 import { getTimeOfDay } from "@/utils/weather.js";
 import { CLEANLINESS_TIER_EFFECTS } from "@/constants/game.js";
+import yardDay from "@/assets/backgrounds/yard_day.png";
 import { useDogLifecycle } from "@/features/game/useDogLifecycle.jsx";
 
-import yardDay from "@/assets/backgrounds/yard_day.png";
 import GameTopBar from "@/features/game/components/GameTopBar.jsx";
-// Future wiring (keep imports commented until used)
-// import NeedsDashboard from "@/features/game/components/NeedsDashboard.jsx";
-// import PottyTrackerCard from "@/features/game/components/PottyTrackerCard.jsx";
-// import CareActionsPanel from "@/features/game/components/CareActionsPanel.jsx";
-// import AdultTrainingCard from "@/features/game/components/AdultTrainingCard.jsx";
-// import DogPollCard from "@/features/game/components/DogPollCard.jsx";
+import PottyTrackerCard from "@/features/game/components/PottyTrackerCard.jsx";
+import CareActionsPanel from "@/features/game/components/CareActionsPanel.jsx";
+import DogPollCard from "@/features/game/components/DogPollCard.jsx";
 
 const TIME_OVERLAY = {
   dawn: "linear-gradient(180deg, rgba(255,209,143,0.5) 0%, rgba(15,23,42,0.7) 100%)",
@@ -55,6 +51,11 @@ const TIME_OVERLAY = {
     "linear-gradient(180deg, rgba(2,6,23,0.4) 0%, rgba(0,0,0,0.9) 100%)",
 };
 
+/**
+ * MainGame is the core “in-yard” experience:
+ * - Left: animated yard & dog sprite
+ * - Right: stats + basic care actions + potty tracker + dog polls
+ */
 export default function MainGame() {
   const dispatch = useDispatch();
   const { temperamentRevealReady } = useDogLifecycle();
@@ -85,13 +86,17 @@ export default function MainGame() {
   // Cleanup toasts on unmount
   useEffect(
     () => () => {
-      if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
-      if (reminderTimeoutRef.current) clearTimeout(reminderTimeoutRef.current);
+      if (toastTimeoutRef.current) {
+        clearTimeout(toastTimeoutRef.current);
+      }
+      if (reminderTimeoutRef.current) {
+        clearTimeout(reminderTimeoutRef.current);
+      }
     },
     []
   );
 
-  // Poll countdown (logic wired, UI can later show seconds left)
+  // Poll countdown for DogPollCard
   useEffect(() => {
     if (!activePoll) {
       setPollCountdown(0);
@@ -129,7 +134,6 @@ export default function MainGame() {
           dispatch(feed({ now }));
           acknowledge("Nom nom nom.");
           break;
-
         case "play":
           dispatch(
             play({
@@ -137,9 +141,8 @@ export default function MainGame() {
               timeOfDay: timeOfDay === "morning" ? "MORNING" : "DAY",
             })
           );
-          acknowledge("Zoomies achieved!");
+          acknowledge("achieved!");
           break;
-
         case "rest":
           if (dog.isAsleep) {
             dispatch(wakeUp());
@@ -149,12 +152,10 @@ export default function MainGame() {
             acknowledge("Settling in for a nap…");
           }
           break;
-
         case "bathe":
           dispatch(bathe({ now }));
           acknowledge("Scrub-a-dub-dub.");
           break;
-
         case "potty":
           if ((dog.pottyLevel ?? 0) < 25) {
             acknowledge("Not urgent yet.");
@@ -163,7 +164,6 @@ export default function MainGame() {
           dispatch(goPotty({ now }));
           acknowledge("Potty break complete.");
           break;
-
         case "scoop":
           if ((dog.poopCount ?? 0) <= 0) {
             acknowledge("Yard is already spotless.");
@@ -172,7 +172,6 @@ export default function MainGame() {
           dispatch(scoopPoop({ now }));
           acknowledge("Yard cleaned up.");
           break;
-
         case "train":
           dispatch(
             trainObedience({
@@ -184,7 +183,6 @@ export default function MainGame() {
           );
           acknowledge("Practiced SIT command.");
           break;
-
         default:
           break;
       }
@@ -235,9 +233,7 @@ export default function MainGame() {
           <h2 className="text-2xl font-bold text-zinc-50 mb-4">
             No Dog Adopted
           </h2>
-          <p className="text-zinc-400 mb-6">
-            Adopt a dog to get started!
-          </p>
+          <p className="text-zinc-400 mb-6">Adopt a dog to get started!</p>
           <button
             onClick={handleQuickAdopt}
             className="px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-black font-semibold rounded-full transition"
@@ -272,8 +268,7 @@ export default function MainGame() {
 
   const adultTraining = trainingState.adult || {};
   const todayIso = new Date().toISOString().slice(0, 10);
-  const adultTrainingDoneToday =
-    adultTraining.lastCompletedDate === todayIso;
+  const adultTrainingDoneToday = adultTraining.lastCompletedDate === todayIso;
   const adultTrainingStreak = adultTraining.streak || 0;
   const adultTrainingMisses = adultTraining.misses || 0;
 
@@ -344,8 +339,7 @@ export default function MainGame() {
   const cleanlinessLabel =
     cleanlinessDetails.label || cleanlinessTier || "Fresh";
   const cleanlinessSummary =
-    cleanlinessDetails.journalSummary ||
-    "Freshly pampered and glowing.";
+    cleanlinessDetails.journalSummary || "Freshly pampered and glowing.";
 
   const lowEnergy = energy < 15;
 
@@ -411,13 +405,12 @@ export default function MainGame() {
                 <span className="text-zinc-100">{pottyStatusLabel}</span>
               </span>
               <span className="text-zinc-400">
-                Yard:{" "}
-                <span className="text-zinc-100">{yardStatusLabel}</span>
+                Yard: <span className="text-zinc-100">{yardStatusLabel}</span>
               </span>
             </div>
           </div>
 
-          {/* Right: stats + actions */}
+          {/* Right: stats + potty tracker + care actions + polls */}
           <div className="space-y-4">
             {/* Cleanliness summary */}
             <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4 space-y-1">
@@ -435,75 +428,61 @@ export default function MainGame() {
             {/* Stat bars */}
             <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4 space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <StatBar
-                  label="Hunger"
-                  value={hunger}
-                  color="amber"
-                  inverse
-                />
-                <StatBar
-                  label="Happiness"
-                  value={happiness}
-                  color="emerald"
-                />
-                <StatBar
-                  label="Energy"
-                  value={energy}
-                  color="blue"
-                />
+                <StatBar label="Hunger" value={hunger} color="amber" inverse />
+                <StatBar label="Happiness" value={happiness} color="emerald" />
+                <StatBar label="Energy" value={energy} color="blue" />
                 <StatBar
                   label="Cleanliness"
                   value={cleanliness}
                   color="cyan"
                 />
               </div>
-            </div>
-
-            {/* Basic care actions */}
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={() => handleCareAction("feed")}
-                  className="px-4 py-3 bg-amber-600 hover:bg-amber-500 rounded-lg font-semibold transition text-sm"
-                >
-                  🍖 Feed
-                </button>
-                <button
-                  onClick={() => handleCareAction("play")}
-                  className="px-4 py-3 bg-emerald-600 hover:bg-emerald-500 rounded-lg font-semibold transition text-sm"
-                >
-                  🎾 Play
-                </button>
-                <button
-                  onClick={() => handleCareAction("rest")}
-                  className="px-4 py-3 bg-blue-600 hover:bg-blue-500 rounded-lg font-semibold transition text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={dog.isAsleep}
-                >
-                  😴 Rest
-                </button>
-                <button
-                  onClick={() => handleCareAction("bathe")}
-                  className="px-4 py-3 bg-cyan-600 hover:bg-cyan-500 rounded-lg font-semibold transition text-sm"
-                >
-                  🛁 Bathe
-                </button>
-              </div>
-
-              <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
-                <button
-                  onClick={() => handleCareAction("potty")}
-                  className="px-3 py-2 rounded-lg border border-zinc-700 hover:border-emerald-500/70 hover:bg-zinc-800 text-zinc-200 transition"
-                >
-                  🚶 Potty Walk
-                </button>
-                <button
-                  onClick={() => handleCareAction("scoop")}
-                  className="px-3 py-2 rounded-lg border border-zinc-700 hover:border-amber-500/70 hover:bg-zinc-800 text-zinc-200 transition"
-                >
-                  🗑️ Scoop Yard
-                </button>
+              <div className="flex justify-between text-[0.65rem] text-zinc-500 mt-1">
+                <span>
+                  Adult streak:{" "}
+                  <span className="text-zinc-300">
+                    {adultTrainingStreak} days
+                  </span>
+                </span>
+                {adultTrainingMisses > 0 && (
+                  <span className="text-amber-300">
+                    Missed: {adultTrainingMisses}
+                  </span>
+                )}
               </div>
             </div>
+
+            {/* Potty tracker + yard / cleanliness context */}
+            <PottyTrackerCard
+              isPuppy={isPuppy}
+              pottyLevel={pottyLevel}
+              pottyStatusLabel={pottyStatusLabel}
+              pottyTrainingComplete={pottyTrainingComplete}
+              pottyProgress={pottyProgress}
+              pottySuccess={pottySuccess}
+              pottyGoal={pottyGoal}
+              cleanlinessLabel={cleanlinessLabel}
+              cleanlinessSummary={cleanlinessSummary}
+              yardStatusLabel={yardStatusLabel}
+            />
+
+            {/* Care actions */}
+            <CareActionsPanel
+              onCareAction={handleCareAction}
+              dogIsAsleep={dog.isAsleep}
+              pottyLevel={pottyLevel}
+              poopCount={poopCount}
+              lowEnergy={lowEnergy}
+            />
+
+            {/* Dog poll card (if any) */}
+            {activePoll && (
+              <DogPollCard
+                activePoll={activePoll}
+                pollCountdown={pollCountdown}
+                onPollResponse={handlePollResponse}
+              />
+            )}
           </div>
         </section>
       </div>

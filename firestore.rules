@@ -2,23 +2,41 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // User dog data - only owner can read/write
-    match /users/{userId}/dog/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
     
-    // User profiles - only owner can read/write
+    // --------- helpers ---------
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // --------- per-user data ---------
+
+    // User profile doc: /users/{uid}
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if isOwner(userId);
     }
-    
-    // Public leaderboards (read-only for all authenticated users)
+
+    // Dog save data: /users/{uid}/dog/...
+    match /users/{userId}/dog/{document=**} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // --------- leaderboards ---------
+
+    // Public leaderboards (read-only from client)
+    // Example: /leaderboards/global, /leaderboards/topWeekly, etc.
     match /leaderboards/{document=**} {
-      allow read: if request.auth != null;
-      allow write: if false; // Only via Cloud Functions
+      // Any authenticated user can see leaderboard entries
+      allow read: if isSignedIn();
+
+      // Writes should be done from Cloud Functions using Admin SDK
+      allow write: if false;
     }
-    
-    // Deny everything else
+
+    // --------- deny everything else ---------
     match /{document=**} {
       allow read, write: if false;
     }

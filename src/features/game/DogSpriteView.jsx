@@ -6,7 +6,7 @@ import { useSelector } from "react-redux";
 import { selectDog } from "@/redux/dogSlice.js";
 
 import spriteSheet from "@/assets/sprites/jack_russell_directions.png";
-import { getAnimationMeta, nextFrame } from "@/DogAnimator.jsx";
+import { getAnimationMeta, nextFrame } from "@/features/game/DogAnimator.js";
 
 export default function DogSpriteView() {
   const dog = useSelector(selectDog);
