@@ -1,3 +1,5 @@
+<!-- cspell:ignore spritesheets Shiba shiba Sploot -->
+
 # Doggerz Spritesheet Specification
 
 ## Overview
@@ -9,12 +11,14 @@ Doggerz uses **2048x2048 PNG spritesheets** with a **16x16 grid** layout (128x12
 ## File Structure
 
 ```
+
 public/
 └── sprites/
     ├── jack_russell_puppy.png      (2048x2048, 256 frames)
     ├── jack_russell_adult.png      (2048x2048, 256 frames)
     ├── jack_russell_senior.png     (2048x2048, 256 frames)
     └── [future breeds follow same pattern]
+
 ```
 
 ---
@@ -45,12 +49,15 @@ public/
 ## Animation State Mapping
 
 ### Idle States
+
 - **Neutral:** Idle animation (row 0)
 - **Happy (>75):** Excited animation (row 14)
 - **Sad (<25):** Sad animation (row 13)
 
 ### Action States
+
 ```js
+
 const ANIMATION_MAP = {
   feeding: 'eat',      // Row 5
   playing: 'play',     // Row 6 or 7 (random)
@@ -60,9 +67,11 @@ const ANIMATION_MAP = {
   walking: 'walk',     // Row 1
   barking: 'bark',     // Row 9
 };
+
 ```
 
 ### Mood-Driven Behaviors
+
 - **Hunger > 70:** Look at player, occasional bark
 - **Happiness < 30:** Lay down, sad animation
 - **Energy < 20:** Sleep animation (even if not resting)
@@ -73,18 +82,22 @@ const ANIMATION_MAP = {
 ## Technical Specs
 
 ### Frame Dimensions
+
 - **Total sheet:** 2048 x 2048 px
 - **Per frame:** 128 x 128 px (16 frames per row/column)
 - **Canvas render size:** 256 x 256 px (2x scale for retina)
 
 ### Animation Timing
+
 - **Idle/Sleep:** 8 FPS (slow, subtle breathing)
 - **Walk/Run:** 12 FPS
 - **Actions (eat/play):** 10 FPS
 - **Fast actions (shake/bark):** 15 FPS
 
 ### Sprite Component Integration
+
 ```jsx
+
 // Example usage in DogSprite.jsx
 <canvas
   ref={canvasRef}
@@ -93,6 +106,7 @@ const ANIMATION_MAP = {
   className="pixelated"
   style={{ imageRendering: 'pixelated' }}
 />
+
 ```
 
 ---
@@ -100,18 +114,21 @@ const ANIMATION_MAP = {
 ## Life Stage Visual Differences
 
 ### Puppy (0-180 game days)
+
 - **Size:** 0.8x scale factor
 - **Proportions:** Large head, short legs, floppy ears
 - **Eyes:** Wide, curious expression
 - **Coat:** Fluffier, softer texture
 
 ### Adult (181-2555 game days)
+
 - **Size:** 1.0x scale (base)
 - **Proportions:** Athletic, balanced
 - **Eyes:** Alert, confident
 - **Coat:** Sleek, defined muscle tone
 
 ### Senior (2556+ game days)
+
 - **Size:** 0.9x scale factor
 - **Proportions:** Slightly hunched posture
 - **Eyes:** Gentle, wise expression
@@ -122,21 +139,26 @@ const ANIMATION_MAP = {
 ## Cleanliness Visual Tiers
 
 ### Fresh (100-76)
+
 - **Base sprite** (no modifications)
 
 ### Dusty (75-51)
+
 - **Overlay:** 10% opacity gray dust particles
 - **Animation:** Occasional scratch (every 30s)
 
 ### Dirty (50-26)
+
 - **Overlay:** 25% opacity brown dirt patches
 - **Animation:** Frequent scratching (every 15s)
 
 ### Fleas (25-11)
+
 - **Overlay:** 40% dirt + animated flea sprites (tiny black dots)
 - **Animation:** Constant scratching, unhappy expression
 
 ### Mange (10-0)
+
 - **Overlay:** 60% dirt + visible skin patches (pink areas)
 - **Animation:** Sad animation loop, laying down
 
@@ -147,16 +169,19 @@ const ANIMATION_MAP = {
 When weather system is active:
 
 ### Rain
+
 - **Overlay:** Animated rain drops (separate sprite layer)
 - **Dog reaction:** Shake animation after 10s exposure
 - **Cleanliness:** -5/min if outside
 
 ### Snow
+
 - **Overlay:** Falling snowflakes
 - **Dog reaction:** Excited animation (jumps in snow)
 - **Energy:** -10/min (cold)
 
 ### Sun
+
 - **Overlay:** None (clear sprite)
 - **Dog behavior:** Lay down animation (sunbathing)
 
@@ -167,15 +192,18 @@ When weather system is active:
 Each breed follows the same layout but with unique art:
 
 ```
+
 jack_russell_puppy.png
 beagle_puppy.png
 corgi_puppy.png
 shiba_puppy.png
 husky_puppy.png
+
 ...
 ```
 
 ### Breed-Specific Animations (Row 15)
+
 - **Jack Russell:** Ball obsession (extra bouncy play)
 - **Beagle:** Food sniffing (nose to ground)
 - **Corgi:** Sploot (lay flat on belly)
@@ -196,6 +224,7 @@ husky_puppy.png
 ### Color Palettes
 
 **Jack Russell:**
+
 - Base: `#F5E6D3` (cream)
 - Markings: `#8B4513` (brown)
 - Nose/Eyes: `#2C1810` (dark brown)
