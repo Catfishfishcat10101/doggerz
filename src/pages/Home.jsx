@@ -11,7 +11,6 @@ export default function Home() {
       {/* HEADER */}
       <header className="sticky top-0 z-40 border-b border-zinc-900 bg-zinc-950/95 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
-          {/* Logo acts as Home */}
           <Link
             to={PATHS.HOME}
             className="flex items-baseline gap-2"
@@ -23,11 +22,70 @@ export default function Home() {
             <span className="hidden text-[11px] font-medium uppercase tracking-[0.18em] text-zinc-500 sm:inline">
               Virtual pup simulator
             </span>
-xxxxxxxxxxxxxxxxxx                >
-                  Log in.
-                </Link>
+          </Link>
+
+          <nav className="flex items-center gap-4">
+            <Link
+              to={PATHS.LOGIN}
+              className="text-sm text-zinc-300 hover:text-white transition"
+            >
+              Log in
+            </Link>
+            <Link
+              to={PATHS.SIGNUP}
+              className="rounded-full bg-emerald-500 hover:bg-emerald-400 px-4 py-1.5 text-sm font-semibold text-black transition"
+            >
+              Sign up
+            </Link>
+          </nav>
+        </div>
+      </header>
+
+      {/* MAIN */}
+      <main className="flex-1 overflow-y-auto">
+        <section className="mx-auto grid max-w-6xl gap-8 px-4 py-16 lg:grid-cols-2 lg:items-start">
+          {/* Left: copy + CTA */}
+          <div className="space-y-6">
+            <div className="space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-400">
+                Adopt. Train. Bond.
               </p>
+              <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
+                Your virtual pup, always one tap away.
+              </h1>
             </div>
+
+            <p className="max-w-xl text-sm text-zinc-300 sm:text-base">
+              Adopt your pup and take care of them over real time. Keep them fed,
+              entertained, rested, and clean. How you treat your dog determines how
+              long they live — no click-spamming, no idle mining.
+            </p>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <Link
+                to={PATHS.ADOPT}
+                className="rounded-full bg-emerald-500 hover:bg-emerald-400 px-6 py-2.5 text-sm font-semibold text-black transition shadow-lg"
+              >
+                Get started
+              </Link>
+
+              <Link
+                to={PATHS.LOGIN}
+                className="rounded-full border border-zinc-700 hover:border-zinc-600 px-6 py-2.5 text-sm font-semibold transition"
+              >
+                Log in
+              </Link>
+            </div>
+
+            <p className="text-xs text-zinc-400">
+              Already have an account?{" "}
+              <Link
+                to={PATHS.LOGIN}
+                className="font-semibold text-emerald-400 hover:text-emerald-300"
+              >
+                Log in.
+              </Link>
+            </p>
           </div>
 
           {/* Right: how it works card */}
@@ -36,7 +94,7 @@ xxxxxxxxxxxxxxxxxx                >
               How Doggerz works
             </p>
             <ul className="mt-3 space-y-2 text-xs text-zinc-300">
-              <li>• Your dog slowly ages even while you&apos;re logged out.</li>
+              <li>• Your dog slowly ages even while you're logged out.</li>
               <li>
                 • Hunger, boredom, and dirtiness creep up over real hours, not
                 button mashing.
@@ -48,7 +106,7 @@ xxxxxxxxxxxxxxxxxx                >
             </ul>
 
             <Link
-              to={PATHS.LEGAL} // This is just a lightweight link; main Legal entry is in footer
+              to={PATHS.LEGAL}
               className="mt-4 inline-flex text-xs font-semibold text-emerald-400 hover:text-emerald-300"
             >
               Read the full guide →
@@ -57,23 +115,31 @@ xxxxxxxxxxxxxxxxxx                >
         </section>
       </main>
 
-      {/* FOOTER – Legal lives here */}
+      {/* FOOTER */}
       <footer className="border-t border-zinc-900 bg-zinc-950">
-        <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-6 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs text-zinc-500">
             © {year} Doggerz. All rights reserved.
           </p>
           <div className="flex flex-wrap items-center gap-4 text-xs">
+            <Link
+              to={PATHS.ABOUT}
+              className="text-zinc-400 hover:text-zinc-100 transition-colors"
+            >
+              About
+            </Link>
+            <Link
+              to={PATHS.CONTACT}
+              className="text-zinc-400 hover:text-zinc-100 transition-colors"
+            >
+              Contact
+            </Link>
             <Link
               to={PATHS.LEGAL}
               className="text-zinc-400 hover:text-zinc-100 transition-colors"
             >
               Legal
             </Link>
-            <span className="hidden h-3 w-px bg-zinc-800 sm:inline-block" />
-            <p className="text-zinc-500">
-              Built to keep your virtual pup thriving, not idle-farmed.
-            </p>
           </div>
         </div>
       </footer>

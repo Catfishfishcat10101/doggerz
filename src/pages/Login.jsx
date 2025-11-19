@@ -134,14 +134,18 @@ export default function LoginPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-zinc-950 text-zinc-50 p-6">
         <div className="max-w-lg space-y-4 text-center">
-          <h1 className="text-3xl font-bold">Firebase not configured</h1>
-          <p className="text-zinc-400 text-sm leading-relaxed">
-            Cloud login, signup, and sync features are disabled because the Firebase
-            credentials are missing or invalid. Update <code>.env.local</code> with your
-            Firebase web config ({missingList}) and restart Vite.
+          <h1 className="text-3xl font-bold text-amber-400">⚠️ Firebase Not Configured</h1>
+          <p className="text-zinc-300 text-sm leading-relaxed">
+            Cloud login, signup, and sync features are disabled because Firebase
+            credentials are missing or invalid.
           </p>
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 text-left">
+            <p className="text-xs text-zinc-400 mb-2">Missing configuration:</p>
+            <code className="text-xs text-red-400">{missingList}</code>
+          </div>
           <p className="text-xs text-zinc-500">
-            Once credentials are present the login screen will re-enable automatically.
+            Update <code className="text-amber-400">.env.local</code> with your Firebase
+            web config and restart the dev server.
           </p>
         </div>
       </div>

@@ -138,35 +138,37 @@ export default function Landing() {
       </main>
 
       {/* FOOTER */}
-      <footer className="border-t border-white/10 text-[11px] text-slate-500 py-4">
-        <div className="container mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <p className="text-center sm:text-left">
-            Doggerz — Created by William Johnson — 2025. All rights reserved.
-          </p>
+      <footer className="border-t border-white/10 bg-[#010104]">
+        <div className="container mx-auto px-4 py-6">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-400">
+            <p className="text-center sm:text-left">
+              Doggerz — Created by William Johnson — {new Date().getFullYear()}. All rights reserved.
+            </p>
 
-          <nav className="flex items-center gap-4">
-            <button
-              type="button"
-              onClick={() => navigate("/about")}
-              className="hover:text-slate-300 transition"
-            >
-              About
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate("/contact")}
-              className="hover:text-slate-300 transition"
-            >
-              Contact
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate("/legal")}
-              className="hover:text-slate-300 transition"
-            >
-              Terms &amp; Privacy
-            </button>
-          </nav>
+            <nav className="flex items-center gap-4">
+              <button
+                type="button"
+                onClick={() => navigate("/about")}
+                className="hover:text-slate-200 transition"
+              >
+                About
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate("/contact")}
+                className="hover:text-slate-200 transition"
+              >
+                Contact
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate("/legal")}
+                className="hover:text-slate-200 transition"
+              >
+                Terms & Privacy
+              </button>
+            </nav>
+          </div>
         </div>
       </footer>
     </div>
