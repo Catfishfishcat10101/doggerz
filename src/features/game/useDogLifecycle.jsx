@@ -5,8 +5,9 @@ import {
   registerSessionStart,
   tickDog,
   selectDogTemperament,
+  tickDogPolls,
 } from "@/redux/dogSlice.js";
-import { DEFAULT_TICK_INTERVAL } from "@/constants/game.js";
+import { DEFAULT_TICK_INTERVAL, DOG_POLL_CONFIG } from "@/constants/game.js";
 
 /**
  * Hook that:
@@ -40,6 +41,24 @@ export function useDogLifecycle({ tickSeconds = DEFAULT_TICK_INTERVAL } = {}) {
 
     return () => clearInterval(interval);
   }, [dispatch, tickSeconds]);
+
+  useEffect(() => {
+    if (!DOG_POLL_CONFIG?.prompts?.length) return undefined;
+    const pollCheckMs = Math.min(
+      Math.max((DOG_POLL_CONFIG.intervalMs || 300000) / 6, 15000),
+      60000
+    );
+
+    const interval = setInterval(() => {
+      dispatch(
+        tickDogPolls({
+          now: Date.now(),
+        })
+      );
+    }, pollCheckMs);
+
+    return () => clearInterval(interval);
+  }, [dispatch]);
 
   return {
     temperamentRevealReady: temperament?.revealReady ?? false,

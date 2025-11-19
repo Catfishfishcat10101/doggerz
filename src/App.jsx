@@ -1,6 +1,7 @@
 // src/App.jsx
 import React from "react";
 import { Routes, Route, Navigate, useNavigate, Link } from "react-router-dom";
+import Splash from "./pages/Splash.jsx";
 import Landing from "./pages/Landing.jsx";
 import Adopt from "./pages/Adopt.jsx";
 import GamePage from "./pages/Game.jsx";
@@ -12,6 +13,7 @@ import Legal from "./pages/Legal.jsx";
 import NotFound from "./pages/NotFound.jsx";
 import Memory from "./pages/Memory.jsx";
 import Potty from "./pages/Potty.jsx";
+import DogAIEngine from "@/features/game/DogAIEngine.jsx";
 
 function AppHeader() {
   const navigate = useNavigate();
@@ -79,11 +81,13 @@ function AppFooter() {
 export default function App() {
   return (
     <div className="min-h-screen flex flex-col bg-zinc-950 text-zinc-50">
+      <DogAIEngine />
       <AppHeader />
 
       <main className="flex-1">
         <Routes>
-          <Route path="/" element={<Landing />} />
+          <Route path="/" element={<Splash />} />
+          <Route path="/landing" element={<Landing />} />
           <Route path="/adopt" element={<Adopt />} />
           <Route path="/play" element={<GamePage />} />
           <Route path="/game" element={<GamePage />} />

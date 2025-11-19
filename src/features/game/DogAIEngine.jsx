@@ -74,7 +74,7 @@ export default function DogAIEngine() {
     }
 
     // Cloud (debounced to avoid excessive writes)
-    const user = auth.currentUser;
+    const user = auth?.currentUser;
     if (user) {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);

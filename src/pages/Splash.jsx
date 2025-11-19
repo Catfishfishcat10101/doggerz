@@ -1,14 +1,21 @@
-// src/pages/Splash.jsx
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 
-/**
- * @param {{ mode?: "login" | "signup" }} props
- */
-export default function SplashPage(props) {
-  // Mode is now explicitly optional, so TS/JSX stops whining
-  const { mode } = props ?? {};
+const LIFE_STAGES = [
+  { label: "Puppy", subtitle: "0-6 months", copy: "High energy, fast growth, soaking up every cuddle." },
+  { label: "Adult", subtitle: "6 months - 7 years", copy: "Balanced needs, learns routines, pushes for adventures." },
+  { label: "Senior", subtitle: "7+ years", copy: "Slower pace, higher care requirements, legacy memories." },
+];
+
+const CLEANLINESS_STATES = [
+  { label: "Fresh", description: "Regular baths keep the coat shiny and stats boosted." },
+  { label: "Dirty", description: "Skip a wash and dirt accrues, lowering happiness." },
+  { label: "Fleas", description: "Neglect longer and fleas appear, sapping energy." },
+  { label: "Mange", description: "At rock bottom, the pup needs urgent care to recover." },
+];
+
+export default function SplashPage() {
   const navigate = useNavigate();
 
   const currentUser = useSelector((state) => {
@@ -21,137 +28,128 @@ export default function SplashPage(props) {
     return !!anyState.dog?.createdAt;
   });
 
-  const primaryCta = () => {
-    if (mode === "signup") {
-      // If we're already on the signup intro, go to the actual signup form
-      navigate("/signup/new");
-      return;
-    }
+  const heroCtaLabel = currentUser
+    ? hasDog
+      ? "Resume your pup"
+      : "Adopt your first pup"
+    : "Start caring";
 
+  const handlePrimary = () => {
     if (currentUser && hasDog) {
       navigate("/game");
-    } else if (currentUser && !hasDog) {
-      navigate("/adopt");
-    } else {
-      navigate("/signup");
+      return;
     }
+    if (currentUser) {
+      navigate("/adopt");
+      return;
+    }
+    navigate("/signup");
   };
 
-  const titleMode =
-    mode === "login"
-      ? "Log in to your Doggerz account"
-      : mode === "signup"
-      ? "Create your Doggerz account"
-      : "Your virtual pup, always one tap away.";
-
   return (
-    <div className="flex-1 flex items-center justify-center px-6 py-10">
-      <div className="max-w-5xl w-full flex flex-col lg:flex-row items-start gap-12">
-        {/* Left side: hero copy */}
-        <section className="flex-1">
-          <p className="text-[0.75rem] font-semibold tracking-[0.3em] text-emerald-400 uppercase mb-4">
-            Adopt. Care. Level up.
+    <div className="flex-1 bg-gradient-to-b from-[#050816] via-[#0b1020] to-[#010104] text-slate-100">
+      <div className="container mx-auto px-4 py-10 lg:py-16 space-y-10">
+        <section className="text-center space-y-6">
+          <p className="text-[0.7rem] uppercase tracking-[0.3em] text-emerald-300">
+            Real-time virtual companion
           </p>
-
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight mb-6">
-            {mode ? (
-              <span>{titleMode}</span>
-            ) : (
-              <>
-                Your <span className="text-emerald-400">virtual pup</span>,
-                always one tap away.
-              </>
-            )}
+          <h1 className="text-[clamp(3rem,10vw,6rem)] font-black tracking-tight leading-none">
+            <span className="text-emerald-400 drop-shadow-[0_0_25px_rgba(16,185,129,0.35)]">Doggerz</span>
           </h1>
-
-          {!mode && (
-            <p className="text-sm sm:text-base text-zinc-300 max-w-xl mb-6">
-              Adopt your pup and take care of them over real time. Keep them
-              fed, entertained, rested, and clean. How you treat your dog
-              determines how long they live — no click-spamming, no idle mining.
-            </p>
-          )}
-
-          {mode && (
-            <p className="text-sm text-zinc-300 max-w-xl mb-6">
-              Use the navigation above to sign in or sign up. Once you’re in,
-              you can adopt your first pup and jump into the yard.
-            </p>
-          )}
-
-          <div className="flex flex-wrap items-center gap-3">
+          <p className="max-w-2xl mx-auto text-base sm:text-lg text-slate-300">
+            Adopt a pup, care for it over real hours, and watch its personality evolve from playful puppy to wise senior.
+            How you treat your dog literally determines its lifespan.
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-3">
             <button
               type="button"
-              onClick={primaryCta}
-              className="rounded-full bg-emerald-500 hover:bg-emerald-400 text-zinc-950 text-sm font-semibold px-6 py-3 transition"
+              onClick={handlePrimary}
+              className="rounded-full bg-emerald-500 hover:bg-emerald-400 text-black font-semibold px-8 py-3 text-sm tracking-wide"
             >
-              {currentUser && hasDog
-                ? "Resume your pup"
-                : currentUser
-                ? "Adopt your pup"
-                : "Get started"}
+              {heroCtaLabel}
             </button>
-
-            {!mode && currentUser && (
-              <p className="text-xs text-zinc-400">
-                Logged in as{" "}
-                <span className="font-semibold">
-                  {currentUser.displayName || currentUser.email}
-                </span>
-                .{" "}
-                <button
-                  type="button"
-                  className="text-emerald-400 hover:underline"
-                  onClick={() => navigate("/game")}
-                >
-                  Jump back into the yard.
-                </button>
-              </p>
-            )}
-
-            {!mode && !currentUser && (
-              <p className="text-xs text-zinc-400">
-                Already have an account?{" "}
-                <Link
-                  to="/login"
-                  className="text-emerald-400 hover:underline"
-                >
-                  Log in
-                </Link>
-                .
-              </p>
-            )}
+            <button
+              type="button"
+              onClick={() => navigate("/login")}
+              className="rounded-full border border-white/20 px-8 py-3 text-sm font-semibold hover:border-white/50 transition"
+            >
+              Log in
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate("/signup")}
+              className="rounded-full border border-emerald-400/30 px-8 py-3 text-sm font-semibold text-emerald-200 hover:border-emerald-400"
+            >
+              Sign up
+            </button>
           </div>
+          {!currentUser && (
+            <p className="text-xs text-slate-400">
+              Already created an account?{" "}
+              <Link to="/login" className="text-emerald-300 hover:text-emerald-200 font-semibold">
+                Jump back in
+              </Link>
+              .
+            </p>
+          )}
         </section>
 
-        {/* Right side: compact explainer with CTA to About */}
-        <aside className="w-full lg:w-80">
-          <div className="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-5">
-            <p className="text-xs uppercase tracking-[0.25em] text-zinc-400 mb-3">
-              How Doggerz works
-            </p>
-            <ul className="space-y-2 text-xs text-zinc-300">
-              <li>• Your dog slowly ages even while you&apos;re logged out.</li>
-              <li>
-                • Hunger, boredom, and dirtiness creep up over real hours, not
-                button mashing.
+        <section className="grid gap-6 lg:grid-cols-2">
+          <article className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-sm p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Life doesn’t pause</h2>
+              <span className="text-xs uppercase tracking-[0.25em] text-emerald-300">Lifecycle</span>
+            </div>
+            <ol className="space-y-4">
+              {LIFE_STAGES.map((stage, idx) => (
+                <li key={stage.label} className="flex gap-4">
+                  <div className="text-emerald-300 font-semibold">{idx + 1}</div>
+                  <div>
+                    <p className="text-sm text-slate-200 font-semibold">
+                      {stage.label} • <span className="text-slate-400">{stage.subtitle}</span>
+                    </p>
+                    <p className="text-xs text-slate-400">{stage.copy}</p>
+                  </div>
+                </li>
+              ))}
+              <li className="flex gap-4">
+                <div className="text-rose-300 font-semibold">∞</div>
+                <div>
+                  <p className="text-sm text-rose-200 font-semibold">Legacy</p>
+                  <p className="text-xs text-slate-400">
+                    Care well and extend their days. Neglect them and the story ends sooner.
+                  </p>
+                </div>
               </li>
-              <li>
-                • As cleanliness drops, your pup can go from dirty → fleas →
-                mange.
-              </li>
-              <li>• Taking good care of your pup extends their life.</li>
-            </ul>
+            </ol>
+          </article>
 
+          <article className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-sm p-6 space-y-5">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Dog polls & cleanliness</h2>
+              <span className="text-xs uppercase tracking-[0.25em] text-emerald-300">Care loops</span>
+            </div>
+            <p className="text-sm text-slate-300">
+              Timed “dog polls” nudge you with quick decisions. Ignore them and the pup tells everyone how it feels.
+              Bathing is critical—the longer you wait, the worse the consequences.
+            </p>
+            <div className="grid gap-3 md:grid-cols-2">
+              {CLEANLINESS_STATES.map((state) => (
+                <div key={state.label} className="rounded-2xl bg-black/20 border border-white/10 p-3">
+                  <p className="text-sm font-semibold text-slate-100">{state.label}</p>
+                  <p className="text-xs text-slate-400">{state.description}</p>
+                </div>
+              ))}
+            </div>
             <button
               type="button"
               onClick={() => navigate("/about")}
-              className="mt-4 text-xs font-semibold text-emerald-300 hover:text-emerald-200 hover:underline underline-offset-2"
+              className="text-xs font-semibold text-emerald-300 hover:text-emerald-200"
             >
-              Read the full guide →
+              Read the full care guide →
             </button>
-          </div>
-        </aside>
+          </article>
+        </section>
       </div>
     </div>
   );

@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { PATHS } from "../routes.js";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/firebase.js";
+import { auth, firebaseReady, firebaseMissingKeys } from "@/firebase.js";
 
 export default function SignupPage() {
   const [email, setEmail] = useState("");
@@ -37,6 +37,24 @@ export default function SignupPage() {
       setBusy(false);
     }
   };
+
+  if (!firebaseReady || !auth) {
+    const missingList = firebaseMissingKeys.length
+      ? firebaseMissingKeys.join(", ")
+      : "Firebase project settings";
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-zinc-950 text-zinc-50 p-6">
+        <div className="max-w-lg space-y-4 text-center">
+          <h1 className="text-3xl font-bold">Signup disabled</h1>
+          <p className="text-zinc-400 text-sm leading-relaxed">
+            We can't talk to Firebase until the local <code>.env.local</code> includes
+            valid keys ({missingList}). Add them from your Firebase console and restart
+            the dev server to bring this screen back online.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-zinc-950 text-zinc-50">

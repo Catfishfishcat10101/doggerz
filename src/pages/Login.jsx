@@ -10,7 +10,12 @@ import {
   browserSessionPersistence,
   sendPasswordResetEmail,
 } from "firebase/auth";
-import { auth, googleProvider } from "@/firebase.js";
+import {
+  auth,
+  googleProvider,
+  firebaseReady,
+  firebaseMissingKeys,
+} from "@/firebase.js";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/firebase.js";
 
@@ -121,6 +126,27 @@ export default function LoginPage() {
       setBusy(false);
     }
   };
+
+  if (!firebaseReady || !auth || !db) {
+    const missingList = firebaseMissingKeys.length
+      ? firebaseMissingKeys.join(", ")
+      : "Firebase project settings";
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-zinc-950 text-zinc-50 p-6">
+        <div className="max-w-lg space-y-4 text-center">
+          <h1 className="text-3xl font-bold">Firebase not configured</h1>
+          <p className="text-zinc-400 text-sm leading-relaxed">
+            Cloud login, signup, and sync features are disabled because the Firebase
+            credentials are missing or invalid. Update <code>.env.local</code> with your
+            Firebase web config ({missingList}) and restart Vite.
+          </p>
+          <p className="text-xs text-zinc-500">
+            Once credentials are present the login screen will re-enable automatically.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-zinc-950 text-zinc-50">

@@ -1,7 +1,7 @@
 // src/redux/dogThunks.js
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "@/firebase.js";
+import { db, firebaseReady } from "@/firebase.js";
 import { hydrateDog } from "./dogSlice.js";
 
 const DOG_COLLECTION = "dogs";
@@ -33,6 +33,11 @@ export const loadDogFromCloud = createAsyncThunk(
   "dog/loadDogFromCloud",
   async ({ uid }, { dispatch, rejectWithValue }) => {
     try {
+      if (!firebaseReady || !db) {
+        return rejectWithValue(
+          "Cloud sync disabled until Firebase is configured."
+        );
+      }
       if (!uid) return rejectWithValue("Missing uid");
 
       const ref = doc(db, DOG_COLLECTION, uid);
@@ -57,6 +62,11 @@ export const saveDogToCloud = createAsyncThunk(
   "dog/saveDogToCloud",
   async ({ uid, dog }, { rejectWithValue }) => {
     try {
+      if (!firebaseReady || !db) {
+        return rejectWithValue(
+          "Cloud sync disabled until Firebase is configured."
+        );
+      }
       if (!uid || !dog) return rejectWithValue("Missing uid or dog");
 
       const ref = doc(db, DOG_COLLECTION, uid);

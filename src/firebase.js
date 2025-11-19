@@ -6,30 +6,65 @@ import {
   FacebookAuthProvider,
 } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import {
+  FIREBASE as firebaseConfig,
+  isFirebaseConfigured,
+  missingFirebaseKeys,
+} from "./config/env.js";
 
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+let missingConfigWarned = false;
+
+const logMissingConfig = () => {
+  if (isFirebaseConfigured || missingConfigWarned) return;
+  missingConfigWarned = true;
+  const printable = missingFirebaseKeys.length
+    ? missingFirebaseKeys.join(", ")
+    : "unknown";
+  console.warn(
+    `[Doggerz] Firebase disabled. Missing config keys: ${printable}. ` +
+      "Populate .env.local or disable cloud features."
+  );
 };
 
-if (!firebaseConfig.apiKey) {
-  console.warn(
-    "[Doggerz] Firebase API key missing. Check your .env.local (VITE_FIREBASE_API_KEY)."
-  );
+let app = null;
+let authInstance = null;
+let dbInstance = null;
+let googleProviderInstance = null;
+let facebookProviderInstance = null;
+let firebaseInitError = null;
+
+if (isFirebaseConfigured) {
+  try {
+    app = initializeApp(firebaseConfig);
+    authInstance = getAuth(app);
+    dbInstance = getFirestore(app);
+    googleProviderInstance = new GoogleAuthProvider();
+    facebookProviderInstance = new FacebookAuthProvider();
+  } catch (err) {
+    firebaseInitError = err;
+    console.error("[Doggerz] Firebase initialization failed", err);
+  }
+} else {
+  logMissingConfig();
 }
 
-const app = initializeApp(firebaseConfig);
+export const firebaseReady = Boolean(
+  app && authInstance && dbInstance && !firebaseInitError
+);
+export const firebaseMissingKeys = missingFirebaseKeys;
+export const firebaseError = firebaseInitError;
 
-// Auth instance
-export const auth = getAuth(app);
+export const auth = firebaseReady ? authInstance : null;
+export const db = firebaseReady ? dbInstance : null;
+export const googleProvider = firebaseReady ? googleProviderInstance : null;
+export const facebookProvider = firebaseReady ? facebookProviderInstance : null;
 
-// Social providers (already used in your login UI)
-export const googleProvider = new GoogleAuthProvider();
-export const facebookProvider = new FacebookAuthProvider();
-
-// Firestore instance for cloud dog save/load
-export const db = getFirestore(app);
+export const assertFirebaseReady = (featureName = "this feature") => {
+  if (firebaseReady) return;
+  const missing = firebaseMissingKeys.length
+    ? `Missing keys: ${firebaseMissingKeys.join(", ")}.`
+    : firebaseError
+    ? `Init error: ${firebaseError.message}`
+    : "Unknown configuration issue.";
+  throw new Error(`[Doggerz] ${featureName} requires Firebase. ${missing}`);
+};

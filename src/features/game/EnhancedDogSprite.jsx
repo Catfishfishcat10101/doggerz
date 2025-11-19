@@ -218,7 +218,7 @@ export default function EnhancedDogSprite() {
       <p className="text-xs text-center mt-2 text-zinc-400 font-medium">
         {age.label} • {dog.name}
       </p>
-      {process.env.NODE_ENV === 'development' && (
+      {import.meta.env?.DEV && (
         <p className="text-xs text-center text-zinc-600 font-mono">
           {animation} (p{currentPriorityRef.current})
         </p>

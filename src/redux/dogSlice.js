@@ -1,5 +1,12 @@
 // src/redux/dogSlice.js
 import { createSlice } from "@reduxjs/toolkit";
+import { calculateDogAge } from "@/utils/lifecycle.js";
+import {
+  LIFECYCLE_STAGE_MODIFIERS,
+  CLEANLINESS_THRESHOLDS,
+  CLEANLINESS_TIER_EFFECTS,
+  DOG_POLL_CONFIG,
+} from "@/constants/game.js";
 
 export const DOG_STORAGE_KEY = "doggerz:dogState";
 
@@ -12,6 +19,7 @@ const DECAY_PER_HOUR = {
   energy: 5,
   cleanliness: 3,
 };
+const DECAY_SPEED = 0.65;
 
 const MOOD_SAMPLE_MINUTES = 60;
 const LEVEL_XP_STEP = 100;
@@ -78,17 +86,42 @@ const initialStreak = {
   lastActiveDate: null,
 };
 
+const POTTY_TRAINING_GOAL = 8;
+const DEFAULT_LIFE_STAGE = { stage: "PUPPY", label: "Puppy", days: 0 };
+const CLEANLINESS_TIER_ORDER = ["FRESH", "DIRTY", "FLEAS", "MANGE"];
+const REAL_DAY_MS = 24 * 60 * 60 * 1000;
+const POTTY_TRAINED_POTTY_GAIN_MULTIPLIER = 0.65;
+
+function createInitialTrainingState() {
+  return {
+    potty: {
+      successCount: 0,
+      goal: POTTY_TRAINING_GOAL,
+      completedAt: null,
+    },
+    adult: {
+      lastCompletedDate: null,
+      streak: 0,
+      misses: 0,
+      lastPenaltyDate: null,
+    },
+  };
+}
+
 const initialState = {
   name: "Pup",
   level: 1,
   xp: 0,
   coins: 0,
+  adoptedAt: null,
+  lifeStage: { stage: "PUPPY", label: "Puppy", days: 0 },
   stats: {
     hunger: 50,
     happiness: 60,
     energy: 60,
     cleanliness: 60,
   },
+  cleanlinessTier: "FRESH",
   poopCount: 0,
   pottyLevel: 0,
   isAsleep: false,
@@ -101,6 +134,14 @@ const initialState = {
   mood: initialMood,
   journal: initialJournal,
   streak: initialStreak,
+  training: createInitialTrainingState(),
+  polls: {
+    active: null,
+    lastPromptId: null,
+    lastSpawnedAt: null,
+    lastResolvedAt: null,
+    history: [],
+  },
 };
 
 /* ---------- helpers ---------- */
@@ -136,7 +177,8 @@ function applyDecay(state, now = nowMs()) {
 
   Object.entries(state.stats).forEach(([key, value]) => {
     const rate = DECAY_PER_HOUR[key] || 0;
-    let delta = rate * diffHours;
+    const stageMultiplier = getStageMultiplier(state, key);
+    let delta = rate * DECAY_SPEED * diffHours * stageMultiplier;
 
     if (key === "hunger") {
       delta *= hungerMultiplier;
@@ -376,6 +418,303 @@ function evaluateTemperament(state, now = nowMs()) {
   t.lastEvaluatedAt = now;
 }
 
+function resolveCleanlinessTierFromValue(value = 0) {
+  if (value >= CLEANLINESS_THRESHOLDS.FRESH) return "FRESH";
+  if (value >= CLEANLINESS_THRESHOLDS.DIRTY) return "DIRTY";
+  if (value >= CLEANLINESS_THRESHOLDS.FLEAS) return "FLEAS";
+  return "MANGE";
+}
+
+function syncLifecycleState(state, now = nowMs()) {
+  const adoptedAt = state.adoptedAt || state.temperament?.adoptedAt || now;
+  const age = calculateDogAge(adoptedAt);
+  state.lifeStage = {
+    stage: age.stage || DEFAULT_LIFE_STAGE.stage,
+    label: age.label || DEFAULT_LIFE_STAGE.label,
+    days: age.days,
+  };
+  return state.lifeStage;
+}
+
+function syncCleanlinessTier(state, now = nowMs()) {
+  const cleanliness = state.stats?.cleanliness ?? 0;
+  const nextTier = resolveCleanlinessTierFromValue(cleanliness);
+  const previousTier = state.cleanlinessTier || "FRESH";
+
+  if (nextTier !== previousTier) {
+    state.cleanlinessTier = nextTier;
+    const tierEffect = CLEANLINESS_TIER_EFFECTS[nextTier];
+    if (tierEffect?.journalSummary) {
+      pushJournalEntry(state, {
+        type: "CARE",
+        moodTag: "DIRTY",
+        summary: tierEffect.label || nextTier,
+        body: tierEffect.journalSummary,
+        timestamp: now,
+      });
+    }
+  } else if (!state.cleanlinessTier) {
+    state.cleanlinessTier = nextTier;
+  }
+
+  return state.cleanlinessTier;
+}
+
+function finalizeDerivedState(state, now = nowMs()) {
+  syncLifecycleState(state, now);
+  return syncCleanlinessTier(state, now);
+}
+
+function applyCleanlinessPenalties(state, tierOverride) {
+  const tier = tierOverride || state.cleanlinessTier || "FRESH";
+  const effects = CLEANLINESS_TIER_EFFECTS[tier];
+  if (!effects) return;
+
+  if (effects.happinessTickPenalty) {
+    state.stats.happiness = clamp(
+      state.stats.happiness - effects.happinessTickPenalty,
+      0,
+      100
+    );
+  }
+
+  if (effects.energyTickPenalty) {
+    state.stats.energy = clamp(
+      state.stats.energy - effects.energyTickPenalty,
+      0,
+      100
+    );
+  }
+}
+
+function getStageMultiplier(state, statKey) {
+  const stageKey = state.lifeStage?.stage || DEFAULT_LIFE_STAGE.stage;
+  const modifiers =
+    LIFECYCLE_STAGE_MODIFIERS[stageKey] ||
+    LIFECYCLE_STAGE_MODIFIERS[DEFAULT_LIFE_STAGE.stage] ||
+    {};
+  return modifiers[statKey] ?? 1;
+}
+
+function getCleanlinessEffect(state) {
+  return (
+    CLEANLINESS_TIER_EFFECTS[state.cleanlinessTier] ||
+    CLEANLINESS_TIER_EFFECTS.FRESH ||
+    {}
+  );
+}
+
+function getIsoDate(ms) {
+  return new Date(ms).toISOString().slice(0, 10);
+}
+
+function recordPuppyPottySuccess(state, now = nowMs()) {
+  const training = ensureTrainingState(state);
+  const potty = training.potty;
+  if (!potty || potty.completedAt) return;
+  const stage = state.lifeStage?.stage || DEFAULT_LIFE_STAGE.stage;
+  if (stage !== "PUPPY") return;
+
+  potty.successCount = Math.min(potty.successCount + 1, potty.goal);
+
+  if (potty.successCount >= potty.goal) {
+    potty.completedAt = now;
+    state.stats.happiness = clamp(state.stats.happiness + 5, 0, 100);
+    pushJournalEntry(state, {
+      type: "TRAINING",
+      moodTag: "PROUD",
+      summary: "Potty training complete",
+      body: "Your puppy now knows how to signal when nature calls. Accidents will slow way down!",
+      timestamp: now,
+    });
+  }
+}
+
+function getPottyTrainingMultiplier(state) {
+  const training = ensureTrainingState(state);
+  return training.potty?.completedAt ? POTTY_TRAINED_POTTY_GAIN_MULTIPLIER : 1;
+}
+
+function completeAdultTrainingSession(state, now = nowMs()) {
+  const training = ensureTrainingState(state);
+  const stage = state.lifeStage?.stage || DEFAULT_LIFE_STAGE.stage;
+  if (stage === "PUPPY") return;
+  const adult = training.adult;
+  const iso = getIsoDate(now);
+  if (adult.lastCompletedDate === iso) return;
+
+  if (adult.lastCompletedDate) {
+    const lastDate = new Date(adult.lastCompletedDate);
+    const currentDate = new Date(iso);
+    const diffMs = currentDate.getTime() - lastDate.getTime();
+    const diffDays = Math.round(diffMs / REAL_DAY_MS);
+    adult.streak = diffDays === 1 ? adult.streak + 1 : 1;
+  } else {
+    adult.streak = 1;
+  }
+
+  adult.lastCompletedDate = iso;
+  adult.misses = 0;
+  adult.lastPenaltyDate = null;
+  state.coins += 40;
+
+  pushJournalEntry(state, {
+    type: "TRAINING",
+    moodTag: "FOCUSED",
+    summary: "Adult training complete",
+    body: `Today's obedience session is logged. Training streak: ${adult.streak}.`,
+    timestamp: now,
+  });
+}
+
+function applyAdultTrainingMissPenalty(state, now = nowMs()) {
+  const training = ensureTrainingState(state);
+  const stage = state.lifeStage?.stage || DEFAULT_LIFE_STAGE.stage;
+  if (stage === "PUPPY") return;
+
+  const adult = training.adult;
+  if (!adult.lastCompletedDate) return;
+
+  const iso = getIsoDate(now);
+  if (adult.lastPenaltyDate === iso) return;
+  if (adult.lastCompletedDate === iso) return;
+
+  const lastDate = new Date(adult.lastCompletedDate);
+  const currentDate = new Date(iso);
+  const diffMs = currentDate.getTime() - lastDate.getTime();
+  const diffDays = Math.max(1, Math.round(diffMs / REAL_DAY_MS));
+
+  adult.misses += diffDays;
+  adult.streak = 0;
+  adult.lastPenaltyDate = iso;
+  state.stats.happiness = clamp(state.stats.happiness - diffDays * 3, 0, 100);
+
+  pushJournalEntry(state, {
+    type: "TRAINING",
+    moodTag: "RESTLESS",
+    summary: "Needs adult training",
+    body: "Too many days without a training session. Schedule time to practice commands!",
+    timestamp: now,
+  });
+}
+
+function ensurePollState(state) {
+  if (!state.polls) {
+    state.polls = {
+      active: null,
+      lastPromptId: null,
+      lastSpawnedAt: null,
+      lastResolvedAt: null,
+      history: [],
+    };
+  }
+  if (!Array.isArray(state.polls.history)) {
+    state.polls.history = [];
+  }
+  return state.polls;
+}
+
+function ensureTrainingState(state) {
+  if (!state.training) {
+    state.training = createInitialTrainingState();
+    return state.training;
+  }
+  const defaults = createInitialTrainingState();
+  if (!state.training.potty) {
+    state.training.potty = { ...defaults.potty };
+  }
+  if (!state.training.adult) {
+    state.training.adult = { ...defaults.adult };
+  }
+  return state.training;
+}
+
+function pickNextPoll(previousId) {
+  const prompts = DOG_POLL_CONFIG?.prompts || [];
+  if (!prompts.length) return null;
+  const pool = prompts.filter((p) => p.id !== previousId);
+  const selection = pool.length ? pool : prompts;
+  const index = Math.floor(Math.random() * selection.length);
+  return selection[index] || null;
+}
+
+function applyPollEffects(state, effects = {}) {
+  Object.entries(effects).forEach(([stat, delta]) => {
+    if (typeof state.stats?.[stat] !== "number") return;
+    state.stats[stat] = clamp(state.stats[stat] + delta, 0, 100);
+  });
+}
+
+function spawnDogPollInternal(state, now = nowMs()) {
+  const pollState = ensurePollState(state);
+  if (pollState.active) return pollState.active;
+  const next = pickNextPoll(pollState.lastPromptId);
+  if (!next) return null;
+
+  pollState.active = {
+    id: next.id,
+    prompt: next.prompt,
+    effects: next.effects || {},
+    startedAt: now,
+    expiresAt: now + (DOG_POLL_CONFIG?.timeoutMs || 60000),
+  };
+  pollState.lastPromptId = next.id;
+  pollState.lastSpawnedAt = now;
+  return pollState.active;
+}
+
+function resolveActivePoll(state, { accepted, reason, now = nowMs() }) {
+  const pollState = ensurePollState(state);
+  const active = pollState.active;
+  if (!active) return;
+
+  if (accepted) {
+    applyPollEffects(state, active.effects);
+    applyXp(state, 4);
+    maybeSampleMood(state, now, "POLL_ACCEPT");
+    pushJournalEntry(state, {
+      type: "POLL",
+      moodTag: "HAPPY",
+      summary: "You handled a dog poll",
+      body: `You said yes to: ${active.prompt}`,
+      timestamp: now,
+    });
+  } else {
+    const penalty = reason === "TIMEOUT" ? 6 : 4;
+    state.stats.happiness = clamp(state.stats.happiness - penalty, 0, 100);
+    maybeSampleMood(
+      state,
+      now,
+      reason === "TIMEOUT" ? "POLL_TIMEOUT" : "POLL_DECLINE"
+    );
+    pushJournalEntry(state, {
+      type: "POLL",
+      moodTag: "SASSY",
+      summary: "Ignored pup feedback",
+      body:
+        reason === "TIMEOUT"
+          ? "The pup asked for help and eventually gave up."
+          : "You said no this time. They took note!",
+      timestamp: now,
+    });
+  }
+
+  pollState.history.unshift({
+    id: active.id,
+    prompt: active.prompt,
+    accepted,
+    reason: reason || (accepted ? "ACCEPT" : "DECLINE"),
+    resolvedAt: now,
+  });
+  if (pollState.history.length > 20) {
+    pollState.history.length = 20;
+  }
+
+  pollState.active = null;
+  pollState.lastResolvedAt = now;
+  finalizeDerivedState(state, now);
+}
+
 /* ---------------------- slice ---------------------- */
 
 const dogSlice = createSlice({
@@ -384,11 +723,27 @@ const dogSlice = createSlice({
   reducers: {
     hydrateDog(state, { payload }) {
       if (!payload || typeof payload !== "object") return;
-      return {
+      const merged = {
         ...state,
         ...payload,
         stats: { ...state.stats, ...(payload.stats || {}) },
       };
+
+      merged.lifeStage = payload.lifeStage ||
+        state.lifeStage || {
+          ...DEFAULT_LIFE_STAGE,
+        };
+      merged.training = {
+        ...createInitialTrainingState(),
+        ...(payload.training || state.training || {}),
+      };
+      ensureTrainingState(merged);
+      merged.cleanlinessTier =
+        payload.cleanlinessTier || state.cleanlinessTier || "FRESH";
+      merged.adoptedAt = payload.adoptedAt || state.adoptedAt || nowMs();
+
+      finalizeDerivedState(merged, nowMs());
+      return merged;
     },
 
     setDogName(state, { payload }) {
@@ -397,7 +752,11 @@ const dogSlice = createSlice({
 
     setAdoptedAt(state, { payload }) {
       // @ts-ignore
-      state.temperament.adoptedAt = payload ?? nowMs();
+      const adoptedAt = payload ?? nowMs();
+      // @ts-ignore
+      state.temperament.adoptedAt = adoptedAt;
+      state.adoptedAt = adoptedAt;
+      finalizeDerivedState(state, adoptedAt);
     },
 
     setCareerLifestyle(state, { payload }) {
@@ -439,6 +798,7 @@ const dogSlice = createSlice({
       const date = new Date(now).toISOString().slice(0, 10);
       updateStreak(state.streak, date);
       updateTemperamentReveal(state, now);
+      finalizeDerivedState(state, now);
     },
 
     play(state, { payload }) {
@@ -461,6 +821,7 @@ const dogSlice = createSlice({
       const date = new Date(now).toISOString().slice(0, 10);
       updateStreak(state.streak, date);
       updateTemperamentReveal(state, now);
+      finalizeDerivedState(state, now);
     },
 
     rest(state, { payload }) {
@@ -476,6 +837,7 @@ const dogSlice = createSlice({
       applyXp(state, 3);
       maybeSampleMood(state, now, "REST");
       updateTemperamentReveal(state, now);
+      finalizeDerivedState(state, now);
     },
 
     wakeUp(state) {
@@ -495,10 +857,14 @@ const dogSlice = createSlice({
       applyXp(state, 4);
       maybeSampleMood(state, now, "BATHE");
       updateTemperamentReveal(state, now);
+      finalizeDerivedState(state, now);
     },
 
     increasePottyLevel(state, { payload }) {
-      const inc = payload?.amount ?? 10;
+      const effects = getCleanlinessEffect(state);
+      const multiplier = effects.pottyGainMultiplier || 1;
+      const trainingMultiplier = getPottyTrainingMultiplier(state);
+      const inc = (payload?.amount ?? 10) * multiplier * trainingMultiplier;
       state.pottyLevel = clamp(state.pottyLevel + inc, 0, 100);
     },
 
@@ -510,6 +876,8 @@ const dogSlice = createSlice({
       state.memory.lastSeenAt = now;
       applyXp(state, 2);
       maybeSampleMood(state, now, "POTTY");
+      recordPuppyPottySuccess(state, now);
+      finalizeDerivedState(state, now);
     },
 
     scoopPoop(state, { payload }) {
@@ -522,6 +890,7 @@ const dogSlice = createSlice({
         maybeSampleMood(state, now, "SCOOP");
       }
       state.memory.lastSeenAt = now;
+      finalizeDerivedState(state, now);
     },
 
     /* ------------- time / login ------------- */
@@ -529,6 +898,8 @@ const dogSlice = createSlice({
     tickDog(state, { payload }) {
       const now = payload?.now ?? nowMs();
       applyDecay(state, now);
+      const tier = finalizeDerivedState(state, now);
+      applyCleanlinessPenalties(state, tier);
       maybeSampleMood(state, now, "TICK");
       updateTemperamentReveal(state, now);
       evaluateTemperament(state, now);
@@ -537,6 +908,8 @@ const dogSlice = createSlice({
     registerSessionStart(state, { payload }) {
       const now = payload?.now ?? nowMs();
       applyDecay(state, now);
+      const tier = finalizeDerivedState(state, now);
+      applyCleanlinessPenalties(state, tier);
       maybeSampleMood(state, now, "SESSION_START");
       state.memory.lastSeenAt = now;
 
@@ -544,6 +917,38 @@ const dogSlice = createSlice({
       updateStreak(state.streak, date);
       updateTemperamentReveal(state, now);
       evaluateTemperament(state, now);
+      applyAdultTrainingMissPenalty(state, now);
+    },
+
+    tickDogPolls(state, { payload }) {
+      const now = payload?.now ?? nowMs();
+      const pollState = ensurePollState(state);
+      if (pollState.active) {
+        if (pollState.active.expiresAt && now >= pollState.active.expiresAt) {
+          resolveActivePoll(state, {
+            accepted: false,
+            reason: "TIMEOUT",
+            now,
+          });
+        }
+        return;
+      }
+
+      const interval = DOG_POLL_CONFIG?.intervalMs || 0;
+      if (!interval) return;
+      if (
+        !pollState.lastSpawnedAt ||
+        now - pollState.lastSpawnedAt >= interval
+      ) {
+        spawnDogPollInternal(state, now);
+      }
+    },
+
+    respondToDogPoll(state, { payload }) {
+      const now = payload?.now ?? nowMs();
+      const accepted = !!payload?.accepted;
+      const reason = payload?.reason || (accepted ? "ACCEPT" : "DECLINE");
+      resolveActivePoll(state, { accepted, reason, now });
     },
 
     /* ------------- skills ------------- */
@@ -569,6 +974,7 @@ const dogSlice = createSlice({
       state.stats.energy = clamp(state.stats.energy - 5, 0, 100);
 
       applyXp(state, 10);
+      completeAdultTrainingSession(state, now);
       maybeSampleMood(state, now, "TRAINING");
 
       pushJournalEntry(state, {
@@ -582,6 +988,7 @@ const dogSlice = createSlice({
       const date = new Date(now).toISOString().slice(0, 10);
       updateStreak(state.streak, date);
       updateTemperamentReveal(state, now);
+      finalizeDerivedState(state, now);
     },
 
     addJournalEntry(state, { payload }) {
@@ -607,6 +1014,10 @@ export const selectDogJournal = (state) => state.dog.journal;
 export const selectDogTemperament = (state) => state.dog.temperament;
 export const selectDogSkills = (state) => state.dog.skills;
 export const selectDogStreak = (state) => state.dog.streak;
+export const selectDogLifeStage = (state) => state.dog.lifeStage;
+export const selectDogCleanlinessTier = (state) => state.dog.cleanlinessTier;
+export const selectDogPolls = (state) => state.dog.polls;
+export const selectDogTraining = (state) => state.dog.training;
 
 /* ----------------------- actions ----------------------- */
 
@@ -627,6 +1038,8 @@ export const {
   scoopPoop,
   tickDog,
   registerSessionStart,
+  tickDogPolls,
+  respondToDogPoll,
   trainObedience,
   addJournalEntry,
   toggleDebug,
