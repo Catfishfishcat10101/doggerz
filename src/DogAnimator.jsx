@@ -1,3 +1,4 @@
+// DogAnimator.jsx
 const SHEET_WIDTH = 1024;
 const SHEET_HEIGHT = 1024;
 

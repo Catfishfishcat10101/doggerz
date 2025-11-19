@@ -1,4 +1,6 @@
 // src/features/game/EnhancedDogSprite.jsx
+// @ts-nocheck  // remove this line if you want TS checking here
+
 import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useSelector } from "react-redux";
 import { selectDog } from "@/redux/dogSlice.js";
@@ -32,7 +34,7 @@ const ANIMATIONS = {
 
 const DEFAULT_ANIMATION = "idle_neutral";
 
-// Animation priorities (higher = more important, can't be interrupted)
+// Higher = can't be interrupted by lower-priority anims
 const ANIMATION_PRIORITY = {
   sleep_curled: 10,
   sleep_stretched: 10,
@@ -47,10 +49,19 @@ const ANIMATION_PRIORITY = {
   idle_neutral: 1,
 };
 
+const SPRITE_SIZE = 128;
+const SHEET_COLS = 16;
+const SHEET_SIZE = SPRITE_SIZE * SHEET_COLS;
+
 export default function EnhancedDogSprite() {
   const dog = useSelector(selectDog);
+
   const [animation, setAnimation] = useState(DEFAULT_ANIMATION);
   const [frameIndex, setFrameIndex] = useState(0);
+
+  // Time-of-day is its own reactive thing, not tied to adoption date
+  const [timeOfDay, setTimeOfDay] = useState(() => getTimeOfDay());
+
   const timeoutsRef = useRef([]);
   const lastActionRef = useRef(null);
   const howlCheckedRef = useRef(false);
@@ -65,11 +76,24 @@ export default function EnhancedDogSprite() {
     };
   }, []);
 
+  // Tick time-of-day every 60s so weather / lighting / howling can react
+  useEffect(() => {
+    const id = setInterval(() => {
+      try {
+        setTimeOfDay(getTimeOfDay());
+      } catch (err) {
+        console.error("[Doggerz] Failed to get time of day", err);
+      }
+    }, 60_000);
+
+    return () => clearInterval(id);
+  }, []);
+
   // Helper to set animation with priority check
   const playAnimation = useCallback((anim, duration) => {
     const newPriority = ANIMATION_PRIORITY[anim] || 1;
 
-    // Don't interrupt higher priority animations
+    // Don't interrupt higher-priority animation
     if (newPriority < currentPriorityRef.current) {
       return;
     }
@@ -83,35 +107,34 @@ export default function EnhancedDogSprite() {
         setAnimation(DEFAULT_ANIMATION);
       }, duration);
       timeoutsRef.current.push(timeout);
-    } else {
-      // Permanent animation (like sleep) - reset priority when cleared
-      currentPriorityRef.current = newPriority;
     }
   }, []);
 
   // Calculate age and sprite sheet (memoized)
-  const { age, spriteSheet, timeOfDay } = useMemo(() => {
-    if (!dog?.adoptedAt) return { age: null, spriteSheet: null, timeOfDay: 'day' };
+  const { age, spriteSheet } = useMemo(() => {
+    if (!dog?.adoptedAt) {
+      return { age: null, spriteSheet: null };
+    }
 
     try {
       const calculatedAge = calculateDogAge(dog.adoptedAt);
       return {
         age: calculatedAge,
         spriteSheet: getSpriteSheet(calculatedAge.stage),
-        timeOfDay: getTimeOfDay(),
       };
     } catch (error) {
-      console.error('Error calculating dog data:', error);
-      return { age: null, spriteSheet: null, timeOfDay: 'day' };
+      console.error("[Doggerz] Error calculating dog age / sprite sheet:", error);
+      return { age: null, spriteSheet: null };
     }
   }, [dog?.adoptedAt]);
 
-  // Auto-trigger howling at full moon (once per moon phase)
+  // Auto-trigger howling at full moon (once per moon phase-ish)
   useEffect(() => {
     if (!dog) return;
 
     try {
-      const shouldHowl = shouldHowlAtMoon();
+      // Pass timeOfDay in case your helper supports it; harmless if ignored
+      const shouldHowl = shouldHowlAtMoon(timeOfDay);
 
       if (shouldHowl && !dog.isAsleep && !howlCheckedRef.current) {
         howlCheckedRef.current = true;
@@ -120,74 +143,91 @@ export default function EnhancedDogSprite() {
           playAnimation("howl", 3000);
         }
       } else if (!shouldHowl) {
+        // Reset flag when moon phase / condition changes
         howlCheckedRef.current = false;
       }
     } catch (error) {
-      console.error('Error in howl check:', error);
+      console.error("[Doggerz] Error in howl check:", error);
     }
   }, [dog?.isAsleep, timeOfDay, playAnimation]);
 
-  // Handle dog state changes with proper state machine
+  // Handle dog state changes with a priority-based state machine
   useEffect(() => {
     if (!dog) return;
 
-    const currentAction = `${dog.lastAction}-${dog.isAsleep}-${dog.stats?.energy}`;
+    const currentActionKey = `${dog.lastAction}-${dog.isAsleep}-${dog.stats?.energy}`;
 
     // Prevent duplicate processing
-    if (lastActionRef.current === currentAction) {
+    if (lastActionRef.current === currentActionKey) {
       return;
     }
-    lastActionRef.current = currentAction;
+    lastActionRef.current = currentActionKey;
 
-    // Clear existing timeouts
+    // Clear existing timeouts for old animations
     timeoutsRef.current.forEach(clearTimeout);
     timeoutsRef.current = [];
 
-    // Priority-based state machine
+    // State machine
     if (dog.isAsleep) {
       const sleepAnim = Math.random() < 0.5 ? "sleep_curled" : "sleep_stretched";
-      playAnimation(sleepAnim); // No duration = permanent
-    } else if (dog.lastAction === "feed") {
+      playAnimation(sleepAnim); // no duration = "permanent" until state changes
+      return;
+    }
+
+    if (dog.lastAction === "feed") {
       playAnimation("eating", 2000);
-    } else if (dog.lastAction === "play") {
+      return;
+    }
+
+    if (dog.lastAction === "play") {
       playAnimation("happy_jump", 1500);
-    } else if (dog.lastAction === "drink") {
+      return;
+    }
+
+    if (dog.lastAction === "drink") {
       playAnimation("drinking", 1500);
-    } else if (dog.stats?.energy < 30) {
+      return;
+    }
+
+    if (dog.stats?.energy < 30) {
       playAnimation("tired");
-    } else {
-      // Reset priority for idle state
-      currentPriorityRef.current = 1;
+      return;
+    }
 
-      // Random idle variants with debouncing (max once per 5 seconds)
-      const now = Date.now();
-      const currentAnim = animation; // Capture current animation state
+    // Idle logic
+    currentPriorityRef.current = 1;
 
-      if (now - lastRandomAnimRef.current > 5000) {
-        const roll = Math.random();
-        if (roll < 0.05) {
-          lastRandomAnimRef.current = now;
-          playAnimation("bark", 1000);
-        } else if (roll < 0.1) {
-          lastRandomAnimRef.current = now;
-          playAnimation("scratch_ear", 1200);
-        } else if (roll < 0.15) {
-          setAnimation("idle_sit");
-        } else {
-          setAnimation(DEFAULT_ANIMATION);
-        }
-      } else if (currentAnim !== DEFAULT_ANIMATION && currentAnim !== "idle_sit") {
-        // Return to idle if we're in some other state
+    const now = Date.now();
+    const currentAnim = animation;
+
+    // Random idle variants with debounce (max once per 5s)
+    if (now - lastRandomAnimRef.current > 5000) {
+      const roll = Math.random();
+
+      if (roll < 0.05) {
+        lastRandomAnimRef.current = now;
+        playAnimation("bark", 1000);
+      } else if (roll < 0.1) {
+        lastRandomAnimRef.current = now;
+        playAnimation("scratch_ear", 1200);
+      } else if (roll < 0.15) {
+        setAnimation("idle_sit");
+      } else {
         setAnimation(DEFAULT_ANIMATION);
       }
+    } else if (currentAnim !== DEFAULT_ANIMATION && currentAnim !== "idle_sit") {
+      // Drift back to idle if we somehow got stuck
+      setAnimation(DEFAULT_ANIMATION);
     }
-  }, [dog?.lastAction, dog?.isAsleep, dog?.stats?.energy, playAnimation, animation]);
+  }, [dog?.lastAction, dog?.isAsleep, dog?.stats?.energy, playAnimation, animation, dog]);
 
-  // Frame animation
+  // Pick animation meta
   const meta = ANIMATIONS[animation] || ANIMATIONS[DEFAULT_ANIMATION];
 
+  // Frame stepping for current animation
   useEffect(() => {
     setFrameIndex(0);
+
     const interval = setInterval(() => {
       setFrameIndex((prev) => (prev + 1) % meta.frames);
     }, 1000 / meta.fps);
@@ -195,7 +235,7 @@ export default function EnhancedDogSprite() {
     return () => clearInterval(interval);
   }, [animation, meta.frames, meta.fps]);
 
-  // Early return if no dog data
+  // Early return if no dog data ready
   if (!dog || !age || !spriteSheet) {
     return (
       <div className="relative w-32 h-32 flex items-center justify-center bg-zinc-900/50 rounded-lg border border-zinc-800">
@@ -204,15 +244,15 @@ export default function EnhancedDogSprite() {
     );
   }
 
-  // Calculate sprite position
-  const frameX = -((meta.startFrame || 0) + frameIndex) * 128;
-  const frameY = -(meta.row * 128);
+  // Calculate sprite offset
+  const frameX = -((meta.startFrame || 0) + frameIndex) * SPRITE_SIZE;
+  const frameY = -(meta.row * SPRITE_SIZE);
 
   const spriteStyle = {
-    width: "128px",
-    height: "128px",
+    width: `${SPRITE_SIZE}px`,
+    height: `${SPRITE_SIZE}px`,
     backgroundImage: `url(${spriteSheet})`,
-    backgroundSize: "2048px 2048px",
+    backgroundSize: `${SHEET_SIZE}px ${SHEET_SIZE}px`,
     backgroundPosition: `${frameX}px ${frameY}px`,
     imageRendering: "pixelated",
     filter: `brightness(${timeOfDay === "night" ? 0.7 : 1})`,
@@ -223,7 +263,7 @@ export default function EnhancedDogSprite() {
     <div className="relative select-none">
       <div
         style={spriteStyle}
-        aria-label={`${dog.name} the dog, currently ${animation.replace('_', ' ')}`}
+        aria-label={`${dog.name} the dog, currently ${animation.replace(/_/g, " ")}`}
         role="img"
       />
       <p className="text-xs text-center mt-2 text-zinc-400 font-medium">
@@ -237,3 +277,4 @@ export default function EnhancedDogSprite() {
     </div>
   );
 }
+// End of src/features/game/EnhancedDogSprite.jsx

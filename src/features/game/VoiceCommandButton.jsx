@@ -1,4 +1,6 @@
 // src/features/game/VoiceCommandButton.jsx
+// @ts-nocheck  // Remove this if you want TS to type-check this file
+
 import React, { useEffect, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
 import { trainObedience } from "@/redux/dogSlice.js";
@@ -61,11 +63,17 @@ export default function VoiceCommandButton() {
             console.warn("[Voice] timeout stop error:", e);
           }
         }
-      }, 10000);
+      }, 10_000);
     };
 
     recognition.onerror = (event) => {
       console.error("[Voice] recognition error:", event);
+
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+
       if (event.error === "not-allowed") {
         setError("Mic access blocked. Check browser permissions.");
       } else if (event.error === "no-speech") {
@@ -77,6 +85,11 @@ export default function VoiceCommandButton() {
     };
 
     recognition.onresult = (event) => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+
       const transcript = Array.from(event.results)
         .map((r) => r[0]?.transcript || "")
         .join(" ")
@@ -105,7 +118,7 @@ export default function VoiceCommandButton() {
         setError(null);
       } else {
         setError(
-          "catch a known command. Try 'sit', 'stay', 'roll over', or 'speak'."
+          "Couldn’t catch a known command. Try 'sit', 'stay', 'roll over', or 'speak'."
         );
       }
     };
@@ -123,11 +136,12 @@ export default function VoiceCommandButton() {
     return () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
       }
       try {
         recognition.stop();
       } catch {
-        // ignore
+        // ignore cleanup errors
       }
       recognitionRef.current = null;
     };
@@ -168,7 +182,7 @@ export default function VoiceCommandButton() {
           Voice Training Not Supported
         </button>
         <p className="text-xs text-zinc-500">
-          Your browser doesn't support in-browser speech recognition. Try
+          Your browser doesn&apos;t support in-browser speech recognition. Try
           Chrome on desktop for voice commands.
         </p>
       </div>
@@ -186,7 +200,10 @@ export default function VoiceCommandButton() {
         onTouchStart={startListening}
         onTouchEnd={stopListening}
         className={`w-full rounded-xl border px-4 py-2 text-sm font-semibold transition active:scale-[0.98]
-          ${isListening ? "border-emerald-500 bg-zinc-900" : "border-zinc-700 bg-zinc-900 hover:bg-zinc-800"}`}
+          ${isListening
+            ? "border-emerald-500 bg-zinc-900"
+            : "border-zinc-700 bg-zinc-900 hover:bg-zinc-800"
+          }`}
       >
         {isListening ? "Listening…" : "Hold to Train (Voice)"}
       </button>

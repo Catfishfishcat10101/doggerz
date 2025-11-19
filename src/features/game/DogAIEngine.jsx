@@ -1,4 +1,6 @@
 // src/features/game/DogAIEngine.jsx
+// @ts-nocheck  // remove this line if you want TS to type-check this file
+
 import React, { useEffect, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { auth, firebaseReady } from "@/firebase.js";
@@ -43,7 +45,7 @@ export default function DogAIEngine() {
     if (firebaseReady && auth?.currentUser) {
       const thunkPromise = dispatch(loadDogFromCloud());
 
-      // RTK's unwrap if available; fall back to normal Promise catch
+      // RTK's unwrap if available; fall back to plain catch
       if (thunkPromise && typeof thunkPromise.unwrap === "function") {
         thunkPromise.unwrap().catch((err) => {
           console.error("[Doggerz] Failed to load dog from cloud", err);
