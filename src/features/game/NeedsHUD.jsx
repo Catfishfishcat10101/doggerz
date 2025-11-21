@@ -1,13 +1,17 @@
 // src/features/game/NeedsHUD.jsx
+// @ts-nocheck
+
 import React from "react";
 import { useSelector } from "react-redux";
 import {
   selectDog,
   selectDogTraining,
+  selectDogCleanlinessTier,
 } from "@/redux/dogSlice.js";
 
 function StatBar({ label, value = 0, color = "bg-emerald-500" }) {
-  const pct = Math.max(0, Math.min(100, Number(value) || 0));
+  const numeric = Number.isFinite(Number(value)) ? Number(value) : 0;
+  const pct = Math.max(0, Math.min(100, numeric));
 
   return (
     <div className="space-y-1">
@@ -45,6 +49,7 @@ function Pill({ label, value, tone = "default" }) {
 export default function NeedsHUD() {
   const dog = useSelector(selectDog);
   const training = useSelector(selectDogTraining);
+  const cleanlinessTier = useSelector(selectDogCleanlinessTier);
 
   if (!dog) return null;
 
@@ -68,11 +73,36 @@ export default function NeedsHUD() {
 
   const isPottyTrained = pottyTrainingComplete;
 
+  // Cleanliness tier pill tone
+  const cleanlinessTone =
+    cleanlinessTier === "MANGE"
+      ? "danger"
+      : cleanlinessTier === "FLEAS"
+        ? "warn"
+        : "default";
+
+  const cleanlinessLabel =
+    cleanlinessTier === "MANGE"
+      ? "Mange"
+      : cleanlinessTier === "FLEAS"
+        ? "Fleas"
+        : cleanlinessTier === "DIRTY"
+          ? "Dirty"
+          : "Fresh";
+
   return (
-    <div className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-5">
-      <p className="text-xs uppercase tracking-wide text-zinc-400 mb-3">
-        Pup needs
-      </p>
+    <div className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-5 space-y-4">
+      <div className="flex items-center justify-between">
+        <p className="text-xs uppercase tracking-wide text-zinc-400">
+          Pup needs
+        </p>
+
+        <Pill
+          label="Coat"
+          value={cleanlinessLabel}
+          tone={cleanlinessTone}
+        />
+      </div>
 
       <div className="space-y-3">
         <StatBar label="Hunger" value={hunger} color="bg-emerald-500" />
@@ -83,11 +113,10 @@ export default function NeedsHUD() {
           value={cleanliness}
           color="bg-amber-400"
         />
-        {/* Add thirst later if you decide to add it to dog.stats */}
-        {/* <StatBar label="Thirst" value={thirst} color="bg-cyan-400" /> */}
+        {/* Thirst, weight, etc. can be added later when added to dog.stats */}
       </div>
 
-      <div className="mt-4 border-t border-zinc-800 pt-3 text-xs text-zinc-400 space-y-2">
+      <div className="mt-3 border-t border-zinc-800 pt-3 text-xs text-zinc-400 space-y-2">
         <div className="flex items-center justify-between">
           <p className="uppercase tracking-wide text-[0.65rem]">
             Potty training
@@ -120,6 +149,12 @@ export default function NeedsHUD() {
         {!pottyTrainingComplete && pottyGoal > 0 && (
           <p className="text-[0.65rem] text-zinc-400">
             {pottySuccess}/{pottyGoal} successful breaks logged.
+          </p>
+        )}
+
+        {!pottyTrainingComplete && pottyGoal === 0 && (
+          <p className="text-[0.65rem] text-zinc-500">
+            Start potty training from the Potty page to unlock this badge.
           </p>
         )}
       </div>

@@ -1,18 +1,21 @@
 /* src/index.css */
 
-/* Tailwind layers */
+/* -------------------------------------------------------
+   Tailwind layers
+------------------------------------------------------- */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Global layout */
+/* -------------------------------------------------------
+   Global layout & typography
+------------------------------------------------------- */
 html,
 body,
 #root {
   height: 100%;
 }
 
-/* Base body styles */
 body {
   margin: 0;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
@@ -20,17 +23,20 @@ body {
     "Helvetica Neue", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: #020617; /* tailwind slate-950 */
+  color: #f9fafb; /* tailwind slate-50 */
 }
 
-/* Let the app scroll vertically */
-body {
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-
-/* Links */
+/* Make links inherit color unless explicitly styled */
 a {
+  color: inherit;
   text-decoration: none;
+}
+
+/* Basic focus outline for keyboard users */
+:focus-visible {
+  outline: 2px solid #22c55e; /* emerald-500 */
+  outline-offset: 2px;
 }
 
 /* Optional: subtle custom scrollbar for dark theme */
@@ -40,10 +46,14 @@ a {
 }
 
 ::-webkit-scrollbar-track {
-  background: #020617; /* slate-950-ish */
+  background: #020617;
 }
 
 ::-webkit-scrollbar-thumb {
   border-radius: 9999px;
   background: #27272a; /* zinc-800 */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46; /* zinc-700 */
 }

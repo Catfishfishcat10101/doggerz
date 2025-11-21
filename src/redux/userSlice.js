@@ -1,4 +1,6 @@
 // src/redux/userSlice.js
+// @ts-nocheck
+
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
@@ -14,12 +16,12 @@ const userSlice = createSlice({
   initialState,
   reducers: {
     setUser(state, action) {
-      const { uid, email, displayName, photoURL } = action.payload;
-      state.uid = uid;
-      state.email = email;
-      state.displayName = displayName;
-      state.photoURL = photoURL;
-      state.isAuthenticated = true;
+      const { uid, email, displayName, photoURL } = action.payload || {};
+      state.uid = uid ?? null;
+      state.email = email ?? null;
+      state.displayName = displayName ?? null;
+      state.photoURL = photoURL ?? null;
+      state.isAuthenticated = Boolean(uid || email);
     },
     clearUser(state) {
       state.uid = null;
@@ -33,7 +35,11 @@ const userSlice = createSlice({
 
 export const { setUser, clearUser } = userSlice.actions;
 
-// SELECTOR (this is the missing export you need!)
+// full user slice
 export const selectUser = (state) => state.user;
+
+// auth flag only, if you want
+export const selectIsAuthenticated = (state) =>
+  Boolean(state.user && state.user.isAuthenticated);
 
 export default userSlice.reducer;

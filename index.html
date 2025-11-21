@@ -48,16 +48,7 @@
       rel="stylesheet"
     />
 
-    <!-- Preload sprite sheet (served from /public/sprites) -->
-    <!-- Make sure you have: public/sprites/jack_russell_directions.png -->
-    <link
-      rel="preload"
-      href="/sprites/jack_russell_directions.png"
-      as="image"
-    />
-
-    <!-- No-FOUC theme bootstrap -->
-    <script>
+ <script>
       (() => {
         const root = document.documentElement;
         const saved = localStorage.getItem("theme"); // "dark" | "light" | null
@@ -69,7 +60,7 @@
     </script>
   </head>
 
-  <body>
+  <body class="dark">
     <noscript>
       Doggerz requires JavaScript. Please enable it to play with your pup.
     </noscript>

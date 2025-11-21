@@ -2,118 +2,83 @@
 // @ts-nocheck
 
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import { auth, firebaseReady } from "@/firebase.js";
-
-const provider = new GoogleAuthProvider();
 
 export default function LoginScreen() {
-  const [error, setError] = useState(null); // can be string or JSX
-  const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-  const handleGoogleSignIn = async () => {
-    if (!firebaseReady || !auth) {
-      setError(
-        "Firebase is not configured. Check your .env.local and firebase.js."
-      );
-      return;
-    }
-
-    try {
-      setError(null);
-      setIsLoading(true);
-
-      const result = await signInWithPopup(auth, provider);
-
-      console.log("[Doggerz] Signed in with Google:", result.user);
-
-      // After login, send them into the game
-      navigate("/game");
-    } catch (err) {
-      console.error("[Doggerz] Google sign-in error:", err);
-
-      if (
-        err.code === "auth/unauthorized-domain" ||
-        err.message?.includes("redirect_uri_mismatch")
-      ) {
-        setError(
-          <div className="text-left space-y-2">
-            <div className="font-semibold">OAuth configuration error</div>
-            <p className="text-sm text-zinc-300">
-              Your Firebase project needs to allow this domain.
-            </p>
-            <p className="font-mono text-xs bg-zinc-900/80 p-2 rounded">
-              Current domain: {window.location.origin}
-            </p>
-            <ol className="list-decimal list-inside text-xs text-zinc-400 space-y-1">
-              <li>
-                Open{" "}
-                <a
-                  href="https://console.firebase.google.com"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-emerald-400 hover:underline"
-                >
-                  Firebase Console
-                </a>
-              </li>
-              <li>Project → Authentication → Settings</li>
-              <li>Scroll to "Authorized domains"</li>
-              <li>
-                Add <code>localhost</code> for local dev
-              </li>
-              <li>Add your production domain once deployed</li>
-            </ol>
-          </div>
-        );
-      } else {
-        setError(
-          `Failed to sign in with Google: ${err.message || "Unknown error"}`
-        );
-      }
-    } finally {
-      setIsLoading(false);
-    }
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    // TODO: Wire to Firebase / Redux login
+    console.log("[Doggerz] Login attempt", { email });
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-zinc-950 text-zinc-50 px-4">
-      <div className="w-full max-w-sm rounded-2xl border border-zinc-800 bg-zinc-900/80 p-6 shadow-xl shadow-black/40">
-        <div className="mb-4 text-center">
-          <p className="text-[0.7rem] uppercase tracking-[0.3em] text-emerald-400/80 mb-1">
-            Doggerz
-          </p>
-          <h1 className="text-xl font-semibold tracking-tight">
-            Log in to your kennel
+    <main className="min-h-[calc(100vh-4rem)] bg-slate-950 text-zinc-100 flex justify-center px-4 py-10">
+      <div className="w-full max-w-md space-y-6">
+        <header className="space-y-2 text-center">
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Log in to Doggerz
           </h1>
-          <p className="text-xs text-zinc-400 mt-1">
-            Use your Google account to sync your pup across devices.
+          <p className="text-sm text-zinc-400">
+            Pick up where your pup left off. Your save file follows your
+            account.
           </p>
-        </div>
+        </header>
 
-        <button
-          type="button"
-          onClick={handleGoogleSignIn}
-          disabled={isLoading}
-          className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-60 disabled:cursor-not-allowed px-4 py-2.5 text-sm font-semibold text-black transition"
-        >
-          {isLoading ? "Signing in…" : "Sign in with Google"}
-        </button>
+        <section className="rounded-2xl border border-zinc-800 bg-slate-900/80 p-5 shadow-xl">
+          <form className="space-y-4" onSubmit={handleSubmit}>
+            <div className="space-y-1">
+              <label
+                htmlFor="email"
+                className="block text-xs font-semibold uppercase tracking-wide text-zinc-400"
+              >
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                placeholder="you@example.com"
+                required
+              />
+            </div>
 
-        {error && (
-          <div className="mt-4 text-xs text-red-300 bg-red-950/40 border border-red-500/40 rounded-xl p-3">
-            {error}
-          </div>
-        )}
+            <div className="space-y-1">
+              <label
+                htmlFor="password"
+                className="block text-xs font-semibold uppercase tracking-wide text-zinc-400"
+              >
+                Password
+              </label>
+              <input
+                id="password"
+                type="password"
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                placeholder="••••••••"
+                required
+              />
+            </div>
 
-        {!error && !isLoading && (
-          <p className="mt-3 text-[0.7rem] text-zinc-500 text-center">
-            We never see your password. Authentication is handled by Google &
-            Firebase.
+            <button
+              type="submit"
+              className="mt-2 inline-flex w-full items-center justify-center rounded-full bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400"
+            >
+              Log in
+            </button>
+          </form>
+
+          <p className="mt-3 text-[0.7rem] text-zinc-500">
+            New here? Use the Adopt flow first to create your pup. Logging in
+            later will sync your existing save file.
           </p>
-        )}
+        </section>
       </div>
     </main>
   );

@@ -1,4 +1,6 @@
 // src/App.jsx
+// @ts-nocheck
+
 import React from "react";
 import {
   BrowserRouter,
@@ -6,6 +8,7 @@ import {
   Route,
   Navigate,
   useNavigate,
+  useLocation,
   Link,
 } from "react-router-dom";
 
@@ -21,15 +24,18 @@ import Legal from "@/pages/Legal.jsx";
 import NotFound from "@/pages/NotFound.jsx";
 import Memory from "@/pages/Memory.jsx";
 import Potty from "@/pages/Potty.jsx";
-
-// Headless game brain (ticks, decay, polls, cloud sync)
-import DogAIEngine from "@/features/game/DogAIEngine.jsx";
+import Contact from "@/pages/Contact.jsx";
 
 // ---------------------------
 // Layout pieces
 // ---------------------------
+
 function AppHeader() {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // “Very first page only” = root path
+  const onHome = location.pathname === "/";
 
   return (
     <header className="border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-sm sticky top-0 z-50">
@@ -43,26 +49,22 @@ function AppHeader() {
           </span>
         </Link>
 
-        <nav className="flex items-center gap-4">
-          <button
-            onClick={() => navigate("/about")}
-            className="text-sm text-zinc-400 hover:text-white transition"
-          >
-            About
-          </button>
-          <button
-            onClick={() => navigate("/login")}
-            className="text-sm text-zinc-400 hover:text-white transition"
-          >
-            Login
-          </button>
-          <button
-            onClick={() => navigate("/adopt")}
-            className="rounded-full bg-emerald-500 hover:bg-emerald-400 text-black text-sm font-semibold px-4 py-1.5 transition"
-          >
-            Adopt
-          </button>
-        </nav>
+        {onHome && (
+          <nav className="flex items-center gap-4">
+            <button
+              onClick={() => navigate("/login")}
+              className="text-sm text-zinc-400 hover:text-white transition"
+            >
+              Login
+            </button>
+            <button
+              onClick={() => navigate("/adopt")}
+              className="rounded-full bg-emerald-500 hover:bg-emerald-400 text-black text-sm font-semibold px-4 py-1.5 transition"
+            >
+              Adopt
+            </button>
+          </nav>
+        )}
       </div>
     </header>
   );
@@ -70,17 +72,26 @@ function AppHeader() {
 
 function AppFooter() {
   const navigate = useNavigate();
+  const year = new Date().getFullYear();
 
   return (
     <footer className="border-t border-zinc-800 bg-zinc-950 text-xs text-zinc-500 py-4">
       <div className="container mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-        <p>© 2025 Doggerz. Created by William Johnson.</p>
+        <p>
+          © {year} Doggerz. Created by William Johnson.
+        </p>
         <nav className="flex items-center gap-4">
           <button
             onClick={() => navigate("/about")}
             className="hover:text-zinc-300"
           >
             About
+          </button>
+          <button
+            onClick={() => navigate("/contact")}
+            className="hover:text-zinc-300"
+          >
+            Contact
           </button>
           <button
             onClick={() => navigate("/settings")}
@@ -92,7 +103,7 @@ function AppFooter() {
             onClick={() => navigate("/legal")}
             className="hover:text-zinc-300"
           >
-            Legal
+            Terms &amp; Privacy
           </button>
         </nav>
       </div>
@@ -103,12 +114,10 @@ function AppFooter() {
 // ---------------------------
 // Route shell
 // ---------------------------
+
 function AppShell() {
   return (
     <div className="min-h-screen flex flex-col bg-zinc-950 text-zinc-50">
-      {/* Headless game engine: runs ticks, decay, polls, cloud sync */}
-      <DogAIEngine />
-
       <AppHeader />
 
       <main className="flex-1">
@@ -129,6 +138,7 @@ function AppShell() {
 
           {/* Extras / sub-screens */}
           <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/legal" element={<Legal />} />
           <Route path="/memory" element={<Memory />} />
@@ -151,6 +161,7 @@ function AppShell() {
 // ---------------------------
 // Root App
 // ---------------------------
+
 export default function App() {
   return (
     <BrowserRouter>

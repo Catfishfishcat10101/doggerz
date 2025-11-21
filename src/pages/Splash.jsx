@@ -1,7 +1,10 @@
 // src/pages/Splash.jsx
+// @ts-nocheck
+
 import React from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
+import { selectDog } from "@/redux/dogSlice.js";
 
 // Display-only copy; actual lifecycle logic is in redux + constants
 const LIFE_STAGES = [
@@ -44,36 +47,22 @@ const CLEANLINESS_STATES = [
 export default function SplashPage() {
   const navigate = useNavigate();
 
-  // This assumes you have a user slice shaped like state.user.user
-  const currentUser = useSelector((state) => state.user?.user ?? null);
+  // Grab user slice directly; no selectUser import
+  const currentUser = useSelector((state) => state.user);
+  const dog = useSelector(selectDog);
+  const hasDog = !!(dog && dog.adoptedAt);
 
-  // IMPORTANT: Dog slice uses `adoptedAt`, not `createdAt`
-  const hasDog = useSelector((state) => {
-    const dog = state.dog;
-    return !!(dog && dog.adoptedAt);
-  });
-
-  const heroCtaLabel = currentUser
-    ? hasDog
-      ? "Resume your pup"
-      : "Adopt your first pup"
-    : "Start caring";
+  const heroCtaLabel = "Adopt a pup!";
 
   const handlePrimary = () => {
     // Logged in + existing run → straight to game
-    if (currentUser && hasDog) {
+    if (currentUser?.isAuthenticated && hasDog) {
       navigate("/game");
       return;
     }
 
-    // Logged in but no dog yet → adopt flow
-    if (currentUser) {
-      navigate("/adopt");
-      return;
-    }
-
-    // Not logged in → let them sign up
-    navigate("/signup");
+    // Everyone else → adopt flow
+    navigate("/adopt");
   };
 
   return (
@@ -93,12 +82,13 @@ export default function SplashPage() {
             </h1>
 
             <p className="max-w-2xl mx-auto text-base sm:text-lg text-slate-300">
-              Adopt a pup, care for it over real hours, and watch its personality
-              evolve from playful puppy to wise senior. How you treat your dog
-              literally determines its lifespan.
+              Adopt a pup, care for it over real hours, and watch its
+              personality evolve from playful puppy to wise senior. How you
+              treat your dog literally determines its lifespan.
             </p>
 
             <div className="flex flex-wrap items-center justify-center gap-3">
+              {/* PRIMARY CTA */}
               <button
                 type="button"
                 onClick={handlePrimary}
@@ -107,35 +97,27 @@ export default function SplashPage() {
                 {heroCtaLabel}
               </button>
 
-              <button
-                type="button"
-                onClick={() => navigate("/login")}
-                className="rounded-full border border-white/20 px-8 py-3 text-sm font-semibold hover:border-white/50 transition"
-              >
-                Log in
-              </button>
+              {/* Secondary: Login / Signup only if not logged in */}
+              {!currentUser?.isAuthenticated && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => navigate("/login")}
+                    className="rounded-full border border-white/20 px-8 py-3 text-sm font-semibold hover:border-white/50 transition"
+                  >
+                    Log in
+                  </button>
 
-              <button
-                type="button"
-                onClick={() => navigate("/signup")}
-                className="rounded-full border border-emerald-400/30 px-8 py-3 text-sm font-semibold text-emerald-200 hover:border-emerald-400"
-              >
-                Sign up
-              </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate("/signup")}
+                    className="rounded-full border border-emerald-400/30 px-8 py-3 text-sm font-semibold text-emerald-200 hover:border-emerald-400"
+                  >
+                    Sign up
+                  </button>
+                </>
+              )}
             </div>
-
-            {!currentUser && (
-              <p className="text-xs text-slate-400">
-                Already created an account?{" "}
-                <Link
-                  to="/login"
-                  className="text-emerald-300 hover:text-emerald-200 font-semibold"
-                >
-                  Jump back in
-                </Link>
-                .
-              </p>
-            )}
           </section>
 
           {/* LIFECYCLE / CLEANLINESS EXPLAINERS */}
@@ -226,40 +208,7 @@ export default function SplashPage() {
           </section>
         </div>
       </div>
-
-      {/* FOOTER */}
-      <footer className="border-t border-white/10 bg-[#010104]">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
-            <p>© {new Date().getFullYear()} Doggerz. All rights reserved.</p>
-
-            <nav className="flex items-center gap-4">
-              <button
-                type="button"
-                onClick={() => navigate("/about")}
-                className="hover:text-slate-200 transition"
-              >
-                About
-              </button>
-              {/* Re-route "Contact" to About for now, since there's no /contact route */}
-              <button
-                type="button"
-                onClick={() => navigate("/about")}
-                className="hover:text-slate-200 transition"
-              >
-                Contact
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate("/legal")}
-                className="hover:text-slate-200 transition"
-              >
-                Terms &amp; Privacy
-              </button>
-            </nav>
-          </div>
-        </div>
-      </footer>
+      {/* No page-local footer; global AppFooter wraps this page */}
     </div>
   );
 }

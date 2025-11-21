@@ -10,11 +10,14 @@ import React, {
 } from "react";
 import { useSelector } from "react-redux";
 import { selectDog } from "@/redux/dogSlice.js";
-import { calculateDogAge, getSpriteSheet } from "@/utils/lifecycle.js";
+import {
+  calculateDogAge,
+  getSpriteForLifeStage,
+} from "@/utils/lifecycle.js";
 import { shouldHowlAtMoon, getTimeOfDay } from "@/utils/weather.js";
 
 /**
- * Spritesheet spec:
+ * Spritesheet spec (target):
  * - 2048x2048 PNG
  * - 16x16 grid
  * - 128x128 per frame
@@ -36,11 +39,14 @@ import { shouldHowlAtMoon, getTimeOfDay } from "@/utils/weather.js";
  * 13 Sad
  * 14 Excited
  * 15 Special
+ *
+ * NOTE: Until the 2048x2048 sheets exist, getSpriteForLifeStage can
+ *       still point at your smaller jack_russell_directions.png – this
+ *       component will just use whatever meta it gets.
  */
 
-const SPRITE_SIZE = 128;
-const SHEET_COLS = 16;
-const SHEET_SIZE = SPRITE_SIZE * SHEET_COLS;
+const DEFAULT_FRAME_SIZE = 128;
+const DEFAULT_FRAMES_PER_ROW = 16;
 
 const ANIMATIONS = {
   // Core movement / idle
@@ -153,23 +159,21 @@ export default function EnhancedDogSprite() {
   }, []);
 
   // Age & sprite sheet based on life stage
-  const { age, spriteSheet } = useMemo(() => {
+  const { age, spriteMeta } = useMemo(() => {
     if (!dog?.adoptedAt) {
-      return { age: null, spriteSheet: null };
+      return { age: null, spriteMeta: null };
     }
 
     try {
       const calculatedAge = calculateDogAge(dog.adoptedAt);
-      return {
-        age: calculatedAge,
-        spriteSheet: getSpriteSheet(calculatedAge.stage),
-      };
+      const meta = getSpriteForLifeStage(calculatedAge.stage);
+      return { age: calculatedAge, spriteMeta: meta };
     } catch (error) {
       console.error(
-        "[Doggerz] Error calculating dog age / sprite sheet:",
+        "[Doggerz] Error calculating dog age / sprite meta:",
         error
       );
-      return { age: null, spriteSheet: null };
+      return { age: null, spriteMeta: null };
     }
   }, [dog?.adoptedAt]);
 
@@ -221,7 +225,7 @@ export default function EnhancedDogSprite() {
     timeoutsRef.current.forEach(clearTimeout);
     timeoutsRef.current = [];
 
-    // 1) Hard locks: sleep state
+    // 1) Hard locks: sleep state (ONLY dog.isAsleep controls sleep)
     if (dog.isAsleep) {
       playAnimation("sleep"); // no duration; stays until state flips
       return;
@@ -254,15 +258,11 @@ export default function EnhancedDogSprite() {
     }
 
     // 3) Mood-driven behaviors (spec-driven)
-    if (energy < 20) {
-      // “Sleep animation even if not resting”
-      playAnimation("sleep");
-      return;
-    }
-
+    // NOTE: we intentionally DO NOT auto-sleep on low energy anymore.
+    // The dog sleeps when the game logic sets `dog.isAsleep = true`.
     if (cleanliness < 30) {
       // “Dirty → scratch”
-      playAnimation("scratch");
+      playAnimation("scratch", 1500);
       return;
     }
 
@@ -328,7 +328,7 @@ export default function EnhancedDogSprite() {
   }, [animation, meta.frames, meta.fps]);
 
   // Guard: no dog / no sprite ready yet
-  if (!dog || !age || !spriteSheet) {
+  if (!dog || !age || !spriteMeta || !spriteMeta.image) {
     return (
       <div className="relative w-32 h-32 flex items-center justify-center bg-zinc-900/50 rounded-lg border border-zinc-800">
         <p className="text-xs text-zinc-500">Loading…</p>
@@ -336,15 +336,22 @@ export default function EnhancedDogSprite() {
     );
   }
 
-  // Sprite offsets (16x16 grid)
-  const frameX = -frameIndex * SPRITE_SIZE;
-  const frameY = -meta.row * SPRITE_SIZE;
+  // Sprite meta with sane fallbacks
+  const frameWidth = spriteMeta.frameWidth ?? DEFAULT_FRAME_SIZE;
+  const frameHeight = spriteMeta.frameHeight ?? frameWidth;
+  const framesPerRow = spriteMeta.framesPerRow ?? DEFAULT_FRAMES_PER_ROW;
+  const sheetWidth = frameWidth * framesPerRow;
+  const sheetHeight = spriteMeta.sheetHeight ?? sheetWidth; // assume square if not provided
+
+  // Sprite offsets (grid)
+  const frameX = -frameIndex * frameWidth;
+  const frameY = -meta.row * frameHeight;
 
   const spriteStyle = {
-    width: `${SPRITE_SIZE}px`,
-    height: `${SPRITE_SIZE}px`,
-    backgroundImage: `url(${spriteSheet})`,
-    backgroundSize: `${SHEET_SIZE}px ${SHEET_SIZE}px`,
+    width: `${frameWidth}px`,
+    height: `${frameHeight}px`,
+    backgroundImage: `url(${spriteMeta.image})`,
+    backgroundSize: `${sheetWidth}px ${sheetHeight}px`,
     backgroundPosition: `${frameX}px ${frameY}px`,
     imageRendering: "pixelated",
     filter: `brightness(${timeOfDay === "night" ? 0.7 : 1})`,

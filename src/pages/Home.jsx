@@ -1,11 +1,13 @@
 // src/pages/Home.jsx
+// @ts-nocheck
+
 import React from "react";
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { selectDog } from "@/redux/dogSlice.js";
+import { selectUser } from "@/redux/userSlice.js";
 
 export default function Home() {
-  const dog = useSelector(selectDog);
+  const user = useSelector(selectUser);
 
   return (
     <main className="min-h-[calc(100vh-4rem)] bg-slate-950 text-zinc-100 flex justify-center px-4 py-10">
@@ -26,13 +28,13 @@ export default function Home() {
             clean, and play—your choices shape their story.
           </p>
 
-          {/* Primary CTAs */}
+          {/* CTAs */}
           <div className="mt-4 flex flex-wrap justify-center gap-3">
             <Link to="/adopt" className="dz-btn dz-btn--pill text-sm">
               Adopt
             </Link>
 
-            {!dog && (
+            {!user && (
               <>
                 <Link
                   to="/login"
@@ -49,7 +51,7 @@ export default function Home() {
               </>
             )}
 
-            {dog && (
+            {user && (
               <Link
                 to="/game"
                 className="dz-btn dz-btn--ghost dz-btn--pill text-sm"
@@ -59,9 +61,7 @@ export default function Home() {
             )}
           </div>
 
-          {/* No “Already created an account? Jump back in.” */}
-
-          {/* Need help? link */}
+          {/* Need help? -> scroll to explainer */}
           <button
             type="button"
             onClick={() => {
@@ -76,13 +76,13 @@ export default function Home() {
           </button>
         </section>
 
-        {/* Help / explainer section */}
+        {/* Explainer / help section */}
         <section
           id="doggerz-help"
           className="grid gap-6 md:grid-cols-2 rounded-3xl border border-zinc-800 bg-gradient-to-br from-slate-900/90 to-slate-950/95 p-6 sm:p-8"
         >
-          {/* Life doesn’t pause block */}
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-5 sm:p-6 flex flex-col gap-3">
+          {/* Life doesn’t pause */}
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-5 sm:p-6 flex flex-col gap-3">
             <header className="flex items-center justify-between gap-2">
               <h2 className="text-base sm:text-lg font-semibold text-zinc-50">
                 Life doesn&apos;t pause
@@ -131,8 +131,8 @@ export default function Home() {
             </ul>
           </div>
 
-          {/* Dog polls / cleanliness block */}
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-5 sm:p-6 flex flex-col gap-3">
+          {/* Dog polls / cleanliness */}
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-5 sm:p-6 flex flex-col gap-3">
             <header className="flex items-center justify-between gap-2">
               <h2 className="text-base sm:text-lg font-semibold text-zinc-50">
                 Dog polls &amp; cleanliness
@@ -144,44 +144,35 @@ export default function Home() {
 
             <p className="text-xs text-zinc-400">
               Timed &quot;dog polls&quot; nudge you with quick decisions.
-              Ignore them and the pup tells everyone how it feels. Bathing is
-              critical—the longer you wait, the worse the consequences.
+              Ignore them and your pup reacts. Bathing and yard care affect
+              mood, energy, and long-term health.
             </p>
 
             <div className="grid grid-cols-2 gap-3 mt-1 text-xs">
               <div className="rounded-xl border border-zinc-700 bg-zinc-900/80 p-3">
                 <p className="font-semibold text-zinc-100 mb-1">Fresh</p>
                 <p className="text-zinc-400">
-                  Regular baths keep the coat shiny and stats boosted.
+                  Regular baths, clean yard, happy dog.
                 </p>
               </div>
               <div className="rounded-xl border border-zinc-700 bg-zinc-900/80 p-3">
                 <p className="font-semibold text-zinc-100 mb-1">Dirty</p>
                 <p className="text-zinc-400">
-                  Skip a wash and dirt accrues, lowering happiness.
+                  Dirt and grime slowly drag happiness down.
                 </p>
               </div>
               <div className="rounded-xl border border-zinc-700 bg-zinc-900/80 p-3">
                 <p className="font-semibold text-zinc-100 mb-1">Fleas</p>
                 <p className="text-zinc-400">
-                  Neglect longer and fleas appear, sapping energy.
+                  Neglect long enough and fleas show up, draining energy.
                 </p>
               </div>
               <div className="rounded-xl border border-zinc-700 bg-zinc-900/80 p-3">
                 <p className="font-semibold text-zinc-100 mb-1">Mange</p>
                 <p className="text-zinc-400">
-                  At rock bottom, the pup needs urgent care to recover.
+                  Worst-case state. Requires serious care to recover.
                 </p>
               </div>
-            </div>
-
-            <div className="mt-2">
-              <Link
-                to="/guide"
-                className="text-[0.75rem] text-emerald-400 hover:text-emerald-300 underline underline-offset-4"
-              >
-                Read the full care guide →
-              </Link>
             </div>
           </div>
         </section>

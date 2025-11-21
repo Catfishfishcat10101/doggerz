@@ -3,13 +3,14 @@ import React from "react";
 
 /**
  * Compact panel for all core care actions:
- * - feed / play / rest / bathe
+ * - feed / play / bathe
  * - potty walk / scoop yard
  * - basic obedience training
+ *
+ * Sleep is automatic now, so there is no Rest button.
  */
 export default function CareActionsPanel({
   onCareAction,
-  dogIsAsleep,
   pottyLevel,
   poopCount,
   lowEnergy,
@@ -32,7 +33,7 @@ export default function CareActionsPanel({
           onClick={handleClick("feed")}
           className="rounded-lg bg-amber-400/90 text-black font-semibold py-2 hover:bg-amber-300 transition"
         >
-          Feed snack
+          🍖 Feed
         </button>
 
         <button
@@ -40,15 +41,7 @@ export default function CareActionsPanel({
           onClick={handleClick("play")}
           className="rounded-lg bg-pink-400/90 text-black font-semibold py-2 hover:bg-pink-300 transition"
         >
-          Play fetch
-        </button>
-
-        <button
-          type="button"
-          onClick={handleClick("rest")}
-          className="rounded-lg bg-sky-400/90 text-black font-semibold py-2 hover:bg-sky-300 transition"
-        >
-          {dogIsAsleep ? "Wake up" : "Nap time"}
+          🎾 Play
         </button>
 
         <button
@@ -56,7 +49,7 @@ export default function CareActionsPanel({
           onClick={handleClick("bathe")}
           className="rounded-lg bg-emerald-400/90 text-black font-semibold py-2 hover:bg-emerald-300 transition"
         >
-          Bath day
+          🛁 Bathe
         </button>
 
         <button
@@ -65,7 +58,7 @@ export default function CareActionsPanel({
           disabled={!pottyReady}
           className="rounded-lg bg-indigo-400/90 text-black font-semibold py-2 hover:bg-indigo-300 transition disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          Go potty
+          🚶 Potty walk
         </button>
 
         <button
@@ -74,7 +67,7 @@ export default function CareActionsPanel({
           disabled={!poopWaiting}
           className="rounded-lg bg-lime-400/90 text-black font-semibold py-2 hover:bg-lime-300 transition disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          Scoop yard
+          🗑️ Scoop yard
         </button>
 
         <button
@@ -83,7 +76,7 @@ export default function CareActionsPanel({
           disabled={lowEnergy}
           className="rounded-lg bg-orange-400/90 text-black font-semibold py-2 hover:bg-orange-300 transition disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          Train &quot;Sit&quot;
+          🐕 Train &quot;Sit&quot;
         </button>
       </div>
 

@@ -39,6 +39,7 @@ export default function AdultTrainingCard() {
     stage: "PUPPY",
     label: "Puppy",
   };
+
   const training = useSelector(selectDogTraining) || {};
   const adult = training.adult || {
     lastCompletedDate: null,
@@ -47,10 +48,11 @@ export default function AdultTrainingCard() {
     lastPenaltyDate: null,
   };
 
-  const isPuppy = (lifeStage.stage || "PUPPY").toUpperCase() === "PUPPY";
+  const stageKey = (lifeStage.stage || "PUPPY").toUpperCase();
+  const isPuppy = stageKey === "PUPPY";
 
   const handleLogSession = () => {
-    // This uses your existing trainObedience reducer,
+    // Uses your existing trainObedience reducer,
     // which internally calls completeAdultTrainingSession(...)
     dispatch(
       trainObedience({
@@ -68,7 +70,9 @@ export default function AdultTrainingCard() {
       : "No streak yet";
 
   const missesLabel =
-    adult.misses && adult.misses > 0 ? `${adult.misses} missed day(s)` : "Clean";
+    adult.misses && adult.misses > 0
+      ? `${adult.misses} missed day${adult.misses === 1 ? "" : "s"}`
+      : "Clean";
 
   return (
     <section className="rounded-2xl border border-emerald-500/20 bg-slate-900/80 p-4 sm:p-5 shadow-[0_18px_50px_rgba(0,0,0,0.65)] backdrop-blur">
@@ -78,7 +82,8 @@ export default function AdultTrainingCard() {
             Adult Training
           </h2>
           <p className="mt-1 text-[11px] sm:text-xs text-zinc-400">
-            Log daily obedience sessions to earn coins and keep your pup sharp.
+            Log daily obedience sessions to earn coins, keep happiness up, and
+            build a long-term streak.
           </p>
         </div>
 
@@ -118,12 +123,12 @@ export default function AdultTrainingCard() {
               : "bg-emerald-500 text-slate-950 hover:translate-y-[1px] hover:bg-emerald-400 active:translate-y-[2px]",
           ].join(" ")}
         >
-          {!isPuppy ? "Log todays training session" : "Unlocks when pup grows up"}
+          {!isPuppy ? "Log today's training session" : "Unlocks when pup grows up"}
         </button>
 
         <p className="text-[10px] sm:text-[11px] text-zinc-500">
-          Each session boosts happiness, awards coins, and strengthens your
-          training streak.
+          Each logged session feeds the streak system and gives your pup a small
+          mood and coin boost.
         </p>
       </div>
     </section>
