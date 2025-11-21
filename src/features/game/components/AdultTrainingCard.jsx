@@ -118,7 +118,7 @@ export default function AdultTrainingCard() {
               : "bg-emerald-500 text-slate-950 hover:translate-y-[1px] hover:bg-emerald-400 active:translate-y-[2px]",
           ].join(" ")}
         >
-          {!isPuppy ? "Log today’s training session" : "Unlocks when pup grows up"}
+          {!isPuppy ? "Log todays training session" : "Unlocks when pup grows up"}
         </button>
 
         <p className="text-[10px] sm:text-[11px] text-zinc-500">

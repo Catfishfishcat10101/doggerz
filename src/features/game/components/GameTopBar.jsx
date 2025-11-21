@@ -2,6 +2,16 @@
 // @ts-nocheck  // keep TS from whining about prop shapes in this JS file
 
 import React from "react";
+import { useSelector } from "react-redux";
+import { selectUser } from "@/redux/userSlice.js";
+
+function getFirstName(user) {
+  if (!user) return null;
+  if (user.displayName) return user.displayName.split(" ")[0];
+  if (user.profile?.firstName) return user.profile.firstName;
+  if (user.email) return user.email.split("@")[0];
+  return null;
+}
 
 export default function GameTopBar({
   dogName = "Pup",
@@ -64,6 +74,10 @@ export default function GameTopBar({
     );
   })();
 
+  // Pull user for greeting
+  const user = useSelector(selectUser);
+  const firstName = getFirstName(user) || null;
+
   return (
     <header className="flex items-start justify-between gap-4">
       {/* Left side: identity & progression */}
@@ -81,8 +95,14 @@ export default function GameTopBar({
         </p>
       </div>
 
-      {/* Right side: state & needs */}
+      {/* Right side: user greeting + state & needs */}
       <div className="text-right text-xs text-zinc-300 space-y-1">
+        {firstName && (
+          <p className="text-[0.75rem] text-zinc-200 mb-1">
+            Hi, {firstName}!
+          </p>
+        )}
+
         <p className="font-medium text-sky-200">Mood: {moodLabel}</p>
 
         <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-0.5">
@@ -106,67 +126,3 @@ export default function GameTopBar({
     </header>
   );
 }
-// src/constants/game.js
-export const SKILL_LEVEL_STEP = 50;
-export const DEFAULT_TICK_INTERVAL = 120; // seconds
-export const CLOUD_SAVE_DEBOUNCE = 3000;
-export const GAME_DAYS_PER_REAL_DAY = 4;
-export const LIFE_STAGES = {
-  PUPPY: { min: 0, max: 180, label: "Puppy" },
-  ADULT: { min: 181, max: 2555, label: "Adult" },
-  SENIOR: { min: 2556, max: 5475, label: "Senior" },
-};
-export const LIFECYCLE_STAGE_MODIFIERS = {
-  PUPPY: {
-    hunger: 1.15,
-    happiness: 1,
-    energy: 0.85,
-    cleanliness: 0.95,
-  },
-  ADULT: {
-    hunger: 1,
-    happiness: 1,
-    energy: 1,
-    cleanliness: 1,
-  },
-  SENIOR: {
-    hunger: 0.9,
-    happiness: 1.05,
-    energy: 1.2,
-    cleanliness: 1.15,
-  },
-};
-export const CLEANLINESS_THRESHOLDS = {
-  FRESH: 75,
-  DIRTY: 50,              
-  FLEAS: 25,
-  MANGE: 0,
-};
-export const CLEANLINESS_TIER_EFFECTS = {
-  FRESH: {
-    label: "Fresh",
-    pottyGainMultiplier: 1,
-  },
-  DIRTY: { 
-    label: "Dirty",
-    happinessTickPenalty: 1,
-    pottyGainMultiplier: 1.1,
-    journalSummary: "Needs bath soon.",
-  },
-  FLEAS: {
-    label: "Fleas",
-    happinessTickPenalty: 2,
-    energyTickPenalty: 1,  
-    cleanlinessTickPenalty: 1,
-    pottyGainMultiplier: 1.25,
-    journalSummary: "Scratching nonstop!",
-  },
-  MANGE: {
-    label: "Mange",
-    happinessTickPenalty: 4,
-    energyTickPenalty: 2,
-    cleanlinessTickPenalty: 2,
-    pottyGainMultiplier: 1.5,
-    journalSummary: "Needs immediate attention!",
-  },
-};

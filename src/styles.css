@@ -1,0 +1,448 @@
+/* src/styles.css */
+/* -------------------------------------------------------
+   Doggerz global theme + layout helpers
+   - No Tailwind directives here (they live in index.css)
+   - Pure CSS, PostCSS-safe, no markdown, no HTML comments
+------------------------------------------------------- */
+
+/* -------------------------------------------------------
+   Design tokens (low-glare, dark-first palette)
+------------------------------------------------------- */
+
+:root {
+  /* Stage & sprite tuning */
+  --stage-w: 960px;
+  --stage-h: 480px;
+  --sprite-size: 128px;
+  --sprite-scale: 2; /* 128px → 256px render */
+  --sprite-frames: 16;
+  --sprite-fps-slow: 8;
+  --sprite-fps-normal: 12;
+  --sprite-fps-fast: 15;
+
+  /* Radii & shadows */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --shadow-soft: 0 10px 25px rgba(0, 0, 0, 0.35);
+  --shadow-subtle: 0 4px 12px rgba(0, 0, 0, 0.35);
+
+  /* Z-index layers */
+  --z-hud: 40;
+  --z-dialog: 50;
+  --z-toast: 60;
+  --z-overlay: 70;
+
+  /* Durations */
+  --dur-fast: 120ms;
+  --dur-normal: 200ms;
+  --dur-slow: 320ms;
+
+  /* Easing */
+  --ease-soft: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-pop: cubic-bezier(0.25, 1, 0.5, 1);
+
+  /* Color tokens (dark theme default) */
+  --bg: #020617;           /* app background (slate-950-ish) */
+  --bg-elevated: #020617;  /* shell background */
+  --surf: #020617;         /* deep slate */
+  --surf-soft: #020617;
+  --surf-bright: #0b1120;  /* panel background */
+
+  --border-subtle: rgba(148, 163, 184, 0.35);
+  --border-strong: rgba(148, 163, 184, 0.65);
+
+  --text-main: #e5e7eb;
+  --text-soft: #9ca3af;
+  --text-muted: #6b7280;
+  --text-accent: #f97316;
+
+  --accent: #f97316;       /* orange-500 */
+  --accent-soft: rgba(249, 115, 22, 0.16);
+  --accent-strong: #ea580c; /* orange-600 */
+
+  --danger: #ef4444;
+  --success: #22c55e;
+  --warning: #facc15;
+  --info: #38bdf8;
+
+  /* Gradients */
+  --grad-shell: radial-gradient(circle at top, #1e293b 0, #020617 55%, #000 100%);
+  --grad-panel: linear-gradient(
+    145deg,
+    rgba(15, 23, 42, 0.96),
+    rgba(15, 23, 42, 0.9),
+    rgba(15, 23, 42, 0.96)
+  );
+
+  /* Glass */
+  --glass-bg: rgba(15, 23, 42, 0.85);
+  --glass-border: rgba(148, 163, 184, 0.35);
+
+  /* Scrollbars */
+  --scroll-track: #020617;
+  --scroll-thumb: #27272a;
+}
+
+/* Optional light mode (if you ever flip data-theme="light") */
+[data-theme="light"] {
+  --bg: #e5e7eb;
+  --bg-elevated: #f3f4f6;
+  --surf: #ffffff;
+  --surf-soft: #f9fafb;
+  --surf-bright: #ffffff;
+
+  --border-subtle: rgba(148, 163, 184, 0.5);
+  --border-strong: rgba(55, 65, 81, 0.75);
+
+  --text-main: #020617;
+  --text-soft: #4b5563;
+  --text-muted: #6b7280;
+  --text-accent: #c2410c;
+
+  --accent: #ea580c;
+  --accent-soft: rgba(234, 88, 12, 0.12);
+  --accent-strong: #9a3412;
+
+  --scroll-track: #e5e7eb;
+  --scroll-thumb: #9ca3af;
+
+  --glass-bg: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(148, 163, 184, 0.45);
+}
+
+/* -------------------------------------------------------
+   App shell & layout helpers
+------------------------------------------------------- */
+
+.doggerz-shell {
+  min-height: 100vh;
+  background: var(--grad-shell);
+  color: var(--text-main);
+  display: flex;
+  flex-direction: column;
+}
+
+.doggerz-shell__inner {
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 1rem;
+  padding-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Top nav (logo + buttons) */
+.doggerz-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-lg);
+  background: radial-gradient(circle at top left, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.98));
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-subtle);
+}
+
+.doggerz-nav__left,
+.doggerz-nav__right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Titles & labels */
+.doggerz-tagline {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--text-muted);
+}
+
+/* -------------------------------------------------------
+   Main game panel
+------------------------------------------------------- */
+
+.doggerz-main {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: 0.75rem;
+  align-items: stretch;
+}
+
+/* Small screens: stack vertically */
+@media (max-width: 900px) {
+  .doggerz-main {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Left: stage area */
+.doggerz-stage-wrapper {
+  position: relative;
+  border-radius: var(--radius-xl);
+  background: var(--grad-panel);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-soft);
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Right: side panel (stats, tabs, etc.) */
+.doggerz-side-panel {
+  border-radius: var(--radius-xl);
+  background: radial-gradient(circle at top, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.96));
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-soft);
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Scrollable content area inside pages (Adopt, Login, etc.) */
+.doggerz-scroll-page {
+  min-height: calc(100vh - 3.5rem);
+  padding: 1rem;
+  padding-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  overflow-y: auto;
+}
+
+/* -------------------------------------------------------
+   Stage canvas & sprite rendering
+------------------------------------------------------- */
+
+.doggerz-stage {
+  position: relative;
+  width: 100%;
+  max-width: var(--stage-w);
+  margin: 0 auto;
+  aspect-ratio: calc(var(--stage-w) / var(--stage-h));
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: radial-gradient(circle at bottom, #0f172a 0, #020617 60%, #000 100%);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+/* Canvas for the dog sprite */
+.doggerz-stage canvas {
+  width: calc(var(--sprite-size) * var(--sprite-scale));
+  height: calc(var(--sprite-size) * var(--sprite-scale));
+  image-rendering: pixelated;
+}
+
+/* Center sprite on stage by default */
+.doggerz-stage__sprite-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 1.25rem;
+}
+
+/* Pixelated helper class for <img> or <canvas> */
+.pixelated {
+  image-rendering: pixelated;
+}
+
+/* -------------------------------------------------------
+   Glass panel & cards
+------------------------------------------------------- */
+
+.dz-glass {
+  background: var(--glass-bg);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-subtle);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.dz-card {
+  border-radius: var(--radius-md);
+  background: var(--surf-bright);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-subtle);
+  padding: 0.75rem 0.9rem;
+}
+
+/* Card header row */
+.dz-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+  font-size: 0.875rem;
+}
+
+/* -------------------------------------------------------
+   Buttons (pairs nicely with Tailwind)
+------------------------------------------------------- */
+
+.dz-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: radial-gradient(circle at top, var(--accent), var(--accent-strong));
+  color: #fefce8;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition:
+    transform var(--dur-fast) var(--ease-soft),
+    box-shadow var(--dur-fast) var(--ease-soft),
+    border-color var(--dur-fast) var(--ease-soft),
+    background var(--dur-fast) var(--ease-soft),
+    opacity var(--dur-fast) linear;
+  box-shadow: 0 10px 25px rgba(249, 115, 22, 0.45);
+}
+
+.dz-btn:hover {
+  transform: translateY(-1px) scale(1.01);
+  box-shadow: 0 14px 30px rgba(249, 115, 22, 0.55);
+}
+
+.dz-btn:active {
+  transform: translateY(0) scale(0.99);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.9);
+}
+
+.dz-btn--ghost {
+  background: rgba(15, 23, 42, 0.9);
+  border-color: var(--border-subtle);
+  color: var(--text-main);
+  box-shadow: none;
+}
+
+.dz-btn--ghost:hover {
+  border-color: var(--border-strong);
+  background: rgba(15, 23, 42, 0.95);
+}
+
+/* Smaller pill button for HUD */
+.dz-btn--pill {
+  padding-inline: 0.7rem;
+  padding-block: 0.3rem;
+  font-size: 0.75rem;
+}
+
+/* Disabled state */
+.dz-btn[disabled],
+.dz-btn--disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+/* -------------------------------------------------------
+   HUD / Status badges
+------------------------------------------------------- */
+
+.dz-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  background: rgba(15, 23, 42, 0.9);
+  color: var(--text-soft);
+}
+
+.dz-badge--good {
+  border-color: rgba(34, 197, 94, 0.65);
+  color: #bbf7d0;
+}
+
+.dz-badge--warn {
+  border-color: rgba(250, 204, 21, 0.75);
+  color: #fef3c7;
+}
+
+.dz-badge--bad {
+  border-color: rgba(239, 68, 68, 0.75);
+  color: #fee2e2;
+}
+
+/* -------------------------------------------------------
+   Toasts & overlays
+------------------------------------------------------- */
+
+.dz-toast-stack {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  z-index: var(--z-toast);
+}
+
+.dz-toast {
+  min-width: 220px;
+  max-width: 320px;
+  padding: 0.6rem 0.75rem;
+  border-radius: var(--radius-md);
+  background: rgba(15, 23, 42, 0.98);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-soft);
+  font-size: 0.8rem;
+}
+
+/* -------------------------------------------------------
+   Accessibility / motion
+------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* -------------------------------------------------------
+   Custom scrollbar (matches tokens)
+------------------------------------------------------- */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scroll-track);
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--scroll-thumb);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scroll-thumb) var(--scroll-track);
+}

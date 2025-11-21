@@ -1,4 +1,4 @@
-<!-- cspell:ignore spritesheets Shiba shiba Sploot -->
+<!-- SPRITESHEET_SPEC.md -->
 
 # Doggerz Spritesheet Specification
 

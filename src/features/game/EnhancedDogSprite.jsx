@@ -1,65 +1,108 @@
 // src/features/game/EnhancedDogSprite.jsx
 // @ts-nocheck
 
-import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
+import React, {
+  useEffect,
+  useState,
+  useRef,
+  useCallback,
+  useMemo,
+} from "react";
 import { useSelector } from "react-redux";
 import { selectDog } from "@/redux/dogSlice.js";
 import { calculateDogAge, getSpriteSheet } from "@/utils/lifecycle.js";
 import { shouldHowlAtMoon, getTimeOfDay } from "@/utils/weather.js";
 
-const ANIMATIONS = {
-  idle_neutral: { row: 0, frames: 6, fps: 4 },
-  idle_sit: { row: 1, frames: 6, fps: 3 },
-  walk_left: { row: 2, frames: 6, fps: 10 },
-  walk_right: { row: 3, frames: 6, fps: 10 },
-  run_left: { row: 4, frames: 6, fps: 12 },
-  run_right: { row: 5, frames: 6, fps: 12 },
-  sleep_curled: { row: 6, frames: 4, fps: 2 },
-  sleep_stretched: { row: 6, frames: 4, fps: 2, startFrame: 4 },
-  eating: { row: 7, frames: 6, fps: 8 },
-  drinking: { row: 8, frames: 6, fps: 8 },
-  bark: { row: 9, frames: 6, fps: 6 },
-  howl: { row: 10, frames: 6, fps: 5 },
-  trick_sit: { row: 11, frames: 4, fps: 6 },
-  trick_stay: { row: 11, frames: 4, fps: 3, startFrame: 4 },
-  trick_rollover: { row: 12, frames: 8, fps: 10 },
-  trick_speak: { row: 13, frames: 6, fps: 6 },
-  trick_playdead: { row: 13, frames: 6, fps: 5, startFrame: 6 },
-  scratch_ear: { row: 14, frames: 6, fps: 8 },
-  shake_off: { row: 14, frames: 6, fps: 10, startFrame: 6 },
-  attention: { row: 15, frames: 4, fps: 8 },
-  happy_jump: { row: 15, frames: 4, fps: 10, startFrame: 4 },
-  tired: { row: 15, frames: 4, fps: 3, startFrame: 8 },
-};
-
-const DEFAULT_ANIMATION = "idle_neutral";
-
-// Higher = can't be interrupted by lower-priority anims
-const ANIMATION_PRIORITY = {
-  sleep_curled: 10,
-  sleep_stretched: 10,
-  eating: 9,
-  drinking: 9,
-  happy_jump: 8,
-  howl: 7,
-  bark: 5,
-  scratch_ear: 5,
-  tired: 4,
-  idle_sit: 2,
-  idle_neutral: 1,
-};
+/**
+ * Spritesheet spec:
+ * - 2048x2048 PNG
+ * - 16x16 grid
+ * - 128x128 per frame
+ *
+ * Rows (0–15):
+ * 0  Idle
+ * 1  Walk
+ * 2  Run
+ * 3  Sit
+ * 4  Lay Down
+ * 5  Eat
+ * 6  Play (Ball)
+ * 7  Play (Tug)
+ * 8  Sleep
+ * 9  Bark
+ * 10 Scratch
+ * 11 Shake
+ * 12 Potty
+ * 13 Sad
+ * 14 Excited
+ * 15 Special
+ */
 
 const SPRITE_SIZE = 128;
 const SHEET_COLS = 16;
 const SHEET_SIZE = SPRITE_SIZE * SHEET_COLS;
+
+const ANIMATIONS = {
+  // Core movement / idle
+  idle: { row: 0, frames: 16, fps: 8 },
+  walk: { row: 1, frames: 16, fps: 12 },
+  run: { row: 2, frames: 16, fps: 12 },
+  sit: { row: 3, frames: 16, fps: 8 },
+  lay: { row: 4, frames: 16, fps: 8 },
+
+  // Actions
+  eat: { row: 5, frames: 16, fps: 10 },
+  play_ball: { row: 6, frames: 16, fps: 10 },
+  play_tug: { row: 7, frames: 16, fps: 10 },
+  sleep: { row: 8, frames: 16, fps: 8 },
+  bark: { row: 9, frames: 16, fps: 15 },
+  scratch: { row: 10, frames: 16, fps: 12 },
+  shake: { row: 11, frames: 16, fps: 15 },
+  potty: { row: 12, frames: 16, fps: 10 },
+
+  // Mood / special
+  sad: { row: 13, frames: 16, fps: 8 },
+  excited: { row: 14, frames: 16, fps: 12 },
+  special: { row: 15, frames: 16, fps: 10 },
+
+  // “Howl” piggybacks on bark row until you get a custom anim
+  howl: { row: 9, frames: 16, fps: 10 },
+};
+
+const DEFAULT_ANIMATION = "idle";
+
+// Higher = can’t be interrupted by lower-priority animations
+const ANIMATION_PRIORITY = {
+  // Hard locks
+  sleep: 10,
+  potty: 9,
+
+  // Strong action / feedback
+  shake: 9,
+  eat: 8,
+  play_ball: 8,
+  play_tug: 8,
+  howl: 7,
+  bark: 6,
+
+  // Status / mood
+  scratch: 5,
+  sad: 4,
+  excited: 3,
+
+  // Movement / idle
+  run: 2,
+  walk: 2,
+  sit: 2,
+  lay: 2,
+  idle: 1,
+};
 
 export default function EnhancedDogSprite() {
   const dog = useSelector(selectDog);
 
   const [animation, setAnimation] = useState(DEFAULT_ANIMATION);
   const [frameIndex, setFrameIndex] = useState(0);
-
-  // Time-of-day is its own reactive thing, not tied to adoption date
   const [timeOfDay, setTimeOfDay] = useState(() => getTimeOfDay());
 
   const timeoutsRef = useRef([]);
@@ -76,7 +119,7 @@ export default function EnhancedDogSprite() {
     };
   }, []);
 
-  // Tick time-of-day every 60s so weather / lighting / howling can react
+  // Time-of-day ticker (for brightness & howling flavor)
   useEffect(() => {
     const id = setInterval(() => {
       try {
@@ -89,11 +132,10 @@ export default function EnhancedDogSprite() {
     return () => clearInterval(id);
   }, []);
 
-  // Helper to set animation with priority check
-  const playAnimation = useCallback((anim, duration) => {
+  // Priority-aware animation setter
+  const playAnimation = useCallback((anim, durationMs) => {
     const newPriority = ANIMATION_PRIORITY[anim] || 1;
 
-    // Don't interrupt higher-priority animation
     if (newPriority < currentPriorityRef.current) {
       return;
     }
@@ -101,16 +143,16 @@ export default function EnhancedDogSprite() {
     currentPriorityRef.current = newPriority;
     setAnimation(anim);
 
-    if (duration) {
+    if (durationMs) {
       const timeout = setTimeout(() => {
         currentPriorityRef.current = 1;
         setAnimation(DEFAULT_ANIMATION);
-      }, duration);
+      }, durationMs);
       timeoutsRef.current.push(timeout);
     }
   }, []);
 
-  // Calculate age and sprite sheet (memoized)
+  // Age & sprite sheet based on life stage
   const { age, spriteSheet } = useMemo(() => {
     if (!dog?.adoptedAt) {
       return { age: null, spriteSheet: null };
@@ -123,17 +165,19 @@ export default function EnhancedDogSprite() {
         spriteSheet: getSpriteSheet(calculatedAge.stage),
       };
     } catch (error) {
-      console.error("[Doggerz] Error calculating dog age / sprite sheet:", error);
+      console.error(
+        "[Doggerz] Error calculating dog age / sprite sheet:",
+        error
+      );
       return { age: null, spriteSheet: null };
     }
   }, [dog?.adoptedAt]);
 
-  // Auto-trigger howling at full moon (once per moon phase-ish)
+  // Moon howling: uses “howl” animation mapped to bark row
   useEffect(() => {
     if (!dog) return;
 
     try {
-      // Pass timeOfDay in case your helper supports it; harmless if ignored
       const shouldHowl = shouldHowlAtMoon(timeOfDay);
 
       if (shouldHowl && !dog.isAsleep && !howlCheckedRef.current) {
@@ -143,7 +187,6 @@ export default function EnhancedDogSprite() {
           playAnimation("howl", 3000);
         }
       } else if (!shouldHowl) {
-        // Reset flag when moon phase / condition changes
         howlCheckedRef.current = false;
       }
     } catch (error) {
@@ -151,80 +194,129 @@ export default function EnhancedDogSprite() {
     }
   }, [dog?.isAsleep, timeOfDay, playAnimation]);
 
-  // Handle dog state changes with a priority-based state machine
+  // Core state machine: dog state → animation
   useEffect(() => {
     if (!dog) return;
 
-    const currentActionKey = `${dog.lastAction}-${dog.isAsleep}-${dog.stats?.energy}`;
+    const energy = dog.stats?.energy ?? 0;
+    const happiness = dog.stats?.happiness ?? 0;
+    const cleanliness = dog.stats?.cleanliness ?? 100;
+    const hunger = dog.stats?.hunger ?? 0;
 
-    // Prevent duplicate processing
+    const currentActionKey = [
+      dog.lastAction || "none",
+      dog.isAsleep ? "asleep" : "awake",
+      Math.round(energy),
+      Math.round(happiness),
+      Math.round(cleanliness),
+      Math.round(hunger),
+    ].join("|");
+
     if (lastActionRef.current === currentActionKey) {
       return;
     }
     lastActionRef.current = currentActionKey;
 
-    // Clear existing timeouts for old animations
+    // Clear pending “go back to idle” timeouts when state changes
     timeoutsRef.current.forEach(clearTimeout);
     timeoutsRef.current = [];
 
-    // State machine
+    // 1) Hard locks: sleep state
     if (dog.isAsleep) {
-      const sleepAnim = Math.random() < 0.5 ? "sleep_curled" : "sleep_stretched";
-      playAnimation(sleepAnim); // no duration = "permanent" until state changes
+      playAnimation("sleep"); // no duration; stays until state flips
       return;
     }
 
-    if (dog.lastAction === "feed") {
-      playAnimation("eating", 2000);
+    // 2) Direct action mapping (from reducers setting lastAction)
+    switch (dog.lastAction) {
+      case "feed":
+        playAnimation("eat", 2000);
+        return;
+      case "play":
+        playAnimation(
+          Math.random() < 0.5 ? "play_ball" : "play_tug",
+          1800
+        );
+        return;
+      case "bathe":
+        playAnimation("shake", 2000);
+        return;
+      case "potty":
+      case "go_potty":
+      case "potty_break":
+        playAnimation("potty", 1800);
+        return;
+      case "bark":
+        playAnimation("bark", 1200);
+        return;
+      default:
+      // fall through into mood / idle logic
+    }
+
+    // 3) Mood-driven behaviors (spec-driven)
+    if (energy < 20) {
+      // “Sleep animation even if not resting”
+      playAnimation("sleep");
       return;
     }
 
-    if (dog.lastAction === "play") {
-      playAnimation("happy_jump", 1500);
+    if (cleanliness < 30) {
+      // “Dirty → scratch”
+      playAnimation("scratch");
       return;
     }
 
-    if (dog.lastAction === "drink") {
-      playAnimation("drinking", 1500);
+    if (happiness < 30) {
+      playAnimation("sad");
       return;
     }
 
-    if (dog.stats?.energy < 30) {
-      playAnimation("tired");
+    if (happiness > 75) {
+      playAnimation("excited");
       return;
     }
 
-    // Idle logic
+    // 4) High hunger → more bark / attention
+    if (hunger > 70 && Math.random() < 0.25) {
+      playAnimation("bark", 1000);
+      return;
+    }
+
+    // 5) Idle wandering: mostly idle, occasional sit/lay/bark/scratch
     currentPriorityRef.current = 1;
-
     const now = Date.now();
     const currentAnim = animation;
 
-    // Random idle variants with debounce (max once per 5s)
+    // Debounce random switches to avoid flicker (max once/5s)
     if (now - lastRandomAnimRef.current > 5000) {
       const roll = Math.random();
+      lastRandomAnimRef.current = now;
 
-      if (roll < 0.05) {
-        lastRandomAnimRef.current = now;
+      if (roll < 0.15) {
         playAnimation("bark", 1000);
-      } else if (roll < 0.1) {
-        lastRandomAnimRef.current = now;
-        playAnimation("scratch_ear", 1200);
-      } else if (roll < 0.15) {
-        setAnimation("idle_sit");
+      } else if (roll < 0.3) {
+        playAnimation("scratch", 1200);
+      } else if (roll < 0.45) {
+        setAnimation("sit");
+      } else if (roll < 0.6) {
+        setAnimation("lay");
       } else {
         setAnimation(DEFAULT_ANIMATION);
       }
-    } else if (currentAnim !== DEFAULT_ANIMATION && currentAnim !== "idle_sit") {
-      // Drift back to idle if we somehow got stuck
+    } else if (
+      currentAnim !== DEFAULT_ANIMATION &&
+      currentAnim !== "sit" &&
+      currentAnim !== "lay"
+    ) {
+      // Drift back to idle if we somehow get stuck
       setAnimation(DEFAULT_ANIMATION);
     }
-  }, [dog?.lastAction, dog?.isAsleep, dog?.stats?.energy, playAnimation, animation, dog]);
+  }, [dog, playAnimation, animation]);
 
   // Pick animation meta
   const meta = ANIMATIONS[animation] || ANIMATIONS[DEFAULT_ANIMATION];
 
-  // Frame stepping for current animation
+  // Frame stepping
   useEffect(() => {
     setFrameIndex(0);
 
@@ -235,18 +327,18 @@ export default function EnhancedDogSprite() {
     return () => clearInterval(interval);
   }, [animation, meta.frames, meta.fps]);
 
-  // Early return if no dog data ready
+  // Guard: no dog / no sprite ready yet
   if (!dog || !age || !spriteSheet) {
     return (
       <div className="relative w-32 h-32 flex items-center justify-center bg-zinc-900/50 rounded-lg border border-zinc-800">
-        <p className="text-xs text-zinc-500">Loading...</p>
+        <p className="text-xs text-zinc-500">Loading…</p>
       </div>
     );
   }
 
-  // Calculate sprite offset
-  const frameX = -((meta.startFrame || 0) + frameIndex) * SPRITE_SIZE;
-  const frameY = -(meta.row * SPRITE_SIZE);
+  // Sprite offsets (16x16 grid)
+  const frameX = -frameIndex * SPRITE_SIZE;
+  const frameY = -meta.row * SPRITE_SIZE;
 
   const spriteStyle = {
     width: `${SPRITE_SIZE}px`,
@@ -263,7 +355,10 @@ export default function EnhancedDogSprite() {
     <div className="relative select-none">
       <div
         style={spriteStyle}
-        aria-label={`${dog.name} the dog, currently ${animation.replace(/_/g, " ")}`}
+        aria-label={`${dog.name} the dog, currently ${animation.replace(
+          /_/g,
+          " "
+        )}`}
         role="img"
       />
       <p className="text-xs text-center mt-2 text-zinc-400 font-medium">
