@@ -5,145 +5,167 @@ import React from "react";
 import {
   Routes,
   Route,
-  Navigate,
-  useNavigate,
-  useLocation,
   Link,
+  Navigate,
+  Outlet,
+  useLocation,
 } from "react-router-dom";
 
-import { Suspense, lazy } from "react";
-import Brand from "@/components/Brand.jsx";
-import Loader from "@/components/Loader.jsx";
-import DevToolbar from "@/components/DevToolbar.jsx";
-const Splash = lazy(() => import("./pages/Splash.jsx"));
-const Landing = lazy(() => import("./pages/Landing.jsx"));
-const Adopt = lazy(() => import("./pages/Adopt.jsx"));
-const GamePage = lazy(() => import("./pages/Game.jsx"));
-const Login = lazy(() => import("./pages/Login.jsx"));
-const Signup = lazy(() => import("./pages/Signup.jsx"));
-const About = lazy(() => import("./pages/About.jsx"));
-const Settings = lazy(() => import("./pages/Settings.jsx"));
-const Legal = lazy(() => import("./pages/Legal.jsx"));
-const NotFound = lazy(() => import("./pages/NotFound.jsx"));
-const Memory = lazy(() => import("./pages/Memory.jsx"));
-const Potty = lazy(() => import("./pages/PottyTraining.jsx"));
-const Contact = lazy(() => import("./pages/Contact.jsx"));
+import Splash from "@/pages/Splash.jsx";
+import Landing from "@/pages/Landing.jsx";
+import Adopt from "@/pages/Adopt.jsx";
+import GamePage from "@/pages/Game.jsx";
+import Login from "@/pages/Login.jsx";
+import Signup from "@/pages/Signup.jsx";
+import About from "@/pages/About.jsx";
+import Settings from "@/pages/Settings.jsx";
+import Legal from "@/pages/Legal.jsx";
+import NotFound from "@/pages/NotFound.jsx";
+import Memory from "@/pages/Memory.jsx";
+import Potty from "@/pages/PottyTraining.jsx";
+import Contact from "@/pages/Contact.jsx";
 
+// ---------------------------------------------------------
+// Header
+// ---------------------------------------------------------
 function AppHeader() {
-  const navigate = useNavigate();
   const location = useLocation();
-  const onHome = location.pathname === "/";
+  const path = location.pathname || "/";
+
+  const isOnLogin = path.startsWith("/login");
+  const isOnAdopt = path.startsWith("/adopt");
 
   return (
-    <header className="border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-sm sticky top-0 z-50">
-      <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-        <Link to="/" className="flex flex-col leading-none">
-          <span className="text-[10px] uppercase tracking-[0.28em] text-emerald-400/90">Virtual Pup</span>
-          <Brand size="lg" />
+    <header className="border-b border-zinc-900 bg-zinc-950/95 backdrop-blur">
+      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
+        {/* Brand */}
+        <Link to="/" className="flex items-baseline gap-2">
+          <span className="text-lg font-black tracking-tight text-emerald-400 drop-shadow-[0_0_14px_rgba(16,185,129,0.9)]">
+            DOGGERZ
+          </span>
+          <span className="hidden text-[0.7rem] uppercase tracking-[0.22em] text-zinc-500 sm:inline">
+            virtual pup
+          </span>
         </Link>
 
-        {onHome && (
-          <nav className="flex items-center gap-4">
-            <button
-              onClick={() => navigate("/login")}
-              className="text-sm text-zinc-400 hover:text-white transition"
-            >
-              Login
-            </button>
-            <button
-              onClick={() => navigate("/adopt")}
-              className="rounded-full bg-emerald-500 hover:bg-emerald-400 text-black text-sm font-semibold px-4 py-1.5 transition"
-            >
-              Adopt
-            </button>
-          </nav>
-        )}
+        {/* Right side: login + adopt */}
+        <nav className="flex items-center gap-3 text-sm">
+          <Link
+            to="/login"
+            className={[
+              "px-3 py-1.5 rounded-full border text-xs font-medium transition",
+              isOnLogin
+                ? "border-emerald-400 text-emerald-300 bg-emerald-500/10"
+                : "border-zinc-700 text-zinc-200 hover:border-emerald-400 hover:text-emerald-300",
+            ].join(" ")}
+          >
+            Login
+          </Link>
+
+          <Link
+            to="/adopt"
+            className={[
+              "px-4 py-1.5 rounded-full text-xs font-semibold transition shadow-md",
+              isOnAdopt
+                ? "bg-emerald-400 text-slate-900 shadow-emerald-500/40"
+                : "bg-emerald-500 text-slate-900 hover:bg-emerald-400 shadow-emerald-500/30",
+            ].join(" ")}
+          >
+            Adopt
+          </Link>
+        </nav>
       </div>
     </header>
   );
 }
 
+// ---------------------------------------------------------
+// Footer
+// ---------------------------------------------------------
 function AppFooter() {
-  const navigate = useNavigate();
-  const year = new Date().getFullYear();
-
   return (
-    <footer className="border-t border-zinc-800 bg-zinc-950 text-xs text-zinc-500 py-4">
-      <div className="container mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-        <p>© {year} Doggerz. Created by William Johnson.</p>
-        <nav className="flex items-center gap-4">
-          <button
-            onClick={() => navigate("/about")}
-            className="hover:text-zinc-300"
+    <footer className="border-t border-zinc-900 bg-black/80 text-[0.7rem] text-zinc-500">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-3">
+        <span>&copy; {new Date().getFullYear()} Doggerz.</span>
+        <div className="flex gap-3">
+          <Link
+            to="/about"
+            className="hover:text-emerald-300 transition-colors"
           >
             About
-          </button>
-          <button
-            onClick={() => navigate("/contact")}
-            className="hover:text-zinc-300"
+          </Link>
+          <Link
+            to="/potty"
+            className="hover:text-emerald-300 transition-colors"
+          >
+            Potty training
+          </Link>
+          <Link
+            to="/legal"
+            className="hover:text-emerald-300 transition-colors"
+          >
+            Legal
+          </Link>
+          <Link
+            to="/contact"
+            className="hover:text-emerald-300 transition-colors"
           >
             Contact
-          </button>
-          <button
-            onClick={() => navigate("/settings")}
-            className="hover:text-zinc-300"
-          >
-            Settings
-          </button>
-          <button
-            onClick={() => navigate("/legal")}
-            className="hover:text-zinc-300"
-          >
-            Terms &amp; Privacy
-          </button>
-        </nav>
+          </Link>
+        </div>
       </div>
     </footer>
   );
 }
 
-export default function AppShell() {
+// ---------------------------------------------------------
+// Layout shell
+// ---------------------------------------------------------
+function AppLayout() {
   return (
-    <div className="min-h-screen flex flex-col bg-zinc-950 text-zinc-50">
+    <div className="flex min-h-screen flex-col bg-slate-950 text-slate-50">
       <AppHeader />
-
       <main className="flex-1">
-        {import.meta.env.DEV && <DevToolbar />}
-        <Suspense fallback={<Loader className="p-6" />}> 
-        <Routes>
-            {/* Primary entry – you can swap Splash ↔ Landing later if you want */}
-          <Route path="/" element={<Splash />} />
-
-          {/* Secondary marketing / info */}
-          <Route path="/landing" element={<Landing />} />
-
-          {/* Core game flow */}
-          <Route path="/adopt" element={<Adopt />} />
-          <Route path="/game" element={<GamePage />} />
-
-          {/* Auth */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-
-          {/* Extras / sub-screens */}
-          <Route path="/about" element={<About />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/legal" element={<Legal />} />
-          <Route path="/memory" element={<Memory />} />
-          <Route path="/potty" element={<Potty />} />
-
-          {/* Friendly aliases / redirects */}
-          <Route path="/home" element={<Navigate to="/" replace />} />
-          <Route path="/play" element={<Navigate to="/game" replace />} />
-
-          {/* 404 */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-        </Suspense>
+        <Outlet />
       </main>
-
       <AppFooter />
     </div>
+  );
+}
+
+// ---------------------------------------------------------
+// Routes
+// ---------------------------------------------------------
+export default function AppShell() {
+  return (
+    <Routes>
+      <Route element={<AppLayout />}>
+        {/* Home / splash */}
+        <Route index element={<Splash />} />
+
+        {/* Core game flow */}
+        <Route path="/landing" element={<Landing />} />
+        <Route path="/adopt" element={<Adopt />} />
+        <Route path="/game" element={<GamePage />} />
+
+        {/* Auth */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+
+        {/* Extra pages */}
+        <Route path="/about" element={<About />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/legal" element={<Legal />} />
+        <Route path="/memory" element={<Memory />} />
+        <Route path="/potty" element={<Potty />} />
+        <Route path="/contact" element={<Contact />} />
+
+        {/* Legacy redirect if needed */}
+        <Route path="/home" element={<Navigate to="/" replace />} />
+
+        {/* 404 */}
+        <Route path="*" element={<NotFound />} />
+      </Route>
+    </Routes>
   );
 }

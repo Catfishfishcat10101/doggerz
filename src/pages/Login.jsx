@@ -1,50 +1,166 @@
+// src/pages/Login.jsx
+// @ts-nocheck
+
 import React, { useState } from "react";
-import { auth, googleProvider } from "@/utils/firebase/firebase";
 import { signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 
+// ✅ IMPORTANT: use the actual Firebase entry file you already use elsewhere
+import { auth, googleProvider } from "@/firebase.js";
+
 export default function Login() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // where to go after login; default to /game
+  const from = location.state?.from?.pathname || "/game";
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [err, setErr] = useState("");
-  const nav = useNavigate();
-  const loc = useLocation();
-  const to = loc.state?.from?.pathname || "/game";
 
-  const emailLogin = async (e) => {
+  const [loadingEmail, setLoadingEmail] = useState(false);
+  const [loadingGoogle, setLoadingGoogle] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleEmailLogin(e) {
     e.preventDefault();
-    setErr("");
+    setError("");
+    setLoadingEmail(true);
     try {
-      await signInWithEmailAndPassword(auth, email.trim(), password);
-      nav(to, { replace: true });
-    } catch (e) {
-      setErr(e.message);
-    }
-  };
+      if (!email || !password) {
+        throw new Error("Enter both email and password.");
+      }
 
-  const googleLogin = async () => {
-    setErr("");
+      await signInWithEmailAndPassword(auth, email.trim(), password);
+      navigate(from, { replace: true });
+    } catch (err) {
+      console.error(err);
+      let msg = "Could not sign you in. Double-check your email and password.";
+      if (err.code === "auth/user-not-found") {
+        msg = "No account found with that email.";
+      } else if (err.code === "auth/wrong-password") {
+        msg = "Wrong password for that email.";
+      } else if (err.code === "auth/too-many-requests") {
+        msg = "Too many attempts. Try again in a bit.";
+      }
+      setError(msg);
+    } finally {
+      setLoadingEmail(false);
+    }
+  }
+
+  async function handleGoogleLogin() {
+    setError("");
+    setLoadingGoogle(true);
     try {
       await signInWithPopup(auth, googleProvider);
-      nav(to, { replace: true });
-    } catch (e) {
-      setErr(e.message);
+      navigate(from, { replace: true });
+    } catch (err) {
+      console.error(err);
+      setError("Google sign-in failed. Try again or use email/password.");
+    } finally {
+      setLoadingGoogle(false);
     }
-  };
+  }
 
   return (
-    <main className="min-h-screen grid place-items-center p-6">
-      <form onSubmit={emailLogin} className="w-full max-w-sm bg-white/5 p-6 rounded-2xl space-y-3">
-        <h1 className="text-2xl font-bold">Sign in</h1>
-        {err && <div className="text-red-300 text-sm">{err}</div>}
-        <input className="w-full px-3 py-2 rounded bg-black/30 outline-none" placeholder="Email" type="email" value={email} onChange={e => setEmail(e.target.value)} />
-        <input className="w-full px-3 py-2 rounded bg-black/30 outline-none" placeholder="Password" type="password" value={password} onChange={e => setPassword(e.target.value)} />
-        <button className="w-full px-3 py-2 rounded bg-amber-400 text-black font-bold hover:bg-amber-500" type="submit">Sign in</button>
-        <button type="button" onClick={googleLogin} className="w-full px-3 py-2 rounded bg-white/10 hover:bg-white/20">Continue with Google</button>
-        <div className="text-xs text-white/60">
-          No account? <Link to="/signup" className="underline">Sign up</Link>
+    <main className="min-h-[calc(100vh-56px)] bg-slate-950 text-slate-50 flex items-center justify-center px-4 py-10">
+      <div className="w-full max-w-md">
+        <div className="mb-8 text-center">
+          <h1 className="text-3xl font-black tracking-tight text-emerald-400 drop-shadow-[0_0_18px_rgba(16,185,129,0.9)]">
+            Log back in
+          </h1>
+          <p className="mt-2 text-sm text-zinc-400">
+            Your pup has absolutely noticed you&apos;re gone.
+          </p>
         </div>
-      </form>
+
+        <div className="rounded-2xl border border-zinc-800 bg-slate-950/80 p-6 shadow-lg shadow-emerald-500/10">
+          {error && (
+            <div className="mb-4 rounded-md border border-red-500/60 bg-red-950/60 px-3 py-2 text-xs text-red-200">
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleEmailLogin} className="space-y-4">
+            <div className="space-y-1.5">
+              <label
+                htmlFor="email"
+                className="block text-xs font-medium uppercase tracking-[0.18em] text-zinc-400"
+              >
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                autoComplete="email"
+                className="w-full rounded-lg border border-zinc-800 bg-slate-900 px-3 py-2 text-sm text-slate-50 outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label
+                htmlFor="password"
+                className="block text-xs font-medium uppercase tracking-[0.18em] text-zinc-400"
+              >
+                Password
+              </label>
+              <input
+                id="password"
+                type="password"
+                autoComplete="current-password"
+                className="w-full rounded-lg border border-zinc-800 bg-slate-900 px-3 py-2 text-sm text-slate-50 outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loadingEmail}
+              className="mt-2 inline-flex w-full items-center justify-center rounded-full bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-slate-950 shadow-md shadow-emerald-500/40 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {loadingEmail ? "Signing in…" : "Sign in"}
+            </button>
+          </form>
+
+          <div className="my-4 flex items-center gap-3 text-[0.7rem] text-zinc-500">
+            <div className="h-px flex-1 bg-zinc-800" />
+            <span>or</span>
+            <div className="h-px flex-1 bg-zinc-800" />
+          </div>
+
+          <button
+            type="button"
+            onClick={handleGoogleLogin}
+            disabled={loadingGoogle}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-zinc-700 bg-slate-900 px-4 py-2.5 text-sm font-medium text-zinc-100 hover:border-emerald-400 hover:text-emerald-300 hover:bg-slate-900/80 disabled:cursor-not-allowed disabled:opacity-70 transition"
+          >
+            {loadingGoogle ? (
+              "Connecting to Google…"
+            ) : (
+              <>
+                <span className="inline-block h-4 w-4 rounded-sm bg-white" />
+                <span>Continue with Google</span>
+              </>
+            )}
+          </button>
+
+          <div className="mt-4 text-center text-xs text-zinc-500">
+            Don&apos;t have an account?{" "}
+            <Link
+              to="/signup"
+              className="font-semibold text-emerald-300 hover:text-emerald-200"
+            >
+              Create one
+            </Link>
+          </div>
+        </div>
+      </div>
     </main>
   );
 }

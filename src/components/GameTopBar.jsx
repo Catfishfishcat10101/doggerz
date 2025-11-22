@@ -1,4 +1,4 @@
-// src/features/game/components/GameTopBar.jsx
+// src/components/GameTopBar.jsx
 // @ts-nocheck  // keep TS from whining about prop shapes in this JS file
 
 import React from "react";
@@ -86,7 +86,9 @@ export default function GameTopBar({
           <span className="text-2xl lg:text-3xl font-black tracking-tight text-emerald-400 drop-shadow-[0_0_12px_rgba(16,185,129,0.75)]">
             DOGGERZ
           </span>
-          <span className="text-[0.6rem] text-emerald-300/80 uppercase tracking-[0.25em]">in-yard</span>
+          <span className="text-[0.6rem] text-emerald-300/80 uppercase tracking-[0.25em]">
+            in-yard
+          </span>
         </div>
 
         <h2 className="text-xl lg:text-2xl font-bold tracking-tight text-zinc-100">

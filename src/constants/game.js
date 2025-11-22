@@ -106,7 +106,7 @@ export const DOG_POLL_CONFIG = {
     },
     {
       id: "snack_time",
-      prompt: "I’m feeling snacky. Maybe a small treat?",
+      prompt: "Maybe a small treat?",
       effects: {
         hunger: -15,
         happiness: +6,

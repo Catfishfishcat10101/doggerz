@@ -2,98 +2,113 @@
 // @ts-nocheck
 
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import EnhancedDogSprite from "@/components/EnhancedDogSprite.jsx";
 
 export default function Splash() {
-  const navigate = useNavigate();
-
-  const handleAdoptClick = () => {
-    navigate("/adopt");
-  };
-
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100">
-      {/* Main hero */}
-      <section className="mx-auto flex max-w-6xl flex-col gap-12 px-6 pb-24 pt-28 md:flex-row md:items-center">
-        {/* LEFT SIDE – BRAND + COPY */}
-        <div className="flex-1 space-y-7">
-          {/* Tiny label – no second DOGGERZ text */}
-          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/40 bg-emerald-500/5 px-3 py-1 text-xs uppercase tracking-[0.2em] text-emerald-300">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.9)]" />
-            virtual pup • real-time care
-          </div>
-
-          {/* Big DOGGERZ wordmark in the middle again */}
-          <h1 className="space-y-2">
-            <span className="block text-[3rem] leading-[1.05] font-black tracking-tight text-emerald-400 drop-shadow-[0_0_22px_rgba(16,185,129,0.85)] md:text-[4rem]">
+    <main className="min-h-[calc(100vh-56px)] bg-slate-950 text-slate-50">
+      <section className="mx-auto flex max-w-6xl flex-col gap-12 px-4 py-16 lg:flex-row lg:items-center lg:py-24">
+        {/* LEFT: wordmark + copy */}
+        <div className="flex-1">
+          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black leading-none tracking-tight">
+            <span className="block text-emerald-400 drop-shadow-[0_0_24px_rgba(16,185,129,0.85)]">
               DOGGERZ
             </span>
-            <span className="block text-2xl font-semibold text-slate-50 md:text-3xl">
-              Virtual pup simulator
+            <span className="mt-4 block text-2xl sm:text-3xl font-semibold text-slate-100">
+              virtual pup, real attitude
             </span>
           </h1>
 
-          {/* Description – no yellow accent, just clean text */}
-          <p className="max-w-xl text-sm leading-relaxed text-slate-300 md:text-base">
-            Adopt a single pixel pup, keep it fed, clean, and trained, and
-            try not to ghost your dog. Stats tick in real time, even when
-            you&apos;re off doing human stuff.
+          <p className="mt-6 max-w-xl text-base sm:text-lg text-slate-300">
+            Adopt a single digital dog that lives on your device 24/7. Hunger,
+            energy and cleanliness tick down in real time &mdash; whether
+            you&apos;re on the screen or out living life.
           </p>
 
-          {/* Primary CTA – ONLY Adopt button, no extra Log in text */}
-          <div className="flex flex-wrap items-center gap-4 pt-2">
-            <button
-              type="button"
-              onClick={handleAdoptClick}
-              className="inline-flex items-center justify-center rounded-full bg-emerald-400 px-7 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-500/40 transition-transform duration-150 hover:-translate-y-[1px] hover:bg-emerald-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+          {/* new subtitle – no receipts line */}
+          <p className="mt-2 max-w-xl text-sm text-slate-400">
+            Keep it fed, clean and trained to build a streak over time. Ignore
+            your pup for too long and the mood, the mess, and the guilt all
+            start to pile up.
+          </p>
+
+          {/* CTA row: Adopt + Login */}
+          <div className="mt-8 flex flex-wrap items-center gap-4">
+            <Link
+              to="/adopt"
+              className="inline-flex items-center justify-center rounded-full px-8 py-3 text-base font-semibold text-slate-950 shadow-lg shadow-emerald-500/30 bg-gradient-to-r from-emerald-400 via-emerald-500 to-lime-400 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 transition"
             >
               Adopt a pup
-            </button>
+            </Link>
 
-            {/* If you *do* want a secondary action later, add it here –
-                for now we keep it clean and avoid the extra Login. */}
+            <Link
+              to="/login"
+              className="inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-semibold border border-emerald-500/60 text-emerald-300 hover:bg-emerald-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 transition"
+            >
+              Log in
+            </Link>
           </div>
-
-          {/* NO more "Dev shortcut: go straight to the yard" */}
         </div>
 
-        {/* RIGHT SIDE – PREVIEW CARD */}
-        <div className="flex-1">
-          <div className="mx-auto w-full max-w-md rounded-3xl border border-emerald-500/30 bg-slate-900/60 p-5 shadow-[0_18px_60px_rgba(0,0,0,0.75)] backdrop-blur">
-            <div className="mb-4 flex items-center justify-between text-[0.65rem] font-mono uppercase tracking-[0.25em] text-slate-400">
+        {/* RIGHT: live preview with EnhancedDogSprite */}
+        <aside className="flex-1">
+          <div className="rounded-3xl border border-emerald-500/20 bg-slate-900/60 p-6 shadow-2xl shadow-emerald-500/15 backdrop-blur">
+            <header className="flex items-center justify-between text-xs font-medium tracking-[0.2em] uppercase text-slate-400">
               <span>Preview</span>
-              <span className="text-emerald-300">real-time sim</span>
-            </div>
+              <span className="text-emerald-400/80">real-time sim</span>
+            </header>
 
-            {/* Fake “device” / card */}
-            <div className="flex items-center justify-center rounded-3xl bg-slate-950/80 px-6 py-10">
-              <div className="relative flex h-32 w-24 items-center justify-center rounded-3xl bg-gradient-to-b from-slate-800 to-slate-950 shadow-[0_0_25px_rgba(15,118,110,0.9)]">
-                <div className="absolute inset-[9px] rounded-2xl bg-gradient-to-br from-emerald-500/20 via-slate-900 to-slate-950 border border-emerald-500/40" />
-                <span className="relative z-10 text-[0.6rem] font-mono text-emerald-200/80">
-                  your<br />
-                  pixel<br />
-                  pup
-                </span>
+            <div className="mt-6 grid gap-6 items-center sm:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+              {/* Sprite side */}
+              <div className="flex items-center justify-center min-h-[10rem]">
+                <EnhancedDogSprite
+                  animation="idle"
+                  scale={1.5}
+                  showCleanlinessOverlay={false}
+                  reducedMotion={false}
+                />
               </div>
-            </div>
 
-            {/* Tiny stats row */}
-            <div className="mt-6 grid grid-cols-2 gap-x-4 gap-y-2 text-[0.7rem] font-mono">
-              <div className="text-slate-400">mood</div>
-              <div className="text-right text-emerald-300">tbd</div>
+              {/* Stats side */}
+              <dl className="space-y-3 text-xs sm:text-sm">
+                <div className="flex justify-between gap-6 border-b border-slate-800 pb-3">
+                  <dt className="text-slate-400">Mood</dt>
+                  <dd className="font-medium text-emerald-300">TBD</dd>
+                </div>
 
-              <div className="text-slate-400">hunger</div>
-              <div className="text-right text-slate-100">ticks hourly</div>
+                <div className="flex justify-between gap-6">
+                  <dt className="text-slate-400">Hunger</dt>
+                  <dd className="text-right text-emerald-300">
+                    ticks hourly
+                    <br />
+                    snacks help… kinda
+                  </dd>
+                </div>
 
-              <div className="text-slate-400">energy</div>
-              <div className="text-right text-slate-100">sleeps to heal</div>
+                <div className="flex justify-between gap-6">
+                  <dt className="text-slate-400">Energy</dt>
+                  <dd className="text-right text-emerald-300">
+                    sleeps to heal
+                    <br />
+                    zoomies cost extra
+                  </dd>
+                </div>
 
-              <div className="text-slate-400">cleanliness</div>
-              <div className="text-right text-slate-100">dirt accumulates</div>
+                <div className="flex justify-between gap-6">
+                  <dt className="text-slate-400">Cleanliness</dt>
+                  <dd className="text-right text-emerald-300">
+                    dirt accumulates
+                    <br />
+                    baths are “opinions”
+                  </dd>
+                </div>
+              </dl>
             </div>
           </div>
-        </div>
+        </aside>
       </section>
     </main>
   );
 }
+// End of src/pages/Splash.jsx
