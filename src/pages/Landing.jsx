@@ -26,7 +26,7 @@ export default function Landing() {
               </span>
             </div>
 
-            {/* Simple, non-cringe heading (short, not stretched) */}
+            {/* Simple, non-stretched heading */}
             <h1 className="mt-6 max-w-md text-2xl font-semibold leading-snug text-slate-100 md:text-3xl">
               Adopt your pup and keep them going in real time.
             </h1>
@@ -50,7 +50,7 @@ export default function Landing() {
               Log in · Resume pup
             </Link>
 
-            {/* Optional “jump back in” if wired to real auth later */}
+            {/* Later you can show this only when real auth says “logged in” */}
             {isLoggedIn && (
               <Link
                 to="/game"
@@ -61,7 +61,7 @@ export default function Landing() {
             )}
           </div>
 
-          {/* Tiny helper text – just clarifying flow */}
+          {/* Tiny helper text – clarifies flow without being loud */}
           <p className="max-w-md text-xs text-zinc-500">
             The full dashboard (hunger, energy, cleanliness, potty training, etc.)
             unlocks on the next screen after you adopt or log in.
@@ -102,7 +102,7 @@ export default function Landing() {
         </section>
       </div>
 
-      {/* Header + footer stay in your layout. This is only the page body. */}
+      {/* Header + footer are already handled somewhere else in your app. */}
     </main>
   );
 }
