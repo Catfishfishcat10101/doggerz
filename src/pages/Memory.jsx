@@ -12,7 +12,7 @@ function formatDateShort(ms) {
   return d.toLocaleDateString(undefined, {
     month: "short",
     day: "numeric",
-    year: "numeric"
+    year: "numeric",
   });
 }
 
@@ -24,7 +24,7 @@ export default function Memory() {
 
   const ageInfo = useMemo(
     () => (adoptedAt ? calculateDogAge(adoptedAt) : null),
-    [adoptedAt]
+    [adoptedAt],
   );
 
   const stageLabel = ageInfo?.stageLabel ?? "Puppy";
@@ -41,17 +41,13 @@ export default function Memory() {
     return rawMemories
       .map((m, idx) => {
         const createdAt = m.createdAt || m.timestamp || m.time || null;
-        const title =
-          m.title || m.label || m.type || `Event #${idx + 1}`;
+        const title = m.title || m.label || m.type || `Event #${idx + 1}`;
 
-        const mood =
-          m.mood?.label || m.moodLabel || null;
+        const mood = m.mood?.label || m.moodLabel || null;
 
-        const level =
-          m.level ?? m.dogLevel ?? dog?.level ?? null;
+        const level = m.level ?? m.dogLevel ?? dog?.level ?? null;
 
-        const summary =
-          m.summary || m.description || m.note || "";
+        const summary = m.summary || m.description || m.note || "";
 
         return {
           id: m.id || `${createdAt || "na"}-${idx}`,
@@ -60,7 +56,7 @@ export default function Memory() {
           mood,
           level,
           summary,
-          raw: m
+          raw: m,
         };
       })
       .sort((a, b) => {

@@ -27,13 +27,13 @@ module.exports = {
       // Doggerz brand palette
       colors: {
         doggerz: {
-          bark: "#000000",   // primary background
-          paw: "#111827",    // surfaces / cards
-          sky: "#38bdf8",    // accent cyan
-          leaf: "#22c55e",   // primary action green
-          treat: "#fbbf24",  // reward / highlight
-          mange: "#9ca3af",  // muted / negative / low states
-          bone: "#f9fafb",   // light text / subtle surfaces
+          bark: "#000000", // primary background
+          paw: "#111827", // surfaces / cards
+          sky: "#38bdf8", // accent cyan
+          leaf: "#22c55e", // primary action green
+          treat: "#fbbf24", // reward / highlight
+          mange: "#9ca3af", // muted / negative / low states
+          bone: "#f9fafb", // light text / subtle surfaces
         },
       },
 
@@ -69,8 +69,5 @@ module.exports = {
       },
     },
   },
-  plugins: [
-    require("@tailwindcss/forms"),
-    require("@tailwindcss/typography"),
-  ],
+  plugins: [require("@tailwindcss/forms"), require("@tailwindcss/typography")],
 };

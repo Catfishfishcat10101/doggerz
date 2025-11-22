@@ -3,15 +3,21 @@
 
 import { LIFE_STAGES, GAME_DAYS_PER_REAL_DAY } from "@/constants/game.js";
 
-const DEFAULT_SPRITE_SRC = "/sprites/jack_russell_directions.png";
-
+/**
+ * Convert adoption timestamp → game age (in "game days") + stage info.
+ *
+ * GAME_DAYS_PER_REAL_DAY controls how fast time moves, e.g.
+ *  - 4  => 1 real day = 4 game days
+ *  - 8  => 1 real day = 8 game days
+ */
 export function calculateDogAge(adoptedAtMs, now = Date.now()) {
   if (!adoptedAtMs) return null;
 
-  const msPerRealDay = 24 * 60 * 60 * 1000;
-  const msPerGameDay = msPerRealDay / GAME_DAYS_PER_REAL_DAY;
+  const MS_PER_REAL_DAY = 24 * 60 * 60 * 1000;
+  const msPerGameDay = MS_PER_REAL_DAY / GAME_DAYS_PER_REAL_DAY;
 
-  const ageInGameDays = Math.floor((now - adoptedAtMs) / msPerGameDay);
+  const diffMs = Math.max(0, now - adoptedAtMs);
+  const ageInGameDays = Math.floor(diffMs / msPerGameDay);
 
   let stageId = "PUPPY";
 
@@ -31,12 +37,11 @@ export function calculateDogAge(adoptedAtMs, now = Date.now()) {
   };
 }
 
-export function getSpriteForLifeStage(stageId) {
-  switch (stageId) {
-    case "PUPPY":
-    case "ADULT":
-    case "SENIOR":
-    default:
-      return DEFAULT_SPRITE_SRC;
-  }
+/**
+ * Convenience helper: compute age info from a dog object.
+ */
+export function getDogAgeInfo(dog, now = Date.now()) {
+  if (!dog || !dog.adoptedAtMs) return null;
+  return calculateDogAge(dog.adoptedAtMs, now);
 }
+// End of src/utils/lifecycle.js

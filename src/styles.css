@@ -56,11 +56,12 @@
   --text-main: #e5e7eb;
   --text-soft: #9ca3af;
   --text-muted: #6b7280;
-  --text-accent: #f97316;
+  --text-accent: #22c55e;  /* emerald-500 */
 
-  --accent: #f97316;       /* orange-500 */
-  --accent-soft: rgba(249, 115, 22, 0.16);
-  --accent-strong: #ea580c; /* orange-600 */
+  /* Emerald accent (brand) */
+  --accent: #22c55e;                             /* emerald-500 */
+  --accent-soft: rgba(34, 197, 94, 0.16);
+  --accent-strong: #16a34a;                      /* emerald-600 */
 
   --danger: #ef4444;
   --success: #22c55e;
@@ -68,7 +69,12 @@
   --info: #38bdf8;
 
   /* Gradients */
-  --grad-shell: radial-gradient(circle at top, #1e293b 0, #020617 55%, #000 100%);
+  --grad-shell: radial-gradient(
+    circle at top,
+    #1e293b 0,
+    #020617 55%,
+    #000 100%
+  );
   --grad-panel: linear-gradient(
     145deg,
     rgba(15, 23, 42, 0.96),
@@ -99,11 +105,11 @@
   --text-main: #020617;
   --text-soft: #4b5563;
   --text-muted: #6b7280;
-  --text-accent: #c2410c;
+  --text-accent: #16a34a; /* emerald-600 */
 
-  --accent: #ea580c;
-  --accent-soft: rgba(234, 88, 12, 0.12);
-  --accent-strong: #9a3412;
+  --accent: #16a34a;
+  --accent-soft: rgba(22, 163, 74, 0.12);
+  --accent-strong: #15803d;
 
   --scroll-track: #e5e7eb;
   --scroll-thumb: #9ca3af;
@@ -143,7 +149,11 @@
   gap: 0.75rem;
   padding: 0.5rem 0.75rem;
   border-radius: var(--radius-lg);
-  background: radial-gradient(circle at top left, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.98));
+  background: radial-gradient(
+    circle at top left,
+    rgba(15, 23, 42, 0.9),
+    rgba(15, 23, 42, 0.98)
+  );
   border: 1px solid var(--border-subtle);
   box-shadow: var(--shadow-subtle);
 }
@@ -197,7 +207,11 @@
 /* Right: side panel (stats, tabs, etc.) */
 .doggerz-side-panel {
   border-radius: var(--radius-xl);
-  background: radial-gradient(circle at top, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.96));
+  background: radial-gradient(
+    circle at top,
+    rgba(15, 23, 42, 0.98),
+    rgba(15, 23, 42, 0.96)
+  );
   border: 1px solid var(--border-subtle);
   box-shadow: var(--shadow-soft);
   padding: 0.75rem;
@@ -229,7 +243,12 @@
   aspect-ratio: calc(var(--stage-w) / var(--stage-h));
   border-radius: var(--radius-lg);
   overflow: hidden;
-  background: radial-gradient(circle at bottom, #0f172a 0, #020617 60%, #000 100%);
+  background: radial-gradient(
+    circle at bottom,
+    #0f172a 0,
+    #020617 60%,
+    #000 100%
+  );
   border: 1px solid rgba(148, 163, 184, 0.25);
 }
 
@@ -299,7 +318,11 @@
   padding: 0.45rem 0.9rem;
   border-radius: 999px;
   border: 1px solid transparent;
-  background: radial-gradient(circle at top, var(--accent), var(--accent-strong));
+  background: radial-gradient(
+    circle at top,
+    var(--accent),
+    var(--accent-strong)
+  );
   color: #fefce8;
   font-size: 0.875rem;
   font-weight: 600;
@@ -311,12 +334,12 @@
     border-color var(--dur-fast) var(--ease-soft),
     background var(--dur-fast) var(--ease-soft),
     opacity var(--dur-fast) linear;
-  box-shadow: 0 10px 25px rgba(249, 115, 22, 0.45);
+  box-shadow: 0 10px 25px rgba(34, 197, 94, 0.45);
 }
 
 .dz-btn:hover {
   transform: translateY(-1px) scale(1.01);
-  box-shadow: 0 14px 30px rgba(249, 115, 22, 0.55);
+  box-shadow: 0 14px 30px rgba(34, 197, 94, 0.55);
 }
 
 .dz-btn:active {

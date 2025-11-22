@@ -1,7 +1,7 @@
 // src/pages/Landing.jsx
 // @ts-nocheck
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 // When you actually have an auth slice with a selector, you can wire this back up.
 // import { useSelector } from "react-redux";
@@ -12,6 +12,28 @@ import EnhancedDogSprite from "@/components/EnhancedDogSprite.jsx";
 export default function Landing() {
   // Temporary stub – avoids the missing selectIsLoggedIn export crash
   const isLoggedIn = false;
+
+  // Intro animation: excited -> bark -> idle
+  const [animation, setAnimation] = useState("excited");
+
+  useEffect(() => {
+    let t1, t2;
+
+    // after ~0.9s, switch to bark (dog pops up and barks at you)
+    t1 = setTimeout(() => {
+      setAnimation("bark");
+    }, 900);
+
+    // after ~2.1s, settle into idle loop
+    t2 = setTimeout(() => {
+      setAnimation("idle");
+    }, 2100);
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, []);
 
   return (
     <main className="min-h-[calc(100vh-4rem)] bg-slate-950 text-slate-50">
@@ -30,16 +52,16 @@ export default function Landing() {
               </span>
             </div>
 
-            {/* Subtitle – compact, not stretched across the whole screen */}
+            {/* Subtitle – reworded, no "doesn't pause" phrasing */}
             <h1 className="mt-6 max-w-md text-balance text-2xl font-semibold leading-snug text-slate-100 md:text-3xl">
-              Life doesn&apos;t pause.
+              One digital dog that keeps going
               <span className="block text-amber-300">
-                Your dog shouldn&apos;t either.
+                even when you close the app.
               </span>
             </h1>
           </div>
 
-          {/* Primary actions – tight to hero, no full-width nonsense */}
+          {/* Primary actions – tight to hero */}
           <div className="mt-6 flex flex-wrap items-center gap-3">
             {/* Primary CTA */}
             <Link
@@ -85,8 +107,13 @@ export default function Landing() {
             <div className="relative flex flex-col items-center gap-4">
               <div className="overflow-hidden rounded-2xl border border-zinc-800 bg-slate-900/80 p-3 backdrop-blur">
                 {/* Actual sprite component */}
-                <div className="h-40 w-40 overflow-hidden">
-                  <EnhancedDogSprite />
+                <div className="flex items-center justify-center min-h-[10rem] min-w-[10rem]">
+                  <EnhancedDogSprite
+                    animation={animation}
+                    scale={1.8}
+                    showCleanlinessOverlay={false}
+                    reducedMotion={false}
+                  />
                 </div>
               </div>
 

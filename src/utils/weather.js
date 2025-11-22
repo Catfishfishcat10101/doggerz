@@ -18,8 +18,8 @@ export function getTimeOfDay(dateLike) {
       dateLike instanceof Date
         ? dateLike
         : typeof dateLike === "number"
-        ? new Date(dateLike)
-        : new Date();
+          ? new Date(dateLike)
+          : new Date();
 
     const hour = d.getHours(); // 0–23
 
@@ -81,7 +81,7 @@ export function shouldHowlAtMoon(timeOfDay) {
     const distFromFakeFull = Math.min(
       Math.abs(day - 1),
       Math.abs(day - 15),
-      Math.abs(day - 29)
+      Math.abs(day - 29),
     );
 
     // Closer to 1 / 15 / 29 → slightly higher chance

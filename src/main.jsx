@@ -20,14 +20,15 @@ try {
     const { registerSW } = await import("virtual:pwa-register");
     registerSW({ immediate: true });
   }
-} catch { }
+} catch {}
 
 if (import.meta.env.DEV) {
   // Dev helper: Ctrl+Shift+U to unregister SW and clear caches
   // Also expose a window function for quick access in console
   //   window.swUnregister()
   // @ts-ignore - add helper to window for dev convenience
-  window.swUnregister = () => unregisterAllServiceWorkers({ clearCaches: true });
+  window.swUnregister = () =>
+    unregisterAllServiceWorkers({ clearCaches: true });
   window.addEventListener("keydown", async (e) => {
     if (e.ctrlKey && e.shiftKey && (e.key === "U" || e.key === "u")) {
       await unregisterAllServiceWorkers({ clearCaches: true });
@@ -45,5 +46,5 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <App />
       </BrowserRouter>
     </Provider>
-  </React.StrictMode>
+  </React.StrictMode>,
 );

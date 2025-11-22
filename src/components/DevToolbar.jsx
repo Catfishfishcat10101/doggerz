@@ -98,7 +98,11 @@ export default function DevToolbar() {
           DEV
         </span>
 
-        <button type="button" className={btnBase} onClick={unregisterServiceWorkers}>
+        <button
+          type="button"
+          className={btnBase}
+          onClick={unregisterServiceWorkers}
+        >
           Unregister SW
         </button>
 

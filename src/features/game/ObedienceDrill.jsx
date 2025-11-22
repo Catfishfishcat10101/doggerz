@@ -38,10 +38,7 @@ export default function ObedienceDrill() {
   const obedience = skills.obedience || {};
 
   const hasAnySkill =
-    obedience.sit ||
-    obedience.stay ||
-    obedience.rollOver ||
-    obedience.speak;
+    obedience.sit || obedience.stay || obedience.rollOver || obedience.speak;
 
   // Choose a target command to practice: prefer the one with lowest progress
   const targetCommand = useMemo(() => {
@@ -73,13 +70,19 @@ export default function ObedienceDrill() {
         trainObedience({
           commandId,
           success: true,
-        })
+        }),
       );
       setFeedback({ type: "success", text: `Nice! Recognized "${commandId}"` });
     } else if (transcript) {
-      setFeedback({ type: "fail", text: `Heard “${transcript}”. Try saying "${targetCommand}".` });
+      setFeedback({
+        type: "fail",
+        text: `Heard “${transcript}”. Try saying "${targetCommand}".`,
+      });
     } else {
-      setFeedback({ type: "fail", text: `Didn’t catch that. Try "${targetCommand}".` });
+      setFeedback({
+        type: "fail",
+        text: `Didn’t catch that. Try "${targetCommand}".`,
+      });
     }
 
     // Auto-hide after 2.2s
@@ -95,7 +98,8 @@ export default function ObedienceDrill() {
             Obedience Training
           </h2>
           <p className="text-xs text-zinc-400">
-            Press, give a command, and level up your pup&apos;s obedience skill tree.
+            Press, give a command, and level up your pup&apos;s obedience skill
+            tree.
           </p>
         </div>
       </div>
@@ -114,15 +118,20 @@ export default function ObedienceDrill() {
           </>
         ) : (
           <p className="text-xs text-zinc-500">
-            No commands trained yet. Use voice commands to start building skills.
+            No commands trained yet. Use voice commands to start building
+            skills.
           </p>
         )}
       </div>
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-xs uppercase tracking-wide text-zinc-500">Target</span>
-          <span className="text-xs font-semibold text-emerald-400">{targetCommand}</span>
+          <span className="text-xs uppercase tracking-wide text-zinc-500">
+            Target
+          </span>
+          <span className="text-xs font-semibold text-emerald-400">
+            {targetCommand}
+          </span>
         </div>
 
         <VoiceCommandButton
@@ -133,10 +142,11 @@ export default function ObedienceDrill() {
 
         {feedback && (
           <div
-            className={`text-xs rounded-lg px-3 py-2 border ${feedback.type === "success"
+            className={`text-xs rounded-lg px-3 py-2 border ${
+              feedback.type === "success"
                 ? "border-emerald-500/50 text-emerald-300 bg-emerald-500/10"
                 : "border-red-500/40 text-red-300 bg-red-500/10"
-              }`}
+            }`}
           >
             {feedback.text}
           </div>

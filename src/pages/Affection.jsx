@@ -39,7 +39,7 @@ export default function Affection() {
 
   // Dumb but intuitive bond score: average of happiness + energy
   const bondScore = Math.round(
-    (Number(happiness || 0) + Number(energy || 0)) / 2
+    (Number(happiness || 0) + Number(energy || 0)) / 2,
   );
 
   let bondLabel = "Getting to know you";
@@ -69,8 +69,7 @@ export default function Affection() {
           </p>
           <p className="text-base">
             <span className="font-semibold">{name}</span> currently feels:{" "}
-            <span className="font-semibold text-emerald-300">{bondLabel}</span>
-            .
+            <span className="font-semibold text-emerald-300">{bondLabel}</span>.
           </p>
 
           <Gauge label="Happiness" value={happiness} />

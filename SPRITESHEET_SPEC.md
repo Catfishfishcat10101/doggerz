@@ -25,24 +25,24 @@ public/
 
 ## Frame Layout (16x16 Grid)
 
-| Row | Animation | Frames | Start | End |
-|-----|-----------|--------|-------|-----|
-| 0 | Idle | 16 | 0 | 15 |
-| 1 | Walk | 16 | 16 | 31 |
-| 2 | Run | 16 | 32 | 47 |
-| 3 | Sit | 16 | 48 | 63 |
-| 4 | Lay Down | 16 | 64 | 79 |
-| 5 | Eat | 16 | 80 | 95 |
-| 6 | Play (Ball) | 16 | 96 | 111 |
-| 7 | Play (Tug) | 16 | 112 | 127 |
-| 8 | Sleep | 16 | 128 | 143 |
-| 9 | Bark | 16 | 144 | 159 |
-| 10 | Scratch | 16 | 160 | 175 |
-| 11 | Shake | 16 | 176 | 191 |
-| 12 | Potty | 16 | 192 | 207 |
-| 13 | Sad | 16 | 208 | 223 |
-| 14 | Excited | 16 | 224 | 239 |
-| 15 | Special | 16 | 240 | 255 |
+| Row | Animation   | Frames | Start | End |
+| --- | ----------- | ------ | ----- | --- |
+| 0   | Idle        | 16     | 0     | 15  |
+| 1   | Walk        | 16     | 16    | 31  |
+| 2   | Run         | 16     | 32    | 47  |
+| 3   | Sit         | 16     | 48    | 63  |
+| 4   | Lay Down    | 16     | 64    | 79  |
+| 5   | Eat         | 16     | 80    | 95  |
+| 6   | Play (Ball) | 16     | 96    | 111 |
+| 7   | Play (Tug)  | 16     | 112   | 127 |
+| 8   | Sleep       | 16     | 128   | 143 |
+| 9   | Bark        | 16     | 144   | 159 |
+| 10  | Scratch     | 16     | 160   | 175 |
+| 11  | Shake       | 16     | 176   | 191 |
+| 12  | Potty       | 16     | 192   | 207 |
+| 13  | Sad         | 16     | 208   | 223 |
+| 14  | Excited     | 16     | 224   | 239 |
+| 15  | Special     | 16     | 240   | 255 |
 
 ---
 
@@ -57,17 +57,15 @@ public/
 ### Action States
 
 ```js
-
 const ANIMATION_MAP = {
-  feeding: 'eat',      // Row 5
-  playing: 'play',     // Row 6 or 7 (random)
-  training: 'sit',     // Row 3
-  resting: 'sleep',    // Row 8
-  bathing: 'shake',    // Row 11
-  walking: 'walk',     // Row 1
-  barking: 'bark',     // Row 9
+  feeding: "eat", // Row 5
+  playing: "play", // Row 6 or 7 (random)
+  training: "sit", // Row 3
+  resting: "sleep", // Row 8
+  bathing: "shake", // Row 11
+  walking: "walk", // Row 1
+  barking: "bark", // Row 9
 };
-
 ```
 
 ### Mood-Driven Behaviors
@@ -97,16 +95,14 @@ const ANIMATION_MAP = {
 ### Sprite Component Integration
 
 ```jsx
-
 // Example usage in DogSprite.jsx
 <canvas
   ref={canvasRef}
   width={256}
   height={256}
   className="pixelated"
-  style={{ imageRendering: 'pixelated' }}
+  style={{ imageRendering: "pixelated" }}
 />
-
 ```
 
 ---
@@ -188,7 +184,6 @@ When weather system is active:
 ---
 
 ## Future Breed Variations
-
 
 ```
 

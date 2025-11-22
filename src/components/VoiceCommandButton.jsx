@@ -51,7 +51,7 @@ export default function VoiceCommandButton({
   const dispatch = useDispatch();
   const recognitionRef = useRef(null);
   const timeoutRef = useRef(null);
-  const visibilityStopRef = useRef(() => { });
+  const visibilityStopRef = useRef(() => {});
 
   const [isListening, setIsListening] = useState(false);
   const [lastTranscript, setLastTranscript] = useState("");
@@ -98,7 +98,7 @@ export default function VoiceCommandButton({
         case "not-allowed":
         case "service-not-allowed":
           setError(
-            "Microphone blocked. Enable mic permissions in your browser settings."
+            "Microphone blocked. Enable mic permissions in your browser settings.",
           );
           break;
         case "no-speech":
@@ -134,7 +134,10 @@ export default function VoiceCommandButton({
       setLastCommand(commandId);
 
       const match = expectedCommand
-        ? Boolean(commandId && commandId.toLowerCase() === expectedCommand.toLowerCase())
+        ? Boolean(
+            commandId &&
+              commandId.toLowerCase() === expectedCommand.toLowerCase(),
+          )
         : Boolean(commandId);
 
       // Callback first if provided
@@ -146,13 +149,13 @@ export default function VoiceCommandButton({
           trainObedience({
             commandId,
             success: true,
-          })
+          }),
         );
       }
 
       if (!commandId) {
         setError(
-          "Couldn’t catch a known command. Try 'sit', 'stay', 'roll over', or 'speak'."
+          "Couldn’t catch a known command. Try 'sit', 'stay', 'roll over', or 'speak'.",
         );
       } else {
         setError(null);
@@ -174,7 +177,7 @@ export default function VoiceCommandButton({
       if (document.hidden && recognitionRef.current) {
         try {
           recognitionRef.current.stop();
-        } catch { }
+        } catch {}
       }
     };
     document.addEventListener("visibilitychange", handleVisibility);
@@ -188,11 +191,19 @@ export default function VoiceCommandButton({
       }
       try {
         recognition.stop();
-      } catch { }
+      } catch {}
       recognitionRef.current = null;
       visibilityStopRef.current?.();
     };
-  }, [dispatch, commands, expectedCommand, lang, maxDurationMs, onCommand, onTranscript]);
+  }, [
+    dispatch,
+    commands,
+    expectedCommand,
+    lang,
+    maxDurationMs,
+    onCommand,
+    onTranscript,
+  ]);
 
   const startListening = () => {
     if (disabled || !hasSpeech || !recognitionRef.current) return;
@@ -238,8 +249,11 @@ export default function VoiceCommandButton({
     );
   }
 
-  const baseBtnClass = `w-full rounded-xl border px-4 py-2 text-sm font-semibold transition ${isListening ? "border-emerald-500 bg-zinc-900" : "border-zinc-700 bg-zinc-900 hover:bg-zinc-800"
-    } ${disabled ? "opacity-50 cursor-not-allowed" : ""} ${className}`;
+  const baseBtnClass = `w-full rounded-xl border px-4 py-2 text-sm font-semibold transition ${
+    isListening
+      ? "border-emerald-500 bg-zinc-900"
+      : "border-zinc-700 bg-zinc-900 hover:bg-zinc-800"
+  } ${disabled ? "opacity-50 cursor-not-allowed" : ""} ${className}`;
 
   return (
     <div className="space-y-2">
@@ -274,14 +288,18 @@ export default function VoiceCommandButton({
           <span className="text-zinc-100">&ldquo;{lastTranscript}&rdquo;</span>
           {lastCommand && (
             <>
-              {" "}→ mapped to {" "}
-              <span className="font-semibold text-emerald-400">{lastCommand}</span>
+              {" "}
+              → mapped to{" "}
+              <span className="font-semibold text-emerald-400">
+                {lastCommand}
+              </span>
               {expectedCommand && (
                 <span
-                  className={`ml-2 text-[11px] font-mono uppercase tracking-wide ${lastCommand?.toLowerCase() === expectedCommand.toLowerCase()
-                      ? 'text-emerald-400'
-                      : 'text-zinc-500'
-                    }`}
+                  className={`ml-2 text-[11px] font-mono uppercase tracking-wide ${
+                    lastCommand?.toLowerCase() === expectedCommand.toLowerCase()
+                      ? "text-emerald-400"
+                      : "text-zinc-500"
+                  }`}
                 >
                   target: {expectedCommand}
                 </span>
@@ -299,8 +317,11 @@ export default function VoiceCommandButton({
           <span className="font-medium text-zinc-300">
             &quot;sit&quot;, &quot;stay&quot;, &quot;roll over&quot;
           </span>{" "}
-          or <span className="font-medium text-zinc-300">&quot;speak&quot;</span>{" "}
-          {mode === "hold" ? " while holding the button." : " then tap again to stop."}
+          or{" "}
+          <span className="font-medium text-zinc-300">&quot;speak&quot;</span>{" "}
+          {mode === "hold"
+            ? " while holding the button."
+            : " then tap again to stop."}
         </p>
       )}
     </div>

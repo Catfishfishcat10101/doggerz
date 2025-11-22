@@ -4,7 +4,7 @@
 import React, { useEffect } from "react";
 
 function burstConfetti(canvas, { particles = 120, duration = 1500 } = {}) {
-  if (!canvas) return () => { };
+  if (!canvas) return () => {};
   const ctx = canvas.getContext("2d");
   const DPR = window.devicePixelRatio || 1;
   const W = canvas.clientWidth * DPR;
@@ -13,7 +13,14 @@ function burstConfetti(canvas, { particles = 120, duration = 1500 } = {}) {
   canvas.height = H;
 
   const rnd = (min, max) => Math.random() * (max - min) + min;
-  const colors = ["#22c55e", "#10b981", "#34d399", "#fde047", "#f59e0b", "#60a5fa"];
+  const colors = [
+    "#22c55e",
+    "#10b981",
+    "#34d399",
+    "#fde047",
+    "#f59e0b",
+    "#60a5fa",
+  ];
   const parts = Array.from({ length: particles }, () => ({
     x: W / 2,
     y: H * 0.35,
@@ -71,7 +78,7 @@ export default function LevelUpCelebration({ level, onDone }) {
       o.start();
       o.stop(ctx.currentTime + 0.4);
       return () => ctx.close();
-    } catch { }
+    } catch {}
   }, []);
 
   return (
@@ -79,11 +86,15 @@ export default function LevelUpCelebration({ level, onDone }) {
       <div className="absolute inset-0 bg-black/30 backdrop-blur-[1px]" />
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="pointer-events-auto rounded-3xl border border-emerald-500/40 bg-slate-950/80 px-6 py-5 text-center shadow-[0_30px_80px_rgba(16,185,129,0.35)]">
-          <div className="text-xs uppercase tracking-[0.25em] text-emerald-300/90">Level Up</div>
+          <div className="text-xs uppercase tracking-[0.25em] text-emerald-300/90">
+            Level Up
+          </div>
           <div className="mt-1 text-4xl font-black tracking-tight text-emerald-300 drop-shadow-[0_0_18px_rgba(16,185,129,0.85)] animate-pulse">
             Level {level}
           </div>
-          <div className="mt-2 text-[11px] text-emerald-200/80">Nice work! Keep training to earn more XP.</div>
+          <div className="mt-2 text-[11px] text-emerald-200/80">
+            Nice work! Keep training to earn more XP.
+          </div>
         </div>
       </div>
       <ConfettiLayer />

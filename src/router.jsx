@@ -1,9 +1,6 @@
 // src/router.jsx
 import React from "react";
-import {
-  createBrowserRouter,
-  RouterProvider,
-} from "react-router-dom";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import AppShell from "./AppShell.jsx";
 
 const router = createBrowserRouter(
@@ -17,7 +14,7 @@ const router = createBrowserRouter(
     future: {
       v7_relativeSplatPath: true,
     },
-  }
+  },
 );
 
 export function AppRouter() {

@@ -1,11 +1,12 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice } from "@reduxjs/toolkit";
 
-export const DOG_STORAGE_KEY = 'doggerz:dogState';
+export const DOG_STORAGE_KEY = "doggerz:dogState";
 
 /**
  * Clamp a numeric value between [lo, hi].
  */
-const clamp = (n, lo = 0, hi = 100) => Math.max(lo, Math.min(hi, Number.isFinite(n) ? n : 0));
+const clamp = (n, lo = 0, hi = 100) =>
+  Math.max(lo, Math.min(hi, Number.isFinite(n) ? n : 0));
 
 /**
  * How fast needs move per *real* hour.
@@ -37,12 +38,12 @@ const getDaysBetween = (fromMs, toMs) => {
 };
 
 const initialTemperament = {
-  primary: 'SPICY', // SPICY / SWEET / CHILL / CHAOS etc.
-  secondary: 'SWEET',
+  primary: "SPICY", // SPICY / SWEET / CHILL / CHAOS etc.
+  secondary: "SWEET",
   traits: [
-    { id: 'zoomies', label: 'Zoomies', intensity: 0.7 },
-    { id: 'clingy', label: 'Clingy', intensity: 0.5 },
-    { id: 'toy_gremlin', label: 'Toy Gremlin', intensity: 0.4 },
+    { id: "zoomies", label: "Zoomies", intensity: 0.7 },
+    { id: "clingy", label: "Clingy", intensity: 0.5 },
+    { id: "toy_gremlin", label: "Toy Gremlin", intensity: 0.4 },
   ],
 };
 
@@ -63,7 +64,7 @@ const initialStats = {
 
 const createInitialDogState = () => ({
   name: null,
-  breed: 'jackrussell',
+  breed: "jackrussell",
   adoptedAtMs: null,
   lastTickMs: null,
 
@@ -139,7 +140,7 @@ const applyNeedDecay = (state, now) => {
     if (!decay) return;
     const delta = decay * hoursElapsed;
 
-    if (key === 'hunger') {
+    if (key === "hunger") {
       // Hunger increases over time.
       state.hunger = clamp(state.hunger + delta);
     } else {
@@ -148,10 +149,10 @@ const applyNeedDecay = (state, now) => {
     }
   };
 
-  apply('hunger');
-  apply('happiness');
-  apply('energy');
-  apply('cleanliness');
+  apply("hunger");
+  apply("happiness");
+  apply("energy");
+  apply("cleanliness");
 
   state.lastTickMs = now;
 };
@@ -160,21 +161,23 @@ const applyNeedDecay = (state, now) => {
  * Simple heuristic mood label.
  */
 const computeMoodLabel = (state) => {
-  if (!state.adoptedAtMs) return 'NONE';
+  if (!state.adoptedAtMs) return "NONE";
 
-  const badCount = [state.hunger, 100 - state.happiness, 100 - state.energy].filter(
-    (v) => v > 75,
-  ).length;
+  const badCount = [
+    state.hunger,
+    100 - state.happiness,
+    100 - state.energy,
+  ].filter((v) => v > 75).length;
 
-  if (state.cleanliness < 25) return 'GRIMY';
-  if (badCount >= 2) return 'STRESSED';
-  if (state.happiness > 75 && state.energy > 60) return 'HAPPY';
-  if (state.happiness < 40) return 'SULKY';
-  return 'OKAY';
+  if (state.cleanliness < 25) return "GRIMY";
+  if (badCount >= 2) return "STRESSED";
+  if (state.happiness > 75 && state.energy > 60) return "HAPPY";
+  if (state.happiness < 40) return "SULKY";
+  return "OKAY";
 };
 
 const dogSlice = createSlice({
-  name: 'dog',
+  name: "dog",
   initialState: createInitialDogState(),
   reducers: {
     /**
@@ -185,11 +188,11 @@ const dogSlice = createSlice({
     },
 
     setDogName(state, action) {
-      state.name = (action.payload || '').toString().trim() || 'Pup';
+      state.name = (action.payload || "").toString().trim() || "Pup";
     },
 
     setBreed(state, action) {
-      state.breed = action.payload || 'jackrussell';
+      state.breed = action.payload || "jackrussell";
     },
 
     /**
@@ -225,7 +228,8 @@ const dogSlice = createSlice({
         const minutes = (end - state.lastSessionStartAt) / (1000 * 60) || 0;
         state.stats = {
           ...state.stats,
-          totalMinutesPlayed: (state.stats.totalMinutesPlayed ?? 0) + Math.max(0, minutes),
+          totalMinutesPlayed:
+            (state.stats.totalMinutesPlayed ?? 0) + Math.max(0, minutes),
         };
       }
 
@@ -243,9 +247,11 @@ const dogSlice = createSlice({
       applyNeedDecay(state, now);
 
       // Optionally sample mood once per hour.
-      const lastSample = state.moodSamples[state.moodSamples.length - 1] || null;
+      const lastSample =
+        state.moodSamples[state.moodSamples.length - 1] || null;
       const needsSample =
-        !lastSample || (now - lastSample.atMs) / (1000 * 60) >= MOOD_SAMPLE_MINUTES;
+        !lastSample ||
+        (now - lastSample.atMs) / (1000 * 60) >= MOOD_SAMPLE_MINUTES;
 
       if (needsSample) {
         state.moodSamples.push({
@@ -267,7 +273,12 @@ const dogSlice = createSlice({
      * feeding, playing, bath, nap, etc).
      */
     adjustNeeds(state, action) {
-      const { hunger = 0, happiness = 0, energy = 0, cleanliness = 0 } = action.payload || {};
+      const {
+        hunger = 0,
+        happiness = 0,
+        energy = 0,
+        cleanliness = 0,
+      } = action.payload || {};
 
       state.hunger = clamp(state.hunger + hunger);
       state.happiness = clamp(state.happiness + happiness);
@@ -404,7 +415,7 @@ const dogSlice = createSlice({
     trainObedience(state, action) {
       // Basic XP award placeholder; UI can display progress
       const xp = Number(action?.payload?.xp ?? 10);
-      const cmd = (action?.payload?.commandId || '').toString();
+      const cmd = (action?.payload?.commandId || "").toString();
 
       // Global XP
       state.xp = Math.max(0, state.xp + xp);
@@ -421,7 +432,7 @@ const dogSlice = createSlice({
       }
 
       // Adult daily training session logging if special routine command used
-      if (cmd === 'routine_session') {
+      if (cmd === "routine_session") {
         const todayIso = toISODate(nowMs());
         if (!state.training) {
           state.training = {
@@ -450,7 +461,9 @@ const dogSlice = createSlice({
         } else {
           const lastDateMs = new Date(last).getTime();
           const todayMs = new Date(todayIso).getTime();
-          const diffDays = Math.round((todayMs - lastDateMs) / (1000 * 60 * 60 * 24));
+          const diffDays = Math.round(
+            (todayMs - lastDateMs) / (1000 * 60 * 60 * 24),
+          );
           if (diffDays === 1) {
             adult.streak = (adult.streak || 0) + 1;
           } else if (diffDays > 1) {
@@ -500,7 +513,7 @@ export const selectDog = (state) => state.dog;
 
 export const selectHasDog = (state) => Boolean(state.dog?.adoptedAtMs);
 
-export const selectDogName = (state) => state.dog?.name ?? 'Pup';
+export const selectDogName = (state) => state.dog?.name ?? "Pup";
 
 export const selectDogNeeds = (state) => ({
   hunger: state.dog.hunger,
@@ -523,27 +536,33 @@ export const selectPotty = (state) => state.dog.potty;
 
 export const selectDogStats = (state) => state.dog.stats;
 
-export const selectDogTraining = (state) => state.dog?.training || { adult: {}, potty: {} };
-export const selectDogSkills = (state) => state.dog?.skills || { obedience: {} };
+export const selectDogTraining = (state) =>
+  state.dog?.training || { adult: {}, potty: {} };
+export const selectDogSkills = (state) =>
+  state.dog?.skills || { obedience: {} };
 
 export const selectDogHydrated = (state) => state.dog.hydratedFromStorage;
 
 // Derived selectors expected by views
 export const selectDogLifeStage = (state) => {
   const adopted = state.dog?.adoptedAtMs;
-  if (!adopted) return { stage: 'PUPPY', label: 'Puppy', days: 0 };
-  const days = Math.max(0, Math.floor((Date.now() - adopted) / (1000 * 60 * 60 * 24)));
-  const stage = days < 30 ? 'PUPPY' : days < 360 ? 'ADULT' : 'SENIOR';
-  const label = stage === 'PUPPY' ? 'Puppy' : stage === 'ADULT' ? 'Adult' : 'Senior';
+  if (!adopted) return { stage: "PUPPY", label: "Puppy", days: 0 };
+  const days = Math.max(
+    0,
+    Math.floor((Date.now() - adopted) / (1000 * 60 * 60 * 24)),
+  );
+  const stage = days < 30 ? "PUPPY" : days < 360 ? "ADULT" : "SENIOR";
+  const label =
+    stage === "PUPPY" ? "Puppy" : stage === "ADULT" ? "Adult" : "Senior";
   return { stage, label, days };
 };
 
 export const selectDogCleanlinessTier = (state) => {
   const c = Number(state.dog?.cleanliness ?? 0);
-  if (c >= 80) return 'FRESH';
-  if (c >= 50) return 'DIRTY';
-  if (c >= 20) return 'FLEAS';
-  return 'MANGE';
+  if (c >= 80) return "FRESH";
+  if (c >= 50) return "DIRTY";
+  if (c >= 20) return "FLEAS";
+  return "MANGE";
 };
 
 /** @returns {{active: any}} */

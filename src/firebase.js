@@ -18,7 +18,7 @@ const logMissingConfig = () => {
     : "unknown";
   console.warn(
     `[Doggerz] Firebase disabled. Missing config keys: ${printable}. ` +
-      "Populate .env.local or disable cloud features."
+      "Populate .env.local or disable cloud features.",
   );
 };
 
@@ -48,7 +48,7 @@ let googleProvider = null;
 
 // Use the existing firebaseReady logic from the first initialization
 const firebaseReady = Boolean(
-  app && authInstance && dbInstance && !firebaseInitError
+  app && authInstance && dbInstance && !firebaseInitError,
 );
 
 try {
@@ -63,7 +63,7 @@ try {
   ];
 
   const missingVars = requiredVars.filter(
-    (varName) => !import.meta.env[varName]
+    (varName) => !import.meta.env[varName],
   );
 
   if (missingVars.length > 0) {
@@ -111,7 +111,7 @@ export const assertFirebaseReady = (featureName = "this feature") => {
   const missing = firebaseMissingKeys.length
     ? `Missing keys: ${firebaseMissingKeys.join(", ")}.`
     : firebaseError
-    ? `Init error: ${firebaseError.message}`
-    : "Unknown configuration issue.";
+      ? `Init error: ${firebaseError.message}`
+      : "Unknown configuration issue.";
   throw new Error(`[Doggerz] ${featureName} requires Firebase. ${missing}`);
 };

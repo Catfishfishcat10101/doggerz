@@ -1,7 +1,12 @@
 // src/features/game/MainGame.jsx
 // @ts-nocheck
 
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+  useCallback,
+} from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   selectDog,
@@ -20,11 +25,11 @@ import {
 } from "@/redux/dogSlice.js";
 
 import EnhancedDogSprite from "@/components/EnhancedDogSprite.jsx";
-import ProgressBar from "@/components/ProgressBar.jsx";
 import VoiceCommandButton from "@/components/VoiceCommandButton.jsx";
 import CareActionsPanel from "@/components/CareActionsPanel.jsx";
 import PottyTrackerCard from "@/components/PottyTrackerCard.jsx";
 import GameTopBar from "@/components/GameTopBar.jsx";
+import NeedsDashboard from "@/components/NeedsDashboard.jsx";
 
 function computeTimeOfDayLabel() {
   const hours = new Date().getHours();
@@ -76,7 +81,10 @@ export default function MainGame() {
 
   const lifeStageLabel = lifeStage?.label ?? "Puppy";
   const lifeStageDay =
-    lifeStage?.ageInGameDays ?? lifeStage?.gameDay ?? lifeStage?.day ?? 1;
+    lifeStage?.ageInGameDays ??
+    lifeStage?.gameDay ??
+    lifeStage?.day ??
+    1;
 
   const needs = useMemo(
     () => ({
@@ -92,7 +100,8 @@ export default function MainGame() {
     dog?.moodLabel || dog?.mood?.label || dog?.mood || "Content";
 
   const temperamentRevealReady = !!(
-    training?.temperament?.ready || training?.temperament?.revealReady
+    training?.temperament?.ready ||
+    training?.temperament?.revealReady
   );
 
   const handleFeed = useCallback(() => {
@@ -153,7 +162,10 @@ export default function MainGame() {
       <section className="py-8 text-center text-sm text-zinc-300">
         <p>You don&apos;t have a pup yet.</p>
         <p className="mt-1">
-          Go to <span className="font-semibold text-emerald-300">Adopt</span>{" "}
+          Go to{" "}
+          <span className="font-semibold text-emerald-300">
+            Adopt
+          </span>{" "}
           to claim your first Doggerz.
         </p>
       </section>
@@ -227,16 +239,9 @@ export default function MainGame() {
           </div>
         </div>
 
-        {/* Right column: stats + actions + potty */}
+        {/* Right column: needs dashboard + actions + potty card */}
         <div className="space-y-4">
-          <div className="rounded-2xl border border-zinc-800 bg-slate-950/80 p-3 shadow">
-            <div className="grid grid-cols-2 gap-2">
-              <ProgressBar label="Hunger" value={hunger} />
-              <ProgressBar label="Happy" value={happiness} />
-              <ProgressBar label="Energy" value={energy} />
-              <ProgressBar label="Clean" value={cleanliness} />
-            </div>
-          </div>
+          <NeedsDashboard needs={needs} />
 
           <CareActionsPanel
             onFeed={handleFeed}
@@ -258,14 +263,18 @@ export default function MainGame() {
           <div className="flex gap-3">
             <button
               type="button"
-              onClick={() => handlePollResponse(activePoll.id, true)}
+              onClick={() =>
+                handlePollResponse(activePoll.id, true)
+              }
               className="rounded-full bg-emerald-500 px-4 py-1.5 text-[0.75rem] font-semibold text-slate-950 hover:bg-emerald-400"
             >
               Yes
             </button>
             <button
               type="button"
-              onClick={() => handlePollResponse(activePoll.id, false)}
+              onClick={() =>
+                handlePollResponse(activePoll.id, false)
+              }
               className="rounded-full border border-emerald-400/70 px-4 py-1.5 text-[0.75rem] font-semibold text-emerald-200 hover:bg-emerald-500/10"
             >
               Not now

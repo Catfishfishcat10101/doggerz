@@ -20,7 +20,10 @@ function Bar({ label, value, color = "emerald", inverse = false }) {
         <span>{Math.round(raw)}%</span>
       </div>
       <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-        <div className={`h-full ${colors[color] || colors.zinc}`} style={{ width: `${pct}%` }} />
+        <div
+          className={`h-full ${colors[color] || colors.zinc}`}
+          style={{ width: `${pct}%` }}
+        />
       </div>
     </div>
   );
@@ -30,11 +33,12 @@ export default function NeedsHUD({ needs = {}, className = "" }) {
   const { hunger = 0, happiness = 0, energy = 0, cleanliness = 0 } = needs;
 
   return (
-    <div className={[
-      "rounded-xl border border-zinc-800/80 bg-zinc-900/85 backdrop-blur px-3 py-2",
-      "shadow-[0_10px_30px_rgba(0,0,0,0.45)]",
-      className,
-    ].join(" ")}
+    <div
+      className={[
+        "rounded-xl border border-zinc-800/80 bg-zinc-900/85 backdrop-blur px-3 py-2",
+        "shadow-[0_10px_30px_rgba(0,0,0,0.45)]",
+        className,
+      ].join(" ")}
       aria-label="Needs HUD"
     >
       <div className="flex flex-col gap-1">

@@ -22,13 +22,13 @@ export function useDogLifecycle() {
 
   const temperamentRevealReady =
     temperament &&
-      typeof temperament === "object" &&
-      "revealReady" in temperament
+    typeof temperament === "object" &&
+    "revealReady" in temperament
       ? Boolean(temperament.revealReady)
       : false;
 
   return {
     temperamentRevealReady,
-    temperament
+    temperament,
   };
 }

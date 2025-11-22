@@ -30,22 +30,40 @@ export default function Settings() {
   });
 
   useEffect(() => {
-    try { localStorage.setItem("doggerz.setting.showOverlay", String(overlay)); } catch { }
+    try {
+      localStorage.setItem("doggerz.setting.showOverlay", String(overlay));
+    } catch {}
   }, [overlay]);
   useEffect(() => {
-    try { localStorage.setItem("doggerz.setting.reducedMotion", String(reduced)); } catch { }
+    try {
+      localStorage.setItem("doggerz.setting.reducedMotion", String(reduced));
+    } catch {}
   }, [reduced]);
   useEffect(() => {
-    try { localStorage.setItem("doggerz.setting.showNeedsHUD", String(showNeedsHUD)); } catch { }
+    try {
+      localStorage.setItem(
+        "doggerz.setting.showNeedsHUD",
+        String(showNeedsHUD),
+      );
+    } catch {}
   }, [showNeedsHUD]);
   useEffect(() => {
-    try { localStorage.setItem("doggerz.setting.useRealWeather", String(useRealWeather)); } catch { }
+    try {
+      localStorage.setItem(
+        "doggerz.setting.useRealWeather",
+        String(useRealWeather),
+      );
+    } catch {}
   }, [useRealWeather]);
   useEffect(() => {
-    try { localStorage.setItem("doggerz.setting.zip", zip || ""); } catch { }
+    try {
+      localStorage.setItem("doggerz.setting.zip", zip || "");
+    } catch {}
   }, [zip]);
   useEffect(() => {
-    try { localStorage.setItem("doggerz.setting.audioFx", String(audioFx)); } catch { }
+    try {
+      localStorage.setItem("doggerz.setting.audioFx", String(audioFx));
+    } catch {}
   }, [audioFx]);
 
   // --- THEME TOGGLER ---------------------------------------------------------
@@ -76,7 +94,6 @@ export default function Settings() {
       <h1 className="text-3xl font-bold mb-6">Settings</h1>
 
       <div className="grid gap-6 lg:grid-cols-2">
-
         {/* Appearance Panel */}
         <div className="card">
           <h2 className="text-xl font-semibold">Appearance</h2>
@@ -145,11 +162,15 @@ export default function Settings() {
                 pattern="[0-9]*"
                 maxLength={10}
                 value={zip}
-                onChange={(e) => setZip(e.target.value.replace(/[^0-9A-Za-z-]/g, ''))}
+                onChange={(e) =>
+                  setZip(e.target.value.replace(/[^0-9A-Za-z-]/g, ""))
+                }
                 placeholder="ZIP (e.g., 98101)"
                 className="w-40 px-3 py-2 rounded-md bg-zinc-800 border border-zinc-700 text-sm"
               />
-              <span className="text-xs text-zinc-500">OpenWeather key in .env as VITE_OPENWEATHER_API_KEY</span>
+              <span className="text-xs text-zinc-500">
+                OpenWeather key in .env as VITE_OPENWEATHER_API_KEY
+              </span>
             </div>
           </div>
         </div>

@@ -1,8 +1,6 @@
-
 // src/config/firebaseConfig.js
 
 export const FIREBASE = {
-
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
 
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -14,13 +12,9 @@ export const FIREBASE = {
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
 
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
-
 };
 
-
-
 const requiredKeys = [
-
   "VITE_FIREBASE_API_KEY",
 
   "VITE_FIREBASE_AUTH_DOMAIN",
@@ -32,18 +26,10 @@ const requiredKeys = [
   "VITE_FIREBASE_MESSAGING_SENDER_ID",
 
   "VITE_FIREBASE_APP_ID",
-
 ];
 
-
-
 export const missingFirebaseKeys = requiredKeys.filter(
-
-  (key) => !import.meta.env[key]
-
+  (key) => !import.meta.env[key],
 );
 
-
-
 export const isFirebaseConfigured = missingFirebaseKeys.length === 0;
-
