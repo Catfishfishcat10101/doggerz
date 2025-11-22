@@ -1,8 +1,17 @@
 // src/utils/lifecycle.js
 // @ts-nocheck
 
-// Reuse shared game constants
-import { GAME_DAYS_PER_REAL_DAY, LIFE_STAGES } from "@/constants/game.js";
+// Keep this file self-contained so it can't break if constants imports are wrong.
+
+// How many in-game days pass per real day
+export const GAME_DAYS_PER_REAL_DAY = 4;
+
+// Lifecycle / age stages (in-game days)
+export const LIFE_STAGES = {
+  PUPPY: { min: 0, max: 180, label: "Puppy" },
+  ADULT: { min: 181, max: 2555, label: "Adult" },
+  SENIOR: { min: 2556, max: 5475, label: "Senior" },
+};
 
 // Flattened stages for lookup
 const ALL_STAGES = Object.entries(LIFE_STAGES).map(([key, stage]) => ({
@@ -41,7 +50,6 @@ export function getLifeStageForAge(ageInGameDays) {
 export function calculateDogAge(adoptedAtMs, now = Date.now()) {
   if (!adoptedAtMs || !Number.isFinite(adoptedAtMs)) return null;
 
-  // 24 hours in ms, divided by how many game days per real day
   const msPerGameDay = (24 * 60 * 60 * 1000) / GAME_DAYS_PER_REAL_DAY;
 
   const ageInGameDays = Math.max(
@@ -78,3 +86,4 @@ export function getSpriteForLifeStage(stageId) {
       return "/sprites/jack_russell_senior.png";
   }
 }
+// End of src/utils/lifecycle.js

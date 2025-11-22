@@ -27,7 +27,7 @@ import {
   setAdoptedAt,
   setDogName,
 } from "@/redux/dogSlice.js";
-import EnhancedDogSprite from "@/utils/EnhancedDogSprite.jsx";
+import EnhancedDogSprite from "@/components/EnhancedDogSprite.jsx";
 import { getTimeOfDay } from "@/utils/weather.js";
 import { CLEANLINESS_TIER_EFFECTS } from "@/constants/game.js";
 import { useDogLifecycle } from "@/features/game/useDogLifecycle.jsx";
