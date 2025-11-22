@@ -1,102 +1,77 @@
 // src/redux/dogThunks.js
-import { createAsyncThunk } from "@reduxjs/toolkit";
-import { doc, getDoc, setDoc } from "firebase/firestore";
-import { auth, db, firebaseReady } from "@/firebase.js";
-import { hydrateDog } from "./dogSlice.js";
+import {
+  DOG_STORAGE_KEY,
+  hydrateFromSnapshot,
+  markHydrated,
+  tickDogNeeds,
+} from "./dogSlice.js";
 
-const CLOUD_DOG_VERSION = 1;
-
-// ensure we only save plain JSON + meta
-const buildCloudDogPayload = (dog) => ({
-  ...dog,
-  lastCloudSyncAt: Date.now(),
-  version: CLOUD_DOG_VERSION,
-});
-
-// defensively unwrap data from Firestore for the client
-const parseCloudDog = (raw) => {
-  if (!raw) return null;
-  const { version, lastCloudSyncAt, userId, ...rest } = raw;
-  return {
-    ...rest,
-    lastCloudSyncAt: lastCloudSyncAt ?? null,
-  };
+/**
+ * Safely parse JSON from localStorage.
+ */
+const safeParse = (raw) => {
+  try {
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
 };
 
-export const loadDogFromCloud = createAsyncThunk(
-  "dog/loadDogFromCloud",
-  async (_, { dispatch, rejectWithValue }) => {
-    try {
-      if (!firebaseReady || !db || !auth?.currentUser) {
-        return rejectWithValue(
-          "Cloud sync disabled: Firebase not configured or user not logged in"
-        );
-      }
+/**
+ * Load dog state from localStorage (if present) and hydrate Redux state.
+ * Should be dispatched once on app boot (e.g., in main layout or App).
+ *
+ * Example:
+ *   const dispatch = useDispatch();
+ *   useEffect(() => {
+ *     dispatch(loadDogFromStorage());
+ *   }, [dispatch]);
+ */
+export const loadDogFromStorage = () => (dispatch) => {
+  if (typeof window === "undefined") {
+    // SSR safety – no-op.
+    dispatch(markHydrated());
+    return;
+  }
 
-      const userId = auth.currentUser.uid;
-      const dogRef = doc(db, "users", userId, "dog", "state");
-      const docSnap = await getDoc(dogRef);
+  const raw = window.localStorage.getItem(DOG_STORAGE_KEY);
+  const snapshot = safeParse(raw);
 
-      if (!docSnap.exists()) {
-        console.log("[Doggerz] No cloud save found for this user");
-        return null;
-      }
+  if (snapshot && typeof snapshot === "object") {
+    dispatch(hydrateFromSnapshot(snapshot));
+  } else {
+    dispatch(markHydrated());
+  }
 
-      const cloudData = parseCloudDog(docSnap.data());
+  // After hydrating, tick needs forward to now.
+  dispatch(tickDogNeeds({ nowMs: Date.now() }));
+};
 
-      // Automatically hydrate the dog state
-      if (cloudData) {
-        dispatch(hydrateDog(cloudData));
-        console.log(
-          "[Doggerz] Dog loaded from cloud and hydrated successfully"
-        );
-      }
+/**
+ * Persist current dog state into localStorage.
+ * Call this after important actions (feed, walk, bath, session end, etc).
+ */
+export const saveDogToStorage = () => (dispatch, getState) => {
+  if (typeof window === "undefined") return;
 
-      return cloudData;
-    } catch (err) {
-      console.error("[Doggerz] Failed to load dog from cloud", err);
-      return rejectWithValue(err.message || "loadDogFromCloud failed");
+  const state = getState();
+  const dog = state.dog;
+
+  try {
+    window.localStorage.setItem(DOG_STORAGE_KEY, JSON.stringify(dog));
+  } catch (err) {
+    // Local storage can fail (quota, privacy, etc). We just log in dev.
+    if (import.meta.env.MODE !== "production") {
+      console.warn("[Doggerz] Failed to persist dog state:", err);
     }
   }
-);
+};
 
-export const saveDogToCloud = createAsyncThunk(
-  "dog/saveDogToCloud",
-  async (_, { getState, rejectWithValue }) => {
-    try {
-      if (!firebaseReady || !db || !auth?.currentUser) {
-        return rejectWithValue(
-          "Cloud sync disabled: Firebase not configured or user not logged in"
-        );
-      }
-
-      const userId = auth.currentUser.uid;
-      if (!userId) {
-        return rejectWithValue("User ID is missing");
-      }
-
-      /** @type {any} */
-      const state = getState();
-      const dogState = state?.dog;
-
-      // Don't sync if no dog adopted
-      if (!dogState || !dogState.adoptedAt) {
-        console.warn("[Doggerz] No dog to sync");
-        return { success: false, reason: "no_dog" };
-      }
-
-      const dogRef = doc(db, "users", userId, "dog", "state");
-      const payload = buildCloudDogPayload({
-        ...dogState,
-        userId,
-      });
-
-      await setDoc(dogRef, payload, { merge: true });
-      console.log("[Doggerz] Dog saved to cloud successfully");
-      return { success: true, timestamp: Date.now() };
-    } catch (err) {
-      console.error("[Doggerz] Failed to save dog to cloud", err);
-      return rejectWithValue(err.message || "saveDogToCloud failed");
-    }
-  }
-);
+/**
+ * Convenience combo: hydrate from storage, then periodically tick + save.
+ * You can build on this later for background timers, etc.
+ */
+export const bootstrapDogState = () => async (dispatch) => {
+  dispatch(loadDogFromStorage());
+  // Any extra boot-time logic for the dog can live here later.
+};

@@ -1,9 +1,9 @@
 // src/pages/Game.jsx
-// @ts-nocheck
 
 import React, { useEffect } from "react";
 import { useSelector } from "react-redux";
 import { selectDog } from "@/redux/dogSlice.js";
+
 import DogAIEngine from "@/features/game/DogAIEngine.jsx";
 import MainGame from "@/features/game/MainGame.jsx";
 
@@ -15,37 +15,12 @@ export default function Game() {
   }, []);
 
   return (
-    <main className="min-h-[calc(100vh-4rem)] bg-slate-950 text-zinc-100 flex justify-center px-4 py-6">
-      <div className="w-full max-w-5xl space-y-4">
-        <header className="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-white">
-              Your pup
-            </h1>
-            <p className="text-xs sm:text-sm text-zinc-400 max-w-md">
-              Check in, feed them, keep them clean — Doggerz tracks time while
-              you&apos;re away.
-            </p>
-          </div>
+    <>
+      {/* Background AI loop / timers – invisible, just runs logic */}
+      {dog && <DogAIEngine />}
 
-          <div className="flex items-center gap-2 text-xs text-zinc-400">
-            <span className="inline-flex items-center rounded-full border border-zinc-700/60 bg-zinc-900/80 px-3 py-1">
-              {dog?.lifeStageLabel ?? "Puppy"} • Day {dog?.gameDay ?? 0}
-            </span>
-          </div>
-        </header>
-
-        {/* Background AI loop / timers */}
-        <DogAIEngine />
-
-        {/* Main game view */}
-        <section
-          aria-label="Doggerz main game view"
-          className="rounded-2xl bg-slate-900/80 border border-slate-700/60 shadow-xl overflow-hidden"
-        >
-          <MainGame />
-        </section>
-      </div>
-    </main>
+      {/* Main game owns the whole layout / screen */}
+      <MainGame />
+    </>
   );
 }

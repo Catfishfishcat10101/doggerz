@@ -1,59 +1,99 @@
 // src/pages/Splash.jsx
-// Simple entry splash screen before the main landing
+// @ts-nocheck
 
-import { Link } from "react-router-dom";
+import React from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function Splash() {
+  const navigate = useNavigate();
+
+  const handleAdoptClick = () => {
+    navigate("/adopt");
+  };
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-slate-950 text-slate-50">
-      <div className="space-y-8 px-4 text-center">
-        {/* Logo stack */}
-        <div className="inline-flex flex-col items-center gap-2">
-          <span className="text-xs font-semibold uppercase tracking-[0.4em] text-emerald-400">
-            welcome to
-          </span>
-          <span className="text-5xl font-black tracking-tight text-emerald-400 drop-shadow-[0_0_30px_rgba(16,185,129,0.7)]">
-            DOGGERZ
-          </span>
-          <span className="text-[0.65rem] font-semibold uppercase tracking-[0.35em] text-emerald-300">
-            virtual pup simulator
-          </span>
+    <main className="min-h-screen bg-slate-950 text-slate-100">
+      {/* Main hero */}
+      <section className="mx-auto flex max-w-6xl flex-col gap-12 px-6 pb-24 pt-28 md:flex-row md:items-center">
+        {/* LEFT SIDE – BRAND + COPY */}
+        <div className="flex-1 space-y-7">
+          {/* Tiny label – no second DOGGERZ text */}
+          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/40 bg-emerald-500/5 px-3 py-1 text-xs uppercase tracking-[0.2em] text-emerald-300">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.9)]" />
+            virtual pup • real-time care
+          </div>
+
+          {/* Big DOGGERZ wordmark in the middle again */}
+          <h1 className="space-y-2">
+            <span className="block text-[3rem] leading-[1.05] font-black tracking-tight text-emerald-400 drop-shadow-[0_0_22px_rgba(16,185,129,0.85)] md:text-[4rem]">
+              DOGGERZ
+            </span>
+            <span className="block text-2xl font-semibold text-slate-50 md:text-3xl">
+              Virtual pup simulator
+            </span>
+          </h1>
+
+          {/* Description – no yellow accent, just clean text */}
+          <p className="max-w-xl text-sm leading-relaxed text-slate-300 md:text-base">
+            Adopt a single pixel pup, keep it fed, clean, and trained, and
+            try not to ghost your dog. Stats tick in real time, even when
+            you&apos;re off doing human stuff.
+          </p>
+
+          {/* Primary CTA – ONLY Adopt button, no extra Log in text */}
+          <div className="flex flex-wrap items-center gap-4 pt-2">
+            <button
+              type="button"
+              onClick={handleAdoptClick}
+              className="inline-flex items-center justify-center rounded-full bg-emerald-400 px-7 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-500/40 transition-transform duration-150 hover:-translate-y-[1px] hover:bg-emerald-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+            >
+              Adopt a pup
+            </button>
+
+            {/* If you *do* want a secondary action later, add it here –
+                for now we keep it clean and avoid the extra Login. */}
+          </div>
+
+          {/* NO more "Dev shortcut: go straight to the yard" */}
         </div>
 
-        {/* Short description */}
-        <p className="mx-auto max-w-md text-sm text-zinc-400">
-          A moody little dog that keeps living in real time while you deal with
-          real life. Feed, clean, train, and try not to ghost your pup.
-        </p>
+        {/* RIGHT SIDE – PREVIEW CARD */}
+        <div className="flex-1">
+          <div className="mx-auto w-full max-w-md rounded-3xl border border-emerald-500/30 bg-slate-900/60 p-5 shadow-[0_18px_60px_rgba(0,0,0,0.75)] backdrop-blur">
+            <div className="mb-4 flex items-center justify-between text-[0.65rem] font-mono uppercase tracking-[0.25em] text-slate-400">
+              <span>Preview</span>
+              <span className="text-emerald-300">real-time sim</span>
+            </div>
 
-        {/* Main actions */}
-        <div className="flex flex-wrap justify-center gap-3">
-          <Link
-            to="/"
-            className="inline-flex items-center justify-center rounded-xl border border-emerald-400 bg-emerald-400 px-6 py-3 text-sm font-semibold uppercase tracking-wide text-slate-950 shadow-lg shadow-emerald-500/30 transition hover:-translate-y-0.5 hover:bg-emerald-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
-          >
-            Enter Doggerz
-          </Link>
+            {/* Fake “device” / card */}
+            <div className="flex items-center justify-center rounded-3xl bg-slate-950/80 px-6 py-10">
+              <div className="relative flex h-32 w-24 items-center justify-center rounded-3xl bg-gradient-to-b from-slate-800 to-slate-950 shadow-[0_0_25px_rgba(15,118,110,0.9)]">
+                <div className="absolute inset-[9px] rounded-2xl bg-gradient-to-br from-emerald-500/20 via-slate-900 to-slate-950 border border-emerald-500/40" />
+                <span className="relative z-10 text-[0.6rem] font-mono text-emerald-200/80">
+                  your<br />
+                  pixel<br />
+                  pup
+                </span>
+              </div>
+            </div>
 
-          <Link
-            to="/login"
-            className="inline-flex items-center justify-center rounded-xl border border-zinc-700 bg-zinc-900/80 px-5 py-3 text-xs font-semibold uppercase tracking-wide text-zinc-100 shadow-md shadow-black/40 transition hover:-translate-y-0.5 hover:border-emerald-300 hover:text-emerald-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
-          >
-            Log in
-          </Link>
+            {/* Tiny stats row */}
+            <div className="mt-6 grid grid-cols-2 gap-x-4 gap-y-2 text-[0.7rem] font-mono">
+              <div className="text-slate-400">mood</div>
+              <div className="text-right text-emerald-300">tbd</div>
+
+              <div className="text-slate-400">hunger</div>
+              <div className="text-right text-slate-100">ticks hourly</div>
+
+              <div className="text-slate-400">energy</div>
+              <div className="text-right text-slate-100">sleeps to heal</div>
+
+              <div className="text-slate-400">cleanliness</div>
+              <div className="text-right text-slate-100">dirt accumulates</div>
+            </div>
+          </div>
         </div>
-
-        {/* Tiny dev helper link – safe to delete later */}
-        <div className="text-[0.65rem] text-zinc-500">
-          <span className="mr-1 align-middle">Dev shortcut:</span>
-          <Link
-            to="/game"
-            className="align-middle underline-offset-4 hover:text-emerald-300 hover:underline"
-          >
-            go straight to the yard
-          </Link>
-        </div>
-      </div>
+      </section>
     </main>
   );
 }

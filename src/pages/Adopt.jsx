@@ -10,6 +10,7 @@ import {
   setAdoptedAt,
   registerSessionStart,
 } from "@/redux/dogSlice.js";
+import { PATHS } from "@/routes.js";
 
 export default function Adopt() {
   const dispatch = useDispatch();
@@ -24,16 +25,20 @@ export default function Adopt() {
     const now = Date.now();
     const finalName = (name || "").trim() || "Pup";
 
+    // Fresh run
     dispatch(resetDogState());
     dispatch(setDogName(finalName));
     dispatch(setAdoptedAt(now));
-    dispatch(registerSessionStart(now));
+    // matches registerSessionStart({ now }) reducer we built
+    dispatch(registerSessionStart({ now }));
 
-    navigate("/game");
+    // TODO later: dispatch(setBreed(breed));
+
+    navigate(PATHS.GAME);
   };
 
   return (
-    <div className="min-h-[calc(100vh-7rem)] bg-zinc-950 text-zinc-50">
+    <main className="min-h-[calc(100vh-7rem)]">
       <div className="container mx-auto px-4 py-6 lg:py-8 max-w-3xl space-y-5">
         {/* smaller Dog polls & cleanliness explainer */}
         <section className="rounded-3xl border border-zinc-800 bg-zinc-900/80 px-4 py-3 shadow-lg shadow-black/50">
@@ -146,6 +151,6 @@ export default function Adopt() {
           </form>
         </section>
       </div>
-    </div>
+    </main>
   );
 }

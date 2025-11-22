@@ -82,9 +82,16 @@ export default function GameTopBar({
     <header className="flex items-start justify-between gap-4">
       {/* Left side: identity & progression */}
       <div className="space-y-1">
-        <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
+        <div className="flex items-baseline gap-2">
+          <span className="text-2xl lg:text-3xl font-black tracking-tight text-emerald-400 drop-shadow-[0_0_12px_rgba(16,185,129,0.75)]">
+            DOGGERZ
+          </span>
+          <span className="text-[0.6rem] text-emerald-300/80 uppercase tracking-[0.25em]">in-yard</span>
+        </div>
+
+        <h2 className="text-xl lg:text-2xl font-bold tracking-tight text-zinc-100">
           {dogName}
-        </h1>
+        </h2>
 
         <p className="text-[0.7rem] uppercase tracking-[0.2em] text-sky-300">
           Level {level} • {coins.toLocaleString()} coins

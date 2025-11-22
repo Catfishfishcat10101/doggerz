@@ -1,4 +1,4 @@
-// src/features/game/VoiceCommandButton.jsx
+// src/components/VoiceCommandButton.jsx
 // @ts-nocheck  // Remove this if you want TS to type-check this file
 
 import React, { useEffect, useRef, useState } from "react";
@@ -9,27 +9,49 @@ const hasSpeech =
   typeof window !== "undefined" &&
   ("SpeechRecognition" in window || "webkitSpeechRecognition" in window);
 
-const commandMap = [
+export const DEFAULT_COMMANDS = [
   { id: "sit", keywords: ["sit", "sit down"] },
   { id: "stay", keywords: ["stay"] },
   { id: "rollOver", keywords: ["roll over", "rollover", "roll"] },
   { id: "speak", keywords: ["speak", "bark", "talk"] },
 ];
 
-function findCommandFromTranscript(text) {
-  const lower = text.toLowerCase();
-  for (const cmd of commandMap) {
-    if (cmd.keywords.some((k) => lower.includes(k))) {
-      return cmd.id;
-    }
+function findCommandFromTranscript(text, commands) {
+  const lower = (text || "").toLowerCase();
+  for (const cmd of commands) {
+    if (cmd.keywords?.some((k) => lower.includes(k))) return cmd.id;
   }
   return null;
 }
 
-export default function VoiceCommandButton() {
+/**
+ * VoiceCommandButton
+ * Props:
+ * - mode: "hold" | "tap" (default: "hold")
+ * - expectedCommand?: string (e.g., "sit")
+ * - onCommand?: (data: { transcript: string, commandId: string|null, match:boolean }) => void
+ * - onTranscript?: (transcript: string) => void
+ * - commands?: Array<{id:string, keywords:string[]}>
+ * - disabled?: boolean
+ * - lang?: string (default: en-US)
+ * - maxDurationMs?: number (default: 10000)
+ * - className?: string (extra classes for the button)
+ */
+export default function VoiceCommandButton({
+  mode = "hold",
+  expectedCommand,
+  onCommand,
+  onTranscript,
+  commands = DEFAULT_COMMANDS,
+  disabled = false,
+  lang = "en-US",
+  maxDurationMs = 10_000,
+  className = "",
+}) {
   const dispatch = useDispatch();
   const recognitionRef = useRef(null);
   const timeoutRef = useRef(null);
+  const visibilityStopRef = useRef(() => { });
 
   const [isListening, setIsListening] = useState(false);
   const [lastTranscript, setLastTranscript] = useState("");
@@ -45,15 +67,14 @@ export default function VoiceCommandButton() {
       window.SpeechRecognition || window.webkitSpeechRecognition;
 
     const recognition = new SpeechRecognition();
-    recognition.lang = "en-US";
+    recognition.lang = lang;
     recognition.continuous = false;
     recognition.interimResults = false;
 
     recognition.onstart = () => {
       setIsListening(true);
       setError(null);
-
-      // Timeout after 10 seconds to prevent infinite listening
+      // Timeout to prevent infinite listening
       timeoutRef.current = setTimeout(() => {
         if (recognitionRef.current) {
           try {
@@ -63,23 +84,28 @@ export default function VoiceCommandButton() {
             console.warn("[Voice] timeout stop error:", e);
           }
         }
-      }, 10_000);
+      }, maxDurationMs);
     };
 
     recognition.onerror = (event) => {
       console.error("[Voice] recognition error:", event);
-
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
         timeoutRef.current = null;
       }
 
-      if (event.error === "not-allowed") {
-        setError("Mic access blocked. Check browser permissions.");
-      } else if (event.error === "no-speech") {
-        setError("Didn’t hear anything. Try again a bit closer to the mic.");
-      } else {
-        setError("Speech recognition error. Try again.");
+      switch (event?.error) {
+        case "not-allowed":
+        case "service-not-allowed":
+          setError(
+            "Microphone blocked. Enable mic permissions in your browser settings."
+          );
+          break;
+        case "no-speech":
+          setError("Didn’t hear anything. Try again closer to the mic.");
+          break;
+        default:
+          setError("Speech recognition error. Try again.");
       }
       setIsListening(false);
     };
@@ -91,35 +117,45 @@ export default function VoiceCommandButton() {
       }
 
       const transcript = Array.from(event.results)
-        .map((r) => r[0]?.transcript || "")
+        .map((r) => r?.[0]?.transcript || "")
         .join(" ")
         .trim();
 
+      setLastTranscript(transcript);
+      onTranscript?.(transcript);
+
       if (!transcript) {
-        setLastTranscript("");
         setLastCommand(null);
         setError("Heard silence. Try again.");
         return;
       }
 
-      setLastTranscript(transcript);
-
-      const commandId = findCommandFromTranscript(transcript);
+      const commandId = findCommandFromTranscript(transcript, commands);
       setLastCommand(commandId);
 
-      if (commandId) {
-        // Hook into your training reducer
+      const match = expectedCommand
+        ? Boolean(commandId && commandId.toLowerCase() === expectedCommand.toLowerCase())
+        : Boolean(commandId);
+
+      // Callback first if provided
+      onCommand?.({ transcript, commandId, match });
+
+      // Fallback to built-in training dispatch if no callback provided
+      if (!onCommand && commandId) {
         dispatch(
           trainObedience({
             commandId,
             success: true,
           })
         );
-        setError(null);
-      } else {
+      }
+
+      if (!commandId) {
         setError(
           "Couldn’t catch a known command. Try 'sit', 'stay', 'roll over', or 'speak'."
         );
+      } else {
+        setError(null);
       }
     };
 
@@ -133,6 +169,18 @@ export default function VoiceCommandButton() {
 
     recognitionRef.current = recognition;
 
+    // Stop listening when page/tab hides (prevents dangling mic)
+    const handleVisibility = () => {
+      if (document.hidden && recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch { }
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    visibilityStopRef.current = () =>
+      document.removeEventListener("visibilitychange", handleVisibility);
+
     return () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
@@ -140,24 +188,20 @@ export default function VoiceCommandButton() {
       }
       try {
         recognition.stop();
-      } catch {
-        // ignore cleanup errors
-      }
+      } catch { }
       recognitionRef.current = null;
+      visibilityStopRef.current?.();
     };
-  }, [dispatch]);
+  }, [dispatch, commands, expectedCommand, lang, maxDurationMs, onCommand, onTranscript]);
 
   const startListening = () => {
-    if (!hasSpeech || !recognitionRef.current) return;
-    if (isListening) return; // avoid double-start exceptions
-
+    if (disabled || !hasSpeech || !recognitionRef.current) return;
+    if (isListening && mode === "hold") return; // avoid double-start exceptions
     setError(null);
     setLastCommand(null);
-
     try {
       recognitionRef.current.start();
     } catch (e) {
-      // Chrome throws if start() is called twice
       console.warn("[Voice] start error:", e);
     }
   };
@@ -169,6 +213,11 @@ export default function VoiceCommandButton() {
     } catch (e) {
       console.warn("[Voice] stop error:", e);
     }
+  };
+
+  const toggleListening = () => {
+    if (isListening) stopListening();
+    else startListening();
   };
 
   if (!hasSpeech) {
@@ -189,24 +238,35 @@ export default function VoiceCommandButton() {
     );
   }
 
+  const baseBtnClass = `w-full rounded-xl border px-4 py-2 text-sm font-semibold transition ${isListening ? "border-emerald-500 bg-zinc-900" : "border-zinc-700 bg-zinc-900 hover:bg-zinc-800"
+    } ${disabled ? "opacity-50 cursor-not-allowed" : ""} ${className}`;
+
   return (
     <div className="space-y-2">
-      <button
-        type="button"
-        // “Hold to train” UX
-        onMouseDown={startListening}
-        onMouseUp={stopListening}
-        onMouseLeave={stopListening}
-        onTouchStart={startListening}
-        onTouchEnd={stopListening}
-        className={`w-full rounded-xl border px-4 py-2 text-sm font-semibold transition active:scale-[0.98]
-          ${isListening
-            ? "border-emerald-500 bg-zinc-900"
-            : "border-zinc-700 bg-zinc-900 hover:bg-zinc-800"
-          }`}
-      >
-        {isListening ? "Listening…" : "Hold to Train (Voice)"}
-      </button>
+      {mode === "hold" ? (
+        <button
+          type="button"
+          onPointerDown={startListening}
+          onPointerUp={stopListening}
+          onPointerCancel={stopListening}
+          onContextMenu={(e) => e.preventDefault()}
+          disabled={disabled}
+          className={`${baseBtnClass} active:scale-[0.98]`}
+          aria-pressed={isListening}
+        >
+          {isListening ? "Listening…" : "Hold to Train (Voice)"}
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={toggleListening}
+          disabled={disabled}
+          className={`${baseBtnClass} ${isListening ? "animate-pulse" : ""}`}
+          aria-pressed={isListening}
+        >
+          {isListening ? "Listening… Tap to Stop" : "Tap to Train (Voice)"}
+        </button>
+      )}
 
       {lastTranscript && (
         <p className="text-xs text-zinc-400">
@@ -214,11 +274,18 @@ export default function VoiceCommandButton() {
           <span className="text-zinc-100">&ldquo;{lastTranscript}&rdquo;</span>
           {lastCommand && (
             <>
-              {" "}
-              → mapped to{" "}
-              <span className="font-semibold text-emerald-400">
-                {lastCommand}
-              </span>
+              {" "}→ mapped to {" "}
+              <span className="font-semibold text-emerald-400">{lastCommand}</span>
+              {expectedCommand && (
+                <span
+                  className={`ml-2 text-[11px] font-mono uppercase tracking-wide ${lastCommand?.toLowerCase() === expectedCommand.toLowerCase()
+                      ? 'text-emerald-400'
+                      : 'text-zinc-500'
+                    }`}
+                >
+                  target: {expectedCommand}
+                </span>
+              )}
             </>
           )}
         </p>
@@ -233,7 +300,7 @@ export default function VoiceCommandButton() {
             &quot;sit&quot;, &quot;stay&quot;, &quot;roll over&quot;
           </span>{" "}
           or <span className="font-medium text-zinc-300">&quot;speak&quot;</span>{" "}
-          while holding the button.
+          {mode === "hold" ? " while holding the button." : " then tap again to stop."}
         </p>
       )}
     </div>

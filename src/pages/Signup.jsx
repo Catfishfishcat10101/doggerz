@@ -1,6 +1,7 @@
 // src/pages/Signup.jsx
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { PATHS } from "@/routes.js";
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -14,12 +15,12 @@ export default function Signup() {
     // TODO: wire into Firebase auth
     console.log("signup attempt", { email, displayName, password });
 
-    // After signup, send them to adopt
-    navigate("/adopt");
+    // After signup, send them to Adopt flow
+    navigate(PATHS.ADOPT);
   };
 
   return (
-    <div className="min-h-[calc(100vh-7rem)] bg-zinc-950 text-zinc-50 flex items-center">
+    <main className="min-h-[calc(100vh-7rem)] bg-zinc-950 text-zinc-50 flex items-center">
       <div className="container mx-auto px-4 max-w-md">
         <h1 className="text-3xl font-bold mb-2">Create your account</h1>
         <p className="text-zinc-300 mb-6">
@@ -93,7 +94,7 @@ export default function Signup() {
           <p className="text-xs text-zinc-400 text-center">
             Already have an account?{" "}
             <Link
-              to="/login"
+              to={PATHS.LOGIN}
               className="text-emerald-400 hover:text-emerald-300"
             >
               Log in
@@ -102,6 +103,6 @@ export default function Signup() {
           </p>
         </form>
       </div>
-    </div>
+    </main>
   );
 }

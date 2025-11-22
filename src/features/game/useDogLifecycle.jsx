@@ -1,12 +1,11 @@
 // src/features/game/useDogLifecycle.jsx
-// @ts-nocheck
 
 import { useSelector } from "react-redux";
-import { selectDogTemperament } from "@/redux/dogSlice.js";
+import { selectDog } from "@/redux/dogSlice.js";
 
 /**
  * Lightweight lifecycle hook:
- * - Reads temperament from Redux
+ * - Reads temperament from Redux (via dog state)
  * - Exposes whether temperament reveal is ready.
  *
  * NOTE:
@@ -18,10 +17,18 @@ import { selectDogTemperament } from "@/redux/dogSlice.js";
  * so we DO NOT duplicate timers or session registration here.
  */
 export function useDogLifecycle() {
-  const temperament = useSelector(selectDogTemperament);
+  const dog = useSelector(selectDog);
+  const temperament = dog?.temperament ?? null;
+
+  const temperamentRevealReady =
+    temperament &&
+      typeof temperament === "object" &&
+      "revealReady" in temperament
+      ? Boolean(temperament.revealReady)
+      : false;
 
   return {
-    temperamentRevealReady: temperament?.revealReady ?? false,
-    temperament,
+    temperamentRevealReady,
+    temperament
   };
 }

@@ -1,6 +1,6 @@
 // src/components/ProtectedRoute.jsx
 // Simple auth gate for routes like /game, /potty, etc.
-
+import React from "react";
 import { useSelector } from "react-redux";
 import { Navigate, useLocation } from "react-router-dom";
 import { selectUser } from "@/redux/userSlice.js"; // adjust if your selector name is different

@@ -12,26 +12,27 @@ function formatDateShort(ms) {
   return d.toLocaleDateString(undefined, {
     month: "short",
     day: "numeric",
-    year: "numeric",
+    year: "numeric"
   });
 }
 
 export default function Memory() {
   const dog = useSelector(selectDog);
 
-  const dogName = dog?.name || "Your Pup";
+  const dogName = dog?.name || "Your pup";
   const adoptedAt = dog?.adoptedAt || null;
-  const age = useMemo(
-    () => calculateDogAge(adoptedAt),
+
+  const ageInfo = useMemo(
+    () => (adoptedAt ? calculateDogAge(adoptedAt) : null),
     [adoptedAt]
   );
 
+  const stageLabel = ageInfo?.stageLabel ?? "Puppy";
+  const dayNumber = ageInfo?.ageInGameDays ?? 0;
+
   // Try to pull some kind of memory array from state if it exists.
   const rawMemories =
-    dog?.memories ||
-    dog?.journal?.entries ||
-    dog?.events ||
-    [];
+    dog?.memories || dog?.journal?.entries || dog?.events || [];
 
   // Normalize to a safe shape
   const memories = useMemo(() => {
@@ -41,27 +42,16 @@ export default function Memory() {
       .map((m, idx) => {
         const createdAt = m.createdAt || m.timestamp || m.time || null;
         const title =
-          m.title ||
-          m.label ||
-          m.type ||
-          `Event #${idx + 1}`;
+          m.title || m.label || m.type || `Event #${idx + 1}`;
 
         const mood =
-          m.mood?.label ||
-          m.moodLabel ||
-          null;
+          m.mood?.label || m.moodLabel || null;
 
         const level =
-          m.level ??
-          m.dogLevel ??
-          dog?.level ??
-          null;
+          m.level ?? m.dogLevel ?? dog?.level ?? null;
 
         const summary =
-          m.summary ||
-          m.description ||
-          m.note ||
-          "";
+          m.summary || m.description || m.note || "";
 
         return {
           id: m.id || `${createdAt || "na"}-${idx}`,
@@ -70,7 +60,7 @@ export default function Memory() {
           mood,
           level,
           summary,
-          raw: m,
+          raw: m
         };
       })
       .sort((a, b) => {
@@ -84,8 +74,8 @@ export default function Memory() {
   const hasMemories = memories.length > 0;
 
   return (
-    <main className="min-h-screen bg-zinc-950 text-zinc-50 px-6 py-10">
-      <div className="max-w-3xl mx-auto space-y-6">
+    <main className="mx-auto max-w-3xl px-6 py-10 min-h-[calc(100vh-7rem)]">
+      <div className="space-y-6">
         <header className="space-y-2">
           <p className="text-[0.65rem] uppercase tracking-[0.3em] text-emerald-400/80">
             Doggerz Memory Log
@@ -105,7 +95,7 @@ export default function Memory() {
             <p className="text-xs text-zinc-400">Current pup</p>
             <p className="text-lg font-semibold">{dogName}</p>
             <p className="text-xs text-zinc-500 mt-1">
-              {age?.label || "Puppy"} • Day {age?.days ?? 0}
+              {stageLabel} • Day {dayNumber}
             </p>
           </div>
           <div className="text-right text-xs text-zinc-400">
@@ -184,9 +174,7 @@ export default function Memory() {
                     )}
 
                     {mem.summary && (
-                      <p className="text-xs text-zinc-300">
-                        {mem.summary}
-                      </p>
+                      <p className="text-xs text-zinc-300">{mem.summary}</p>
                     )}
                   </div>
                 </article>

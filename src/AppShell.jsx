@@ -11,19 +11,23 @@ import {
   Link,
 } from "react-router-dom";
 
-import Splash from "@/pages/Splash.jsx";
-import Landing from "@/pages/Landing.jsx";
-import Adopt from "@/pages/Adopt.jsx";
-import GamePage from "@/pages/Game.jsx";
-import Login from "@/pages/Login.jsx";
-import Signup from "@/pages/Signup.jsx";
-import About from "@/pages/About.jsx";
-import Settings from "@/pages/Settings.jsx";
-import Legal from "@/pages/Legal.jsx";
-import NotFound from "@/pages/NotFound.jsx";
-import Memory from "@/pages/Memory.jsx";
-import Potty from "@/pages/Potty.jsx";
-import Contact from "@/pages/Contact.jsx";
+import { Suspense, lazy } from "react";
+import Brand from "@/components/Brand.jsx";
+import Loader from "@/components/Loader.jsx";
+import DevToolbar from "@/components/DevToolbar.jsx";
+const Splash = lazy(() => import("./pages/Splash.jsx"));
+const Landing = lazy(() => import("./pages/Landing.jsx"));
+const Adopt = lazy(() => import("./pages/Adopt.jsx"));
+const GamePage = lazy(() => import("./pages/Game.jsx"));
+const Login = lazy(() => import("./pages/Login.jsx"));
+const Signup = lazy(() => import("./pages/Signup.jsx"));
+const About = lazy(() => import("./pages/About.jsx"));
+const Settings = lazy(() => import("./pages/Settings.jsx"));
+const Legal = lazy(() => import("./pages/Legal.jsx"));
+const NotFound = lazy(() => import("./pages/NotFound.jsx"));
+const Memory = lazy(() => import("./pages/Memory.jsx"));
+const Potty = lazy(() => import("./pages/PottyTraining.jsx"));
+const Contact = lazy(() => import("./pages/Contact.jsx"));
 
 function AppHeader() {
   const navigate = useNavigate();
@@ -34,12 +38,8 @@ function AppHeader() {
     <header className="border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-sm sticky top-0 z-50">
       <div className="container mx-auto px-4 py-3 flex items-center justify-between">
         <Link to="/" className="flex flex-col leading-none">
-          <span className="text-[10px] uppercase tracking-[0.28em] text-emerald-400/90">
-            Virtual Pup
-          </span>
-          <span className="text-2xl font-extrabold tracking-tight text-white">
-            Doggerz
-          </span>
+          <span className="text-[10px] uppercase tracking-[0.28em] text-emerald-400/90">Virtual Pup</span>
+          <Brand size="lg" />
         </Link>
 
         {onHome && (
@@ -108,8 +108,10 @@ export default function AppShell() {
       <AppHeader />
 
       <main className="flex-1">
+        {import.meta.env.DEV && <DevToolbar />}
+        <Suspense fallback={<Loader className="p-6" />}> 
         <Routes>
-          {/* Primary entry */}
+            {/* Primary entry – you can swap Splash ↔ Landing later if you want */}
           <Route path="/" element={<Splash />} />
 
           {/* Secondary marketing / info */}
@@ -138,6 +140,7 @@ export default function AppShell() {
           {/* 404 */}
           <Route path="*" element={<NotFound />} />
         </Routes>
+        </Suspense>
       </main>
 
       <AppFooter />

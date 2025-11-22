@@ -1,51 +1,49 @@
-// src/DogAnimator.jsx
-// @ts-nocheck
+// Doggerz spritesheet config (per SPRITESHEET_SPEC.md):
+//  - each frame is 128x128
+//  - sheet is 2048x2048 → 16 columns x 16 rows
+const FRAME_WIDTH = 128;
+const FRAME_HEIGHT = 128;
+const COLUMNS = 16;
+const ROWS = 16;
 
-// Sprite sheet config:
-//  - each frame is 64x64
-//  - sheet is 256x320 → 4 columns x 5 rows
-const FRAME_WIDTH = 64;
-const FRAME_HEIGHT = 64;
-const COLUMNS = 4;
-const ROWS = 5;
-
-const SHEET_WIDTH = FRAME_WIDTH * COLUMNS;   // 256
-const SHEET_HEIGHT = FRAME_HEIGHT * ROWS;    // 320
+const SHEET_WIDTH = FRAME_WIDTH * COLUMNS; // 2048
+const SHEET_HEIGHT = FRAME_HEIGHT * ROWS; // 2048
 
 /**
  * Define animations and which row they use.
  * Adjust row/frames to match your actual sprite layout.
  */
 const ANIMATIONS = {
+  // Row mapping per SPRITESHEET_SPEC.md
   idle: {
     name: "idle",
-    row: 0,       // row 0
-    frames: 4,    // 4 frames across
-    fps: 6,
+    row: 0, // Idle (row 0)
+    frames: 16,
+    fps: 8,
   },
   idle_bark: {
     name: "idle_bark",
-    row: 1,       // row 1
-    frames: 4,
-    fps: 10,
+    row: 9, // Bark (row 9)
+    frames: 16,
+    fps: 15,
   },
   idle_scratch: {
     name: "idle_scratch",
-    row: 2,       // row 2
-    frames: 4,
-    fps: 8,
+    row: 10, // Scratch (row 10)
+    frames: 16,
+    fps: 10,
   },
   attention: {
     name: "attention",
-    row: 3,       // row 3
-    frames: 4,
+    row: 3, // Sit/attention (row 3)
+    frames: 16,
     fps: 10,
   },
   sleep: {
     name: "sleep",
-    row: 4,       // row 4 (last row)
-    frames: 4,    // change to 2 if last 2 frames are empty
-    fps: 4,
+    row: 8, // Sleep (row 8)
+    frames: 16,
+    fps: 8,
   },
 };
 

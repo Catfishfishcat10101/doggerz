@@ -1,84 +1,64 @@
 <!-- index.html -->
 <!DOCTYPE html>
 <html lang="en" class="dark">
-  <head>
-    <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, viewport-fit=cover"
-    />
 
-    <title>Doggerz</title>
-    <meta name="description" content="Doggerz — a moody virtual dog simulator with real-time care, training, and streaks." />
-    <meta name="robots" content="index,follow" />
-    <meta name="color-scheme" content="dark light" />
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 
-    <!-- Theme colors per scheme -->
-    <meta
-      name="theme-color"
-      content="#0b1020"
-      media="(prefers-color-scheme: dark)"
-    />
-    <meta
-      name="theme-color"
-      content="#ffffff"
-      media="(prefers-color-scheme: light)"
-    />
+  <title>Doggerz</title>
+  <meta name="description"
+    content="Doggerz — a moody virtual dog simulator with real-time care, training, and streaks." />
+  <meta name="robots" content="index,follow" />
+  <meta name="color-scheme" content="dark light" />
 
-    <!-- iOS / PWA chrome -->
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="Doggerz" />
-    <meta
-      name="apple-mobile-web-app-status-bar-style"
-      content="black-translucent"
-    />
+  <!-- Theme colors per scheme -->
+  <meta name="theme-color" content="#0b1020" media="(prefers-color-scheme: dark)" />
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
 
-    <!-- Icons & Manifest -->
-    <link rel="icon" href="/favicon.ico" sizes="any" />
-    <!-- Tip: use a PNG here for widest iOS support -->
-    <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
-    <link rel="manifest" href="/manifest.webmanifest" />
+  <!-- iOS / PWA chrome -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Doggerz" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap"
-      rel="stylesheet"
-    />
+  <!-- Icons & Manifest -->
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <!-- Tip: use a PNG here for widest iOS support -->
+  <link rel="apple-touch-icon" href="/icons/icon-192x192.svg" />
+  <link rel="manifest" href="/manifest.webmanifest" />
 
- <script>
-      (() => {
-        const root = document.documentElement;
-        const saved = localStorage.getItem("theme"); // "dark" | "light" | null
-        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-        const next = saved || (prefersDark ? "dark" : "light");
-        root.classList.toggle("dark", next === "dark");
-        root.classList.toggle("light", next === "light");
-      })();
-    </script>
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Early theme bootstrap: avoid flash of wrong theme -->
+  <script>
+    (() => {
+      const root = document.documentElement;
+      const saved = localStorage.getItem("theme"); // "dark" | "light" | null
+                  const prefersDark = window.matchMedia(
+                    "(prefers-color-scheme: dark)"
+                  ).matches;
+                  const next = saved || (prefersDark ? "dark" : "light");
+                  root.classList.toggle("dark", next === "dark");
+                  root.classList.toggle("light", next === "light");
+                })();
+              </script>
   </head>
 
-  <body class="dark">
-    <noscript>
-      Doggerz requires JavaScript. Please enable it to play with your pup.
-    </noscript>
+<body class="dark">
+  <noscript>
+    Doggerz requires JavaScript. Please enable it to play with your pup.
+  </noscript>
 
-    <div id="root"></div>
+  <div id="root"></div>
 
-    <!-- Vite entry -->
-    <script type="module" src="/src/main.jsx"></script>
+  <!-- Vite entry -->
+  <script type="module" src="/src/main.jsx"></script>
 
-    <!-- Service worker (PWA shell) -->
-    <script>
-      if ("serviceWorker" in navigator) {
-        window.addEventListener("load", () => {
-          navigator.serviceWorker.register("/sw.js").catch(() => {
-            // swallow errors; app should still run fine without SW
-          });
-        });
-      }
-    </script>
+  <!-- Service worker registration is handled by vite-plugin-pwa in src/main.jsx -->
   </body>
+
 </html>

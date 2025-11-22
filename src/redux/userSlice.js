@@ -1,6 +1,5 @@
 // src/redux/userSlice.js
 
-
 import { createSlice } from "@reduxjs/toolkit";
 
 const USER_STORAGE_KEY = "doggerz:userState";
@@ -117,12 +116,25 @@ export const { setUser, clearUser, addCoins, setCoins, updateStreak } =
   userSlice.actions;
 
 /**
- * ✅ This is the selector GameTopBar imports.
+ * Base selector – returns the whole user slice.
+ * GameTopBar already uses this.
  */
 export const selectUser = (state) => state.user;
 
-/** Some optional helpers if you want them later */
+/**
+ * ✅ This is what App.jsx was importing.
+ * Treat "logged in" as having a real id set (Firebase uid, etc.).
+ */
+export const selectIsLoggedIn = (state) => Boolean(state.user?.id);
+
+/** Convenience helpers. */
+export const selectUserId = (state) => state.user?.id ?? null;
+
+export const selectUserDisplayName = (state) =>
+  state.user?.displayName ?? "Trainer";
+
 export const selectUserCoins = (state) => state.user?.coins ?? 0;
+
 export const selectUserStreak = (state) =>
   state.user?.streak ?? {
     current: 0,

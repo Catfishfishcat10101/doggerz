@@ -189,16 +189,10 @@ When weather system is active:
 
 ## Future Breed Variations
 
-Each breed follows the same layout but with unique art:
 
 ```
 
 jack_russell_puppy.png
-beagle_puppy.png
-corgi_puppy.png
-shiba_puppy.png
-husky_puppy.png
-
 ...
 ```
 

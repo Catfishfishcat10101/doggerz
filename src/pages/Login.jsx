@@ -1,92 +1,50 @@
-// src/pages/Login.jsx
-// @ts-nocheck
-
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { auth, googleProvider } from "@/utils/firebase/firebase";
+import { signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 
 export default function Login() {
-  const navigate = useNavigate();
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [err, setErr] = useState("");
+  const nav = useNavigate();
+  const loc = useLocation();
+  const to = loc.state?.from?.pathname || "/game";
 
-  const handleSubmit = (e) => {
+  const emailLogin = async (e) => {
     e.preventDefault();
+    setErr("");
+    try {
+      await signInWithEmailAndPassword(auth, email.trim(), password);
+      nav(to, { replace: true });
+    } catch (e) {
+      setErr(e.message);
+    }
+  };
 
-    // TODO: wire this into Firebase Auth later
-    console.log("login attempt", { email, password });
-
-    // For now: pretend it worked and go to the game
-    navigate("/game");
+  const googleLogin = async () => {
+    setErr("");
+    try {
+      await signInWithPopup(auth, googleProvider);
+      nav(to, { replace: true });
+    } catch (e) {
+      setErr(e.message);
+    }
   };
 
   return (
-    <div className="min-h-[calc(100vh-7rem)] bg-zinc-950 text-zinc-50 flex items-center">
-      <div className="container mx-auto px-4 max-w-md">
-        <h1 className="text-3xl font-bold mb-2">Welcome back</h1>
-        <p className="text-zinc-300 mb-6">
-          Log in to check on your pup, continue your streak, and keep their
-          stats out of the danger zone.
-        </p>
-
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-4 rounded-xl bg-zinc-900/70 p-6 border border-zinc-800"
-        >
-          <div className="space-y-2">
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-zinc-200"
-            >
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-md bg-zinc-950 border border-zinc-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              placeholder="you@example.com"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-zinc-200"
-            >
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-md bg-zinc-950 border border-zinc-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-            />
-          </div>
-
-          <button
-            type="submit"
-            className="w-full rounded-full bg-emerald-500 hover:bg-emerald-400 text-black font-semibold text-sm py-2.5 transition"
-          >
-            Log in
-          </button>
-
-          <p className="text-xs text-zinc-400 text-center">
-            No account yet?{" "}
-            <Link
-              to="/signup"
-              className="text-emerald-400 hover:text-emerald-300"
-            >
-              Create one
-            </Link>
-            .
-          </p>
-        </form>
-      </div>
-    </div>
+    <main className="min-h-screen grid place-items-center p-6">
+      <form onSubmit={emailLogin} className="w-full max-w-sm bg-white/5 p-6 rounded-2xl space-y-3">
+        <h1 className="text-2xl font-bold">Sign in</h1>
+        {err && <div className="text-red-300 text-sm">{err}</div>}
+        <input className="w-full px-3 py-2 rounded bg-black/30 outline-none" placeholder="Email" type="email" value={email} onChange={e => setEmail(e.target.value)} />
+        <input className="w-full px-3 py-2 rounded bg-black/30 outline-none" placeholder="Password" type="password" value={password} onChange={e => setPassword(e.target.value)} />
+        <button className="w-full px-3 py-2 rounded bg-amber-400 text-black font-bold hover:bg-amber-500" type="submit">Sign in</button>
+        <button type="button" onClick={googleLogin} className="w-full px-3 py-2 rounded bg-white/10 hover:bg-white/20">Continue with Google</button>
+        <div className="text-xs text-white/60">
+          No account? <Link to="/signup" className="underline">Sign up</Link>
+        </div>
+      </form>
+    </main>
   );
 }
