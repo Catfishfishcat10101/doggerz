@@ -10,8 +10,8 @@ import {
   getSpriteForLifeStage,
 } from "@/utils/lifecycle.js";
 
-const FRAME_SIZE = 96;
-const FRAME_COUNT = 8;
+const FRAME_SIZE = 96;        // width of a single frame in the sheet
+const FRAME_COUNT = 8;        // how many frames across
 const FRAME_DURATION_MS = 140;
 
 export default function EnhancedDogSprite() {
@@ -46,7 +46,7 @@ export default function EnhancedDogSprite() {
   if (!spriteSrc) {
     return (
       <p className="text-xs text-zinc-400">
-        Sprite not configured for stage {stageId}. Check getSpriteForLifeStage().
+        Sprite not configured for stage {stageId}.
       </p>
     );
   }
@@ -61,7 +61,7 @@ export default function EnhancedDogSprite() {
 
       {hasError && (
         <div className="absolute inset-0 flex items-center justify-center text-xs text-red-400">
-          Couldn&apos;t load sprite. Check image path in lifecycle.js.
+          couldn't load sprite. Check image path in lifecycle.js.
         </div>
       )}
 
@@ -81,7 +81,7 @@ export default function EnhancedDogSprite() {
             setIsLoaded(true);
           }}
         />
-      </div>
+       </div>
     </div>
   );
 }

@@ -3,96 +3,131 @@
 
 import { createSlice } from "@reduxjs/toolkit";
 
-export const USER_STORAGE_KEY = "doggerz:userState";
+const USER_STORAGE_KEY = "doggerz:userState";
 
-const initialState = {
-  uid: null,
-  displayName: null,
-  email: null,
-  avatarUrl: null,
-  coins: 0,
-  streakDays: 0,
-  lastLoginAt: null,
-  isGuest: false,
-};
-
-// tiny helper so we can load from localStorage later if you want
-function safeParseUser(raw) {
+const loadUserFromStorage = () => {
+  if (typeof window === "undefined") return null;
   try {
+    const raw = window.localStorage.getItem(USER_STORAGE_KEY);
     if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (typeof parsed !== "object" || parsed === null) return null;
-    return {
-      ...initialState,
-      ...parsed,
-    };
-  } catch {
+    return JSON.parse(raw);
+  } catch (e) {
+    console.warn("[userSlice] Failed to parse user from storage:", e);
     return null;
   }
-}
+};
 
-// if you want to hydrate from localStorage at app start, you can
-// call restoreUserState() inside your root, but for now we just
-// keep it here for later.
-export function restoreUserState() {
-  const raw = window.localStorage.getItem(USER_STORAGE_KEY);
-  return safeParseUser(raw) ?? initialState;
-}
+const saveUserToStorage = (state) => {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(state));
+  } catch (e) {
+    console.warn("[userSlice] Failed to save user to storage:", e);
+  }
+};
+
+const initialState = loadUserFromStorage() || {
+  id: null,
+  displayName: "Trainer",
+  email: null,
+  avatarUrl: null,
+
+  coins: 0,
+  streak: {
+    current: 0,
+    best: 0,
+    lastPlayedAt: null,
+  },
+
+  createdAt: null,
+};
 
 const userSlice = createSlice({
   name: "user",
   initialState,
   reducers: {
     setUser(state, action) {
-      const {
-        uid = null,
-        displayName = null,
-        email = null,
-        avatarUrl = null,
-        coins = 0,
-        streakDays = 0,
-        lastLoginAt = null,
-        isGuest = false,
-      } = action.payload || {};
+      const { id, displayName, email, avatarUrl, coins, streak, createdAt } =
+        action.payload || {};
 
-      state.uid = uid;
-      state.displayName = displayName;
-      state.email = email;
-      state.avatarUrl = avatarUrl;
-      state.coins = Number.isFinite(coins) ? coins : 0;
-      state.streakDays = Number.isFinite(streakDays) ? streakDays : 0;
-      state.lastLoginAt = lastLoginAt;
-      state.isGuest = !!isGuest;
+      state.id = id ?? state.id;
+      state.displayName = displayName ?? state.displayName;
+      state.email = email ?? state.email;
+      state.avatarUrl = avatarUrl ?? state.avatarUrl;
+
+      if (typeof coins === "number") state.coins = coins;
+
+      if (streak && typeof streak === "object") {
+        state.streak.current = streak.current ?? state.streak.current;
+        state.streak.best = streak.best ?? state.streak.best;
+        state.streak.lastPlayedAt =
+          streak.lastPlayedAt ?? state.streak.lastPlayedAt;
+      }
+
+      state.createdAt = createdAt ?? state.createdAt;
+
+      saveUserToStorage(state);
     },
 
     clearUser(state) {
-      Object.assign(state, initialState);
+      state.id = null;
+      state.displayName = "Trainer";
+      state.email = null;
+      state.avatarUrl = null;
+      state.coins = 0;
+      state.streak = { current: 0, best: 0, lastPlayedAt: null };
+      state.createdAt = null;
+
+      if (typeof window !== "undefined") {
+        try {
+          window.localStorage.removeItem(USER_STORAGE_KEY);
+        } catch {
+          // ignore
+        }
+      }
     },
 
     addCoins(state, action) {
-      const delta = Number(action.payload) || 0;
-      const next = (state.coins || 0) + delta;
-      state.coins = Math.max(0, next);
+      const amount = Number(action.payload || 0);
+      if (!Number.isFinite(amount)) return;
+      state.coins = Math.max(0, (state.coins || 0) + amount);
+      saveUserToStorage(state);
     },
 
-    setStreakDays(state, action) {
-      const days = Number(action.payload) || 0;
-      state.streakDays = Math.max(0, days);
+    setCoins(state, action) {
+      const amount = Number(action.payload || 0);
+      if (!Number.isFinite(amount)) return;
+      state.coins = Math.max(0, amount);
+      saveUserToStorage(state);
+    },
+
+    updateStreak(state, action) {
+      const { current, best, lastPlayedAt } = action.payload || {};
+      if (typeof current === "number") state.streak.current = current;
+      if (typeof best === "number") state.streak.best = best;
+      if (lastPlayedAt !== undefined) {
+        state.streak.lastPlayedAt = lastPlayedAt;
+      }
+      saveUserToStorage(state);
     },
   },
 });
 
-export const { setUser, clearUser, addCoins, setStreakDays } =
+export const { setUser, clearUser, addCoins, setCoins, updateStreak } =
   userSlice.actions;
 
-// ✅ THIS is what GameTopBar is trying to import
+/**
+ * ✅ This is the selector GameTopBar imports.
+ */
 export const selectUser = (state) => state.user;
 
-// Some convenience selectors if you want them:
-export const selectUserId = (state) => state.user?.uid ?? null;
-export const selectUserName = (state) => state.user?.displayName ?? "Guest";
+/** Some optional helpers if you want them later */
 export const selectUserCoins = (state) => state.user?.coins ?? 0;
-export const selectUserStreak = (state) => state.user?.streakDays ?? 0;
-export const selectIsGuest = (state) => !!state.user?.isGuest;
+export const selectUserStreak = (state) =>
+  state.user?.streak ?? {
+    current: 0,
+    best: 0,
+    lastPlayedAt: null,
+  };
 
 export default userSlice.reducer;

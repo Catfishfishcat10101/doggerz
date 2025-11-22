@@ -1,7 +1,7 @@
 // src/utils/lifecycle.js
 // @ts-nocheck
 
-// Reuse your central game constants so we don't duplicate definitions.
+// Reuse shared game constants
 import { GAME_DAYS_PER_REAL_DAY, LIFE_STAGES } from "@/constants/game.js";
 
 // Flattened stages for lookup
