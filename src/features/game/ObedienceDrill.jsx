@@ -5,7 +5,7 @@ import React from "react";
 import { useSelector } from "react-redux";
 import { selectDogSkills } from "@/redux/dogSlice.js";
 import { SKILL_LEVEL_STEP } from "@/constants/game.js";
-import VoiceCommandButton from "./VoiceCommandButton.jsx";
+import VoiceCommandButton from "../../components/VoiceCommandButton.jsx";
 
 function SkillRow({ label, node }) {
   if (!node) return null;

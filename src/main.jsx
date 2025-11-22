@@ -1,19 +1,17 @@
 // src/main.jsx
+// @ts-nocheck
+
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { Provider } from "react-redux";
 
-import App from "./App.jsx";
 import { store } from "@/redux/store.js";
-import "./index.css"; // <-- this is your Tailwind + global css
+import App from "./App.jsx";
 
-const rootEl = document.getElementById("root");
+import "./index.css";   // Tailwind + base reset (@tailwind stuff)
+import "./styles.css";  // Your Doggerz global theme
 
-if (!rootEl) {
-  throw new Error("Root element #root not found in index.html");
-}
-
-ReactDOM.createRoot(rootEl).render(
+ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <Provider store={store}>
       <App />

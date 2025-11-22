@@ -121,6 +121,13 @@ const initialState = {
   coins: 0,
   adoptedAt: null,
   lifeStage: { stage: "PUPPY", label: "Puppy", days: 0 },
+  potty: {
+    training: 0,        // 0–100: how potty-trained
+    lastSuccessAt: null,
+    lastAccidentAt: null,
+    totalSuccesses: 0,
+    totalAccidents: 0,
+  },
   stats: {
     hunger: 50,
     happiness: 60,
@@ -129,7 +136,7 @@ const initialState = {
   },
   cleanlinessTier: "FRESH",
   poopCount: 0,
-  pottyLevel: 0,
+  
   isAsleep: false,
   debug: false,
   lastUpdatedAt: null,

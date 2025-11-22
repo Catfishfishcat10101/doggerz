@@ -1,24 +1,42 @@
 // src/utils/lifecycle.js
 // @ts-nocheck
 
-// For now we just use the same sheet for all life stages.
-// Later you can plug in puppy/adult/senior-specific sheets.
-import jackRussellSheet from "@/assets/sprites/jack_russell_directions.png";
+// Reuse your central game constants so we don't duplicate definitions.
+import { GAME_DAYS_PER_REAL_DAY, LIFE_STAGES } from "@/constants/game.js";
 
-// How many in-game days pass per real-world day.
-export const GAME_DAYS_PER_REAL_DAY = 4;
-
-// Life stages defined in *game days*
-export const LIFE_STAGES = {
-  PUPPY: { id: "PUPPY", min: 0, max: 180, label: "Puppy" },
-  ADULT: { id: "ADULT", min: 181, max: 2555, label: "Adult" },
-  SENIOR: { id: "SENIOR", min: 2556, max: 5475, label: "Senior" },
-};
-
-const ALL_STAGES = Object.values(LIFE_STAGES);
+// Flattened stages for lookup
+const ALL_STAGES = Object.entries(LIFE_STAGES).map(([key, stage]) => ({
+  id: key,
+  ...stage,
+}));
 
 /**
- * Convert adoption timestamp → { ageInGameDays, stageId, stageLabel, stage }.
+ * Given an age in "game days", pick the correct life stage bucket.
+ * Returns one of the LIFE_STAGES entries with an added `id` field.
+ */
+export function getLifeStageForAge(ageInGameDays) {
+  if (!Number.isFinite(ageInGameDays) || ageInGameDays < 0) {
+    // default to puppy
+    return { id: "PUPPY", ...LIFE_STAGES.PUPPY };
+  }
+
+  const match = ALL_STAGES.find(
+    (stage) => ageInGameDays >= stage.min && ageInGameDays <= stage.max
+  ) || { id: "SENIOR", ...LIFE_STAGES.SENIOR };
+
+  return match;
+}
+
+/**
+ * Convert adoption timestamp → age info.
+ *
+ * Returns:
+ * {
+ *   ageInGameDays: number,
+ *   stageId: "PUPPY" | "ADULT" | "SENIOR",
+ *   stageLabel: string,
+ *   stage: { id, min, max, label }
+ * }
  */
 export function calculateDogAge(adoptedAtMs, now = Date.now()) {
   if (!adoptedAtMs || !Number.isFinite(adoptedAtMs)) return null;
@@ -42,31 +60,21 @@ export function calculateDogAge(adoptedAtMs, now = Date.now()) {
 }
 
 /**
- * Given an age in game days, pick the correct life stage bucket.
- */
-export function getLifeStageForAge(ageInGameDays) {
-  if (!Number.isFinite(ageInGameDays) || ageInGameDays < 0) {
-    return LIFE_STAGES.PUPPY;
-  }
-
-  const match = ALL_STAGES.find(
-    (stage) => ageInGameDays >= stage.min && ageInGameDays <= stage.max
-  );
-
-  return match || LIFE_STAGES.SENIOR;
-}
-
-/**
- * ✅ This is the export EnhancedDogSprite is asking for.
- * For now we just return the same sprite sheet for every stage so
- * the game renders. Later you can swap based on stageId.
+ * Map a life stage → appropriate sprite sheet path.
+ *
+ * These are served from /public/sprites so the paths are:
+ *   /sprites/jack_russell_puppy.png
+ *   /sprites/jack_russell_adult.png
+ *   /sprites/jack_russell_senior.png
  */
 export function getSpriteForLifeStage(stageId) {
   switch (stageId) {
-    case LIFE_STAGES.PUPPY.id:
-    case LIFE_STAGES.ADULT.id:
-    case LIFE_STAGES.SENIOR.id:
+    case "PUPPY":
+      return "/sprites/jack_russell_puppy.png";
+    case "ADULT":
+      return "/sprites/jack_russell_adult.png";
+    case "SENIOR":
     default:
-      return jackRussellSheet;
+      return "/sprites/jack_russell_senior.png";
   }
 }

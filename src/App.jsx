@@ -26,15 +26,17 @@ import Memory from "@/pages/Memory.jsx";
 import Potty from "@/pages/Potty.jsx";
 import Contact from "@/pages/Contact.jsx";
 
-// ---------------------------
+// --------------------------------------------------------
 // Layout pieces
-// ---------------------------
+// --------------------------------------------------------
 
 function AppHeader() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const onHome = location.pathname === "/" || location.pathname === "/landing";
+  // Treat both / and /landing as “home marketing” views
+  const onHome =
+    location.pathname === "/" || location.pathname === "/landing";
 
   return (
     <header className="border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-sm sticky top-0 z-50">
@@ -48,16 +50,18 @@ function AppHeader() {
           </span>
         </Link>
 
-        {/* Top-right CTAs only on the main marketing view */}
+        {/* Top-right CTAs only on home/marketing screens */}
         {onHome && (
           <nav className="flex items-center gap-4">
             <button
+              type="button"
               onClick={() => navigate("/login")}
               className="text-sm text-zinc-400 hover:text-white transition"
             >
               Login
             </button>
             <button
+              type="button"
               onClick={() => navigate("/signup")}
               className="rounded-full bg-emerald-500 hover:bg-emerald-400 text-black text-sm font-semibold px-4 py-1.5 transition"
             >
@@ -80,30 +84,35 @@ function AppFooter() {
         <p>© {year} Doggerz. Created by William Johnson.</p>
         <nav className="flex items-center gap-4">
           <button
+            type="button"
             onClick={() => navigate("/about")}
             className="hover:text-zinc-300"
           >
             About
           </button>
           <button
+            type="button"
             onClick={() => navigate("/contact")}
             className="hover:text-zinc-300"
           >
             Contact
           </button>
           <button
+            type="button"
             onClick={() => navigate("/potty")}
             className="hover:text-zinc-300"
           >
             Potty training
           </button>
           <button
+            type="button"
             onClick={() => navigate("/settings")}
             className="hover:text-zinc-300"
           >
             Settings
           </button>
           <button
+            type="button"
             onClick={() => navigate("/legal")}
             className="hover:text-zinc-300"
           >
@@ -115,9 +124,9 @@ function AppFooter() {
   );
 }
 
-// ---------------------------
+// --------------------------------------------------------
 // Route shell
-// ---------------------------
+// --------------------------------------------------------
 
 function AppShell() {
   return (
@@ -128,7 +137,8 @@ function AppShell() {
         <Routes>
           {/* HOME = Landing hero */}
           <Route path="/" element={<Landing />} />
-          {/* Optional: keep Splash as a hidden/alt intro */}
+
+          {/* Optional: separate splash page if you want a special intro */}
           <Route path="/splash" element={<Splash />} />
           <Route path="/landing" element={<Landing />} />
 
@@ -140,7 +150,7 @@ function AppShell() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
 
-          {/* Extras / info */}
+          {/* Info / extras */}
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/settings" element={<Settings />} />
@@ -162,9 +172,9 @@ function AppShell() {
   );
 }
 
-// ---------------------------
+// --------------------------------------------------------
 // Root App
-// ---------------------------
+// --------------------------------------------------------
 
 export default function App() {
   return (
