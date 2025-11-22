@@ -45,13 +45,11 @@ export default function EnhancedDogSprite({
   const storeDog = useSelector(selectDog);
 
   // Fallback dog so Splash/Landing still show something
-  const dog =
-    storeDog ||
-    {
-      name: "Your pup",
-      adoptedAtMs: Date.now(),
-      stats: { cleanliness: 100 },
-    };
+  const dog = storeDog || {
+    name: "Your pup",
+    adoptedAtMs: Date.now(),
+    stats: { cleanliness: 100 },
+  };
 
   const [frameIndex, setFrameIndex] = useState(0);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -126,8 +124,7 @@ export default function EnhancedDogSprite({
           ? "rgba(128,32,32,0.35)"
           : null;
 
-  const safeScale =
-    Number.isFinite(scale) && scale > 0 ? scale : DEFAULT_SCALE;
+  const safeScale = Number.isFinite(scale) && scale > 0 ? scale : DEFAULT_SCALE;
 
   const displayWidth = FRAME_SIZE * safeScale;
   const displayHeight = FRAME_SIZE * safeScale;
@@ -152,8 +149,9 @@ export default function EnhancedDogSprite({
           backgroundImage: `url(${SPRITESHEET_URL})`,
           backgroundRepeat: "no-repeat",
           backgroundSize: `${sheetWidth}px ${sheetHeight}px`,
-          backgroundPosition: `-${frameIndex * displayWidth}px -${row * displayHeight
-            }px`,
+          backgroundPosition: `-${frameIndex * displayWidth}px -${
+            row * displayHeight
+          }px`,
           imageRendering: "pixelated",
         }}
       />

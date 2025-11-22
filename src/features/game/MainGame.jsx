@@ -1,12 +1,7 @@
 // src/features/game/MainGame.jsx
 // @ts-nocheck
 
-import React, {
-  useEffect,
-  useMemo,
-  useState,
-  useCallback,
-} from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   selectDog,
@@ -81,10 +76,7 @@ export default function MainGame() {
 
   const lifeStageLabel = lifeStage?.label ?? "Puppy";
   const lifeStageDay =
-    lifeStage?.ageInGameDays ??
-    lifeStage?.gameDay ??
-    lifeStage?.day ??
-    1;
+    lifeStage?.ageInGameDays ?? lifeStage?.gameDay ?? lifeStage?.day ?? 1;
 
   const needs = useMemo(
     () => ({
@@ -93,15 +85,14 @@ export default function MainGame() {
       energy,
       cleanliness,
     }),
-    [hunger, happiness, energy, cleanliness]
+    [hunger, happiness, energy, cleanliness],
   );
 
   const moodLabel =
     dog?.moodLabel || dog?.mood?.label || dog?.mood || "Content";
 
   const temperamentRevealReady = !!(
-    training?.temperament?.ready ||
-    training?.temperament?.revealReady
+    training?.temperament?.ready || training?.temperament?.revealReady
   );
 
   const handleFeed = useCallback(() => {
@@ -135,10 +126,10 @@ export default function MainGame() {
           pollId,
           accepted,
           respondedAt: Date.now(),
-        })
+        }),
       );
     },
-    [dispatch]
+    [dispatch],
   );
 
   const activePoll = polls?.active || polls?.current || null;
@@ -154,7 +145,7 @@ export default function MainGame() {
       dispatch(setDogName(trimmed));
       setEditingName(false);
     },
-    [dispatch, draftName, dog]
+    [dispatch, draftName, dog],
   );
 
   if (!dog) {
@@ -162,11 +153,8 @@ export default function MainGame() {
       <section className="py-8 text-center text-sm text-zinc-300">
         <p>You don&apos;t have a pup yet.</p>
         <p className="mt-1">
-          Go to{" "}
-          <span className="font-semibold text-emerald-300">
-            Adopt
-          </span>{" "}
-          to claim your first Doggerz.
+          Go to <span className="font-semibold text-emerald-300">Adopt</span> to
+          claim your first Doggerz.
         </p>
       </section>
     );
@@ -263,18 +251,14 @@ export default function MainGame() {
           <div className="flex gap-3">
             <button
               type="button"
-              onClick={() =>
-                handlePollResponse(activePoll.id, true)
-              }
+              onClick={() => handlePollResponse(activePoll.id, true)}
               className="rounded-full bg-emerald-500 px-4 py-1.5 text-[0.75rem] font-semibold text-slate-950 hover:bg-emerald-400"
             >
               Yes
             </button>
             <button
               type="button"
-              onClick={() =>
-                handlePollResponse(activePoll.id, false)
-              }
+              onClick={() => handlePollResponse(activePoll.id, false)}
               className="rounded-full border border-emerald-400/70 px-4 py-1.5 text-[0.75rem] font-semibold text-emerald-200 hover:bg-emerald-500/10"
             >
               Not now

@@ -14,7 +14,7 @@ const DEFAULT_FPS = 8;
 // Animation → row, start frame, frame count, fps
 // You can tweak these ranges if some frames look bad.
 const ANIM_META = {
-  idle: { row: 0, start: 0, frames: 4, fps: 6 },   // small breathing loop
+  idle: { row: 0, start: 0, frames: 4, fps: 6 }, // small breathing loop
   walk: { row: 1, start: 0, frames: 8, fps: 10 },
   run: { row: 2, start: 0, frames: 8, fps: 12 },
   sit: { row: 3, start: 0, frames: 4, fps: 6 },
@@ -102,7 +102,7 @@ export default function DogSprite({
       0,
       0,
       scaledSize,
-      scaledSize
+      scaledSize,
     );
   }, [frameIndex, animation, isLoaded, hasError, scale, meta]);
 

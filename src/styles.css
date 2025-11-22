@@ -44,11 +44,11 @@
   --ease-pop: cubic-bezier(0.25, 1, 0.5, 1);
 
   /* Color tokens (dark theme default) */
-  --bg: #020617;           /* app background (slate-950-ish) */
-  --bg-elevated: #020617;  /* shell background */
-  --surf: #020617;         /* deep slate */
+  --bg: #020617; /* app background (slate-950-ish) */
+  --bg-elevated: #020617; /* shell background */
+  --surf: #020617; /* deep slate */
   --surf-soft: #020617;
-  --surf-bright: #0b1120;  /* panel background */
+  --surf-bright: #0b1120; /* panel background */
 
   --border-subtle: rgba(148, 163, 184, 0.35);
   --border-strong: rgba(148, 163, 184, 0.65);
@@ -56,12 +56,12 @@
   --text-main: #e5e7eb;
   --text-soft: #9ca3af;
   --text-muted: #6b7280;
-  --text-accent: #22c55e;  /* emerald-500 */
+  --text-accent: #22c55e; /* emerald-500 */
 
   /* Emerald accent (brand) */
-  --accent: #22c55e;                             /* emerald-500 */
+  --accent: #22c55e; /* emerald-500 */
   --accent-soft: rgba(34, 197, 94, 0.16);
-  --accent-strong: #16a34a;                      /* emerald-600 */
+  --accent-strong: #16a34a; /* emerald-600 */
 
   --danger: #ef4444;
   --success: #22c55e;
