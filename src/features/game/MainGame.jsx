@@ -27,11 +27,11 @@ import {
   setAdoptedAt,
   setDogName,
 } from "@/redux/dogSlice.js";
-import EnhancedDogSprite from "@/features/game/EnhancedDogSprite.jsx";
+import EnhancedDogSprite from "@/components/EnhancedDogSprite.jsx";
 import { getTimeOfDay } from "@/utils/weather.js";
 import { CLEANLINESS_TIER_EFFECTS } from "@/constants/game.js";
 import { useDogLifecycle } from "@/features/game/useDogLifecycle.jsx";
-import GameTopBar from "@/features/game/components/GameTopBar.jsx";
+import GameTopBar from "@/components/GameTopBar.jsx";
 
 const TIME_OVERLAY = {
   dawn: "linear-gradient(180deg, rgba(255,209,143,0.5) 0%, rgba(15,23,42,0.7) 100%)",

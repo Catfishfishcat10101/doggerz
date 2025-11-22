@@ -34,8 +34,7 @@ function AppHeader() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // “Very first page only” = root path
-  const onHome = location.pathname === "/";
+  const onHome = location.pathname === "/" || location.pathname === "/landing";
 
   return (
     <header className="border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-sm sticky top-0 z-50">
@@ -49,6 +48,7 @@ function AppHeader() {
           </span>
         </Link>
 
+        {/* Top-right CTAs only on the main marketing view */}
         {onHome && (
           <nav className="flex items-center gap-4">
             <button
@@ -58,10 +58,10 @@ function AppHeader() {
               Login
             </button>
             <button
-              onClick={() => navigate("/adopt")}
+              onClick={() => navigate("/signup")}
               className="rounded-full bg-emerald-500 hover:bg-emerald-400 text-black text-sm font-semibold px-4 py-1.5 transition"
             >
-              Adopt
+              Sign up
             </button>
           </nav>
         )}
@@ -77,9 +77,7 @@ function AppFooter() {
   return (
     <footer className="border-t border-zinc-800 bg-zinc-950 text-xs text-zinc-500 py-4">
       <div className="container mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-        <p>
-          © {year} Doggerz. Created by William Johnson.
-        </p>
+        <p>© {year} Doggerz. Created by William Johnson.</p>
         <nav className="flex items-center gap-4">
           <button
             onClick={() => navigate("/about")}
@@ -92,6 +90,12 @@ function AppFooter() {
             className="hover:text-zinc-300"
           >
             Contact
+          </button>
+          <button
+            onClick={() => navigate("/potty")}
+            className="hover:text-zinc-300"
+          >
+            Potty training
           </button>
           <button
             onClick={() => navigate("/settings")}
@@ -122,10 +126,10 @@ function AppShell() {
 
       <main className="flex-1">
         <Routes>
-          {/* Primary entry */}
-          <Route path="/" element={<Splash />} />
-
-          {/* Secondary marketing / info */}
+          {/* HOME = Landing hero */}
+          <Route path="/" element={<Landing />} />
+          {/* Optional: keep Splash as a hidden/alt intro */}
+          <Route path="/splash" element={<Splash />} />
           <Route path="/landing" element={<Landing />} />
 
           {/* Core game flow */}
@@ -136,7 +140,7 @@ function AppShell() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
 
-          {/* Extras / sub-screens */}
+          {/* Extras / info */}
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/settings" element={<Settings />} />
@@ -144,7 +148,7 @@ function AppShell() {
           <Route path="/memory" element={<Memory />} />
           <Route path="/potty" element={<Potty />} />
 
-          {/* Friendly aliases / redirects */}
+          {/* Friendly aliases */}
           <Route path="/home" element={<Navigate to="/" replace />} />
           <Route path="/play" element={<Navigate to="/game" replace />} />
 
@@ -169,4 +173,3 @@ export default function App() {
     </BrowserRouter>
   );
 }
-// End of src/App.jsx

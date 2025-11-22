@@ -1,4 +1,6 @@
 // src/pages/Landing.jsx
+// @ts-nocheck
+
 import React from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -14,7 +16,7 @@ export default function Landing() {
   };
 
   const handleSignUp = () => {
-    navigate("/adopt");
+    navigate("/signup"); // ✅ go to signup, not adopt
   };
 
   const handleReadGuide = () => {
@@ -22,48 +24,9 @@ export default function Landing() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050816] text-slate-100 flex flex-col">
-      {/* HEADER */}
-      <header className="border-b border-white/10">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          {/* Logo + tagline */}
-          <div className="flex items-center gap-3">
-            <div className="flex flex-col leading-none">
-              <span className="text-[11px] uppercase tracking-[0.28em] text-emerald-400/90">
-                Adopt. Train. Bond.
-              </span>
-              <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-extrabold tracking-tight text-white">
-                  Doggerz
-                </span>
-                <span className="hidden sm:inline text-[11px] text-slate-400 tracking-[0.22em] uppercase">
-                  Virtual Pup Simulator
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Auth CTAs */}
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={handleLogin}
-              className="text-xs font-medium text-slate-200 hover:text-white transition"
-            >
-              Log in
-            </button>
-            <button
-              type="button"
-              onClick={handleSignUp}
-              className="rounded-full bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-semibold px-4 py-2 transition"
-            >
-              Sign up
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* MAIN HERO */}
+    // AppShell already renders a header and footer.
+    // This is just the main hero section in between.
+    <div className="min-h-[calc(100vh-7rem)] bg-[#050816] text-slate-100 flex flex-col">
       <main className="flex-1">
         <div className="container mx-auto px-4 py-10 lg:py-16 grid gap-10 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,0.9fr)] items-start">
           {/* Left: copy + CTA */}
@@ -78,9 +41,9 @@ export default function Landing() {
             </h1>
 
             <p className="text-sm sm:text-base text-slate-300 max-w-xl mb-6">
-              Adopt your pup and take care of them over real time. Keep them
-              fed, entertained, rested, and clean. How you treat your dog
-              determines how long they live — no click-spamming, no idle mining.
+              Adopt your pup and take care of them over real time. Keep them fed,
+              entertained, rested, and clean. How you treat your dog determines
+              how long they live — no click-spamming, no idle mining.
             </p>
 
             <div className="flex flex-wrap items-center gap-4 mb-4">
@@ -97,7 +60,8 @@ export default function Landing() {
                 onClick={handleLogin}
                 className="text-xs text-slate-300 hover:text-white underline-offset-4 hover:underline"
               >
-                Already have an account? <span className="font-semibold">Log in.</span>
+                Already have an account?{" "}
+                <span className="font-semibold">Log in.</span>
               </button>
             </div>
           </section>
@@ -109,20 +73,15 @@ export default function Landing() {
             </h2>
 
             <ul className="space-y-3 text-slate-100 text-xs sm:text-sm">
-              <li>
-                • Your dog slowly ages even while you&apos;re logged out.
-              </li>
+              <li>• Your dog slowly ages even while you&apos;re logged out.</li>
               <li>
                 • Hunger, boredom, and dirtiness creep up over real hours, not
                 button mashing.
               </li>
               <li>
-                • As cleanliness drops, your pup can go from dirty → fleas →
-                mange.
+                • As cleanliness drops, your pup can go from dirty → fleas → mange.
               </li>
-              <li>
-                • Taking good care of your pup extends their life.
-              </li>
+              <li>• Taking good care of your pup extends their life.</li>
             </ul>
 
             <button
@@ -136,41 +95,6 @@ export default function Landing() {
           </aside>
         </div>
       </main>
-
-      {/* FOOTER */}
-      <footer className="border-t border-white/10 bg-[#010104]">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-400">
-            <p className="text-center sm:text-left">
-              Doggerz — Created by William Johnson — {new Date().getFullYear()}. All rights reserved.
-            </p>
-
-            <nav className="flex items-center gap-4">
-              <button
-                type="button"
-                onClick={() => navigate("/about")}
-                className="hover:text-slate-200 transition"
-              >
-                About
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate("/contact")}
-                className="hover:text-slate-200 transition"
-              >
-                Contact
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate("/legal")}
-                className="hover:text-slate-200 transition"
-              >
-                Terms & Privacy
-              </button>
-            </nav>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

@@ -1,4 +1,6 @@
 // src/redux/store.js
+// @ts-nocheck
+
 import { configureStore } from "@reduxjs/toolkit";
 import dogReducer from "./dogSlice.js";
 import userReducer from "./userSlice.js";
@@ -6,14 +8,10 @@ import userReducer from "./userSlice.js";
 export const store = configureStore({
   reducer: {
     dog: dogReducer,
-    user: userReducer,
+    user: userReducer, // 👈 this MUST be "user" for selectUser(state).user to work
   },
-  middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware({
-      serializableCheck: {
-        // Ignore these paths for non-serializable values
-        ignoredPaths: ["dog.lastUpdatedAt", "dog.adoptedAt"],
-        ignoredActions: ["dog/hydrateDog", "dog/registerSessionStart"],
-      },
-    }),
 });
+
+// Optional: type helpers if you decide to add TS later
+// export const RootState = store.getState;
+// export const AppDispatch = store.dispatch;

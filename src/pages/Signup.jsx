@@ -1,126 +1,106 @@
 // src/pages/Signup.jsx
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { PATHS } from "../routes.js";
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth, firebaseReady, firebaseMissingKeys } from "@/firebase.js";
 
-export default function SignupPage() {
+export default function Signup() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
+  const [displayName, setDisplayName] = useState("");
   const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState(null);
 
-  const nav = useNavigate();
-
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    setError(null);
-    if (!email || !password) {
-      setError("Please provide email and password.");
-      return;
-    }
-    if (password !== confirm) {
-      setError("Passwords do not match.");
-      return;
-    }
 
-    setBusy(true);
-    try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      // On success, send user to adopt flow
-      nav(PATHS.ADOPT);
-    } catch (err) {
-      setError(err.message || "Failed to create account");
-    } finally {
-      setBusy(false);
-    }
+    // TODO: wire into Firebase auth
+    console.log("signup attempt", { email, displayName, password });
+
+    // After signup, send them to adopt
+    navigate("/adopt");
   };
 
-  if (!firebaseReady || !auth) {
-    const missingList = firebaseMissingKeys.length
-      ? firebaseMissingKeys.join(", ")
-      : "Firebase project settings";
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-950 text-zinc-50 p-6">
-        <div className="max-w-lg space-y-4 text-center">
-          <h1 className="text-3xl font-bold">Signup disabled</h1>
-          <p className="text-zinc-400 text-sm leading-relaxed">
-            We can't talk to Firebase until the local <code>.env.local</code> includes
-            valid keys ({missingList}). Add them from your Firebase console and restart
-            the dev server to bring this screen back online.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-zinc-950 text-zinc-50">
-      <div className="w-full max-w-md mx-auto px-4 space-y-6">
-        <h1 className="text-3xl font-bold text-center">Create your Doggerz account</h1>
-
-        <p className="text-sm text-zinc-400 text-center">
-          Create an account to persist your pup to the cloud.
+    <div className="min-h-[calc(100vh-7rem)] bg-zinc-950 text-zinc-50 flex items-center">
+      <div className="container mx-auto px-4 max-w-md">
+        <h1 className="text-3xl font-bold mb-2">Create your account</h1>
+        <p className="text-zinc-300 mb-6">
+          Save your pup, your streaks, and your Doggerz coins across devices.
         </p>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="text-sm text-red-400 bg-red-950/20 p-2 rounded">{error}</div>
-          )}
-
-          <div className="space-y-1 text-left">
-            <label className="text-sm text-zinc-300">Email</label>
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-4 rounded-xl bg-zinc-900/70 p-6 border border-zinc-800"
+        >
+          <div className="space-y-2">
+            <label
+              htmlFor="displayName"
+              className="block text-sm font-medium text-zinc-200"
+            >
+              Display name
+            </label>
             <input
+              id="displayName"
+              type="text"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              maxLength={32}
+              className="w-full rounded-md bg-zinc-950 border border-zinc-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              placeholder="William"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-zinc-200"
+            >
+              Email
+            </label>
+            <input
+              id="email"
               type="email"
+              autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm outline-none focus:border-emerald-500"
+              className="w-full rounded-md bg-zinc-950 border border-zinc-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
               placeholder="you@example.com"
             />
           </div>
 
-          <div className="space-y-1 text-left">
-            <label className="text-sm text-zinc-300">Password</label>
+          <div className="space-y-2">
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-zinc-200"
+            >
+              Password
+            </label>
             <input
+              id="password"
               type="password"
+              autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm outline-none focus:border-emerald-500"
-              placeholder="••••••••"
-            />
-          </div>
-
-          <div className="space-y-1 text-left">
-            <label className="text-sm text-zinc-300">Confirm password</label>
-            <input
-              type="password"
-              value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
-              className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm outline-none focus:border-emerald-500"
-              placeholder="••••••••"
+              className="w-full rounded-md bg-zinc-950 border border-zinc-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
             />
           </div>
 
           <button
             type="submit"
-            disabled={busy}
-            className="w-full rounded-lg bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-semibold py-2.5 text-sm transition disabled:opacity-50"
+            className="w-full rounded-full bg-emerald-500 hover:bg-emerald-400 text-black font-semibold text-sm py-2.5 transition"
           >
-            {busy ? "Creating…" : "Sign up"}
+            Sign up
           </button>
-        </form>
 
-        <p className="text-xs text-zinc-400 text-center">
-          Already have an account?{" "}
-          <Link
-            to={PATHS.LOGIN}
-            className="text-emerald-400 hover:text-emerald-300"
-          >
-            Sign in
-          </Link>
-        </p>
+          <p className="text-xs text-zinc-400 text-center">
+            Already have an account?{" "}
+            <Link
+              to="/login"
+              className="text-emerald-400 hover:text-emerald-300"
+            >
+              Log in
+            </Link>
+            .
+          </p>
+        </form>
       </div>
     </div>
   );
