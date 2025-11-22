@@ -1,13 +1,9 @@
 # Node / Vite
-node_modules/
 dist/
-.vite/
 *.local
 *.log
 
 # Env and tooling
-.env
-.env.*
 !.env.example
 coverage/
 .cache/
@@ -18,8 +14,3 @@ coverage/
 Thumbs.db
 *.swp
 .idea/
-.vscode/
-
-# Firebase artifacts (if any build outputs appear)
-.firebase/
-.firebaserc.local

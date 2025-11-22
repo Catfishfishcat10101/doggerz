@@ -94,12 +94,7 @@ function AppFooter() {
           >
             About
           </Link>
-          <Link
-            to="/potty"
-            className="hover:text-emerald-300 transition-colors"
-          >
-            Potty training
-          </Link>
+          {/* Potty training link removed from footer per design */}
           <Link
             to="/legal"
             className="hover:text-emerald-300 transition-colors"

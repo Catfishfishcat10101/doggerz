@@ -4,7 +4,7 @@
 
 ## Overview
 
-Doggerz uses **2048x2048 PNG spritesheets** with a **16x16 grid** layout (128x128px per frame). Each life stage has a dedicated sheet.
+Doggerz uses **2048x2048 PNG spritesheet** with a **16x16 grid** layout (128x128px per frame). Each life stage has a dedicated sheet.
 
 ---
 

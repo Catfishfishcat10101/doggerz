@@ -6,7 +6,7 @@ import {
   FIREBASE as firebaseConfig,
   isFirebaseConfigured,
   missingFirebaseKeys,
-} from "./config/env.js";
+} from "@/config/firebaseConfig.js";
 
 let missingConfigWarned = false;
 

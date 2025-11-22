@@ -24,7 +24,7 @@ import ProgressBar from "@/components/ProgressBar.jsx";
 import VoiceCommandButton from "@/components/VoiceCommandButton.jsx";
 import CareActionsPanel from "@/components/CareActionsPanel.jsx";
 import PottyTrackerCard from "@/components/PottyTrackerCard.jsx";
-import GameTopBar from "@/features/game/components/GameTopBar.jsx";
+import GameTopBar from "@/components/GameTopBar.jsx";
 
 function computeTimeOfDayLabel() {
   const hours = new Date().getHours();
