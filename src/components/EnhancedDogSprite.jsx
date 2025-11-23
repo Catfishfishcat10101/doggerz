@@ -5,10 +5,7 @@ import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { selectDog } from "@/redux/dogSlice.js";
 
-import {
-  calculateDogAge,
-  getSpriteForLifeStage,
-} from "@/utils/lifecycle.js";
+import { calculateDogAge, getSpriteForLifeStage } from "@/utils/lifecycle.js";
 
 const FRAME_SIZE = 96;
 const FRAME_COUNT = 8;
@@ -36,10 +33,10 @@ export default function EnhancedDogSprite() {
   const spriteSrc = getSpriteForLifeStage(stageId);
 
   useEffect(() => {
-    const id = setInterval(() => {
-      setFrameIndex((prev) => (prev + 1) % FRAME_COUNT);
-    }, FRAME_DURATION_MS);
-
+    const id = setInterval(
+      () => setFrameIndex((prev) => (prev + 1) % FRAME_COUNT),
+      FRAME_DURATION_MS
+    );
     return () => clearInterval(id);
   }, []);
 
@@ -85,6 +82,7 @@ export default function EnhancedDogSprite() {
     </div>
   );
 }
+
 EnhancedDogSprite.displayName = "EnhancedDogSprite";
 EnhancedDogSprite.framework = "react";
 EnhancedDogSprite.group = "components";

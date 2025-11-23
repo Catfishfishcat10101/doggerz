@@ -16,6 +16,8 @@ const router = createBrowserRouter(
   {
     future: {
       v7_relativeSplatPath: true,
+      // Opt-in early to startTransition wrapping to silence v7 warning
+      v7_startTransition: true,
     },
   }
 );
