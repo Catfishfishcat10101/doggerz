@@ -27,12 +27,7 @@ export default function GameTopBar({
   /** @type {{ hunger?: number; happiness?: number; energy?: number; cleanliness?: number }} */
   const safeNeeds = needs || {};
 
-  const {
-    hunger = 0,
-    happiness = 0,
-    energy = 0,
-    cleanliness = 0,
-  } = safeNeeds;
+  const { hunger = 0, happiness = 0, energy = 0, cleanliness = 0 } = safeNeeds;
 
   const clamp = (n) =>
     Number.isFinite(n) ? Math.max(0, Math.min(100, Math.round(n))) : 0;
@@ -98,9 +93,7 @@ export default function GameTopBar({
       {/* Right side: user greeting + state & needs */}
       <div className="text-right text-xs text-zinc-300 space-y-1">
         {firstName && (
-          <p className="text-[0.75rem] text-zinc-200 mb-1">
-            Hi, {firstName}!
-          </p>
+          <p className="text-[0.75rem] text-zinc-200 mb-1">Hi, {firstName}!</p>
         )}
 
         <p className="font-medium text-sky-200">Mood: {moodLabel}</p>

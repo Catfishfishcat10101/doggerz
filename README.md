@@ -20,8 +20,8 @@
 
 > Replace with real captures; these are placeholders.
 
-| Splash / Auth | Game Screen | Shop |
-|---|---|---|
+| Splash / Auth                        | Game Screen                      | Shop                             |
+| ------------------------------------ | -------------------------------- | -------------------------------- |
 | ![Splash](public/screens/splash.png) | ![Game](public/screens/game.png) | ![Shop](public/screens/shop.png) |
 
 ---

@@ -42,8 +42,7 @@ const TIME_OVERLAY = {
   dusk: "linear-gradient(180deg, rgba(255,164,119,0.4) 0%, rgba(2,6,23,0.8) 100%)",
   evening:
     "linear-gradient(180deg, rgba(15,23,42,0.2) 0%, rgba(2,6,23,0.85) 100%)",
-  night:
-    "linear-gradient(180deg, rgba(2,6,23,0.4) 0%, rgba(0,0,0,0.9) 100%)",
+  night: "linear-gradient(180deg, rgba(2,6,23,0.4) 0%, rgba(0,0,0,0.9) 100%)",
 };
 
 /**
@@ -108,7 +107,7 @@ export default function MainGame() {
   const moodLabel = dog?.mood?.label || "Calibrating vibe…";
   const needs = useMemo(
     () => ({ hunger, happiness, energy, cleanliness }),
-    [hunger, happiness, energy, cleanliness]
+    [hunger, happiness, energy, cleanliness],
   );
 
   const poopCount = dog?.poopCount ?? 0;
@@ -134,8 +133,7 @@ export default function MainGame() {
   const cleanlinessLabel =
     cleanlinessDetails.label || cleanlinessTier || "Fresh";
   const cleanlinessSummary =
-    cleanlinessDetails.journalSummary ||
-    "Freshly pampered and glowing.";
+    cleanlinessDetails.journalSummary || "Freshly pampered and glowing.";
 
   const overlayStyle = {
     background: TIME_OVERLAY[timeOfDay] || TIME_OVERLAY.afternoon,
@@ -174,7 +172,7 @@ export default function MainGame() {
     const updateCountdown = () => {
       const remaining = Math.max(
         0,
-        Math.round((activePoll.expiresAt - Date.now()) / 1000)
+        Math.round((activePoll.expiresAt - Date.now()) / 1000),
       );
       setPollCountdown(remaining);
     };
@@ -208,12 +206,9 @@ export default function MainGame() {
     }
 
     setReminderToast(
-      "Adult training overdue — run a command to keep streaks alive."
+      "Adult training overdue — run a command to keep streaks alive.",
     );
-    reminderTimeoutRef.current = setTimeout(
-      () => setReminderToast(null),
-      6000
-    );
+    reminderTimeoutRef.current = setTimeout(() => setReminderToast(null), 6000);
   }, [
     isAdopted,
     isPuppy,
@@ -246,7 +241,7 @@ export default function MainGame() {
             play({
               now,
               timeOfDay: timeOfDay === "morning" ? "MORNING" : "DAY",
-            })
+            }),
           );
           acknowledge("Zoomies achieved!");
           break;
@@ -278,7 +273,7 @@ export default function MainGame() {
               success: true,
               xp: 8,
               now,
-            })
+            }),
           );
           acknowledge("Practiced SIT command.");
           break;
@@ -286,7 +281,7 @@ export default function MainGame() {
           break;
       }
     },
-    [dispatch, dog, acknowledge, timeOfDay]
+    [dispatch, dog, acknowledge, timeOfDay],
   );
 
   const handlePollResponse = useCallback(
@@ -296,10 +291,10 @@ export default function MainGame() {
           accepted,
           reason: accepted ? "ACCEPT" : "DECLINE",
           now: Date.now(),
-        })
+        }),
       );
     },
-    [dispatch]
+    [dispatch],
   );
 
   const handleQuickAdopt = useCallback(() => {
@@ -375,12 +370,10 @@ export default function MainGame() {
           {/* Yard status strip */}
           <div className="relative z-10 flex justify-between items-center px-4 py-2 text-[0.7rem] bg-zinc-950/70 border-t border-zinc-800">
             <span className="text-zinc-400">
-              Potty:{" "}
-              <span className="text-zinc-100">{pottyStatusLabel}</span>
+              Potty: <span className="text-zinc-100">{pottyStatusLabel}</span>
             </span>
             <span className="text-zinc-400">
-              Yard:{" "}
-              <span className="text-zinc-100">{yardStatusLabel}</span>
+              Yard: <span className="text-zinc-100">{yardStatusLabel}</span>
             </span>
           </div>
         </div>
@@ -395,26 +388,16 @@ export default function MainGame() {
                 {cleanlinessLabel}
               </span>
             </p>
-            <p className="text-[0.7rem] text-zinc-500">
-              {cleanlinessSummary}
-            </p>
+            <p className="text-[0.7rem] text-zinc-500">{cleanlinessSummary}</p>
           </div>
 
           {/* Stat bars */}
           <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4 space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <StatBar label="Hunger" value={hunger} color="amber" inverse />
-              <StatBar
-                label="Happiness"
-                value={happiness}
-                color="emerald"
-              />
+              <StatBar label="Happiness" value={happiness} color="emerald" />
               <StatBar label="Energy" value={energy} color="blue" />
-              <StatBar
-                label="Cleanliness"
-                value={cleanliness}
-                color="cyan"
-              />
+              <StatBar label="Cleanliness" value={cleanliness} color="cyan" />
             </div>
           </div>
 

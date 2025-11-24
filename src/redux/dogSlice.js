@@ -122,7 +122,7 @@ const initialState = {
   adoptedAt: null,
   lifeStage: { stage: "PUPPY", label: "Puppy", days: 0 },
   potty: {
-    training: 0,        // 0–100: how potty-trained
+    training: 0, // 0–100: how potty-trained
     lastSuccessAt: null,
     lastAccidentAt: null,
     totalSuccesses: 0,
@@ -136,13 +136,18 @@ const initialState = {
   },
   cleanlinessTier: "FRESH",
   poopCount: 0,
-  
+
   isAsleep: false,
-  debug: false,
+  debug:
+    (typeof localStorage !== "undefined" &&
+      localStorage.getItem("doggerz:debug") === "1") ||
+    false,
   lastUpdatedAt: null,
 
   // Used by EnhancedDogSprite / animations
   lastAction: null,
+  // Temporary animation override: { name: string, expiresAt: ms }
+  animationOverride: null,
 
   temperament: initialTemperament,
   memory: initialMemory,
@@ -874,6 +879,8 @@ const dogSlice = createSlice({
       state.memory.lastSeenAt = now;
 
       state.lastAction = "feed";
+      // Action animation override (eat)
+      state.animationOverride = { name: "eat", expiresAt: now + 1800 };
 
       applyXp(state, 5);
       maybeSampleMood(state, now, "FEED");
@@ -902,6 +909,9 @@ const dogSlice = createSlice({
       state.memory.lastSeenAt = now;
 
       state.lastAction = "play";
+      // Random play animation variant
+      const anim = Math.random() < 0.5 ? "play_ball" : "play_tug";
+      state.animationOverride = { name: anim, expiresAt: now + 2000 };
 
       applyXp(state, 8);
       maybeSampleMood(state, now, "PLAY");
@@ -923,6 +933,7 @@ const dogSlice = createSlice({
       state.memory.lastSeenAt = now;
 
       state.lastAction = "rest";
+      state.animationOverride = { name: "lay", expiresAt: now + 3000 };
 
       applyXp(state, 3);
       maybeSampleMood(state, now, "REST");
@@ -933,6 +944,7 @@ const dogSlice = createSlice({
     wakeUp(state) {
       state.isAsleep = false;
       state.lastAction = "wake";
+      state.animationOverride = { name: "idle", expiresAt: nowMs() + 1200 };
     },
 
     bathe(state, { payload }) {
@@ -946,6 +958,7 @@ const dogSlice = createSlice({
       state.memory.lastSeenAt = now;
 
       state.lastAction = "bathe";
+      state.animationOverride = { name: "shake", expiresAt: now + 1600 };
 
       applyXp(state, 4);
       maybeSampleMood(state, now, "BATHE");
@@ -969,6 +982,7 @@ const dogSlice = createSlice({
       state.memory.lastSeenAt = now;
 
       state.lastAction = "potty";
+      state.animationOverride = { name: "potty", expiresAt: now + 1800 };
 
       applyXp(state, 2);
       maybeSampleMood(state, now, "POTTY");
@@ -988,6 +1002,7 @@ const dogSlice = createSlice({
       state.memory.lastSeenAt = now;
 
       state.lastAction = "scoop";
+      state.animationOverride = { name: "scratch", expiresAt: now + 1400 };
 
       finalizeDerivedState(state, now);
     },
@@ -1076,6 +1091,7 @@ const dogSlice = createSlice({
       state.memory.lastSeenAt = now;
 
       state.lastAction = "train";
+      state.animationOverride = { name: "sit", expiresAt: now + 1800 };
 
       state.stats.happiness = clamp(state.stats.happiness + 8, 0, 100);
       state.stats.energy = clamp(state.stats.energy - 5, 0, 100);
@@ -1098,12 +1114,33 @@ const dogSlice = createSlice({
       finalizeDerivedState(state, now);
     },
 
+    // Manual override setters (UI / middleware can dispatch)
+    setAnimationOverride(state, { payload }) {
+      if (!payload || !payload.name) return;
+      const now = payload?.now ?? nowMs();
+      const dur = Math.max(200, Math.min(payload.durationMs ?? 1800, 10000));
+      state.animationOverride = { name: payload.name, expiresAt: now + dur };
+    },
+    clearAnimationOverride(state, { payload }) {
+      const now = payload?.now ?? nowMs();
+      if (state.animationOverride && state.animationOverride.expiresAt <= now) {
+        state.animationOverride = null;
+      } else if (payload?.force) {
+        state.animationOverride = null;
+      }
+    },
+
     addJournalEntry(state, { payload }) {
       pushJournalEntry(state, payload || {});
     },
 
     toggleDebug(state) {
       state.debug = !state.debug;
+      try {
+        if (typeof localStorage !== "undefined") {
+          localStorage.setItem("doggerz:debug", state.debug ? "1" : "0");
+        }
+      } catch {}
     },
 
     resetDogState() {
@@ -1148,6 +1185,8 @@ export const {
   tickDogPolls,
   respondToDogPoll,
   trainObedience,
+  setAnimationOverride,
+  clearAnimationOverride,
   addJournalEntry,
   toggleDebug,
   resetDogState,

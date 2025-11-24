@@ -1,10 +1,7 @@
 // src/features/game/MoodAndJournalPanel.jsx
 import React from "react";
 import { useSelector } from "react-redux";
-import {
-  selectDogMood,
-  selectDogJournal,
-} from "@/redux/dogSlice.js";
+import { selectDogMood, selectDogJournal } from "@/redux/dogSlice.js";
 
 const MOOD_EMOJI = {
   HAPPY: "🦴",
@@ -31,10 +28,7 @@ function MoodTimeline({ mood }) {
     );
   }
 
-  const maxHappiness = Math.max(
-    1,
-    ...recent.map((m) => m.happiness || 0)
-  );
+  const maxHappiness = Math.max(1, ...recent.map((m) => m.happiness || 0));
 
   return (
     <div className="space-y-2">
@@ -88,7 +82,8 @@ function JournalList({ journal }) {
   if (!recent.length) {
     return (
       <p className="text-xs text-zinc-500">
-        When you feed, play, or stay away for a while, your pup will start writing little notes here.
+        When you feed, play, or stay away for a while, your pup will start
+        writing little notes here.
       </p>
     );
   }
@@ -105,10 +100,7 @@ function JournalList({ journal }) {
         });
 
         return (
-          <li
-            key={entry.id}
-            className="rounded-xl bg-zinc-900/90 px-3 py-2"
-          >
+          <li key={entry.id} className="rounded-xl bg-zinc-900/90 px-3 py-2">
             <div className="flex items-center justify-between gap-2 text-[11px] text-zinc-400">
               <span className="uppercase tracking-wide text-zinc-500">
                 {entry.type}

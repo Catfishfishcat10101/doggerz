@@ -16,11 +16,7 @@ export default function TemperamentCard({ temperament }) {
   const dispatch = useDispatch();
   if (!temperament) return null;
 
-  const {
-    primary,
-    secondary,
-    traits = [],
-  } = temperament;
+  const { primary, secondary, traits = [] } = temperament;
 
   const handleClose = () => {
     dispatch(markTemperamentRevealed());
@@ -35,7 +31,8 @@ export default function TemperamentCard({ temperament }) {
               Temperament reveal
             </h2>
             <p className="text-xs text-zinc-400">
-              After spending time together, your pup&apos;s personality is showing.
+              After spending time together, your pup&apos;s personality is
+              showing.
             </p>
           </div>
           <button
@@ -57,9 +54,7 @@ export default function TemperamentCard({ temperament }) {
           {secondary && (
             <p>
               Secondary:{" "}
-              <span className="font-semibold text-sky-400">
-                {secondary}
-              </span>
+              <span className="font-semibold text-sky-400">{secondary}</span>
             </p>
           )}
         </div>
@@ -71,19 +66,16 @@ export default function TemperamentCard({ temperament }) {
             </p>
             <div className="grid grid-cols-2 gap-2">
               {traits.map((t) => (
-                <TraitPill
-                  key={t.id}
-                  label={t.label}
-                  intensity={t.intensity}
-                />
+                <TraitPill key={t.id} label={t.label} intensity={t.intensity} />
               ))}
             </div>
           </div>
         )}
 
         <p className="text-xs text-zinc-400">
-          Your pup&apos;s temperament influences idle animations, moods, and how quickly
-          they get bored or excited. Keep playing together to discover more quirks.
+          Your pup&apos;s temperament influences idle animations, moods, and how
+          quickly they get bored or excited. Keep playing together to discover
+          more quirks.
         </p>
       </div>
     </div>

@@ -6,13 +6,29 @@ import { useSelector } from "react-redux";
 import { selectDog } from "@/redux/dogSlice.js";
 import DogAIEngine from "@/features/game/DogAIEngine.jsx";
 import MainGame from "@/features/game/MainGame.jsx";
+import SpritePerfPanel from "@/features/game/SpritePerfPanel.jsx";
+import { useDispatch } from "react-redux";
+import { toggleDebug } from "@/redux/dogSlice.js";
 
 export default function Game() {
   const dog = useSelector(selectDog);
+  const dispatch = useDispatch();
 
   useEffect(() => {
     document.title = "Doggerz • Main Game";
   }, []);
+
+  // Keyboard shortcut for perf panel toggle
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    function onKey(e) {
+      if (e.key.toLowerCase() === "d" && e.shiftKey) {
+        dispatch(toggleDebug());
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [dispatch]);
 
   return (
     <main className="min-h-[calc(100vh-4rem)] bg-slate-950 text-zinc-100 flex justify-center px-4 py-6">
@@ -45,6 +61,7 @@ export default function Game() {
         >
           <MainGame />
         </section>
+        <SpritePerfPanel />
       </div>
     </main>
   );

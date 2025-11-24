@@ -63,8 +63,8 @@ export default function Landing() {
 
           {/* Tiny helper text – clarifies flow without being loud */}
           <p className="max-w-md text-xs text-zinc-500">
-            The full dashboard (hunger, energy, cleanliness, potty training, etc.)
-            unlocks on the next screen after you adopt or log in.
+            The full dashboard (hunger, energy, cleanliness, potty training,
+            etc.) unlocks on the next screen after you adopt or log in.
           </p>
         </section>
 

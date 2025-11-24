@@ -9,8 +9,8 @@ const FRAME_HEIGHT = 64;
 const COLUMNS = 4;
 const ROWS = 5;
 
-const SHEET_WIDTH = FRAME_WIDTH * COLUMNS;   // 256
-const SHEET_HEIGHT = FRAME_HEIGHT * ROWS;    // 320
+const SHEET_WIDTH = FRAME_WIDTH * COLUMNS; // 256
+const SHEET_HEIGHT = FRAME_HEIGHT * ROWS; // 320
 
 /**
  * Define animations and which row they use.
@@ -19,32 +19,32 @@ const SHEET_HEIGHT = FRAME_HEIGHT * ROWS;    // 320
 const ANIMATIONS = {
   idle: {
     name: "idle",
-    row: 0,       // row 0
-    frames: 4,    // 4 frames across
+    row: 0, // row 0
+    frames: 4, // 4 frames across
     fps: 6,
   },
   idle_bark: {
     name: "idle_bark",
-    row: 1,       // row 1
+    row: 1, // row 1
     frames: 4,
     fps: 10,
   },
   idle_scratch: {
     name: "idle_scratch",
-    row: 2,       // row 2
+    row: 2, // row 2
     frames: 4,
     fps: 8,
   },
   attention: {
     name: "attention",
-    row: 3,       // row 3
+    row: 3, // row 3
     frames: 4,
     fps: 10,
   },
   sleep: {
     name: "sleep",
-    row: 4,       // row 4 (last row)
-    frames: 4,    // change to 2 if last 2 frames are empty
+    row: 4, // row 4 (last row)
+    frames: 4, // change to 2 if last 2 frames are empty
     fps: 4,
   },
 };

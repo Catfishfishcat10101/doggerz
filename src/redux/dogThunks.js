@@ -29,7 +29,7 @@ export const loadDogFromCloud = createAsyncThunk(
     try {
       if (!firebaseReady || !db || !auth?.currentUser) {
         return rejectWithValue(
-          "Cloud sync disabled: Firebase not configured or user not logged in"
+          "Cloud sync disabled: Firebase not configured or user not logged in",
         );
       }
 
@@ -48,7 +48,7 @@ export const loadDogFromCloud = createAsyncThunk(
       if (cloudData) {
         dispatch(hydrateDog(cloudData));
         console.log(
-          "[Doggerz] Dog loaded from cloud and hydrated successfully"
+          "[Doggerz] Dog loaded from cloud and hydrated successfully",
         );
       }
 
@@ -57,7 +57,7 @@ export const loadDogFromCloud = createAsyncThunk(
       console.error("[Doggerz] Failed to load dog from cloud", err);
       return rejectWithValue(err.message || "loadDogFromCloud failed");
     }
-  }
+  },
 );
 
 export const saveDogToCloud = createAsyncThunk(
@@ -66,7 +66,7 @@ export const saveDogToCloud = createAsyncThunk(
     try {
       if (!firebaseReady || !db || !auth?.currentUser) {
         return rejectWithValue(
-          "Cloud sync disabled: Firebase not configured or user not logged in"
+          "Cloud sync disabled: Firebase not configured or user not logged in",
         );
       }
 
@@ -98,5 +98,5 @@ export const saveDogToCloud = createAsyncThunk(
       console.error("[Doggerz] Failed to save dog to cloud", err);
       return rejectWithValue(err.message || "saveDogToCloud failed");
     }
-  }
+  },
 );

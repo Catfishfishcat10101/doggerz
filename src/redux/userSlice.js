@@ -1,6 +1,5 @@
 // src/redux/userSlice.js
 
-
 import { createSlice } from "@reduxjs/toolkit";
 
 const USER_STORAGE_KEY = "doggerz:userState";

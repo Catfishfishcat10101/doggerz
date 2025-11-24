@@ -34,7 +34,6 @@ export default function Settings() {
       <h1 className="text-3xl font-bold mb-6">Settings</h1>
 
       <div className="grid gap-6 lg:grid-cols-2">
-
         {/* Appearance Panel */}
         <div className="card">
           <h2 className="text-xl font-semibold">Appearance</h2>

@@ -14,8 +14,8 @@ import {
 } from "@/redux/dogSlice.js";
 import { loadDogFromCloud, saveDogToCloud } from "@/redux/dogThunks.js";
 
-const TICK_INTERVAL_MS = 60_000;    // 60 seconds
-const CLOUD_SAVE_DEBOUNCE = 3_000;  // 3 seconds
+const TICK_INTERVAL_MS = 60_000; // 60 seconds
+const CLOUD_SAVE_DEBOUNCE = 3_000; // 3 seconds
 
 export default function DogAIEngine() {
   const dispatch = useDispatch();

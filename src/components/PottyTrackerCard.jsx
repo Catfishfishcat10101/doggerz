@@ -31,7 +31,7 @@ export default function PottyTrackerCard({
   const pottyPct = Math.max(0, Math.min(100, Math.round(pottyLevel ?? 0)));
   const pottyTrainingPct = Math.max(
     0,
-    Math.min(100, Math.round((pottyProgress ?? 0) * 100))
+    Math.min(100, Math.round((pottyProgress ?? 0) * 100)),
   );
   const showTraining = isPuppy && pottyGoal > 0;
 
@@ -66,7 +66,9 @@ export default function PottyTrackerCard({
           <div className="flex items-center justify-between text-xs text-amber-100 font-semibold">
             <span>Puppy potty training</span>
             <span>
-              {pottyTrainingComplete ? "Completed" : `${pottySuccess}/${pottyGoal}`}
+              {pottyTrainingComplete
+                ? "Completed"
+                : `${pottySuccess}/${pottyGoal}`}
             </span>
           </div>
           <div className="h-2 rounded-full bg-amber-900/40 overflow-hidden">
