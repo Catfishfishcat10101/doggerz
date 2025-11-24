@@ -2,7 +2,7 @@
   "compilerOptions": {
     "jsx": "react",
     "baseUrl": ".",
-    "paths": {"@/*": ["src/*"]},
+    "paths": { "@/*": ["src/*"] },
     "checkJs": true,
     "noEmit": true,
     "module": "esnext",
@@ -10,7 +10,14 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
-    "types": ["vite/client", "node"]},
-  "include": ["src/**/*", "vite.config.*", "tailwind.config.*", "postcss.config.js", "game"],
+    "types": ["vite/client", "node"]
+  },
+  "include": [
+    "src/**/*",
+    "vite.config.*",
+    "tailwind.config.*",
+    "postcss.config.js",
+    "game"
+  ],
   "exclude": ["node_modules", "dist", "build"]
 }

@@ -9,8 +9,8 @@ export default function AboutPage() {
           How Doggerz works
         </h1>
         <p className="text-sm text-zinc-300">
-          Doggerz is a real-time virtual pup simulator. Their stats drift based on actual
-          time, even while you are gone.
+          Doggerz is a real-time virtual pup simulator. Their stats drift based
+          on actual time, even while you are gone.
         </p>
 
         <section className="space-y-2 text-sm text-zinc-300">

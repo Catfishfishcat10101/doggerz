@@ -5,6 +5,7 @@
 Doggerz uses a **freemium + IAP + ads** hybrid model to maximize accessibility while generating sustainable revenue.
 
 ### Core Philosophy
+
 - **Free tier must be genuinely fun** (1 dog, core gameplay intact)
 - **Premium feels like a quality-of-life upgrade**, not a paywall
 - **Ads are opt-in for rewards**, never forced interruptions
@@ -115,12 +116,12 @@ Doggerz uses a **freemium + IAP + ads** hybrid model to maximize accessibility w
 
 ### Monthly Revenue (Steady State)
 
-| Source | Users | Rev/User | Total |
-|--------|-------|----------|-------|
-| Premium | 500 | $4.99 | $2,495 |
-| IAP | 1,500 | $2.50 | $3,750 |
-| Ads | 4,000 | $1.00 | $4,000 |
-| **TOTAL** | | | **$10,245/mo** |
+| Source    | Users | Rev/User | Total          |
+| --------- | ----- | -------- | -------------- |
+| Premium   | 500   | $4.99    | $2,495         |
+| IAP       | 1,500 | $2.50    | $3,750         |
+| Ads       | 4,000 | $1.00    | $4,000         |
+| **TOTAL** |       |          | **$10,245/mo** |
 
 **Year 1 Target:** $80,000-120,000 (accounting for growth curve)
 
@@ -136,22 +137,24 @@ Constants defined in `src/constants/game.js`:
 export const PREMIUM_FEATURES = {
   MAX_DOGS_FREE: 1,
   MAX_DOGS_PREMIUM: 5,
-  RARE_BREEDS: ['corgi', 'shiba', 'husky', 'pug', 'frenchie'],
-  LEGENDARY_BREEDS: ['dingo', 'wolf'],
+  RARE_BREEDS: ["corgi", "shiba", "husky", "pug", "frenchie"],
+  LEGENDARY_BREEDS: ["dingo", "wolf"],
   COIN_MULTIPLIER_PREMIUM: 2,
-  CLOUD_SYNC_REQUIRED_FOR_PREMIUM: true
+  CLOUD_SYNC_REQUIRED_FOR_PREMIUM: true,
 };
 ```
 
-###  Usage Example
+### Usage Example
+
 ```js
 // In AdoptScreen.jsx
-const canAdoptMore = isPremium 
+const canAdoptMore = isPremium
   ? dogState.adoptedDogs?.length < PREMIUM_FEATURES.MAX_DOGS_PREMIUM
   : dogState.adoptedDogs?.length < PREMIUM_FEATURES.MAX_DOGS_FREE;
 
 // In BreedSelector.jsx
-const isBreedLocked = !isPremium && PREMIUM_FEATURES.RARE_BREEDS.includes(breedId);
+const isBreedLocked =
+  !isPremium && PREMIUM_FEATURES.RARE_BREEDS.includes(breedId);
 ```
 
 ---

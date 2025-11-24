@@ -34,8 +34,7 @@ export default function NeedsDashboard({ needs = {} }) {
 
           // Special handling: internal 'hunger' is "how hungry"
           // UI should show "how full" as a percentage.
-          const value =
-            key === "hunger" ? 100 - raw : raw;
+          const value = key === "hunger" ? 100 - raw : raw;
 
           return (
             <div key={key} className="space-y-1">

@@ -1,13 +1,19 @@
 import React from "react";
 
-export default function DogPollCard({ activePoll, pollCountdown, onPollResponse }) {
+export default function DogPollCard({
+  activePoll,
+  pollCountdown,
+  onPollResponse,
+}) {
   return (
     <div className="bg-indigo-950/70 border border-indigo-500/30 rounded-2xl p-3 lg:p-4 shadow-lg shadow-indigo-900/40 space-y-3">
       {activePoll ? (
         <>
           <div className="flex items-center justify-between text-sm font-semibold text-indigo-100">
             <span>Dog poll in progress</span>
-            <span className="text-xs text-indigo-200">{pollCountdown}s left</span>
+            <span className="text-xs text-indigo-200">
+              {pollCountdown}s left
+            </span>
           </div>
           <p className="text-sm text-indigo-50">{activePoll.prompt}</p>
           <div className="grid grid-cols-2 gap-2 text-xs">
@@ -27,14 +33,18 @@ export default function DogPollCard({ activePoll, pollCountdown, onPollResponse 
             </button>
           </div>
           <p className="text-[0.65rem] text-indigo-200/80">
-            Answering keeps happiness high. Ignoring polls makes the pup a little salty.
+            Answering keeps happiness high. Ignoring polls makes the pup a
+            little salty.
           </p>
         </>
       ) : (
         <div className="space-y-1">
-          <p className="text-sm font-semibold text-indigo-100">Dog polls idle</p>
+          <p className="text-sm font-semibold text-indigo-100">
+            Dog polls idle
+          </p>
           <p className="text-xs text-indigo-200/80">
-            No active prompt. Another check-in will appear every few minutes to keep you honest.
+            No active prompt. Another check-in will appear every few minutes to
+            keep you honest.
           </p>
         </div>
       )}

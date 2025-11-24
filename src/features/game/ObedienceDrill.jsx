@@ -37,10 +37,7 @@ export default function ObedienceDrill() {
   const obedience = skills.obedience || {};
 
   const hasAnySkill =
-    obedience.sit ||
-    obedience.stay ||
-    obedience.rollOver ||
-    obedience.speak;
+    obedience.sit || obedience.stay || obedience.rollOver || obedience.speak;
 
   return (
     <section className="rounded-2xl border border-zinc-800 bg-zinc-950/80 p-4 space-y-3">
@@ -50,7 +47,8 @@ export default function ObedienceDrill() {
             Obedience Training
           </h2>
           <p className="text-xs text-zinc-400">
-            Press, give a command, and level up your pup&apos;s obedience skill tree.
+            Press, give a command, and level up your pup&apos;s obedience skill
+            tree.
           </p>
         </div>
       </div>
@@ -69,7 +67,8 @@ export default function ObedienceDrill() {
           </>
         ) : (
           <p className="text-xs text-zinc-500">
-            No commands trained yet. Use voice commands to start building skills.
+            No commands trained yet. Use voice commands to start building
+            skills.
           </p>
         )}
       </div>

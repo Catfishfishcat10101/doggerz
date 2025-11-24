@@ -85,9 +85,7 @@ export default function Potty() {
               <p className="text-xs font-semibold text-zinc-100">
                 Current training level
               </p>
-              <p className="text-sm text-zinc-300">
-                {training}% potty trained
-              </p>
+              <p className="text-sm text-zinc-300">{training}% potty trained</p>
             </div>
 
             <div className="w-full sm:w-64 h-2 rounded-full bg-zinc-800 overflow-hidden">
@@ -105,9 +103,7 @@ export default function Potty() {
               <p className="text-[11px] font-semibold text-zinc-200">
                 Total accidents
               </p>
-              <p className="text-lg font-semibold text-rose-300">
-                {accidents}
-              </p>
+              <p className="text-lg font-semibold text-rose-300">{accidents}</p>
               <p className="text-[11px] text-zinc-500">
                 Each indoor accident slows training a bit.
               </p>
@@ -150,8 +146,9 @@ export default function Potty() {
           </p>
           <ul className="list-disc list-inside text-xs text-zinc-300 space-y-1">
             <li>
-              Take your pup out <span className="font-semibold">right after</span>{" "}
-              feeding, play sessions, and naps.
+              Take your pup out{" "}
+              <span className="font-semibold">right after</span> feeding, play
+              sessions, and naps.
             </li>
             <li>
               Use the <span className="font-semibold">Potty Walk</span> button

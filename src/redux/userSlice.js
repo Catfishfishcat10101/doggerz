@@ -1,6 +1,5 @@
 // src/redux/userSlice.js
 
-
 import { createSlice } from "@reduxjs/toolkit";
 
 const USER_STORAGE_KEY = "doggerz:userState";
@@ -31,6 +30,7 @@ const initialState = loadUserFromStorage() || {
   displayName: "Trainer",
   email: null,
   avatarUrl: null,
+  zip: null,
 
   coins: 0,
   streak: {
@@ -47,8 +47,16 @@ const userSlice = createSlice({
   initialState,
   reducers: {
     setUser(state, action) {
-      const { id, displayName, email, avatarUrl, coins, streak, createdAt } =
-        action.payload || {};
+      const {
+        id,
+        displayName,
+        email,
+        avatarUrl,
+        coins,
+        streak,
+        createdAt,
+        zip,
+      } = action.payload || {};
 
       state.id = id ?? state.id;
       state.displayName = displayName ?? state.displayName;
@@ -65,6 +73,7 @@ const userSlice = createSlice({
       }
 
       state.createdAt = createdAt ?? state.createdAt;
+      if (zip !== undefined) state.zip = zip;
 
       saveUserToStorage(state);
     },
@@ -110,16 +119,25 @@ const userSlice = createSlice({
       }
       saveUserToStorage(state);
     },
+
+    setZip(state, action) {
+      const raw = String(action.payload || "").trim();
+      // Accept 5-digit US ZIPs only for now
+      const valid = /^[0-9]{5}$/.test(raw) ? raw : null;
+      state.zip = valid;
+      saveUserToStorage(state);
+    },
   },
 });
 
-export const { setUser, clearUser, addCoins, setCoins, updateStreak } =
+export const { setUser, clearUser, addCoins, setCoins, updateStreak, setZip } =
   userSlice.actions;
 
 /**
  * ✅ This is the selector GameTopBar imports.
  */
 export const selectUser = (state) => state.user;
+export const selectUserZip = (state) => state.user?.zip || null;
 
 /** Some optional helpers if you want them later */
 export const selectUserCoins = (state) => state.user?.coins ?? 0;

@@ -60,7 +60,7 @@ export default function AdultTrainingCard() {
         success: true,
         xp: 10,
         now: Date.now(),
-      })
+      }),
     );
   };
 
@@ -101,10 +101,16 @@ export default function AdultTrainingCard() {
 
       {/* Stats */}
       <div className="mt-3 sm:mt-4 space-y-2 rounded-xl bg-slate-900/90 p-3 ring-1 ring-slate-800/80">
-        <StatRow label="Last session" value={formatDate(adult.lastCompletedDate)} />
+        <StatRow
+          label="Last session"
+          value={formatDate(adult.lastCompletedDate)}
+        />
         <StatRow label="Streak" value={streakLabel} />
         <StatRow label="Misses" value={missesLabel} />
-        <StatRow label="Last penalty" value={formatDate(adult.lastPenaltyDate)} />
+        <StatRow
+          label="Last penalty"
+          value={formatDate(adult.lastPenaltyDate)}
+        />
       </div>
 
       {/* Call to action */}
@@ -123,7 +129,9 @@ export default function AdultTrainingCard() {
               : "bg-emerald-500 text-slate-950 hover:translate-y-[1px] hover:bg-emerald-400 active:translate-y-[2px]",
           ].join(" ")}
         >
-          {!isPuppy ? "Log today's training session" : "Unlocks when pup grows up"}
+          {!isPuppy
+            ? "Log today's training session"
+            : "Unlocks when pup grows up"}
         </button>
 
         <p className="text-[10px] sm:text-[11px] text-zinc-500">

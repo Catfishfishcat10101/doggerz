@@ -30,7 +30,7 @@ export function getLifeStageForAge(ageInGameDays) {
   }
 
   const match = ALL_STAGES.find(
-    (stage) => ageInGameDays >= stage.min && ageInGameDays <= stage.max
+    (stage) => ageInGameDays >= stage.min && ageInGameDays <= stage.max,
   ) || { id: "SENIOR", ...LIFE_STAGES.SENIOR };
 
   return match;
@@ -54,7 +54,7 @@ export function calculateDogAge(adoptedAtMs, now = Date.now()) {
 
   const ageInGameDays = Math.max(
     0,
-    Math.floor((now - adoptedAtMs) / msPerGameDay)
+    Math.floor((now - adoptedAtMs) / msPerGameDay),
   );
 
   const stage = getLifeStageForAge(ageInGameDays);

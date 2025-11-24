@@ -1,16 +1,34 @@
 <!-- SPRITESHEET_SPEC.md -->
 
-# Doggerz Spritesheet Specification
+# Doggerz Spritesheet Specification (v1.1)
 
 ## Overview
 
 Doggerz uses **2048x2048 PNG spritesheets** with a **16x16 grid** layout (128x128px per frame). Each life stage has a dedicated sheet.
 
+### Current Implementation Delta (feat/animation-hook branch)
+
+| Area                 | Spec (original)                       | Implemented                                          | Notes                                                                                     |
+| -------------------- | ------------------------------------- | ---------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| Rendering            | Canvas (`<canvas>`)                   | CSS background `<div>`                               | Simpler, leverages `background-position`; easy scaling & overlays.                        |
+| Frame Cycling        | Manual tick loop                      | `setInterval` (fps per row)                          | Paused when `prefers-reduced-motion` is true.                                             |
+| Cleanliness Tiers    | Fresh / Dusty / Dirty / Fleas / Mange | Fresh / Dirty / Fleas / Mange                        | Consolidated: "Dusty" merged into "Dirty". Thresholds defined in `src/constants/game.js`. |
+| Thresholds           | Not finalized                         | FRESH ≥75, DIRTY ≥50, FLEAS ≥25, else MANGE          | See `CLEANLINESS_THRESHOLDS` constants.                                                   |
+| Senior Speed         | 0.8× animations                       | Not yet applied globally                             | Hook can add per-stage fps multiplier later.                                              |
+| Overrides            | Manual per action                     | Timed ephemeral overrides in reducers                | `animationOverride { name, expiresAt }` cleared passively.                                |
+| Random Idles         | Not specified                         | 25% chance every 6–10s when idle                     | Picks from variant list (e.g. sit, scratch) to add life.                                  |
+| Prefetch             | Not specified                         | Next life stage sheet preloaded at last 30% of stage | Implemented in `useDogAnimation`.                                                         |
+| Cleanliness Visuals  | Dust / dirt / fleas / mange overlays  | Layered radial gradients + flea particles            | Mange adds contrast + saturation filter.                                                  |
+| Performance Panel    | Not in spec                           | `SpritePerfPanel` (dev)                              | Listens to `doggerz:spriteFrame` events.                                                  |
+| Legacy Sheet Support | Not mentioned                         | Auto-detect 256×320 (4×5, 64px frames)               | Fallback for early art assets.                                                            |
+
+This section should be kept in sync when merging into `main` so artists & devs have authoritative reference.
+
 ---
 
 ## File Structure
 
-```
+```text
 
 public/
 └── sprites/
@@ -25,24 +43,24 @@ public/
 
 ## Frame Layout (16x16 Grid)
 
-| Row | Animation | Frames | Start | End |
-|-----|-----------|--------|-------|-----|
-| 0 | Idle | 16 | 0 | 15 |
-| 1 | Walk | 16 | 16 | 31 |
-| 2 | Run | 16 | 32 | 47 |
-| 3 | Sit | 16 | 48 | 63 |
-| 4 | Lay Down | 16 | 64 | 79 |
-| 5 | Eat | 16 | 80 | 95 |
-| 6 | Play (Ball) | 16 | 96 | 111 |
-| 7 | Play (Tug) | 16 | 112 | 127 |
-| 8 | Sleep | 16 | 128 | 143 |
-| 9 | Bark | 16 | 144 | 159 |
-| 10 | Scratch | 16 | 160 | 175 |
-| 11 | Shake | 16 | 176 | 191 |
-| 12 | Potty | 16 | 192 | 207 |
-| 13 | Sad | 16 | 208 | 223 |
-| 14 | Excited | 16 | 224 | 239 |
-| 15 | Special | 16 | 240 | 255 |
+| Row | Animation   | Frames | Start | End |
+| --- | ----------- | ------ | ----- | --- |
+| 0   | Idle        | 16     | 0     | 15  |
+| 1   | Walk        | 16     | 16    | 31  |
+| 2   | Run         | 16     | 32    | 47  |
+| 3   | Sit         | 16     | 48    | 63  |
+| 4   | Lay Down    | 16     | 64    | 79  |
+| 5   | Eat         | 16     | 80    | 95  |
+| 6   | Play (Ball) | 16     | 96    | 111 |
+| 7   | Play (Tug)  | 16     | 112   | 127 |
+| 8   | Sleep       | 16     | 128   | 143 |
+| 9   | Bark        | 16     | 144   | 159 |
+| 10  | Scratch     | 16     | 160   | 175 |
+| 11  | Shake       | 16     | 176   | 191 |
+| 12  | Potty       | 16     | 192   | 207 |
+| 13  | Sad         | 16     | 208   | 223 |
+| 14  | Excited     | 16     | 224   | 239 |
+| 15  | Special     | 16     | 240   | 255 |
 
 ---
 
@@ -57,17 +75,15 @@ public/
 ### Action States
 
 ```js
-
 const ANIMATION_MAP = {
-  feeding: 'eat',      // Row 5
-  playing: 'play',     // Row 6 or 7 (random)
-  training: 'sit',     // Row 3
-  resting: 'sleep',    // Row 8
-  bathing: 'shake',    // Row 11
-  walking: 'walk',     // Row 1
-  barking: 'bark',     // Row 9
+  feeding: "eat", // Row 5
+  playing: "play", // Row 6 or 7 (random)
+  training: "sit", // Row 3
+  resting: "sleep", // Row 8
+  bathing: "shake", // Row 11
+  walking: "walk", // Row 1
+  barking: "bark", // Row 9
 };
-
 ```
 
 ### Mood-Driven Behaviors
@@ -83,9 +99,11 @@ const ANIMATION_MAP = {
 
 ### Frame Dimensions
 
-- **Total sheet:** 2048 x 2048 px
-- **Per frame:** 128 x 128 px (16 frames per row/column)
-- **Canvas render size:** 256 x 256 px (2x scale for retina)
+- **Primary sheet:** 2048 × 2048 px (16×16 frames)
+- **Per frame:** 128 × 128 px
+- **Default logical display:** 128 × 128 px element scaled (Puppy 0.8×, Adult 1.0×, Senior 0.9×)
+- **Legacy fallback:** 256 × 320 px (4×5 frames at 64 × 64 px) auto-detected and mapped to reduced animation set.
+- **Optional upscale for retina:** apply CSS `transform: scale(2)` or explicit width/height ×2 if art remains pixel-crisp.
 
 ### Animation Timing
 
@@ -97,17 +115,21 @@ const ANIMATION_MAP = {
 ### Sprite Component Integration
 
 ```jsx
-
-// Example usage in DogSprite.jsx
-<canvas
-  ref={canvasRef}
-  width={256}
-  height={256}
-  className="pixelated"
-  style={{ imageRendering: 'pixelated' }}
+// Current approach (CSS background) in EnhancedDogSprite.jsx
+<div
+  style={{
+    width: frameSize * scale,
+    height: frameSize * scale,
+    backgroundImage: `url(${spriteSrc})`,
+    backgroundSize: `${cols * frameSize}px ${rows * frameSize}px`,
+    backgroundPosition, // computed from current frame index
+    imageRendering: "pixelated",
+  }}
+  className="rounded-xl will-change-[background-position]"
 />
-
 ```
+
+Advantages: fewer draw calls, simpler overlay stacking (cleanliness / weather), easy blending & filters.
 
 ---
 
@@ -138,26 +160,25 @@ const ANIMATION_MAP = {
 
 ## Cleanliness Visual Tiers
 
-### Fresh (100-76)
+### Fresh (≥75)
 
 - **Base sprite** (no modifications)
 
-### Dusty (75-51)
+### (Deprecated) Dusty
 
-- **Overlay:** 10% opacity gray dust particles
-- **Animation:** Occasional scratch (every 30s)
+Merged into Dirty to reduce art complexity. If reinstated, map range 74–60 and apply subtle gray speckle layer.
 
-### Dirty (50-26)
+### Dirty (50–74)
 
 - **Overlay:** 25% opacity brown dirt patches
 - **Animation:** Frequent scratching (every 15s)
 
-### Fleas (25-11)
+### Fleas (25–49)
 
 - **Overlay:** 40% dirt + animated flea sprites (tiny black dots)
 - **Animation:** Constant scratching, unhappy expression
 
-### Mange (10-0)
+### Mange (0–24)
 
 - **Overlay:** 60% dirt + visible skin patches (pink areas)
 - **Animation:** Sad animation loop, laying down
@@ -191,7 +212,7 @@ When weather system is active:
 
 Each breed follows the same layout but with unique art:
 
-```
+```text
 
 jack_russell_puppy.png
 beagle_puppy.png
@@ -234,19 +255,40 @@ husky_puppy.png
 
 ## Implementation Checklist
 
-- [ ] Generate base spritesheets (3 per breed)
-- [ ] Implement `DogSprite.jsx` with canvas rendering
-- [ ] Add animation state machine in Redux
-- [ ] Create `useAnimation` hook for frame cycling
-- [ ] Add cleanliness overlay system
-- [ ] Implement weather overlay layer
-- [ ] Add life stage scaling logic
-- [ ] Test all 16 animation states
-- [ ] Optimize sprite loading (lazy load by breed)
-- [ ] Add fallback for missing sprites
+- [x] Generate base spritesheets (3 life stages for Jack Russell) _(art WIP quality)_
+- [x] Implement sprite component (CSS background rendering in `EnhancedDogSprite.jsx`)
+- [x] Add animation override system in Redux (`animationOverride` in `dogSlice.js`)
+- [x] Create `useDogAnimation` hook (frame cycling, random idle, prefetch, reduced motion)
+- [x] Add cleanliness overlay + flea particle system
+- [ ] Implement weather overlay layer (rain / snow particles + reaction timers)
+- [x] Add life stage scaling logic (0.8× / 1.0× / 0.9×)
+- [x] Test primary animation states (unit tests for derivation; visual QA remaining for all rows)
+- [x] Optimize sprite loading (lazy single sheet + conditional prefetch next stage)
+- [x] Add fallback for missing / legacy sheets (auto-detect 256×320 variant)
+- [ ] Senior speed reduction (apply global fps multiplier 0.8×)
+- [ ] Dirty tier passive scratch cadence (interval injection) — currently only overlay & stat penalties.
+- [ ] Weather-driven cleanliness decay & mood interactions.
 
 ---
 
-**Version:** 1.0  
-**Last Updated:** 2024-01-15  
-**Status:** In Progress (base sprites needed)
+**Version:** 1.1  
+**Last Updated:** 2025-11-23  
+**Status:** Active – core animation system implemented; pending weather + senior speed tuning.
+
+### Next Art / Code Priorities
+
+- Finalize polished puppy/adult/senior sheets with consistent palette & silhouette.
+- Produce flea & mange specific frames (optional) to replace overlay-only approach.
+- Add rainfall & snowfall overlay sheets or procedural CSS animations.
+- Integrate breed-specific row 15 animations (special) once additional breeds arrive.
+- Senior animation speed multiplier (0.8×) implementation.
+- Dirty passive scratch cadence (timer-triggered if not already scratching).
+
+### Implementation Notes for Contributors
+
+1. Add new animation rows by updating `getAnimationsForVariant` (or external map) and supplying a row/fps.
+2. When adding new cleanliness tiers, update `CLEANLINESS_THRESHOLDS` and overlay logic in `EnhancedDogSprite`.
+3. For performance debugging, hook into `window` event `doggerz:spriteFrame` emitted each frame.
+4. To test prefetch, manually set `adoptedAt` far enough back so stage age ≥ 70% of max.
+5. Prefer non-blocking preloads (`new Image().src = path`) for future breed sheets.
+6. Keep sprite art within 16-color palette for retro coherence.

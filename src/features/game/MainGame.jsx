@@ -1,13 +1,7 @@
 // src/features/game/MainGame.jsx
 // @ts-nocheck
 
-import React, {
-  useEffect,
-  useMemo,
-  useState,
-  useCallback,
-  useRef,
-} from "react";
+import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   selectDog,
@@ -32,6 +26,8 @@ import { getTimeOfDay } from "@/utils/weather.js";
 import { CLEANLINESS_TIER_EFFECTS } from "@/constants/game.js";
 import { useDogLifecycle } from "@/features/game/useDogLifecycle.jsx";
 import GameTopBar from "@/components/GameTopBar.jsx";
+import useDayNightBackground from "@/features/game/useDayNightBackground.jsx";
+import { selectUser } from "@/redux/userSlice.js";
 
 const TIME_OVERLAY = {
   dawn: "linear-gradient(180deg, rgba(255,209,143,0.5) 0%, rgba(15,23,42,0.7) 100%)",
@@ -54,9 +50,11 @@ const TIME_OVERLAY = {
 export default function MainGame() {
   const dispatch = useDispatch();
   const { temperamentRevealReady } = useDogLifecycle();
-
+  const user = useSelector(selectUser);
   const dog = useSelector(selectDog);
   const lifeStage = useSelector(selectDogLifeStage);
+  const userZip = user?.zip || undefined;
+  const { style: yardBackgroundStyle } = useDayNightBackground({ zip: userZip });
   const cleanlinessTier = useSelector(selectDogCleanlinessTier);
   const pollState = useSelector(selectDogPolls);
   const training = useSelector(selectDogTraining);
@@ -352,15 +350,10 @@ export default function MainGame() {
       <section className="grid gap-6 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         {/* Left: yard & sprite */}
         <div className="relative rounded-2xl overflow-hidden border border-zinc-800 bg-zinc-900">
-          {/* Background yard (gradient) + overlay */}
+          {/* Background yard image (day/night) + gradient overlay */}
           <div
-            className="absolute inset-0 bg-cover bg-center opacity-70"
-            style={{
-              backgroundImage:
-                "radial-gradient(circle at 20% 0%, rgba(34,197,94,0.28) 0, transparent 55%), " +
-                "radial-gradient(circle at 80% 100%, rgba(14,165,233,0.28) 0, transparent 55%), " +
-                "linear-gradient(180deg, #020617 0%, #020617 100%)",
-            }}
+            className="absolute inset-0 bg-cover bg-center opacity-80"
+            style={yardBackgroundStyle}
           />
           <div
             className="absolute inset-0 mix-blend-multiply"

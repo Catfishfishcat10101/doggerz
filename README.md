@@ -20,8 +20,8 @@
 
 > Replace with real captures; these are placeholders.
 
-| Splash / Auth | Game Screen | Shop |
-|---|---|---|
+| Splash / Auth                        | Game Screen                      | Shop                             |
+| ------------------------------------ | -------------------------------- | -------------------------------- |
 | ![Splash](public/screens/splash.png) | ![Game](public/screens/game.png) | ![Shop](public/screens/shop.png) |
 
 ---
@@ -58,3 +58,30 @@ Grab a free OpenWeather API key, add `VITE_OPENWEATHER_API_KEY` to `.env.local`,
 and (optionally) set `VITE_WEATHER_DEFAULT_ZIP`. Once set, the in-game weather
 widget auto-refreshes conditions every 30 minutes and tints the yard based on
 the current time of day.
+
+### 4. Day/Night Backgrounds (by ZIP)
+
+- Add background images to `public/backgrounds/` named:
+  - `backyard-day.png`
+  - `backyard-night.png`
+- Optional variants for more vibe:
+  - `backyard-dawn.png`
+  - `backyard-dusk.png`
+- If these files are missing, the game gracefully falls back to a stylized
+  gradient so you can play without assets.
+- Time-of-day is derived from your ZIP's local time using OpenWeather's
+  timezone offset (no geolocation required). If `VITE_OPENWEATHER_API_KEY` is
+  not set, we fall back to your device clock.
+
+Fallback rules:
+
+- If only `backyard-split.png` exists (day|night in one image), it's cropped
+  left/right automatically.
+- If `dawn`/`dusk` variants are missing, we fall back to `day`/`night` with a
+  tinted gradient overlay.
+
+Environment variables used:
+
+- `VITE_OPENWEATHER_API_KEY` – required for ZIP-based local time.
+- `VITE_WEATHER_DEFAULT_ZIP` – default ZIP (e.g., `10001`) if the player
+  hasn't provided one elsewhere.

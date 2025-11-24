@@ -21,17 +21,11 @@ export default function Memory() {
 
   const dogName = dog?.name || "Your Pup";
   const adoptedAt = dog?.adoptedAt || null;
-  const age = useMemo(
-    () => calculateDogAge(adoptedAt),
-    [adoptedAt]
-  );
+  const age = useMemo(() => calculateDogAge(adoptedAt), [adoptedAt]);
 
   // Try to pull some kind of memory array from state if it exists.
   const rawMemories =
-    dog?.memories ||
-    dog?.journal?.entries ||
-    dog?.events ||
-    [];
+    dog?.memories || dog?.journal?.entries || dog?.events || [];
 
   // Normalize to a safe shape
   const memories = useMemo(() => {
@@ -40,28 +34,13 @@ export default function Memory() {
     return rawMemories
       .map((m, idx) => {
         const createdAt = m.createdAt || m.timestamp || m.time || null;
-        const title =
-          m.title ||
-          m.label ||
-          m.type ||
-          `Event #${idx + 1}`;
+        const title = m.title || m.label || m.type || `Event #${idx + 1}`;
 
-        const mood =
-          m.mood?.label ||
-          m.moodLabel ||
-          null;
+        const mood = m.mood?.label || m.moodLabel || null;
 
-        const level =
-          m.level ??
-          m.dogLevel ??
-          dog?.level ??
-          null;
+        const level = m.level ?? m.dogLevel ?? dog?.level ?? null;
 
-        const summary =
-          m.summary ||
-          m.description ||
-          m.note ||
-          "";
+        const summary = m.summary || m.description || m.note || "";
 
         return {
           id: m.id || `${createdAt || "na"}-${idx}`,
@@ -184,9 +163,7 @@ export default function Memory() {
                     )}
 
                     {mem.summary && (
-                      <p className="text-xs text-zinc-300">
-                        {mem.summary}
-                      </p>
+                      <p className="text-xs text-zinc-300">{mem.summary}</p>
                     )}
                   </div>
                 </article>

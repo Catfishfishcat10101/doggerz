@@ -4,11 +4,13 @@
 import { configureStore } from "@reduxjs/toolkit";
 import dogReducer from "./dogSlice.js";
 import userReducer from "./userSlice.js";
+import weatherReducer from "./weatherSlice.js";
 
 export const store = configureStore({
   reducer: {
     dog: dogReducer,
     user: userReducer, // 👈 this MUST be "user" for selectUser(state).user to work
+    weather: weatherReducer,
   },
 });
 

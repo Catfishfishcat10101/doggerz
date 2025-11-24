@@ -12,14 +12,16 @@ import {
   selectDog,
   DOG_STORAGE_KEY,
 } from "@/redux/dogSlice.js";
+import { selectWeatherCondition } from "@/redux/weatherSlice.js";
 import { loadDogFromCloud, saveDogToCloud } from "@/redux/dogThunks.js";
 
-const TICK_INTERVAL_MS = 60_000;    // 60 seconds
-const CLOUD_SAVE_DEBOUNCE = 3_000;  // 3 seconds
+const TICK_INTERVAL_MS = 60_000; // 60 seconds
+const CLOUD_SAVE_DEBOUNCE = 3_000; // 3 seconds
 
 export default function DogAIEngine() {
   const dispatch = useDispatch();
   const dogState = useSelector(selectDog);
+  const weather = useSelector(selectWeatherCondition);
 
   const hasHydratedRef = useRef(false);
   const cloudSaveTimeoutRef = useRef(null);
@@ -123,10 +125,21 @@ export default function DogAIEngine() {
       const now = Date.now();
       dispatch(tickDog({ now }));
       dispatch(tickDogPolls({ now }));
+      // Simple weather effects (applied once per tick ~60s)
+      if (dogState && dogState.stats) {
+        if (weather === "rain") {
+          dogState.stats.cleanliness = Math.max(
+            0,
+            dogState.stats.cleanliness - 5,
+          );
+        } else if (weather === "snow") {
+          dogState.stats.energy = Math.max(0, dogState.stats.energy - 10);
+        }
+      }
     }, TICK_INTERVAL_MS);
 
     return () => clearInterval(intervalId);
-  }, [dispatch]);
+  }, [dispatch, dogState, weather]);
 
   // Headless "brain" component: never renders UI
   return null;

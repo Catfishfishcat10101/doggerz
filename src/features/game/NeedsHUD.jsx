@@ -97,22 +97,14 @@ export default function NeedsHUD() {
           Pup needs
         </p>
 
-        <Pill
-          label="Coat"
-          value={cleanlinessLabel}
-          tone={cleanlinessTone}
-        />
+        <Pill label="Coat" value={cleanlinessLabel} tone={cleanlinessTone} />
       </div>
 
       <div className="space-y-3">
         <StatBar label="Hunger" value={hunger} color="bg-emerald-500" />
         <StatBar label="Happiness" value={happiness} color="bg-sky-500" />
         <StatBar label="Energy" value={energy} color="bg-violet-500" />
-        <StatBar
-          label="Cleanliness"
-          value={cleanliness}
-          color="bg-amber-400"
-        />
+        <StatBar label="Cleanliness" value={cleanliness} color="bg-amber-400" />
         {/* Thirst, weight, etc. can be added later when added to dog.stats */}
       </div>
 
@@ -133,10 +125,7 @@ export default function NeedsHUD() {
             <div
               className="h-full bg-emerald-500"
               style={{
-                width: `${Math.max(
-                  0,
-                  Math.min(100, pottyTrainingProgress)
-                )}%`,
+                width: `${Math.max(0, Math.min(100, pottyTrainingProgress))}%`,
               }}
             />
           </div>

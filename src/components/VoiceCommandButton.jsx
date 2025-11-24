@@ -113,12 +113,12 @@ export default function VoiceCommandButton() {
           trainObedience({
             commandId,
             success: true,
-          })
+          }),
         );
         setError(null);
       } else {
         setError(
-          "Couldn’t catch a known command. Try 'sit', 'stay', 'roll over', or 'speak'."
+          "Couldn’t catch a known command. Try 'sit', 'stay', 'roll over', or 'speak'.",
         );
       }
     };
@@ -200,9 +200,10 @@ export default function VoiceCommandButton() {
         onTouchStart={startListening}
         onTouchEnd={stopListening}
         className={`w-full rounded-xl border px-4 py-2 text-sm font-semibold transition active:scale-[0.98]
-          ${isListening
-            ? "border-emerald-500 bg-zinc-900"
-            : "border-zinc-700 bg-zinc-900 hover:bg-zinc-800"
+          ${
+            isListening
+              ? "border-emerald-500 bg-zinc-900"
+              : "border-zinc-700 bg-zinc-900 hover:bg-zinc-800"
           }`}
       >
         {isListening ? "Listening…" : "Hold to Train (Voice)"}
@@ -232,7 +233,8 @@ export default function VoiceCommandButton() {
           <span className="font-medium text-zinc-300">
             &quot;sit&quot;, &quot;stay&quot;, &quot;roll over&quot;
           </span>{" "}
-          or <span className="font-medium text-zinc-300">&quot;speak&quot;</span>{" "}
+          or{" "}
+          <span className="font-medium text-zinc-300">&quot;speak&quot;</span>{" "}
           while holding the button.
         </p>
       )}

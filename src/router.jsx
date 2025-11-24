@@ -1,9 +1,6 @@
 // src/router.jsx
 import React from "react";
-import {
-  createBrowserRouter,
-  RouterProvider,
-} from "react-router-dom";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import AppShell from "./AppShell.jsx";
 
 const router = createBrowserRouter(
@@ -19,7 +16,7 @@ const router = createBrowserRouter(
       // Opt-in early to startTransition wrapping to silence v7 warning
       v7_startTransition: true,
     },
-  }
+  },
 );
 
 export function AppRouter() {

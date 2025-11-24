@@ -4,15 +4,17 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { selectDog } from "@/redux/dogSlice.js";
+import { selectWeatherCondition } from "@/redux/weatherSlice.js";
 
 import { calculateDogAge, getSpriteForLifeStage } from "@/utils/lifecycle.js";
 
-const FRAME_SIZE = 96;
-const FRAME_COUNT = 8;
-const FRAME_DURATION_MS = 140;
+const FRAME_SIZE = 96; // legacy horizontal strip width per frame
+const FRAME_COUNT = 8; // legacy frames per animation
+const BASE_FRAME_DURATION_MS = 140; // ~7 FPS
 
 export default function EnhancedDogSprite() {
   const dog = useSelector(selectDog);
+  const weather = useSelector(selectWeatherCondition);
 
   const [frameIndex, setFrameIndex] = useState(0);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -32,18 +34,29 @@ export default function EnhancedDogSprite() {
 
   const spriteSrc = getSpriteForLifeStage(stageId);
 
+  // Senior slowdown 0.8x speed => longer frame duration
+  const frameDuration = (() => {
+    if (!dog) return BASE_FRAME_DURATION_MS;
+    const adoptedAt = dog.adoptedAt ?? dog.createdAt ?? Date.now();
+    const ageInfo = calculateDogAge(adoptedAt);
+    const stageId = ageInfo?.stageId ?? "PUPPY";
+    if (stageId === "SENIOR") return Math.round(BASE_FRAME_DURATION_MS * 1.25); // slower
+    return BASE_FRAME_DURATION_MS;
+  })();
+
   useEffect(() => {
     const id = setInterval(
       () => setFrameIndex((prev) => (prev + 1) % FRAME_COUNT),
-      FRAME_DURATION_MS
+      frameDuration,
     );
     return () => clearInterval(id);
-  }, []);
+  }, [frameDuration]);
 
   if (!spriteSrc) {
     return (
       <p className="text-xs text-zinc-400">
-        Sprite not configured for stage {stageId}. Check getSpriteForLifeStage().
+        Sprite not configured for stage {stageId}. Check
+        getSpriteForLifeStage().
       </p>
     );
   }
@@ -78,6 +91,43 @@ export default function EnhancedDogSprite() {
             setIsLoaded(true);
           }}
         />
+        {/* Weather overlay layers */}
+        {weather === "rain" && (
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            <style>{`@keyframes rainDrop {0%{transform:translateY(-120%);}100%{transform:translateY(120%);}}`}</style>
+            {Array.from({ length: 18 }).map((_, i) => (
+              <div
+                key={i}
+                className="absolute bg-emerald-300/40"
+                style={{
+                  top: "-10%",
+                  left: `${(i * 100) / 18}%`,
+                  width: "2px",
+                  height: "24px",
+                  animation: `rainDrop ${1.6 + (i % 5) * 0.2}s linear ${(i % 7) * 0.15}s infinite`,
+                }}
+              />
+            ))}
+          </div>
+        )}
+        {weather === "snow" && (
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            <style>{`@keyframes snowFall {0%{transform:translateY(-20%) scale(1);}100%{transform:translateY(110%) scale(0.9);}}`}</style>
+            {Array.from({ length: 14 }).map((_, i) => (
+              <div
+                key={i}
+                className="absolute rounded-full bg-zinc-100/80"
+                style={{
+                  top: "-10%",
+                  left: `${(i * 100) / 14}%`,
+                  width: `${4 + (i % 3)}px`,
+                  height: `${4 + (i % 3)}px`,
+                  animation: `snowFall ${3 + (i % 4) * 0.6}s linear ${(i % 5) * 0.3}s infinite`,
+                }}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,10 +1,17 @@
 // src/pages/Settings.jsx
-import React from "react";
-import { useDispatch } from "react-redux";
+import React, { useMemo, useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { resetDogState } from "@/redux/dogSlice";
+import { selectUserZip, setZip } from "@/redux/userSlice.js";
 
 export default function Settings() {
   const dispatch = useDispatch();
+  const currentZip = useSelector(selectUserZip);
+  const [zipInput, setZipInput] = useState(currentZip || "");
+
+  useEffect(() => {
+    setZipInput(currentZip || "");
+  }, [currentZip]);
 
   // --- THEME TOGGLER ---------------------------------------------------------
   function toggleTheme() {
@@ -34,6 +41,56 @@ export default function Settings() {
       <h1 className="text-3xl font-bold mb-6">Settings</h1>
 
       <div className="grid gap-6 lg:grid-cols-2">
+        {/* Location Panel */}
+        <div className="card">
+          <h2 className="text-xl font-semibold">Location</h2>
+          <p className="text-sm opacity-70 mt-1">
+            Set your ZIP code to use local time for the yard background.
+          </p>
+
+          <div className="mt-4 flex flex-wrap items-end gap-3">
+            <div>
+              <label className="block text-xs opacity-70 mb-1" htmlFor="zip">
+                ZIP (US)
+              </label>
+              <input
+                id="zip"
+                inputMode="numeric"
+                pattern="[0-9]{5}"
+                maxLength={5}
+                className="px-3 py-2 rounded-md bg-zinc-900 border border-zinc-700 outline-none focus:border-emerald-500"
+                placeholder="e.g. 10001"
+                value={zipInput}
+                onChange={(e) => {
+                  const v = e.target.value.replace(/\D+/g, "").slice(0, 5);
+                  setZipInput(v);
+                }}
+              />
+            </div>
+            <button
+              className="btn"
+              onClick={() => dispatch(setZip(zipInput))}
+              disabled={zipInput && !/^\d{5}$/.test(zipInput)}
+              title={
+                zipInput && !/^\d{5}$/.test(zipInput) ? "Enter 5 digits" : ""
+              }
+            >
+              Save ZIP
+            </button>
+            {/* Geolocation controls removed: ZIP-only by design */}
+          </div>
+
+          <div className="mt-3 text-xs opacity-70 leading-snug space-y-1">
+            <p>
+              Status: <span className="text-zinc-300">Using ZIP</span>{" "}
+              {currentZip ? `(ZIP ${currentZip})` : ""}
+            </p>
+            <p>
+              Requires <code>VITE_OPENWEATHER_API_KEY</code>; without it, the
+              game falls back to your device time.
+            </p>
+          </div>
+        </div>
 
         {/* Appearance Panel */}
         <div className="card">

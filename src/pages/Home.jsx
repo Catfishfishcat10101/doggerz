@@ -143,9 +143,9 @@ export default function Home() {
             </header>
 
             <p className="text-xs text-zinc-400">
-              Timed &quot;dog polls&quot; nudge you with quick decisions.
-              Ignore them and your pup reacts. Bathing and yard care affect
-              mood, energy, and long-term health.
+              Timed &quot;dog polls&quot; nudge you with quick decisions. Ignore
+              them and your pup reacts. Bathing and yard care affect mood,
+              energy, and long-term health.
             </p>
 
             <div className="grid grid-cols-2 gap-3 mt-1 text-xs">

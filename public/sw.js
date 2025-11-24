@@ -36,7 +36,7 @@ self.addEventListener("install", (event) => {
       .then((cache) => cache.addAll(CORE_ASSETS))
       .catch(() => {
         // silent fail; app will still work online
-      })
+      }),
   );
 
   // Activate this SW immediately on next load
@@ -54,9 +54,9 @@ self.addEventListener("activate", (event) => {
         Promise.all(
           keys
             .filter((key) => !key.startsWith(CACHE_VERSION))
-            .map((key) => caches.delete(key))
-        )
-      )
+            .map((key) => caches.delete(key)),
+        ),
+      ),
   );
 
   // Take control of currently open clients
