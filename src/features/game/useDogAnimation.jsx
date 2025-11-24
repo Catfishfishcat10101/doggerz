@@ -31,7 +31,7 @@ export function useDogAnimation() {
   useEffect(() => {
     if (!dog) return;
     if (override && override.expiresAt > Date.now()) return; // active override
-    if (animation !== 'idle') return;
+    if (animation !== "idle") return;
     let cancelled = false;
     const delay = 6000 + Math.random() * 4000; // 6-10s
     const id = setTimeout(() => {
@@ -39,7 +39,7 @@ export function useDogAnimation() {
       // 25% chance to trigger
       if (Math.random() < 0.25) {
         const variant = pickRandomIdleVariant();
-        if (variant !== 'idle') {
+        if (variant !== "idle") {
           dispatch(setAnimationOverride({ name: variant, durationMs: 1600 }));
         }
       }
@@ -61,7 +61,8 @@ export function useDogAnimation() {
     const span = stage.max - stage.min;
     const threshold = stage.max - span * 0.3; // last 30% of stage
     if (ageInGameDays >= threshold) {
-      const nextStageId = stage.id === "PUPPY" ? "ADULT" : stage.id === "ADULT" ? "SENIOR" : null;
+      const nextStageId =
+        stage.id === "PUPPY" ? "ADULT" : stage.id === "ADULT" ? "SENIOR" : null;
       if (nextStageId) {
         const src = getSpriteForLifeStage(nextStageId);
         const img = new Image();

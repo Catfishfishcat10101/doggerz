@@ -107,13 +107,23 @@ export default function EnhancedDogSprite({
   const effectiveScale = scale * lifeScale;
 
   // Determine animation if not explicitly passed
-  const { animation: hookAnimation, reducedMotion: autoReducedMotion } = useDogAnimation();
+  const { animation: hookAnimation, reducedMotion: autoReducedMotion } =
+    useDogAnimation();
   const resolvedAnimation = forcedAnimation || hookAnimation || "idle";
-  const [sheetMeta, setSheetMeta] = useState({ frameSize: 128, cols: 16, rows: 16, variant: "pending" });
+  const [sheetMeta, setSheetMeta] = useState({
+    frameSize: 128,
+    cols: 16,
+    rows: 16,
+    variant: "pending",
+  });
   const [animations, setAnimations] = useState(getAnimationsForVariant("full"));
 
-  const animMeta = animations[resolvedAnimation] || animations.idle || { row: 0, fps: 8 };
-  const sequence = useMemo(() => buildRowSequence(animMeta.row, sheetMeta.cols), [animMeta.row, sheetMeta.cols]);
+  const animMeta = animations[resolvedAnimation] ||
+    animations.idle || { row: 0, fps: 8 };
+  const sequence = useMemo(
+    () => buildRowSequence(animMeta.row, sheetMeta.cols),
+    [animMeta.row, sheetMeta.cols],
+  );
   const frameDuration = Math.round(1000 / animMeta.fps);
 
   // Preload image once
@@ -171,7 +181,7 @@ export default function EnhancedDogSprite({
         scratch: "Scratching",
         excited: "Excited",
       };
-      setAnnounce(`${dog.name || 'Pup'}: ${map[name] || name}`);
+      setAnnounce(`${dog.name || "Pup"}: ${map[name] || name}`);
       const t = setTimeout(() => setAnnounce(""), 2500);
       return () => clearTimeout(t);
     }
@@ -205,7 +215,7 @@ export default function EnhancedDogSprite({
           animation: resolvedAnimation,
           frame: frameIndex,
         },
-      })
+      }),
     );
   }, [frameIndex, resolvedAnimation]);
 
@@ -267,7 +277,10 @@ export default function EnhancedDogSprite({
                 : dog.cleanlinessTier === "FLEAS"
                   ? "radial-gradient(circle at 30% 40%, rgba(95,55,20,0.35), transparent 70%), radial-gradient(circle at 65% 60%, rgba(70,35,15,0.30), transparent 65%)"
                   : "radial-gradient(circle at 50% 50%, rgba(120,40,20,0.65), transparent 75%), radial-gradient(circle at 25% 70%, rgba(140,60,25,0.55), transparent 80%)",
-            filter: dog.cleanlinessTier === "MANGE" ? "contrast(1.05) saturate(0.85)" : undefined,
+            filter:
+              dog.cleanlinessTier === "MANGE"
+                ? "contrast(1.05) saturate(0.85)"
+                : undefined,
           }}
         />
       )}
@@ -284,7 +297,7 @@ export default function EnhancedDogSprite({
             }
           `}</style>
           <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-xl">
-            {fleas.map(f => (
+            {fleas.map((f) => (
               <div
                 key={f.id}
                 className="absolute rounded-full bg-zinc-800 dark:bg-black"
@@ -295,7 +308,10 @@ export default function EnhancedDogSprite({
                   height: f.d,
                   boxShadow: "0 0 2px rgba(0,0,0,0.7)",
                   opacity: dog.cleanlinessTier === "MANGE" ? 0.9 : 0.75,
-                  animation: (forcedReducedMotion || autoReducedMotion) ? undefined : `fleaMove ${f.dur}s linear ${f.delay}s infinite`,
+                  animation:
+                    forcedReducedMotion || autoReducedMotion
+                      ? undefined
+                      : `fleaMove ${f.dur}s linear ${f.delay}s infinite`,
                 }}
               />
             ))}
@@ -303,10 +319,7 @@ export default function EnhancedDogSprite({
         </>
       )}
       {/* Live region for screen readers */}
-      <div
-        aria-live="polite"
-        className="sr-only"
-      >
+      <div aria-live="polite" className="sr-only">
         {announce}
       </div>
     </div>

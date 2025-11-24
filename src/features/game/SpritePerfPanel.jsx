@@ -58,13 +58,20 @@ export default function SpritePerfPanel() {
         </button>
       </div>
       <div className="grid grid-cols-2 gap-x-3 gap-y-1">
-        <span>Anim:</span><span className="truncate max-w-[120px]">{animation}</span>
-        <span>FPS:</span><span>{fps}</span>
-        <span>Dropped:</span><span>{dropped}</span>
-        <span>Tier:</span><span>{dog.cleanlinessTier}</span>
-        <span>Override:</span><span>{dog.animationOverride?.name || "none"}</span>
+        <span>Anim:</span>
+        <span className="truncate max-w-[120px]">{animation}</span>
+        <span>FPS:</span>
+        <span>{fps}</span>
+        <span>Dropped:</span>
+        <span>{dropped}</span>
+        <span>Tier:</span>
+        <span>{dog.cleanlinessTier}</span>
+        <span>Override:</span>
+        <span>{dog.animationOverride?.name || "none"}</span>
       </div>
-      <p className="mt-1 text-[9px] text-emerald-300/70">Press Shift+D to toggle.</p>
+      <p className="mt-1 text-[9px] text-emerald-300/70">
+        Press Shift+D to toggle.
+      </p>
     </div>
   );
 }

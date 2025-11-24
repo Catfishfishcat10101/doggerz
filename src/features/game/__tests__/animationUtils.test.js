@@ -12,7 +12,7 @@ describe("deriveBaseAnimation", () => {
   });
   it("scratch when cleanliness <30 overrides happiness", () => {
     expect(
-      deriveBaseAnimation(makeDog({ cleanliness: 25, happiness: 10 }))
+      deriveBaseAnimation(makeDog({ cleanliness: 25, happiness: 10 })),
     ).toBe("scratch");
   });
   it("sad when happiness <25", () => {
@@ -29,12 +29,12 @@ describe("isOverrideExpired", () => {
   });
   it("false when expiresAt > now", () => {
     expect(isOverrideExpired({ name: "eat", expiresAt: 2000 }, 1000)).toBe(
-      false
+      false,
     );
   });
   it("true when expiresAt <= now", () => {
     expect(isOverrideExpired({ name: "eat", expiresAt: 1000 }, 1000)).toBe(
-      true
+      true,
     );
   });
 });
