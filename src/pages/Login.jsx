@@ -2,90 +2,145 @@
 // @ts-nocheck
 
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { Navigate, useNavigate, Link, useLocation } from "react-router-dom";
+import { signInWithEmailAndPassword } from "firebase/auth";
 
-export default function Login() {
+import { auth } from "@/firebase.js";
+import { selectUser } from "@/redux/userSlice.js";
+
+export default function LoginPage() {
+  const user = useSelector(selectUser);
+  const isLoggedIn = !!user;
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // So we can send them back where they came from later if needed
+  const from = location.state?.from || "/game";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState(null);
 
-  const handleSubmit = (e) => {
+  if (isLoggedIn) {
+    // Already logged in? Don’t even show the screen.
+    return <Navigate to={from} replace />;
+  }
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError(null);
 
-    // TODO: wire this into Firebase Auth later
-    console.log("login attempt", { email, password });
+    if (!email.trim() || !password) {
+      setError("Email and password are both required.");
+      return;
+    }
 
-    // For now: pretend it worked and go to the game
-    navigate("/game");
+    try {
+      setSubmitting(true);
+      await signInWithEmailAndPassword(auth, email.trim(), password);
+      navigate(from, { replace: true });
+    } catch (err) {
+      console.error("[Login] signIn error:", err);
+      let message = "Login failed. Double-check your email and password.";
+
+      if (err.code === "auth/user-not-found") {
+        message = "No account found for that email.";
+      } else if (err.code === "auth/wrong-password") {
+        message = "Incorrect password.";
+      } else if (err.code === "auth/too-many-requests") {
+        message =
+          "Too many attempts. Take a breath, wait a bit, and try again.";
+      }
+
+      setError(message);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
-    <div className="min-h-[calc(100vh-7rem)] bg-zinc-950 text-zinc-50 flex items-center">
-      <div className="container mx-auto px-4 max-w-md">
-        <h1 className="text-3xl font-bold mb-2">Welcome back</h1>
-        <p className="text-zinc-300 mb-6">
-          Log in to check on your pup, continue your streak, and keep their
-          stats out of the danger zone.
+    <div className="flex flex-col items-center w-full h-full pt-6 pb-10 bg-gradient-to-b from-zinc-950 to-zinc-900 text-white">
+      {/* Title */}
+      <div className="flex flex-col items-center mb-6">
+        <h1 className="text-4xl font-bold tracking-wide text-emerald-400 drop-shadow-lg">
+          DOGGERZ
+        </h1>
+        <p className="text-sm text-zinc-300 mt-1">Virtual Pup Simulator</p>
+      </div>
+
+      {/* Card */}
+      <div className="w-full max-w-md bg-zinc-900/80 border border-zinc-800 rounded-2xl p-6 shadow-xl">
+        <h2 className="text-xl font-semibold mb-2">Log in</h2>
+        <p className="text-sm text-zinc-400 mb-4">
+          Log in to keep your pup synced, protect your progress, and eventually
+          unlock cross-device play.
         </p>
 
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-4 rounded-xl bg-zinc-900/70 p-6 border border-zinc-800"
-        >
-          <div className="space-y-2">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
             <label
-              htmlFor="email"
-              className="block text-sm font-medium text-zinc-200"
+              htmlFor="login-email"
+              className="block text-sm font-medium text-zinc-200 mb-1"
             >
               Email
             </label>
             <input
-              id="email"
+              id="login-email"
               type="email"
-              autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-md bg-zinc-950 border border-zinc-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="w-full px-3 py-2 rounded-lg bg-zinc-950 border border-zinc-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+              autoComplete="email"
               placeholder="you@example.com"
             />
           </div>
 
-          <div className="space-y-2">
+          <div>
             <label
-              htmlFor="password"
-              className="block text-sm font-medium text-zinc-200"
+              htmlFor="login-password"
+              className="block text-sm font-medium text-zinc-200 mb-1"
             >
               Password
             </label>
             <input
-              id="password"
+              id="login-password"
               type="password"
-              autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-md bg-zinc-950 border border-zinc-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="w-full px-3 py-2 rounded-lg bg-zinc-950 border border-zinc-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+              autoComplete="current-password"
+              placeholder="••••••••"
             />
           </div>
 
+          {error && (
+            <p className="text-xs text-red-400 mt-1">
+              {error}
+            </p>
+          )}
+
           <button
             type="submit"
-            className="w-full rounded-full bg-emerald-500 hover:bg-emerald-400 text-black font-semibold text-sm py-2.5 transition"
+            disabled={submitting}
+            className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-sm font-semibold shadow-lg"
           >
-            Log in
+            {submitting ? "Logging in…" : "Log in"}
           </button>
-
-          <p className="text-xs text-zinc-400 text-center">
-            No account yet?{" "}
-            <Link
-              to="/signup"
-              className="text-emerald-400 hover:text-emerald-300"
-            >
-              Create one
-            </Link>
-            .
-          </p>
         </form>
+
+        <div className="mt-4 text-xs text-zinc-400 flex items-center justify-between">
+          <span>
+            Don&apos;t have an account?
+          </span>
+          <Link
+            to="/signup"
+            className="text-emerald-400 hover:text-emerald-300 font-medium"
+          >
+            Sign up
+          </Link>
+        </div>
       </div>
     </div>
   );
