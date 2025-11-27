@@ -1,10 +1,11 @@
-import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
-import useSpriteLoader from '../useSpriteLoader.jsx';
+import React from "react";
+import { render, screen, waitFor } from "@testing-library/react";
+import "@testing-library/jest-dom";
+import useSpriteLoader from "../useSpriteLoader.jsx";
 
 function TestComponent({ src, cleanliness }) {
-  const { imageLoaded, imageFailed, inferredStage, lqipDataUrl } = useSpriteLoader(src, cleanliness);
+  const { imageLoaded, imageFailed, inferredStage, lqipDataUrl } =
+    useSpriteLoader(src, cleanliness);
   return (
     <div>
       <div>loaded:{String(imageLoaded)}</div>
@@ -30,7 +31,7 @@ class MockImageSuccess {
 class MockImageFail {
   constructor() {
     setTimeout(() => {
-      if (this.onerror) this.onerror(new Error('mock-fail'));
+      if (this.onerror) this.onerror(new Error("mock-fail"));
     }, 0);
   }
   set src(v) {
@@ -38,7 +39,7 @@ class MockImageFail {
   }
 }
 
-describe('useSpriteLoader', () => {
+describe("useSpriteLoader", () => {
   let OriginalImage;
 
   beforeEach(() => {
@@ -51,28 +52,32 @@ describe('useSpriteLoader', () => {
     if (global.window) global.window.__DOGGERZ_MONITOR__ = [];
   });
 
-  it('reports loaded=true and emits success telemetry', async () => {
+  it("reports loaded=true and emits success telemetry", async () => {
     global.Image = MockImageSuccess;
     render(<TestComponent src="ok.png" cleanliness="FRESH" />);
-    await waitFor(() => expect(screen.getByText(/^loaded:/)).toHaveTextContent('loaded:true'));
+    await waitFor(() =>
+      expect(screen.getByText(/^loaded:/)).toHaveTextContent("loaded:true"),
+    );
     // monitor should have a success event
     expect(window.__DOGGERZ_MONITOR__).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ eventType: 'sprite_load_success' }),
-      ])
+        expect.objectContaining({ eventType: "sprite_load_success" }),
+      ]),
     );
-    const lqip = screen.getByTestId('lqip').textContent;
+    const lqip = screen.getByTestId("lqip").textContent;
     expect(lqip).toMatch(/^data:image\/svg\+xml/);
   });
 
-  it('reports failed=true and emits failed telemetry', async () => {
+  it("reports failed=true and emits failed telemetry", async () => {
     global.Image = MockImageFail;
     render(<TestComponent src="fail.png" cleanliness="DIRTY" />);
-    await waitFor(() => expect(screen.getByText(/^failed:/)).toHaveTextContent('failed:true'));
+    await waitFor(() =>
+      expect(screen.getByText(/^failed:/)).toHaveTextContent("failed:true"),
+    );
     expect(window.__DOGGERZ_MONITOR__).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ eventType: 'sprite_load_failed' }),
-      ])
+        expect.objectContaining({ eventType: "sprite_load_failed" }),
+      ]),
     );
   });
 });
