@@ -83,16 +83,16 @@ export default function CareActionsPanel({
           className="rounded-lg bg-lime-400 text-black font-semibold py-2 hover:bg-lime-300 transition disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900"
         >
           🗑️ Scoop yard
+        </button>
+
         <button
           type="button"
-            aria-label="Train obedience"
+          aria-label="Train obedience"
           onClick={handleClick("train")}
           disabled={lowEnergy}
-            className="rounded-lg bg-zinc-800 text-zinc-100 font-semibold py-2 hover:bg-zinc-700 transition disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900"
-          >
-            className="rounded-lg bg-orange-400 text-black font-semibold py-2 hover:bg-orange-300 transition disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900"
+          className="rounded-lg bg-orange-400 text-black font-semibold py-2 hover:bg-orange-300 transition disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900"
         >
-          🐕 Train &quot;Sit&quot;
+          🐕 Train "Sit"
         </button>
       </div>
 
