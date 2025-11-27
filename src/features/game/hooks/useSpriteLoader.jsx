@@ -1,6 +1,46 @@
 import { useEffect, useMemo, useState } from "react";
 import { useToast } from "@/components/ToastProvider.jsx";
 
+// Lightweight telemetry helper for post-merge monitoring.
+// Emits events via `navigator.sendBeacon()` to `window.__DOGGERZ_MONITOR_URL__` when configured.
+// Falls back to collecting events in `window.__DOGGERZ_MONITOR__` (useful for dev/staging)
+// and logs to console.debug when available.
+function sendTelemetry(eventType, payload = {}) {
+  try {
+    const event = {
+      eventType,
+      payload,
+      ts: Date.now(),
+      ua: typeof navigator !== 'undefined' ? navigator.userAgent : 'node',
+    };
+
+    // Prefer configured beacon endpoint.
+    const beaconUrl = typeof window !== 'undefined' && window.__DOGGERZ_MONITOR_URL__;
+    if (beaconUrl && typeof navigator !== 'undefined' && navigator.sendBeacon) {
+      const blob = new Blob([JSON.stringify(event)], { type: 'application/json' });
+      try {
+        navigator.sendBeacon(beaconUrl, blob);
+        return;
+      } catch (e) {
+        // fall through to fallback
+      }
+    }
+
+    // In-page fallback collector for dev / staging.
+    if (typeof window !== 'undefined') {
+      window.__DOGGERZ_MONITOR__ = window.__DOGGERZ_MONITOR__ || [];
+      window.__DOGGERZ_MONITOR__.push(event);
+    }
+
+    // Helpful for local debugging without a monitor endpoint.
+    if (typeof console !== 'undefined' && console.debug) {
+      console.debug('[Doggerz Monitor]', eventType, event);
+    }
+  } catch (err) {
+    // swallow telemetry errors to avoid user-visible failures
+  }
+}
+
 export default function useSpriteLoader(spriteSrc, cleanlinessTier) {
   const toast = useToast();
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -41,12 +81,47 @@ export default function useSpriteLoader(spriteSrc, cleanlinessTier) {
     setImageLoaded(false);
     setImageFailed(false);
     if (!spriteSrc) return;
+    const started = Date.now();
     const img = new Image();
-    img.onload = () => setImageLoaded(true);
-    img.onerror = () => {
+    img.onload = () => {
+      const elapsed = Date.now() - started;
+      setImageLoaded(true);
+      // Telemetry: success and slow-load indicator
+      try {
+        sendTelemetry("sprite_load_success", {
+          spriteSrc,
+          inferredStage,
+          cleanlinessTier,
+          attempts: 1,
+          elapsed,
+        });
+        if (elapsed > 2000) {
+          sendTelemetry("sprite_load_slow", {
+            spriteSrc,
+            inferredStage,
+            cleanlinessTier,
+            elapsed,
+          });
+        }
+      } catch (e) {
+        // swallow telemetry errors
+      }
+    };
+    img.onerror = (err) => {
       setImageFailed(true);
       try {
         toast.add("Failed to load dog sprite");
+      } catch (e) {
+        // ignore
+      }
+      try {
+        sendTelemetry("sprite_load_failed", {
+          spriteSrc,
+          inferredStage,
+          cleanlinessTier,
+          attempts: 1,
+          error: String(err || "unknown"),
+        });
       } catch (e) {
         // ignore
       }
