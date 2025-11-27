@@ -11,13 +11,16 @@ function sendTelemetry(eventType, payload = {}) {
       eventType,
       payload,
       ts: Date.now(),
-      ua: typeof navigator !== 'undefined' ? navigator.userAgent : 'node',
+      ua: typeof navigator !== "undefined" ? navigator.userAgent : "node",
     };
 
     // Prefer configured beacon endpoint.
-    const beaconUrl = typeof window !== 'undefined' && window.__DOGGERZ_MONITOR_URL__;
-    if (beaconUrl && typeof navigator !== 'undefined' && navigator.sendBeacon) {
-      const blob = new Blob([JSON.stringify(event)], { type: 'application/json' });
+    const beaconUrl =
+      typeof window !== "undefined" && window.__DOGGERZ_MONITOR_URL__;
+    if (beaconUrl && typeof navigator !== "undefined" && navigator.sendBeacon) {
+      const blob = new Blob([JSON.stringify(event)], {
+        type: "application/json",
+      });
       try {
         navigator.sendBeacon(beaconUrl, blob);
         return;
@@ -27,14 +30,14 @@ function sendTelemetry(eventType, payload = {}) {
     }
 
     // In-page fallback collector for dev / staging.
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       window.__DOGGERZ_MONITOR__ = window.__DOGGERZ_MONITOR__ || [];
       window.__DOGGERZ_MONITOR__.push(event);
     }
 
     // Helpful for local debugging without a monitor endpoint.
-    if (typeof console !== 'undefined' && console.debug) {
-      console.debug('[Doggerz Monitor]', eventType, event);
+    if (typeof console !== "undefined" && console.debug) {
+      console.debug("[Doggerz Monitor]", eventType, event);
     }
   } catch (err) {
     // swallow telemetry errors to avoid user-visible failures
