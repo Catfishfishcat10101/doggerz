@@ -1,23 +1,38 @@
 {
   "compilerOptions": {
-    "jsx": "react",
-    "baseUrl": ".",
-    "paths": { "@/*": ["src/*"] },
-    "checkJs": true,
-    "noEmit": true,
+    // Treat "src" as the root for imports
+    "baseUrl": "src",
+
+    // Support the Vite alias: "@/something"
+    "paths": {
+      "@/*": ["*"]
+    },
+
+    // React + JSX in normal .js files
+    "jsx": "react-jsx",
+    "allowJs": true,
+    "checkJs": false,
+
+    // Module resolution like Node/Vite
+    "moduleResolution": "node",
     "module": "esnext",
-    "target": "es2022",
-    "moduleResolution": "bundler",
-    "resolveJsonModule": true,
+    "target": "es2020",
+
+    // Keep IntelliSense fast
     "allowSyntheticDefaultImports": true,
-    "types": ["vite/client", "node"]
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+
+    // So VS Code doesn't nag about missing libs
+    "lib": ["DOM", "ES2020"]
   },
-  "include": [
-    "src/**/*",
-    "vite.config.*",
-    "tailwind.config.*",
-    "postcss.config.js",
-    "game"
-  ],
-  "exclude": ["node_modules", "dist", "build"]
+  "include": ["src"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    "coverage",
+    "**/*.test.*",
+    "**/*.spec.*"
+  ]
 }

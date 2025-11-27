@@ -86,6 +86,7 @@ const userSlice = createSlice({
       state.coins = 0;
       state.streak = { current: 0, best: 0, lastPlayedAt: null };
       state.createdAt = null;
+      state.zip = null;
 
       if (typeof window !== "undefined") {
         try {
@@ -133,13 +134,25 @@ const userSlice = createSlice({
 export const { setUser, clearUser, addCoins, setCoins, updateStreak, setZip } =
   userSlice.actions;
 
+/* ---------------------- selectors ---------------------- */
+
 /**
- * ✅ This is the selector GameTopBar imports.
+ * Full user object
  */
 export const selectUser = (state) => state.user;
+
+/**
+ * Used by ProtectedRoute / header logic.
+ * "Logged in" = we have a non-null user id.
+ */
+export const selectIsLoggedIn = (state) => Boolean(state.user && state.user.id);
+
+/**
+ * ZIP for weather-powered background hook.
+ */
 export const selectUserZip = (state) => state.user?.zip || null;
 
-/** Some optional helpers if you want them later */
+/** Optional helpers */
 export const selectUserCoins = (state) => state.user?.coins ?? 0;
 export const selectUserStreak = (state) =>
   state.user?.streak ?? {

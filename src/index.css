@@ -1,4 +1,7 @@
 /* src/index.css */
+/* Doggerz: Global styles and Tailwind layers. */
+/* Usage: Imported by main.jsx for app-wide styles. */
+/* Maintainability: Extend here for new global theme, accessibility, or layout rules. */
 
 /* -------------------------------------------------------
    Tailwind layers

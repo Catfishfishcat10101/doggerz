@@ -1,5 +1,56 @@
 # 🐶 Doggerz
 
+## 🗂️ Project Structure & Onboarding (2025 Migration)
+
+Doggerz now uses a **feature-based folder structure** for scalability and maintainability. All domain logic, UI, hooks, Redux, and utils are grouped by feature:
+
+````text
+src/
+  features/
+    game/
+      components/      # Game-specific UI (sprites, HUD, cards)
+      hooks/           # Game logic hooks (lifecycle, animation, backgrounds)
+      redux/           # Dog state, thunks, selectors
+      utils/           # Game-related helpers (sprite, lifecycle, weather)
+      MainGame.jsx     # Main game screen
+      DogAIEngine.jsx  # AI/persistence orchestrator
+      ...
+    dashboard/
+      components/      # Dashboard widgets (if present)
+      ...
+    settings/
+      components/      # Settings panels (if present)
+      ...
+  components/          # Shared UI (used across features)
+  pages/               # Route-level screens (Home, Adopt, Login, etc.)
+  constants/           # Game config, thresholds, enums
+  redux/               # User/global Redux (non-dog)
+  utils/               # Shared helpers (non-game)
+
+Path aliases use `@/` for imports (see `vite.config.js`). Example:
+
+```js
+import EnhancedDogSprite from "@/features/game/components/EnhancedDogSprite.jsx";
+import { selectDog } from "@/features/game/redux/dogSlice.js";
+````
+
+### Migration Steps (Nov 2025)
+
+1. **All game logic/UI/hooks/redux/utils moved to `src/features/game/`**
+2. **Imports updated** in all files to use new feature-based paths
+3. **Shared UI/components** remain in `src/components/`
+4. **Global Redux/user logic** remains in `src/redux/`
+5. **Onboarding:** New contributors should add new features by creating a folder under `src/features/` and grouping all related files inside
+
+#### Why Feature-Based?
+
+- Easier scaling for multi-dog, dashboard, settings, etc.
+- Clear separation of concerns
+- Faster onboarding for new devs
+- Reduces import path confusion
+
+For details, see `.github/copilot-instructions.md`.
+
 > Adopt a pixel pup and make choices that shape its behavior. Built with **React**, **Redux Toolkit**, **Vite**, **Tailwind**, and **Firebase**. Offline-ready PWA.
 
 [![React 18](https://img.shields.io/badge/React-18-61dafb)](https://react.dev/)
@@ -85,3 +136,34 @@ Environment variables used:
 - `VITE_OPENWEATHER_API_KEY` – required for ZIP-based local time.
 - `VITE_WEATHER_DEFAULT_ZIP` – default ZIP (e.g., `10001`) if the player
   hasn't provided one elsewhere.
+
+### 5. Spritesheets (Jack Russell Terrier)
+
+- Format: `2048x2048` PNG, `16x16` grid of `128x128` frames.
+- Files expected in `public/sprites/`:
+  - `jack_russell_puppy.png`
+  - `jack_russell_adult.png`
+  - `jack_russell_senior.png`
+- Row/animation mapping lives in `public/sprites/manifest.json`.
+- Optional cleanliness variants: append suffix `_dirty`, `_fleas`, `_mange` to each stage filename.
+
+Generate labeled placeholder sheets for testing:
+
+```powershell
+npm run sprites:generate
+```
+
+Replace the generated files with real art while keeping the same grid. The game can map specific rows to actions/directions using the manifest.
+
+---
+
+## 🙏 Attribution
+
+If you use the LPC dog art:
+
+- Source: <https://opengameart.org/content/lpc-cats-and-dogs>
+- Author: bluecarrot16
+- License: CC-BY 3.0
+- Attribution: "[LPC] Cats and Dogs" by bluecarrot16 — CC-BY 3.0 via OpenGameArt.org
+
+See `CREDITS.md` for the full list of third‑party credits and links.

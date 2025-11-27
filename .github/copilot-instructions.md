@@ -4,7 +4,7 @@
 
 **Doggerz** is a React-based virtual pet game (Tamagotchi-style) where users adopt and care for a Jack Russell Terrier through multiple life stages. The dog evolves from puppy → adult → senior with dynamic needs decay, temperament system, skill training, and mood tracking. Built as an offline-capable PWA with optional Firebase cloud sync.
 
-**Core Loop:** feed → play → train → rest → level up  
+**Core Loop:** feed → play → train → rest → level up
 **Tech:** React 18 + Redux Toolkit + Vite + TailwindCSS + Firebase
 
 ## Architecture & Data Flow
@@ -54,80 +54,76 @@
 - Primary/secondary labels (SPICY/SWEET/CHILL) derived from top 2 traits
 - Reveal unlocks after 3 days (`revealReady` flag)
 
+## Settings & Device Tuning
+
+Doggerz exposes player-facing settings that live per-device and influence visuals, simulation behavior, and persistence. These are stored in `localStorage` under the key:
+
+- `doggerz:settings` — JSON object describing location, appearance, gameplay tuning, and safety options.
+
+Settings are **NOT** part of the Redux dog state; they are read-once on app load and consumed by the engine (DogAI, background hooks, theming).
+
+### Settings Shape
+
+```ts
+type DoggerzSettings = {
+  // Location / time source
+  zip: string; // 5-digit US ZIP, default "65401"
+  useRealTime: boolean; // true = use ZIP + OpenWeather; false = device-time only
+
+  // Appearance
+  theme: "dark" | "light";
+  accent: "emerald" | "teal" | "violet"; // brand hue for highlights
+
+  // Gameplay tuning
+  bladderModel: "realistic" | "meals"; // time+meals vs meals-only bladder build
+  difficulty: "chill" | "normal" | "hard";
+  runMs: number; // sprint animation duration in ms (300–1600)
+  autoPause: boolean; // pause DogAI when tab is not focused (visibilitychange)
+
+  // Reserved for future:
+  // soundEnabled: boolean;
+  // vibrationEnabled: boolean;
+};
+```
+
 ## File Organization
 
 ### Path Aliases
 
 Use `@/` for all imports (configured in `vite.config.js`):
 
-```js
+````js
 import { selectDog } from "@/redux/dogSlice.js";
 import { LIFE_STAGES } from "@/constants/game.js";
-```
-
-### Key Files
-
 - **State:** `src/redux/dogSlice.js` (all reducers), `src/redux/store.js` (RTK setup)
 - **Sync:** `src/redux/dogThunks.js` (Firebase cloud save/load)
 - **Engine:** `src/features/game/DogAIEngine.jsx` (tick loop, hydration, persistence orchestrator)
 - **Constants:** `src/constants/game.js` (decay rates, thresholds, config)
 - **Utils:** `src/utils/lifecycle.js` (age calculation), `src/utils/weather.js` (optional weather API)
-- **Routing:** `src/routes.js` (path constants), `src/App.jsx` (React Router setup)
-
-### Component Organization
-
 - **Pages:** `src/pages/*.jsx` (route components: Home, Game, Adopt, Login, etc.)
 - **Game features:** `src/features/game/` (MainGame, NeedsHUD, ObedienceDrill, MoodAndJournalPanel, etc.)
 - **Shared:** `src/components/` (reusable UI like DogSprite, WeatherWidget)
 
-## Critical Patterns & Conventions
-
-### Reducer Actions Pattern
-
 Every care action (feed, play, rest, bathe, trainObedience) follows this structure:
 
-```js
-actionName(state, { payload }) {
-  const now = payload?.now ?? Date.now();
   applyDecay(state, now);           // 1. Apply time-based decay
   // ... modify stats/state ...
   state.memory.lastSeenAt = now;    // 2. Update memory
-  applyXp(state, amount);            // 3. Grant XP
-  maybeSampleMood(state, now, tag); // 4. Log mood sample
-  updateStreak(state.streak, isoDate); // 5. Update daily streak
   updateTemperamentReveal(state, now); // 6. Check reveal readiness
   finalizeDerivedState(state, now);    // 7. Sync lifecycle/cleanliness
 }
-```
-
 **Never skip `finalizeDerivedState()`** – it ensures `lifeStage` and `cleanlinessTier` stay in sync.
 
 ### Firebase Defensive Coding & Graceful Degradation
 
-Always check `firebaseReady` before using `auth` or `db`:
-
 ```js
-import { auth, db, firebaseReady } from "@/firebase.js";
-
-if (firebaseReady && auth?.currentUser) {
-  // safe to use Firebase
 }
-```
+````
 
-**Critical UX Pattern:** Missing `.env.local` vars will disable Firebase gracefully:
-
-- Login/Signup pages show **"Firebase Not Configured"** warning with specific missing keys
-- Lists exact missing config (apiKey, authDomain, projectId, storageBucket, messagingSenderId, appId)
 - Instructs user to "Update .env.local with your Firebase web config and restart the dev server"
 - App remains fully functional in **local-only mode** (localStorage persistence)
-- No crashes or broken features when Firebase is unavailable
-
-### Game Time Scaling
-
 - 1 real day = 4 game days (`GAME_DAYS_PER_REAL_DAY`)
 - Puppy stage: 0-180 game days (0-6 months in-game)
-- Adult stage: 181-2555 game days (6mo-7yrs)
-- Senior stage: 2556+ game days (7-15yrs)
 
 ### Journal & Mood Logging
 

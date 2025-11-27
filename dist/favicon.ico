@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Placeholder favicon: simple SVG saved with .ico name to avoid 404 during dev -->
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+  <rect width="100%" height="100%" fill="#0b1120" />
+  <circle cx="16" cy="10" r="6" fill="#10b981" />
+  <text x="16" y="26" font-size="8" fill="#cbd5e1" font-family="Inter, sans-serif" text-anchor="middle">D</text>
+</svg>

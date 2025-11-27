@@ -1,0 +1,46 @@
+name: Visual Pixel Diff
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  visual-pixel-diff:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Capture screenshots (Playwright)
+        run: |
+          mkdir -p artifacts/visual-current
+          node scripts/playwright-game-screenshots.js --start-server --out artifacts/visual-current
+        env:
+          CI: true
+
+      - name: Run pixel-compare
+        run: |
+          if [ ! -d tests/visual/baseline ]; then
+            echo "Baseline directory 'tests/visual/baseline' not found; uploading current screenshots as artifact and failing the check.";
+            ls -la artifacts/visual-current || true
+            gh actions upload-artifact --name visual-current --path artifacts/visual-current || true
+            exit 1
+          fi
+          npm run visual:compare
+
+      - name: Upload diff artifacts (if any)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-diffs
+          path: artifacts/visual-current/diffs

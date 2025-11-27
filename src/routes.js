@@ -1,6 +1,12 @@
 // src/routes.js
+// Doggerz: Centralized route path constants for all app navigation.
+// Usage: import { PATHS } from "@/routes.js" to avoid hard-coded strings.
 
-// Central place for all route paths so components don't hard-code strings.
+/**
+ * PATHS: All route path constants for Doggerz navigation.
+ * Extend this object when adding new pages or flows.
+ * @type {Object}
+ */
 export const PATHS = {
   // Landing / marketing
   HOME: "/", // you can point this to <SplashPage /> or <Home /> in your router

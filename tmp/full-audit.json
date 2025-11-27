@@ -1,0 +1,185 @@
+{
+  "generatedAt": "2025-11-27T02:14:53.603Z",
+  "totals": {
+    "files": 154,
+    "images": 19,
+    "largeFiles": 3,
+    "duplicates": 1
+  },
+  "largeFiles": [
+    {
+      "path": "src\\assets\\backgrounds\\backyard-day.png",
+      "size": 1744053
+    },
+    {
+      "path": "src\\assets\\backgrounds\\backyard-night.png",
+      "size": 1281702
+    },
+    {
+      "path": "src\\assets\\sprites\\jackrussell\\jack_russell_directions.png",
+      "size": 1619993
+    }
+  ],
+  "exactDuplicates": [
+    {
+      "hash": "0a30c99818baef8732b1113523afb21a35086ce173429e39db7c4f1a7e224c60",
+      "files": [
+        "src\\assets\\sprites\\jackrussell\\jack_russell_puppy.png",
+        "src\\assets\\sprites\\jackrussell\\jack_russell_senior.png"
+      ]
+    }
+  ],
+  "similarGroups": [],
+  "imageInfo": [
+    {
+      "path": "public\\doggerz-192.svg",
+      "size": 485,
+      "ext": ".svg",
+      "width": null,
+      "height": null
+    },
+    {
+      "path": "public\\doggerz-512.svg",
+      "size": 495,
+      "ext": ".svg",
+      "width": null,
+      "height": null
+    },
+    {
+      "path": "src\\assets\\backgrounds\\backyard-day.png",
+      "size": 1744053,
+      "ext": ".png",
+      "width": null,
+      "height": null
+    },
+    {
+      "path": "src\\assets\\backgrounds\\backyard-night.png",
+      "size": 1281702,
+      "ext": ".png",
+      "width": null,
+      "height": null
+    },
+    {
+      "path": "src\\assets\\sprites\\jackrussell\\jack_russell_adult.png",
+      "size": 64852,
+      "ext": ".png",
+      "width": null,
+      "height": null
+    },
+    {
+      "path": "src\\assets\\sprites\\jackrussell\\jack_russell_adult_dirty.png",
+      "size": 121625,
+      "ext": ".png",
+      "width": null,
+      "height": null
+    },
+    {
+      "path": "src\\assets\\sprites\\jackrussell\\jack_russell_adult_fleas.png",
+      "size": 85791,
+      "ext": ".png",
+      "width": null,
+      "height": null
+    },
+    {
+      "path": "src\\assets\\sprites\\jackrussell\\jack_russell_adult_mange.png",
+      "size": 125819,
+      "ext": ".png",
+      "width": null,
+      "height": null
+    },
+    {
+      "path": "src\\assets\\sprites\\jackrussell\\jack_russell_directions.png",
+      "size": 1619993,
+      "ext": ".png",
+      "width": null,
+      "height": null
+    },
+    {
+      "path": "src\\assets\\sprites\\jackrussell\\jack_russell_puppy.png",
+      "size": 70460,
+      "ext": ".png",
+      "width": null,
+      "height": null
+    },
+    {
+      "path": "src\\assets\\sprites\\jackrussell\\jack_russell_puppy.svg",
+      "size": 6967,
+      "ext": ".svg",
+      "width": null,
+      "height": null
+    },
+    {
+      "path": "src\\assets\\sprites\\jackrussell\\jack_russell_puppy_dirty.png",
+      "size": 123760,
+      "ext": ".png",
+      "width": null,
+      "height": null
+    },
+    {
+      "path": "src\\assets\\sprites\\jackrussell\\jack_russell_puppy_fleas.png",
+      "size": 86115,
+      "ext": ".png",
+      "width": null,
+      "height": null
+    },
+    {
+      "path": "src\\assets\\sprites\\jackrussell\\jack_russell_puppy_hd.svg",
+      "size": 6069,
+      "ext": ".svg",
+      "width": null,
+      "height": null
+    },
+    {
+      "path": "src\\assets\\sprites\\jackrussell\\jack_russell_puppy_mange.png",
+      "size": 128682,
+      "ext": ".png",
+      "width": null,
+      "height": null
+    },
+    {
+      "path": "src\\assets\\sprites\\jackrussell\\jack_russell_senior.png",
+      "size": 70460,
+      "ext": ".png",
+      "width": null,
+      "height": null
+    },
+    {
+      "path": "src\\assets\\sprites\\jackrussell\\jack_russell_senior_dirty.png",
+      "size": 123701,
+      "ext": ".png",
+      "width": null,
+      "height": null
+    },
+    {
+      "path": "src\\assets\\sprites\\jackrussell\\jack_russell_senior_fleas.png",
+      "size": 85752,
+      "ext": ".png",
+      "width": null,
+      "height": null
+    },
+    {
+      "path": "src\\assets\\sprites\\jackrussell\\jack_russell_senior_mange.png",
+      "size": 125194,
+      "ext": ".png",
+      "width": null,
+      "height": null
+    }
+  ],
+  "unusedFiles": [
+    "public\\bark.mp3",
+    "public\\doggerz-192.svg",
+    "public\\doggerz-512.svg",
+    "src\\assets\\sprites\\jackrussell\\jack_russell_directions.png",
+    "src\\assets\\sprites\\jack_russell_puppy_hd_export_notice.txt",
+    "src\\features\\game\\components\\BasicDogSprite.jsx",
+    "src\\features\\game\\components\\CoinPackOptions.jsx",
+    "src\\features\\game\\components\\DogPixiSprite.jsx",
+    "src\\features\\game\\components\\GiftSubscriptionFunnel.jsx",
+    "src\\features\\game\\components\\LivePupSnapshot.jsx",
+    "src\\features\\game\\components\\SubscriptionNudgeModal.jsx",
+    "src\\features\\game\\components\\TrainingPanel.jsx",
+    "src\\features\\settings\\components\\AccessibilitySettingsPanel.jsx",
+    "src\\features\\settings\\components\\LayoutSettingsPanel.jsx",
+    "src\\features\\settings\\hooks\\useSettings.js"
+  ]
+}

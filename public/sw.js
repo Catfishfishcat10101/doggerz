@@ -1,13 +1,11 @@
-// public/sw.js
-
 /* -------------------------------------------------------
    Doggerz Service Worker
    - App shell + runtime cache
    - Network-first for pages
-   - Cache-first for static assets
+   - Cache-first for static assets (sprites, backgrounds, CSS/JS)
 -------------------------------------------------------- */
 
-const CACHE_VERSION = "doggerz-v1"; // bump this when you change SW behaviour
+const CACHE_VERSION = "doggerz-v2"; // bump this whenever SW behaviour / CORE_ASSETS change
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Core assets to pre-cache on install.
@@ -18,13 +16,28 @@ const CORE_ASSETS = [
   "/manifest.webmanifest",
   "/favicon.ico",
 
-  // Icons (adjust to whatever icons you actually have)
-  "/icons/icon-192x192.png",
-  "/icons/icon-512x512.png",
+  // Icons (keep in sync with manifest.webmanifest)
+  "/icons/doggerz-192.png",
+  "/icons/doggerz-512.png",
+  "/icons/doggerz-maskable.png",
 
-  // Sprite sheet
-  "/sprites/jack_russell_directions.png",
+  // Sprite manifest + stage sheets (Doggerz sprite pipeline)
+  "/sprites/manifest.json",
+  "/sprites/jack_russell_puppy.png",
+  "/sprites/jack_russell_adult.png",
+  "/sprites/jack_russell_senior.png",
+
+  // If these don't exist yet, it's fine; caching will just log an error.
+  "/backgrounds/backyard-day.png",
+  "/backgrounds/backyard-night.png",
+  "/backgrounds/backyard-dawn.png",
+  "/backgrounds/backyard-dusk.png",
 ];
+
+// Static asset detection patterns
+const STATIC_EXTENSIONS =
+  /\.(png|jpe?g|webp|gif|svg|ico|css|js|woff2?|ttf|otf)$/i;
+const STATIC_PATHS = ["/sprites/", "/icons/", "/backgrounds/"];
 
 /* -------------------------------------------------------
    Install: pre-cache core assets
@@ -34,8 +47,9 @@ self.addEventListener("install", (event) => {
     caches
       .open(RUNTIME_CACHE)
       .then((cache) => cache.addAll(CORE_ASSETS))
-      .catch(() => {
-        // silent fail; app will still work online
+      .catch((err) => {
+        // Log error for debugging; app will still work online
+        console.error("[SW] Cache addAll failed:", err);
       }),
   );
 
@@ -44,19 +58,18 @@ self.addEventListener("install", (event) => {
 });
 
 /* -------------------------------------------------------
-   Activate: clean old caches
+   Activate: clean old Doggerz caches
 -------------------------------------------------------- */
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches
-      .keys()
-      .then((keys) =>
-        Promise.all(
-          keys
-            .filter((key) => !key.startsWith(CACHE_VERSION))
-            .map((key) => caches.delete(key)),
-        ),
+    caches.keys().then((keys) =>
+      Promise.all(
+        keys
+          // Only touch Doggerz-specific caches
+          .filter((key) => key.startsWith("doggerz-") && key !== RUNTIME_CACHE)
+          .map((key) => caches.delete(key)),
       ),
+    ),
   );
 
   // Take control of currently open clients
@@ -66,7 +79,7 @@ self.addEventListener("activate", (event) => {
 /* -------------------------------------------------------
    Fetch handler
    - HTML: network-first + offline fallback
-   - Static assets: cache-first
+   - Static assets (sprites/css/js/backgrounds): cache-first
 -------------------------------------------------------- */
 self.addEventListener("fetch", (event) => {
   const { request } = event;
@@ -93,10 +106,8 @@ self.addEventListener("fetch", (event) => {
     const pathname = url.pathname;
 
     const isStaticAsset =
-      pathname.match(/\.(png|jpe?g|webp|gif|svg|ico)$/i) ||
-      pathname.match(/\.(css|js|woff2?|ttf|otf)$/i) ||
-      pathname.startsWith("/sprites/") ||
-      pathname.startsWith("/icons/");
+      STATIC_EXTENSIONS.test(pathname) ||
+      STATIC_PATHS.some((prefix) => pathname.startsWith(prefix));
 
     if (isStaticAsset) {
       event.respondWith(cacheFirst(request));
@@ -134,12 +145,8 @@ async function cacheFirst(request) {
   if (cached) return cached;
 
   // Not cached yet → fetch & store
-  try {
-    const response = await fetch(request);
-    const cache = await caches.open(RUNTIME_CACHE);
-    cache.put(request, response.clone());
-    return response;
-  } catch (err) {
-    throw err;
-  }
+  const response = await fetch(request);
+  const cache = await caches.open(RUNTIME_CACHE);
+  cache.put(request, response.clone());
+  return response;
 }

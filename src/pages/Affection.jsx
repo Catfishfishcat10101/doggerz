@@ -1,34 +1,35 @@
 // src/pages/Affection.jsx
-// @ts-nocheck
-
+// Doggerz: Affection/bonding preview page. Usage: <Affection /> previews future mechanics.
+// Accessibility: ARIA roles and meta tags are documented for SEO and screen readers.
 import React from "react";
+import PageContainer from "@/features/game/components/PageContainer.jsx";
 
+/**
+ * Affection: Preview page for future bonding mechanics in Doggerz.
+ * - Placeholder for toys, visit cadence, reactions
+ * - ARIA roles and meta tags for accessibility
+ */
 export default function Affection() {
   return (
-    <main className="min-h-[calc(100vh-4rem)] bg-slate-950 text-zinc-100 flex justify-center px-4 py-10">
-      <div className="w-full max-w-2xl space-y-5">
-        <header className="space-y-2">
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Affection &amp; Bonding
-          </h1>
-          <p className="text-sm text-zinc-400">
-            This page will evolve into a deep dive on how your pup forms a bond
-            with you across sessions.
-          </p>
-        </header>
-
-        <section className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-5 text-sm text-zinc-300">
-          <p>
-            Affection systems can track favorite toys, reactions to how often
-            you visit, and how you respond when needs go unmet. Over time, this
-            will give each Doggerz pup its own personality curve.
-          </p>
-          <p className="mt-3 text-xs text-zinc-500">
-            For now, consider this a placeholder. The underlying temperament and
-            memory systems are under active construction.
-          </p>
-        </section>
-      </div>
-    </main>
+    <PageContainer
+      title="Affection & Bonding"
+      subtitle="Future system: toys, visit cadence, reactions to unmet needs will shape a unique bond curve."
+      metaDescription="Doggerz affection system preview: upcoming mechanics for bonding via routines, toys, and consistent care."
+      padding="px-4 py-10"
+    >
+      <section
+        className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-5 text-sm text-zinc-300"
+        aria-label="Affection system overview"
+      >
+        <p>
+          Affection systems will track favorite toys, visit frequency, and how
+          you respond when needs dip. Over time your pup’s emotional profile and
+          loyalty will diverge from others.
+        </p>
+        <p className="mt-3 text-xs text-zinc-300">
+          Placeholder content while temperament & memory backbones evolve.
+        </p>
+      </section>
+    </PageContainer>
   );
 }

@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- High-detail vector spritesheet for Jack Russell puppy (16 frames, 128x128 each, 4x4 grid)
+     This is a higher-detail SVG intended for review before exporting to PNG.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <style>
+      .fur { fill:#f1d2b0; stroke:#5a3e2a; stroke-width:3 }
+      .mark { fill:#3b2a1f }
+      .eye { fill:#111 }
+      .tongue { fill:#ff6b8a }
+      .shadow { fill:rgba(0,0,0,0.28) }
+    </style>
+  </defs>
+
+  <!-- Frame 0..3: walk/run -->
+  <g id="frame0" transform="translate(0,0)">
+    <rect width="128" height="128" fill="transparent"/>
+    <g transform="translate(14,22)">
+      <ellipse cx="54" cy="48" rx="48" ry="26" class="fur"/>
+      <rect x="16" y="34" width="14" height="8" rx="4" class="mark"/>
+      <circle cx="36" cy="34" r="6" class="eye"/>
+      <circle cx="64" cy="34" r="6" class="eye"/>
+      <path d="M10 28 q12 -18 28 0" fill="#2f2317" />
+    </g>
+  </g>
+
+  <g id="frame1" transform="translate(128,0)">
+    <rect width="128" height="128" fill="transparent"/>
+    <g transform="translate(14,22)">
+      <ellipse cx="54" cy="50" rx="46" ry="24" class="fur"/>
+      <circle cx="34" cy="34" r="6" class="eye"/>
+      <circle cx="62" cy="34" r="6" class="eye"/>
+      <path d="M12 26 q8 -12 22 0" fill="#3b2a1f"/>
+    </g>
+  </g>
+
+  <g id="frame2" transform="translate(256,0)">
+    <rect width="128" height="128" fill="transparent"/>
+    <g transform="translate(10,24)">
+      <ellipse cx="52" cy="48" rx="46" ry="24" class="fur"/>
+      <rect x="30" y="36" width="6" height="3" fill="#111"/>
+      <circle cx="30" cy="34" r="6" class="eye"/>
+      <circle cx="58" cy="34" r="6" class="eye"/>
+    </g>
+  </g>
+
+  <g id="frame3" transform="translate(384,0)">
+    <rect width="128" height="128" fill="transparent"/>
+    <g transform="translate(12,20)">
+      <ellipse cx="54" cy="50" rx="48" ry="26" class="fur"/>
+      <circle cx="36" cy="34" r="6" class="eye"/>
+      <circle cx="66" cy="34" r="6" class="eye"/>
+      <path d="M46 56 q10 8 24 4" stroke="#5a3e2a" stroke-width="3" fill="none"/>
+    </g>
+  </g>
+
+  <!-- Row 1: sit (4) and wag frames -->
+  <g id="frame4" transform="translate(0,128)">
+    <rect width="128" height="128" fill="transparent"/>
+    <g transform="translate(18,30)">
+      <ellipse cx="54" cy="56" rx="46" ry="26" class="fur"/>
+      <circle cx="36" cy="36" r="6" class="eye"/>
+      <circle cx="64" cy="36" r="6" class="eye"/>
+    </g>
+  </g>
+
+  <g id="frame5" transform="translate(128,128)">
+    <rect width="128" height="128" fill="transparent"/>
+    <g transform="translate(18,28)">
+      <ellipse cx="54" cy="52" rx="46" ry="24" class="fur"/>
+      <path d="M90 50 q-10 26 -40 34" stroke="#3b2a1f" stroke-width="4" fill="none" />
+    </g>
+  </g>
+
+  <g id="frame6" transform="translate(256,128)">
+    <rect width="128" height="128" fill="transparent"/>
+    <g transform="translate(18,28)">
+      <ellipse cx="54" cy="50" rx="46" ry="24" class="fur"/>
+      <path d="M94 54 q-14 20 -44 30" stroke="#3b2a1f" stroke-width="4" fill="none" />
+    </g>
+  </g>
+
+  <g id="frame7" transform="translate(384,128)">
+    <rect width="128" height="128" fill="transparent"/>
+    <g transform="translate(20,30)">
+      <ellipse cx="52" cy="52" rx="44" ry="22" class="fur"/>
+      <path d="M88 54 q-10 18 -36 26" stroke="#3b2a1f" stroke-width="4" fill="none" />
+    </g>
+  </g>
+
+  <!-- Row 2: blink/sleep/eat -->
+  <g id="frame8" transform="translate(0,256)">
+    <rect width="128" height="128" fill="transparent"/>
+    <g transform="translate(18,30)">
+      <ellipse cx="54" cy="50" rx="44" ry="22" class="fur"/>
+      <rect x="30" y="32" width="10" height="4" rx="2" fill="#111"/>
+      <rect x="56" y="32" width="10" height="4" rx="2" fill="#111"/>
+    </g>
+  </g>
+
+  <g id="frame9" transform="translate(128,256)">
+    <rect width="128" height="128" fill="transparent"/>
+    <g transform="translate(18,28)">
+      <ellipse cx="56" cy="60" rx="46" ry="26" class="fur"/>
+      <rect x="28" y="38" width="20" height="8" rx="4" fill="#3b2a1f"/>
+    </g>
+  </g>
+
+  <g id="frame10" transform="translate(256,256)">
+    <rect width="128" height="128" fill="transparent"/>
+    <g transform="translate(16,30)">
+      <ellipse cx="54" cy="50" rx="46" ry="24" class="fur"/>
+      <path d="M40 50 q10 12 34 10" stroke="#5a3e2a" stroke-width="3" fill="none"/>
+    </g>
+  </g>
+
+  <g id="frame11" transform="translate(384,256)">
+    <rect width="128" height="128" fill="transparent"/>
+    <g transform="translate(18,28)">
+      <ellipse cx="54" cy="50" rx="46" ry="24" class="fur"/>
+      <path d="M44 54 q10 12 28 8" stroke="#5a3e2a" stroke-width="3" fill="none"/>
+      <ellipse cx="48" cy="64" rx="8" ry="4" class="tongue"/>
+    </g>
+  </g>
+
+  <!-- Row 3: lay/idle/variants -->
+  <g id="frame12" transform="translate(0,384)">
+    <rect width="128" height="128" fill="transparent"/>
+    <g transform="translate(16,36)">
+      <ellipse cx="58" cy="62" rx="50" ry="26" class="fur"/>
+      <circle cx="36" cy="44" r="6" class="eye"/>
+    </g>
+  </g>
+
+  <g id="frame13" transform="translate(128,384)">
+    <rect width="128" height="128" fill="transparent"/>
+    <g transform="translate(12,36)">
+      <ellipse cx="60" cy="64" rx="52" ry="28" class="fur"/>
+      <path d="M38 50 q10 12 32 12" stroke="#5a3e2a" stroke-width="3" fill="none"/>
+    </g>
+  </g>
+
+  <g id="frame14" transform="translate(256,384)">
+    <rect width="128" height="128" fill="transparent"/>
+    <g transform="translate(18,34)">
+      <ellipse cx="52" cy="52" rx="46" ry="24" class="fur"/>
+    </g>
+  </g>
+
+  <g id="frame15" transform="translate(384,384)">
+    <rect width="128" height="128" fill="transparent"/>
+    <g transform="translate(18,34)">
+      <ellipse cx="52" cy="52" rx="46" ry="24" class="fur"/>
+      <ellipse cx="52" cy="70" rx="30" ry="6" class="shadow"/>
+    </g>
+  </g>
+
+</svg>

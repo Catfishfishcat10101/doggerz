@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "frameSize": 128,
+  "cols": 16,
+  "rows": 16,
+
+  "stages": {
+    "PUPPY": "jack_russell_puppy.png",
+    "ADULT": "jack_russell_adult.png",
+    "SENIOR": "jack_russell_senior.png"
+  },
+
+  "animations": {
+    "idle": { "row": 0, "frames": 8, "fps": 8 },
+    "walk": { "row": 1, "frames": 8, "fps": 12 },
+    "run": { "row": 9, "frames": 8, "fps": 12 },
+    "sleep": { "row": 10, "frames": 8, "fps": 8 },
+    "eat": { "row": 11, "frames": 8, "fps": 10 },
+    "sit": { "row": 12, "frames": 8, "fps": 10 },
+    "lie_down": { "row": 13, "frames": 8, "fps": 8 },
+    "trick": { "row": 14, "frames": 8, "fps": 12 },
+    "bathe_shake": { "row": 15, "frames": 8, "fps": 15 },
+
+    "scratch": { "row": 12, "frames": 8, "fps": 10 },
+    "sad_idle": { "row": 13, "frames": 8, "fps": 8 },
+    "look": { "row": 0, "frames": 8, "fps": 8 }
+  }
+}

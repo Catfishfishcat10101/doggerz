@@ -1,0 +1,40 @@
+name: Visual Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  visual-screenshots:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: |
+          npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Run WebP verification (optional)
+        run: node scripts/verify-webp-sprites.js
+
+      - name: Run visual screenshot runner (start server)
+        env:
+          CI: "1"
+        run: npm run visual:screenshots:start
+
+      - name: Upload screenshots artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-screenshots
+          path: screens/visual

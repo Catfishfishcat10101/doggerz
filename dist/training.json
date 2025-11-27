@@ -1,0 +1,34 @@
+[
+  {
+    "id": "sit",
+    "label": "Sit",
+    "branch": "obedience",
+    "description": "Basic sit command.",
+    "unlock": { "age": "PUPPY" },
+    "xpStep": 50
+  },
+  {
+    "id": "stay",
+    "label": "Stay",
+    "branch": "obedience",
+    "description": "Stay in place until released.",
+    "unlock": { "age": "PUPPY" },
+    "xpStep": 50
+  },
+  {
+    "id": "rollOver",
+    "label": "Roll Over",
+    "branch": "obedience",
+    "description": "Roll over on command.",
+    "unlock": { "age": "ADULT" },
+    "xpStep": 50
+  },
+  {
+    "id": "speak",
+    "label": "Speak",
+    "branch": "obedience",
+    "description": "Bark on command.",
+    "unlock": { "age": "ADULT" },
+    "xpStep": 50
+  }
+]
