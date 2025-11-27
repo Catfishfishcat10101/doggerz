@@ -1,0 +1,40 @@
+[
+  {
+    "id": "winterfest_2025",
+    "name": "Winterfest 2025",
+    "startDate": "2025-12-15",
+    "endDate": "2026-01-05",
+    "baseTrack": [
+      {
+        "id": "snowball_toy",
+        "type": "toy",
+        "name": "Snowball Toy",
+        "rarity": "common"
+      },
+      {
+        "id": "winter_bg",
+        "type": "background",
+        "name": "Winter Background",
+        "rarity": "rare"
+      }
+    ],
+    "bonusTrack": [
+      {
+        "id": "ice_crown",
+        "type": "cosmetic",
+        "name": "Ice Crown",
+        "rarity": "legendary",
+        "premium": true
+      },
+      {
+        "id": "frost_collar",
+        "type": "collar",
+        "name": "Frost Collar",
+        "rarity": "epic",
+        "premium": true
+      }
+    ],
+    "banner": "Winterfest is here! Earn exclusive rewards.",
+    "active": true
+  }
+]

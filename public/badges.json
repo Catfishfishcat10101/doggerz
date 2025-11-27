@@ -1,0 +1,16 @@
+[
+  {
+    "id": "potty_trained",
+    "label": "Potty Trained",
+    "description": "Your pup now signals before every break.",
+    "icon": "🚽",
+    "unlock": { "training": "potty", "complete": true }
+  },
+  {
+    "id": "first_walk",
+    "label": "First Walk",
+    "description": "You took your pup for their first walk.",
+    "icon": "🐾",
+    "unlock": { "action": "walk_outside", "count": 1 }
+  }
+]

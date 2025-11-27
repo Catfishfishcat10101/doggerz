@@ -1,9 +1,11 @@
 // src/constants/game.js
+// Core game constants for Doggerz. Usage: import from "@/constants/game.js"
+// Keys are grouped and documented for maintainability.
 
-// Core tuning knobs
-export const SKILL_LEVEL_STEP = 50;
-export const DEFAULT_TICK_INTERVAL = 120; // seconds
-export const CLOUD_SAVE_DEBOUNCE = 3000;
+/* ---------------- Core tuning knobs ---------------- */
+
+export const DEFAULT_TICK_INTERVAL = 120; // seconds between passive ticks
+export const CLOUD_SAVE_DEBOUNCE = 3000; // ms between cloud saves
 export const GAME_DAYS_PER_REAL_DAY = 4;
 
 // Lifecycle / age stages (in-game days)
@@ -15,27 +17,28 @@ export const LIFE_STAGES = {
 
 // How each life stage tweaks stat decay
 export const LIFECYCLE_STAGE_MODIFIERS = {
-  PUPPY: {
-    hunger: 1.15, // gets hungry faster
-    happiness: 1,
-    energy: 0.85, // burns less energy
-    cleanliness: 0.95,
-  },
   ADULT: {
-    hunger: 1,
-    happiness: 1,
-    energy: 1,
     cleanliness: 1,
+    energy: 1,
+    happiness: 1,
+    hunger: 1,
+  },
+  PUPPY: {
+    cleanliness: 0.95,
+    energy: 0.85, // burns less energy
+    happiness: 1,
+    hunger: 1.15, // gets hungry faster
   },
   SENIOR: {
-    hunger: 0.9, // eats a bit less
-    happiness: 1.05,
-    energy: 1.2, // tires more quickly
     cleanliness: 1.15,
+    energy: 1.2, // tires more quickly
+    happiness: 1.05,
+    hunger: 0.9, // eats a bit less
   },
 };
 
-// Cleanliness thresholds → tiers
+/* ---------------- Cleanliness tiers ---------------- */
+
 export const CLEANLINESS_THRESHOLDS = {
   FRESH: 75,
   DIRTY: 50,
@@ -43,37 +46,64 @@ export const CLEANLINESS_THRESHOLDS = {
   MANGE: 0,
 };
 
-// Per-tier effects on gameplay
 export const CLEANLINESS_TIER_EFFECTS = {
   FRESH: {
     label: "Fresh",
     pottyGainMultiplier: 1,
   },
   DIRTY: {
-    label: "Dirty",
     happinessTickPenalty: 1,
-    pottyGainMultiplier: 1.1,
     journalSummary: "Your pup is tracking in a little dirt. Bath soon?",
+    label: "Dirty",
+    pottyGainMultiplier: 1.1,
   },
   FLEAS: {
-    label: "Fleas",
-    happinessTickPenalty: 2,
-    energyTickPenalty: 1,
     cleanlinessTickPenalty: 1,
-    pottyGainMultiplier: 1.25,
+    energyTickPenalty: 1,
+    happinessTickPenalty: 2,
     journalSummary:
       "Scratching nonstop. Looks like your pup picked up some hitchhikers.",
+    label: "Fleas",
+    pottyGainMultiplier: 1.25,
   },
   MANGE: {
-    label: "Mange",
-    happinessTickPenalty: 4,
-    energyTickPenalty: 2,
     cleanlinessTickPenalty: 2,
-    pottyGainMultiplier: 1.5,
+    energyTickPenalty: 2,
+    happinessTickPenalty: 4,
     journalSummary:
       "Skin is irritated and patchy. Needs a vet visit and serious TLC.",
+    label: "Mange",
+    pottyGainMultiplier: 1.5,
   },
 };
+
+/**
+ * Resolve cleanliness tier key ("FRESH" | "DIRTY" | "FLEAS" | "MANGE")
+ * from a cleanliness value (0–100).
+ */
+export function resolveCleanlinessTier(cleanliness) {
+  const v = Number.isFinite(cleanliness) ? cleanliness : 0;
+
+  if (v >= CLEANLINESS_THRESHOLDS.FRESH) return "FRESH";
+  if (v >= CLEANLINESS_THRESHOLDS.DIRTY) return "DIRTY";
+  if (v >= CLEANLINESS_THRESHOLDS.FLEAS) return "FLEAS";
+  return "MANGE";
+}
+
+/**
+ * Get cleanliness tier key + effect descriptor in one shot.
+ * Returns: { tier, label, ...effectFields }
+ */
+export function getCleanlinessEffects(cleanliness) {
+  const tier = resolveCleanlinessTier(cleanliness);
+  const base = CLEANLINESS_TIER_EFFECTS[tier] || CLEANLINESS_TIER_EFFECTS.FRESH;
+  return {
+    tier,
+    ...base,
+  };
+}
+
+/* ---------------- Dog polls (wants/needs) ---------- */
 
 /**
  * Mini “what does your dog want?” system.
@@ -122,29 +152,3 @@ export const DOG_POLL_CONFIG = {
     },
   ],
 };
-
-/**
- * Resolve cleanliness tier key ("FRESH" | "DIRTY" | "FLEAS" | "MANGE")
- * from a cleanliness value (0–100).
- */
-export function resolveCleanlinessTier(cleanliness) {
-  const v = Number.isFinite(cleanliness) ? cleanliness : 0;
-
-  if (v >= CLEANLINESS_THRESHOLDS.FRESH) return "FRESH";
-  if (v >= CLEANLINESS_THRESHOLDS.DIRTY) return "DIRTY";
-  if (v >= CLEANLINESS_THRESHOLDS.FLEAS) return "FLEAS";
-  return "MANGE";
-}
-
-/**
- * Get cleanliness tier key + effect descriptor in one shot.
- * Returns: { tier, label, ...effectFields }
- */
-export function getCleanlinessEffects(cleanliness) {
-  const tier = resolveCleanlinessTier(cleanliness);
-  const base = CLEANLINESS_TIER_EFFECTS[tier] || CLEANLINESS_TIER_EFFECTS.FRESH;
-  return {
-    tier,
-    ...base,
-  };
-}

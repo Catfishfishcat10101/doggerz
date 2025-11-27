@@ -1,108 +1,205 @@
 // src/pages/Landing.jsx
-// Main landing / start screen for Doggerz
+// Doggerz: Main landing/start screen. Usage: <Landing /> is the marketing/start route.
+// Accessibility: ARIA roles and meta tags are documented for SEO and screen readers.
 
-import { Link } from "react-router-dom";
-import EnhancedDogSprite from "@/components/EnhancedDogSprite";
+import React from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 
+import PageContainer from "@/features/game/components/PageContainer.jsx";
+import EnhancedDogSprite from "@/features/game/components/EnhancedDogSprite.jsx";
+import { selectUser } from "@/redux/userSlice.js";
+import { selectDog } from "@/features/game/redux/dogSlice.js";
+import { DOG_STORAGE_KEY } from "@/redux/dogSlice.js";
+import { useToast } from "@/components/ToastProvider.jsx";
+
+import AnimatedBackground from "@/features/game/components/AnimatedBackground.jsx";
+import MiniAdoptCTA from "@/features/game/components/MiniAdoptCTA.jsx";
+import AchievementTicker from "@/features/game/components/AchievementTicker.jsx";
+import CinematicIntro from "@/features/game/components/CinematicIntro.jsx";
+import HowItWorksModal from "@/components/HowItWorksModal.jsx";
+import { useState } from "react";
+
+/**
+ * Landing: Main landing/start screen for Doggerz.
+ * - Brand, hero, calls to action, sprite showcase
+ * - ARIA roles and meta tags for accessibility
+ */
 export default function Landing() {
-  // Later you can wire this to real auth / Redux
-  const isLoggedIn = false;
+  const user = useSelector(selectUser);
+  const dog = useSelector(selectDog);
+
+  const isLoggedIn = Boolean(user);
+  const hasPup = Boolean(dog && dog.adoptedAt);
+
+  // Primary CTA: always encourage adoption (routes to /adopt)
+  const primaryHref = "/adopt";
+  const primaryLabel = "Adopt a pup";
+
+  // Secondary CTA: learn more about the project (opens modal)
+  const secondaryLabel = "Learn More?";
+  const [showHowItWorks, setShowHowItWorks] = useState(false);
+  const [naming, setNaming] = useState(true);
+  const [nameInput, setNameInput] = useState("Pup");
+  const [animating, setAnimating] = useState(true);
+  const navigate = useNavigate();
+  const toast = useToast();
 
   return (
-    <main className="min-h-[calc(100vh-4rem)] bg-slate-950 text-slate-50">
-      {/* Hero container */}
-      <div className="mx-auto flex max-w-6xl flex-col gap-10 px-4 pb-16 pt-10 md:flex-row md:items-center md:justify-between lg:gap-16">
-        {/* LEFT: Logo, tagline, text, buttons */}
-        <section className="flex-1 space-y-6">
-          {/* Brand block */}
-          <div>
-            {/* Bigger Doggerz wordmark */}
-            <div className="inline-flex flex-col">
-              <span className="text-4xl font-black tracking-tight text-emerald-400 drop-shadow-[0_0_20px_rgba(16,185,129,0.55)]">
-                DOGGERZ
-              </span>
-              <span className="mt-1 text-sm font-semibold uppercase tracking-[0.2em] text-emerald-300">
-                virtual pup
-              </span>
+    <>
+      <PageContainer className="px-4 pb-16 pt-10">
+        <CinematicIntro />
+        <AnimatedBackground
+          zip={
+            typeof window !== "undefined"
+              ? (() => {
+                  try {
+                    const s = window.localStorage.getItem("doggerz:settings");
+                    if (s) return JSON.parse(s).zip;
+                  } catch {}
+                  return undefined;
+                })()
+              : undefined
+          }
+          useRealTime={
+            typeof window !== "undefined"
+              ? (() => {
+                  try {
+                    const s = window.localStorage.getItem("doggerz:settings");
+                    if (s) return JSON.parse(s).useRealTime;
+                  } catch {}
+                  return false;
+                })()
+              : false
+          }
+        />
+
+        <AchievementTicker />
+
+        <div
+          className="mx-auto flex flex-col gap-10 md:flex-row md:items-center md:justify-between lg:gap-24"
+          aria-label="Landing hero layout"
+        >
+          {/* Left: marketing + CTAs */}
+          <section className="flex-1 space-y-6" aria-label="Marketing intro">
+            <div>
+              <div className="inline-flex flex-col" aria-label="Doggerz brand">
+                <span className="text-6xl font-extrabold tracking-tight text-emerald-400 drop-shadow-[0_8px_24px_rgba(0,0,0,0.6)]">
+                  DOGGERZ
+                </span>
+              </div>
+              <h2 className="mt-3 max-w-md text-sm font-medium leading-snug text-slate-300 md:text-base">
+                {hasPup
+                  ? "Your pup’s still ticking. Jump back in and keep them thriving."
+                  : "Adopt your pup & keep them thriving in real time."}
+              </h2>
             </div>
 
-            {/* Simple, non-stretched heading */}
-            <h1 className="mt-6 max-w-md text-2xl font-semibold leading-snug text-slate-100 md:text-3xl">
-              Adopt your pup and keep them going in real time.
-            </h1>
-          </div>
-
-          {/* Primary actions – close to the dog area */}
-          <div className="mt-6 flex flex-wrap items-center gap-3">
-            {/* Big primary CTA */}
-            <Link
-              to="/adopt"
-              className="inline-flex items-center justify-center rounded-xl border border-emerald-400 bg-emerald-400 px-6 py-3 text-sm font-semibold uppercase tracking-wide text-slate-950 shadow-lg shadow-emerald-500/30 transition hover:-translate-y-0.5 hover:bg-emerald-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+            <div
+              className="mt-6 flex items-center gap-3"
+              aria-label="Primary calls to action"
             >
-              Adopt a pup
-            </Link>
+              <MiniAdoptCTA
+                primaryHref={primaryHref}
+                primaryLabel={primaryLabel}
+                onLearnMore={() => setShowHowItWorks(true)}
+              />
 
-            {/* Larger login button */}
-            <Link
-              to="/login"
-              className="inline-flex items-center justify-center rounded-xl border border-zinc-600 bg-zinc-900/70 px-5 py-3 text-sm font-semibold uppercase tracking-wide text-zinc-100 shadow-md shadow-black/40 transition hover:-translate-y-0.5 hover:border-emerald-300 hover:text-emerald-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
-            >
-              Log in · Resume pup
-            </Link>
-
-            {/* Later you can show this only when real auth says “logged in” */}
-            {isLoggedIn && (
-              <Link
-                to="/game"
-                className="text-xs font-medium text-zinc-400 underline-offset-4 hover:text-emerald-200 hover:underline"
+              <button
+                onClick={() => setShowHowItWorks(true)}
+                className="inline-flex items-center justify-center rounded-md border border-zinc-700 bg-zinc-900/60 px-3 py-2 text-sm font-medium uppercase tracking-wide text-zinc-200 transition hover:-translate-y-0.5"
               >
-                Jump back into the yard
-              </Link>
-            )}
-          </div>
+                {secondaryLabel}
+              </button>
+            </div>
 
-          {/* Tiny helper text – clarifies flow without being loud */}
-          <p className="max-w-md text-xs text-zinc-500">
-            The full dashboard (hunger, energy, cleanliness, potty training,
-            etc.) unlocks on the next screen after you adopt or log in.
-          </p>
-        </section>
+            {/* hero extras removed: only sprite shown on the right per request */}
+          </section>
 
-        {/* RIGHT: Dog sprite showcase card */}
-        <section className="flex-1">
-          <div className="relative mx-auto flex max-w-sm items-center justify-center rounded-3xl border border-zinc-800 bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 px-4 py-6 shadow-[0_18px_60px_rgba(0,0,0,0.7)]">
-            {/* Glow ring behind dog */}
-            <div className="pointer-events-none absolute inset-auto h-56 w-56 rounded-full bg-emerald-400/12 blur-3xl" />
+          {/* Right: live pup snapshot */}
+          <section className="flex-1" aria-label="Sprite showcase">
+            <style>{`
+            @keyframes pup-jump { 0% { transform: translateY(0) } 30% { transform: translateY(-40px) } 70% { transform: translateY(6px) } 100% { transform: translateY(0) } }
+            .pup-jump { animation: pup-jump 700ms ease; }
+            .name-board { min-width: 160px; max-width: 260px; }
+          `}</style>
 
-            <div className="relative flex flex-col items-center gap-4">
-              <div className="overflow-hidden rounded-2xl border border-zinc-800 bg-slate-900/80 p-3 backdrop-blur">
-                {/* Your actual sprite sheet component */}
-                <div className="h-40 w-40 overflow-hidden">
-                  <EnhancedDogSprite />
+            <div className="relative mx-auto flex max-w-lg items-center justify-center rounded-3xl border border-zinc-800 bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 px-8 py-10 shadow-[0_18px_60px_rgba(0,0,0,0.7)]">
+              <div className="pointer-events-none absolute -top-10 flex items-center justify-center w-full">
+                <div className="name-board rounded-md bg-zinc-900/80 border border-zinc-800 px-3 py-2 text-sm text-emerald-200 text-center shadow">
+                  {nameInput}
                 </div>
               </div>
 
-              {/* Minimal status text - no big meters here */}
-              <div className="w-full rounded-2xl border border-zinc-800 bg-slate-900/70 px-4 py-3 text-xs text-zinc-300">
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-emerald-200">
-                    Your virtual pup
-                  </span>
-                  <span className="text-[0.7rem] text-zinc-500">
-                    Real-time sim
-                  </span>
-                </div>
-                <p className="mt-1 text-[0.7rem] text-zinc-400">
-                  Needs tick in the background while you’re away. You’ll see the
-                  full stats once you’re inside the game.
-                </p>
+              <div
+                className={`relative flex items-center justify-center ${animating ? "pup-jump" : ""}`}
+              >
+                <EnhancedDogSprite />
+              </div>
+
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-full flex items-center justify-center">
+                {naming ? (
+                  <input
+                    value={nameInput}
+                    onChange={(e) => setNameInput(e.target.value)}
+                    onKeyDown={async (e) => {
+                      if (e.key === "Enter") {
+                        // Trigger adopt animation, save pup locally, then navigate to /game
+                        try {
+                          setAnimating(true);
+                          try {
+                            toast?.add(`${nameInput || "Pup"}: BARK!`);
+                          } catch {}
+                          // save dog locally
+                          const now = Date.now();
+                          const dog = {
+                            id: `local-${now}`,
+                            name: nameInput || "Pup",
+                            adoptedAt: now,
+                            level: 1,
+                            xp: 0,
+                            stats: {
+                              hunger: 100,
+                              happiness: 100,
+                              energy: 100,
+                              cleanliness: 100,
+                              pottyProgress: 0,
+                            },
+                            lifeStage: "PUPPY",
+                          };
+                          window.localStorage.setItem(
+                            DOG_STORAGE_KEY,
+                            JSON.stringify(dog),
+                          );
+                          // small delay to show animation
+                          setTimeout(() => {
+                            navigate("/game");
+                          }, 800);
+                        } catch (err) {
+                          console.error("Adopt flow failed", err);
+                        }
+                      }
+                    }}
+                    className="w-64 rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                    placeholder="Name your pup"
+                  />
+                ) : (
+                  <button
+                    onClick={() => setNaming(true)}
+                    className="rounded-md border border-zinc-800 px-3 py-2 text-sm text-zinc-200"
+                  >
+                    Name your pup
+                  </button>
+                )}
               </div>
             </div>
-          </div>
-        </section>
-      </div>
-
-      {/* Header + footer are already handled somewhere else in your app. */}
-    </main>
+          </section>
+        </div>
+      </PageContainer>
+      <HowItWorksModal
+        open={showHowItWorks}
+        onClose={() => setShowHowItWorks(false)}
+      />
+    </>
   );
 }

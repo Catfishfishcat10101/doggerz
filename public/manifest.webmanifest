@@ -1,5 +1,7 @@
 {
-  "name": "Doggerz – Virtual Pup Simulator",
+  "id": "/doggerz-pwa",
+  "scope": "/",
+  "name": "Doggerz Virtual Pup Simulator",
   "short_name": "Doggerz",
   "description": "Adopt, care for, and level up your virtual pup over real time.",
   "start_url": "/",
@@ -9,14 +11,44 @@
   "theme_color": "#10b981",
   "icons": [
     {
-      "src": "/icons/doggerz-192.svg",
+      "src": "/doggerz-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/doggerz-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/doggerz-maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/doggerz-192.svg",
       "sizes": "any",
       "type": "image/svg+xml"
     },
     {
-      "src": "/icons/doggerz-512.svg",
+      "src": "/doggerz-512.svg",
       "sizes": "any",
       "type": "image/svg+xml"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/splash.png",
+      "sizes": "540x960",
+      "type": "image/png",
+      "label": "Doggerz splash screen"
+    },
+    {
+      "src": "/screenshots/game.png",
+      "sizes": "540x960",
+      "type": "image/png",
+      "label": "Doggerz main game"
     }
   ]
 }

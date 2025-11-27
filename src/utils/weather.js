@@ -1,16 +1,12 @@
 // src/utils/weather.js
+// Doggerz: Utility for time-of-day, moon, and ambient weather logic.
+// Usage: getTimeOfDay(), shouldHowlAtMoon(), getAmbientWeatherHint()
 // @ts-nocheck
 
 /**
- * Time-of-day buckets tuned for vibe, not astronomy.
- *
- * Returns one of:
- *  - "night"
- *  - "dawn"
- *  - "morning"
- *  - "afternoon"
- *  - "dusk"
- *  - "evening"
+ * Returns a time-of-day bucket for a given date/time.
+ * @param {Date|number} [dateLike]
+ * @returns {"night"|"dawn"|"morning"|"afternoon"|"dusk"|"evening"}
  */
 export function getTimeOfDay(dateLike) {
   try {
@@ -23,7 +19,7 @@ export function getTimeOfDay(dateLike) {
 
     const hour = d.getHours(); // 0–23
 
-    // 00:00–04:59 → deep night
+    // 00:00–04:59 → night
     if (hour < 5) return "night";
 
     // 05:00–06:59 → dawn
@@ -57,6 +53,9 @@ export function getTimeOfDay(dateLike) {
  *
  * You can replace this later with a real moon-phase API
  * and keep the interface the same.
+ *
+ * @param {string} [timeOfDay] Optional bucket from getTimeOfDay()
+ * @returns {boolean}
  */
 export function shouldHowlAtMoon(timeOfDay) {
   const tod = timeOfDay || getTimeOfDay();
@@ -98,8 +97,8 @@ export function shouldHowlAtMoon(timeOfDay) {
 }
 
 /**
- * Optional helper if later you want ambient weather state.
- * For now it's just a placeholder for future expansion.
+ * Returns a string hint for ambient weather based on time of day.
+ * @returns {string}
  */
 export function getAmbientWeatherHint() {
   const tod = getTimeOfDay();

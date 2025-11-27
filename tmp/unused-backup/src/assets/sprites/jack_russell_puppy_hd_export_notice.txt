@@ -1,0 +1,21 @@
+This folder contains the HD SVG prototype `jack_russell_puppy_hd.svg`.
+
+To produce a pixel-art PNG spritesheet suitable for the game's sprite engine:
+
+1. Rasterize the SVG at 2048x128 (16 frames of 128x128) or 2048x128 depending on layout.
+   - For a 16-frame horizontal strip: width = 16 * 128 = 2048, height = 128.
+   - Use nearest-neighbor (no anti-alias) if you want a pixel-art look.
+
+2. Save as `jack_russell_puppy_hd.png` in this same folder.
+
+3. The app prefers `jack_russell_puppy_hd.png` automatically if present.
+
+Recommended commands using ImageMagick (WSL / bash):
+
+   convert -background none jack_russell_puppy_hd.svg -resize 2048x128 -filter point -resize 2048x128 jack_russell_puppy_hd.png
+
+Or using rsvg-convert:
+
+   rsvg-convert -w 2048 -h 128 jack_russell_puppy_hd.svg -o jack_russell_puppy_hd.png
+
+Note: After placing the PNG, restart the dev server to ensure Vite picks up the new asset.

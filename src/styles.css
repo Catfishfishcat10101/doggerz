@@ -2,7 +2,7 @@
 /* -------------------------------------------------------
    Doggerz global theme + layout helpers
    - No Tailwind directives here (they live in index.css)
-   - Pure CSS, PostCSS-safe, no markdown, no HTML comments
+   - Pure CSS, PostCSS-safe
 ------------------------------------------------------- */
 
 /* -------------------------------------------------------
@@ -14,7 +14,7 @@
   --stage-w: 960px;
   --stage-h: 480px;
   --sprite-size: 128px;
-  --sprite-scale: 2; /* 128px → 256px render */
+  --sprite-scale: 2;
   --sprite-frames: 16;
   --sprite-fps-slow: 8;
   --sprite-fps-normal: 12;
@@ -44,11 +44,11 @@
   --ease-pop: cubic-bezier(0.25, 1, 0.5, 1);
 
   /* Color tokens (dark theme default) */
-  --bg: #020617; /* app background (slate-950-ish) */
-  --bg-elevated: #020617; /* shell background */
-  --surf: #020617; /* deep slate */
+  --bg: #020617;
+  --bg-elevated: #020617;
+  --surf: #020617;
   --surf-soft: #020617;
-  --surf-bright: #0b1120; /* panel background */
+  --surf-bright: #0b1120;
 
   --border-subtle: rgba(148, 163, 184, 0.35);
   --border-strong: rgba(148, 163, 184, 0.65);
@@ -56,12 +56,14 @@
   --text-main: #e5e7eb;
   --text-soft: #9ca3af;
   --text-muted: #6b7280;
-  --text-accent: #f97316;
+  --text-accent: #22c55e;
 
-  --accent: #f97316; /* orange-500 */
-  --accent-soft: rgba(249, 115, 22, 0.16);
-  --accent-strong: #ea580c; /* orange-600 */
+  /* Primary Doggerz accent = emerald */
+  --accent: #22c55e;
+  --accent-soft: rgba(34, 197, 94, 0.16);
+  --accent-strong: #16a34a;
 
+  /* Semantic accents */
   --danger: #ef4444;
   --success: #22c55e;
   --warning: #facc15;
@@ -72,13 +74,13 @@
     circle at top,
     #1e293b 0,
     #020617 55%,
-    #000 100%
+    #000000 100%
   );
   --grad-panel: linear-gradient(
-    145deg,
-    rgba(15, 23, 42, 0.96),
-    rgba(15, 23, 42, 0.9),
-    rgba(15, 23, 42, 0.96)
+    140deg,
+    rgba(15, 23, 42, 0.98),
+    rgba(15, 23, 42, 0.94),
+    rgba(15, 23, 42, 0.98)
   );
 
   /* Glass */
@@ -90,7 +92,7 @@
   --scroll-thumb: #27272a;
 }
 
-/* Optional light mode (if you ever flip data-theme="light") */
+/* Optional light mode */
 [data-theme="light"] {
   --bg: #e5e7eb;
   --bg-elevated: #f3f4f6;
@@ -104,11 +106,11 @@
   --text-main: #020617;
   --text-soft: #4b5563;
   --text-muted: #6b7280;
-  --text-accent: #c2410c;
+  --text-accent: #16a34a;
 
-  --accent: #ea580c;
-  --accent-soft: rgba(234, 88, 12, 0.12);
-  --accent-strong: #9a3412;
+  --accent: #16a34a;
+  --accent-soft: rgba(22, 163, 74, 0.12);
+  --accent-strong: #15803d;
 
   --scroll-track: #e5e7eb;
   --scroll-thumb: #9ca3af;
@@ -150,8 +152,8 @@
   border-radius: var(--radius-lg);
   background: radial-gradient(
     circle at top left,
-    rgba(15, 23, 42, 0.9),
-    rgba(15, 23, 42, 0.98)
+    rgba(15, 23, 42, 0.94),
+    rgba(15, 23, 42, 0.99)
   );
   border: 1px solid var(--border-subtle);
   box-shadow: var(--shadow-subtle);
@@ -183,7 +185,6 @@
   align-items: stretch;
 }
 
-/* Small screens: stack vertically */
 @media (max-width: 900px) {
   .doggerz-main {
     grid-template-columns: minmax(0, 1fr);
@@ -203,7 +204,7 @@
   gap: 0.5rem;
 }
 
-/* Right: side panel (stats, tabs, etc.) */
+/* Right: side panel */
 .doggerz-side-panel {
   border-radius: var(--radius-xl);
   background: radial-gradient(
@@ -219,7 +220,7 @@
   gap: 0.5rem;
 }
 
-/* Scrollable content area inside pages (Adopt, Login, etc.) */
+/* Scrollable content area inside pages */
 .doggerz-scroll-page {
   min-height: calc(100vh - 3.5rem);
   padding: 1rem;
@@ -246,7 +247,7 @@
     circle at bottom,
     #0f172a 0,
     #020617 60%,
-    #000 100%
+    #000000 100%
   );
   border: 1px solid rgba(148, 163, 184, 0.25);
 }
@@ -268,7 +269,7 @@
   padding-bottom: 1.25rem;
 }
 
-/* Pixelated helper class for <img> or <canvas> */
+/* Pixelated helper */
 .pixelated {
   image-rendering: pixelated;
 }
@@ -294,7 +295,6 @@
   padding: 0.75rem 0.9rem;
 }
 
-/* Card header row */
 .dz-card__header {
   display: flex;
   align-items: center;
@@ -322,7 +322,7 @@
     var(--accent),
     var(--accent-strong)
   );
-  color: #fefce8;
+  color: #f0fdf4;
   font-size: 0.875rem;
   font-weight: 600;
   letter-spacing: 0.02em;
@@ -333,12 +333,12 @@
     border-color var(--dur-fast) var(--ease-soft),
     background var(--dur-fast) var(--ease-soft),
     opacity var(--dur-fast) linear;
-  box-shadow: 0 10px 25px rgba(249, 115, 22, 0.45);
+  box-shadow: 0 10px 25px rgba(34, 197, 94, 0.45);
 }
 
 .dz-btn:hover {
   transform: translateY(-1px) scale(1.01);
-  box-shadow: 0 14px 30px rgba(249, 115, 22, 0.55);
+  box-shadow: 0 14px 30px rgba(34, 197, 94, 0.6);
 }
 
 .dz-btn:active {
@@ -358,14 +358,12 @@
   background: rgba(15, 23, 42, 0.95);
 }
 
-/* Smaller pill button for HUD */
 .dz-btn--pill {
   padding-inline: 0.7rem;
   padding-block: 0.3rem;
   font-size: 0.75rem;
 }
 
-/* Disabled state */
 .dz-btn[disabled],
 .dz-btn--disabled {
   opacity: 0.6;
@@ -446,7 +444,7 @@
 }
 
 /* -------------------------------------------------------
-   Custom scrollbar (matches tokens)
+   Custom scrollbar
 ------------------------------------------------------- */
 
 ::-webkit-scrollbar {
@@ -463,7 +461,6 @@
   background: var(--scroll-thumb);
 }
 
-/* Firefox scrollbar */
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--scroll-thumb) var(--scroll-track);

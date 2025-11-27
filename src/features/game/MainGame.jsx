@@ -1,7 +1,13 @@
 // src/features/game/MainGame.jsx
 // @ts-nocheck
 
-import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+  useCallback,
+  useRef,
+} from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   selectDog,
@@ -21,12 +27,12 @@ import {
   setAdoptedAt,
   setDogName,
 } from "@/redux/dogSlice.js";
-import EnhancedDogSprite from "@/components/EnhancedDogSprite.jsx";
+import EnhancedDogSprite from "@/features/game/components/EnhancedDogSprite.jsx";
 import { getTimeOfDay } from "@/utils/weather.js";
 import { CLEANLINESS_TIER_EFFECTS } from "@/constants/game.js";
-import { useDogLifecycle } from "@/features/game/useDogLifecycle.jsx";
-import GameTopBar from "@/components/GameTopBar.jsx";
-import useDayNightBackground from "@/features/game/useDayNightBackground.jsx";
+import { useDogLifecycle } from "@/features/game/hooks/useDogLifecycle.jsx";
+import GameTopBar from "@/features/game/components/GameTopBar.jsx";
+import useDayNightBackground from "@/features/game/hooks/useDayNightBackground.jsx";
 import { selectUser } from "@/redux/userSlice.js";
 
 const TIME_OVERLAY = {
@@ -38,8 +44,7 @@ const TIME_OVERLAY = {
   dusk: "linear-gradient(180deg, rgba(255,164,119,0.4) 0%, rgba(2,6,23,0.8) 100%)",
   evening:
     "linear-gradient(180deg, rgba(15,23,42,0.2) 0%, rgba(2,6,23,0.85) 100%)",
-  night:
-    "linear-gradient(180deg, rgba(2,6,23,0.4) 0%, rgba(0,0,0,0.9) 100%)",
+  night: "linear-gradient(180deg, rgba(2,6,23,0.4) 0%, rgba(0,0,0,0.9) 100%)",
 };
 
 /**
@@ -54,7 +59,9 @@ export default function MainGame() {
   const dog = useSelector(selectDog);
   const lifeStage = useSelector(selectDogLifeStage);
   const userZip = user?.zip || undefined;
-  const { style: yardBackgroundStyle } = useDayNightBackground({ zip: userZip });
+  const { style: yardBackgroundStyle } = useDayNightBackground({
+    zip: userZip,
+  });
   const cleanlinessTier = useSelector(selectDogCleanlinessTier);
   const pollState = useSelector(selectDogPolls);
   const training = useSelector(selectDogTraining);
@@ -83,9 +90,13 @@ export default function MainGame() {
 
   const trainingState = training || {};
   const pottyTraining = trainingState.potty || {};
-  const pottyGoal = pottyTraining.goal || 0;
-  const pottySuccess = pottyTraining.successCount || 0;
-  const pottyTrainingComplete = Boolean(pottyTraining.completedAt);
+  // Backwards-compatible: older state uses { successes, attempts }
+  const pottyGoal = pottyTraining.goal ?? 8;
+  const pottySuccess =
+    pottyTraining.successes ?? pottyTraining.successCount ?? 0;
+  const pottyTrainingComplete = Boolean(
+    pottyTraining.completedAt || pottySuccess >= pottyGoal,
+  );
   const pottyProgress = pottyGoal
     ? Math.min(1, pottySuccess / pottyGoal)
     : pottyTrainingComplete
@@ -106,7 +117,7 @@ export default function MainGame() {
   const moodLabel = dog?.mood?.label || "Calibrating vibe…";
   const needs = useMemo(
     () => ({ hunger, happiness, energy, cleanliness }),
-    [hunger, happiness, energy, cleanliness]
+    [hunger, happiness, energy, cleanliness],
   );
 
   const poopCount = dog?.poopCount ?? 0;
@@ -132,8 +143,7 @@ export default function MainGame() {
   const cleanlinessLabel =
     cleanlinessDetails.label || cleanlinessTier || "Fresh";
   const cleanlinessSummary =
-    cleanlinessDetails.journalSummary ||
-    "Freshly pampered and glowing.";
+    cleanlinessDetails.journalSummary || "Freshly pampered and glowing.";
 
   const overlayStyle = {
     background: TIME_OVERLAY[timeOfDay] || TIME_OVERLAY.afternoon,
@@ -172,7 +182,7 @@ export default function MainGame() {
     const updateCountdown = () => {
       const remaining = Math.max(
         0,
-        Math.round((activePoll.expiresAt - Date.now()) / 1000)
+        Math.round((activePoll.expiresAt - Date.now()) / 1000),
       );
       setPollCountdown(remaining);
     };
@@ -206,12 +216,9 @@ export default function MainGame() {
     }
 
     setReminderToast(
-      "Adult training overdue — run a command to keep streaks alive."
+      "Adult training overdue — run a command to keep streaks alive.",
     );
-    reminderTimeoutRef.current = setTimeout(
-      () => setReminderToast(null),
-      6000
-    );
+    reminderTimeoutRef.current = setTimeout(() => setReminderToast(null), 6000);
   }, [
     isAdopted,
     isPuppy,
@@ -244,7 +251,7 @@ export default function MainGame() {
             play({
               now,
               timeOfDay: timeOfDay === "morning" ? "MORNING" : "DAY",
-            })
+            }),
           );
           acknowledge("Zoomies achieved!");
           break;
@@ -276,7 +283,7 @@ export default function MainGame() {
               success: true,
               xp: 8,
               now,
-            })
+            }),
           );
           acknowledge("Practiced SIT command.");
           break;
@@ -284,7 +291,7 @@ export default function MainGame() {
           break;
       }
     },
-    [dispatch, dog, acknowledge, timeOfDay]
+    [dispatch, dog, acknowledge, timeOfDay],
   );
 
   const handlePollResponse = useCallback(
@@ -294,10 +301,10 @@ export default function MainGame() {
           accepted,
           reason: accepted ? "ACCEPT" : "DECLINE",
           now: Date.now(),
-        })
+        }),
       );
     },
-    [dispatch]
+    [dispatch],
   );
 
   const handleQuickAdopt = useCallback(() => {
@@ -368,12 +375,10 @@ export default function MainGame() {
           {/* Yard status strip */}
           <div className="relative z-10 flex justify-between items-center px-4 py-2 text-[0.7rem] bg-zinc-950/70 border-t border-zinc-800">
             <span className="text-zinc-400">
-              Potty:{" "}
-              <span className="text-zinc-100">{pottyStatusLabel}</span>
+              Potty: <span className="text-zinc-100">{pottyStatusLabel}</span>
             </span>
             <span className="text-zinc-400">
-              Yard:{" "}
-              <span className="text-zinc-100">{yardStatusLabel}</span>
+              Yard: <span className="text-zinc-100">{yardStatusLabel}</span>
             </span>
           </div>
         </div>
@@ -388,26 +393,37 @@ export default function MainGame() {
                 {cleanlinessLabel}
               </span>
             </p>
-            <p className="text-[0.7rem] text-zinc-500">
-              {cleanlinessSummary}
-            </p>
+            <p className="text-[0.7rem] text-zinc-500">{cleanlinessSummary}</p>
+          </div>
+
+          {/* Potty training progress */}
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-zinc-400">Potty Training</span>
+              <span className="text-xs font-semibold text-zinc-100">
+                {Math.round(pottyProgress * 100)}%
+              </span>
+            </div>
+            <div className="h-3 bg-zinc-800 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-emerald-500 transition-all"
+                style={{ width: `${Math.round(pottyProgress * 100)}%` }}
+              />
+            </div>
+            {pottyTrainingComplete && (
+              <div className="mt-2 text-[0.7rem] text-emerald-300">
+                Potty training complete — accidents reduced.
+              </div>
+            )}
           </div>
 
           {/* Stat bars */}
           <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4 space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <StatBar label="Hunger" value={hunger} color="amber" inverse />
-              <StatBar
-                label="Happiness"
-                value={happiness}
-                color="emerald"
-              />
+              <StatBar label="Happiness" value={happiness} color="emerald" />
               <StatBar label="Energy" value={energy} color="blue" />
-              <StatBar
-                label="Cleanliness"
-                value={cleanliness}
-                color="cyan"
-              />
+              <StatBar label="Cleanliness" value={cleanliness} color="cyan" />
             </div>
           </div>
 
@@ -501,7 +517,6 @@ function StatBar({ label, value, color, inverse = false }) {
     blue: "bg-blue-500",
     cyan: "bg-cyan-500",
   };
-
   const barColor = colorMap[color] || "bg-zinc-500";
   const raw = Number.isFinite(value) ? value : 0;
   const displayValue = inverse ? 100 - raw : raw;
@@ -509,13 +524,13 @@ function StatBar({ label, value, color, inverse = false }) {
 
   return (
     <div>
-      <div className="flex justify-between text-xs text-zinc-400 mb-1">
-        <span>{label}</span>
-        <span>{Math.round(raw)}</span>
+      <div className="flex justify-between text-sm text-zinc-300 mb-2">
+        <span className="font-medium">{label}</span>
+        <span className="font-bold text-zinc-100">{Math.round(raw)}</span>
       </div>
-      <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+      <div className="h-3 bg-zinc-800 rounded-full overflow-hidden">
         <div
-          className={`h-full ${barColor} transition-all duration-500`}
+          className={`h-full ${barColor} transition-all duration-500 shadow-md`}
           style={{ width: `${percentage}%` }}
         />
       </div>

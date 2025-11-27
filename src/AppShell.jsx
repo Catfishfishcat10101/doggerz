@@ -1,146 +1,117 @@
 // src/AppShell.jsx
 // @ts-nocheck
 
-import React from "react";
-import {
-  Routes,
-  Route,
-  Navigate,
-  useNavigate,
-  useLocation,
-  Link,
-} from "react-router-dom";
+import React, { Suspense, lazy } from "react";
+import { cssVars } from "@/constants/palette.js";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import AppHeader from "@/features/game/components/AppHeader.jsx";
+import AppFooter from "@/features/game/components/AppFooter.jsx";
+import ProtectedRoute from "@/features/game/components/ProtectedRoute.jsx";
+import ToastProvider from "@/components/ToastProvider.jsx";
+import CloudSyncNotice from "@/components/CloudSyncNotice.jsx";
+import ContributePage from "@/pages/Contribute";
 
-import Splash from "@/pages/Splash.jsx";
-import Landing from "@/pages/Landing.jsx";
-import Adopt from "@/pages/Adopt.jsx";
-import GamePage from "@/pages/Game.jsx";
-import Login from "@/pages/Login.jsx";
-import Signup from "@/pages/Signup.jsx";
-import About from "@/pages/About.jsx";
-import Settings from "@/pages/Settings.jsx";
-import Legal from "@/pages/Legal.jsx";
-import NotFound from "@/pages/NotFound.jsx";
-import Memory from "@/pages/Memory.jsx";
-import Potty from "@/pages/Potty.jsx";
-import Contact from "@/pages/Contact.jsx";
-
-function AppHeader() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const onHome = location.pathname === "/";
-
-  return (
-    <header className="border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-sm sticky top-0 z-50">
-      <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-        <Link to="/" className="flex flex-col leading-none">
-          <span className="text-[10px] uppercase tracking-[0.28em] text-emerald-400/90">
-            Virtual Pup
-          </span>
-          <span className="text-2xl font-extrabold tracking-tight text-white">
-            Doggerz
-          </span>
-        </Link>
-
-        {onHome && (
-          <nav className="flex items-center gap-4">
-            <button
-              onClick={() => navigate("/login")}
-              className="text-sm text-zinc-400 hover:text-white transition"
-            >
-              Login
-            </button>
-            <button
-              onClick={() => navigate("/adopt")}
-              className="rounded-full bg-emerald-500 hover:bg-emerald-400 text-black text-sm font-semibold px-4 py-1.5 transition"
-            >
-              Adopt
-            </button>
-          </nav>
-        )}
-      </div>
-    </header>
-  );
-}
-
-function AppFooter() {
-  const navigate = useNavigate();
-  const year = new Date().getFullYear();
-
-  return (
-    <footer className="border-t border-zinc-800 bg-zinc-950 text-xs text-zinc-500 py-4">
-      <div className="container mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-        <p>© {year} Doggerz. Created by William Johnson.</p>
-        <nav className="flex items-center gap-4">
-          <button
-            onClick={() => navigate("/about")}
-            className="hover:text-zinc-300"
-          >
-            About
-          </button>
-          <button
-            onClick={() => navigate("/contact")}
-            className="hover:text-zinc-300"
-          >
-            Contact
-          </button>
-          <button
-            onClick={() => navigate("/settings")}
-            className="hover:text-zinc-300"
-          >
-            Settings
-          </button>
-          <button
-            onClick={() => navigate("/legal")}
-            className="hover:text-zinc-300"
-          >
-            Terms &amp; Privacy
-          </button>
-        </nav>
-      </div>
-    </footer>
-  );
-}
+// Lazy-loaded pages
+const Splash = lazy(() => import("@/pages/Splash.jsx"));
+const Landing = lazy(() => import("@/pages/Landing.jsx"));
+const Adopt = lazy(() => import("@/pages/Adopt.jsx"));
+const GamePage = lazy(() => import("@/pages/Game.jsx"));
+const Login = lazy(() => import("@/pages/Login.jsx"));
+const Signup = lazy(() => import("@/pages/Signup.jsx"));
+const About = lazy(() => import("@/pages/About.jsx"));
+const Settings = lazy(() => import("@/pages/Settings.jsx"));
+const Legal = lazy(() => import("@/pages/Legal.jsx"));
+const NotFound = lazy(() => import("@/pages/NotFound.jsx"));
+const Memory = lazy(() => import("@/pages/Memory.jsx"));
+const Potty = lazy(() => import("@/pages/Potty.jsx"));
+const Contact = lazy(() => import("@/pages/Contact.jsx"));
 
 export default function AppShell() {
+  const location = useLocation();
+
+  // Prevent auto-activation: Only load protected routes if user navigates there
+  // (React.lazy already prevents loading until navigation, but you can add extra guards if needed)
+
   return (
-    <div className="min-h-screen flex flex-col bg-zinc-950 text-zinc-50">
-      <AppHeader />
+    <ToastProvider>
+      <div className="app-shell flex flex-col min-h-screen">
+        {/* Inject palette CSS variables for components to consume */}
+        <style>{`:root{\n${cssVars()}\n}`}</style>
+        {/* Skip to content link */}
+        <a
+          href="#app-main"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 rounded-md bg-emerald-500 px-4 py-2 text-sm font-semibold text-black shadow-lg"
+        >
+          Skip to main content
+        </a>
 
-      <main className="flex-1">
-        <Routes>
-          {/* Primary entry */}
-          <Route path="/" element={<Splash />} />
+        <AppHeader />
+        <CloudSyncNotice />
 
-          {/* Secondary marketing / info */}
-          <Route path="/landing" element={<Landing />} />
+        <main className="flex-1" id="app-main" aria-label="App main area">
+          <Suspense
+            fallback={
+              <div className="flex items-center justify-center h-screen text-zinc-400">
+                Loading...
+              </div>
+            }
+          >
+            <Routes location={location}>
+              {/* Splash / hero */}
+              <Route path="/" element={<Landing />} />
+              <Route path="/splash" element={<Splash />} />
 
-          {/* Core game flow */}
-          <Route path="/adopt" element={<Adopt />} />
-          <Route path="/game" element={<GamePage />} />
+              {/* Public flows */}
+              <Route path="/adopt" element={<Adopt />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
 
-          {/* Auth */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
+              {/* Protected game routes (only loaded if navigated) */}
+              <Route
+                path="/game"
+                element={
+                  location.pathname === "/game" ? (
+                    <ProtectedRoute>
+                      <GamePage />
+                    </ProtectedRoute>
+                  ) : null
+                }
+              />
+              <Route
+                path="/potty"
+                element={
+                  location.pathname === "/potty" ? (
+                    <ProtectedRoute>
+                      <Potty />
+                    </ProtectedRoute>
+                  ) : null
+                }
+              />
 
-          {/* Extras / sub-screens */}
-          <Route path="/about" element={<About />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/legal" element={<Legal />} />
-          <Route path="/memory" element={<Memory />} />
-          <Route path="/potty" element={<Potty />} />
+              <>
+                {/* existing routes… */}
+                <Route path="/contribute" element={<ContributePage />} />
+                {/* 404 catch-all */}
+                {/* <Route path="*" element={<NotFoundPage />} /> */}
+              </>
 
-          {/* Friendly aliases / redirects */}
-          <Route path="/home" element={<Navigate to="/" replace />} />
-          <Route path="/play" element={<Navigate to="/game" replace />} />
+              {/* Extra pages */}
+              <Route path="/about" element={<About />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/legal" element={<Legal />} />
+              <Route path="/memory" element={<Memory />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/home" element={<Navigate to="/" replace />} />
+              <Route path="/play" element={<Navigate to="/game" replace />} />
 
-          {/* 404 */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </main>
+              {/* 404 */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
+        </main>
 
-      <AppFooter />
-    </div>
+        <AppFooter />
+      </div>
+    </ToastProvider>
   );
 }

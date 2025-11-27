@@ -6,14 +6,12 @@ import { useSelector, useDispatch } from "react-redux";
 import { auth, firebaseReady } from "@/firebase.js";
 import {
   hydrateDog,
-  tickDog,
-  registerSessionStart,
-  tickDogPolls,
+  engineTick,
   selectDog,
   DOG_STORAGE_KEY,
 } from "@/redux/dogSlice.js";
-import { selectWeatherCondition } from "@/redux/weatherSlice.js";
 import { loadDogFromCloud, saveDogToCloud } from "@/redux/dogThunks.js";
+import { loadSettings } from "@/utils/settings.js";
 
 const TICK_INTERVAL_MS = 60_000; // 60 seconds
 const CLOUD_SAVE_DEBOUNCE = 3_000; // 3 seconds
@@ -21,7 +19,6 @@ const CLOUD_SAVE_DEBOUNCE = 3_000; // 3 seconds
 export default function DogAIEngine() {
   const dispatch = useDispatch();
   const dogState = useSelector(selectDog);
-  const weather = useSelector(selectWeatherCondition);
 
   const hasHydratedRef = useRef(false);
   const cloudSaveTimeoutRef = useRef(null);
@@ -33,85 +30,173 @@ export default function DogAIEngine() {
 
     // LocalStorage hydrate
     try {
-      const localData = localStorage.getItem(DOG_STORAGE_KEY);
+      const localData = window.localStorage.getItem(DOG_STORAGE_KEY);
       if (localData) {
         const parsed = JSON.parse(localData);
         dispatch(hydrateDog(parsed));
-        console.log("[Doggerz] Hydrated dog from localStorage");
+        console.info("[Doggerz] Hydrated dog from localStorage");
       }
     } catch (err) {
       console.error("[Doggerz] Failed to parse localStorage dog data", err);
     }
 
-    // Cloud hydrate if logged in at mount time
-    if (firebaseReady && auth?.currentUser) {
-      const thunkPromise = dispatch(loadDogFromCloud());
-
-      // RTK's unwrap if available; fall back to raw promise
-      if (thunkPromise && typeof thunkPromise.unwrap === "function") {
-        thunkPromise.unwrap().catch((err) => {
-          console.error("[Doggerz] Failed to load dog from cloud", err);
+    // Cloud hydrate if logged in at mount time. Respect a local dev flag
+    // `doggerz:cloudDisabled` so permission-denied errors don't spam the console.
+    try {
+      const cloudDisabled = window.localStorage.getItem(
+        "doggerz:cloudDisabled",
+      );
+      if (!cloudDisabled && firebaseReady && auth?.currentUser) {
+        console.debug("[Doggerz] Attempting cloud hydrate", {
+          uid: auth.currentUser?.uid,
         });
-      } else if (thunkPromise?.catch) {
-        thunkPromise.catch((err) => {
-          console.error("[Doggerz] Failed to load dog from cloud", err);
-        });
+        const thunkPromise = dispatch(loadDogFromCloud());
+        if (thunkPromise && typeof thunkPromise.unwrap === "function") {
+          thunkPromise.unwrap().catch((err) => {
+            console.error("[Doggerz] Failed to load dog from cloud", err);
+            try {
+              if (
+                err?.code === "permission-denied" ||
+                String(err?.message || "")
+                  .toLowerCase()
+                  .includes("insufficient permissions")
+              ) {
+                window.localStorage.setItem("doggerz:cloudDisabled", "1");
+                console.warn(
+                  "[Doggerz] Cloud sync disabled due to permission errors",
+                );
+              }
+            } catch (e) {
+              /* ignore */
+            }
+          });
+        } else if (thunkPromise?.catch) {
+          thunkPromise.catch((err) => {
+            console.error("[Doggerz] Failed to load dog from cloud", err);
+            try {
+              if (
+                err?.code === "permission-denied" ||
+                String(err?.message || "")
+                  .toLowerCase()
+                  .includes("insufficient permissions")
+              ) {
+                window.localStorage.setItem("doggerz:cloudDisabled", "1");
+                console.warn(
+                  "[Doggerz] Cloud sync disabled due to permission errors",
+                );
+              }
+            } catch (e) {
+              /* ignore */
+            }
+          });
+        }
       }
+    } catch (e) {
+      // If localStorage is unavailable for any reason, just proceed silently
     }
 
-    // Register session start (catch-up decay, penalties, streak, etc.)
-    dispatch(registerSessionStart({ now: Date.now() }));
+    // Run a single tick to catch up immediately
+    dispatch(engineTick({ now: Date.now() }));
   }, [dispatch]);
 
-  // 1b. If user logs in *after* mount, pull from cloud once
+  // If user logs in after mount, pull from cloud once
   useEffect(() => {
     if (!firebaseReady) return;
     if (!auth?.currentUser) return;
-    if (!hasHydratedRef.current) return; // let the first effect run first
-
-    const thunkPromise = dispatch(loadDogFromCloud());
-
-    if (thunkPromise && typeof thunkPromise.unwrap === "function") {
-      thunkPromise.unwrap().catch((err) => {
-        console.error("[Doggerz] Late cloud load failed", err);
-      });
-    } else if (thunkPromise?.catch) {
-      thunkPromise.catch((err) => {
-        console.error("[Doggerz] Late cloud load failed", err);
-      });
-    }
-
-    // Also count this as a fresh session for decay/streaks
-    dispatch(registerSessionStart({ now: Date.now() }));
-  }, [dispatch, firebaseReady, auth?.currentUser]);
-
-  // 2. Save to localStorage on every dog state change
-  useEffect(() => {
-    if (!dogState || !dogState.adoptedAt) return; // no adopted dog yet
+    if (!hasHydratedRef.current) return;
 
     try {
-      localStorage.setItem(DOG_STORAGE_KEY, JSON.stringify(dogState));
+      const cloudDisabled = window.localStorage.getItem(
+        "doggerz:cloudDisabled",
+      );
+      if (!cloudDisabled) {
+        console.debug("[Doggerz] Attempting late cloud hydrate", {
+          uid: auth.currentUser?.uid,
+        });
+        const thunkPromise = dispatch(loadDogFromCloud());
+        if (thunkPromise && typeof thunkPromise.unwrap === "function") {
+          thunkPromise.unwrap().catch((err) => {
+            console.error("[Doggerz] Late cloud load failed", err);
+            try {
+              if (
+                err?.code === "permission-denied" ||
+                String(err?.message || "")
+                  .toLowerCase()
+                  .includes("insufficient permissions")
+              ) {
+                window.localStorage.setItem("doggerz:cloudDisabled", "1");
+                console.warn(
+                  "[Doggerz] Cloud sync disabled due to permission errors",
+                );
+              }
+            } catch (e) {
+              /* ignore */
+            }
+          });
+        } else if (thunkPromise?.catch) {
+          thunkPromise.catch((err) => {
+            console.error("[Doggerz] Late cloud load failed", err);
+            try {
+              if (
+                err?.code === "permission-denied" ||
+                String(err?.message || "")
+                  .toLowerCase()
+                  .includes("insufficient permissions")
+              ) {
+                window.localStorage.setItem("doggerz:cloudDisabled", "1");
+                console.warn(
+                  "[Doggerz] Cloud sync disabled due to permission errors",
+                );
+              }
+            } catch (e) {
+              /* ignore */
+            }
+          });
+        }
+      }
+    } catch (e) {
+      // ignore localStorage failures
+    }
+
+    // Also run a session tick
+    dispatch(engineTick({ now: Date.now() }));
+  }, [dispatch, firebaseReady, auth?.currentUser]);
+
+  // Save to localStorage on every dog state change
+  useEffect(() => {
+    if (!dogState || !dogState.adoptedAt) return;
+
+    try {
+      window.localStorage.setItem(DOG_STORAGE_KEY, JSON.stringify(dogState));
     } catch (err) {
       console.error("[Doggerz] Failed to save to localStorage", err);
     }
   }, [dogState]);
 
-  // 3. Debounced cloud save whenever dogState changes while logged in
+  // Debounced cloud save whenever dogState changes while logged in
   useEffect(() => {
     if (!dogState || !dogState.adoptedAt) return;
     if (!firebaseReady || !auth?.currentUser) return;
 
-    // Clear existing timeout if any
     if (cloudSaveTimeoutRef.current) {
       clearTimeout(cloudSaveTimeoutRef.current);
     }
 
-    // Schedule new debounced save
     cloudSaveTimeoutRef.current = setTimeout(() => {
+      try {
+        const appSettings = loadSettings();
+        if (!appSettings.allowCloudSync) {
+          console.info(
+            "[Doggerz] Cloud sync disabled by settings; skipping save.",
+          );
+          return;
+        }
+      } catch (e) {
+        // proceed with save if settings cannot be read
+      }
       dispatch(saveDogToCloud());
     }, CLOUD_SAVE_DEBOUNCE);
 
-    // Cleanup on dependency change / unmount
     return () => {
       if (cloudSaveTimeoutRef.current) {
         clearTimeout(cloudSaveTimeoutRef.current);
@@ -119,28 +204,14 @@ export default function DogAIEngine() {
     };
   }, [dogState, dispatch, firebaseReady, auth?.currentUser]);
 
-  // 4. Game loop tick (every 60 seconds → decay + polls)
+  // Game loop tick (every 60 seconds → decay)
   useEffect(() => {
     const intervalId = setInterval(() => {
-      const now = Date.now();
-      dispatch(tickDog({ now }));
-      dispatch(tickDogPolls({ now }));
-      // Simple weather effects (applied once per tick ~60s)
-      if (dogState && dogState.stats) {
-        if (weather === "rain") {
-          dogState.stats.cleanliness = Math.max(
-            0,
-            dogState.stats.cleanliness - 5,
-          );
-        } else if (weather === "snow") {
-          dogState.stats.energy = Math.max(0, dogState.stats.energy - 10);
-        }
-      }
+      dispatch(engineTick({ now: Date.now() }));
     }, TICK_INTERVAL_MS);
 
     return () => clearInterval(intervalId);
-  }, [dispatch, dogState, weather]);
+  }, [dispatch]);
 
-  // Headless "brain" component: never renders UI
   return null;
 }
