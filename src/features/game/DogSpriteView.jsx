@@ -4,7 +4,7 @@
 import React from "react";
 import { useSelector } from "react-redux";
 import { selectDog } from "@/redux/dogSlice.js";
-import EnhancedDogSprite from "@/components/EnhancedDogSprite.jsx";
+import EnhancedDogSprite from "@/features/game/EnhancedDogSprite.jsx";
 
 export default function DogSpriteView() {
   const dog = useSelector(selectDog);

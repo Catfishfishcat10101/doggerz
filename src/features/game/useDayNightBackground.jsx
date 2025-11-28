@@ -48,9 +48,9 @@ export function useDayNightBackground(options = {}) {
     let cancelled = false;
 
     const run = async () => {
-      const apiKey = import.meta.env.VITE_OPENWEATHER_API_KEY;
+      const apiKey = process.env.VITE_OPENWEATHER_API_KEY;
       const effectiveZip =
-        zip || import.meta.env.VITE_WEATHER_DEFAULT_ZIP || "10001"; // NYC fallback
+        zip || process.env.VITE_WEATHER_DEFAULT_ZIP || "10001"; // NYC fallback
 
       // No API key → local-only mode using client clock
       if (!apiKey) {

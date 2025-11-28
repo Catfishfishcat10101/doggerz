@@ -11,10 +11,13 @@
 
 :root {
   /* Stage & sprite tuning */
-  --stage-w: 960px;
-  --stage-h: 480px;
+  --stage-w: 350px;
+  --stage-h: 350px;
   --sprite-size: 128px;
   --sprite-scale: 2; /* 128px → 256px render */
+  /* logical CSS render size (used for stylesheet sizing) */
+  --sprite-render-w: calc(var(--sprite-size) * var(--sprite-scale));
+  --sprite-render-h: calc(var(--sprite-size) * var(--sprite-scale));
   --sprite-frames: 16;
   --sprite-fps-slow: 8;
   --sprite-fps-normal: 12;
@@ -253,9 +256,19 @@
 
 /* Canvas for the dog sprite */
 .doggerz-stage canvas {
-  width: calc(var(--sprite-size) * var(--sprite-scale));
-  height: calc(var(--sprite-size) * var(--sprite-scale));
+  /* CSS visual size (logical pixels). The real drawing buffer must be set in JS */
+  width: var(--sprite-render-w);
+  height: var(--sprite-render-h);
+  display: block; /* avoids inline baseline gaps that can shift sprite */
   image-rendering: pixelated;
+  background: transparent;
+}
+
+/* Mark canvases managed by JS sizing helper */
+.js-managed-canvas {
+  width: var(--sprite-render-w) !important;
+  height: var(--sprite-render-h) !important;
+  display: block;
 }
 
 /* Center sprite on stage by default */

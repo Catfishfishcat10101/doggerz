@@ -2,135 +2,112 @@
 // @ts-nocheck
 
 import React, { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
-import { selectDog } from "@/redux/dogSlice.js";
-import { selectWeatherCondition } from "@/redux/weatherSlice.js";
 
-import { calculateDogAge, getSpriteForLifeStage } from "@/utils/lifecycle.js";
+export default function EnhancedDogSprite({
+    spritePublicPath = "/assets/sprites/jack_russell_puppy.png",
+    alt = "Dog sprite",
+    className = ""
+}) {
+    const [readySrc, setReadySrc] = useState(null);
+    const [errored, setErrored] = useState(false);
 
-const FRAME_SIZE = 96; // legacy horizontal strip width per frame
-const FRAME_COUNT = 8; // legacy frames per animation
-const BASE_FRAME_DURATION_MS = 140; // ~7 FPS
+    useEffect(() => {
+        let cancelled = false;
+        setErrored(false);
+        setReadySrc(null);
 
-export default function EnhancedDogSprite() {
-  const dog = useSelector(selectDog);
-  const weather = useSelector(selectWeatherCondition);
+        const candidates = [
+            spritePublicPath,
+            "/assets/sprites/jack_russell_puppy.png",
+            "/assets/images/jack_russell_puppy.png",
+            "/sprites/jack_russell_puppy.png",
+            "/images/jack_russell_puppy.png"
+        ];
 
-  const [frameIndex, setFrameIndex] = useState(0);
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [hasError, setHasError] = useState(false);
+        let idx = 0;
+        const tried = [];
 
-  if (!dog) {
+        const tryLoad = () => {
+            if (cancelled) return;
+            if (idx >= candidates.length) {
+                setErrored(true);
+                console.error(
+                    "[EnhancedDogSprite] Failed to load sprite after trying paths:\n" +
+                    tried.map(p => `  • ${p}`).join("\n") +
+                    "\n\nQuick checks:\n" +
+                    `  • If you keep assets in /public, ensure the file exists at public${candidates[0]} and then restart Vite.\n` +
+                    `  • Open one of these URLs in your browser (e.g. http://localhost:5173${candidates[0]}) to see the HTTP response.\n` +
+                    "  • Alternatively, import the image from src/assets and pass its imported path into EnhancedDogSprite."
+                );
+                return;
+            }
+
+            const url = candidates[idx++];
+            tried.push(url);
+            const img = new Image();
+            img.decoding = "async";
+            img.src = url;
+
+            img.onload = () => {
+                if (cancelled) return;
+                setReadySrc(url);
+                console.info("[EnhancedDogSprite] loaded sprite:", url);
+            };
+
+            img.onerror = (ev) => {
+                if (cancelled) return;
+                // log per-attempt as debug to avoid spamming console during normal dev
+                console.debug("[EnhancedDogSprite] attempt failed:", url, ev?.message ?? ev);
+                setTimeout(tryLoad, 30);
+            };
+        };
+
+        tryLoad();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [spritePublicPath]);
+
+    if (errored) {
+        return (
+            <div
+                className={`flex h-full w-full items-center justify-center bg-slate-900 text-zinc-500 ${className}`}
+                role="img"
+                aria-label="sprite placeholder"
+            >
+                <svg width="72" height="72" viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <rect x="1" y="1" width="22" height="22" rx="4" stroke="rgba(148,163,184,0.12)" strokeWidth="1.5" fill="rgba(15,23,42,0.4)" />
+                    <path d="M7 14s1.5-3 5-3 5 3 5 3" stroke="rgba(148,163,184,0.6)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                    <circle cx="9.5" cy="10" r="1.1" fill="rgba(148,163,184,0.6)" />
+                    <circle cx="14.5" cy="10" r="1.1" fill="rgba(148,163,184,0.6)" />
+                </svg>
+            </div>
+        );
+    }
+
+    if (!readySrc) {
+        return (
+            <div className={`flex h-full w-full items-center justify-center ${className}`} aria-hidden>
+                <div className="h-6 w-6 animate-pulse rounded-full bg-emerald-400/30" />
+            </div>
+        );
+    }
+
     return (
-      <p className="text-xs text-zinc-400">
-        No pup yet. Adopt one to bring this area to life.
-      </p>
-    );
-  }
-
-  const adoptedAt = dog.adoptedAt ?? dog.createdAt ?? null;
-  const ageInfo = adoptedAt ? calculateDogAge(adoptedAt) : null;
-  const stageId = ageInfo?.stageId ?? "PUPPY";
-
-  const spriteSrc = getSpriteForLifeStage(stageId);
-
-  // Senior slowdown 0.8x speed => longer frame duration
-  const frameDuration = (() => {
-    if (!dog) return BASE_FRAME_DURATION_MS;
-    const adoptedAt = dog.adoptedAt ?? dog.createdAt ?? Date.now();
-    const ageInfo = calculateDogAge(adoptedAt);
-    const stageId = ageInfo?.stageId ?? "PUPPY";
-    if (stageId === "SENIOR") return Math.round(BASE_FRAME_DURATION_MS * 1.25); // slower
-    return BASE_FRAME_DURATION_MS;
-  })();
-
-  useEffect(() => {
-    const id = setInterval(
-      () => setFrameIndex((prev) => (prev + 1) % FRAME_COUNT),
-      frameDuration,
-    );
-    return () => clearInterval(id);
-  }, [frameDuration]);
-
-  if (!spriteSrc) {
-    return (
-      <p className="text-xs text-zinc-400">
-        Sprite not configured for stage {stageId}. Check
-        getSpriteForLifeStage().
-      </p>
-    );
-  }
-
-  return (
-    <div className="relative w-full h-full flex items-center justify-center">
-      {!isLoaded && !hasError && (
-        <div className="absolute inset-0 flex items-center justify-center text-xs text-zinc-500">
-          Loading sprite…
-        </div>
-      )}
-
-      {hasError && (
-        <div className="absolute inset-0 flex items-center justify-center text-xs text-red-400">
-          Couldn&apos;t load sprite. Check image path in lifecycle.js.
-        </div>
-      )}
-
-      <div className="relative w-24 h-24 overflow-hidden rounded-xl bg-zinc-900/80 shadow-lg">
         <img
-          src={spriteSrc}
-          alt={dog.name || "Your pup"}
-          className="absolute top-0 left-0"
-          style={{
-            height: FRAME_SIZE,
-            width: "auto",
-            transform: `translateX(${-frameIndex * FRAME_SIZE}px)`,
-          }}
-          onLoad={() => setIsLoaded(true)}
-          onError={() => {
-            setHasError(true);
-            setIsLoaded(true);
-          }}
+            src={readySrc}
+            alt={alt}
+            // ensure the sprite image is constrained to the parent box (uses Tailwind)
+            className={`block h-full w-full object-contain ${className}`}
+            draggable={false}
+            onError={(e) => {
+                // Extra safety: if img fails after being set, show placeholder next render
+                console.error("[EnhancedDogSprite] img.onerror fired after readySrc set", readySrc, e);
+                setErrored(true);
+            }}
         />
-        {/* Weather overlay layers */}
-        {weather === "rain" && (
-          <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            <style>{`@keyframes rainDrop {0%{transform:translateY(-120%);}100%{transform:translateY(120%);}}`}</style>
-            {Array.from({ length: 18 }).map((_, i) => (
-              <div
-                key={i}
-                className="absolute bg-emerald-300/40"
-                style={{
-                  top: "-10%",
-                  left: `${(i * 100) / 18}%`,
-                  width: "2px",
-                  height: "24px",
-                  animation: `rainDrop ${1.6 + (i % 5) * 0.2}s linear ${(i % 7) * 0.15}s infinite`,
-                }}
-              />
-            ))}
-          </div>
-        )}
-        {weather === "snow" && (
-          <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            <style>{`@keyframes snowFall {0%{transform:translateY(-20%) scale(1);}100%{transform:translateY(110%) scale(0.9);}}`}</style>
-            {Array.from({ length: 14 }).map((_, i) => (
-              <div
-                key={i}
-                className="absolute rounded-full bg-zinc-100/80"
-                style={{
-                  top: "-10%",
-                  left: `${(i * 100) / 14}%`,
-                  width: `${4 + (i % 3)}px`,
-                  height: `${4 + (i % 3)}px`,
-                  animation: `snowFall ${3 + (i % 4) * 0.6}s linear ${(i % 5) * 0.3}s infinite`,
-                }}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
+    );
 }
 
 EnhancedDogSprite.displayName = "EnhancedDogSprite";

@@ -86,4 +86,47 @@ export function getSpriteForLifeStage(stageId) {
       return "/sprites/jack_russell_senior.png";
   }
 }
-// End of src/utils/lifecycle.js
+
+/*
+  Helper: getSpriteForStageAndTier
+  - Accepts either (stageKey, cleanlinessTier) or a dog-like object:
+      getSpriteForStageAndTier('PUPPY', 'FRESH')
+      getSpriteForStageAndTier({ stage: 'ADULT', cleanlinessTier: 'DIRTY' })
+  - Returns a string path to the spritesheet (adjust paths to your public/assets layout).
+*/
+export function getSpriteForStageAndTier(stageOrObj, cleanlinessTier) {
+  // Resolve inputs
+  let stageKey;
+  let tier = cleanlinessTier;
+
+  if (stageOrObj && typeof stageOrObj === "object") {
+    stageKey =
+      stageOrObj.stage ||
+      stageOrObj.lifeStage ||
+      (stageOrObj.lifeStage && stageOrObj.lifeStage.stage) ||
+      stageOrObj.stageKey;
+    tier =
+      tier ||
+      stageOrObj.cleanlinessTier ||
+      stageOrObj.cleanliness ||
+      stageOrObj.tier;
+  } else {
+    stageKey = stageOrObj;
+  }
+
+  stageKey = String(stageKey || "PUPPY").toUpperCase().trim();
+  tier = String(tier || "FRESH").toUpperCase().trim();
+
+  // Simple mapping — adjust to your actual asset locations
+  const SPRITES = {
+    PUPPY: "/assets/sprites/jack_russell_puppy.png",
+    ADULT: "/assets/sprites/jack_russell_adult.png",
+    SENIOR: "/assets/sprites/jack_russell_senior.png",
+  };
+
+  // Choose sprite by stage (fallback to puppy)
+  const src = SPRITES[stageKey] || SPRITES.PUPPY;
+
+  // Return string path; component can import or use fetch depending on asset pipeline
+  return src;
+}

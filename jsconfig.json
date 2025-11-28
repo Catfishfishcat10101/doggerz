@@ -5,19 +5,28 @@
     "paths": { "@/*": ["src/*"] },
     "checkJs": true,
     "noEmit": true,
-    "module": "esnext",
-    "target": "es2022",
-    "moduleResolution": "bundler",
+    // Use ES module target that supports import.meta and Node-style resolution
+    "module": "Node16",
+    "target": "ES2022",
+    "moduleResolution": "node16",
     "resolveJsonModule": true,
-    "allowSyntheticDefaultImports": true,
+    "allowSyntheticDefaultImports": false,
+    // Keep helpful ambient types for editor but avoid auto-acquisition noise
     "types": ["vite/client", "node"]
   },
+
+  // Prevent the TS server from trying to auto-install many @types packages
+  "typeAcquisition": {
+    "enable": false
+  },
+
   "include": [
     "src/**/*",
     "vite.config.*",
     "tailwind.config.*",
     "postcss.config.js",
-    "game"
+    "game",
+    "server",
+    "scripts"
   ],
-  "exclude": ["node_modules", "dist", "build"]
 }

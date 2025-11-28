@@ -13,17 +13,19 @@ const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 // Core assets to pre-cache on install.
 // These paths are from the *public* root.
 const CORE_ASSETS = [
-  "/",
-  "/index.html",
-  "/manifest.webmanifest",
-  "/favicon.ico",
+  '/',
+  '/index.html',
+  '/manifest.webmanifest',
+  '/favicon.ico',
 
   // Icons (adjust to whatever icons you actually have)
-  "/icons/icon-192x192.png",
-  "/icons/icon-512x512.png",
+  '/icons/icon-192x192.png',
+  '/icons/icon-512x512.png',
 
   // Sprite sheet
-  "/sprites/jack_russell_directions.png",
+  '/sprites/jack_russell_puppy.png',
+  'public/sprites/jack_russell_adult.png',
+  'public/sprites/jack_russell_directions.png',
 ];
 
 /* -------------------------------------------------------

@@ -1,5 +1,5 @@
 // src/features/game/components/PottyTrackerCard.jsx
-import React from "react";
+import * as React from "react";
 
 /**
  * Potty + cleanliness + yard status card

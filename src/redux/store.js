@@ -2,18 +2,15 @@
 // @ts-nocheck
 
 import { configureStore } from "@reduxjs/toolkit";
-import dogReducer from "./dogSlice.js";
-import userReducer from "./userSlice.js";
-import weatherReducer from "./weatherSlice.js";
+// use your real reducers — these paths match the project's conventions
+import dogReducer from "@/redux/dogSlice.js";
+import userReducer from "@/redux/userSlice.js";
 
-export const store = configureStore({
+const store = configureStore({
   reducer: {
     dog: dogReducer,
-    user: userReducer, // 👈 this MUST be "user" for selectUser(state).user to work
-    weather: weatherReducer,
+    user: userReducer,
   },
 });
 
-// Optional: type helpers if you decide to add TS later
-// export const RootState = store.getState;
-// export const AppDispatch = store.dispatch;
+export default store;

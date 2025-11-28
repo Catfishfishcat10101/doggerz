@@ -1,32 +1,32 @@
-// src/routes.js
+import * as React from 'react';
 
-// Central place for all route paths so components don't hard-code strings.
-export const PATHS = {
-  // Landing / marketing
-  HOME: "/", // you can point this to <SplashPage /> or <Home /> in your router
-  SPLASH: "/splash", // optional separate splash if you want both
+// Lazy-load the real MainGame (relative path ensures Vite resolves it)
+const MainGame = React.lazy(() => import('./features/game/MainGame.jsx'));
 
-  // Core game flows
-  ADOPT: "/adopt",
-  GAME: "/game",
-  PLAY: "/play", // reserved for minigames / playground if you use it later
+// Simple placeholders built with createElement so this file stays valid .js (no JSX).
+const AdoptPlaceholder = () =>
+  React.createElement(
+    'div',
+    { className: 'p-6 text-zinc-50' },
+    React.createElement('h2', { className: 'text-lg font-semibold' }, 'Adopt'),
+    React.createElement(
+      'p',
+      { className: 'text-zinc-400' },
+      'Adoption flow will appear here.'
+    )
+  );
 
-  // Auth
-  LOGIN: "/login",
-  SIGNUP: "/signup",
+const simple = (text) =>
+  React.createElement('div', { className: 'p-6 text-zinc-50' }, text);
 
-  // Info / meta
-  ABOUT: "/about",
-  CONTACT: "/contact",
-  SETTINGS: "/settings",
-  LEGAL: "/legal",
-  GUIDE: "/guide", // "Read the full care guide →" link on Home/Splash
+export const routes = [
+  { path: '/', name: 'Home', meta: { title: 'Home' } },
+  { path: '/adopt', name: 'Adopt', meta: { title: 'Adopt a Pup' } },
+  { path: '/game', name: 'Game', meta: { title: 'Your Yard' } },
+  { path: '/login', name: 'Login', meta: { title: 'Login' } },
+  { path: '/signup', name: 'Signup', meta: { title: 'Sign up' } },
+  { path: '/about', name: 'About', meta: { title: 'About Doggerz' } },
+  { path: '/settings', name: 'Settings', meta: { title: 'Settings' } },
+];
 
-  // Dog systems
-  MEMORY: "/memory", // future dog journal / memory log page
-  POTTY: "/potty",
-  AFFECTION: "/affection",
-  TEMPERAMENT_REVEAL: "/temperament",
-};
-
-export default PATHS;
+export default routes;

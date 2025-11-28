@@ -21,13 +21,17 @@ import {
   setAdoptedAt,
   setDogName,
 } from "@/redux/dogSlice.js";
-import EnhancedDogSprite from "@/components/EnhancedDogSprite.jsx";
+import EnhancedDogSprite from "@/features/game/EnhancedDogSprite.jsx";
 import { getTimeOfDay } from "@/utils/weather.js";
 import { CLEANLINESS_TIER_EFFECTS } from "@/constants/game.js";
 import { useDogLifecycle } from "@/features/game/useDogLifecycle.jsx";
-import GameTopBar from "@/components/GameTopBar.jsx";
+import GameTopBar from "@/features/game/GameTopBar.jsx";
 import useDayNightBackground from "@/features/game/useDayNightBackground.jsx";
 import { selectUser } from "@/redux/userSlice.js";
+import ErrorBoundary from "@/features/game/ErrorBoundary.jsx";
+
+// Debug helpers: Logs to help identify why MainGame might not render.
+// Remove or silence these once the issue is resolved.
 
 const TIME_OVERLAY = {
   dawn: "linear-gradient(180deg, rgba(255,209,143,0.5) 0%, rgba(15,23,42,0.7) 100%)",
@@ -48,6 +52,8 @@ const TIME_OVERLAY = {
  * - Right: stats + basic care actions
  */
 export default function MainGame() {
+  const [renderError, setRenderError] = useState(null);
+
   const dispatch = useDispatch();
   const { temperamentRevealReady } = useDogLifecycle();
   const user = useSelector(selectUser);
@@ -58,6 +64,46 @@ export default function MainGame() {
   const cleanlinessTier = useSelector(selectDogCleanlinessTier);
   const pollState = useSelector(selectDogPolls);
   const training = useSelector(selectDogTraining);
+
+  // Log key state once and whenever it changes to help trace hydration / selector issues
+  useEffect(() => {
+    // eslint-disable-next-line no-console
+    console.log("MainGame state:", {
+      dogPresent: !!dog,
+      dog,
+      lifeStage,
+      cleanlinessTier,
+      pollActive: !!pollState?.active,
+      training,
+    });
+  }, [dog, lifeStage, cleanlinessTier, pollState, training]);
+
+  // Suppress only the specific React Router "Future Flag" dev warning.
+  // Keep this filter narrow so other console warnings are preserved.
+  useEffect(() => {
+    const originalWarn = console.warn;
+    console.warn = (...args) => {
+      try {
+        const first = args[0];
+        const text =
+          typeof first === "string" ? first : JSON.stringify(first || "");
+        // match the known future-flag wording and related token
+        if (
+          text.includes("React Router Future Flag Warning") ||
+          text.includes("v7_startTransition") ||
+          text.includes("will begin wrapping state updates in `React.startTransition`")
+        ) {
+          return;
+        }
+      } catch (e) {
+        // if anything goes wrong, fall back to original warn below
+      }
+      originalWarn.apply(console, args);
+    };
+    return () => {
+      console.warn = originalWarn;
+    };
+  }, []);
 
   const [timeOfDay, setTimeOfDay] = useState(getTimeOfDay());
   const [actionToast, setActionToast] = useState(null);
@@ -141,6 +187,14 @@ export default function MainGame() {
 
   const hasDog = !!dog;
   const isAdopted = !!dog?.adoptedAt;
+
+  // Simple animation selection (auto-switch based on core state)
+  const selectedAnimation = (() => {
+    if (dog?.isAsleep || energy <= 15) return "sleep";
+    if (happiness >= 80 && energy >= 40) return "attention";
+    if (hunger >= 80) return "idle_bark";
+    return "idle";
+  })();
 
   // ---------- Effects & callbacks (hooks in stable order) ----------
 
@@ -309,156 +363,160 @@ export default function MainGame() {
 
   let mainContent;
 
-  if (!hasDog) {
-    // Redux not hydrated yet or no dog state created
-    mainContent = (
-      <div className="flex items-center justify-center min-h-[60vh] bg-zinc-950">
-        <div className="space-y-3 text-center max-w-sm px-4">
-          <h1 className="text-lg font-semibold tracking-tight">
-            Loading your pup…
-          </h1>
-          <p className="text-xs text-zinc-400">
-            If this screen is stuck, use the back button and go through the
-            Adopt flow again so Doggerz can create your save file.
-          </p>
-        </div>
-      </div>
-    );
-  } else if (!isAdopted) {
-    // Dog object exists but Adopt flow never set adoptedAt
-    mainContent = (
-      <div className="flex items-center justify-center min-h-[60vh] bg-zinc-950">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-zinc-50 mb-4">
-            No Dog Adopted
-          </h2>
-          <p className="text-zinc-400 mb-6">
-            Adopt a dog to get started with the main game.
-          </p>
-          <button
-            onClick={handleQuickAdopt}
-            className="px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-black font-semibold rounded-full transition"
-          >
-            Quick Adopt (Test)
-          </button>
-        </div>
-      </div>
-    );
-  } else {
-    // Full game layout
-    mainContent = (
-      <section className="grid gap-6 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-        {/* Left: yard & sprite */}
-        <div className="relative rounded-2xl overflow-hidden border border-zinc-800 bg-zinc-900">
-          {/* Background yard image (day/night) + gradient overlay */}
-          <div
-            className="absolute inset-0 bg-cover bg-center opacity-80"
-            style={yardBackgroundStyle}
-          />
-          <div
-            className="absolute inset-0 mix-blend-multiply"
-            style={overlayStyle}
-          />
-
-          {/* Dog sprite */}
-          <div className="relative z-10 flex flex-col items-center justify-center h-64">
-            <EnhancedDogSprite />
-          </div>
-
-          {/* Yard status strip */}
-          <div className="relative z-10 flex justify-between items-center px-4 py-2 text-[0.7rem] bg-zinc-950/70 border-t border-zinc-800">
-            <span className="text-zinc-400">
-              Potty:{" "}
-              <span className="text-zinc-100">{pottyStatusLabel}</span>
-            </span>
-            <span className="text-zinc-400">
-              Yard:{" "}
-              <span className="text-zinc-100">{yardStatusLabel}</span>
-            </span>
-          </div>
-        </div>
-
-        {/* Right: stats + actions */}
-        <div className="space-y-4">
-          {/* Cleanliness summary */}
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4 space-y-1">
+  try {
+    if (!hasDog) {
+      // Redux not hydrated yet or no dog state created
+      mainContent = (
+        <div className="flex items-center justify-center min-h-[60vh] bg-zinc-950">
+          <div className="space-y-3 text-center max-w-sm px-4">
+            <h1 className="text-lg font-semibold tracking-tight">
+              Loading your pup…
+            </h1>
             <p className="text-xs text-zinc-400">
-              Cleanliness:{" "}
-              <span className="font-semibold text-zinc-100">
-                {cleanlinessLabel}
-              </span>
+              If this screen is stuck, use the back button and go through the
+              Adopt flow again so Doggerz can create your save file.
             </p>
-            <p className="text-[0.7rem] text-zinc-500">
-              {cleanlinessSummary}
-            </p>
-          </div>
-
-          {/* Stat bars */}
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4 space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <StatBar label="Hunger" value={hunger} color="amber" inverse />
-              <StatBar
-                label="Happiness"
-                value={happiness}
-                color="emerald"
-              />
-              <StatBar label="Energy" value={energy} color="blue" />
-              <StatBar
-                label="Cleanliness"
-                value={cleanliness}
-                color="cyan"
-              />
-            </div>
-          </div>
-
-          {/* Basic care actions – NO Rest button */}
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={() => handleCareAction("feed")}
-                className="px-4 py-3 bg-amber-600 hover:bg-amber-500 rounded-lg font-semibold transition text-sm"
-              >
-                🍖 Feed
-              </button>
-              <button
-                onClick={() => handleCareAction("play")}
-                className="px-4 py-3 bg-emerald-600 hover:bg-emerald-500 rounded-lg font-semibold transition text-sm"
-              >
-                🎾 Play
-              </button>
-              <button
-                onClick={() => handleCareAction("bathe")}
-                className="px-4 py-3 bg-cyan-600 hover:bg-cyan-500 rounded-lg font-semibold transition text-sm col-span-2"
-              >
-                🛁 Bathe
-              </button>
-            </div>
-
-            <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
-              <button
-                onClick={() => handleCareAction("potty")}
-                className="px-3 py-2 rounded-lg border border-zinc-700 hover:border-emerald-500/70 hover:bg-zinc-800 text-zinc-200 transition"
-              >
-                🚶 Potty Walk
-              </button>
-              <button
-                onClick={() => handleCareAction("scoop")}
-                className="px-3 py-2 rounded-lg border border-zinc-700 hover:border-amber-500/70 hover:bg-zinc-800 text-zinc-200 transition"
-              >
-                🗑️ Scoop Yard
-              </button>
-            </div>
           </div>
         </div>
-      </section>
+      );
+    } else if (!isAdopted) {
+      // Dog object exists but Adopt flow never set adoptedAt
+      mainContent = (
+        <div className="flex items-center justify-center min-h-[60vh] bg-zinc-950">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-zinc-50 mb-4">No Dog Adopted</h2>
+            <p className="text-zinc-400 mb-6">
+              Adopt a dog to get started with the main game.
+            </p>
+            <button
+              onClick={handleQuickAdopt}
+              className="px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-black font-semibold rounded-full transition"
+            >
+              Quick Adopt (Test)
+            </button>
+          </div>
+        </div>
+      );
+    } else {
+      // Full game layout
+      mainContent = (
+        <section className="grid gap-6 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+          {/* Left: yard & sprite */}
+          <div className="relative rounded-2xl overflow-hidden border border-zinc-800 bg-zinc-900">
+            {/* Background yard image (day/night) + gradient overlay */}
+            <div
+              className="absolute inset-0 bg-cover bg-center opacity-80"
+              style={yardBackgroundStyle}
+            />
+            <div
+              className="absolute inset-0 mix-blend-multiply"
+              style={overlayStyle}
+            />
+
+            {/* Dog sprite */}
+            <div className="relative z-10 flex flex-col items-center justify-center h-64">
+              <ErrorBoundary>
+                <EnhancedDogSprite animation={selectedAnimation} />
+              </ErrorBoundary>
+            </div>
+
+            {/* Yard status strip */}
+            <div className="relative z-10 flex justify-between items-center px-4 py-2 text-[0.7rem] bg-zinc-950/70 border-t border-zinc-800">
+              <span className="text-zinc-400">
+                Potty: <span className="text-zinc-100">{pottyStatusLabel}</span>
+              </span>
+              <span className="text-zinc-400">
+                Yard: <span className="text-zinc-100">{yardStatusLabel}</span>
+              </span>
+            </div>
+          </div>
+
+          {/* Right: stats + actions */}
+          <div className="space-y-4">
+            {/* Cleanliness summary */}
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4 space-y-1">
+              <p className="text-xs text-zinc-400">
+                Cleanliness:{" "}
+                <span className="font-semibold text-zinc-100">
+                  {cleanlinessLabel}
+                </span>
+              </p>
+              <p className="text-[0.7rem] text-zinc-500">{cleanlinessSummary}</p>
+            </div>
+
+            {/* Stat bars */}
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <StatBar label="Hunger" value={hunger} color="amber" inverse />
+                <StatBar label="Happiness" value={happiness} color="emerald" />
+                <StatBar label="Energy" value={energy} color="blue" />
+                <StatBar label="Cleanliness" value={cleanliness} color="cyan" />
+              </div>
+            </div>
+
+            {/* Basic care actions – NO Rest button */}
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => handleCareAction("feed")}
+                  className="px-4 py-3 bg-amber-600 hover:bg-amber-500 rounded-lg font-semibold transition text-sm"
+                >
+                  🍖 Feed
+                </button>
+                <button
+                  onClick={() => handleCareAction("play")}
+                  className="px-4 py-3 bg-emerald-600 hover:bg-emerald-500 rounded-lg font-semibold transition text-sm"
+                >
+                  🎾 Play
+                </button>
+                <button
+                  onClick={() => handleCareAction("bathe")}
+                  className="px-3 py-2 bg-cyan-600 hover:bg-cyan-500 rounded-lg font-semibold transition text-sm col-span-2"
+                >
+                  🛁 Bathe
+                </button>
+              </div>
+
+              <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
+                <button
+                  onClick={() => handleCareAction("potty")}
+                  className="px-3 py-2 rounded-lg border border-zinc-700 hover:border-emerald-500/70 hover:bg-zinc-800 text-zinc-200 transition"
+                >
+                  🚶 Potty Walk
+                </button>
+                <button
+                  onClick={() => handleCareAction("scoop")}
+                  className="px-3 py-2 rounded-lg border border-zinc-700 hover:border-amber-500/70 hover:bg-zinc-800 text-zinc-200 transition"
+                >
+                  🗑️ Scoop Yard
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      );
+    }
+  } catch (err) {
+    // Capture render-time error to help debugging without crashing the app.
+    // eslint-disable-next-line no-console
+    console.error("MainGame render error:", err);
+    setRenderError(err?.message || String(err));
+    mainContent = (
+      <div className="p-6 bg-red-900/10 rounded-md border border-red-700 text-red-200">
+        <strong>MainGame failed to render.</strong>
+        <div className="mt-2 text-xs">
+          Check the console for the full stack trace. Error: {String(err?.message || err)}
+        </div>
+      </div>
     );
   }
 
+  // Render final UI
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-50 p-6">
       <div className="max-w-5xl mx-auto space-y-6">
         {/* Only show HUD when we have a real adopted dog */}
-        {isAdopted && (
+        {isAdopted && !renderError && (
           <GameTopBar
             dogName={dogName}
             level={level}
@@ -488,6 +546,7 @@ export default function MainGame() {
           </div>
         )}
 
+        {/* Main content area */}
         {mainContent}
       </div>
     </div>
@@ -522,3 +581,2025 @@ function StatBar({ label, value, color, inverse = false }) {
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

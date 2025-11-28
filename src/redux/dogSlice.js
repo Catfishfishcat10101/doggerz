@@ -2,13 +2,7 @@
 // @ts-nocheck
 
 import { createSlice } from "@reduxjs/toolkit";
-import { calculateDogAge } from "@/utils/lifecycle.js";
-import {
-  LIFECYCLE_STAGE_MODIFIERS,
-  CLEANLINESS_THRESHOLDS,
-  CLEANLINESS_TIER_EFFECTS,
-  DOG_POLL_CONFIG,
-} from "@/constants/game.js";
+import { calculateDogAge } from '@/utils/lifecycle.js';
 
 export const DOG_STORAGE_KEY = "doggerz:dogState";
 

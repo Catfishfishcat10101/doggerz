@@ -1,5 +1,5 @@
 // src/features/game/TemperamentCard.jsx
-import React from "react";
+import * as React from "react";
 import { useDispatch } from "react-redux";
 import { markTemperamentRevealed } from "@/redux/dogSlice.js";
 
@@ -20,6 +20,7 @@ export default function TemperamentCard({ temperament }) {
 
   const handleClose = () => {
     dispatch(markTemperamentRevealed());
+
   };
 
   return (
@@ -31,7 +32,7 @@ export default function TemperamentCard({ temperament }) {
               Temperament reveal
             </h2>
             <p className="text-xs text-zinc-400">
-              After spending time together, your pup&apos;s personality is
+              After spending time together, your pup personality is
               showing.
             </p>
           </div>
@@ -66,7 +67,9 @@ export default function TemperamentCard({ temperament }) {
             </p>
             <div className="grid grid-cols-2 gap-2">
               {traits.map((t) => (
-                <TraitPill key={t.id} label={t.label} intensity={t.intensity} />
+                <div key={t.id}>
+                  <TraitPill label={t.label} intensity={t.intensity} />
+                </div>
               ))}
             </div>
           </div>
