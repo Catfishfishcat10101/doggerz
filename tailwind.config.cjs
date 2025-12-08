@@ -1,4 +1,6 @@
 /** @type {import('tailwindcss').Config} */
+const _twColors = require("tailwindcss/dist/colors");
+
 module.exports = {
   content: ["./index.html", "./src/**/*.{js,jsx,ts,tsx}"],
   darkMode: "class", // matches <html class="dark">
@@ -33,13 +35,19 @@ module.exports = {
         mono: ["Roboto Mono", "ui-monospace", "SFMono-Regular", "monospace"],
         pixel: ['"Press Start 2P"', "system-ui", "sans-serif"],
       },
-      colors: {
-        doggerz: {
-          bg: "#0b1020",
-          neon: "#22c55e",
-          neonSoft: "#4ade80",
-        },
-      },
+      colors: Object.assign(
+        {},
+        {
+          // explicitly include Zinc and Emerald palettes to ensure utilities exist
+          zinc: _twColors.zinc,
+          emerald: _twColors.emerald,
+          doggerz: {
+            bg: "#0b1020",
+            neon: "#22c55e",
+            neonSoft: "#4ade80",
+          },
+        }
+      ),
       boxShadow: {
         "neon-green": "0 0 25px rgba(34,197,94,0.45)",
       },
