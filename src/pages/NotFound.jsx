@@ -1,7 +1,6 @@
 // src/pages/NotFound.jsx
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
-import { PATHS } from "@/routes.js";
 
 export default function NotFound() {
   const nav = useNavigate();
@@ -14,7 +13,7 @@ export default function NotFound() {
 
         <div className="mt-6 flex items-center justify-center gap-3">
           <button
-            onClick={() => nav(PATHS.HOME)}
+            onClick={() => nav("/")}
             className="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black font-semibold"
           >
             Home

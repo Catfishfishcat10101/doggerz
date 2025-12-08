@@ -1,5 +1,6 @@
 // src/features/game/components/PottyTrackerCard.jsx
 import * as React from "react";
+import PropTypes from "prop-types";
 
 /**
  * Potty + cleanliness + yard status card
@@ -40,7 +41,7 @@ export default function PottyTrackerCard({
       {/* Header */}
       <div className="flex items-center justify-between text-sm font-semibold text-amber-200">
         <span>Potty tracker</span>
-        <span className="text-xs text-amber-300">{pottyStatusLabel}</span>
+        <span className="text-xs text-amber-300">{pottyStatusLabel === 'NOW' ? 'Now' : pottyStatusLabel}</span>
       </div>
 
       {/* Potty gauge */}
@@ -107,3 +108,16 @@ export default function PottyTrackerCard({
     </div>
   );
 }
+
+PottyTrackerCard.propTypes = {
+  isPuppy: PropTypes.bool,
+  pottyLevel: PropTypes.number,
+  pottyStatusLabel: PropTypes.string,
+  pottyTrainingComplete: PropTypes.bool,
+  pottyProgress: PropTypes.number,
+  pottySuccess: PropTypes.number,
+  pottyGoal: PropTypes.number,
+  cleanlinessLabel: PropTypes.string,
+  cleanlinessSummary: PropTypes.string,
+  yardStatusLabel: PropTypes.string,
+};

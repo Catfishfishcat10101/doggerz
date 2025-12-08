@@ -1,11 +1,13 @@
 // src/pages/Settings.jsx
 import React, { useMemo, useState, useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
+import { useAppDispatch } from "@/redux/hooks.js";
 import { resetDogState } from "@/redux/dogSlice";
 import { selectUserZip, setZip } from "@/redux/userSlice.js";
+import { announce } from "@/utils/announcer.js";
 
 export default function Settings() {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const currentZip = useSelector(selectUserZip);
   const [zipInput, setZipInput] = useState(currentZip || "");
 
@@ -51,7 +53,7 @@ export default function Settings() {
           <div className="mt-4 flex flex-wrap items-end gap-3">
             <div>
               <label className="block text-xs opacity-70 mb-1" htmlFor="zip">
-                ZIP (US)
+                Zip code (US)
               </label>
               <input
                 id="zip"
@@ -69,20 +71,25 @@ export default function Settings() {
             </div>
             <button
               className="btn"
-              onClick={() => dispatch(setZip(zipInput))}
+              onClick={() => {
+                dispatch(setZip(zipInput));
+                try {
+                  announce({ message: "Settings saved", type: "success" });
+                } catch (e) { }
+              }}
               disabled={zipInput && !/^\d{5}$/.test(zipInput)}
               title={
                 zipInput && !/^\d{5}$/.test(zipInput) ? "Enter 5 digits" : ""
               }
             >
-              Save ZIP
+              Save
             </button>
             {/* Geolocation controls removed: ZIP-only by design */}
           </div>
 
           <div className="mt-3 text-xs opacity-70 leading-snug space-y-1">
             <p>
-              Status: <span className="text-zinc-300">Using ZIP</span>{" "}
+              Status: <span className="text-zinc-300">Using zip</span>{" "}
               {currentZip ? `(ZIP ${currentZip})` : ""}
             </p>
             <p>

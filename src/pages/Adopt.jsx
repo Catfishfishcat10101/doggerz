@@ -2,17 +2,14 @@
 // @ts-nocheck
 
 import React, { useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
+import { useAppDispatch } from "@/redux/hooks.js";
 import { useNavigate } from "react-router-dom";
 
-import {
-  selectDog,
-  setDogName,
-  setAdoptedAt,
-} from "@/redux/dogSlice.js";
+import { selectDog, setDogName, setAdoptedAt } from "@/redux/dogSlice.js";
 
 export default function AdoptPage() {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
   const dog = useSelector(selectDog);
@@ -45,7 +42,7 @@ export default function AdoptPage() {
       <div className="flex flex-col items-center w-full h-full pt-6 pb-10 bg-gradient-to-b from-zinc-950 to-zinc-900 text-white">
         <div className="flex flex-col items-center mb-6">
           <h1 className="text-4xl font-bold tracking-wide text-emerald-400 drop-shadow-lg">
-            DOGGERZ
+            Doggerz
           </h1>
           <p className="text-sm text-zinc-300 mt-1">Virtual Pup Simulator</p>
         </div>
@@ -78,7 +75,7 @@ export default function AdoptPage() {
       {/* Title */}
       <div className="flex flex-col items-center mb-6">
         <h1 className="text-4xl font-bold tracking-wide text-emerald-400 drop-shadow-lg">
-          DOGGERZ
+          Doggerz
         </h1>
         <p className="text-sm text-zinc-300 mt-1">Virtual Pup Simulator</p>
       </div>
@@ -108,14 +105,13 @@ export default function AdoptPage() {
               placeholder="Fireball"
               maxLength={24}
               autoComplete="off"
+              aria-label="Pup name"
+              aria-describedby="adopt-pro-tip"
+              autoFocus
             />
           </div>
 
-          {error && (
-            <p className="text-xs text-red-400 mt-1">
-              {error}
-            </p>
-          )}
+          {error && <p className="text-xs text-red-400 mt-1">{error}</p>}
 
           <button
             type="submit"
@@ -125,9 +121,9 @@ export default function AdoptPage() {
           </button>
         </form>
 
-        <p className="mt-4 text-xs text-zinc-500">
-          Pro tip: Keep the name short. You’ll see it a lot in alerts,
-          training, and future story events.
+        <p id="adopt-pro-tip" className="mt-4 text-xs text-zinc-500">
+          Pro tip: Keep the name short. You’ll see it a lot in alerts, training,
+          and future story events.
         </p>
       </div>
     </div>

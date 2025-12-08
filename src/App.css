@@ -1,21 +1,24 @@
 /* src/App.css */
+/* App-level layout helpers (optional) */
 
-/* Root color scheme hint for browsers */
-:root {
-  color-scheme: dark;
-}
-
-/* Let the main app stretch full height */
-#root {
+.app-root {
   min-height: 100vh;
+  background-color: #020617; /* zinc-950 */
+  color: #f9fafb;           /* zinc-50 */
+  display: flex;
+  flex-direction: column;
 }
 
-/* Utility class if you ever want a subtle app-wide background overlay */
-.app-shell {
-  background:
-    radial-gradient(circle at top, rgba(34, 197, 94, 0.12), transparent 55%)
-      fixed,
-    radial-gradient(circle at bottom, rgba(56, 189, 248, 0.08), transparent 55%)
-      fixed,
-    #020617;
+.app-main {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
 }
+
+.app-main--center {
+  align-items: center;
+  justify-content: center;
+}
+.app-footer {
+  flex-shrink: 0;
+};

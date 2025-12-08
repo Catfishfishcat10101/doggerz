@@ -65,7 +65,7 @@ export default function LoginPage() {
       {/* Title */}
       <div className="flex flex-col items-center mb-6">
         <h1 className="text-4xl font-bold tracking-wide text-emerald-400 drop-shadow-lg">
-          DOGGERZ
+          Doggerz
         </h1>
         <p className="text-sm text-zinc-300 mt-1">Virtual Pup Simulator</p>
       </div>
@@ -115,11 +115,7 @@ export default function LoginPage() {
             />
           </div>
 
-          {error && (
-            <p className="text-xs text-red-400 mt-1">
-              {error}
-            </p>
-          )}
+          {error && <p className="text-xs text-red-400 mt-1">{error}</p>}
 
           <button
             type="submit"
@@ -131,9 +127,7 @@ export default function LoginPage() {
         </form>
 
         <div className="mt-4 text-xs text-zinc-400 flex items-center justify-between">
-          <span>
-            Don&apos;t have an account?
-          </span>
+          <span>Don&apos;t have an account?</span>
           <Link
             to="/signup"
             className="text-emerald-400 hover:text-emerald-300 font-medium"

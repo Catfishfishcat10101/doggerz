@@ -10,10 +10,21 @@
  *     const ctx = setupCanvasForSprite(cvs);
  *     // then draw with ctx (coordinates in logical pixels)
  *   }, []);
+ *
+ * @param {HTMLCanvasElement} canvas Canvas element to configure
+ * @param {{spriteSize?:number, scale?:number}} options sizing options (optional)
+ * @returns {{ctx:CanvasRenderingContext2D|null, cssW:number, cssH:number, dpr:number}|null}
  */
-export function setupCanvasForSprite(canvas, { spriteSize = 128, scale = 2 } = {}) {
+export function setupCanvasForSprite(
+  canvas,
+  { spriteSize = 128, scale = 2 } = {},
+) {
   if (!canvas) return null;
-  const dpr = Math.max(1, window.devicePixelRatio || 1);
+  if (typeof window === "undefined") return null;
+  const dpr = Math.max(
+    1,
+    (typeof window !== "undefined" && window.devicePixelRatio) || 1
+  );
 
   // logical CSS size (px)
   const cssW = Math.round(spriteSize * scale);
@@ -32,11 +43,13 @@ export function setupCanvasForSprite(canvas, { spriteSize = 128, scale = 2 } = {
   canvas.style.height = `${cssH}px`;
 
   // Mark canvas as JS-managed (CSS helper)
-  canvas.classList.add('js-managed-canvas');
+  canvas.classList.add("js-managed-canvas");
 
-  const ctx = canvas.getContext('2d');
-  if (ctx && typeof ctx.setTransform === 'function') {
+  const ctx = canvas.getContext && canvas.getContext("2d");
+  if (!ctx) return { ctx: null, cssW, cssH, dpr };
+  if (typeof ctx.setTransform === "function") {
     // Scale drawing operations so 1 unit = 1 CSS pixel
+    // Use (scaleX, skewX, skewY, scaleY, translateX, translateY)
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 

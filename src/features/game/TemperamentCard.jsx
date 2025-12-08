@@ -1,86 +1,163 @@
+// @ts-nocheck
 // src/features/game/TemperamentCard.jsx
-import * as React from "react";
-import { useDispatch } from "react-redux";
-import { markTemperamentRevealed } from "@/redux/dogSlice.js";
+//
+// Shows your dog's temperament summary and traits.
+// Safe to render even if temperament isn't set yet.
 
-function TraitPill({ label, intensity }) {
+import React from "react";
+
+export default function TemperamentCard({
+  temperament,      // e.g. "LOYAL", "ROWDY", etc.
+  traits = [],      // array of { name, description } or strings
+  rank,             // e.g. "S", "A", "B" etc.
+  discoveredAt,     // ISO string or null
+}) {
+  const hasTemperament = Boolean(temperament);
+
+  const title = hasTemperament
+    ? formatTemperament(temperament)
+    : "Temperament Unknown";
+
+  const subtitle = hasTemperament
+    ? "Your pup's emerging personality profile."
+    : "Play, train, and care for your dog to reveal their temperament.";
+
+  const parsedTraits = normalizeTraits(traits, temperament);
+
   return (
-    <div className="flex items-center justify-between rounded-full bg-zinc-900/90 px-3 py-1 text-xs text-zinc-200">
-      <span>{label}</span>
-      <span className="text-[10px] text-zinc-400">{intensity}%</span>
+    <section className="w-full rounded-2xl border border-emerald-500/40 bg-black/60 p-4 backdrop-blur">
+      <header className="flex items-center justify-between gap-3 mb-2">
+        <div className="flex flex-col">
+          <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-300">
+            Temperament
+          </h2>
+          <p className="text-lg font-bold text-slate-50 leading-tight">
+            {title}
+          </p>
+        </div>
+
+        <div className="flex flex-col items-end gap-1">
+          {rank && (
+            <span className="inline-flex items-center justify-center rounded-full border border-emerald-400/60 bg-emerald-900/40 px-3 py-1 text-xs font-semibold text-emerald-100">
+              Rank: {rank}
+            </span>
+          )}
+          {discoveredAt && (
+            <span className="text-[10px] text-slate-300">
+              Discovered: {formatDate(discoveredAt)}
+            </span>
+          )}
+        </div>
+      </header>
+
+      <p className="text-xs text-slate-200 mb-3">{subtitle}</p>
+
+      {hasTemperament && parsedTraits.length > 0 ? (
+        <ul className="space-y-2" role="list">
+          {parsedTraits.map((trait, idx) => (
+            <li
+              key={`${trait.name}-${idx}`}
+              role="listitem"
+              tabIndex={0}
+              className="flex items-start gap-2 rounded-xl bg-slate-900/70 border border-slate-700/60 px-3 py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"
+            >
+              <div className="mt-0.5 text-emerald-300 text-xs">◆</div>
+              <div className="flex-1">
+                <div className="text-xs font-semibold text-slate-50">
+                  {trait.name}
+                </div>
+                {trait.description && (
+                  <div className="text-[11px] text-slate-300">
+                    {trait.description}
+                  </div>
+                )}
+                {typeof trait.intensity === 'number' && (
+                  <div className="mt-2">
+                    <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                      <div
+                        className="bg-emerald-500 h-2"
+                        style={{ width: `${Math.max(0, Math.min(100, trait.intensity))}%` }}
+                      />
+                    </div>
+                    <div className="text-[10px] text-slate-400 mt-1">Intensity: {trait.intensity}%</div>
+                  </div>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <EmptyState />
+      )}
+    </section>
+  );
+}
+
+// --- helpers ---
+
+function EmptyState() {
+  return (
+    <div className="rounded-xl border border-dashed border-slate-600/80 bg-slate-950/70 px-3 py-3">
+      <p className="text-[11px] text-slate-300 mb-1">
+        Your pup is still figuring themselves out.
+      </p>
+      <p className="text-[11px] text-slate-400">
+        Keep feeding, playing, and training. Once you&apos;ve spent enough time
+        together, Doggerz will reveal your dog&apos;s temperament profile here.
+      </p>
     </div>
   );
 }
 
-export default function TemperamentCard({ temperament }) {
-  const dispatch = useDispatch();
-  if (!temperament) return null;
+function formatTemperament(value) {
+  if (!value) return "";
+  const s = String(value).trim().replace(/_/g, " ");
+  return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+}
 
-  const { primary, secondary, traits = [] } = temperament;
+function formatDate(value) {
+  try {
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return "";
+    return d.toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  } catch {
+    return "";
+  }
+}
 
-  const handleClose = () => {
-    dispatch(markTemperamentRevealed());
+/**
+ * Normalize traits into [{ name, description }] objects
+ */
+function normalizeTraits(traits, temperament) {
+  if (!Array.isArray(traits) || traits.length === 0) {
+    // Provide a couple of default traits based on temperament if desired
+    if (!temperament) return [];
+    const tempLabel = formatTemperament(temperament);
+    return [
+      {
+        name: "Core Trait",
+        description: `${tempLabel} is your pup's primary temperament. This will influence how they react to care, play, and training.`,
+      },
+    ];
+  }
 
-  };
-
-  return (
-    <div className="fixed inset-x-0 bottom-4 z-40 flex justify-center px-4 pointer-events-none">
-      <div className="pointer-events-auto max-w-md w-full rounded-2xl border border-emerald-500/60 bg-zinc-950/95 shadow-2xl shadow-emerald-500/20 p-4 space-y-3">
-        <div className="flex items-start justify-between gap-2">
-          <div>
-            <h2 className="text-sm font-semibold text-zinc-50">
-              Temperament reveal
-            </h2>
-            <p className="text-xs text-zinc-400">
-              After spending time together, your pup personality is
-              showing.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={handleClose}
-            className="text-xs text-zinc-500 hover:text-zinc-200"
-          >
-            Close
-          </button>
-        </div>
-
-        <div className="rounded-xl bg-zinc-900/80 px-3 py-2 text-xs text-zinc-200 space-y-0.5">
-          <p>
-            Primary:{" "}
-            <span className="font-semibold text-emerald-400">
-              {primary || "Unknown"}
-            </span>
-          </p>
-          {secondary && (
-            <p>
-              Secondary:{" "}
-              <span className="font-semibold text-sky-400">{secondary}</span>
-            </p>
-          )}
-        </div>
-
-        {traits.length > 0 && (
-          <div className="space-y-2">
-            <p className="text-[11px] uppercase tracking-wide text-zinc-500">
-              Key traits
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              {traits.map((t) => (
-                <div key={t.id}>
-                  <TraitPill label={t.label} intensity={t.intensity} />
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <p className="text-xs text-zinc-400">
-          Your pup&apos;s temperament influences idle animations, moods, and how
-          quickly they get bored or excited. Keep playing together to discover
-          more quirks.
-        </p>
-      </div>
-    </div>
-  );
+  return traits.map((t) => {
+    if (typeof t === "string") {
+      return {
+        name: t,
+        description: "",
+      };
+    }
+    if (t && typeof t === "object") {
+      return {
+        name: t.name || "Trait",
+        description: t.description || "",
+      };
+    }
+    return { name: "Trait", description: "" };
+  });
 }

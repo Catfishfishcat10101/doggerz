@@ -1,15 +1,37 @@
+// @ts-nocheck
 // src/firebase.js
+//
+// Centralized Firebase initialization for Doggerz.
+// - Uses Vite env via src/config/env.js (no hard-coded secrets)
+// - Safely handles "Firebase not configured" and local-only mode
+// - Exposes auth, db, googleProvider, messaging, and helper flags
+
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import {
+  getMessaging,
+  onMessage,
+  getToken,
+  isSupported as isMessagingSupported,
+} from "firebase/messaging";
+
+import {
   FIREBASE as firebaseConfig,
   isFirebaseConfigured,
   missingFirebaseKeys,
-} from "./config/env.js";
+} from "@/config/env.js";
 
+let app = null;
+let auth = null;
+let db = null;
+let googleProvider = null;
+let messagingInstance = null;
+let firebaseInitError = null;
+let firebaseReady = false;
+
+// One-time warning about missing config
 let missingConfigWarned = false;
-
 const logMissingConfig = () => {
   if (isFirebaseConfigured || missingConfigWarned) return;
   missingConfigWarned = true;
@@ -18,98 +40,72 @@ const logMissingConfig = () => {
     : "unknown";
   console.warn(
     `[Doggerz] Firebase disabled. Missing config keys: ${printable}. ` +
-      "Populate .env.local or disable cloud features.",
+      "Populate .env.local (VITE_FIREBASE_*) or cloud features will be off."
   );
 };
 
-let app = null;
-let authInstance = null;
-let dbInstance = null;
-let googleProviderInstance = null;
-let firebaseInitError = null;
-
 if (isFirebaseConfigured) {
   try {
+    // Initialize core Firebase services
     app = initializeApp(firebaseConfig);
-    authInstance = getAuth(app);
-    dbInstance = getFirestore(app);
-    googleProviderInstance = new GoogleAuthProvider();
-  } catch (err) {
-    firebaseInitError = err;
-    console.error("[Doggerz] Firebase initialization failed", err);
-  }
-} else {
-  logMissingConfig();
-}
+    auth = getAuth(app);
+    db = getFirestore(app);
 
-let auth = null;
-let db = null;
-let googleProvider = null;
-
-// Use the existing firebaseReady logic from the first initialization
-const firebaseReady = Boolean(
-  app && authInstance && dbInstance && !firebaseInitError,
-);
-
-try {
-  // Check for required env vars
-  const requiredVars = [
-    "VITE_FIREBASE_API_KEY",
-    "VITE_FIREBASE_AUTH_DOMAIN",
-    "VITE_FIREBASE_PROJECT_ID",
-    "VITE_FIREBASE_STORAGE_BUCKET",
-    "VITE_FIREBASE_MESSAGING_SENDER_ID",
-    "VITE_FIREBASE_APP_ID",
-  ];
-
-  const missingVars = requiredVars.filter((varName) => !process.env[varName]);
-
-  if (missingVars.length > 0) {
-    console.warn("Firebase: Missing environment variables:", missingVars);
-    console.warn("App will run in local-only mode (localStorage only)");
-  } else if (!firebaseReady) {
-    // Only initialize if the first initialization failed
-    const firebaseConfig = {
-      apiKey: process.env.VITE_FIREBASE_API_KEY,
-      authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN,
-      projectId: process.env.VITE_FIREBASE_PROJECT_ID,
-      storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET,
-      messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-      appId: process.env.VITE_FIREBASE_APP_ID,
-    };
-
-    const fallbackApp = initializeApp(firebaseConfig);
-    auth = getAuth(fallbackApp);
-    db = getFirestore(fallbackApp);
-
-    // Initialize Google provider with proper popup configuration
+    // Google Auth provider with sensible defaults
     googleProvider = new GoogleAuthProvider();
     googleProvider.setCustomParameters({
       prompt: "select_account",
     });
 
-    console.log("Firebase initialized successfully (fallback)");
-  } else {
-    // Use the instances from the first successful initialization
-    auth = authInstance;
-    db = dbInstance;
-    googleProvider = googleProviderInstance;
+    firebaseReady = true;
+
+    // Messaging (push notifications) is optional
+    // Only try to wire it up if supported
+    isMessagingSupported()
+      .then((supported) => {
+        if (!supported) return;
+        if (!app) return;
+        messagingInstance = getMessaging(app);
+      })
+      .catch((err) => {
+        console.warn("[Doggerz] Firebase messaging not available:", err);
+      });
+  } catch (err) {
+    firebaseInitError = err;
+    firebaseReady = false;
+    console.error("[Doggerz] Firebase initialization failed", err);
   }
-} catch (error) {
-  console.error("Firebase initialization error:", error);
-  console.warn("Firebase features disabled. App will use localStorage only.");
+} else {
+  logMissingConfig();
+  firebaseReady = false;
 }
 
+// Public exports used across the app
 export { auth, db, googleProvider, firebaseReady };
+
+// Messaging-related exports
+export const messaging = messagingInstance;
+export const isPushSupported = isMessagingSupported;
+export { onMessage, getToken };
+
+// Config + error helpers
 export const firebaseMissingKeys = missingFirebaseKeys;
 export const firebaseError = firebaseInitError;
 
+/**
+ * Throw a clear error if a feature requires Firebase but it
+ * is not configured or failed to initialize.
+ */
 export const assertFirebaseReady = (featureName = "this feature") => {
   if (firebaseReady) return;
+
   const missing = firebaseMissingKeys.length
     ? `Missing keys: ${firebaseMissingKeys.join(", ")}.`
     : firebaseError
-      ? `Init error: ${firebaseError.message}`
-      : "Unknown configuration issue.";
-  throw new Error(`[Doggerz] ${featureName} requires Firebase. ${missing}`);
+    ? `Init error: ${firebaseError.message}`
+    : "Unknown configuration issue.";
+
+  throw new Error(
+    `[Doggerz] ${featureName} requires Firebase to be configured. ${missing}`
+  );
 };

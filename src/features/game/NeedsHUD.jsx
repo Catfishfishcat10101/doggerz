@@ -1,7 +1,10 @@
 // src/features/game/NeedsHUD.jsx
+// src/features/game/NeedsHUD.jsx
 // @ts-nocheck
 
 import React from "react";
+import PropTypes from "prop-types";
+import { motion } from "framer-motion";
 import { useSelector } from "react-redux";
 import {
   selectDog,
@@ -20,11 +23,22 @@ function StatBar({ label, value = 0, color = "bg-emerald-500" }) {
         <span>{pct.toFixed(0)}%</span>
       </div>
       <div className="h-2 rounded-full bg-zinc-800 overflow-hidden">
-        <div className={`h-full ${color}`} style={{ width: `${pct}%` }} />
+        <motion.div
+          className={`h-full ${color}`}
+          initial={{ width: 0 }}
+          animate={{ width: `${pct}%` }}
+          transition={{ type: "spring", stiffness: 120, damping: 18 }}
+        />
       </div>
     </div>
   );
 }
+
+StatBar.propTypes = {
+  label: PropTypes.string,
+  value: PropTypes.number,
+  color: PropTypes.string,
+};
 
 function Pill({ label, value, tone = "default" }) {
   const toneClasses =
@@ -45,6 +59,12 @@ function Pill({ label, value, tone = "default" }) {
     </div>
   );
 }
+
+Pill.propTypes = {
+  label: PropTypes.string,
+  value: PropTypes.any,
+  tone: PropTypes.string,
+};
 
 export default function NeedsHUD() {
   const dog = useSelector(selectDog);

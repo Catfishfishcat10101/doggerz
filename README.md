@@ -1,83 +1,92 @@
+ # 🐶 Doggerz
+
+ Adopt a pixel pup and make choices that shape its behavior. Built with React, Redux Toolkit, Vite, Tailwind, and Firebase. Offline-ready PWA.
+
+ Badges, screenshots, and other collateral live in the repository; run the app locally to preview.
+
+ ## Quick Links
+
+ - Run dev server: `npm run dev`
+ - Run tests: `npm test`
+ - Lifespan analysis scripts: `npm run lifespan:analytical` and `npm run lifespan:simulate -- <trials>`
+
+ ## Getting Started
+
+ 1. Clone and install:
+
+ ```powershell
+ git clone git@github.com:Catfishfishcat10101/doggerz.git
+ cd doggerz
+ npm install
 # 🐶 Doggerz
 
-> Adopt a pixel pup and make choices that shape its behavior. Built with **React**, **Redux Toolkit**, **Vite**, **Tailwind**, and **Firebase**. Offline-ready PWA.
+Adopt a pixel pup and make choices that shape its behavior. Built with React, Redux Toolkit, Vite, Tailwind, and Firebase. Offline-ready PWA.
 
-[![React 18](https://img.shields.io/badge/React-18-61dafb)](https://react.dev/)
-[![Redux Toolkit](https://img.shields.io/badge/Redux%20Toolkit-RTK-764abc)](https://redux-toolkit.js.org/)
-[![Vite](https://img.shields.io/badge/Vite-5-646cff)](https://vitejs.dev/)
-[![Tailwind](https://img.shields.io/badge/Tailwind-CSS-38bdf8)](https://tailwindcss.com/)
-[![Firebase](https://img.shields.io/badge/Firebase-Auth%2FFirestore-ffca28)](https://firebase.google.com/)
-[![PWA](https://img.shields.io/badge/PWA-Ready-5a0fc8)](https://web.dev/progressive-web-apps/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-success)](https://github.com/Catfishfishcat10101/doggerz/pulls)
+Badges, screenshots, and other collateral live in the repository; run the app locally to preview.
 
-**Core loop:** feed → play → train → rest → level up  
-**Feature pillars:** one-dog-per-user · needs & mood system · sprite animations · responsive UI · installable PWA · offline gameplay
+## Quick Links
 
----
+- Run dev server: `npm run dev`
+- Run tests: `npm test`
+- Lifespan analysis scripts: `npm run lifespan:analytical` and `npm run lifespan:simulate -- <trials>`
 
-## 📸 Screenshots
+## Getting Started
 
-> Replace with real captures; these are placeholders.
+1. Clone and install:
 
-| Splash / Auth                        | Game Screen                      | Shop                             |
-| ------------------------------------ | -------------------------------- | -------------------------------- |
-| ![Splash](public/screens/splash.png) | ![Game](public/screens/game.png) | ![Shop](public/screens/shop.png) |
-
----
-
-## 🧱 Tech Stack
-
-- **Frontend:** React 18, React Router, Redux Toolkit, TailwindCSS, Vite
-- **Backend:** Firebase Auth + Firestore (emulator support)
-- **PWA:** `vite-plugin-pwa` (offline page, runtime caches, update toast)
-- **DX:** ES Modules, fast HMR, strict env gating, Windows-friendly scripts
-
----
-
-## 🚀 Quick Start
-
-### 1. Clone & Install
-
-```bash
+```powershell
 git clone git@github.com:Catfishfishcat10101/doggerz.git
 cd doggerz
 npm install
 ```
 
-### 2. Configure Firebase
+2. Create `.env.local` from `.env.example` and add your Firebase web app credentials.
 
-Create `.env.local` from the provided `.env.example` and paste your Firebase web
-app credentials (Project settings → General → Your apps → SDK setup). The app
-will disable auth/cloud features until every required key is present to prevent
-runtime crashes.
+3. Run the dev server:
 
-### 3. (Optional) Enable live weather
+```powershell
+npm run dev
+```
 
-Grab a free OpenWeather API key, add `VITE_OPENWEATHER_API_KEY` to `.env.local`,
-and (optionally) set `VITE_WEATHER_DEFAULT_ZIP`. Once set, the in-game weather
-widget auto-refreshes conditions every 30 minutes and tints the yard based on
-the current time of day.
+The app disables cloud features if Firebase keys are missing so you can still run locally.
 
-### 4. Day/Night Backgrounds (by ZIP)
+## Testing
 
-- Add background images to `public/backgrounds/` named:
-  - `backyard-day.png`
-  - `backyard-night.png`
-- Optional variants for more vibe:
-  - `backyard-dawn.png`
-  - `backyard-dusk.png`
-- If these files are missing, the game gracefully falls back to a stylized
-  gradient so you can play without assets.
-- Time-of-day is derived from your ZIP's local time using OpenWeather's
-  timezone offset (no geolocation required). If `VITE_OPENWEATHER_API_KEY` is
-  not set, we fall back to your device clock.
+This project uses Jest + React Testing Library.
 
-Fallback rules:
+Important note: As of Jest v28+, the `jsdom` test environment is not bundled with Jest and must be installed separately. This repository includes `jest-environment-jsdom` in `devDependencies` and `jest.config.cjs` is configured to use it.
 
-- If only `backyard-split.png` exists (day|night in one image), it's cropped
-  left/right automatically.
-- If `dawn`/`dusk` variants are missing, we fall back to `day`/`night` with a
+Install dependencies and run tests:
+
+```powershell
+npm install
+npm test
+```
+
+If you see an error that says "Test environment jest-environment-jsdom cannot be found":
+
+- Confirm the package is installed: `npm ls jest-environment-jsdom`.
+- If it's missing, run: `npm install --save-dev jest-environment-jsdom`.
+- If problems persist, remove `node_modules` and `package-lock.json` then run `npm install` again.
+
+Also share `node -v` and `npm -v` in bug reports.
+
+## Lifespan Analysis Scripts
+
+Developer-facing scripts are provided to evaluate the in-game lifespan tuning:
+
+- `npm run lifespan:analytical` — analytical estimator
+- `npm run lifespan:simulate -- 10000` — Monte Carlo simulator (pass number of trials)
+
+These scripts read from `src/config/lifespan.js` so you can tune constants and re-run locally.
+
+## Contributing
+
+See `CONTRIBUTING.md` (if present) or open an issue/PR. Be sure to run tests locally.
+
+---
+
+If you'd like, I can add a short `TESTING.md` or `CONTRIBUTING.md` with more details, or I can keep the README concise.
   tinted gradient overlay.
 
 Environment variables used:

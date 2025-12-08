@@ -1,15 +1,20 @@
 // src/features/game/MoodAndJournalPanel.jsx
+// @ts-nocheck
+
 import React from "react";
+import PropTypes from "prop-types";
+import { motion, AnimatePresence } from "framer-motion";
 import { useSelector } from "react-redux";
 import { selectDogMood, selectDogJournal } from "@/redux/dogSlice.js";
+import { MOOD_NEUTRAL } from "@/constants/game.js";
 
 const MOOD_EMOJI = {
-  HAPPY: "🦴",
-  HUNGRY: "🍗",
-  SLEEPY: "😴",
-  DIRTY: "🛁",
-  LONELY: "💔",
-  NEUTRAL: "🙂",
+  "HAPPY": "🦴",
+  "HUNGRY": "🍗",
+  "SLEEPY": "😴",
+  "DIRTY": "🛁",
+  "LONELY": "💔",
+  "NEUTRAL": "🙂",
 };
 
 function moodEmoji(tag) {
@@ -18,7 +23,7 @@ function moodEmoji(tag) {
 
 function MoodTimeline({ mood }) {
   const history = mood?.history ?? [];
-  const recent = history.slice(0, 20); // last 20 points max
+  const recent = history.slice(0, 20);
 
   if (!recent.length) {
     return (
@@ -38,17 +43,15 @@ function MoodTimeline({ mood }) {
           Last {recent.length} samples
         </span>
       </div>
+
       <div className="relative h-16 rounded-xl bg-zinc-900/80 overflow-hidden px-1">
         <div className="absolute inset-0 flex items-end gap-[2px] px-1 pb-1">
           {recent.map((m, idx) => {
             const hRatio = (m.happiness || 0) / maxHappiness;
             const height = Math.max(6, hRatio * 56);
-            const tag = m.tag || "NEUTRAL";
+            const tag = m.tag || MOOD_NEUTRAL;
             return (
-              <div
-                key={idx}
-                className="flex-1 flex flex-col items-center justify-end"
-              >
+              <div key={idx} className="flex-1 flex flex-col items-center justify-end">
                 <div
                   className="w-full rounded-full bg-emerald-500/80"
                   style={{ height: `${height}px` }}
@@ -74,6 +77,10 @@ function MoodTimeline({ mood }) {
     </div>
   );
 }
+
+MoodTimeline.propTypes = {
+  mood: PropTypes.object,
+};
 
 function JournalList({ journal }) {
   const entries = journal?.entries ?? [];
@@ -107,9 +114,7 @@ function JournalList({ journal }) {
               </span>
               <span>{timeString}</span>
             </div>
-            <p className="mt-1 text-xs font-medium text-zinc-100">
-              {entry.summary}
-            </p>
+            <p className="mt-1 text-xs font-medium text-zinc-100">{entry.summary}</p>
             {entry.body && (
               <p className="mt-1 text-[11px] text-zinc-300 whitespace-pre-line">
                 {entry.body}
@@ -122,23 +127,33 @@ function JournalList({ journal }) {
   );
 }
 
+JournalList.propTypes = {
+  journal: PropTypes.object,
+};
+
 export default function MoodAndJournalPanel() {
   const mood = useSelector(selectDogMood);
   const journal = useSelector(selectDogJournal);
 
   return (
-    <section className="rounded-2xl border border-zinc-800 bg-zinc-950/90 p-4 space-y-4">
-      <MoodTimeline mood={mood} />
-      <div className="h-px bg-zinc-800" />
-      <div className="space-y-2">
-        <div className="flex items-center justify-between text-xs text-zinc-400">
-          <span>Dog journal</span>
-          <span className="text-[10px] text-zinc-500">
-            Auto-written by your pup
-          </span>
+    <AnimatePresence>
+      <motion.section
+        className="rounded-2xl border border-zinc-800 bg-zinc-950/90 p-4 space-y-4"
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 24 }}
+        transition={{ type: "spring", stiffness: 120, damping: 18 }}
+      >
+        <MoodTimeline mood={mood} />
+        <div className="h-px bg-zinc-800" />
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-xs text-zinc-400">
+            <span>Dog journal</span>
+            <span className="text-[10px] text-zinc-500">Auto-written by your pup</span>
+          </div>
+          <JournalList journal={journal} />
         </div>
-        <JournalList journal={journal} />
-      </div>
-    </section>
+      </motion.section>
+    </AnimatePresence>
   );
 }

@@ -2,7 +2,8 @@
 // @ts-nocheck
 
 import React, { useEffect, useRef } from "react";
-import { useSelector, useDispatch } from "react-redux";
+import { useSelector } from "react-redux";
+import { useAppDispatch } from "@/redux/hooks.js";
 import { auth, firebaseReady } from "@/firebase.js";
 import {
   hydrateDog,
@@ -11,17 +12,20 @@ import {
   tickDogPolls,
   selectDog,
   DOG_STORAGE_KEY,
+  applyWeatherEffects,
 } from "@/redux/dogSlice.js";
-import { selectWeatherCondition } from "@/redux/weatherSlice.js";
+import { useTimeWeatherBackground } from "@/hooks/useTimeWeatherBackground.js";
 import { loadDogFromCloud, saveDogToCloud } from "@/redux/dogThunks.js";
 
 const TICK_INTERVAL_MS = 60_000; // 60 seconds
 const CLOUD_SAVE_DEBOUNCE = 3_000; // 3 seconds
 
 export default function DogAIEngine() {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const dogState = useSelector(selectDog);
-  const weather = useSelector(selectWeatherCondition);
+  // Derive a simple weather hint from the time/weather hook when a redux slice is not present
+  const { skyState } = useTimeWeatherBackground();
+  const weather = skyState === "rainy" ? "rain" : skyState === "snow" ? "snow" : "clear";
 
   const hasHydratedRef = useRef(false);
   const cloudSaveTimeoutRef = useRef(null);
@@ -126,15 +130,11 @@ export default function DogAIEngine() {
       dispatch(tickDog({ now }));
       dispatch(tickDogPolls({ now }));
       // Simple weather effects (applied once per tick ~60s)
-      if (dogState && dogState.stats) {
-        if (weather === "rain") {
-          dogState.stats.cleanliness = Math.max(
-            0,
-            dogState.stats.cleanliness - 5,
-          );
-        } else if (weather === "snow") {
-          dogState.stats.energy = Math.max(0, dogState.stats.energy - 10);
-        }
+      // Apply weather effects via reducer to avoid mutating selector state directly
+      if (weather === "rain") {
+        dispatch(applyWeatherEffects({ cleanlinessDelta: -5 }));
+      } else if (weather === "snow") {
+        dispatch(applyWeatherEffects({ energyDelta: -10 }));
       }
     }, TICK_INTERVAL_MS);
 

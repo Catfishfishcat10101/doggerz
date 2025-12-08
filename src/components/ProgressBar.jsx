@@ -1,4 +1,6 @@
 import * as React from "react";
+import PropTypes from "prop-types";
+import { motion } from "framer-motion";
 
 export default function ProgressBar({
   value = 0,
@@ -8,7 +10,8 @@ export default function ProgressBar({
   size = "md", // sm, md, lg
   showPercent = true,
 }) {
-  const pct = max > 0 ? Math.max(0, Math.min(100, Math.round((value / max) * 100))) : 0;
+  const pct =
+    max > 0 ? Math.max(0, Math.min(100, Math.round((value / max) * 100))) : 0;
 
   const sizeMap = {
     sm: "h-2",
@@ -49,11 +52,22 @@ export default function ProgressBar({
         aria-valuemax={100}
         aria-label={label || "progress"}
       >
-        <div
-          className={`${fillClass} h-full transition-all duration-300 ease-out`}
-          style={{ width: `${pct}%` }}
+        <motion.div
+          className={`${fillClass} h-full`}
+          initial={{ width: 0 }}
+          animate={{ width: `${pct}%` }}
+          transition={{ type: "spring", stiffness: 120, damping: 18 }}
         />
       </div>
     </div>
   );
 }
+
+ProgressBar.propTypes = {
+  value: PropTypes.number,
+  max: PropTypes.number,
+  label: PropTypes.string,
+  color: PropTypes.string,
+  size: PropTypes.string,
+  showPercent: PropTypes.bool,
+};

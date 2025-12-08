@@ -7,10 +7,13 @@
 export const GAME_DAYS_PER_REAL_DAY = 4;
 
 // Lifecycle / age stages (in-game days)
+// Adjusted so the expected lifespan aligns with ~17 dog years.
+// 17 years * 365 days = 6205 game-days.
 export const LIFE_STAGES = {
   PUPPY: { min: 0, max: 180, label: "Puppy" },
   ADULT: { min: 181, max: 2555, label: "Adult" },
-  SENIOR: { min: 2556, max: 5475, label: "Senior" },
+  // Senior spans from around 7 years onward; extend max to target ~17 years.
+  SENIOR: { min: 2556, max: 6205, label: "Senior" },
 };
 
 // Flattened stages for lookup
@@ -23,8 +26,13 @@ const ALL_STAGES = Object.entries(LIFE_STAGES).map(([key, stage]) => ({
  * Given an age in "game days", pick the correct life stage bucket.
  * Returns one of the LIFE_STAGES entries with an added `id` field.
  */
+/**
+ * Get life stage info for an age measured in game-days.
+ * @param {number} ageInGameDays Number of in-game days (may be fractional)
+ * @returns {{id:string, min:number, max:number, label:string}} life stage info
+ */
 export function getLifeStageForAge(ageInGameDays) {
-  if (!Number.isFinite(ageInGameDays) || ageInGameDays < 0) {
+  if (!Number.isFinite(ageInGameDays) || ageInGameDays < 1) {
     // default to puppy
     return { id: "PUPPY", ...LIFE_STAGES.PUPPY };
   }
@@ -37,15 +45,14 @@ export function getLifeStageForAge(ageInGameDays) {
 }
 
 /**
- * Convert adoption timestamp → age info.
- *
- * Returns:
- * {
- *   ageInGameDays: number,
- *   stageId: "PUPPY" | "ADULT" | "SENIOR",
- *   stageLabel: string,
- *   stage: { id, min, max, label }
- * }
+ * Calculates the dog's age in "game days" and life stage info
+ * from the timestamp it was adopted.
+ */
+/**
+ * Calculate the dog's age derived values.
+ * @param {number} adoptedAtMs timestamp when the dog was adopted (ms since epoch)
+ * @param {number} [now=Date.now()] optional 'now' timestamp to compute age against
+ * @returns {{ageInGameDays:number, stageId:string, stageLabel:string, stage:object}|null}
  */
 export function calculateDogAge(adoptedAtMs, now = Date.now()) {
   if (!adoptedAtMs || !Number.isFinite(adoptedAtMs)) return null;
@@ -68,15 +75,14 @@ export function calculateDogAge(adoptedAtMs, now = Date.now()) {
 }
 
 /**
- * Map a life stage → appropriate sprite sheet path.
- *
- * These are served from /public/sprites so the paths are:
- *   /sprites/jack_russell_puppy.png
- *   /sprites/jack_russell_adult.png
- *   /sprites/jack_russell_senior.png
+ * Map a life-stage id to a default sprite.
  */
 export function getSpriteForLifeStage(stageId) {
-  switch (stageId) {
+  switch (
+    String(stageId || "PUPPY")
+      .toUpperCase()
+      .trim()
+  ) {
     case "PUPPY":
       return "/sprites/jack_russell_puppy.png";
     case "ADULT":
@@ -87,15 +93,17 @@ export function getSpriteForLifeStage(stageId) {
   }
 }
 
-/*
-  Helper: getSpriteForStageAndTier
-  - Accepts either (stageKey, cleanlinessTier) or a dog-like object:
-      getSpriteForStageAndTier('PUPPY', 'FRESH')
-      getSpriteForStageAndTier({ stage: 'ADULT', cleanlinessTier: 'DIRTY' })
-  - Returns a string path to the spritesheet (adjust paths to your public/assets layout).
-*/
+/**
+ * Flexible helper: accepts a stage id string or a dog object plus cleanliness tier.
+ * Right now, cleanlinessTier is reserved for later variants (dirty, fleas, etc.).
+ */
+/**
+ * Return a sprite path for a given life-stage or dog object.
+ * @param {string|object} stageOrObj stage id string (e.g. 'PUPPY') or dog object
+ * @param {string} [cleanlinessTier] optional cleanliness tier (e.g. 'DIRTY')
+ * @returns {string} URL path to sprite asset
+ */
 export function getSpriteForStageAndTier(stageOrObj, cleanlinessTier) {
-  // Resolve inputs
   let stageKey;
   let tier = cleanlinessTier;
 
@@ -114,19 +122,23 @@ export function getSpriteForStageAndTier(stageOrObj, cleanlinessTier) {
     stageKey = stageOrObj;
   }
 
-  stageKey = String(stageKey || "PUPPY").toUpperCase().trim();
-  tier = String(tier || "FRESH").toUpperCase().trim();
+  stageKey = String(stageKey || "PUPPY")
+    .toUpperCase()
+    .trim();
+  tier = String(tier || "FRESH")
+    .toUpperCase()
+    .trim();
 
   // Simple mapping — adjust to your actual asset locations
   const SPRITES = {
-    PUPPY: "/assets/sprites/jack_russell_puppy.png",
-    ADULT: "/assets/sprites/jack_russell_adult.png",
-    SENIOR: "/assets/sprites/jack_russell_senior.png",
+    PUPPY: "/sprites/jack_russell_puppy.png",
+    ADULT: "/sprites/jack_russell_adult.png",
+    SENIOR: "/sprites/jack_russell_senior.png",
   };
 
   // Choose sprite by stage (fallback to puppy)
   const src = SPRITES[stageKey] || SPRITES.PUPPY;
 
-  // Return string path; component can import or use fetch depending on asset pipeline
+  // Later you can branch on `tier` to return different variants like DIRTY/MANGE sprites.
   return src;
 }

@@ -8,24 +8,23 @@
 -------------------------------------------------------- */
 
 const CACHE_VERSION = "doggerz-v1"; // bump this when you change SW behaviour
-const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
+const RUNTIME_CACHE = CACHE_VERSION + "-runtime";
 
 // Core assets to pre-cache on install.
 // These paths are from the *public* root.
 const CORE_ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.webmanifest',
-  '/favicon.ico',
+  "/",
+  "/index.html",
+  "/manifest.webmanifest",
+  "/favicon.ico",
 
   // Icons (adjust to whatever icons you actually have)
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png',
+  "/icons/icon-192x192.svg",
+  "/icons/doggerz-512.svg",
 
   // Sprite sheet
-  '/sprites/jack_russell_puppy.png',
-  'public/sprites/jack_russell_adult.png',
-  'public/sprites/jack_russell_directions.png',
+  "/assets/sprites/jack_russell_puppy.png",
+  "/assets/sprites/jack_russell_adult.png",
 ];
 
 /* -------------------------------------------------------
@@ -33,12 +32,29 @@ const CORE_ASSETS = [
 -------------------------------------------------------- */
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches
-      .open(RUNTIME_CACHE)
-      .then((cache) => cache.addAll(CORE_ASSETS))
-      .catch(() => {
-        // silent fail; app will still work online
-      }),
+    (async () => {
+      try {
+        const cache = await caches.open(RUNTIME_CACHE);
+        // use Promise.allSettled so one missing file doesn't abort the whole install
+        const settled = await Promise.allSettled(
+          CORE_ASSETS.map((p) => cache.add(p))
+        );
+        const failed = settled.filter((s) => s.status === "rejected");
+        if (failed.length) {
+          // Log missing assets to help debugging during development
+          console.warn(
+            "SW: some core assets failed to cache:",
+            failed.map((f) => f.reason && f.reason.message)
+          );
+        }
+      } catch (err) {
+        // Log and continue; offline fallback still tries to work
+        console.warn(
+          "SW install/cache error",
+          err && err.message ? err.message : err
+        );
+      }
+    })()
   );
 
   // Activate this SW immediately on next load
@@ -100,8 +116,20 @@ self.addEventListener("fetch", (event) => {
       pathname.startsWith("/sprites/") ||
       pathname.startsWith("/icons/");
 
+    // Cache-first for static assets
     if (isStaticAsset) {
       event.respondWith(cacheFirst(request));
+      return;
+    }
+
+    // Runtime cache for journal, training, and game API endpoints (offline support)
+    const isOfflineApi =
+      pathname.startsWith("/api/journal") ||
+      pathname.startsWith("/api/training") ||
+      pathname.startsWith("/api/game");
+
+    if (isOfflineApi) {
+      event.respondWith(networkFirst(request));
       return;
     }
   }

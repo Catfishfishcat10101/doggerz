@@ -1,4 +1,5 @@
 import * as React from "react";
+import PropTypes from "prop-types";
 
 export default function DogPollCard({
   activePoll,
@@ -51,3 +52,12 @@ export default function DogPollCard({
     </div>
   );
 }
+
+DogPollCard.propTypes = {
+  activePoll: PropTypes.shape({
+    prompt: PropTypes.string,
+    options: PropTypes.array,
+  }),
+  pollCountdown: PropTypes.number,
+  onPollResponse: PropTypes.func,
+};

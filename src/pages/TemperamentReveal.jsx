@@ -1,75 +1,52 @@
-// src/pages/TemperamentReveal.jsx
 // @ts-nocheck
+// src/pages/TemperamentReveal.jsx
+//
+// Standalone page that shows your dog's temperament profile
+// using the TemperamentCard component.
 
 import React from "react";
 import { useSelector } from "react-redux";
 import { selectDog } from "@/redux/dogSlice.js";
+import TemperamentCard from "@/features/game/TemperamentCard.jsx";
 
-export default function TemperamentReveal() {
+export default function TemperamentRevealPage() {
   const dog = useSelector(selectDog);
-  const temperament = dog?.temperament || {};
-  const primary = temperament.primary || "Unknown";
-  const secondary = temperament.secondary || null;
-  const traits = temperament.traits || [];
+
+  const temperament = dog?.temperament || dog?.temperamentType || null;
+  const traits = dog?.temperamentTraits || [];
+  const rank = dog?.temperamentRank || null;
+  const discoveredAt = dog?.temperamentDiscoveredAt || dog?.temperamentRevealedAt || null;
 
   return (
-    <main className="min-h-[calc(100vh-4rem)] bg-slate-950 text-zinc-100 flex justify-center px-4 py-10">
-      <div className="w-full max-w-3xl space-y-6">
-        <header className="space-y-2">
-          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
-            Temperament Reveal
+    <div className="flex-1 flex items-center justify-center px-4 py-8">
+      <div className="w-full max-w-3xl space-y-4">
+        {/* Title / intro */}
+        <header className="mb-2">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-emerald-400">
+            Your Pup's Temperament
           </h1>
-          <p className="text-sm text-zinc-400">
-            Based on how you&apos;ve been treating your pup so far, this is
-            their emerging personality profile.
+          <p className="mt-1 text-sm text-slate-200 max-w-xl">
+            Based on how you've fed, played with, and trained your pup, Doggerz
+            builds a temperament profile. This helps you understand how your
+            dog is likely to react to different care and training styles.
           </p>
         </header>
 
-        {!dog && (
-          <p className="text-sm text-zinc-400">
-            No pup loaded. Head back to the game or adopt a dog first.
-          </p>
-        )}
+        {/* Main card */}
+        <TemperamentCard
+          temperament={temperament}
+          traits={traits}
+          rank={rank}
+          discoveredAt={discoveredAt}
+        />
 
-        {dog && (
-          <section className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-5 space-y-4 text-sm text-zinc-300">
-            <p className="text-xs uppercase tracking-[0.25em] text-emerald-400">
-              {dog.name || "Your pup"}
-            </p>
-
-            <div>
-              <p className="text-xs text-zinc-400">Primary temperament</p>
-              <p className="text-lg font-semibold text-emerald-300">
-                {primary}
-              </p>
-            </div>
-
-            {secondary && (
-              <div>
-                <p className="text-xs text-zinc-400">Secondary flavor</p>
-                <p className="text-sm font-medium text-zinc-200">{secondary}</p>
-              </div>
-            )}
-
-            {traits.length > 0 && (
-              <div>
-                <p className="text-xs text-zinc-400 mb-1">Trait breakdown</p>
-                <ul className="list-disc list-inside text-xs text-zinc-300 space-y-1">
-                  {traits.map((t) => (
-                    <li key={t.id || t.label || t}>{t.label || t.id || t}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            <p className="text-xs text-zinc-500">
-              Temperament can shift slowly over time as your care patterns
-              change. Check back after big routine changes to see how your pup
-              evolves.
-            </p>
-          </section>
-        )}
+        {/* Footer hint / navigation hint (optional) */}
+        <p className="text-[11px] text-slate-400 mt-3">
+          Temperament can evolve slightly over time as you continue to play and
+          train. Check back after big milestones or life stages to see how your
+          pup grows.
+        </p>
       </div>
-    </main>
+    </div>
   );
 }

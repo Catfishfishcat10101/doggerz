@@ -2,7 +2,10 @@
 // @ts-nocheck
 
 import React from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { LIFE_STAGES } from "@/constants/game.js";
+import PropTypes from "prop-types";
+import { useSelector } from "react-redux";
+import { useAppDispatch } from "@/redux/hooks.js";
 import {
   selectDogTraining,
   selectDogLifeStage,
@@ -32,8 +35,13 @@ function StatRow({ label, value }) {
   );
 }
 
+StatRow.propTypes = {
+  label: PropTypes.string.isRequired,
+  value: PropTypes.oneOfType([PropTypes.string, PropTypes.node]).isRequired,
+};
+
 export default function AdultTrainingCard() {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
 
   const lifeStage = useSelector(selectDogLifeStage) || {
     stage: "PUPPY",
@@ -49,7 +57,7 @@ export default function AdultTrainingCard() {
   };
 
   const stageKey = (lifeStage.stage || "PUPPY").toUpperCase();
-  const isPuppy = stageKey === "PUPPY";
+  const isPuppy = stageKey === LIFE_STAGES.PUPPY;
 
   const handleLogSession = () => {
     // Uses your existing trainObedience reducer,
@@ -142,3 +150,5 @@ export default function AdultTrainingCard() {
     </section>
   );
 }
+
+/* AdultTrainingCard uses redux selectors; no external props */
