@@ -2,13 +2,13 @@
 // scripts/find-undeclared.mjs
 // Heuristic scanner to find UPPER_CASE identifiers that may be used but not imported/declared.
 
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
-const repoRoot = path.resolve(__filename, '..', '..');
-const srcDir = path.join(repoRoot, 'src');
+const repoRoot = path.resolve(__filename, "..", "..");
+const srcDir = path.join(repoRoot, "src");
 
 function walk(dir) {
   const out = [];
@@ -35,9 +35,12 @@ function extractImports(content) {
       imports.add(spec);
     } else if (/^\{/.test(spec)) {
       // { A, B as C }
-      const names = spec.replace(/[{}]/g, '').split(',').map(s => s.trim());
+      const names = spec
+        .replace(/[{}]/g, "")
+        .split(",")
+        .map((s) => s.trim());
       for (const n of names) {
-        const parts = n.split(/\s+as\s+/i).map(p => p.trim());
+        const parts = n.split(/\s+as\s+/i).map((p) => p.trim());
         imports.add(parts[1] || parts[0]);
       }
     } else if (/^\*\s+as\s+/.test(spec)) {
@@ -57,7 +60,8 @@ function extractDeclared(content) {
   while ((m = re2.exec(content))) decl.add(m[1]);
   const re3 = /class\s+([A-Za-z_$][A-Za-z0-9_$]*)/g;
   while ((m = re3.exec(content))) decl.add(m[1]);
-  const re4 = /export\s+(?:const|let|var|function|class)\s+([A-Za-z_$][A-Za-z0-9_$]*)/g;
+  const re4 =
+    /export\s+(?:const|let|var|function|class)\s+([A-Za-z_$][A-Za-z0-9_$]*)/g;
   while ((m = re4.exec(content))) decl.add(m[1]);
   return decl;
 }
@@ -65,13 +69,13 @@ function extractDeclared(content) {
 function extractUpperTokens(content) {
   // sanitize content by stripping string literals, template literals, and comments
   let sanitized = content
-    .replace(/\/\/.*$/gm, '') // single-line comments
-    .replace(/\/\*[\s\S]*?\*\//g, '') // block comments
-    .replace(/(['"])(?:\\.|(?!\1).)*\1/g, '') // single/double quoted strings
-    .replace(/`(?:\\.|[^`])*`/g, ''); // template literals
+    .replace(/\/\/.*$/gm, "") // single-line comments
+    .replace(/\/\*[\s\S]*?\*\//g, "") // block comments
+    .replace(/(['"])(?:\\.|(?!\1).)*\1/g, "") // single/double quoted strings
+    .replace(/`(?:\\.|[^`])*`/g, ""); // template literals
 
   // Remove JSX text nodes between tags (e.g. >TBD< or >ZIP<)
-  sanitized = sanitized.replace(/>[^<>]*</g, '><');
+  sanitized = sanitized.replace(/>[^<>]*</g, "><");
 
   const re = /\b([A-Z][A-Z0-9_]{2,})\b/g;
   const out = new Set();
@@ -81,7 +85,23 @@ function extractUpperTokens(content) {
 }
 
 const KNOWN_GLOBALS = new Set([
-  'Date', 'Math', 'JSON', 'Promise', 'Array', 'Object', 'console', 'window', 'document', 'self', 'navigator', 'fetch', 'import', 'require', 'module', 'process', 'URL',
+  "Date",
+  "Math",
+  "JSON",
+  "Promise",
+  "Array",
+  "Object",
+  "console",
+  "window",
+  "document",
+  "self",
+  "navigator",
+  "fetch",
+  "import",
+  "require",
+  "module",
+  "process",
+  "URL",
 ]);
 
 // Collect exported identifiers from src/constants and src/config so they're not flagged
@@ -92,7 +112,7 @@ function collectExportsFromDir(dir) {
     const full = path.join(dir, name);
     if (!fs.statSync(full).isFile()) continue;
     if (!/\.(js|jsx)$/.test(name)) continue;
-    const src = fs.readFileSync(full, 'utf8');
+    const src = fs.readFileSync(full, "utf8");
     // export const NAME =
     const re1 = /export\s+(?:const|let|var)\s+([A-Za-z_$][A-Za-z0-9_$]*)/g;
     let m;
@@ -106,9 +126,9 @@ function collectExportsFromDir(dir) {
     // export { A, B as C }
     const re4 = /export\s*\{([^}]+)\}/g;
     while ((m = re4.exec(src))) {
-      const names = m[1].split(',').map(s => s.trim());
+      const names = m[1].split(",").map((s) => s.trim());
       for (const n of names) {
-        const parts = n.split(/\s+as\s+/i).map(p => p.trim());
+        const parts = n.split(/\s+as\s+/i).map((p) => p.trim());
         out.add(parts[1] || parts[0]);
       }
     }
@@ -117,13 +137,13 @@ function collectExportsFromDir(dir) {
   return out;
 }
 
-const CONST_EXPORTS = collectExportsFromDir(path.join(srcDir, 'constants'));
-const CONFIG_EXPORTS = collectExportsFromDir(path.join(srcDir, 'config'));
+const CONST_EXPORTS = collectExportsFromDir(path.join(srcDir, "constants"));
+const CONFIG_EXPORTS = collectExportsFromDir(path.join(srcDir, "config"));
 
 const files = walk(srcDir);
 const report = [];
 for (const f of files) {
-  const content = fs.readFileSync(f, 'utf8');
+  const content = fs.readFileSync(f, "utf8");
   const imports = extractImports(content);
   const decl = extractDeclared(content);
   const uppers = extractUpperTokens(content);
@@ -143,15 +163,17 @@ for (const f of files) {
 }
 
 if (!report.length) {
-  console.log('No suspicious undeclared UPPER_CASE tokens found.');
+  console.log("No suspicious undeclared UPPER_CASE tokens found.");
   process.exit(0);
 }
 
-console.log('Potential undeclared UPPER_CASE tokens (heuristic):');
+console.log("Potential undeclared UPPER_CASE tokens (heuristic):");
 for (const r of report) {
-  console.log('\n', path.relative(repoRoot, r.file));
-  console.log('  ', r.suspects.join(', '));
+  console.log("\n", path.relative(repoRoot, r.file));
+  console.log("  ", r.suspects.join(", "));
 }
 
-console.log('\nReview the listed tokens in each file — they may be constants expected to be imported or defined elsewhere.');
+console.log(
+  "\nReview the listed tokens in each file — they may be constants expected to be imported or defined elsewhere.",
+);
 process.exit(0);

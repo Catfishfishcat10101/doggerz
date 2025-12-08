@@ -27,7 +27,10 @@ export default function BackyardBackground(props = {}) {
 
   const mode = String(timeOfDay).toLowerCase() === "night" ? "night" : "day";
 
-  const backgroundUrl = mode === "night" ? "/backgrounds/backyard-night.png" : "/backgrounds/backyard-day.png";
+  const backgroundUrl =
+    mode === "night"
+      ? "/backgrounds/backyard-night.png"
+      : "/backgrounds/backyard-day.png";
 
   return (
     <div

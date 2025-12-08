@@ -2,14 +2,14 @@
 // scripts/check-jsx-syntax.mjs
 // Parse all .jsx files in src/ using @babel/parser to detect syntax errors
 
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import parser from '@babel/parser';
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+import parser from "@babel/parser";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const SRC = path.resolve(__dirname, '../src');
+const SRC = path.resolve(__dirname, "../src");
 
 function collectJsxFiles(dir) {
   const results = [];
@@ -18,7 +18,7 @@ function collectJsxFiles(dir) {
     const full = path.join(dir, e.name);
     if (e.isDirectory()) {
       results.push(...collectJsxFiles(full));
-    } else if (e.isFile() && full.endsWith('.jsx')) {
+    } else if (e.isFile() && full.endsWith(".jsx")) {
       results.push(full);
     }
   }
@@ -26,11 +26,16 @@ function collectJsxFiles(dir) {
 }
 
 function checkFile(file) {
-  const code = fs.readFileSync(file, 'utf8');
+  const code = fs.readFileSync(file, "utf8");
   try {
     parser.parse(code, {
-      sourceType: 'module',
-      plugins: ['jsx', 'classProperties', 'optionalChaining', 'nullishCoalescingOperator'],
+      sourceType: "module",
+      plugins: [
+        "jsx",
+        "classProperties",
+        "optionalChaining",
+        "nullishCoalescingOperator",
+      ],
     });
     return null;
   } catch (err) {
@@ -41,7 +46,7 @@ function checkFile(file) {
 const files = fs.existsSync(SRC) ? collectJsxFiles(SRC) : [];
 
 if (!files.length) {
-  console.log('No .jsx files found under src/');
+  console.log("No .jsx files found under src/");
   process.exit(0);
 }
 
@@ -50,12 +55,14 @@ for (const f of files) {
   const msg = checkFile(f);
   if (msg) {
     errors++;
-    console.error(`SYNTAX ERROR in ${path.relative(process.cwd(), f)}:\n  ${msg}\n`);
+    console.error(
+      `SYNTAX ERROR in ${path.relative(process.cwd(), f)}:\n  ${msg}\n`,
+    );
   }
 }
 
 if (errors === 0) {
-  console.log('All .jsx files parsed successfully.');
+  console.log("All .jsx files parsed successfully.");
   process.exit(0);
 } else {
   console.error(`Found ${errors} file(s) with syntax errors.`);

@@ -23,7 +23,7 @@ export function setupCanvasForSprite(
   if (typeof window === "undefined") return null;
   const dpr = Math.max(
     1,
-    (typeof window !== "undefined" && window.devicePixelRatio) || 1
+    (typeof window !== "undefined" && window.devicePixelRatio) || 1,
   );
 
   // logical CSS size (px)

@@ -19,7 +19,11 @@ const SPRITES_BY_STAGE = {
  *  - stage: "puppy" | "adult" | "senior"
  *  - size?: "sm" | "md" | "lg"
  */
-export default function Dog3DSprite({ stage = "puppy", size = "md", className = "" }) {
+export default function Dog3DSprite({
+  stage = "puppy",
+  size = "md",
+  className = "",
+}) {
   const src = SPRITES_BY_STAGE[stage] ?? puppySprite;
 
   const sizeClass =
@@ -30,7 +34,11 @@ export default function Dog3DSprite({ stage = "puppy", size = "md", className = 
         : "w-[50%] max-w-[200px]";
 
   return (
-    <div className={["pointer-events-none select-none", className].filter(Boolean).join(" ")}>
+    <div
+      className={["pointer-events-none select-none", className]
+        .filter(Boolean)
+        .join(" ")}
+    >
       <img
         src={src}
         alt="Your Doggerz pup"

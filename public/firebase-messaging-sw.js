@@ -34,14 +34,14 @@ if (firebaseConfig) {
     // If initialization fails, don't crash the service worker
     console.warn(
       "Firebase messaging SW init failed:",
-      err && err.message ? err.message : err
+      err && err.message ? err.message : err,
     );
   }
 } else {
   // Not configured; messaging will be disabled. This is normal in dev
   // when you haven't provided firebase credentials to the SW.
   console.warn(
-    "Firebase messaging service worker: no firebase config found (set self.__FIREBASE_CONFIG__)."
+    "Firebase messaging service worker: no firebase config found (set self.__FIREBASE_CONFIG__).",
   );
 }
 

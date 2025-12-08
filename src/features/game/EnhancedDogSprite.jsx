@@ -12,25 +12,37 @@ import { getAnimationMeta } from "./DogAnimator.js";
  * with animation metadata from `DogAnimator.js` so animations match the
  * sheet layout.
  */
-export default function EnhancedDogSprite({ stage, dog, className = "", animation = "idle", scale = 1 }) {
+export default function EnhancedDogSprite({
+  stage,
+  dog,
+  className = "",
+  animation = "idle",
+  scale = 1,
+}) {
   // Determine the sprite source from the dog's stage or provided stage prop
   const spriteSrc = getSpriteForStageAndTier(dog || stage);
 
   const meta = getAnimationMeta(animation || "idle");
 
   // Compute columns/rows from sheet/frame sizes (meta provides these)
-  const columns = Math.max(1, Math.floor((meta.sheetWidth || 256) / (meta.frameWidth || 64)));
-  const rows = Math.max(1, Math.floor((meta.sheetHeight || 320) / (meta.frameHeight || 64)));
+  const columns = Math.max(
+    1,
+    Math.floor((meta.sheetWidth || 256) / (meta.frameWidth || 64)),
+  );
+  const rows = Math.max(
+    1,
+    Math.floor((meta.sheetHeight || 320) / (meta.frameHeight || 64)),
+  );
 
   const fps = meta.fps || 6;
 
   const [interactiveAnim, setInteractiveAnim] = useState(null);
 
-  const currentAnimation = interactiveAnim || animation || 'idle';
+  const currentAnimation = interactiveAnim || animation || "idle";
 
   const handleActivate = useCallback(() => {
     // momentarily switch to attention animation
-    setInteractiveAnim('attention');
+    setInteractiveAnim("attention");
     setTimeout(() => setInteractiveAnim(null), 1200);
   }, []);
 
@@ -42,7 +54,7 @@ export default function EnhancedDogSprite({ stage, dog, className = "", animatio
       tabIndex={0}
       onClick={handleActivate}
       onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
+        if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
           handleActivate();
         }

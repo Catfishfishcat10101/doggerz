@@ -15,7 +15,8 @@ export default function TemperamentRevealPage() {
   const temperament = dog?.temperament || dog?.temperamentType || null;
   const traits = dog?.temperamentTraits || [];
   const rank = dog?.temperamentRank || null;
-  const discoveredAt = dog?.temperamentDiscoveredAt || dog?.temperamentRevealedAt || null;
+  const discoveredAt =
+    dog?.temperamentDiscoveredAt || dog?.temperamentRevealedAt || null;
 
   return (
     <div className="flex-1 flex items-center justify-center px-4 py-8">
@@ -27,8 +28,8 @@ export default function TemperamentRevealPage() {
           </h1>
           <p className="mt-1 text-sm text-slate-200 max-w-xl">
             Based on how you've fed, played with, and trained your pup, Doggerz
-            builds a temperament profile. This helps you understand how your
-            dog is likely to react to different care and training styles.
+            builds a temperament profile. This helps you understand how your dog
+            is likely to react to different care and training styles.
           </p>
         </header>
 

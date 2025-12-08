@@ -71,7 +71,7 @@ export default function JackRussellPuppySprite({
         0,
         0,
         frameWidth * scale,
-        frameHeight * scale
+        frameHeight * scale,
       );
 
       rafRef.current = requestAnimationFrame(drawFrame);

@@ -41,7 +41,9 @@ export default function PottyTrackerCard({
       {/* Header */}
       <div className="flex items-center justify-between text-sm font-semibold text-amber-200">
         <span>Potty tracker</span>
-        <span className="text-xs text-amber-300">{pottyStatusLabel === 'NOW' ? 'Now' : pottyStatusLabel}</span>
+        <span className="text-xs text-amber-300">
+          {pottyStatusLabel === "NOW" ? "Now" : pottyStatusLabel}
+        </span>
       </div>
 
       {/* Potty gauge */}

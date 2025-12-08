@@ -31,7 +31,7 @@ export const fetchMemorials = createAsyncThunk(
     } catch (err) {
       return rejectWithValue(err.message || String(err));
     }
-  }
+  },
 );
 
 export const saveMemorial = createAsyncThunk(
@@ -42,7 +42,9 @@ export const saveMemorial = createAsyncThunk(
       const payload = { ...memorial, savedAt: Date.now() };
       if (!user) {
         // local fallback
-        const existing = JSON.parse(localStorage.getItem("doggerz:memorials") || "[]");
+        const existing = JSON.parse(
+          localStorage.getItem("doggerz:memorials") || "[]",
+        );
         existing.unshift(payload);
         localStorage.setItem("doggerz:memorials", JSON.stringify(existing));
         return payload;
@@ -53,7 +55,7 @@ export const saveMemorial = createAsyncThunk(
     } catch (err) {
       return rejectWithValue(err.message || String(err));
     }
-  }
+  },
 );
 
 export const deleteMemorial = createAsyncThunk(
@@ -62,7 +64,9 @@ export const deleteMemorial = createAsyncThunk(
     try {
       const user = auth?.currentUser;
       if (!user) {
-        const existing = JSON.parse(localStorage.getItem("doggerz:memorials") || "[]");
+        const existing = JSON.parse(
+          localStorage.getItem("doggerz:memorials") || "[]",
+        );
         const filtered = existing.filter((m) => m.id !== id);
         localStorage.setItem("doggerz:memorials", JSON.stringify(filtered));
         return id;
@@ -73,7 +77,7 @@ export const deleteMemorial = createAsyncThunk(
     } catch (err) {
       return rejectWithValue(err.message || String(err));
     }
-  }
+  },
 );
 
 const initialState = {

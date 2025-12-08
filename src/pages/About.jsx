@@ -32,9 +32,9 @@ export default function AboutPage() {
             Time in Doggerz is accelerated: your dog ages faster than real time.
             With good care they can live a long, happy life. Ignoring them for
             days has consequences — hunger, poor cleanliness, and low health can
-            eventually lead to death. The simulator aims for a realistic lifespan
-            (roughly 17 dog years by default) while letting care and choices
-            influence outcomes.
+            eventually lead to death. The simulator aims for a realistic
+            lifespan (roughly 17 dog years by default) while letting care and
+            choices influence outcomes.
           </p>
         </section>
 

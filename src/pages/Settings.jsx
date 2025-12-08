@@ -75,7 +75,7 @@ export default function Settings() {
                 dispatch(setZip(zipInput));
                 try {
                   announce({ message: "Settings saved", type: "success" });
-                } catch (e) { }
+                } catch (e) {}
               }}
               disabled={zipInput && !/^\d{5}$/.test(zipInput)}
               title={

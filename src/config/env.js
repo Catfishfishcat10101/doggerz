@@ -48,5 +48,5 @@ export async function fetchWeatherByZip(zipCode, countryCode = "US") {
 export const FIREBASE = firebaseConfig;
 export const missingFirebaseKeys = [];
 export const isFirebaseConfigured = Boolean(
-  FIREBASE && FIREBASE.apiKey && FIREBASE.apiKey.length > 0
+  FIREBASE && FIREBASE.apiKey && FIREBASE.apiKey.length > 0,
 );

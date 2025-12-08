@@ -7,10 +7,10 @@
 import React from "react";
 
 export default function TemperamentCard({
-  temperament,      // e.g. "LOYAL", "ROWDY", etc.
-  traits = [],      // array of { name, description } or strings
-  rank,             // e.g. "S", "A", "B" etc.
-  discoveredAt,     // ISO string or null
+  temperament, // e.g. "LOYAL", "ROWDY", etc.
+  traits = [], // array of { name, description } or strings
+  rank, // e.g. "S", "A", "B" etc.
+  discoveredAt, // ISO string or null
 }) {
   const hasTemperament = Boolean(temperament);
 
@@ -71,15 +71,19 @@ export default function TemperamentCard({
                     {trait.description}
                   </div>
                 )}
-                {typeof trait.intensity === 'number' && (
+                {typeof trait.intensity === "number" && (
                   <div className="mt-2">
                     <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
                       <div
                         className="bg-emerald-500 h-2"
-                        style={{ width: `${Math.max(0, Math.min(100, trait.intensity))}%` }}
+                        style={{
+                          width: `${Math.max(0, Math.min(100, trait.intensity))}%`,
+                        }}
                       />
                     </div>
-                    <div className="text-[10px] text-slate-400 mt-1">Intensity: {trait.intensity}%</div>
+                    <div className="text-[10px] text-slate-400 mt-1">
+                      Intensity: {trait.intensity}%
+                    </div>
                   </div>
                 )}
               </div>

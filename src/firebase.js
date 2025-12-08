@@ -40,7 +40,7 @@ const logMissingConfig = () => {
     : "unknown";
   console.warn(
     `[Doggerz] Firebase disabled. Missing config keys: ${printable}. ` +
-      "Populate .env.local (VITE_FIREBASE_*) or cloud features will be off."
+      "Populate .env.local (VITE_FIREBASE_*) or cloud features will be off.",
   );
 };
 
@@ -102,10 +102,10 @@ export const assertFirebaseReady = (featureName = "this feature") => {
   const missing = firebaseMissingKeys.length
     ? `Missing keys: ${firebaseMissingKeys.join(", ")}.`
     : firebaseError
-    ? `Init error: ${firebaseError.message}`
-    : "Unknown configuration issue.";
+      ? `Init error: ${firebaseError.message}`
+      : "Unknown configuration issue.";
 
   throw new Error(
-    `[Doggerz] ${featureName} requires Firebase to be configured. ${missing}`
+    `[Doggerz] ${featureName} requires Firebase to be configured. ${missing}`,
   );
 };

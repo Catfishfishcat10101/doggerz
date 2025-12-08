@@ -21,7 +21,8 @@ function runTrial({ health = 100, maxDays = 20000 }) {
     const ageOver = Math.max(0, ageDays - expectedGameDays);
     const ageFactor = Math.min(1, ageOver / AGE_RISK_WINDOW_DAYS);
     const healthFactor = Math.min(1, Math.max(0, (100 - health) / 100));
-    const prob = baseProb + baseProb * MULTIPLIER * ageFactor * (0.5 + healthFactor);
+    const prob =
+      baseProb + baseProb * MULTIPLIER * ageFactor * (0.5 + healthFactor);
 
     if (Math.random() < prob) return ageDays;
 
@@ -67,7 +68,7 @@ async function run({ trials = DEFAULT_TRIALS }) {
       median: v.medianYears.toFixed(2),
       p10: v.p10.toFixed(2),
       p90: v.p90.toFixed(2),
-    }))
+    })),
   );
 }
 

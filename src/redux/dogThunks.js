@@ -108,7 +108,7 @@ export const saveMemorialToCloud = createAsyncThunk(
     try {
       if (!firebaseReady || !db || !auth?.currentUser) {
         return rejectWithValue(
-          "Cloud sync disabled: Firebase not configured or user not logged in"
+          "Cloud sync disabled: Firebase not configured or user not logged in",
         );
       }
 
@@ -118,7 +118,7 @@ export const saveMemorialToCloud = createAsyncThunk(
         "users",
         userId,
         "memorials",
-        `${Date.now()}`
+        `${Date.now()}`,
       );
       // avoid spreading unknown types for stricter typing
       /** @type {any} */
@@ -136,5 +136,5 @@ export const saveMemorialToCloud = createAsyncThunk(
       console.error("[Doggerz] Failed to save memorial to cloud", err);
       return rejectWithValue(err.message || "saveMemorialToCloud failed");
     }
-  }
+  },
 );
