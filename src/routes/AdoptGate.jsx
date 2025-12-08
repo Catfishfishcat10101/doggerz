@@ -11,11 +11,7 @@ import { useSelector } from "react-redux";
 import { useAppDispatch } from "@/redux/hooks.js";
 import { useNavigate } from "react-router-dom";
 
-import {
-  selectDog,
-  setDogName,
-  setAdoptedAt,
-} from "@/redux/dogSlice.js";
+import { selectDog, setDogName, setAdoptedAt } from "@/redux/dogSlice.js";
 
 export default function AdoptGate() {
   const dispatch = useAppDispatch();
@@ -51,8 +47,8 @@ export default function AdoptGate() {
           Adopt Your Doggerz Pup
         </h1>
         <p className="text-sm text-slate-200 mb-4">
-          Choose a name for your new Jack Russell buddy. You can always
-          change it later, but this is how they&apos;ll show up in game.
+          Choose a name for your new Jack Russell buddy. You can always change
+          it later, but this is how they&apos;ll show up in game.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -67,9 +63,7 @@ export default function AdoptGate() {
             className="w-full rounded-lg bg-black/70 border border-emerald-500/60 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-400"
           />
 
-          {error && (
-            <div className="text-xs text-red-300 mt-1">{error}</div>
-          )}
+          {error && <div className="text-xs text-red-300 mt-1">{error}</div>}
 
           <button
             type="submit"

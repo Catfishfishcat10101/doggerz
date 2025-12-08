@@ -25,7 +25,8 @@ export default function DogAIEngine() {
   const dogState = useSelector(selectDog);
   // Derive a simple weather hint from the time/weather hook when a redux slice is not present
   const { skyState } = useTimeWeatherBackground();
-  const weather = skyState === "rainy" ? "rain" : skyState === "snow" ? "snow" : "clear";
+  const weather =
+    skyState === "rainy" ? "rain" : skyState === "snow" ? "snow" : "clear";
 
   const hasHydratedRef = useRef(false);
   const cloudSaveTimeoutRef = useRef(null);

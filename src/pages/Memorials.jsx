@@ -5,7 +5,11 @@ import { useSelector } from "react-redux";
 import { useAppDispatch } from "@/redux/hooks.js";
 import { useNavigate } from "react-router-dom";
 import MemorialCard from "@/components/MemorialCard.jsx";
-import { fetchMemorials, saveMemorial, deleteMemorial } from "@/redux/memorialsSlice.js";
+import {
+  fetchMemorials,
+  saveMemorial,
+  deleteMemorial,
+} from "@/redux/memorialsSlice.js";
 import { selectDog, adoptFromMemorial } from "@/redux/dogSlice.js";
 
 export default function Memorials() {
@@ -57,7 +61,9 @@ export default function Memorials() {
       <div className="container mx-auto px-4 max-w-4xl space-y-6">
         <header>
           <h1 className="text-2xl font-bold">Memorials</h1>
-          <p className="text-sm text-zinc-300">Saved memories of past pups and notable moments.</p>
+          <p className="text-sm text-zinc-300">
+            Saved memories of past pups and notable moments.
+          </p>
         </header>
 
         <div className="flex gap-3">
@@ -85,10 +91,17 @@ export default function Memorials() {
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
             <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 max-w-md w-full">
               <h3 className="text-lg font-semibold">Delete memorial?</h3>
-              <p className="text-sm text-zinc-400 mt-2">Are you sure you want to delete this memorial? This cannot be undone.</p>
+              <p className="text-sm text-zinc-400 mt-2">
+                Are you sure you want to delete this memorial? This cannot be
+                undone.
+              </p>
               <div className="mt-4 flex gap-3 justify-end">
-                <button className="btn btn--ghost" onClick={cancelDelete}>Cancel</button>
-                <button className="btn btn--warn" onClick={doDelete}>Delete</button>
+                <button className="btn btn--ghost" onClick={cancelDelete}>
+                  Cancel
+                </button>
+                <button className="btn btn--warn" onClick={doDelete}>
+                  Delete
+                </button>
               </div>
             </div>
           </div>

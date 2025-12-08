@@ -16,7 +16,6 @@ export default function Landing() {
             </span>
             <span className="text-[0.7rem] sm:text-xs uppercase tracking-[0.25em] text-zinc-400">
               Adopt. Train. Bond.
-
             </span>
           </div>
 
@@ -49,8 +48,8 @@ export default function Landing() {
 
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-tight text-zinc-50">
               A little dog that{" "}
-              <span className="text-emerald-400">doesnt pause</span>{" "}
-              when you do.
+              <span className="text-emerald-400">doesnt pause</span> when you
+              do.
             </h1>
 
             <p className="max-w-xl text-sm sm:text-base text-zinc-300">
@@ -60,8 +59,8 @@ export default function Landing() {
             </p>
 
             <p className="max-w-xl text-sm sm:text-base text-zinc-400">
-              Feed, clean, train, and try not to ghost your dog. Miss a few
-              days and your pup will definitely have feelings about it.
+              Feed, clean, train, and try not to ghost your dog. Miss a few days
+              and your pup will definitely have feelings about it.
             </p>
 
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 pt-2">
@@ -100,7 +99,9 @@ export default function Landing() {
                 <div className="h-20 w-20 rounded-2xl bg-zinc-800" />
               </div>
 
-              <div className="text-sm text-zinc-400">Adopt a pup to see live stats and temperament.</div>
+              <div className="text-sm text-zinc-400">
+                Adopt a pup to see live stats and temperament.
+              </div>
             </div>
           </section>
         </div>
@@ -109,7 +110,9 @@ export default function Landing() {
       {/* Simple footer */}
       <footer className="w-full border-t border-zinc-900">
         <div className="mx-auto max-w-6xl px-4 py-4 text-[0.7rem] sm:text-xs text-zinc-500 flex items-center justify-between">
-          <span>© {new Date().getFullYear()} Doggerz — 2025 All Rights Reserved</span>
+          <span>
+            © {new Date().getFullYear()} Doggerz — 2025 All Rights Reserved
+          </span>
           <span className="hidden sm:inline">
             Be kind to real dogs as well as your virtual one.
           </span>

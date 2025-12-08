@@ -3,7 +3,9 @@ import React from "react";
 
 export default function MemorialCard({ memorial, onRestore, onDelete }) {
   const title = memorial.title || memorial.name || "A beloved pup";
-  const savedAt = memorial.savedAt ? new Date(memorial.savedAt).toLocaleString() : "Unknown";
+  const savedAt = memorial.savedAt
+    ? new Date(memorial.savedAt).toLocaleString()
+    : "Unknown";
 
   return (
     <article className="rounded-xl border border-zinc-800 bg-zinc-950/80 p-4 shadow">

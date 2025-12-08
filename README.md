@@ -1,23 +1,23 @@
- # 🐶 Doggerz
+# 🐶 Doggerz
 
- Adopt a pixel pup and make choices that shape its behavior. Built with React, Redux Toolkit, Vite, Tailwind, and Firebase. Offline-ready PWA.
+Adopt a pixel pup and make choices that shape its behavior. Built with React, Redux Toolkit, Vite, Tailwind, and Firebase. Offline-ready PWA.
 
- Badges, screenshots, and other collateral live in the repository; run the app locally to preview.
+Badges, screenshots, and other collateral live in the repository; run the app locally to preview.
 
- ## Quick Links
+## Quick Links
 
- - Run dev server: `npm run dev`
- - Run tests: `npm test`
- - Lifespan analysis scripts: `npm run lifespan:analytical` and `npm run lifespan:simulate -- <trials>`
+- Run dev server: `npm run dev`
+- Run tests: `npm test`
+- Lifespan analysis scripts: `npm run lifespan:analytical` and `npm run lifespan:simulate -- <trials>`
 
- ## Getting Started
+## Getting Started
 
- 1. Clone and install:
+1.  Clone and install:
 
- ```powershell
- git clone git@github.com:Catfishfishcat10101/doggerz.git
- cd doggerz
- npm install
+````powershell
+git clone git@github.com:Catfishfishcat10101/doggerz.git
+cd doggerz
+npm install
 # 🐶 Doggerz
 
 Adopt a pixel pup and make choices that shape its behavior. Built with React, Redux Toolkit, Vite, Tailwind, and Firebase. Offline-ready PWA.
@@ -38,7 +38,7 @@ Badges, screenshots, and other collateral live in the repository; run the app lo
 git clone git@github.com:Catfishfishcat10101/doggerz.git
 cd doggerz
 npm install
-```
+````
 
 2. Create `.env.local` from `.env.example` and add your Firebase web app credentials.
 
@@ -87,7 +87,7 @@ See `CONTRIBUTING.md` (if present) or open an issue/PR. Be sure to run tests loc
 ---
 
 If you'd like, I can add a short `TESTING.md` or `CONTRIBUTING.md` with more details, or I can keep the README concise.
-  tinted gradient overlay.
+tinted gradient overlay.
 
 Environment variables used:
 

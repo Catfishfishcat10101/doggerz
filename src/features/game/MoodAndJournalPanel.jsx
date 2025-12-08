@@ -9,12 +9,12 @@ import { selectDogMood, selectDogJournal } from "@/redux/dogSlice.js";
 import { MOOD_NEUTRAL } from "@/constants/game.js";
 
 const MOOD_EMOJI = {
-  "HAPPY": "🦴",
-  "HUNGRY": "🍗",
-  "SLEEPY": "😴",
-  "DIRTY": "🛁",
-  "LONELY": "💔",
-  "NEUTRAL": "🙂",
+  HAPPY: "🦴",
+  HUNGRY: "🍗",
+  SLEEPY: "😴",
+  DIRTY: "🛁",
+  LONELY: "💔",
+  NEUTRAL: "🙂",
 };
 
 function moodEmoji(tag) {
@@ -51,7 +51,10 @@ function MoodTimeline({ mood }) {
             const height = Math.max(6, hRatio * 56);
             const tag = m.tag || MOOD_NEUTRAL;
             return (
-              <div key={idx} className="flex-1 flex flex-col items-center justify-end">
+              <div
+                key={idx}
+                className="flex-1 flex flex-col items-center justify-end"
+              >
                 <div
                   className="w-full rounded-full bg-emerald-500/80"
                   style={{ height: `${height}px` }}
@@ -114,7 +117,9 @@ function JournalList({ journal }) {
               </span>
               <span>{timeString}</span>
             </div>
-            <p className="mt-1 text-xs font-medium text-zinc-100">{entry.summary}</p>
+            <p className="mt-1 text-xs font-medium text-zinc-100">
+              {entry.summary}
+            </p>
             {entry.body && (
               <p className="mt-1 text-[11px] text-zinc-300 whitespace-pre-line">
                 {entry.body}
@@ -149,7 +154,9 @@ export default function MoodAndJournalPanel() {
         <div className="space-y-2">
           <div className="flex items-center justify-between text-xs text-zinc-400">
             <span>Dog journal</span>
-            <span className="text-[10px] text-zinc-500">Auto-written by your pup</span>
+            <span className="text-[10px] text-zinc-500">
+              Auto-written by your pup
+            </span>
           </div>
           <JournalList journal={journal} />
         </div>

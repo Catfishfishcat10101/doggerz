@@ -8,7 +8,11 @@
 // fetchWeatherByZip: uses VITE_OPENWEATHER_API_KEY if available, otherwise returns
 // a safe dummy value so UI can render without a real API key.
 export async function fetchWeatherByZip(zipCode, countryCode = "US") {
-  const apiKey = (typeof process !== 'undefined' && process.env && process.env.VITE_OPENWEATHER_API_KEY) || undefined;
+  const apiKey =
+    (typeof process !== "undefined" &&
+      process.env &&
+      process.env.VITE_OPENWEATHER_API_KEY) ||
+    undefined;
   if (!apiKey) {
     // Dummy fallback
     return {
@@ -60,4 +64,9 @@ export function shouldHowlAtMoon(/* now, location */) {
   return Math.random() < 0.2;
 }
 
-export default { fetchWeatherByZip, getTimeOfDay, getAmbientWeatherHint, shouldHowlAtMoon };
+export default {
+  fetchWeatherByZip,
+  getTimeOfDay,
+  getAmbientWeatherHint,
+  shouldHowlAtMoon,
+};

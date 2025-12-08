@@ -282,7 +282,7 @@ function applyDecay(state, now = nowMs()) {
   if (diffHours >= 24) {
     state.memory.neglectStrikes = Math.min(
       (state.memory.neglectStrikes || 0) + 1,
-      999
+      999,
     );
     pushJournalEntry(state, {
       type: "NEGLECT",
@@ -398,7 +398,7 @@ function updateStreak(streakState, isoDate) {
 
   streakState.bestStreakDays = Math.max(
     streakState.bestStreakDays,
-    streakState.currentStreakDays
+    streakState.currentStreakDays,
   );
   streakState.lastActiveDate = isoDate;
 }
@@ -458,7 +458,7 @@ function evaluateTemperament(state, now = nowMs()) {
   const recentMoods = (state.mood?.history || []).slice(0, 10);
   const happyMoodCount = recentMoods.filter((m) => m.tag === MOOD_HAPPY).length;
   const hungryMoodCount = recentMoods.filter(
-    (m) => m.tag === MOOD_HUNGRY
+    (m) => m.tag === MOOD_HUNGRY,
   ).length;
   const moodSentiment = {
     happy: happyMoodCount,
@@ -467,10 +467,10 @@ function evaluateTemperament(state, now = nowMs()) {
 
   const recentJournal = (state.journal?.entries || []).slice(0, 20);
   const trainingEntries = recentJournal.filter(
-    (e) => e.type === "TRAINING"
+    (e) => e.type === "TRAINING",
   ).length;
   const neglectEntries = recentJournal.filter(
-    (e) => e.type === "NEGLECT"
+    (e) => e.type === "NEGLECT",
   ).length;
 
   const targetClingy = clamp(
@@ -479,10 +479,10 @@ function evaluateTemperament(state, now = nowMs()) {
         (100 - happiness) * 0.15 +
         neglect * 8 +
         neglectEntries * 5 +
-        (trainedRecently ? -5 : 10)
+        (trainedRecently ? -5 : 10),
     ),
     0,
-    100
+    100,
   );
 
   const targetToy = clamp(
@@ -491,10 +491,10 @@ function evaluateTemperament(state, now = nowMs()) {
         (happiness - 50) * 0.2 +
         (playedRecently ? 12 : 0) +
         moodSentiment.happy * 3 +
-        avgObedienceLevel * 0.5
+        avgObedienceLevel * 0.5,
     ),
     0,
-    100
+    100,
   );
 
   const targetFood = clamp(
@@ -503,10 +503,10 @@ function evaluateTemperament(state, now = nowMs()) {
         (hunger - 50) * 0.25 +
         (fedRecently ? 10 : 0) +
         moodSentiment.hungry * 2 +
-        (avgObedienceLevel > 0 ? -3 : 0)
+        (avgObedienceLevel > 0 ? -3 : 0),
     ),
     0,
-    100
+    100,
   );
 
   // Factor in health: sick pups lean more clingy and less playful
@@ -520,21 +520,21 @@ function evaluateTemperament(state, now = nowMs()) {
     // use adj values below when updating intensities
     clingy.intensity = Math.round(clingy.intensity * 0.65 + adjClingy * 0.35);
     toyObsessed.intensity = Math.round(
-      toyObsessed.intensity * 0.65 + adjToy * 0.35
+      toyObsessed.intensity * 0.65 + adjToy * 0.35,
     );
     foodMotivated.intensity = Math.round(
-      foodMotivated.intensity * 0.65 + adjFood * 0.35
+      foodMotivated.intensity * 0.65 + adjFood * 0.35,
     );
   } catch (e) {
     // fallback to previous assignments
     clingy.intensity = Math.round(
-      clingy.intensity * 0.65 + targetClingy * 0.35
+      clingy.intensity * 0.65 + targetClingy * 0.35,
     );
     toyObsessed.intensity = Math.round(
-      toyObsessed.intensity * 0.65 + targetToy * 0.35
+      toyObsessed.intensity * 0.65 + targetToy * 0.35,
     );
     foodMotivated.intensity = Math.round(
-      foodMotivated.intensity * 0.65 + targetFood * 0.35
+      foodMotivated.intensity * 0.65 + targetFood * 0.35,
     );
   }
 
@@ -618,7 +618,7 @@ function finalizeDerivedState(state, now = nowMs()) {
       ? state.stats.cleanliness
       : 50;
     const healthVal = Math.round(
-      (100 - hunger + happiness + energy + cleanliness) / 4
+      (100 - hunger + happiness + energy + cleanliness) / 4,
     );
     state.health = clamp(healthVal, 0, 100);
   } catch (err) {
@@ -666,7 +666,7 @@ function finalizeDerivedState(state, now = nowMs()) {
           state.stats[stat] = clamp(
             state.stats[stat] + Math.round((delta * severity) / 100),
             0,
-            100
+            100,
           );
         }
       });
@@ -674,7 +674,7 @@ function finalizeDerivedState(state, now = nowMs()) {
       state.health = clamp(
         (state.health || 100) - Math.max(1, Math.round(severity / 15)),
         0,
-        100
+        100,
       );
     } else {
       // maybe spawn a disease if health is low or randomly
@@ -775,7 +775,7 @@ function applyCleanlinessPenalties(state, tierOverride) {
     state.stats.happiness = clamp(
       state.stats.happiness - effects.happinessTickPenalty,
       0,
-      100
+      100,
     );
   }
 
@@ -783,7 +783,7 @@ function applyCleanlinessPenalties(state, tierOverride) {
     state.stats.energy = clamp(
       state.stats.energy - effects.energyTickPenalty,
       0,
-      100
+      100,
     );
   }
 }
@@ -1016,7 +1016,7 @@ function resolveActivePoll(state, { accepted, reason, now = nowMs() }) {
     maybeSampleMood(
       state,
       now,
-      reason === "TIMEOUT" ? "POLL_TIMEOUT" : "POLL_DECLINE"
+      reason === "TIMEOUT" ? "POLL_TIMEOUT" : "POLL_DECLINE",
     );
     pushJournalEntry(state, {
       type: "POLL",
@@ -1180,7 +1180,7 @@ const dogSlice = createSlice({
         if (!training.nonPottyUnlockedAt) {
           const unlockDate = new Date();
           unlockDate.setDate(
-            unlockDate.getDate() + REAL_DAYS_TO_UNLOCK_TRAINING
+            unlockDate.getDate() + REAL_DAYS_TO_UNLOCK_TRAINING,
           );
           training.nonPottyUnlockedAt = unlockDate.toISOString();
           training.nonPottyUnlockNotified = false;
@@ -1223,7 +1223,7 @@ const dogSlice = createSlice({
       state.stats.happiness = clamp(
         state.stats.happiness + 5 * careerMultiplier,
         0,
-        100
+        100,
       );
 
       state.memory.lastFedAt = now;
@@ -1365,7 +1365,7 @@ const dogSlice = createSlice({
         state.stats.energy = clamp(state.stats.energy + energyDelta);
       if (typeof state.stats?.cleanliness === "number")
         state.stats.cleanliness = clamp(
-          state.stats.cleanliness + cleanlinessDelta
+          state.stats.cleanliness + cleanlinessDelta,
         );
     },
 
@@ -1488,7 +1488,7 @@ const dogSlice = createSlice({
       state.stats.cleanliness = clamp(
         (state.stats.cleanliness || 50) + 25,
         0,
-        100
+        100,
       );
       state.health = clamp((state.health || 50) + 30, 0, 100);
       state.memory.lastVetVisitAt = now;

@@ -37,24 +37,24 @@ self.addEventListener("install", (event) => {
         const cache = await caches.open(RUNTIME_CACHE);
         // use Promise.allSettled so one missing file doesn't abort the whole install
         const settled = await Promise.allSettled(
-          CORE_ASSETS.map((p) => cache.add(p))
+          CORE_ASSETS.map((p) => cache.add(p)),
         );
         const failed = settled.filter((s) => s.status === "rejected");
         if (failed.length) {
           // Log missing assets to help debugging during development
           console.warn(
             "SW: some core assets failed to cache:",
-            failed.map((f) => f.reason && f.reason.message)
+            failed.map((f) => f.reason && f.reason.message),
           );
         }
       } catch (err) {
         // Log and continue; offline fallback still tries to work
         console.warn(
           "SW install/cache error",
-          err && err.message ? err.message : err
+          err && err.message ? err.message : err,
         );
       }
-    })()
+    })(),
   );
 
   // Activate this SW immediately on next load

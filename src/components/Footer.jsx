@@ -2,7 +2,13 @@ import * as React from "react";
 import PropTypes from "prop-types";
 import { Link } from "react-router-dom";
 import SocialLinks from "@/components/SocialLinks.jsx";
-import { HEADER_WRAPPER, CONTAINER, NAV_CLASSES, SOCIAL_WRAPPER, FOOTER_WRAPPER } from "@/config/headerFooterStyles.js";
+import {
+  HEADER_WRAPPER,
+  CONTAINER,
+  NAV_CLASSES,
+  SOCIAL_WRAPPER,
+  FOOTER_WRAPPER,
+} from "@/config/headerFooterStyles.js";
 
 export default function Footer() {
   return (

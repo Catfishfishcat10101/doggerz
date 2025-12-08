@@ -17,7 +17,8 @@ function dailyDeathProbability(ageDays, health) {
   const ageFactor = Math.min(1, ageOver / AGE_RISK_WINDOW_DAYS);
   const healthFactor = Math.min(1, Math.max(0, (100 - health) / 100));
   const baseProb = 1 / (expectedGameDays * BASE_PROB_FACTOR);
-  const prob = baseProb + baseProb * MULTIPLIER * ageFactor * (0.5 + healthFactor);
+  const prob =
+    baseProb + baseProb * MULTIPLIER * ageFactor * (0.5 + healthFactor);
   return Math.min(1, Math.max(0, prob));
 }
 
@@ -56,8 +57,10 @@ function analyze({ health = 100, maxDays = 20000 }) {
 
 function runAll() {
   const healthScenarios = [100, 90, 80, 70, 60, 50, 30];
-  const results = healthScenarios.map((h) => analyze({ health: h, maxDays: 30000 }));
-  console.log('Analytical lifespan estimates (years):');
+  const results = healthScenarios.map((h) =>
+    analyze({ health: h, maxDays: 30000 }),
+  );
+  console.log("Analytical lifespan estimates (years):");
   console.table(
     results.map((r) => ({
       health: r.health,
@@ -65,7 +68,7 @@ function runAll() {
       median: r.medianYears.toFixed(2),
       p10: r.p10Years.toFixed(2),
       p90: r.p90Years.toFixed(2),
-    }))
+    })),
   );
 }
 

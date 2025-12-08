@@ -2,14 +2,28 @@ import * as React from "react";
 import PropTypes from "prop-types";
 import { Link } from "react-router-dom";
 import SocialLinks from "@/components/SocialLinks.jsx";
-import { HEADER_WRAPPER, CONTAINER, NAV_CLASSES, SOCIAL_WRAPPER } from "@/config/headerFooterStyles.js";
+import {
+  HEADER_WRAPPER,
+  CONTAINER,
+  NAV_CLASSES,
+  SOCIAL_WRAPPER,
+} from "@/config/headerFooterStyles.js";
 
 export default function Header() {
   return (
     <header className={HEADER_WRAPPER}>
-      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 bg-emerald-600 text-black px-2 py-1 rounded">Skip to content</a>
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 bg-emerald-600 text-black px-2 py-1 rounded"
+      >
+        Skip to content
+      </a>
       <div className={CONTAINER}>
-        <Link to="/" className="inline-flex items-center gap-4" aria-label="Home">
+        <Link
+          to="/"
+          className="inline-flex items-center gap-4"
+          aria-label="Home"
+        >
           {/* Match Landing wordmark exactly */}
           <div className="inline-flex flex-col">
             <span className="text-4xl font-black tracking-tight text-emerald-400 drop-shadow-[0_0_20px_rgba(16,185,129,0.55)]">

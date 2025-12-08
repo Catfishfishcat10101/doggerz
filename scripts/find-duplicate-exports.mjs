@@ -4,13 +4,13 @@
 // Run without arguments to print a report. Run with `--fix` to remove exact duplicate
 // declarations (keeps the first occurrence).
 
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
-const repoRoot = path.resolve(__filename, '..', '..');
-const srcDir = path.join(repoRoot, 'src');
+const repoRoot = path.resolve(__filename, "..", "..");
+const srcDir = path.join(repoRoot, "src");
 
 function walk(dir) {
   const out = [];
@@ -24,7 +24,7 @@ function walk(dir) {
 }
 
 function findDuplicatesInFile(filePath) {
-  const src = fs.readFileSync(filePath, 'utf8');
+  const src = fs.readFileSync(filePath, "utf8");
   const re = /export\s+const\s+([A-Za-z_$][A-Za-z0-9_$]*)\s*=\s*([^;]+);/g;
   const items = [];
   let m;
@@ -50,25 +50,27 @@ for (const f of files) {
 }
 
 if (!report.length) {
-  console.log('No duplicate `export const` declarations found within files.');
+  console.log("No duplicate `export const` declarations found within files.");
   process.exit(0);
 }
 
-console.log('Duplicate export declarations report:');
+console.log("Duplicate export declarations report:");
 for (const r of report) {
-  console.log('\n' + path.relative(repoRoot, r.file));
+  console.log("\n" + path.relative(repoRoot, r.file));
   for (const d of r.dups) {
-    console.log('  ', d.name, '(', d.occurrences.length, 'occurrences)');
+    console.log("  ", d.name, "(", d.occurrences.length, "occurrences)");
     for (const occ of d.occurrences) {
-      console.log('    value:', occ.value);
+      console.log("    value:", occ.value);
     }
   }
 }
 
-if (process.argv.includes('--fix')) {
-  console.log('\nAttempting to auto-fix exact duplicate declarations (keeps first).');
+if (process.argv.includes("--fix")) {
+  console.log(
+    "\nAttempting to auto-fix exact duplicate declarations (keeps first).",
+  );
   for (const r of report) {
-    let src = fs.readFileSync(r.file, 'utf8');
+    let src = fs.readFileSync(r.file, "utf8");
     let patched = src;
     // For each duplicate group, remove later occurrences if value is identical to the first
     for (const d of r.dups) {
@@ -77,20 +79,27 @@ if (process.argv.includes('--fix')) {
         const occ = d.occurrences[i];
         if (occ.value === first.value) {
           // Remove the occurrence line
-          const reLine = new RegExp('export\\s+const\\s+' + d.name + '\\s*=\\s*' + escapeRegExp(occ.value) + '\\s*;\\s*\\n?', '');
-          patched = patched.replace(reLine, '');
+          const reLine = new RegExp(
+            "export\\s+const\\s+" +
+              d.name +
+              "\\s*=\\s*" +
+              escapeRegExp(occ.value) +
+              "\\s*;\\s*\\n?",
+            "",
+          );
+          patched = patched.replace(reLine, "");
         }
       }
     }
     if (patched !== src) {
-      fs.writeFileSync(r.file, patched, 'utf8');
-      console.log('Fixed', path.relative(repoRoot, r.file));
+      fs.writeFileSync(r.file, patched, "utf8");
+      console.log("Fixed", path.relative(repoRoot, r.file));
     } else {
-      console.log('No safe fixes for', path.relative(repoRoot, r.file));
+      console.log("No safe fixes for", path.relative(repoRoot, r.file));
     }
   }
 }
 
 function escapeRegExp(str) {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
