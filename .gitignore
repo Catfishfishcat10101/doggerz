@@ -14,3 +14,4 @@ coverage/
 /.cache
 public/assets/
 package-lock.json
+audit-snapshots/
