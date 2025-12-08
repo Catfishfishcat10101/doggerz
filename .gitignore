@@ -13,5 +13,4 @@ yarn-error.log*
 coverage/
 /.cache
 public/assets/
-package-lock.json
 audit-snapshots/
