@@ -1,5 +1,5 @@
-// src/DogAnimator.jsx
 // @ts-nocheck
+// src/features/game/DogAnimator.js
 
 // Sprite sheet config:
 //  - each frame is 64x64
@@ -82,4 +82,24 @@ export function nextFrame(name, currentIndex) {
 
   const idx = Number.isFinite(currentIndex) ? currentIndex : 0;
   return (idx + 1) % total;
+}
+
+/**
+ * Return inline style props for rendering a specific frame from the sprite sheet.
+ * Useful for CSS-based sprite renderers.
+ */
+export function getFrameStyle(name, frameIndex = 0) {
+  const meta = getAnimationMeta(name);
+  const fw = meta.frameWidth || FRAME_WIDTH;
+  const fh = meta.frameHeight || FRAME_HEIGHT;
+  const row = meta.row || 0;
+  const x = (frameIndex % (meta.frames || 1)) * fw;
+  const y = row * fh;
+
+  return {
+    width: `${fw}px`,
+    height: `${fh}px`,
+    backgroundSize: `${meta.sheetWidth}px ${meta.sheetHeight}px`,
+    backgroundPosition: `-${x}px -${y}px`,
+  };
 }

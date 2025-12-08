@@ -1,0 +1,54 @@
+<svg
+  width="192"
+  height="192"
+  viewBox="0 0 512 512"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <defs>
+    <!-- Dark → neon-green radial background -->
+    <radialGradient id="bg" cx="50%" cy="35%" r="70%">
+      <stop offset="0%" stop-color="#22c55e"/>
+      <stop offset="45%" stop-color="#16a34a"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </radialGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="18" flood-color="#000000" flood-opacity="0.65"/>
+    </filter>
+  </defs>
+
+  <!-- Rounded-square badge -->
+  <rect
+    x="32"
+    y="32"
+    width="448"
+    height="448"
+    rx="120"
+    fill="url(#bg)"
+  />
+
+  <!-- Paw print (Doggerz mark) -->
+  <g filter="url(#shadow)" fill="#bbf7d0">
+    <!-- toes -->
+    <circle cx="176" cy="190" r="42"/>
+    <circle cx="235" cy="160" r="42"/>
+    <circle cx="291" cy="160" r="42"/>
+    <circle cx="350" cy="190" r="42"/>
+    <!-- main pad -->
+    <ellipse cx="256" cy="290" rx="98" ry="82" fill="#22c55e"/>
+    <ellipse cx="256" cy="276" rx="72" ry="58" fill="#bbf7d0"/>
+  </g>
+
+  <!-- Subtle DOGGERZ initials at bottom -->
+  <text
+    x="50%"
+    y="420"
+    text-anchor="middle"
+    font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+    font-size="60"
+    font-weight="700"
+    letter-spacing="6"
+    fill="#22c55e"
+  >
+    DGZ
+  </text>
+</svg>

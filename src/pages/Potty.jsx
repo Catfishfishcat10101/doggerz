@@ -169,6 +169,7 @@ export default function Potty() {
           type="button"
           onClick={() => navigate("/game")}
           className="text-xs text-emerald-400 hover:text-emerald-300 underline underline-offset-4"
+          aria-label="Back to your yard"
         >
           ← Back to your yard
         </button>

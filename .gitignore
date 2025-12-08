@@ -1,19 +1,16 @@
-#gitignore file
-
-# OS-generated junk
+node_modules/
+dist/
+build/
 .DS_Store
-Thumbs.db
-
-# Logs
+.env
+.env.local
+/.idea
+/.vscode
+tsconfig.temp.json
 npm-debug.log*
 yarn-debug.log*
-pnpm-debug.log*
-*.log
-
-# IDEs
-.vscode/
-.idea/
-*.suo
-*.sln
-};
-
+yarn-error.log*
+coverage/
+/.cache
+public/assets/
+package-lock.json

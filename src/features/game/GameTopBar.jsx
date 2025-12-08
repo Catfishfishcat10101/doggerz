@@ -1,121 +1,102 @@
-// src/features/game/components/GameTopBar.jsx
-// @ts-nocheck  // keep TS from whining about prop shapes in this JS file
+// @ts-nocheck
+// src/features/game/GameTopBar.jsx
 
 import React from "react";
-import { useSelector } from "react-redux";
-import { selectUser } from "@/redux/userSlice.js";
+import PropTypes from "prop-types";
 
-function getFirstName(user) {
-  if (!user) return null;
-  if (user.displayName) return user.displayName.split(" ")[0];
-  if (user.profile?.firstName) return user.profile.firstName;
-  if (user.email) return user.email.split("@")[0];
-  return null;
-}
-
+/**
+ * GameTopBar
+ *  - Shows dog name, level, coins, and a time-of-day pill.
+ */
 export default function GameTopBar({
-  dogName = "Pup",
+  name = "Pup",
   level = 1,
+  xp = 0,
   coins = 0,
-  lifeStageLabel = "Puppy",
-  lifeStageDay = 1,
+  stage,
   timeOfDay = "day",
-  moodLabel = "Content",
-  needs = {},
-  temperamentRevealReady = false,
 }) {
-  /** @type {{ hunger?: number; happiness?: number; energy?: number; cleanliness?: number }} */
-  const safeNeeds = needs || {};
-
-  const { hunger = 0, happiness = 0, energy = 0, cleanliness = 0 } = safeNeeds;
-
-  const clamp = (n) =>
-    Number.isFinite(n) ? Math.max(0, Math.min(100, Math.round(n))) : 0;
-
-  const formatNeed = (label, value) => {
-    const v = clamp(value);
-
-    let tone = "text-emerald-300";
-    if (v < 30) tone = "text-rose-300";
-    else if (v < 60) tone = "text-amber-200";
-
-    return (
-      <span className={`inline-flex items-center gap-1 ${tone}`} key={label}>
-        <span className="text-[0.65rem] uppercase tracking-wide text-zinc-500">
-          {label}
-        </span>
-        <span className="text-[0.75rem] font-semibold">{v}%</span>
-      </span>
-    );
-  };
-
-  const timePill = (() => {
-    const label = (timeOfDay || "day").toString().toLowerCase();
-    let bg = "bg-sky-900/60 text-sky-200 border-sky-500/40";
-
-    if (label === "night") {
-      bg = "bg-indigo-950/70 text-indigo-200 border-indigo-500/40";
-    } else if (label === "dawn" || label === "dusk") {
-      bg = "bg-amber-900/40 text-amber-200 border-amber-500/40";
-    }
-
-    return (
-      <div
-        className={`inline-flex items-center gap-1 rounded-full border px-2 py-[2px] text-[0.65rem] capitalize ${bg}`}
-      >
-        <span className="h-1.5 w-1.5 rounded-full bg-current" />
-        <span>{label}</span>
-      </div>
-    );
-  })();
-
-  // Pull user for greeting
-  const user = useSelector(selectUser);
-  const firstName = getFirstName(user) || null;
+  const stageLabel = formatStage(stage);
+  const timeLabel = formatTimeOfDay(timeOfDay);
 
   return (
-    <header className="flex items-start justify-between gap-4">
-      {/* Left side: identity & progression */}
-      <div className="space-y-1">
-        <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
-          {dogName}
-        </h1>
-
-        <p className="text-[0.7rem] uppercase tracking-[0.2em] text-sky-300">
-          Level {level} • {coins.toLocaleString()} coins
-        </p>
-
-        <p className="text-[0.7rem] text-emerald-200">
-          {lifeStageLabel} • Day {lifeStageDay}
-        </p>
+    <header
+      className="w-full flex items-center justify-between gap-3 bg-black/45 border border-emerald-500/40 rounded-2xl px-3 py-2.5 backdrop-blur"
+      aria-label="Game top bar"
+    >
+      {/* Left: Dog name + stage */}
+      <div className="flex items-center gap-3">
+        <div className="flex flex-col">
+          <span className="text-xs uppercase tracking-[0.2em] text-emerald-300">
+            Doggerz
+          </span>
+          <div className="flex items-center gap-2">
+            <h1 className="text-lg sm:text-xl font-bold leading-tight">
+              {name}
+            </h1>
+            {stageLabel && (
+              <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-600/30 border border-emerald-400/40 text-emerald-100 uppercase tracking-wide">
+                {stageLabel}
+              </span>
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* Right side: user greeting + state & needs */}
-      <div className="text-right text-xs text-zinc-300 space-y-1">
-        {firstName && (
-          <p className="text-[0.75rem] text-zinc-200 mb-1">Hi, {firstName}!</p>
-        )}
+      {/* Center: level / xp */}
+      <div className="hidden sm:flex flex-col items-center text-xs">
+        <div className="flex items-baseline gap-2">
+          <span className="uppercase tracking-wide text-slate-200">Level</span>
+          <span className="text-lg font-bold text-emerald-300">{level}</span>
+        </div>
+        <span className="text-[11px] text-slate-300">XP: {xp}</span>
+      </div>
 
-        <p className="font-medium text-sky-200">Mood: {moodLabel}</p>
-
-        <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-0.5">
-          {formatNeed("Hunger", hunger)}
-          {formatNeed("Happy", happiness)}
-          {formatNeed("Energy", energy)}
-          {formatNeed("Clean", cleanliness)}
+      {/* Right: coins + time-of-day */}
+      <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-slate-900/70 border border-yellow-400/40">
+          <span className="text-xs font-semibold text-yellow-300">⬤</span>
+          <span className="text-xs font-semibold text-yellow-100">{coins}</span>
         </div>
 
-        <div className="flex items-center justify-end gap-2 mt-1">
-          {timePill}
+        <div className="px-2 py-1 rounded-full border border-sky-400/40 bg-sky-900/50 text-[11px] font-medium text-sky-100 uppercase tracking-wide">
+          {timeLabel}
         </div>
-
-        {temperamentRevealReady && (
-          <p className="inline-flex items-center justify-end gap-1 text-[0.65rem] text-amber-200 font-semibold mt-1">
-            <span className="h-2 w-2 rounded-full bg-amber-300 animate-pulse" />
-            Temperament reveal ready
-          </p>
-        )}
       </div>
     </header>
   );
 }
+
+function formatStage(stage) {
+  if (!stage) return "";
+  // Accept either a string stage (e.g. "PUPPY") or a lifeStage object
+  let value = stage;
+  if (typeof stage === "object") {
+    // prefer explicit fields if provided
+    value = stage.stage || stage.id || stage.label || "";
+  }
+
+  const s = String(value).toLowerCase();
+  if (s === "puppy") return "Puppy";
+  if (s === "adult") return "Adult";
+  if (s === "senior") return "Senior";
+  return String(value);
+}
+
+function formatTimeOfDay(timeOfDay) {
+  const t = String(timeOfDay).toLowerCase();
+  if (t === "morning") return "Morning";
+  if (t === "afternoon") return "Afternoon";
+  if (t === "evening") return "Evening";
+  if (t === "night") return "Night";
+  return "Day";
+}
+
+GameTopBar.propTypes = {
+  name: PropTypes.string,
+  level: PropTypes.number,
+  xp: PropTypes.number,
+  coins: PropTypes.number,
+  stage: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
+  timeOfDay: PropTypes.string,
+};

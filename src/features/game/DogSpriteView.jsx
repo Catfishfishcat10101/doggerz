@@ -2,9 +2,10 @@
 // @ts-nocheck
 
 import React from "react";
+import PropTypes from "prop-types";
 import { useSelector } from "react-redux";
 import { selectDog } from "@/redux/dogSlice.js";
-import EnhancedDogSprite from "@/features/game/EnhancedDogSprite.jsx";
+import EnhancedDogSprite from "@/components/EnhancedDogSprite.jsx";
 
 export default function DogSpriteView() {
   const dog = useSelector(selectDog);
@@ -30,3 +31,5 @@ export default function DogSpriteView() {
     </div>
   );
 }
+
+/* DogSpriteView uses redux selector; no external props */

@@ -2,7 +2,33 @@
 // @ts-nocheck
 
 import { createSlice } from "@reduxjs/toolkit";
-import { calculateDogAge } from '@/utils/lifecycle.js';
+import { calculateDogAge, LIFE_STAGES } from "@/utils/lifecycle.js";
+import {
+  TARGET_EXPECTED_YEARS,
+  AGE_RISK_WINDOW_DAYS,
+  MULTIPLIER,
+  BASE_PROB_FACTOR,
+} from "@/config/lifespan.js";
+import {
+  CLEANLINESS_THRESHOLDS,
+  CLEANLINESS_TIER_EFFECTS,
+  MOOD_HAPPY,
+  MOOD_HUNGRY,
+  MOOD_SLEEPY,
+  MOOD_LONELY,
+  MOOD_NEUTRAL,
+} from "@/constants/game.js";
+import DOG_POLL_CONFIG from "@/config/polls.js";
+import { announce } from "@/utils/announcer.js";
+import { SKILL_LEVEL_STEP } from "@/config/training.js";
+
+// Default lifecycle modifiers by life stage. These tune decay/penalties per stat
+// and are safe defaults if not defined elsewhere.
+const LIFECYCLE_STAGE_MODIFIERS = {
+  PUPPY: { hunger: 1.0, happiness: 1.0, energy: 1.0, cleanliness: 1.0 },
+  ADULT: { hunger: 1.0, happiness: 1.0, energy: 1.0, cleanliness: 1.0 },
+  SENIOR: { hunger: 1.0, happiness: 0.95, energy: 0.9, cleanliness: 1.0 },
+};
 
 export const DOG_STORAGE_KEY = "doggerz:dogState";
 
@@ -17,9 +43,30 @@ const DECAY_PER_HOUR = {
 };
 const DECAY_SPEED = 0.65;
 
+// Disease definitions (name, base severity, stat effects per finalize tick)
+const DISEASES = [
+  {
+    id: "GASTRITIS",
+    label: "Gastritis",
+    baseSeverity: 10,
+    effects: { hunger: 5, happiness: -4, energy: -3 },
+  },
+  {
+    id: "ITCH",
+    label: "Skin Itch",
+    baseSeverity: 8,
+    effects: { cleanliness: -6, happiness: -5 },
+  },
+  {
+    id: "INFECTION",
+    label: "Infection",
+    baseSeverity: 15,
+    effects: { energy: -6, happiness: -6, cleanliness: -4 },
+  },
+];
+
 const MOOD_SAMPLE_MINUTES = 60;
 const LEVEL_XP_STEP = 100;
-const SKILL_LEVEL_STEP = 50;
 
 const nowMs = () => Date.now();
 
@@ -92,13 +139,35 @@ const CLEANLINESS_TIER_ORDER = ["FRESH", "DIRTY", "FLEAS", "MANGE"];
 const REAL_DAY_MS = 24 * 60 * 60 * 1000;
 const POTTY_TRAINED_POTTY_GAIN_MULTIPLIER = 0.65;
 
+// How many real days after potty completion before non-potty training unlocks
+const REAL_DAYS_TO_UNLOCK_TRAINING = 3; // adjust if you want longer
+
+function daysSince(dateIso) {
+  if (!dateIso) return 0;
+  const then = new Date(dateIso).getTime();
+  const now = Date.now();
+  const diff = now - then;
+  return diff / (1000 * 60 * 60 * 24);
+}
+
+// `DOG_POLL_CONFIG` is imported from `src/config/polls.js` which provides a
+// safe default. Apps can replace that module or supply runtime config if
+// they need to customize prompts/timeouts.
+
 function createInitialTrainingState() {
   return {
     potty: {
       successCount: 0,
       goal: POTTY_TRAINING_GOAL,
       completedAt: null,
+      // convenience derived fields (kept in sync by reducers)
+      progress: 0, // 0-100
+      complete: false,
     },
+    // When non-potty (obedience/tricks) training becomes available
+    nonPottyUnlockedAt: null,
+    // whether we've shown the one-time unlock notification
+    nonPottyUnlockNotified: false,
     adult: {
       lastCompletedDate: null,
       streak: 0,
@@ -112,8 +181,10 @@ const initialState = {
   name: "Pup",
   level: 1,
   xp: 0,
+  health: 100,
   coins: 0,
   adoptedAt: null,
+  deceasedAt: null,
   lifeStage: { stage: "PUPPY", label: "Puppy", days: 0 },
   potty: {
     training: 0, // 0–100: how potty-trained
@@ -194,7 +265,11 @@ function applyDecay(state, now = nowMs()) {
 
     const rate = DECAY_PER_HOUR[key] || 0;
     const stageMultiplier = getStageMultiplier(state, key);
-    let delta = rate * DECAY_SPEED * diffHours * stageMultiplier;
+    // Adjust decay when health is poor: lower health increases decay up to 1.5x
+    const health = Number.isFinite(state.health) ? state.health : 100;
+    const healthDecayMultiplier = 1 + ((100 - health) / 100) * 0.5;
+    let delta =
+      rate * DECAY_SPEED * diffHours * stageMultiplier * healthDecayMultiplier;
 
     if (key === "hunger") {
       delta *= hungerMultiplier;
@@ -207,11 +282,11 @@ function applyDecay(state, now = nowMs()) {
   if (diffHours >= 24) {
     state.memory.neglectStrikes = Math.min(
       (state.memory.neglectStrikes || 0) + 1,
-      999,
+      999
     );
     pushJournalEntry(state, {
       type: "NEGLECT",
-      moodTag: "LONELY",
+      moodTag: MOOD_LONELY,
       summary: "Dear hooman… I missed you.",
       body:
         "Dear hooman,\n\nI wasn’t sure if you were chasing squirrels or just busy, " +
@@ -229,11 +304,11 @@ function maybeSampleMood(state, now = nowMs(), reason = "TICK") {
 
   const { hunger, happiness, energy, cleanliness } = state.stats;
 
-  let tag = "NEUTRAL";
-  if (happiness > 75 && hunger < 60) tag = "HAPPY";
-  else if (hunger > 75) tag = "HUNGRY";
-  else if (energy < 30) tag = "SLEEPY";
-  else if (cleanliness < 30) tag = "DIRTY";
+  let tag = MOOD_NEUTRAL;
+  if (happiness > 75 && hunger < 60) tag = MOOD_HAPPY;
+  else if (hunger > 75) tag = MOOD_HUNGRY;
+  else if (energy < 30) tag = MOOD_SLEEPY;
+  else if (cleanliness < 30) tag = DIRTY;
 
   state.mood.history.unshift({
     timestamp: now,
@@ -259,10 +334,20 @@ function applyXp(state, amount = 10) {
     state.level = targetLevel;
     pushJournalEntry(state, {
       type: "LEVEL_UP",
-      moodTag: "HAPPY",
+      moodTag: MOOD_HAPPY,
       summary: `Level up! Now level ${state.level}.`,
       body: `Nice work, hooman. I’m now level ${state.level}! New tricks unlocked soon…`,
     });
+    // Visible announcement for level-up (screen-reader + sighted toast)
+    try {
+      announce({
+        message: `Level up! ${state.name} reached level ${state.level}.`,
+        type: "success",
+        actions: [{ id: "view-journal", label: "View Journal" }],
+      });
+    } catch (e) {
+      // announcer is best-effort; swallow errors
+    }
   }
 }
 
@@ -275,6 +360,12 @@ function applySkillXp(skillBranch, skillId, skillState, amount = 5) {
   const targetLevel = Math.floor(node.xp / SKILL_LEVEL_STEP);
   if (targetLevel > node.level) {
     node.level = targetLevel;
+    // Announce skill level increases so players see a toast
+    try {
+      announce(`${skillId} leveled up to ${node.level}!`);
+    } catch (e) {
+      // noop - announcer is optional
+    }
   }
 }
 
@@ -307,7 +398,7 @@ function updateStreak(streakState, isoDate) {
 
   streakState.bestStreakDays = Math.max(
     streakState.bestStreakDays,
-    streakState.currentStreakDays,
+    streakState.currentStreakDays
   );
   streakState.lastActiveDate = isoDate;
 }
@@ -344,6 +435,7 @@ function evaluateTemperament(state, now = nowMs()) {
   const hunger = state.stats.hunger;
   const happiness = state.stats.happiness;
   const neglect = state.memory.neglectStrikes || 0;
+  const health = Number.isFinite(state.health) ? state.health : 100;
 
   const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
   const playedRecently =
@@ -364,8 +456,10 @@ function evaluateTemperament(state, now = nowMs()) {
   })();
 
   const recentMoods = (state.mood?.history || []).slice(0, 10);
-  const happyMoodCount = recentMoods.filter((m) => m.tag === "HAPPY").length;
-  const hungryMoodCount = recentMoods.filter((m) => m.tag === "HUNGRY").length;
+  const happyMoodCount = recentMoods.filter((m) => m.tag === MOOD_HAPPY).length;
+  const hungryMoodCount = recentMoods.filter(
+    (m) => m.tag === MOOD_HUNGRY
+  ).length;
   const moodSentiment = {
     happy: happyMoodCount,
     hungry: hungryMoodCount,
@@ -373,10 +467,10 @@ function evaluateTemperament(state, now = nowMs()) {
 
   const recentJournal = (state.journal?.entries || []).slice(0, 20);
   const trainingEntries = recentJournal.filter(
-    (e) => e.type === "TRAINING",
+    (e) => e.type === "TRAINING"
   ).length;
   const neglectEntries = recentJournal.filter(
-    (e) => e.type === "NEGLECT",
+    (e) => e.type === "NEGLECT"
   ).length;
 
   const targetClingy = clamp(
@@ -385,10 +479,10 @@ function evaluateTemperament(state, now = nowMs()) {
         (100 - happiness) * 0.15 +
         neglect * 8 +
         neglectEntries * 5 +
-        (trainedRecently ? -5 : 10),
+        (trainedRecently ? -5 : 10)
     ),
     0,
-    100,
+    100
   );
 
   const targetToy = clamp(
@@ -397,10 +491,10 @@ function evaluateTemperament(state, now = nowMs()) {
         (happiness - 50) * 0.2 +
         (playedRecently ? 12 : 0) +
         moodSentiment.happy * 3 +
-        avgObedienceLevel * 0.5,
+        avgObedienceLevel * 0.5
     ),
     0,
-    100,
+    100
   );
 
   const targetFood = clamp(
@@ -409,19 +503,40 @@ function evaluateTemperament(state, now = nowMs()) {
         (hunger - 50) * 0.25 +
         (fedRecently ? 10 : 0) +
         moodSentiment.hungry * 2 +
-        (avgObedienceLevel > 0 ? -3 : 0),
+        (avgObedienceLevel > 0 ? -3 : 0)
     ),
     0,
-    100,
+    100
   );
 
-  clingy.intensity = Math.round(clingy.intensity * 0.65 + targetClingy * 0.35);
-  toyObsessed.intensity = Math.round(
-    toyObsessed.intensity * 0.65 + targetToy * 0.35,
-  );
-  foodMotivated.intensity = Math.round(
-    foodMotivated.intensity * 0.65 + targetFood * 0.35,
-  );
+  // Factor in health: sick pups lean more clingy and less playful
+  try {
+    const healthPenalty = Math.round((100 - health) * 0.1);
+    // nudge targets
+    const adjClingy = Math.min(100, targetClingy + healthPenalty);
+    const adjToy = Math.max(0, targetToy - Math.round(healthPenalty * 0.5));
+    const adjFood = Math.min(100, targetFood + Math.round(healthPenalty * 0.3));
+    // replace targets
+    // use adj values below when updating intensities
+    clingy.intensity = Math.round(clingy.intensity * 0.65 + adjClingy * 0.35);
+    toyObsessed.intensity = Math.round(
+      toyObsessed.intensity * 0.65 + adjToy * 0.35
+    );
+    foodMotivated.intensity = Math.round(
+      foodMotivated.intensity * 0.65 + adjFood * 0.35
+    );
+  } catch (e) {
+    // fallback to previous assignments
+    clingy.intensity = Math.round(
+      clingy.intensity * 0.65 + targetClingy * 0.35
+    );
+    toyObsessed.intensity = Math.round(
+      toyObsessed.intensity * 0.65 + targetToy * 0.35
+    );
+    foodMotivated.intensity = Math.round(
+      foodMotivated.intensity * 0.65 + targetFood * 0.35
+    );
+  }
 
   const sorted = [...t.traits].sort((a, b) => b.intensity - a.intensity);
   const top = sorted[0];
@@ -448,11 +563,14 @@ function resolveCleanlinessTierFromValue(value = 0) {
 
 function syncLifecycleState(state, now = nowMs()) {
   const adoptedAt = state.adoptedAt || state.temperament?.adoptedAt || now;
-  const age = calculateDogAge(adoptedAt);
+  const age = calculateDogAge(adoptedAt, now) || {};
   state.lifeStage = {
-    stage: age.stage || DEFAULT_LIFE_STAGE.stage,
-    label: age.label || DEFAULT_LIFE_STAGE.label,
-    days: age.days,
+    stage: age.stageId || age.stage || DEFAULT_LIFE_STAGE.stage,
+    label:
+      age.stageLabel ||
+      (age.stage && age.stage.label) ||
+      DEFAULT_LIFE_STAGE.label,
+    days: age.ageInGameDays ?? age.days ?? 0,
   };
   return state.lifeStage;
 }
@@ -483,7 +601,169 @@ function syncCleanlinessTier(state, now = nowMs()) {
 
 function finalizeDerivedState(state, now = nowMs()) {
   syncLifecycleState(state, now);
-  return syncCleanlinessTier(state, now);
+  // update cleanliness tier
+  const tier = syncCleanlinessTier(state, now);
+  // Update derived health as a function of care stats (higher hunger reduces health)
+  try {
+    const hunger = Number.isFinite(state.stats.hunger)
+      ? state.stats.hunger
+      : 50;
+    const happiness = Number.isFinite(state.stats.happiness)
+      ? state.stats.happiness
+      : 50;
+    const energy = Number.isFinite(state.stats.energy)
+      ? state.stats.energy
+      : 50;
+    const cleanliness = Number.isFinite(state.stats.cleanliness)
+      ? state.stats.cleanliness
+      : 50;
+    const healthVal = Math.round(
+      (100 - hunger + happiness + energy + cleanliness) / 4
+    );
+    state.health = clamp(healthVal, 0, 100);
+  } catch (err) {
+    state.health = state.health || 100;
+  }
+
+  // Illness detection: if health dips below threshold and not already flagged
+  try {
+    if (
+      !state.deceasedAt &&
+      state.health < 30 &&
+      !(state.illness && state.illness.detectedAt)
+    ) {
+      state.illness = {
+        detectedAt: now,
+        severity: Math.round(100 - state.health),
+      };
+      pushJournalEntry(state, {
+        type: "ILLNESS",
+        moodTag: "SICK",
+        summary: "Your pup seems unwell",
+        body: "Your pup is showing signs of poor health. Consider a vet visit to help them feel better.",
+        timestamp: now,
+      });
+      try {
+        announce({
+          message: `${state.name} seems unwell and may need vet care.`,
+          type: "warn",
+        });
+      } catch (e) {}
+    }
+  } catch (e) {
+    // swallow
+  }
+
+  // Disease progression and possible spawning
+  try {
+    // If there is an active illness, apply its effects each finalize pass
+    if (state.illness && !state.illness.resolvedAt) {
+      const dis = state.illness;
+      const severity = dis.severity || 10;
+      // Reduce stats slowly based on severity
+      Object.entries(dis.effects || {}).forEach(([stat, delta]) => {
+        if (typeof state.stats?.[stat] === "number") {
+          state.stats[stat] = clamp(
+            state.stats[stat] + Math.round((delta * severity) / 100),
+            0,
+            100
+          );
+        }
+      });
+      // health erosion
+      state.health = clamp(
+        (state.health || 100) - Math.max(1, Math.round(severity / 15)),
+        0,
+        100
+      );
+    } else {
+      // maybe spawn a disease if health is low or randomly
+      if (!state.deceasedAt && !state.illness) {
+        const health = Number.isFinite(state.health) ? state.health : 100;
+        // base chance increases if health < 70
+        const baseChance = health < 70 ? (70 - health) / 2000 : 0.0002; // small base
+        const rand = Math.random();
+        if (rand < baseChance) {
+          const pick = DISEASES[Math.floor(Math.random() * DISEASES.length)];
+          if (pick) {
+            state.illness = {
+              id: pick.id,
+              label: pick.label,
+              detectedAt: now,
+              severity: pick.baseSeverity + Math.round((100 - health) / 5),
+              effects: pick.effects,
+            };
+            pushJournalEntry(state, {
+              type: "ILLNESS",
+              moodTag: "SICK",
+              summary: `${state.name} got sick: ${pick.label}`,
+              body: `Your pup seems to have ${pick.label}. Consider a vet visit.`,
+              timestamp: now,
+            });
+            try {
+              announce({
+                message: `${state.name} may be sick (${pick.label}).`,
+                type: "warn",
+              });
+            } catch (e) {}
+          }
+        }
+      }
+    }
+  } catch (e) {
+    // swallow
+  }
+
+  // Check for natural end-of-life based on age + health
+  try {
+    const adoptedAt = state.adoptedAt || state.temperament?.adoptedAt;
+    if (adoptedAt && !state.deceasedAt) {
+      const ageInfo = calculateDogAge(adoptedAt, now) || {};
+      const ageDays = ageInfo.ageInGameDays ?? ageInfo.days ?? 0;
+      // Target expected lifespan (in dog years) — tunable via src/config/lifespan.js
+      const expectedGameDays = TARGET_EXPECTED_YEARS * 365;
+      const health = state.health || 100;
+
+      // Compute how far past the expected lifespan we are and scale death probability
+      const ageOver = Math.max(0, ageDays - expectedGameDays);
+      const ageFactor = Math.min(1, ageOver / AGE_RISK_WINDOW_DAYS);
+
+      // Health factor: 0 when healthy, up to 1 when near 0 health
+      const healthFactor = Math.min(1, Math.max(0, (100 - health) / 100));
+
+      // Base probability per finalize tick (very small). Scales with ageFactor and healthFactor.
+      // Compute baseProb from expectedGameDays so average lifespan centers near target.
+      const baseProb = 1 / (expectedGameDays * BASE_PROB_FACTOR);
+      const prob =
+        baseProb + baseProb * MULTIPLIER * ageFactor * (0.5 + healthFactor);
+
+      // If health is critically low always kill, otherwise random roll
+      if (health <= 1 || Math.random() < prob) {
+        state.deceasedAt = now;
+        pushJournalEntry(state, {
+          type: "DEATH",
+          moodTag: null,
+          summary: `${state.name} passed away`,
+          body: `With a wag and a tired sigh, ${
+            state.name
+          } crossed the Rainbow Bridge on ${new Date(now).toLocaleString()}.`,
+          timestamp: now,
+        });
+        try {
+          announce({
+            message: `${state.name} has passed away and crossed the Rainbow Bridge.`,
+            type: "error",
+          });
+        } catch (e) {
+          // best-effort
+        }
+      }
+    }
+  } catch (err) {
+    // swallow
+  }
+
+  return tier;
 }
 
 function applyCleanlinessPenalties(state, tierOverride) {
@@ -495,7 +775,7 @@ function applyCleanlinessPenalties(state, tierOverride) {
     state.stats.happiness = clamp(
       state.stats.happiness - effects.happinessTickPenalty,
       0,
-      100,
+      100
     );
   }
 
@@ -503,7 +783,7 @@ function applyCleanlinessPenalties(state, tierOverride) {
     state.stats.energy = clamp(
       state.stats.energy - effects.energyTickPenalty,
       0,
-      100,
+      100
     );
   }
 }
@@ -537,9 +817,17 @@ function recordPuppyPottySuccess(state, now = nowMs()) {
   if (stage !== "PUPPY") return;
 
   potty.successCount = Math.min(potty.successCount + 1, potty.goal);
+  // Update convenience progress/complete fields so UI can read directly
+  if (typeof potty.goal === "number" && potty.goal > 0) {
+    potty.progress = Math.round((potty.successCount / potty.goal) * 100);
+  } else {
+    potty.progress = 0;
+  }
 
   if (potty.successCount >= potty.goal) {
     potty.completedAt = now;
+    potty.complete = true;
+    potty.progress = 100;
     state.stats.happiness = clamp(state.stats.happiness + 5, 0, 100);
     pushJournalEntry(state, {
       type: "TRAINING",
@@ -548,6 +836,19 @@ function recordPuppyPottySuccess(state, now = nowMs()) {
       body: "Your puppy now knows how to signal when nature calls. Accidents will slow way down!",
       timestamp: now,
     });
+    // Announce potty training completion with a visible toast and action
+    try {
+      announce({
+        message: "Potty training complete! Your puppy is potty trained.",
+        type: "success",
+        actions: [
+          { id: "view-journal", label: "View Journal" },
+          { id: "celebrate", label: "Yay!" },
+        ],
+      });
+    } catch (e) {
+      // best-effort
+    }
   }
 }
 
@@ -586,6 +887,12 @@ function completeAdultTrainingSession(state, now = nowMs()) {
     body: `Today's obedience session is logged. Training streak: ${adult.streak}.`,
     timestamp: now,
   });
+  // Visible toast for adult training completion
+  try {
+    announce(`Adult training complete! +40 coins.`);
+  } catch (e) {
+    // noop
+  }
 }
 
 function applyAdultTrainingMissPenalty(state, now = nowMs()) {
@@ -695,18 +1002,21 @@ function resolveActivePoll(state, { accepted, reason, now = nowMs() }) {
     maybeSampleMood(state, now, "POLL_ACCEPT");
     pushJournalEntry(state, {
       type: "POLL",
-      moodTag: "HAPPY",
+      moodTag: MOOD_HAPPY,
       summary: "You handled a dog poll",
       body: `You said yes to: ${active.prompt}`,
       timestamp: now,
     });
+    try {
+      announce("You responded to the pup prompt.");
+    } catch (err) {}
   } else {
     const penalty = reason === "TIMEOUT" ? 6 : 4;
     state.stats.happiness = clamp(state.stats.happiness - penalty, 0, 100);
     maybeSampleMood(
       state,
       now,
-      reason === "TIMEOUT" ? "POLL_TIMEOUT" : "POLL_DECLINE",
+      reason === "TIMEOUT" ? "POLL_TIMEOUT" : "POLL_DECLINE"
     );
     pushJournalEntry(state, {
       type: "POLL",
@@ -718,6 +1028,10 @@ function resolveActivePoll(state, { accepted, reason, now = nowMs() }) {
           : "You said no this time. They took note!",
       timestamp: now,
     });
+    try {
+      if (reason === "TIMEOUT") announce("Pup prompt timed out.");
+      else announce("You declined the pup prompt.");
+    } catch (err) {}
   }
 
   pollState.history.unshift({
@@ -829,6 +1143,19 @@ const dogSlice = createSlice({
       finalizeDerivedState(state, adoptedAt);
     },
 
+    adoptDog(state, { payload }) {
+      const nowIso = new Date().toISOString();
+      state.id = payload?.id ?? state.id ?? null;
+      state.name = payload?.name || state.name || "Pup";
+      state.lifeStage = { ...DEFAULT_LIFE_STAGE };
+      state.adoptedAt = nowIso;
+      // Reset training to initial values
+      state.training = createInitialTrainingState();
+      // Reset top-level potty trackers as well
+      state.potty = { ...initialState.potty };
+      state.lastUpdatedAt = nowMs();
+    },
+
     setCareerLifestyle(state, { payload }) {
       const { lifestyle, perks } = payload || {};
       state.career.lifestyle = lifestyle || null;
@@ -836,6 +1163,41 @@ const dogSlice = createSlice({
       if (perks && typeof perks === "object") {
         state.career.perks = { ...state.career.perks, ...perks };
       }
+    },
+
+    trainPotty(state, { payload }) {
+      const training = ensureTrainingState(state);
+      const potty = training.potty;
+      if (!potty || potty.complete || potty.completedAt) return;
+      const amount = payload?.amount ?? 8;
+      potty.progress = Math.min(100, (potty.progress || 0) + amount);
+      if (potty.progress >= 100) {
+        const now = nowMs();
+        potty.completedAt = now;
+        potty.complete = true;
+        potty.progress = 100;
+        // schedule non-potty training unlock
+        if (!training.nonPottyUnlockedAt) {
+          const unlockDate = new Date();
+          unlockDate.setDate(
+            unlockDate.getDate() + REAL_DAYS_TO_UNLOCK_TRAINING
+          );
+          training.nonPottyUnlockedAt = unlockDate.toISOString();
+          training.nonPottyUnlockNotified = false;
+        }
+        pushJournalEntry(state, {
+          type: "TRAINING",
+          moodTag: "PROUD",
+          summary: "Potty training complete",
+          body: "Your puppy now knows how to signal when nature calls.",
+          timestamp: nowMs(),
+        });
+      }
+    },
+
+    markTrainingUnlockNotified(state) {
+      const training = ensureTrainingState(state);
+      training.nonPottyUnlockNotified = true;
     },
 
     markTemperamentRevealed(state) {
@@ -861,7 +1223,7 @@ const dogSlice = createSlice({
       state.stats.happiness = clamp(
         state.stats.happiness + 5 * careerMultiplier,
         0,
-        100,
+        100
       );
 
       state.memory.lastFedAt = now;
@@ -986,6 +1348,27 @@ const dogSlice = createSlice({
       finalizeDerivedState(state, now);
     },
 
+    applyWeatherEffects(state, { payload }) {
+      // payload: { hungerDelta, happinessDelta, energyDelta, cleanlinessDelta }
+      if (!payload || typeof payload !== "object") return;
+      const {
+        hungerDelta = 0,
+        happinessDelta = 0,
+        energyDelta = 0,
+        cleanlinessDelta = 0,
+      } = payload;
+      if (typeof state.stats?.hunger === "number")
+        state.stats.hunger = clamp(state.stats.hunger + hungerDelta);
+      if (typeof state.stats?.happiness === "number")
+        state.stats.happiness = clamp(state.stats.happiness + happinessDelta);
+      if (typeof state.stats?.energy === "number")
+        state.stats.energy = clamp(state.stats.energy + energyDelta);
+      if (typeof state.stats?.cleanliness === "number")
+        state.stats.cleanliness = clamp(
+          state.stats.cleanliness + cleanlinessDelta
+        );
+    },
+
     /* ------------- time / login ------------- */
 
     tickDog(state, { payload }) {
@@ -1035,7 +1418,14 @@ const dogSlice = createSlice({
         !pollState.lastSpawnedAt ||
         now - pollState.lastSpawnedAt >= interval
       ) {
-        spawnDogPollInternal(state, now);
+        const active = spawnDogPollInternal(state, now);
+        if (active && active.prompt) {
+          try {
+            announce(`Your pup needs attention: ${active.prompt}`);
+          } catch (err) {
+            // announcer is best-effort; don't break reducer
+          }
+        }
       }
     },
 
@@ -1080,7 +1470,7 @@ const dogSlice = createSlice({
 
       pushJournalEntry(state, {
         type: "TRAINING",
-        moodTag: "HAPPY",
+        moodTag: MOOD_HAPPY,
         summary: `Practiced ${commandId}.`,
         body: `We worked on "${commandId}" today. I think I'm getting the hang of it!`,
         timestamp: now,
@@ -1089,6 +1479,50 @@ const dogSlice = createSlice({
       const date = getIsoDate(now);
       updateStreak(state.streak, date);
       updateTemperamentReveal(state, now);
+      finalizeDerivedState(state, now);
+    },
+
+    visitVet(state, { payload }) {
+      const now = (payload && payload.now) || nowMs();
+      // Simple vet visit: restore health and cleanliness, reduce illness
+      state.stats.cleanliness = clamp(
+        (state.stats.cleanliness || 50) + 25,
+        0,
+        100
+      );
+      state.health = clamp((state.health || 50) + 30, 0, 100);
+      state.memory.lastVetVisitAt = now;
+      // clear illness/disease state entirely on a vet visit
+      if (state.illness) {
+        state.illness = null;
+      }
+
+      pushJournalEntry(state, {
+        type: "CARE",
+        moodTag: null,
+        summary: "Vet visit",
+        body: "Your pup visited the vet and received care. They seem better now.",
+        timestamp: now,
+      });
+
+      try {
+        announce({
+          message: "Vet visit complete — your pup feels better.",
+          type: "success",
+        });
+      } catch (e) {}
+
+      // Slight temperament calming effect after vet
+      try {
+        const t = state.temperament;
+        if (t && Array.isArray(t.traits)) {
+          t.traits = t.traits.map((tr) => ({
+            ...tr,
+            intensity: Math.max(0, Math.round(tr.intensity * 0.95)),
+          }));
+        }
+      } catch (e) {}
+
       finalizeDerivedState(state, now);
     },
 
@@ -1102,6 +1536,40 @@ const dogSlice = createSlice({
 
     resetDogState() {
       return initialState;
+    },
+    adoptFromMemorial(state, { payload }) {
+      try {
+        const now = Date.now();
+        // payload may contain: name, journal, statsSnapshot, etc.
+        const adoptedAt = now;
+        // merge sensible defaults
+        state.name = payload.name || state.name || "Pup";
+        state.stats = { ...state.stats, ...(payload.statsSnapshot || {}) };
+        state.journal = {
+          entries: (payload.journal || []).concat(state.journal?.entries || []),
+        };
+        state.adoptedAt = adoptedAt;
+        state.deceasedAt = null;
+        state.lastUpdatedAt = now;
+        state.memory = { ...state.memory, lastSeenAt: now };
+
+        pushJournalEntry(state, {
+          type: "ADOPT",
+          moodTag: MOOD_HAPPY,
+          summary: `Adopted ${state.name} from memory`,
+          body: `You adopted ${state.name} from memory. Welcome back!`,
+          timestamp: now,
+        });
+
+        try {
+          announce({
+            message: `${state.name} adopted from memory.`,
+            type: "success",
+          });
+        } catch (e) {}
+      } catch (err) {
+        // best-effort
+      }
     },
   },
 });
@@ -1126,6 +1594,7 @@ export const {
   hydrateDog,
   setDogName,
   setAdoptedAt,
+  adoptDog,
   setCareerLifestyle,
   markTemperamentRevealed,
   updateFavoriteToy,
@@ -1137,14 +1606,19 @@ export const {
   increasePottyLevel,
   goPotty,
   scoopPoop,
+  applyWeatherEffects,
   tickDog,
   registerSessionStart,
   tickDogPolls,
   respondToDogPoll,
   trainObedience,
+  visitVet,
   addJournalEntry,
   toggleDebug,
   resetDogState,
+  adoptFromMemorial,
+  trainPotty,
+  markTrainingUnlockNotified,
 } = dogSlice.actions;
 
 export default dogSlice.reducer;

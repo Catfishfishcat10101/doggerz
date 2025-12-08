@@ -1,69 +1,100 @@
-/* src/index.css */
-
-/* -------------------------------------------------------
-   Tailwind layers
-------------------------------------------------------- */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* -------------------------------------------------------
-   Global layout & typography
-------------------------------------------------------- */
-html,
-body,
-#root {
-  height: 100%;
+:root {
+  color-scheme: dark;
 }
 
-body {
-  margin: 0;
-  font-family:
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    "Roboto",
-    "Oxygen",
-    "Ubuntu",
-    "Cantarell",
-    "Fira Sans",
-    "Droid Sans",
-    "Helvetica Neue",
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background-color: #020617; /* tailwind slate-950 */
-  color: #f9fafb; /* tailwind slate-50 */
+/* Base HTML/body/root setup */
+@layer base {
+  html {
+    @apply h-full;
+  }
+
+  body {
+    @apply h-full bg-zinc-950 text-zinc-50 antialiased;
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont,
+      "Segoe UI", sans-serif;
+  }
+
+  #root {
+    @apply h-full;
+  }
+
+  a {
+    @apply text-emerald-400 underline-offset-2;
+  }
+
+  a:hover {
+    @apply text-emerald-300;
+  }
+
+  button {
+    @apply focus:outline-none;
+  }
+
+  button:focus-visible {
+    @apply ring-2 ring-emerald-400 ring-offset-2 ring-offset-zinc-950;
+  }
 }
 
-/* Make links inherit color unless explicitly styled */
-a {
-  color: inherit;
-  text-decoration: none;
+/* Reusable component-style classes */
+@layer components {
+  .doggerz-container {
+    @apply mx-auto max-w-6xl px-4;
+  }
+
+  .doggerz-card {
+    @apply rounded-3xl border border-zinc-800 bg-zinc-900/60 backdrop-blur-md;
+  }
+
+  .doggerz-chip {
+    @apply inline-flex items-center rounded-full border border-zinc-700/80 bg-zinc-900/80 px-2 py-0.5 text-[11px] font-medium uppercase tracking-[0.18em] text-zinc-400;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-full bg-emerald-500 px-5 py-2 text-sm font-semibold text-zinc-950 shadow-md shadow-emerald-500/40 transition-colors hover:bg-emerald-400;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-full border border-emerald-500/60 bg-emerald-500/10 px-4 py-2 text-sm font-medium text-emerald-300 transition-colors hover:bg-emerald-500 hover:text-zinc-950;
+  }
 }
 
-/* Basic focus outline for keyboard users */
-:focus-visible {
-  outline: 2px solid #22c55e; /* emerald-500 */
-  outline-offset: 2px;
+/* Little utility helpers */
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: rgba(63, 63, 70, 0.9);
+    border-radius: 999px;
+  }
 }
 
-/* Optional: subtle custom scrollbar for dark theme */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+/* Doggerz bobbing animation + subtle glow */
+@keyframes doggerz-bob {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-6px) scale(1.02);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
 }
 
-::-webkit-scrollbar-track {
-  background: #020617;
-}
-
-::-webkit-scrollbar-thumb {
-  border-radius: 9999px;
-  background: #27272a; /* zinc-800 */
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #3f3f46; /* zinc-700 */
+.animate-doggerz-bob {
+  animation: doggerz-bob 2.8s ease-in-out infinite;
 }
