@@ -2,6 +2,13 @@
 export default {
   content: ["./index.html", "./src/**/*.{js,jsx,ts,tsx}"],
   darkMode: "class", // matches <html class="dark">
+  // Ensure classes used via `@apply` are preserved by the JIT/purge step
+  safelist: [
+    {
+      pattern:
+        /^(bg|text|border|ring-offset|ring|shadow|hover:bg|hover:text)-(zinc|emerald)(-.+)?$/,
+    },
+  ],
   theme: {
     extend: {
       fontFamily: {
