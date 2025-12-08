@@ -1,5 +1,5 @@
 /** @type {import('tailwindcss').Config} */
-const _twColors = require("tailwindcss/dist/colors");
+const _twColors = require("tailwindcss/colors");
 
 module.exports = {
   content: ["./index.html", "./src/**/*.{js,jsx,ts,tsx}"],
@@ -57,5 +57,23 @@ module.exports = {
       },
     },
   },
-  plugins: [require("@tailwindcss/forms")],
+  plugins: [
+    require("@tailwindcss/forms"),
+    require("tailwindcss/plugin")(function ({ addUtilities, theme }) {
+      const u = {
+        ".bg-zinc-950": { backgroundColor: theme("colors.zinc.950") },
+        ".text-zinc-50": { color: theme("colors.zinc.50") },
+        ".border-zinc-800": { borderColor: theme("colors.zinc.800") },
+        ".ring-offset-zinc-950": {
+          "--tw-ring-offset-color": theme("colors.zinc.950"),
+        },
+        ".ring-emerald-400": { "--tw-ring-color": theme("colors.emerald.400") },
+        ".bg-emerald-500": { backgroundColor: theme("colors.emerald.500") },
+        ".text-zinc-950": { color: theme("colors.zinc.950") },
+        ".bg-emerald-400": { backgroundColor: theme("colors.emerald.400") },
+      };
+
+      addUtilities(u, { variants: ["responsive", "hover", "focus"] });
+    }),
+  ],
 };

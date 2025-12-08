@@ -9,13 +9,11 @@
 /* Base HTML/body/root setup */
 @layer base {
   html {
-    
+    @apply h-full;
   }
 
   body {
-    
-    background-color: oklch(14.1% 0.005 285.823);
-    color: oklch(98.5% 0 0);
+    @apply h-full bg-zinc-950 text-zinc-50 antialiased;
     font-family:
       "Inter",
       system-ui,
@@ -26,61 +24,46 @@
   }
 
   #root {
-    
+    @apply h-full;
   }
 
   a {
-    
-    color: oklch(76.5% 0.177 163.223);
+    @apply text-emerald-400 underline-offset-2;
   }
 
   a:hover {
-    
-    color: oklch(84.5% 0.143 164.978);
+    @apply text-emerald-300;
   }
 
   button {
-    
+    @apply focus:outline-none;
   }
 
   button:focus-visible {
-    
-    --tw-ring-color: oklch(76.5% 0.177 163.223);
-    --tw-ring-offset-color: oklch(14.1% 0.005 285.823);
+    @apply ring-2 ring-emerald-400 ring-offset-2 ring-offset-zinc-950;
   }
 }
 
 /* Reusable component-style classes */
 @layer components {
   .doggerz-container {
-    
+    @apply mx-auto max-w-6xl px-4;
   }
 
   .doggerz-card {
-    
-    border-color: oklch(27.4% 0.006 286.033);
-    background-color: oklch(21% 0.006 285.885) / 0.6;
+    @apply rounded-3xl border border-zinc-800 bg-zinc-900/60 backdrop-blur-md;
   }
 
   .doggerz-chip {
-    
-    color: oklch(70.5% 0.015 286.067);
-    border-color: oklch(37% 0.013 285.805) / 0.8;
-    background-color: oklch(21% 0.006 285.885) / 0.8;
+    @apply inline-flex items-center rounded-full border border-zinc-700/80 bg-zinc-900/80 px-2 py-0.5 text-[11px] font-medium uppercase tracking-[0.18em] text-zinc-400;
   }
 
   .btn-primary {
-    
-    box-shadow: 0 0 25px oklch(69.6% 0.17 162.48) / 0.4;
-    background-color: oklch(69.6% 0.17 162.48);
-    color: oklch(14.1% 0.005 285.823);
+    @apply inline-flex items-center justify-center rounded-full bg-emerald-500 px-5 py-2 text-sm font-semibold text-zinc-950 shadow-md shadow-emerald-500/40 transition-colors hover:bg-emerald-400;
   }
 
   .btn-secondary {
-    
-    border-color: oklch(69.6% 0.17 162.48) / 0.6;
-    color: oklch(84.5% 0.143 164.978);
-    background-color: oklch(69.6% 0.17 162.48) / 0.1;
+    @apply inline-flex items-center justify-center rounded-full border border-emerald-500/60 bg-emerald-500/10 px-4 py-2 text-sm font-medium text-emerald-300 transition-colors hover:bg-emerald-500 hover:text-zinc-950;
   }
 }
 
