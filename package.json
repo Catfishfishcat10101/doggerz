@@ -17,16 +17,16 @@
     "split:backyard": "node scripts/split-backyard.js public/backgrounds/backyard-split.png public/backgrounds/backyard-day.png public/backgrounds/backyard-night.png"
   },
   "dependencies": {
-    "@reduxjs/toolkit": "^2.10.1",
+    "@reduxjs/toolkit": "^2.11.1",
     "classnames": "^2.5.1",
-    "firebase": "^11.10.0",
+    "firebase": "^12.6.0",
     "framer-motion": "^12.23.25",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1",
     "react-redux": "^9.2.0",
-    "react-router-dom": "^6.14.2",
+    "react-router-dom": "^7.10.1",
     "typescript": "^5.9.3",
-    "vite-plugin-pwa": "^1.1.0"
+    "vite-plugin-pwa": "^1.2.0"
   },
   "devDependencies": {
     "@babel/parser": "^7.28.5",
@@ -43,6 +43,7 @@
     "@vitejs/plugin-react-swc": "^4.2.2",
     "autoprefixer": "^10.4.22",
     "babel-jest": "^30.2.0",
+    "cross-fetch": "^4.1.0",
     "jest": "^30.2.0",
     "jest-environment-jsdom": "^30.2.0",
     "postcss": "^8.5.6",
