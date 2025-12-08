@@ -3,4 +3,11 @@ module.exports = [
   {
     ignores: ["node_modules/**", "audit-snapshots/**"],
   },
+  // Treat tailwind config as module so ESM-style exports parse correctly
+  {
+    files: ["tailwind.config.cjs"],
+    languageOptions: {
+      sourceType: "module",
+    },
+  },
 ];
