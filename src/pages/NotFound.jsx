@@ -1,3 +1,13 @@
+import React from 'react'
+
+export default function NotFound() {
+  return (
+    <div className="content">
+      <h2 className="text-2xl font-semibold">Page Not Found</h2>
+      <p className="mt-2">Sorry, we couldn't find that page.</p>
+    </div>
+  )
+}
 // src/pages/NotFound.jsx
 import * as React from "react";
 import { useNavigate } from "react-router-dom";

@@ -1,3 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  @apply bg-white text-slate-900 antialiased;
+}
+
+.app-shell {
+  @apply min-h-screen flex flex-col;
+}
+
+.content {
+  @apply flex-1 container mx-auto px-4 py-6;
+}
 /* src/index.css */
 
 /* -------------------------------------------------------
@@ -16,31 +37,70 @@ body,
   height: 100%;
 }
 
-body {
-  margin: 0;
-  font-family:
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    "Roboto",
-    "Oxygen",
-    "Ubuntu",
-    "Cantarell",
-    "Fira Sans",
-    "Droid Sans",
-    "Helvetica Neue",
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background-color: #020617; /* tailwind slate-950 */
-  color: #f9fafb; /* tailwind slate-50 */
+/* Base HTML/body/root setup */
+@layer base {
+  html {
+  }
+
+  body {
+    background-color: oklch(14.1% 0.005 285.823);
+    color: oklch(98.5% 0 0);
+    font-family:
+      "Inter",
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      sans-serif;
+  }
+
+  #root {
+  }
+
+  a {
+    color: oklch(76.5% 0.177 163.223);
+  }
+
+  a:hover {
+    color: oklch(84.5% 0.143 164.978);
+  }
+
+  button {
+  }
+
+  button:focus-visible {
+    --tw-ring-color: oklch(76.5% 0.177 163.223);
+    --tw-ring-offset-color: oklch(14.1% 0.005 285.823);
+  }
 }
 
-/* Make links inherit color unless explicitly styled */
-a {
-  color: inherit;
-  text-decoration: none;
+/* Reusable component-style classes */
+@layer components {
+  .doggerz-container {
+  }
+
+  .doggerz-card {
+    border-color: oklch(27.4% 0.006 286.033);
+    background-color: oklch(21% 0.006 285.885) / 0.6;
+  }
+
+  .doggerz-chip {
+    color: oklch(70.5% 0.015 286.067);
+    border-color: oklch(37% 0.013 285.805) / 0.8;
+    background-color: oklch(21% 0.006 285.885) / 0.8;
+  }
+
+  .btn-primary {
+    box-shadow: 0 0 25px oklch(69.6% 0.17 162.48) / 0.4;
+    background-color: oklch(69.6% 0.17 162.48);
+    color: oklch(14.1% 0.005 285.823);
+  }
+
+  .btn-secondary {
+    border-color: oklch(69.6% 0.17 162.48) / 0.6;
+    color: oklch(84.5% 0.143 164.978);
+    background-color: oklch(69.6% 0.17 162.48) / 0.1;
+  }
 }
 
 /* Basic focus outline for keyboard users */

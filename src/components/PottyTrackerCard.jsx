@@ -1,3 +1,13 @@
+import React from 'react'
+
+export default function PottyTrackerCard() {
+  return (
+    <div className="p-4 bg-white rounded shadow-sm">
+      <h3 className="font-semibold">Potty Tracker</h3>
+      <p className="text-sm text-slate-500 mt-1">Last: 2 hours ago</p>
+    </div>
+  )
+}
 // src/features/game/components/PottyTrackerCard.jsx
 import * as React from "react";
 

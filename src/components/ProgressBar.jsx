@@ -1,3 +1,13 @@
+import React from 'react'
+
+export default function ProgressBar({ value = 0 }) {
+  const pct = Math.max(0, Math.min(100, Math.round(value)))
+  return (
+    <div className="w-full bg-slate-200 rounded-full h-3 overflow-hidden">
+      <div className="bg-emerald-500 h-3" style={{ width: `${pct}%` }} />
+    </div>
+  )
+}
 import * as React from "react";
 
 export default function ProgressBar({
@@ -8,7 +18,8 @@ export default function ProgressBar({
   size = "md", // sm, md, lg
   showPercent = true,
 }) {
-  const pct = max > 0 ? Math.max(0, Math.min(100, Math.round((value / max) * 100))) : 0;
+  const pct =
+    max > 0 ? Math.max(0, Math.min(100, Math.round((value / max) * 100))) : 0;
 
   const sizeMap = {
     sm: "h-2",

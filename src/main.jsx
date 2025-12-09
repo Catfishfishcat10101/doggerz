@@ -1,3 +1,18 @@
+import React from "react";
+import { createRoot } from "react-dom/client";
+import AppRouter from "./AppRouter";
+import "./index.css";
+
+const root =
+  document.getElementById("root") ||
+  document.body.appendChild(document.createElement("div"));
+root.id = "root";
+
+createRoot(root).render(
+  <React.StrictMode>
+    <AppRouter />
+  </React.StrictMode>,
+);
 // src/main.jsx
 // @ts-nocheck
 
@@ -16,5 +31,5 @@ const root = createRoot(rootEl);
 root.render(
   <Provider store={store}>
     <App />
-  </Provider>
+  </Provider>,
 );

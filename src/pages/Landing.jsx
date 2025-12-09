@@ -1,3 +1,13 @@
+import React from 'react'
+
+export default function Landing() {
+  return (
+    <div className="content">
+      <h1 className="text-3xl font-bold">Welcome to Doggerz</h1>
+      <p className="mt-4">Adopt, train and care for virtual dogs.</p>
+    </div>
+  )
+}
 // src/pages/Landing.jsx
 import * as React from "react";
 
@@ -10,7 +20,8 @@ export default function Landing() {
           <div className="rounded-lg p-6 bg-zinc-800">
             <h1 className="text-4xl font-bold">Welcome to Doggerz</h1>
             <p className="mt-2 text-zinc-400">
-              Your virtual Jack Russell awaits — feed, play, train, and watch them grow.
+              Your virtual Jack Russell awaits — feed, play, train, and watch
+              them grow.
             </p>
           </div>
 

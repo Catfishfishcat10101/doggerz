@@ -24,9 +24,18 @@
     "src/**/*",
     "vite.config.*",
     "tailwind.config.*",
-    "postcss.config.js",
+    "postcss.config.*",
     "game",
     "server",
     "scripts"
   ],
+
+  "exclude": [
+    "node_modules",
+    "dist",
+    "public",
+    "**/node_modules/*",
+    "tmp.*",
+    "audit-snapshots"
+  ]
 }

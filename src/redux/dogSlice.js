@@ -1,8 +1,32 @@
+import { createSlice } from '@reduxjs/toolkit'
+
+const initialState = {
+  name: null,
+  age: 0,
+  hunger: 50,
+}
+
+const dogSlice = createSlice({
+  name: 'dog',
+  initialState,
+  reducers: {
+    adopt(state, action) {
+      state.name = action.payload.name
+      state.age = action.payload.age || 0
+    },
+    feed(state, action) {
+      state.hunger = Math.max(0, state.hunger - (action.payload?.amount || 10))
+    },
+  },
+})
+
+export const { adopt, feed } = dogSlice.actions
+export default dogSlice.reducer
 // src/redux/dogSlice.js
 // @ts-nocheck
 
 import { createSlice } from "@reduxjs/toolkit";
-import { calculateDogAge } from '@/utils/lifecycle.js';
+import { calculateDogAge } from "@/utils/lifecycle.js";
 
 export const DOG_STORAGE_KEY = "doggerz:dogState";
 

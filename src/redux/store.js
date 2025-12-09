@@ -1,3 +1,13 @@
+import { configureStore } from '@reduxjs/toolkit'
+import dogReducer from './dogSlice'
+import userReducer from './userSlice'
+
+export default configureStore({
+  reducer: {
+    dog: dogReducer,
+    user: userReducer,
+  },
+})
 // src/redux/store.js
 // @ts-nocheck
 

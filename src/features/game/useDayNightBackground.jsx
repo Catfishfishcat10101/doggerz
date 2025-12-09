@@ -21,10 +21,7 @@ function deriveIsNightFromHour(h) {
  * @param {DayNightOptions} [options]
  */
 export function useDayNightBackground(options = {}) {
-  const {
-    zip,
-    pollIntervalMs = 5 * 60 * 1000,
-  } = options;
+  const { zip, pollIntervalMs = 5 * 60 * 1000 } = options;
 
   const [isNight, setIsNight] = useState(() =>
     deriveIsNightFromHour(new Date().getHours()),

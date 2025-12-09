@@ -5,11 +5,7 @@ import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
-import {
-  selectDog,
-  setDogName,
-  setAdoptedAt,
-} from "@/redux/dogSlice.js";
+import { selectDog, setDogName, setAdoptedAt } from "@/redux/dogSlice.js";
 
 export default function AdoptPage() {
   const dispatch = useDispatch();
@@ -111,11 +107,7 @@ export default function AdoptPage() {
             />
           </div>
 
-          {error && (
-            <p className="text-xs text-red-400 mt-1">
-              {error}
-            </p>
-          )}
+          {error && <p className="text-xs text-red-400 mt-1">{error}</p>}
 
           <button
             type="submit"
@@ -126,8 +118,8 @@ export default function AdoptPage() {
         </form>
 
         <p className="mt-4 text-xs text-zinc-500">
-          Pro tip: Keep the name short. You’ll see it a lot in alerts,
-          training, and future story events.
+          Pro tip: Keep the name short. You’ll see it a lot in alerts, training,
+          and future story events.
         </p>
       </div>
     </div>

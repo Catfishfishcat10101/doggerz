@@ -6,7 +6,7 @@ import React, { useEffect, useState } from "react";
 export default function EnhancedDogSprite({
   spritePublicPath = "/assets/sprites/jack_russell_puppy.png",
   alt = "Dog sprite",
-  className = ""
+  className = "",
 }) {
   const [readySrc, setReadySrc] = useState(null);
   const [errored, setErrored] = useState(false);
@@ -21,7 +21,7 @@ export default function EnhancedDogSprite({
       "/assets/sprites/jack_russell_puppy.png",
       "/assets/images/jack_russell_puppy.png",
       "/sprites/jack_russell_puppy.png",
-      "/images/jack_russell_puppy.png"
+      "/images/jack_russell_puppy.png",
     ];
 
     let idx = 0;
@@ -33,11 +33,11 @@ export default function EnhancedDogSprite({
         setErrored(true);
         console.error(
           "[EnhancedDogSprite] Failed to load sprite after trying paths:\n" +
-          tried.map(p => `  • ${p}`).join("\n") +
-          "\n\nQuick checks:\n" +
-          `  • If you keep assets in /public, ensure the file exists at public${candidates[0]} and then restart Vite.\n` +
-          `  • Open one of these URLs in your browser (e.g. http://localhost:5173${candidates[0]}) to see the HTTP response.\n` +
-          "  • Alternatively, import the image from src/assets and pass its imported path into EnhancedDogSprite."
+            tried.map((p) => `  • ${p}`).join("\n") +
+            "\n\nQuick checks:\n" +
+            `  • If you keep assets in /public, ensure the file exists at public${candidates[0]} and then restart Vite.\n` +
+            `  • Open one of these URLs in your browser (e.g. http://localhost:5173${candidates[0]}) to see the HTTP response.\n` +
+            "  • Alternatively, import the image from src/assets and pass its imported path into EnhancedDogSprite.",
         );
         return;
       }
@@ -57,7 +57,11 @@ export default function EnhancedDogSprite({
       img.onerror = (ev) => {
         if (cancelled) return;
         // log per-attempt as debug to avoid spamming console during normal dev
-        console.debug("[EnhancedDogSprite] attempt failed:", url, ev?.message ?? ev);
+        console.debug(
+          "[EnhancedDogSprite] attempt failed:",
+          url,
+          ev?.message ?? ev,
+        );
         setTimeout(tryLoad, 30);
       };
     };
@@ -77,8 +81,23 @@ export default function EnhancedDogSprite({
         aria-label="sprite placeholder"
       >
         <svg width="72" height="72" viewBox="0 0 24 24" fill="none" aria-hidden>
-          <rect x="1" y="1" width="22" height="22" rx="4" stroke="rgba(148,163,184,0.12)" strokeWidth="1.5" fill="rgba(15,23,42,0.4)" />
-          <path d="M7 14s1.5-3 5-3 5 3 5 3" stroke="rgba(148,163,184,0.6)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+          <rect
+            x="1"
+            y="1"
+            width="22"
+            height="22"
+            rx="4"
+            stroke="rgba(148,163,184,0.12)"
+            strokeWidth="1.5"
+            fill="rgba(15,23,42,0.4)"
+          />
+          <path
+            d="M7 14s1.5-3 5-3 5 3 5 3"
+            stroke="rgba(148,163,184,0.6)"
+            strokeWidth="1.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
           <circle cx="9.5" cy="10" r="1.1" fill="rgba(148,163,184,0.6)" />
           <circle cx="14.5" cy="10" r="1.1" fill="rgba(148,163,184,0.6)" />
         </svg>
@@ -88,7 +107,10 @@ export default function EnhancedDogSprite({
 
   if (!readySrc) {
     return (
-      <div className={`flex h-full w-full items-center justify-center ${className}`} aria-hidden>
+      <div
+        className={`flex h-full w-full items-center justify-center ${className}`}
+        aria-hidden
+      >
         <div className="h-6 w-6 animate-pulse rounded-full bg-emerald-400/30" />
       </div>
     );
@@ -101,7 +123,11 @@ export default function EnhancedDogSprite({
       className={className}
       draggable={false}
       onError={(e) => {
-        console.error("[EnhancedDogSprite] img.onerror fired after readySrc set", readySrc, e);
+        console.error(
+          "[EnhancedDogSprite] img.onerror fired after readySrc set",
+          readySrc,
+          e,
+        );
         setErrored(true);
       }}
     />

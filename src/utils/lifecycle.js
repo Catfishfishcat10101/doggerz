@@ -114,8 +114,12 @@ export function getSpriteForStageAndTier(stageOrObj, cleanlinessTier) {
     stageKey = stageOrObj;
   }
 
-  stageKey = String(stageKey || "PUPPY").toUpperCase().trim();
-  tier = String(tier || "FRESH").toUpperCase().trim();
+  stageKey = String(stageKey || "PUPPY")
+    .toUpperCase()
+    .trim();
+  tier = String(tier || "FRESH")
+    .toUpperCase()
+    .trim();
 
   // Simple mapping — adjust to your actual asset locations
   const SPRITES = {

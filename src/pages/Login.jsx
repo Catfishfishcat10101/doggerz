@@ -115,11 +115,7 @@ export default function LoginPage() {
             />
           </div>
 
-          {error && (
-            <p className="text-xs text-red-400 mt-1">
-              {error}
-            </p>
-          )}
+          {error && <p className="text-xs text-red-400 mt-1">{error}</p>}
 
           <button
             type="submit"
@@ -131,9 +127,7 @@ export default function LoginPage() {
         </form>
 
         <div className="mt-4 text-xs text-zinc-400 flex items-center justify-between">
-          <span>
-            Don&apos;t have an account?
-          </span>
+          <span>Don&apos;t have an account?</span>
           <Link
             to="/signup"
             className="text-emerald-400 hover:text-emerald-300 font-medium"

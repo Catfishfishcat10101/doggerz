@@ -1,4 +1,5 @@
 // tailwind.config.cjs
+const _twColors = require("tailwindcss/colors");
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
@@ -24,20 +25,30 @@ module.exports = {
         sans: ["Inter", "ui-sans-serif", "system-ui", "Segoe UI", "Roboto"],
       },
 
-      // Doggerz brand palette
-      colors: {
-        doggerz: {
-          bark: "#000000", // primary background
-          paw: "#111827", // surfaces / cards
-          sky: "#38bdf8", // accent cyan
-          leaf: "#22c55e", // primary action green
-          treat: "#fbbf24", // reward / highlight
-          mange: "#9ca3af", // muted / negative / low states
-          bone: "#f9fafb", // light text / subtle surfaces
+      // Merge brand palette with explicit color palettes to ensure utilities exist
+      colors: Object.assign(
+        {},
+        {
+          zinc: _twColors.zinc,
+          emerald: _twColors.emerald,
         },
-      },
+        {
+          doggerz: {
+            bark: "#000000",
+            paw: "#111827",
+            sky: "#38bdf8",
+            leaf: "#22c55e",
+            treat: "#fbbf24",
+            mange: "#9ca3af",
+            bone: "#f9fafb",
+            // back-compat shorter keys used earlier
+            bg: "#0b1020",
+            neon: "#22c55e",
+            neonSoft: "#4ade80",
+          },
+        },
+      ),
 
-      // Reusable card shadow
       boxShadow: {
         card: "0 8px 24px rgba(0, 0, 0, 0.25)",
       },

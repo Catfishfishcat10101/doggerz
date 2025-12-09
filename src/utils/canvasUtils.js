@@ -11,7 +11,10 @@
  *     // then draw with ctx (coordinates in logical pixels)
  *   }, []);
  */
-export function setupCanvasForSprite(canvas, { spriteSize = 128, scale = 2 } = {}) {
+export function setupCanvasForSprite(
+  canvas,
+  { spriteSize = 128, scale = 2 } = {},
+) {
   if (!canvas) return null;
   const dpr = Math.max(1, window.devicePixelRatio || 1);
 
@@ -32,10 +35,10 @@ export function setupCanvasForSprite(canvas, { spriteSize = 128, scale = 2 } = {
   canvas.style.height = `${cssH}px`;
 
   // Mark canvas as JS-managed (CSS helper)
-  canvas.classList.add('js-managed-canvas');
+  canvas.classList.add("js-managed-canvas");
 
-  const ctx = canvas.getContext('2d');
-  if (ctx && typeof ctx.setTransform === 'function') {
+  const ctx = canvas.getContext("2d");
+  if (ctx && typeof ctx.setTransform === "function") {
     // Scale drawing operations so 1 unit = 1 CSS pixel
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }

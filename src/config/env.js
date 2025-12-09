@@ -11,38 +11,44 @@ const REQUIRED_VITE_FIREBASE_VARS = [
 ];
 
 // Use Vite's import.meta.env for environment variables
-const VITE_ENV = typeof process !== "undefined" && process.env ? process.env : {};
+const VITE_ENV =
+  typeof process !== "undefined" && process.env ? process.env : {};
 
 const seenMissingKeys = new Set();
 const warnMissingEnv =
   VITE_ENV &&
-  VITE_ENV.MODE === 'development' &&
-  (VITE_ENV.VITE_SUPPRESS_ENV_MISSING_WARNINGS || 'false') !== 'true';
+  VITE_ENV.MODE === "development" &&
+  (VITE_ENV.VITE_SUPPRESS_ENV_MISSING_WARNINGS || "false") !== "true";
 
-const getEnv = (name) => (VITE_ENV && name in VITE_ENV ? VITE_ENV[name] : undefined);
+const getEnv = (name) =>
+  VITE_ENV && name in VITE_ENV ? VITE_ENV[name] : undefined;
 
 const warnIfMissing = (name) => {
   const value = getEnv(name);
   if (!value && warnMissingEnv && !seenMissingKeys.has(name)) {
     seenMissingKeys.add(name);
-    console.warn(`[env] Missing env var "${name}". Add it to .env.local as ${name}.`);
+    console.warn(
+      `[env] Missing env var "${name}". Add it to .env.local as ${name}.`,
+    );
   }
   return value ?? undefined;
 };
 
 // Build FIREBASE config from VITE_* vars (do NOT hardcode secrets here)
 export const FIREBASE = {
-  apiKey: warnIfMissing('VITE_FIREBASE_API_KEY'),
-  authDomain: warnIfMissing('VITE_FIREBASE_AUTH_DOMAIN'),
-  projectId: warnIfMissing('VITE_FIREBASE_PROJECT_ID'),
-  storageBucket: warnIfMissing('VITE_FIREBASE_STORAGE_BUCKET'),
-  messagingSenderId: warnIfMissing('VITE_FIREBASE_MESSAGING_SENDER_ID'),
-  appId: warnIfMissing('VITE_FIREBASE_APP_ID'),
-  measurementId: getEnv('VITE_FIREBASE_MEASUREMENT_ID') || undefined,
+  apiKey: warnIfMissing("VITE_FIREBASE_API_KEY"),
+  authDomain: warnIfMissing("VITE_FIREBASE_AUTH_DOMAIN"),
+  projectId: warnIfMissing("VITE_FIREBASE_PROJECT_ID"),
+  storageBucket: warnIfMissing("VITE_FIREBASE_STORAGE_BUCKET"),
+  messagingSenderId: warnIfMissing("VITE_FIREBASE_MESSAGING_SENDER_ID"),
+  appId: warnIfMissing("VITE_FIREBASE_APP_ID"),
+  measurementId: getEnv("VITE_FIREBASE_MEASUREMENT_ID") || undefined,
 };
 
 // List missing VITE_* keys (actionable names)
-export const missingFirebaseKeys = REQUIRED_VITE_FIREBASE_VARS.filter((k) => !getEnv(k));
+export const missingFirebaseKeys = REQUIRED_VITE_FIREBASE_VARS.filter(
+  (k) => !getEnv(k),
+);
 
 // True when all required VITE_* firebase vars are present
 export const isFirebaseConfigured = missingFirebaseKeys.length === 0;

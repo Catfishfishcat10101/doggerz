@@ -30,27 +30,28 @@ export default class ErrorBoundary extends React.Component {
       return this.props.children || null;
     }
 
-    const fallback =
-      this.props.fallback || (
-        <div className="p-4 bg-red-900/10 rounded-md border border-red-700 text-red-200">
-          <strong>Something went wrong rendering this panel.</strong>
-          <div className="mt-2 text-xs">Try retrying or check the console for details.</div>
-          <div className="mt-3">
-            <button
-              onClick={this.handleRetry}
-              className="px-3 py-1 rounded bg-amber-600 hover:bg-amber-500 text-black text-sm"
-            >
-              Retry
-            </button>
-            <button
-              onClick={() => window.location.reload()}
-              className="ml-2 px-3 py-1 rounded border border-zinc-700 text-zinc-200 text-sm"
-            >
-              Hard Reload
-            </button>
-          </div>
+    const fallback = this.props.fallback || (
+      <div className="p-4 bg-red-900/10 rounded-md border border-red-700 text-red-200">
+        <strong>Something went wrong rendering this panel.</strong>
+        <div className="mt-2 text-xs">
+          Try retrying or check the console for details.
         </div>
-      );
+        <div className="mt-3">
+          <button
+            onClick={this.handleRetry}
+            className="px-3 py-1 rounded bg-amber-600 hover:bg-amber-500 text-black text-sm"
+          >
+            Retry
+          </button>
+          <button
+            onClick={() => window.location.reload()}
+            className="ml-2 px-3 py-1 rounded border border-zinc-700 text-zinc-200 text-sm"
+          >
+            Hard Reload
+          </button>
+        </div>
+      </div>
+    );
 
     return fallback;
   }

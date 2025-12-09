@@ -1,3 +1,9 @@
+export async function getWeather() {
+  // Minimal placeholder: in real app call weather API
+  return "clear";
+}
+
+export default { getWeather };
 // src/utils/weather.js
 // @ts-nocheck
 

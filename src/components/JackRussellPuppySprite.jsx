@@ -37,11 +37,15 @@ export default function JackRussellPuppySprite({
   const currentFrameRef = useRef(0);
 
   const [loaded, setLoaded] = useState(false);
-  const [frameSize, setFrameSize] = useState({ w: frameWidth || 0, h: frameHeight || 0 });
+  const [frameSize, setFrameSize] = useState({
+    w: frameWidth || 0,
+    h: frameHeight || 0,
+  });
   const totalFrames = columns * rows;
 
   // Resolve src (support ESM import objects)
-  const resolvedSrc = typeof src === "string" ? src : src?.default || src?.src || "";
+  const resolvedSrc =
+    typeof src === "string" ? src : src?.default || src?.src || "";
 
   // Load image and infer frame size if needed
   useEffect(() => {
@@ -54,7 +58,8 @@ export default function JackRussellPuppySprite({
       if (canceled) return;
       const naturalW = img.naturalWidth || img.width;
       const naturalH = img.naturalHeight || img.height;
-      const inferredW = frameWidth || Math.floor(naturalW / Math.max(1, columns));
+      const inferredW =
+        frameWidth || Math.floor(naturalW / Math.max(1, columns));
       const inferredH = frameHeight || Math.floor(naturalH / Math.max(1, rows));
       setFrameSize({ w: inferredW, h: inferredH });
       setLoaded(true);
@@ -152,7 +157,16 @@ export default function JackRussellPuppySprite({
       rafRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loaded, animate, fps, loop, totalFrames, frameSize.w, frameSize.h, scale]);
+  }, [
+    loaded,
+    animate,
+    fps,
+    loop,
+    totalFrames,
+    frameSize.w,
+    frameSize.h,
+    scale,
+  ]);
 
   // Redraw when frameSize or loaded changes (ensures correct sizing)
   useEffect(() => {
@@ -164,7 +178,12 @@ export default function JackRussellPuppySprite({
   return (
     <div
       className={className}
-      style={{ display: "inline-block", lineHeight: 0, verticalAlign: "middle", ...style }}
+      style={{
+        display: "inline-block",
+        lineHeight: 0,
+        verticalAlign: "middle",
+        ...style,
+      }}
       role="img"
       aria-label={alt}
     >
@@ -172,4 +191,3 @@ export default function JackRussellPuppySprite({
     </div>
   );
 }
-

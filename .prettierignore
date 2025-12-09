@@ -1,0 +1,9 @@
+# Ignore binary snapshots and generated files that break Prettier
+audit-snapshots/
+tmp.*
+public/assets/
+public/backgrounds/
+public/assets/*
+
+# Keep node_modules ignored
+node_modules/
