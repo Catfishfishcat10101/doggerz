@@ -1,609 +1,618 @@
-import React from 'react'
-import EnhancedDogSprite from '../../components/EnhancedDogSprite'
-import CareActionsPanel from '../../components/CareActionsPanel'
-
-export default function MainGame() {
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div className="md:col-span-2 space-y-4">
-        <EnhancedDogSprite />
-        <div className="bg-white p-4 rounded shadow">Game world / HUD</div>
-      </div>
-      <aside className="space-y-4">
-        <CareActionsPanel />
-      </aside>
-    </div>
-  )
-}
 // src/features/game/MainGame.jsx
 // @ts-nocheck
-
-import React, {
-  useEffect,
-  useMemo,
-  useState,
-  useCallback,
-  useRef,
-} from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+
+import GameTopBar from "@/features/game/components/GameTopBar.jsx";
+import AnimatedDog from "@/components/AnimatedDog.jsx";
+import RealisticDog from "@/components/RealisticDog.jsx";
+import LongTermProgressionCard from "@/components/LongTermProgressionCard.jsx";
+import DogPollCard from "@/components/DogPollCard.jsx";
+import PottyTrackerCard from "@/components/PottyTrackerCard.jsx";
+import { selectDogRenderModel } from "@/features/dog/dogSelectors.js";
+import { selectDogRenderMode } from "@/redux/userSlice.js";
 import {
-  selectDog,
-  selectDogLifeStage,
-  selectDogCleanlinessTier,
-  selectDogPolls,
-  selectDogTraining,
-  feed,
-  play,
-  // rest,       // ⬅ removed
-  // wakeUp,     // ⬅ removed
   bathe,
+  feed,
   goPotty,
-  scoopPoop,
-  trainObedience,
+  increasePottyLevel,
+  play,
   respondToDogPoll,
-  setAdoptedAt,
-  setDogName,
+  trainObedience,
 } from "@/redux/dogSlice.js";
-import EnhancedDogSprite from "@/features/game/EnhancedDogSprite.jsx";
-import { getTimeOfDay } from "@/utils/weather.js";
-import { CLEANLINESS_TIER_EFFECTS } from "@/constants/game.js";
-import { useDogLifecycle } from "@/features/game/useDogLifecycle.jsx";
-import GameTopBar from "@/features/game/GameTopBar.jsx";
-import useDayNightBackground from "@/features/game/useDayNightBackground.jsx";
-import { selectUser } from "@/redux/userSlice.js";
-import ErrorBoundary from "@/features/game/ErrorBoundary.jsx";
 
-// Debug helpers: Logs to help identify why MainGame might not render.
-// Remove or silence these once the issue is resolved.
+function clamp01(n) {
+  const x = Number(n || 0);
+  return Math.max(0, Math.min(100, x));
+}
 
-const TIME_OVERLAY = {
-  dawn: "linear-gradient(180deg, rgba(255,209,143,0.5) 0%, rgba(15,23,42,0.7) 100%)",
-  morning:
-    "linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(15,23,42,0.5) 100%)",
-  afternoon:
-    "linear-gradient(180deg, rgba(255,255,255,0.1) 0%, rgba(15,23,42,0.45) 65%, rgba(2,6,23,0.6) 100%)",
-  dusk: "linear-gradient(180deg, rgba(255,164,119,0.4) 0%, rgba(2,6,23,0.8) 100%)",
-  evening:
-    "linear-gradient(180deg, rgba(15,23,42,0.2) 0%, rgba(2,6,23,0.85) 100%)",
-  night: "linear-gradient(180deg, rgba(2,6,23,0.4) 0%, rgba(0,0,0,0.9) 100%)",
-};
-
-/**
- * MainGame is the core “in-yard” experience:
- * - Left: animated yard & dog sprite
- * - Right: stats + basic care actions
- */
-export default function MainGame() {
-  const [renderError, setRenderError] = useState(null);
-
-  const dispatch = useDispatch();
-  const { temperamentRevealReady } = useDogLifecycle();
-  const user = useSelector(selectUser);
-  const dog = useSelector(selectDog);
-  const lifeStage = useSelector(selectDogLifeStage);
-  const userZip = user?.zip || undefined;
-  const { style: yardBackgroundStyle } = useDayNightBackground({
-    zip: userZip,
-  });
-  const cleanlinessTier = useSelector(selectDogCleanlinessTier);
-  const pollState = useSelector(selectDogPolls);
-  const training = useSelector(selectDogTraining);
-
-  // Log key state once and whenever it changes to help trace hydration / selector issues
-  useEffect(() => {
-    // eslint-disable-next-line no-console
-    console.log("MainGame state:", {
-      dogPresent: !!dog,
-      dog,
-      lifeStage,
-      cleanlinessTier,
-      pollActive: !!pollState?.active,
-      training,
-    });
-  }, [dog, lifeStage, cleanlinessTier, pollState, training]);
-
-  // Suppress only the specific React Router "Future Flag" dev warning.
-  // Keep this filter narrow so other console warnings are preserved.
-  useEffect(() => {
-    const originalWarn = console.warn;
-    console.warn = (...args) => {
-      try {
-        const first = args[0];
-        const text =
-          typeof first === "string" ? first : JSON.stringify(first || "");
-        // match the known future-flag wording and related token
-        if (
-          text.includes("React Router Future Flag Warning") ||
-          text.includes("v7_startTransition") ||
-          text.includes(
-            "will begin wrapping state updates in `React.startTransition`",
-          )
-        ) {
-          return;
-        }
-      } catch (e) {
-        // if anything goes wrong, fall back to original warn below
-      }
-      originalWarn.apply(console, args);
-    };
-    return () => {
-      console.warn = originalWarn;
-    };
-  }, []);
-
-  const [timeOfDay, setTimeOfDay] = useState(getTimeOfDay());
-  const [actionToast, setActionToast] = useState(null);
-  const [pollCountdown, setPollCountdown] = useState(0);
-  const [reminderToast, setReminderToast] = useState(null);
-
-  const toastTimeoutRef = useRef(null);
-  const reminderTimeoutRef = useRef(null);
-  const reminderKeyRef = useRef(null);
-
-  const activePoll = pollState?.active || null;
-
-  // ---------- Derived state (safe for "no dog" too) ----------
-
-  const dogName = dog?.name || "Pup";
-  const level = Number.isFinite(dog?.level) ? dog.level : 1;
-  const coins = Number.isFinite(dog?.coins) ? dog.coins : 0;
-
-  const lifeStageKey = lifeStage?.stage || "PUPPY";
-  const lifeStageLabel =
-    lifeStage?.label || (lifeStageKey === "PUPPY" ? "Puppy" : lifeStageKey);
-  const lifeStageDay = lifeStage?.days ?? 0;
-
-  const trainingState = training || {};
-  const pottyTraining = trainingState.potty || {};
-  const pottyGoal = pottyTraining.goal || 0;
-  const pottySuccess = pottyTraining.successCount || 0;
-  const pottyTrainingComplete = Boolean(pottyTraining.completedAt);
-  const pottyProgress = pottyGoal
-    ? Math.min(1, pottySuccess / pottyGoal)
-    : pottyTrainingComplete
-      ? 1
-      : 0;
-
-  const adultTraining = trainingState.adult || {};
-  const todayIso = new Date().toISOString().slice(0, 10);
-  const adultLastCompleted = adultTraining.lastCompletedDate || null;
-  const adultTrainingDoneToday = adultLastCompleted === todayIso;
-  const isPuppy = lifeStageKey === "PUPPY";
-
-  const hunger = Math.round(dog?.stats?.hunger ?? 0);
-  const happiness = Math.round(dog?.stats?.happiness ?? 0);
-  const energy = Math.round(dog?.stats?.energy ?? 0);
-  const cleanliness = Math.round(dog?.stats?.cleanliness ?? 0);
-
-  const moodLabel = dog?.mood?.label || "Calibrating vibe…";
-  const needs = useMemo(
-    () => ({ hunger, happiness, energy, cleanliness }),
-    [hunger, happiness, energy, cleanliness],
+function StatRow({ label, value }) {
+  const v = clamp01(value);
+  return (
+    <div className="flex items-center gap-3">
+      <div className="w-28 text-xs sm:text-sm text-zinc-300">{label}</div>
+      <div className="flex-1 h-3.5 rounded-full bg-white/10 overflow-hidden">
+        <div
+          className="h-full rounded-full bg-emerald-400"
+          style={{ width: `${v}%` }}
+        />
+      </div>
+      <div className="w-12 text-right text-xs sm:text-sm font-semibold text-zinc-200">
+        {v}%
+      </div>
+    </div>
   );
+}
 
-  const poopCount = dog?.poopCount ?? 0;
-  const pottyLevel = Math.round(dog?.pottyLevel ?? 0);
-
-  const pottyStatusLabel = (() => {
-    if (pottyLevel >= 75) return "Emergency walk NOW";
-    if (pottyLevel >= 50) return "Itching to go";
-    if (pottyLevel >= 25) return "Ready for a break";
-    return "All good";
-  })();
-
-  const yardStatusLabel = (() => {
-    if (poopCount === 0) return "Yard is spotless";
-    if (poopCount === 1) return "One pile waiting";
-    return `${poopCount} piles waiting`;
-  })();
-
-  const cleanlinessDetails =
-    CLEANLINESS_TIER_EFFECTS[cleanlinessTier] ||
-    CLEANLINESS_TIER_EFFECTS.FRESH ||
-    {};
-  const cleanlinessLabel =
-    cleanlinessDetails.label || cleanlinessTier || "Fresh";
-  const cleanlinessSummary =
-    cleanlinessDetails.journalSummary || "Freshly pampered and glowing.";
-
-  const overlayStyle = {
-    background: TIME_OVERLAY[timeOfDay] || TIME_OVERLAY.afternoon,
-  };
-
-  const hasDog = !!dog;
-  const isAdopted = !!dog?.adoptedAt;
-
-  // Simple animation selection (auto-switch based on core state)
-  const selectedAnimation = (() => {
-    if (dog?.isAsleep || energy <= 15) return "sleep";
-    if (happiness >= 80 && energy >= 40) return "attention";
-    if (hunger >= 80) return "idle_bark";
-    return "idle";
-  })();
-
-  // ---------- Effects & callbacks (hooks in stable order) ----------
-
-  // Time-of-day ticker
-  useEffect(() => {
-    const id = setInterval(() => setTimeOfDay(getTimeOfDay()), 60 * 1000);
-    return () => clearInterval(id);
-  }, []);
-
-  // Cleanup toasts on unmount
-  useEffect(() => {
-    return () => {
-      if (toastTimeoutRef.current) {
-        clearTimeout(toastTimeoutRef.current);
-      }
-      if (reminderTimeoutRef.current) {
-        clearTimeout(reminderTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  // Poll countdown (logic preserved for future UI)
-  useEffect(() => {
-    if (!activePoll) {
-      setPollCountdown(0);
-      return;
-    }
-
-    const updateCountdown = () => {
-      const remaining = Math.max(
-        0,
-        Math.round((activePoll.expiresAt - Date.now()) / 1000),
-      );
-      setPollCountdown(remaining);
-    };
-
-    updateCountdown();
-    const id = setInterval(updateCountdown, 1000);
-    return () => clearInterval(id);
-  }, [activePoll]);
-
-  // Overdue adult training reminder
-  useEffect(() => {
-    if (!isAdopted) {
-      // Don’t nag if there’s no real save file yet
-      reminderKeyRef.current = null;
-      if (reminderToast) setReminderToast(null);
-      return;
-    }
-
-    if (isPuppy || adultTrainingDoneToday) {
-      reminderKeyRef.current = null;
-      if (reminderToast) setReminderToast(null);
-      return;
-    }
-
-    const key = `${todayIso}-${adultLastCompleted || "none"}`;
-    if (reminderKeyRef.current === key) return;
-    reminderKeyRef.current = key;
-
-    if (reminderTimeoutRef.current) {
-      clearTimeout(reminderTimeoutRef.current);
-    }
-
-    setReminderToast(
-      "Adult training overdue — run a command to keep streaks alive.",
+function Icon({ name }) {
+  const cls = "h-5 w-5";
+  // Minimal inline SVG set (no extra deps)
+  if (name === "bowl") {
+    return (
+      <svg className={cls} viewBox="0 0 24 24" fill="none">
+        <path
+          d="M4 12c0 4 3.6 7 8 7s8-3 8-7"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+        <path
+          d="M6 12c1.8-2 4-3 6-3s4.2 1 6 3"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+        <path
+          d="M5 20h14"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+      </svg>
     );
-    reminderTimeoutRef.current = setTimeout(() => setReminderToast(null), 6000);
-  }, [
-    isAdopted,
-    isPuppy,
-    adultTrainingDoneToday,
-    todayIso,
-    adultLastCompleted,
-    reminderToast,
-  ]);
+  }
+  if (name === "ball") {
+    return (
+      <svg className={cls} viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="2" />
+        <path
+          d="M4.5 10.5c2 1 4.5 1.5 7.5 1.5s5.5-.5 7.5-1.5"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+        <path
+          d="M6 15.5c2 .8 4 .5 6-.8s4-1.6 6-.7"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+      </svg>
+    );
+  }
+  if (name === "sparkle") {
+    return (
+      <svg className={cls} viewBox="0 0 24 24" fill="none">
+        <path
+          d="M12 3l1.2 5.1L18 9.3l-4.8 1.2L12 15l-1.2-4.5L6 9.3l4.8-1.2L12 3z"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M19 13l.6 2.4L22 16l-2.4.6L19 19l-.6-2.4L16 16l2.4-.6L19 13z"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinejoin="round"
+        />
+      </svg>
+    );
+  }
+  if (name === "toilet") {
+    return (
+      <svg className={cls} viewBox="0 0 24 24" fill="none">
+        <path d="M7 4h6v6H7V4z" stroke="currentColor" strokeWidth="2" />
+        <path
+          d="M5 10h10v2c0 4-2.5 7-7 7H7c-1.1 0-2-.9-2-2v-7z"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M8 19v2"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+      </svg>
+    );
+  }
+  // fallback
+  return (
+    <svg className={cls} viewBox="0 0 24 24" fill="none">
+      <path
+        d="M12 4v16M4 12h16"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
 
-  const acknowledge = useCallback((message) => {
-    if (toastTimeoutRef.current) {
-      clearTimeout(toastTimeoutRef.current);
-    }
-    setActionToast(message);
-    toastTimeoutRef.current = setTimeout(() => setActionToast(null), 2500);
+function ActionDockButton({
+  label,
+  icon,
+  onClick,
+  tone = "neutral",
+  disabled = false,
+}) {
+  const base =
+    "group relative w-full rounded-2xl border px-4 py-3 sm:py-4 transition select-none";
+  const disabledCls =
+    "bg-white/5 border-white/10 text-zinc-500 cursor-not-allowed";
+  const neutral =
+    "bg-black/35 border-white/10 text-zinc-100 hover:bg-black/45 hover:border-white/15";
+  const primary =
+    "bg-emerald-500/12 border-emerald-500/30 text-emerald-100 hover:bg-emerald-500/18 hover:border-emerald-400/40";
+  const danger =
+    "bg-rose-500/10 border-rose-500/25 text-rose-100 hover:bg-rose-500/14 hover:border-rose-400/35";
+
+  const toneCls =
+    tone === "primary" ? primary : tone === "danger" ? danger : neutral;
+
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className={`${base} ${disabled ? disabledCls : toneCls}`}
+    >
+      <div className="flex items-center gap-3">
+        <div
+          className={`grid place-items-center h-10 w-10 rounded-xl border ${disabled
+            ? "border-white/10 bg-black/20"
+            : "border-white/10 bg-black/30 group-hover:bg-black/35"
+            }`}
+        >
+          <span className={disabled ? "text-zinc-500" : "text-emerald-200"}>
+            <Icon name={icon} />
+          </span>
+        </div>
+        <div className="text-left">
+          <div className="text-sm sm:text-base font-extrabold leading-tight">
+            {label}
+          </div>
+          <div className="text-[0.7rem] sm:text-xs text-zinc-400">
+            Tap to act
+          </div>
+        </div>
+      </div>
+    </button>
+  );
+}
+
+export default function MainGame() {
+  const dispatch = useDispatch();
+
+  // Flexible selector so this doesn't explode if your store shape differs
+  const dogState = useSelector(
+    (s) => s?.dog?.current || s?.dog || s?.game?.dog || {},
+  );
+  const dog = dogState || {};
+  const progression = dog?.progression;
+  const polls = dog?.polls;
+  const activePoll = polls?.active;
+
+  const [pollCountdown, setPollCountdown] = useState(null);
+
+  const timeOfDay = useMemo(() => {
+    const h = new Date().getHours();
+    if (h >= 5 && h < 11) return "MORNING";
+    if (h >= 11 && h < 17) return "AFTERNOON";
+    if (h >= 17 && h < 22) return "EVENING";
+    return "NIGHT";
   }, []);
 
-  const handleCareAction = useCallback(
-    (action) => {
-      if (!dog) return;
-      const now = Date.now();
+  const dogRenderMode = useSelector(selectDogRenderMode);
+  const [realisticFailed, setRealisticFailed] = useState(false);
+  const REALISTIC_SRC = "/assets/dogs/realistic/dog.svg";
 
-      switch (action) {
-        case "feed":
-          dispatch(feed({ now }));
-          acknowledge("Nom nom nom.");
-          break;
-        case "play":
-          dispatch(
-            play({
-              now,
-              timeOfDay: timeOfDay === "morning" ? "MORNING" : "DAY",
-            }),
-          );
-          acknowledge("Zoomies achieved!");
-          break;
-        // Rest removed: dog sleeps on its own
-        case "bathe":
-          dispatch(bathe({ now }));
-          acknowledge("Scrub-a-dub-dub.");
-          break;
-        case "potty":
-          if ((dog.pottyLevel ?? 0) < 25) {
-            acknowledge("Not urgent yet.");
-            break;
-          }
-          dispatch(goPotty({ now }));
-          acknowledge("Potty break complete.");
-          break;
-        case "scoop":
-          if ((dog.poopCount ?? 0) <= 0) {
-            acknowledge("Yard is already spotless.");
-            break;
-          }
-          dispatch(scoopPoop({ now }));
-          acknowledge("Yard cleaned up.");
-          break;
-        case "train":
-          dispatch(
-            trainObedience({
-              commandId: "sit",
-              success: true,
-              xp: 8,
-              now,
-            }),
-          );
-          acknowledge("Practiced SIT command.");
-          break;
-        default:
-          break;
-      }
-    },
-    [dispatch, dog, acknowledge, timeOfDay],
-  );
+  // Allow retrying the realistic image if the user toggles modes.
+  useEffect(() => {
+    setRealisticFailed(false);
+    setHasWarnedMissingRealistic(false);
+  }, [dogRenderMode]);
 
-  const handlePollResponse = useCallback(
-    (accepted) => {
+  // Canonical render model (single source of truth)
+  const renderModel = selectDogRenderModel(dog);
+  const stageLabel = renderModel.stageLabel;
+  const spriteSrc = renderModel.staticSpriteUrl;
+
+  // Stats
+  const hunger = clamp01(dog?.stats?.hunger ?? 50);
+  const happiness = clamp01(dog?.stats?.happiness ?? 60);
+  const energy = clamp01(dog?.stats?.energy ?? 60);
+  const cleanliness = clamp01(dog?.stats?.cleanliness ?? 60);
+
+  // Mood hint
+  const moodHint = (() => {
+    if (energy <= 25) return "sleepy";
+    if (hunger >= 75) return "hungry";
+    if (cleanliness <= 25) return "dirty";
+    if (happiness >= 78) return "happy";
+    return "neutral";
+  })();
+
+  // Potty training lock
+  const training = dog?.training || {};
+  const potty = training?.potty || {};
+  const goal = Number(potty?.goal || 0);
+  const success = Number(potty?.successCount || 0);
+  const pottyPercent =
+    goal > 0
+      ? Math.max(0, Math.min(100, Math.round((success / goal) * 100)))
+      : 0;
+  const pottyTrained = !!potty?.completedAt;
+
+  // UI feedback + animation pulse
+  const [toast, setToast] = useState("");
+  const [actionName, setActionName] = useState("");
+  const [actionKey, setActionKey] = useState("");
+
+  // One-time warning guard to avoid spamming when realistic image is missing.
+  const [hasWarnedMissingRealistic, setHasWarnedMissingRealistic] =
+    useState(false);
+
+  function showToast(msg, ms = 1600) {
+    const message = String(msg || "").trim();
+    if (!message) return;
+
+    setToast(message);
+    window.clearTimeout(window.__doggerz_toast);
+    window.__doggerz_toast = window.setTimeout(() => setToast(""), ms);
+  }
+
+  function pulse(action, msg) {
+    if (msg) showToast(msg, 1600);
+    if (action) {
+      setActionName(action);
+      setActionKey(`${action}:${Date.now()}`);
+    }
+  }
+
+  // Allow other UI pieces (top bar) to trigger toasts.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handler = (ev) => {
+      const message = ev?.detail?.message;
+      if (message) showToast(message, 1600);
+    };
+
+    window.addEventListener("doggerz:toast", handler);
+    return () => window.removeEventListener("doggerz:toast", handler);
+  }, []);
+
+  function onFeed() {
+    dispatch(feed({ now: Date.now() }));
+    pulse("feed", "Fed.");
+  }
+  function onPlay() {
+    dispatch(play({ now: Date.now() }));
+    pulse("play", "Played.");
+  }
+  function onBathe() {
+    dispatch(bathe({ now: Date.now() }));
+    pulse("bathe", "Bathed.");
+  }
+  function onPotty() {
+    dispatch(increasePottyLevel({ amount: 12 }));
+    dispatch(goPotty({ now: Date.now() }));
+    pulse("potty", "Potty training progress.");
+  }
+  function onTrain() {
+    if (!pottyTrained) {
+      pulse("", "Trick training locked until potty trained.");
+      return;
+    }
+    dispatch(
+      trainObedience({
+        commandId: "sit",
+        success: true,
+        xp: 6,
+        now: Date.now(),
+      }),
+    );
+    pulse("train", "Training session started.");
+  }
+
+  function performSuggestedAction(action) {
+    const now = Date.now();
+    if (action === "feed") {
+      dispatch(feed({ now }));
+      pulse("feed", "Fed.");
+      return;
+    }
+    if (action === "play") {
+      dispatch(play({ now, timeOfDay }));
+      pulse("play", "Played.");
+      return;
+    }
+    if (action === "bathe") {
+      dispatch(bathe({ now }));
+      pulse("bathe", "Bathed.");
+      return;
+    }
+    if (action === "potty") {
+      dispatch(goPotty({ now }));
+      pulse("potty", "Potty time.");
+      return;
+    }
+    if (action === "rest") {
+      // In this UI, rest is represented by a simple toast/pulse.
+      pulse("rest", "Rested.");
+      return;
+    }
+    if (action === "train") {
       dispatch(
-        respondToDogPoll({
-          accepted,
-          reason: accepted ? "ACCEPT" : "DECLINE",
-          now: Date.now(),
+        trainObedience({
+          commandId: "sit",
+          success: true,
+          xp: 6,
+          now,
         }),
       );
-    },
-    [dispatch],
-  );
+      pulse("train", "Training session.");
+    }
+  }
 
-  const handleQuickAdopt = useCallback(() => {
-    dispatch(setDogName("Buddy"));
-    dispatch(setAdoptedAt(Date.now()));
-  }, [dispatch]);
+  function onPollResponse(accepted) {
+    const now = Date.now();
+    dispatch(
+      respondToDogPoll({
+        accepted: !!accepted,
+        reason: accepted ? "ACCEPT" : "DECLINE",
+        now,
+      }),
+    );
 
-  // ---------- Render ----------
+    // If this poll included a suggested action, do it immediately.
+    const suggested = activePoll?.action;
+    if (accepted && suggested) {
+      performSuggestedAction(suggested);
+    } else if (!accepted) {
+      showToast("Maybe later.", 900);
+    }
+  }
 
-  let mainContent;
+  // Poll countdown display
+  useEffect(() => {
+    if (!activePoll?.expiresAt) {
+      setPollCountdown(null);
+      return;
+    }
 
-  try {
-    if (!hasDog) {
-      // Redux not hydrated yet or no dog state created
-      mainContent = (
-        <div className="flex items-center justify-center min-h-[60vh] bg-zinc-950">
-          <div className="space-y-3 text-center max-w-sm px-4">
-            <h1 className="text-lg font-semibold tracking-tight">
-              Loading your pup…
-            </h1>
-            <p className="text-xs text-zinc-400">
-              If this screen is stuck, use the back button and go through the
-              Adopt flow again so Doggerz can create your save file.
-            </p>
-          </div>
-        </div>
-      );
-    } else if (!isAdopted) {
-      // Dog object exists but Adopt flow never set adoptedAt
-      mainContent = (
-        <div className="flex items-center justify-center min-h-[60vh] bg-zinc-950">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-zinc-50 mb-4">
-              No Dog Adopted
-            </h2>
-            <p className="text-zinc-400 mb-6">
-              Adopt a dog to get started with the main game.
-            </p>
-            <button
-              onClick={handleQuickAdopt}
-              className="px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-black font-semibold rounded-full transition"
-            >
-              Quick Adopt (Test)
-            </button>
-          </div>
-        </div>
-      );
-    } else {
-      // Full game layout
-      mainContent = (
-        <section className="grid gap-6 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-          {/* Left: yard & sprite */}
-          <div className="relative rounded-2xl overflow-hidden border border-zinc-800 bg-zinc-900">
-            {/* Background yard image (day/night) + gradient overlay */}
-            <div
-              className="absolute inset-0 bg-cover bg-center opacity-80"
-              style={yardBackgroundStyle}
-            />
-            <div
-              className="absolute inset-0 mix-blend-multiply"
-              style={overlayStyle}
-            />
+    const tick = () => {
+      const left = Math.max(0, Math.ceil((activePoll.expiresAt - Date.now()) / 1000));
+      setPollCountdown(left);
+    };
 
-            {/* Dog sprite */}
-            <div className="relative z-10 flex flex-col items-center justify-center h-64">
-              <ErrorBoundary>
-                <EnhancedDogSprite animation={selectedAnimation} />
-              </ErrorBoundary>
-            </div>
+    tick();
+    const id = window.setInterval(tick, 250);
+    return () => window.clearInterval(id);
+  }, [activePoll?.expiresAt]);
+  const wantsRealistic = dogRenderMode === "realistic";
+  const [isWalking, setIsWalking] = useState(false);
 
-            {/* Yard status strip */}
-            <div className="relative z-10 flex justify-between items-center px-4 py-2 text-[0.7rem] bg-zinc-950/70 border-t border-zinc-800">
-              <span className="text-zinc-400">
-                Potty: <span className="text-zinc-100">{pottyStatusLabel}</span>
-              </span>
-              <span className="text-zinc-400">
-                Yard: <span className="text-zinc-100">{yardStatusLabel}</span>
-              </span>
-            </div>
-          </div>
+  useEffect(() => {
+    if (!actionName) return;
+    if (["feed", "play", "bathe", "potty", "train"].includes(actionName)) {
+      setIsWalking(true);
+      const id = window.setTimeout(() => setIsWalking(false), 1200);
+      return () => window.clearTimeout(id);
+    }
+  }, [actionName]);
 
-          {/* Right: stats + actions */}
-          <div className="space-y-4">
-            {/* Cleanliness summary */}
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4 space-y-1">
-              <p className="text-xs text-zinc-400">
-                Cleanliness:{" "}
-                <span className="font-semibold text-zinc-100">
-                  {cleanlinessLabel}
-                </span>
-              </p>
-              <p className="text-[0.7rem] text-zinc-500">
-                {cleanlinessSummary}
-              </p>
-            </div>
+  // When realistic fails while requested, warn once.
+  useEffect(() => {
+    if (!wantsRealistic) return;
+    if (!realisticFailed) return;
+    if (hasWarnedMissingRealistic) return;
+    setHasWarnedMissingRealistic(true);
+    showToast("Realistic dog image missing — falling back to sprites", 2200);
+  }, [wantsRealistic, realisticFailed, hasWarnedMissingRealistic]);
 
-            {/* Stat bars */}
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <StatBar label="Hunger" value={hunger} color="amber" inverse />
-                <StatBar label="Happiness" value={happiness} color="emerald" />
-                <StatBar label="Energy" value={energy} color="blue" />
-                <StatBar label="Cleanliness" value={cleanliness} color="cyan" />
+  return (
+    <div className="w-full max-w-6xl mx-auto px-4 pb-12 pt-5">
+      {/* GAME TOP BAR */}
+      <div className="mb-4">
+        <GameTopBar />
+      </div>
+
+      {/* CONTENT */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        {/* LEFT: DOG HERO */}
+        <section className="lg:col-span-7 rounded-3xl border border-emerald-500/15 bg-black/35 backdrop-blur-md shadow-[0_0_70px_rgba(16,185,129,0.12)] overflow-hidden">
+          {/* Header strip */}
+          <div className="px-5 sm:px-6 py-4 border-b border-emerald-500/10 bg-black/25">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="text-xs uppercase tracking-[0.2em] text-zinc-400">
+                  Backyard
+                </div>
+                <div className="text-lg sm:text-2xl font-extrabold text-emerald-200 leading-tight">
+                  {dog?.name || "Pup"} <span className="text-zinc-500">•</span>{" "}
+                  {stageLabel}
+                </div>
+                <div className="mt-1 text-xs sm:text-sm text-zinc-300">
+                  Mood:{" "}
+                  <span className="text-emerald-200 font-semibold capitalize">
+                    {moodHint}
+                  </span>
+                </div>
+              </div>
+
+              <div className="text-right">
+                <div className="text-xs text-zinc-400">Potty Training</div>
+                <div className="text-sm font-extrabold text-emerald-200">
+                  {pottyPercent}%
+                </div>
               </div>
             </div>
 
-            {/* Basic care actions – NO Rest button */}
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={() => handleCareAction("feed")}
-                  className="px-4 py-3 bg-amber-600 hover:bg-amber-500 rounded-lg font-semibold transition text-sm"
-                >
-                  🍖 Feed
-                </button>
-                <button
-                  onClick={() => handleCareAction("play")}
-                  className="px-4 py-3 bg-emerald-600 hover:bg-emerald-500 rounded-lg font-semibold transition text-sm"
-                >
-                  🎾 Play
-                </button>
-                <button
-                  onClick={() => handleCareAction("bathe")}
-                  className="px-3 py-2 bg-cyan-600 hover:bg-cyan-500 rounded-lg font-semibold transition text-sm col-span-2"
-                >
-                  🛁 Bathe
-                </button>
+            {toast ? (
+              <div className="mt-3 text-sm font-semibold text-emerald-200">
+                {toast}
+              </div>
+            ) : (
+              <div className="mt-3 text-xs text-zinc-400">
+                Care first. Potty training unlocks trick training.
+              </div>
+            )}
+          </div>
+
+          {/* Dog stage */}
+          <div className="p-6 sm:p-8">
+            {/* Depth + glow frame */}
+            <div className="relative rounded-3xl border border-white/10 bg-black/30 p-6 sm:p-10 overflow-hidden">
+              {/* Soft vignette */}
+              <div className="pointer-events-none absolute inset-0">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.18),transparent_55%)]" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,rgba(56,189,248,0.10),transparent_55%)]" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(0,0,0,0.0),rgba(0,0,0,0.65))]" />
               </div>
 
-              <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
-                <button
-                  onClick={() => handleCareAction("potty")}
-                  className="px-3 py-2 rounded-lg border border-zinc-700 hover:border-emerald-500/70 hover:bg-zinc-800 text-zinc-200 transition"
-                >
-                  🚶 Potty Walk
-                </button>
-                <button
-                  onClick={() => handleCareAction("scoop")}
-                  className="px-3 py-2 rounded-lg border border-zinc-700 hover:border-amber-500/70 hover:bg-zinc-800 text-zinc-200 transition"
-                >
-                  🗑️ Scoop Yard
-                </button>
-              </div>
+              {/* Dog platform */}
+              <div className="relative flex items-center justify-center">
+                <div className="absolute -bottom-6 h-16 w-72 rounded-[999px] bg-black/35 blur-xl" />
+                <div className="absolute -bottom-6 h-10 w-56 rounded-[999px] bg-emerald-500/15 blur-xl" />
+
+                {wantsRealistic && !realisticFailed ? (
+                  <RealisticDog
+                    stage={renderModel.stage}
+                    src={REALISTIC_SRC}
+                    size={420}
+                    onLoadSuccess={() => setRealisticFailed(false)}
+                    onLoadError={() => setRealisticFailed(true)}
+                    className={isWalking ? "opacity-95" : ""}
+                  />
+                ) : (
+                  <AnimatedDog
+                    src={spriteSrc}
+                    cols={9}
+                    rows={9}
+                    fps={8}
+                    scale={3.55}
+                    pixelated={false}
+                    mood={moodHint}
+                    pulseKey={dog?.lastAction || ""}
+                    action={actionName}
+                    actionKey={actionKey}
+                  />
+                )}
+              </div>            </div>
+
+            {/* ACTION DOCK (replaces tiny button row) */}
+            <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <ActionDockButton label="Feed" icon="bowl" onClick={onFeed} />
+              <ActionDockButton label="Play" icon="ball" onClick={onPlay} />
+              <ActionDockButton
+                label="Bathe"
+                icon="sparkle"
+                onClick={onBathe}
+              />
+              <ActionDockButton
+                label="Potty Training"
+                icon="toilet"
+                onClick={onPotty}
+                tone="primary"
+              />
+            </div>
+
+            <div className="mt-3">
+              <button
+                disabled={!pottyTrained}
+                className={`w-full rounded-2xl px-4 py-3 sm:py-4 text-sm sm:text-base font-extrabold transition
+                  ${pottyTrained
+                    ? "bg-emerald-400 text-black shadow-[0_0_35px_rgba(52,211,153,0.35)] hover:shadow-[0_0_50px_rgba(52,211,153,0.60)]"
+                    : "bg-white/5 text-zinc-500 border border-white/10 cursor-not-allowed"
+                  }`}
+                onClick={onTrain}
+                type="button"
+              >
+                Trick Training
+              </button>
+
+              {!pottyTrained && (
+                <div className="mt-2 text-xs text-zinc-400">
+                  Trick training is locked until Potty Training reaches 100%.
+                </div>
+              )}
             </div>
           </div>
         </section>
-      );
-    }
-  } catch (err) {
-    // Capture render-time error to help debugging without crashing the app.
-    // eslint-disable-next-line no-console
-    console.error("MainGame render error:", err);
-    setRenderError(err?.message || String(err));
-    mainContent = (
-      <div className="p-6 bg-red-900/10 rounded-md border border-red-700 text-red-200">
-        <strong>MainGame failed to render.</strong>
-        <div className="mt-2 text-xs">
-          Check the console for the full stack trace. Error:{" "}
-          {String(err?.message || err)}
-        </div>
-      </div>
-    );
-  }
 
-  // Render final UI
-  return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-50 p-6">
-      <div className="max-w-5xl mx-auto space-y-6">
-        {/* Only show HUD when we have a real adopted dog */}
-        {isAdopted && !renderError && (
-          <GameTopBar
-            dogName={dogName}
-            level={level}
-            coins={coins}
-            lifeStageLabel={lifeStageLabel}
-            lifeStageDay={lifeStageDay}
-            timeOfDay={timeOfDay}
-            moodLabel={moodLabel}
-            needs={needs}
-            temperamentRevealReady={temperamentRevealReady}
-          />
-        )}
+        {/* RIGHT: STICKY PANEL */}
+        <aside className="lg:col-span-5">
+          <div className="lg:sticky lg:top-4 space-y-4">
+            {/* Care stats */}
+            <section className="rounded-3xl border border-emerald-500/15 bg-black/35 backdrop-blur-md shadow-[0_0_60px_rgba(16,185,129,0.08)] overflow-hidden">
+              <div className="px-5 sm:px-6 py-4 border-b border-emerald-500/10 bg-black/25">
+                <div className="text-xs uppercase tracking-[0.2em] text-zinc-400">
+                  Care
+                </div>
+                <div className="text-lg font-extrabold text-emerald-200">
+                  Needs Overview
+                </div>
+                <div className="mt-1 text-xs text-zinc-400">
+                  This is your dog’s current state.
+                </div>
+              </div>
 
-        {/* Toasts */}
-        {isAdopted && (actionToast || reminderToast) && (
-          <div className="space-y-2 text-xs text-amber-200">
-            {actionToast && (
-              <div className="inline-flex rounded-full bg-amber-900/40 border border-amber-500/40 px-3 py-1">
-                {actionToast}
+              <div className="p-5 sm:p-6 space-y-4">
+                <StatRow label="Hunger" value={hunger} />
+                <StatRow label="Happiness" value={happiness} />
+                <StatRow label="Energy" value={energy} />
+                <StatRow label="Cleanliness" value={cleanliness} />
               </div>
-            )}
-            {reminderToast && (
-              <div className="inline-flex rounded-full bg-zinc-900/70 border border-zinc-700 px-3 py-1">
-                {reminderToast}
+            </section>
+
+            {/* Long-term progression */}
+            <LongTermProgressionCard progression={progression} now={Date.now()} />
+
+            {/* Dog polls (initiative) */}
+            <DogPollCard
+              activePoll={activePoll}
+              pollCountdown={pollCountdown}
+              onPollResponse={onPollResponse}
+            />
+
+            {/* Potty progress */}
+            <section className="rounded-3xl border border-emerald-500/15 bg-black/35 backdrop-blur-md shadow-[0_0_60px_rgba(16,185,129,0.08)] overflow-hidden">
+              <div className="px-5 sm:px-6 py-4 border-b border-emerald-500/10 bg-black/25">
+                <div className="text-xs uppercase tracking-[0.2em] text-zinc-400">
+                  Progression
+                </div>
+                <div className="text-lg font-extrabold text-emerald-200">
+                  Potty Training Tracker
+                </div>
+                <div className="mt-1 text-xs text-zinc-400">
+                  Complete this milestone to unlock tricks.
+                </div>
               </div>
-            )}
+
+              <div className="p-5 sm:p-6">
+                <PottyTrackerCard percent={pottyPercent} />
+                <div className="mt-3 text-xs text-zinc-400">
+                  {pottyTrained
+                    ? "Potty training complete. Trick training is now unlocked."
+                    : "Train consistently. When this hits 100%, tricks unlock permanently."}
+                </div>
+              </div>
+            </section>
           </div>
-        )}
-
-        {/* Main content area */}
-        {mainContent}
-      </div>
-    </div>
-  );
-}
-
-function StatBar({ label, value, color, inverse = false }) {
-  const colorMap = {
-    amber: "bg-amber-500",
-    emerald: "bg-emerald-500",
-    blue: "bg-blue-500",
-    cyan: "bg-cyan-500",
-  };
-
-  const barColor = colorMap[color] || "bg-zinc-500";
-  const raw = Number.isFinite(value) ? value : 0;
-  const displayValue = inverse ? 100 - raw : raw;
-  const percentage = Math.max(0, Math.min(100, displayValue));
-
-  return (
-    <div>
-      <div className="flex justify-between text-xs text-zinc-400 mb-1">
-        <span>{label}</span>
-        <span>{Math.round(raw)}</span>
-      </div>
-      <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
-        <div
-          className={`h-full ${barColor} transition-all duration-500`}
-          style={{ width: `${percentage}%` }}
-        />
+        </aside>
       </div>
     </div>
   );
