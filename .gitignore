@@ -1,0 +1,47 @@
+# OS-generated junk
+.DS_Store
+Thumbs.db
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+*.log
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+.vite/
+
+# Vite / temporary
+.cache/
+build/
+
+# Environment / secrets
+# Ignore all env files but keep the example committed.
+.env
+.env.local
+.env.*.local
+.env.*
+!.env.example
+
+# Tooling & snapshots
+audit-snapshots/
+tmp.*
+
+# IDE / editor
+.vscode/
+.idea/
+*.suo
+*.sln
+
+# Firebase emulators and local state
+.firebase/
+
+# Coverage & test output
+coverage/
+
+# OS swap / lock files
+*.swp

@@ -1,0 +1,47 @@
+{
+  "name": "doggerz",
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "dev:host": "vite --host --port 5173",
+    "check": "npm run build",
+    "build": "vite build",
+    "preview": "vite preview",
+    "preview:host": "vite preview --host --port 4173",
+    "icons:gen": "node scripts/gen-pwa-icons.mjs",
+    "sprites:gen": "node scripts/generate-sprites.js",
+    "sprites:pack": "node scripts/pack-atlas-to-sprites.js",
+    "sprites:build": "npm run sprites:gen && npm run sprites:pack",
+    "split:backyard": "node scripts/split-backyard.js public/assets/backgrounds/backyard-split.png public/assets/backgrounds/backyard-day.png public/assets/backgrounds/backyard-night.png"
+  },
+  "dependencies": {
+    "@pixi/react": "^7.1.2",
+    "@react-three/drei": "^9.122.0",
+    "@react-three/fiber": "^8.18.0",
+    "@reduxjs/toolkit": "^2.10.1",
+    "firebase": "^11.10.0",
+    "lucide-react": "^0.556.0",
+    "pixi.js": "^8.14.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-redux": "^9.2.0",
+    "react-router-dom": "^6.14.2",
+    "three": "^0.182.0",
+    "vite-plugin-pwa": "^1.1.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/forms": "^0.5.10",
+    "@tailwindcss/typography": "^0.5.19",
+    "@types/react": "^18.3.0",
+    "@vitejs/plugin-react": "^5.1.1",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.47",
+    "sharp": "^0.33.5",
+    "tailwindcss": "^3.4.13",
+    "vite": "^7.2.2"
+  }
+}
