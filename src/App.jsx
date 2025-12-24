@@ -1,4 +1,3 @@
-// src/App.jsx
 // Top-level routing for Doggerz
 
 import * as React from "react";
@@ -35,5 +34,5 @@ const resolvedRoutes = [
 const router = createBrowserRouter(resolvedRoutes); // no future flags — avoids dev warnings if package is older
 
 export default function AppRouter() {
-  return <RouterProvider router={router} />;
+  return <RouterProvider router={router} future={{ v7_startTransition: true }} />;
 }

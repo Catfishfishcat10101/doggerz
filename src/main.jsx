@@ -1,20 +1,19 @@
 // src/main.jsx
-// @ts-nocheck
+// Vite entry point for Doggerz
 
-import React from "react";
-import { createRoot } from "react-dom/client";
+import * as React from "react";
+import ReactDOM from "react-dom/client";
 import { Provider } from "react-redux";
-import store from "@/redux/store.js";
-import App from "@/App.jsx";
 
-const rootEl = document.getElementById("root");
-if (!rootEl) {
-  throw new Error("Root element not found");
-}
-const root = createRoot(rootEl);
+import AppRouter from "./AppRouter.jsx";
+import store from "./redux/store"; // works for ./redux/store.js or ./redux/store/index.js
 
-root.render(
-  <Provider store={store}>
-    <App />
-  </Provider>
+import "./index.css";
+
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <React.StrictMode>
+    <Provider store={store}>
+      <AppRouter />
+    </Provider>
+  </React.StrictMode>
 );
