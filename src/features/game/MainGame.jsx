@@ -1,6 +1,7 @@
 // src/features/game/MainGame.jsx
 // @ts-nocheck
 import React, { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 
 import GameTopBar from "@/features/game/components/GameTopBar.jsx";
@@ -200,6 +201,7 @@ export default function MainGame() {
     (s) => s?.dog?.current || s?.dog || s?.game?.dog || {},
   );
   const dog = dogState || {};
+  const adopted = !!dog?.adoptedAt;
   const progression = dog?.progression;
   const polls = dog?.polls;
   const activePoll = polls?.active;
@@ -309,7 +311,7 @@ export default function MainGame() {
   function onPotty() {
     dispatch(increasePottyLevel({ amount: 12 }));
     dispatch(goPotty({ now: Date.now() }));
-    pulse("potty", "Potty training progress.");
+    pulse("potty", "Potty break logged.");
   }
   function onTrain() {
     if (!pottyTrained) {
@@ -422,6 +424,38 @@ export default function MainGame() {
     setHasWarnedMissingRealistic(true);
     showToast("Realistic dog image missing — falling back to sprites", 2200);
   }, [wantsRealistic, realisticFailed, hasWarnedMissingRealistic]);
+
+  if (!adopted) {
+    return (
+      <div className="w-full max-w-3xl mx-auto px-4 py-10">
+        <div className="rounded-3xl border border-emerald-500/15 bg-black/35 backdrop-blur-md shadow-[0_0_60px_rgba(16,185,129,0.10)] p-6 sm:p-8">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-emerald-200">
+            You don’t have a pup yet
+          </h1>
+          <p className="mt-2 text-sm text-zinc-300">
+            Adopt your first dog to start the yard experience, unlock potty
+            training, and begin progression.
+          </p>
+
+          <div className="mt-6 flex flex-col sm:flex-row gap-3">
+            <Link
+              to="/adopt"
+              className="inline-flex items-center justify-center rounded-2xl px-6 py-3 text-sm font-extrabold bg-emerald-400 text-black shadow-[0_0_35px_rgba(52,211,153,0.35)] hover:shadow-[0_0_45px_rgba(52,211,153,0.55)] transition"
+            >
+              Go to Adopt
+            </Link>
+
+            <Link
+              to="/"
+              className="inline-flex items-center justify-center rounded-2xl px-6 py-3 text-sm font-bold border border-emerald-500/25 bg-black/30 text-emerald-100 hover:bg-black/45 transition"
+            >
+              Back to Home
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-6xl mx-auto px-4 pb-12 pt-5">

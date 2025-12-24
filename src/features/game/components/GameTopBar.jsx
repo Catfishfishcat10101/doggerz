@@ -3,6 +3,7 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import { selectUser } from "@/redux/userSlice.js";
 import { selectDogRenderMode, setDogRenderMode } from "@/redux/userSlice.js";
 
 // Optional Firebase logout (won't crash if Firebase isn't present).
@@ -42,6 +43,8 @@ export default function GameTopBar() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const dogRenderMode = useSelector(selectDogRenderMode);
+  const user = useSelector(selectUser);
+  const isSignedIn = !!(user?.email || user?.id);
 
   function pushToast(message) {
     if (typeof window === "undefined") return;
@@ -65,6 +68,10 @@ export default function GameTopBar() {
     } finally {
       navigate("/", { replace: true });
     }
+  }
+
+  function handleExit() {
+    navigate("/", { replace: true });
   }
 
   return (
@@ -106,11 +113,11 @@ export default function GameTopBar() {
             {dogRenderMode === "realistic" ? "Realistic" : "Sprite"}
           </button>
           <button
-            onClick={handleLogout}
+            onClick={isSignedIn ? handleLogout : handleExit}
             className="px-3 py-2 rounded-lg text-sm font-semibold text-zinc-100 hover:bg-white/10 transition"
             type="button"
           >
-            Logout
+            {isSignedIn ? "Logout" : "Exit"}
           </button>
         </nav>
       </div>
