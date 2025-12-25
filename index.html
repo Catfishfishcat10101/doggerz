@@ -1,0 +1,54 @@
+<!-- index.html -->
+<!doctype html>
+<html lang="en" class="dark">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+  <title>Doggerz — Your Virtual Pup</title>
+  <meta name="description" content="Adopt. Train. Bond." />
+  
+  <!-- PWA / App icons -->
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512x512.png" />
+  <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+
+  <!-- Open Graph / Social preview -->
+  <meta property="og:site_name" content="Doggerz" />
+  <meta property="og:title" content="Doggerz — Adopt. Train. Bond." />
+  <meta property="og:description" content="Adopt your own puppy!" />
+  <meta property="og:type" content="website" />
+  <!-- TODO: set this to your canonical production URL (e.g., https://doggerz.example.com/) -->
+  <meta property="og:url" content="https://example.com/" />
+  <meta property="og:image" content="/icons/icon-512x512.png" />
+
+  <!-- Twitter / X -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Doggerz — Adopt. Train. Bond." />
+  <meta name="twitter:description" content="Adopt your own puppy!" />
+  <meta name="twitter:image" content="/icons/icon-512x512.png" />
+
+  <meta name="color-scheme" content="dark light" />
+
+  <!-- Theme colors per scheme -->
+  <meta name="theme-color" content="#0b1020" media="(prefers-color-scheme: dark)" />
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap"
+    rel="stylesheet" />
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+  <script src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js" type="module"></script>
+  <script src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js" nomodule></script>
+
+</body>
+
+</html>
