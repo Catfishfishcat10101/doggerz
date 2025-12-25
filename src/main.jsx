@@ -1,7 +1,6 @@
 import "./App.css";
 // src/main.jsx
 import React from "react";
-import { registerSW } from "./pwa/registerSW.js";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { Provider } from "react-redux";
@@ -27,6 +26,3 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     </Provider>
   </React.StrictMode>,
 );
-
-// PWA service worker (disabled in dev)
-registerSW();

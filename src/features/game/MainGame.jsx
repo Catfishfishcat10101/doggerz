@@ -1,12 +1,15 @@
 // src/features/game/MainGame.jsx
 // @ts-nocheck
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 
 import GameTopBar from "@/features/game/components/GameTopBar.jsx";
+import DogPixiView from "@/features/game/components/DogPixiView.jsx";
 import AnimatedDog from "@/components/AnimatedDog.jsx";
 import RealisticDog from "@/components/RealisticDog.jsx";
+import LottieBurst from "@/components/ui/LottieBurst.jsx";
+import pulseAnim from "@/assets/lottie/doggerz-pulse.json";
 import LongTermProgressionCard from "@/components/LongTermProgressionCard.jsx";
 import DogPollCard from "@/components/DogPollCard.jsx";
 import PottyTrackerCard from "@/components/PottyTrackerCard.jsx";
@@ -257,10 +260,38 @@ export default function MainGame() {
       : 0;
   const pottyTrained = !!potty?.completedAt;
 
+  // Long-term progression milestones
+  const seasonLevel = Number(progression?.season?.level || 1);
+  const journeyLevel = Number(progression?.journey?.level || 1);
+  const weeklyChallenges = Array.isArray(progression?.weekly?.challenges)
+    ? progression.weekly.challenges
+    : [];
+  const weeklyClaimedCount = weeklyChallenges.filter((c) => !!c?.claimedAt)
+    .length;
+
   // UI feedback + animation pulse
   const [toast, setToast] = useState("");
   const [actionName, setActionName] = useState("");
   const [actionKey, setActionKey] = useState("");
+
+  // UI-only burst effect (Lottie) on milestones
+  const [fxOn, setFxOn] = useState(false);
+  const [fxKey, setFxKey] = useState("");
+  const fxTimerRef = useRef(null);
+  const milestoneInitRef = useRef(false);
+  const prevMilestonesRef = useRef({
+    pottyTrained: false,
+    pottyPercent: 0,
+    seasonLevel: 1,
+    journeyLevel: 1,
+    weeklyClaimedCount: 0,
+  });
+
+  // Pixi renderer status (we mount Pixi even when hidden so it can load)
+  const [pixiStatus, setPixiStatus] = useState("loading");
+
+  // Responsive sizing for the dog stage so the Pixi canvas fits on mobile.
+  const [dogView, setDogView] = useState({ w: 420, h: 300, scale: 2.6 });
 
   // One-time warning guard to avoid spamming when realistic image is missing.
   const [hasWarnedMissingRealistic, setHasWarnedMissingRealistic] =
@@ -282,6 +313,92 @@ export default function MainGame() {
       setActionKey(`${action}:${Date.now()}`);
     }
   }
+
+  function triggerFx(reason) {
+    const key = `${String(reason || "fx")}:${Date.now()}`;
+    setFxKey(key);
+    setFxOn(true);
+    window.clearTimeout(fxTimerRef.current);
+    fxTimerRef.current = window.setTimeout(() => setFxOn(false), 900);
+  }
+
+  // Trigger the burst only for milestone moments (not every action click).
+  useEffect(() => {
+    const prev = prevMilestonesRef.current || {};
+
+    // Avoid firing effects on initial load (e.g., returning users).
+    if (!milestoneInitRef.current) {
+      milestoneInitRef.current = true;
+      prevMilestonesRef.current = {
+        pottyTrained,
+        pottyPercent,
+        seasonLevel,
+        journeyLevel,
+        weeklyClaimedCount,
+      };
+      return;
+    }
+
+    // Potty completion is the biggest early-game milestone.
+    if (!prev.pottyTrained && pottyTrained) {
+      triggerFx("potty-trained");
+    } else if (seasonLevel > Number(prev.seasonLevel || 1)) {
+      triggerFx("season-level-up");
+    } else if (journeyLevel > Number(prev.journeyLevel || 1)) {
+      triggerFx("journey-level-up");
+    } else if (weeklyClaimedCount > Number(prev.weeklyClaimedCount || 0)) {
+      triggerFx("weekly-claimed");
+    } else {
+      // Potty progress thresholds: only celebrate meaningful checkpoints.
+      // (0-24 none) (25/50/75/100) = celebrate
+      const prevBucket = Math.floor(Number(prev.pottyPercent || 0) / 25);
+      const nextBucket = Math.floor(Number(pottyPercent || 0) / 25);
+      if (pottyPercent > Number(prev.pottyPercent || 0) && nextBucket > prevBucket) {
+        // cap at 4 to avoid weirdness if % briefly exceeds 100
+        const pct = Math.min(100, nextBucket * 25);
+        if (pct >= 25) triggerFx(`potty-${pct}`);
+      }
+    }
+
+    prevMilestonesRef.current = {
+      pottyTrained,
+      pottyPercent,
+      seasonLevel,
+      journeyLevel,
+      weeklyClaimedCount,
+    };
+  }, [
+    pottyTrained,
+    pottyPercent,
+    seasonLevel,
+    journeyLevel,
+    weeklyClaimedCount,
+  ]);
+
+  // Reset Pixi status when the dog render target changes.
+  useEffect(() => {
+    setPixiStatus("loading");
+  }, [renderModel.stage, renderModel.condition]);
+
+  // Keep the dog stage responsive (simple viewport heuristic).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const calc = () => {
+      const maxW = 420;
+      const minW = 280;
+      // Account for page padding + card padding so the canvas doesn't overflow.
+      const available = Math.max(0, (window.innerWidth || maxW) - 140);
+      const w = Math.max(minW, Math.min(maxW, available));
+      const h = Math.round((w * 300) / 420);
+      const scale = 2.6 * (w / 420);
+      setDogView({ w, h, scale });
+    };
+
+    calc();
+    window.addEventListener("resize", calc);
+    return () => window.removeEventListener("resize", calc);
+  }, []);
 
   // Allow other UI pieces (top bar) to trigger toasts.
   useEffect(() => {
@@ -532,18 +649,53 @@ export default function MainGame() {
                     className={isWalking ? "opacity-95" : ""}
                   />
                 ) : (
-                  <AnimatedDog
-                    src={spriteSrc}
-                    cols={9}
-                    rows={9}
-                    fps={8}
-                    scale={3.55}
-                    pixelated={false}
-                    mood={moodHint}
-                    pulseKey={dog?.lastAction || ""}
-                    action={actionName}
-                    actionKey={actionKey}
-                  />
+                    <div
+                      className="relative"
+                      style={{ width: dogView.w, height: dogView.h }}
+                    >
+                      <div
+                        className={`absolute inset-0 transition-opacity duration-300 ${pixiStatus === "ready" ? "opacity-100" : "opacity-0"}`}
+                      >
+                        <DogPixiView
+                          stage={renderModel.stage}
+                          condition={renderModel.condition}
+                          anim={renderModel.anim}
+                          width={dogView.w}
+                          height={dogView.h}
+                          scale={dogView.scale}
+                          onStatus={setPixiStatus}
+                        />
+                      </div>
+
+                      <div
+                        className={`absolute inset-0 flex items-center justify-center transition-opacity duration-200 ${pixiStatus === "ready" ? "opacity-0" : "opacity-100"}`}
+                      >
+                        <AnimatedDog
+                          src={spriteSrc}
+                          cols={9}
+                          rows={9}
+                          fps={8}
+                          scale={3.55 * (dogView.w / 420)}
+                          pixelated={false}
+                          mood={moodHint}
+                          pulseKey={dog?.lastAction || ""}
+                          action={actionName}
+                          actionKey={actionKey}
+                        />
+                      </div>
+
+                      {fxOn ? (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <LottieBurst
+                            playKey={fxKey}
+                            animationData={pulseAnim}
+                            size={Math.round(dogView.w * 1.05)}
+                            className="opacity-90"
+                            style={{ filter: "drop-shadow(0 0 28px rgba(52,211,153,0.25))" }}
+                          />
+                        </div>
+                      ) : null}
+                    </div>
                 )}
               </div>            </div>
 

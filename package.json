@@ -24,6 +24,7 @@
     "@react-three/fiber": "^8.18.0",
     "@reduxjs/toolkit": "^2.10.1",
     "firebase": "^11.10.0",
+    "lottie-react": "^2.4.1",
     "lucide-react": "^0.556.0",
     "pixi.js": "^8.14.3",
     "react": "^18.3.1",
