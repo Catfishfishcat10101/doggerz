@@ -9,6 +9,7 @@ const AdoptPage = lazy(() => import("./pages/Adopt.jsx"));
 const GamePage = lazy(() => import("./pages/GamePage.jsx"));
 const Settings = lazy(() => import("./pages/Settings.jsx"));
 const About = lazy(() => import("./pages/About.jsx"));
+const Help = lazy(() => import("./pages/Help.jsx"));
 const NotFound = lazy(() => import("./pages/NotFound.jsx"));
 
 export default function AppRouter() {
@@ -22,6 +23,7 @@ export default function AppRouter() {
         <Route path="/" element={<Landing />} />
         <Route path="/adopt" element={<AdoptPage />} />
         <Route path="/game" element={<GamePage />} />
+        <Route path="/help" element={<Help />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/about" element={<About />} />
 

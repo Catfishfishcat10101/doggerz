@@ -3,8 +3,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
-import DogSpriteAnimator from "@/components/DogSpriteAnimator.jsx";
-import { ASSETS } from "@/game/assetPaths.js";
 
 export default function Landing() {
   const dog = useSelector((s) => s?.dog?.current || s?.dog || {});
@@ -71,40 +69,50 @@ export default function Landing() {
               </div>
             </div>
 
-            {/* RIGHT: Preview panel */}
+            {/* RIGHT: Info panel */}
             <div className="p-8 sm:p-10 lg:p-12 border-t lg:border-t-0 lg:border-l border-emerald-500/10 bg-black/25">
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <div className="text-sm font-bold text-emerald-200">
-                    Live Preview
-                  </div>
-                  <div className="text-xs text-zinc-400">
-                    Idle animation (8-frame loop)
-                  </div>
-                </div>
-                <div className="text-xs text-zinc-400">
-                  puppy → adult → senior
-                </div>
+              <div className="text-sm font-bold text-emerald-200">What’s inside</div>
+              <div className="mt-2 text-sm text-zinc-300 leading-relaxed">
+                Doggerz is an offline-first neon pup sim: adopt, care, train, and
+                progress through life stages.
               </div>
 
-              <div className="rounded-3xl border border-white/10 bg-black/30 p-8 flex items-center justify-center min-h-[360px]">
-                <DogSpriteAnimator
-                  src={ASSETS.sprite("jack_russell_puppy.png")}
-                  cols={9}
-                  rows={9}
-                  sheetWidth={1152}
-                  sheetHeight={1152}
-                  fps={8}
-                  sequence={[0, 1, 2, 3, 4, 5, 6, 7]}
-                  frameWidth={128}
-                  frameHeight={128}
-                  scale={3.2}
-                />
+              <div className="mt-5 grid grid-cols-1 gap-3">
+                <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
+                  <div className="text-sm font-bold text-emerald-100">FAQs + Developer notes</div>
+                  <div className="mt-1 text-xs text-zinc-400">
+                    Troubleshooting, PWA/cache help, and local setup.
+                  </div>
+                  <div className="mt-3">
+                    <Link
+                      to="/help"
+                      className="inline-flex items-center justify-center rounded-2xl px-4 py-2 text-sm font-extrabold bg-emerald-400 text-black shadow-[0_0_25px_rgba(52,211,153,0.25)] hover:shadow-[0_0_35px_rgba(52,211,153,0.40)] transition"
+                    >
+                      Open Help
+                    </Link>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
+                  <div className="text-sm font-bold text-emerald-100">GitHub</div>
+                  <div className="mt-1 text-xs text-zinc-400">
+                    Track changes, report bugs, and ship features.
+                  </div>
+                  <div className="mt-3">
+                    <a
+                      href="https://github.com/Catfishfishcat10101/doggerz"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center justify-center rounded-2xl px-4 py-2 text-sm font-bold border border-emerald-500/25 bg-black/30 text-emerald-100 hover:bg-black/45 transition"
+                    >
+                      View repo
+                    </a>
+                  </div>
+                </div>
               </div>
 
               <div className="mt-4 text-xs text-zinc-400">
-                Tip: Best experience on desktop or “Install App” on mobile
-                (PWA).
+                Tip: Best experience on desktop or “Install App” on mobile (PWA).
               </div>
             </div>
           </div>
