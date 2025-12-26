@@ -1,0 +1,24 @@
+/* src/App.css */
+
+/* Root color scheme hint for browsers */
+html[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+html[data-theme="light"] {
+  color-scheme: light;
+}
+/* Let the main app stretch full height */
+#root {
+  min-height: 100vh;
+}
+
+/* Utility class if you ever want a subtle app-wide background overlay */
+.app-shell {
+  background:
+    radial-gradient(circle at top, rgba(34, 197, 94, 0.12), transparent 55%)
+      fixed,
+    radial-gradient(circle at bottom, rgba(56, 189, 248, 0.08), transparent 55%)
+      fixed,
+    #020617;
+}

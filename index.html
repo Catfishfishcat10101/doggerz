@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#10b981" />
+  <meta name="color-scheme" content="light dark" />
+
+  <meta name="description"
+    content="Doggerz is a virtual pup simulator: adopt a Jack Russell, manage needs, train, and level up your companion." />
+
+  <meta property="og:title" content="Doggerz" />
+  <meta property="og:description" content="Adopt a virtual pup and make choices that shape its behavior." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="/icons/doggerz-512.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Doggerz" />
+  <meta name="twitter:description" content="Adopt a virtual pup and make choices that shape its behavior." />
+  <meta name="twitter:image" content="/icons/doggerz-512.png" />
+
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/icons/doggerz-180.png" />
+  
+  <style>
+    /* App-shell splash: shows immediately, removed by React once assets preload. */
+    #app-shell-splash {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at top, #1e293b 0, #020617 55%, #000 100%);
+      color: #e5e7eb;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      transition: opacity 260ms ease;
+    }
+  
+    #app-shell-splash[data-hide="1"] {
+      opacity: 0;
+      pointer-events: none;
+    }
+  
+    .dz-splash-card {
+      width: min(760px, calc(100vw - 32px));
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      background: rgba(0, 0, 0, 0.18);
+      box-shadow: 0 18px 60px rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      padding: 18px;
+    }
+  
+    .dz-splash-title {
+      font-weight: 800;
+      letter-spacing: 0.18em;
+      font-size: 28px;
+      text-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+      margin: 0;
+    }
+  
+    .dz-splash-sub {
+      margin-top: 6px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.28em;
+      color: rgba(255, 255, 255, 0.70);
+    }
+  
+    .dz-splash-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-top: 16px;
+    }
+  
+    @media (min-width: 640px) {
+      .dz-splash-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+  
+    .dz-skeleton {
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      background: rgba(255, 255, 255, 0.05);
+      padding: 14px;
+    }
+  
+    .dz-skel-bar {
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.10);
+      overflow: hidden;
+      position: relative;
+    }
+  
+    .dz-skel-bar::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      transform: translateX(-60%);
+      background: linear-gradient(90deg,
+          transparent,
+          rgba(34, 197, 94, 0.35),
+          rgba(249, 115, 22, 0.35),
+          transparent);
+      animation: dz-shimmer 1.05s ease-in-out infinite;
+    }
+  
+    @keyframes dz-shimmer {
+      0% {
+        transform: translateX(-60%);
+      }
+  
+      100% {
+        transform: translateX(60%);
+      }
+    }
+  </style>
+  
+  <script>
+    // React will call this once it has preloaded core sprites/backgrounds.
+    window.__DOGGERZ_HIDE_SPLASH__ = function () {
+      var el = document.getElementById('app-shell-splash');
+      if (!el) return;
+      el.setAttribute('data-hide', '1');
+      window.setTimeout(function () {
+        try { el.remove(); } catch (e) { }
+      }, 420);
+    };
+  </script>
+
+  <title>Doggerz</title>
+</head>
+
+<body class="bg-white text-slate-900 dark:bg-zinc-950 dark:text-zinc-50 antialiased">
+  <div id="app-shell-splash" aria-label="Loading Doggerz" role="status">
+    <div class="dz-splash-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;">
+        <div>
+          <h1 class="dz-splash-title">DOGGERZ</h1>
+          <div class="dz-splash-sub">Adopt • Train • Thrive</div>
+        </div>
+        <div
+          style="width:40px;height:40px;border-radius:999px;background:radial-gradient(circle at 30% 30%, rgba(34,197,94,.85), rgba(249,115,22,.75), rgba(2,6,23,.35));box-shadow:0 10px 24px rgba(249,115,22,.28), 0 10px 24px rgba(34,197,94,.18);">
+        </div>
+      </div>
+
+      <div class="dz-splash-grid">
+        <div class="dz-skeleton">
+          <div style="height:10px;width:120px;border-radius:999px;background:rgba(255,255,255,.10);"></div>
+          <div style="margin-top:12px;height:160px;border-radius:12px;background:rgba(255,255,255,.10);"></div>
+          <div style="margin-top:12px;height:10px;width:160px;border-radius:999px;background:rgba(255,255,255,.10);">
+          </div>
+        </div>
+        <div class="dz-skeleton">
+          <div style="height:10px;width:110px;border-radius:999px;background:rgba(255,255,255,.10);"></div>
+          <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px;">
+            <div style="height:10px;width:100%;border-radius:999px;background:rgba(255,255,255,.10);"></div>
+            <div style="height:10px;width:86%;border-radius:999px;background:rgba(255,255,255,.10);"></div>
+            <div style="height:10px;width:70%;border-radius:999px;background:rgba(255,255,255,.10);"></div>
+          </div>
+          <div style="margin-top:14px;display:flex;gap:10px;">
+            <div style="height:32px;flex:1;border-radius:999px;background:rgba(255,255,255,.10);"></div>
+            <div style="height:32px;flex:1;border-radius:999px;background:rgba(255,255,255,.10);"></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+          <div style="font-size:13px;color:rgba(255,255,255,.80);">Loading sprites & backgrounds…</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.55);">Please wait</div>
+        </div>
+        <div class="dz-skel-bar" style="margin-top:8px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="root"></div>
+  <noscript>
+    <div style="padding:16px;font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;max-width:680px;margin:0 auto;">
+      <h1 style="margin:0 0 8px 0;">Doggerz</h1>
+      <p style="margin:0;opacity:.85;">Doggerz needs JavaScript enabled to run. Please enable JavaScript and reload.</p>
+    </div>
+  </noscript>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+
+</html>

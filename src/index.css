@@ -1,0 +1,133 @@
+/* src/index.css */
+
+/* -------------------------------------------------------
+   Tailwind layers
+------------------------------------------------------- */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* -------------------------------------------------------
+   Global layout & typography
+------------------------------------------------------- */
+html,
+body,
+#root {
+  height: 100%;
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+html[data-theme="light"] {
+  color-scheme: light;
+}
+body {
+  margin: 0;
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    "Roboto",
+    "Oxygen",
+    "Ubuntu",
+    "Cantarell",
+    "Fira Sans",
+    "Droid Sans",
+    "Helvetica Neue",
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--bg, #020617);
+    color: var(--text-main, #f9fafb);
+}
+
+/* Make links inherit color unless explicitly styled */
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Basic focus outline for keyboard users */
+:focus-visible {
+  outline: 2px solid #22c55e;
+  /* emerald-500 */
+  outline-offset: 2px;
+}
+
+/* Optional: always show focus ring (accessibility setting) */
+html[data-focus-rings="always"] :focus {
+  outline: 2px solid #22c55e;
+  outline-offset: 2px;
+}
+
+/* Optional: large hit targets (accessibility setting) */
+html[data-hit-targets="large"] button,
+html[data-hit-targets="large"] [role="button"],
+html[data-hit-targets="large"] a,
+html[data-hit-targets="large"] input,
+html[data-hit-targets="large"] select {
+  min-height: 44px;
+}
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Force reduced motion regardless of OS setting */
+html[data-reduce-motion="1"] *,
+html[data-reduce-motion="1"] *::before,
+html[data-reduce-motion="1"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* High contrast tuning (kept modest so it doesn't break the brand) */
+html[data-contrast="high"] {
+  --border-subtle: rgba(148, 163, 184, 0.65);
+  --border-strong: rgba(148, 163, 184, 0.85);
+  --text-soft: #d1d5db;
+  --text-muted: #cbd5e1;
+}
+
+/* Reduce transparency / blur (helps readability and GPU perf on low-end devices) */
+html[data-transparency="reduced"] .backdrop-blur,
+html[data-transparency="reduced"] .backdrop-blur-sm,
+html[data-transparency="reduced"] .backdrop-blur-md,
+html[data-transparency="reduced"] .backdrop-blur-lg,
+html[data-transparency="reduced"] .backdrop-blur-xl {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+/* Optional: subtle custom scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #020617;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  background: #27272a;
+  /* zinc-800 */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46;
+  /* zinc-700 */
+}

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Doggerz logo">
+  <title>Doggerz</title>
+  <defs>
+    <linearGradient id="g" x1="32" y1="32" x2="224" y2="224" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#34d399"/>
+      <stop offset="1" stop-color="#10b981"/>
+    </linearGradient>
+    <filter id="s" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#000" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+
+  <!-- Badge -->
+  <path filter="url(#s)" d="M128 18c36 0 69 16 90 43 22 27 31 63 24 97-11 55-59 95-114 95S25 213 14 158c-7-34 2-70 24-97C59 34 92 18 128 18z" fill="url(#g)"/>
+
+  <!-- Simple pup head icon (stylized) -->
+  <g fill="#052e1b" opacity="0.95">
+    <!-- ears -->
+    <path d="M66 98c-10 6-17 17-18 30-1 10 2 20 8 28 6 7 14 11 23 12-7-14-6-32 1-46 4-8 10-15 18-20-12-8-22-9-32-4z"/>
+    <path d="M190 98c10 6 17 17 18 30 1 10-2 20-8 28-6 7-14 11-23 12 7-14 6-32-1-46-4-8-10-15-18-20 12-8 22-9 32-4z"/>
+
+    <!-- face -->
+    <path d="M128 86c-33 0-60 26-60 58 0 25 17 47 41 55 6 2 13 3 19 3s13-1 19-3c24-8 41-30 41-55 0-32-27-58-60-58z" fill="#083d25"/>
+
+    <!-- muzzle -->
+    <path d="M128 138c-20 0-36 13-36 30 0 16 16 28 36 28s36-12 36-28c0-17-16-30-36-30z" fill="#0b5b33"/>
+
+    <!-- nose -->
+    <path d="M128 152c-7 0-13 5-13 11 0 7 6 10 13 10s13-3 13-10c0-6-6-11-13-11z" fill="#02150c"/>
+
+    <!-- eyes -->
+    <circle cx="104" cy="132" r="7" fill="#02150c"/>
+    <circle cx="152" cy="132" r="7" fill="#02150c"/>
+
+    <!-- highlight -->
+    <circle cx="102" cy="130" r="2" fill="#eafff6" opacity="0.9"/>
+    <circle cx="150" cy="130" r="2" fill="#eafff6" opacity="0.9"/>
+  </g>
+
+  <!-- Inner ring -->
+  <circle cx="128" cy="128" r="92" fill="none" stroke="#d1fae5" stroke-opacity="0.35" stroke-width="6"/>
+</svg>

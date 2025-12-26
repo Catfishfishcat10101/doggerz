@@ -1,0 +1,47 @@
+{
+  "name": "doggerz",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "dev:host": "vite --host 127.0.0.1 --port 5173",
+    "build": "vite build",
+    "preflight": "node scripts/preflight.js",
+    "assets:report": "node scripts/report-assets.js",
+    "icons:generate": "node scripts/generate-app-icons.js",
+    "images:optimize": "node scripts/optimize-images.js",
+    "audio:optimize": "node scripts/optimize-audio.js",
+    "sprites:webp": "node scripts/make-spritesheet-webp.js",
+    "sprites:webp:dry": "node scripts/make-spritesheet-webp.js --dryRun",
+    "sw:bump": "node scripts/bump-sw-cache-version.js",
+    "bundle:analyze": "node scripts/analyze-bundle.js",
+    "preview": "vite preview",
+    "preview:host": "vite preview --host 127.0.0.1 --port 4173",
+    "split:backyard": "node scripts/split-backyard.js public/backgrounds/backyard-split.png public/backgrounds/backyard-day.png public/backgrounds/backyard-night.png"
+  },
+  "dependencies": {
+    "@react-three/drei": "^9.122.0",
+    "@react-three/fiber": "^8.18.0",
+    "@reduxjs/toolkit": "^2.10.1",
+    "firebase": "^11.10.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-redux": "^9.2.0",
+    "react-router-dom": "^6.14.2",
+    "three": "^0.182.0",
+    "vite-plugin-pwa": "^1.1.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/forms": "^0.5.10",
+    "@tailwindcss/typography": "^0.5.19",
+    "@types/react": "^19.2.7",
+    "@vitejs/plugin-react": "^5.1.1",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.47",
+    "rollup": "^4.53.2",
+    "rollup-plugin-visualizer": "^5.14.0",
+    "sharp": "^0.33.5",
+    "tailwindcss": "^3.4.13",
+    "vite": "^7.3.0"
+  }
+}

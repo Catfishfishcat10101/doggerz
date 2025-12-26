@@ -1,0 +1,56 @@
+{
+  "name": "Doggerz – Virtual Pup Simulator",
+  "short_name": "Doggerz",
+  "description": "Adopt, care for, and level up your virtual pup over real time.",
+  "lang": "en-US",
+  "id": "/",
+  "scope": "/",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#020617",
+  "theme_color": "#10b981",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    {
+      "src": "/icons/doggerz-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/doggerz-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Play",
+      "short_name": "Play",
+      "url": "/game",
+      "description": "Jump straight into the game",
+      "icons": [
+        {
+          "src": "/icons/doggerz-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Potty Tracker",
+      "short_name": "Potty",
+      "url": "/potty",
+      "description": "Track potty breaks",
+      "icons": [
+        {
+          "src": "/icons/doggerz-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ]
+}
