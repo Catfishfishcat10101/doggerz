@@ -15,6 +15,7 @@ import "./App.css";
 import AppPreferencesEffects from "./components/AppPreferencesEffects.jsx";
 import AppBootGate from "./components/AppBootGate.jsx";
 import DogAIEngine from "./features/game/DogAIEngine.jsx";
+import { ToastProvider } from "./components/toast/ToastProvider.jsx";
 
 // Register the app's service worker in production for offline/PWA support.
 // (In dev, Vite's HMR + caching is a bad combo; keep SW off.)
@@ -29,11 +30,13 @@ if (import.meta.env.PROD && "serviceWorker" in navigator) {
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <Provider store={store}>
-      <AppPreferencesEffects />
-      <DogAIEngine />
-      <AppBootGate>
-        <AppRouter />
-      </AppBootGate>
+      <ToastProvider>
+        <AppPreferencesEffects />
+        <DogAIEngine />
+        <AppBootGate>
+          <AppRouter />
+        </AppBootGate>
+      </ToastProvider>
     </Provider>
   </React.StrictMode>
 );
