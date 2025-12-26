@@ -1,7 +1,7 @@
 // src/pages/Help.jsx
 // @ts-nocheck
 
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/components/toast/ToastProvider.jsx";
 
@@ -10,6 +10,10 @@ const SURFACE =
 const CARD = "rounded-2xl border border-white/10 bg-black/25";
 const LINK =
   "text-emerald-300 hover:text-emerald-200 underline underline-offset-4";
+
+const DOG_STORAGE_KEY = "doggerz:dogState";
+const USER_STORAGE_KEY = "doggerz:userState";
+const WORKFLOW_STORAGE_KEY = "doggerz:workflows";
 
 function safeJson(value) {
   try {
@@ -74,6 +78,8 @@ export default function HelpPage() {
   const toast = useToast();
   const [query, setQuery] = useState("");
 
+  const [notice, setNotice] = useState(null);
+
   const diagnostics = useMemo(() => {
     const now = new Date();
     return {
@@ -101,6 +107,86 @@ export default function HelpPage() {
 
   const repoUrl = "https://github.com/Catfishfishcat10101/doggerz";
 
+  const setNoticeAuto = useCallback((n) => {
+    setNotice(n);
+    window.setTimeout(() => setNotice(null), 4500);
+  }, []);
+
+  const handleClearCache = useCallback(async () => {
+    try {
+      if (typeof window === "undefined") return;
+
+      // Clear Cache Storage (PWA/static assets)
+      if ("caches" in window) {
+        const keys = await window.caches.keys();
+        await Promise.all(keys.map((k) => window.caches.delete(k)));
+      }
+
+      // Ask SW to update (if present). Not all browsers support this cleanly.
+      if ("serviceWorker" in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map((r) => r.update().catch(() => null)));
+      }
+
+      setNoticeAuto({ kind: "success", text: "Cache cleared. Reloading…" });
+      window.setTimeout(() => window.location.reload(), 450);
+    } catch (e) {
+      console.warn("[Help] clearCache failed", e);
+      setNoticeAuto({
+        kind: "error",
+        text: "Couldn’t clear cache. Try a hard refresh or reinstall the app.",
+      });
+    }
+  }, [setNoticeAuto]);
+
+  const handleUnregisterSW = useCallback(async () => {
+    try {
+      if (typeof window === "undefined") return;
+      if (!("serviceWorker" in navigator)) {
+        setNoticeAuto({ kind: "info", text: "Service workers aren’t supported here." });
+        return;
+      }
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map((r) => r.unregister()));
+      setNoticeAuto({ kind: "success", text: "Service worker unregistered. Reloading…" });
+      window.setTimeout(() => window.location.reload(), 450);
+    } catch (e) {
+      console.warn("[Help] unregisterSW failed", e);
+      setNoticeAuto({ kind: "error", text: "Couldn’t unregister the service worker." });
+    }
+  }, [setNoticeAuto]);
+
+  const handleResetLocalData = useCallback(async () => {
+    try {
+      const ok = window.confirm(
+        "Reset local Doggerz data on this device? This clears your pup + settings and cannot be undone.",
+      );
+      if (!ok) return;
+
+      // Remove known Doggerz keys (avoid nuking unrelated sites' storage)
+      try {
+        window.localStorage.removeItem(DOG_STORAGE_KEY);
+        window.localStorage.removeItem(USER_STORAGE_KEY);
+        window.localStorage.removeItem(WORKFLOW_STORAGE_KEY);
+        window.localStorage.removeItem("theme");
+      } catch (e) {
+        // ignore storage permissions
+      }
+
+      // Also clear caches if available (optional but helpful)
+      if ("caches" in window) {
+        const keys = await window.caches.keys();
+        await Promise.all(keys.map((k) => window.caches.delete(k)));
+      }
+
+      setNoticeAuto({ kind: "success", text: "Local data reset. Reloading…" });
+      window.setTimeout(() => window.location.reload(), 450);
+    } catch (e) {
+      console.warn("[Help] resetLocalData failed", e);
+      setNoticeAuto({ kind: "error", text: "Couldn’t reset local data." });
+    }
+  }, [setNoticeAuto]);
+
   const topics = useMemo(
     () => [
       {
@@ -122,6 +208,10 @@ export default function HelpPage() {
                   <li>
                     If you’re developing: stop and restart the dev server.
                   </li>
+                  <li>
+                    If it persists: use the actions below (clear cache or
+                    unregister the service worker).
+                  </li>
                 </ul>
               </>
             ),
@@ -142,6 +232,21 @@ export default function HelpPage() {
             ),
           },
           {
+            q: "I see a blank/black screen",
+            tags: "render • cache",
+            a: (
+              <>
+                <p>
+                  Reload first. If it persists, clear cached assets and reload.
+                </p>
+                <p className="text-xs text-zinc-400">
+                  If you’re reporting a bug: include a screenshot and copy the
+                  diagnostics below.
+                </p>
+              </>
+            ),
+          },
+          {
             q: "Where do I start?",
             tags: "getting started",
             a: (
@@ -154,6 +259,39 @@ export default function HelpPage() {
                     Head to <Link to="/game" className={LINK}>Play</Link> to care, potty train, and progress.
                   </li>
                 </ol>
+              </>
+            ),
+          },
+        ],
+      },
+      {
+        id: "pwa",
+        title: "Install & offline (PWA)",
+        items: [
+          {
+            q: "How do I install Doggerz as an app?",
+            tags: "install • pwa",
+            a: (
+              <>
+                <p>
+                  On desktop, look for an “Install” button in the address bar.
+                  On mobile, use the browser menu → “Add to Home Screen”.
+                </p>
+                <p className="text-xs text-zinc-400">
+                  Doggerz can be offline-first once cached.
+                </p>
+              </>
+            ),
+          },
+          {
+            q: "Offline: what works and what won’t?",
+            tags: "offline",
+            a: (
+              <>
+                <p>
+                  Core gameplay should run once cached. Anything requiring the
+                  network (sign-in/sync) may be unavailable.
+                </p>
               </>
             ),
           },
@@ -190,6 +328,49 @@ export default function HelpPage() {
         ],
       },
       {
+        id: "account",
+        title: "Account & sign-in",
+        items: [
+          {
+            q: "Where are Login/Signup?",
+            tags: "auth",
+            a: (
+              <>
+                <p>
+                  They’re available as routes:
+                  <span className="ml-2">
+                    <Link to="/login" className={LINK}>/login</Link>
+                  </span>
+                  <span className="ml-2">
+                    <Link to="/signup" className={LINK}>/signup</Link>
+                  </span>
+                </p>
+                <p className="text-xs text-zinc-400">
+                  (Auth may still be “stubbed” depending on your Firebase config.)
+                </p>
+              </>
+            ),
+          },
+          {
+            q: "I lost progress / my dog reset",
+            tags: "storage • offline",
+            a: (
+              <>
+                <p>
+                  Progress is stored locally for offline play. Clearing browser
+                  storage, using private browsing, or switching devices can look
+                  like a reset.
+                </p>
+                <p>
+                  If you want to intentionally wipe local data, use the “Reset
+                  local data” action below.
+                </p>
+              </>
+            ),
+          },
+        ],
+      },
+      {
         id: "dev",
         title: "Developer / setup",
         items: [
@@ -204,6 +385,9 @@ export default function HelpPage() {
                 <p>
                   Environment variables go in <code>.env.local</code> (start from <code>.env.example</code>).
                 </p>
+                <p className="text-xs text-zinc-400">
+                  If your UI looks stale in production, it’s usually service-worker caching.
+                </p>
               </>
             ),
           },
@@ -215,6 +399,26 @@ export default function HelpPage() {
                 <p>
                   Yep. Doggerz is designed to work offline-first. Firebase powers
                   sign-in/sync features when configured.
+                </p>
+              </>
+            ),
+          },
+          {
+            q: "Where are Potty and Temperament pages?",
+            tags: "routes",
+            a: (
+              <>
+                <p>
+                  Potty training guide:
+                  <span className="ml-2">
+                    <Link to="/potty" className={LINK}>/potty</Link>
+                  </span>
+                </p>
+                <p>
+                  Temperament reveal:
+                  <span className="ml-2">
+                    <Link to="/temperament" className={LINK}>/temperament</Link>
+                  </span>
                 </p>
               </>
             ),
@@ -246,7 +450,7 @@ export default function HelpPage() {
     return topics
       .map((t) => {
         const items = t.items.filter((it) => {
-          const hay = `${it.q} ${it.tags}`.toLowerCase();
+          const hay = `${it.q} ${it.tags} ${it.search || ""}`.toLowerCase();
           return hay.includes(q);
         });
         return { ...t, items };
@@ -254,11 +458,22 @@ export default function HelpPage() {
       .filter((t) => t.items.length > 0);
   }, [query, topics]);
 
-  const copyDiag = async () => {
+  const copyDiag = useCallback(async () => {
     const ok = await copyToClipboard(safeJson(diagnostics));
-    if (ok) toast.success("Diagnostics copied");
-    else toast.error("Couldn’t copy (clipboard blocked)");
-  };
+    if (ok) {
+      toast.success("Diagnostics copied");
+      setNoticeAuto({
+        kind: "success",
+        text: "Diagnostics copied. Paste them into your message.",
+      });
+    } else {
+      toast.error("Couldn’t copy (clipboard blocked)");
+      setNoticeAuto({
+        kind: "error",
+        text: "Couldn’t copy diagnostics. Your browser may block clipboard access.",
+      });
+    }
+  }, [diagnostics, setNoticeAuto, toast]);
 
   return (
     <div className="min-h-[calc(100dvh-120px)] w-full">
@@ -290,6 +505,66 @@ export default function HelpPage() {
                   className="mt-1 w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
                 />
               </div>
+            </div>
+
+            {notice ? (
+              <div
+                className={
+                  [
+                    "mt-6 rounded-2xl border px-4 py-3 text-sm",
+                    notice.kind === "success"
+                      ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-100"
+                      : notice.kind === "error"
+                        ? "border-red-500/25 bg-red-500/10 text-red-100"
+                        : "border-sky-500/25 bg-sky-500/10 text-sky-100",
+                  ].join(" ")
+                }
+                role="status"
+                aria-live="polite"
+              >
+                {notice.text}
+              </div>
+            ) : null}
+
+            <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-3">
+              <button
+                type="button"
+                onClick={handleClearCache}
+                className="rounded-2xl border border-white/10 bg-black/25 p-4 text-left hover:bg-black/35 transition"
+              >
+                <div className="text-sm font-extrabold text-emerald-200">
+                  Clear cache + reload
+                </div>
+                <div className="mt-1 text-xs text-zinc-400">
+                  Fixes stale assets after updates.
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleUnregisterSW}
+                className="rounded-2xl border border-white/10 bg-black/25 p-4 text-left hover:bg-black/35 transition"
+              >
+                <div className="text-sm font-extrabold text-emerald-200">
+                  Unregister service worker
+                </div>
+                <div className="mt-1 text-xs text-zinc-400">
+                  Nuclear option for stubborn PWA caching.
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleResetLocalData}
+                className="rounded-2xl border border-amber-500/25 bg-amber-500/10 p-4 text-left hover:bg-amber-500/15 transition"
+              >
+                <div className="text-sm font-extrabold text-amber-100">
+                  Reset local data
+                </div>
+                <div className="mt-1 text-xs text-amber-100/70">
+                  Clears your pup + settings on this device.
+                </div>
+              </button>
             </div>
 
             <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-4">

@@ -7,6 +7,10 @@ import { Routes, Route } from "react-router-dom";
 const Landing = lazy(() => import("./pages/Landing.jsx"));
 const AdoptPage = lazy(() => import("./pages/Adopt.jsx"));
 const GamePage = lazy(() => import("./pages/GamePage.jsx"));
+const Potty = lazy(() => import("./pages/Potty.jsx"));
+const TemperamentReveal = lazy(() => import("./pages/TemperamentReveal.jsx"));
+const Login = lazy(() => import("./pages/Login.jsx"));
+const Signup = lazy(() => import("./pages/Signup.jsx"));
 const Settings = lazy(() => import("./pages/Settings.jsx"));
 const About = lazy(() => import("./pages/About.jsx"));
 const Help = lazy(() => import("./pages/Help.jsx"));
@@ -23,6 +27,10 @@ export default function AppRouter() {
         <Route path="/" element={<Landing />} />
         <Route path="/adopt" element={<AdoptPage />} />
         <Route path="/game" element={<GamePage />} />
+        <Route path="/potty" element={<Potty />} />
+        <Route path="/temperament" element={<TemperamentReveal />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
         <Route path="/help" element={<Help />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/about" element={<About />} />
