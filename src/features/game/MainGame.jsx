@@ -302,6 +302,11 @@ export default function MainGame() {
   const [hasWarnedMissingRealistic, setHasWarnedMissingRealistic] =
     useState(false);
 
+  const trainingButtonEnabled =
+    "bg-emerald-400 text-black shadow-[0_0_35px_rgba(52,211,153,0.35)] hover:shadow-[0_0_50px_rgba(52,211,153,0.60)]";
+  const trainingButtonDisabled =
+    "bg-white/5 text-zinc-500 border border-white/10 cursor-not-allowed";
+
   function showToast(msg, ms = 1600) {
     const message = String(msg || "").trim();
     if (!message) return;
@@ -702,8 +707,8 @@ export default function MainGame() {
                 disabled={!pottyTrained}
                 className={`w-full rounded-2xl px-4 py-3 sm:py-4 text-sm sm:text-base font-extrabold transition ${
                   pottyTrained
-                    ? "bg-emerald-400 text-black shadow-[0_0_35px_rgba(52,211,153,0.35)] hover:shadow-[0_0_50px_rgba(52,211,153,0.60)]"
-                    : "bg-white/5 text-zinc-500 border border-white/10 cursor-not-allowed"
+                    ? trainingButtonEnabled
+                    : trainingButtonDisabled
                 }`}
                 onClick={onTrain}
                 type="button"
@@ -744,7 +749,9 @@ export default function MainGame() {
                   <div className="text-[0.65rem] uppercase tracking-[0.2em] text-emerald-200/80">Polls</div>
                   <div className="text-sm font-semibold text-emerald-50">Dog choices</div>
                 </div>
-                <div className="text-xs text-emerald-200/80">{typeof pollCountdown === "number" ? `${pollCountdown}s` : ""}</div>
+                <div className="text-xs text-emerald-200/80">
+                  {typeof pollCountdown === "number" ? `${pollCountdown}s` : ""}
+                </div>
               </div>
               <DogPollCard
                 activePoll={activePoll}
