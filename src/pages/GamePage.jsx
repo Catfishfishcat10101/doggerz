@@ -24,7 +24,7 @@ export default function GamePage() {
       <YardBackground />
       <DogAIEngine />
 
-      <div className="relative z-10 min-h-dvh w-full flex items-center justify-center">
+      <div className="relative z-10 w-full min-h-dvh">
         <MainGame />
       </div>
     </main>
