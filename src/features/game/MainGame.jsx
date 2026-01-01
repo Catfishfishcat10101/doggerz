@@ -13,6 +13,11 @@ import pulseAnim from "@/assets/lottie/doggerz-pulse.json";
 import LongTermProgressionCard from "@/components/LongTermProgressionCard.jsx";
 import DogPollCard from "@/components/DogPollCard.jsx";
 import PottyTrackerCard from "@/components/PottyTrackerCard.jsx";
+
+// MainGame renders the single scene card experience: a wide left scene with the
+// dog viewport and action dock, paired with a slim right rail containing stats,
+// polls, potty tracking, and progression modules. Keep bindings intact while
+// adjusting layout/styling here.
 import { selectDogRenderModel } from "@/features/dog/dogSelectors.js";
 import { selectDogRenderMode } from "@/redux/userSlice.js";
 import {
@@ -575,139 +580,115 @@ export default function MainGame() {
   }
 
   return (
-    <div className="w-full max-w-6xl mx-auto px-4 pb-12 pt-5">
-      {/* GAME TOP BAR */}
+    <div className="w-full max-w-7xl mx-auto px-4 pb-14 pt-5">
       <div className="mb-4">
         <GameTopBar />
       </div>
 
-      {/* CONTENT */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        {/* LEFT: DOG HERO */}
-        <section className="lg:col-span-7 rounded-3xl border border-emerald-500/15 bg-black/35 backdrop-blur-md shadow-[0_0_70px_rgba(16,185,129,0.12)] overflow-hidden">
-          {/* Header strip */}
-          <div className="px-5 sm:px-6 py-4 border-b border-emerald-500/10 bg-black/25">
-            <div className="flex items-start justify-between gap-3">
+      <section className="relative overflow-hidden rounded-[32px] border border-emerald-500/15 bg-gradient-to-br from-emerald-500/10 via-black/60 to-black shadow-[0_0_90px_rgba(16,185,129,0.18)]">
+        <div className="pointer-events-none absolute inset-0 opacity-60">
+          <div className="absolute -left-32 -top-20 h-64 w-64 rounded-full bg-emerald-400/15 blur-3xl" />
+          <div className="absolute right-0 bottom-0 h-72 w-72 rounded-full bg-sky-400/10 blur-3xl" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(34,197,94,0.25),transparent_35%),radial-gradient(circle_at_80%_80%,rgba(56,189,248,0.20),transparent_40%)]" />
+        </div>
+
+        <div className="relative grid grid-cols-1 lg:grid-cols-[1.05fr_0.6fr]">
+          <div className="relative p-6 sm:p-8 lg:p-10 space-y-6 border-b border-white/5 lg:border-b-0 lg:border-r lg:border-white/5 backdrop-blur-sm">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
               <div>
-                <div className="text-xs uppercase tracking-[0.2em] text-zinc-400">
-                  Backyard
+                <div className="text-xs uppercase tracking-[0.2em] text-zinc-300/80">
+                  Backyard Scene
                 </div>
-                <div className="text-lg sm:text-2xl font-extrabold text-emerald-200 leading-tight">
-                  {dog?.name || "Pup"} <span className="text-zinc-500">•</span>{" "}
-                  {stageLabel}
+                <div className="text-2xl sm:text-3xl font-extrabold text-emerald-100 leading-tight">
+                  {dog?.name || "Pup"} <span className="text-zinc-500">•</span> {stageLabel}
                 </div>
-                <div className="mt-1 text-xs sm:text-sm text-zinc-300">
-                  Mood:{" "}
-                  <span className="text-emerald-200 font-semibold capitalize">
-                    {moodHint}
-                  </span>
+                <div className="mt-1 text-xs sm:text-sm text-zinc-200">
+                  Mood: <span className="text-emerald-200 font-semibold capitalize">{moodHint}</span>
                 </div>
+
+                {toast ? (
+                  <div className="mt-3 text-sm font-semibold text-emerald-200">
+                    {toast}
+                  </div>
+                ) : (
+                  <div className="mt-3 text-xs text-zinc-300/80">
+                    Care first. Potty training unlocks trick training.
+                  </div>
+                )}
               </div>
 
-              <div className="text-right">
-                <div className="text-xs text-zinc-400">Potty Training</div>
-                <div className="text-sm font-extrabold text-emerald-200">
-                  {pottyPercent}%
+              <div className="flex items-center gap-3 bg-black/40 border border-white/10 rounded-2xl px-3 py-2">
+                <div className="text-xs text-zinc-400">Potty training</div>
+                <div className="text-lg font-extrabold text-emerald-200">{pottyPercent}%</div>
+              </div>
+            </div>
+
+            <div className="relative rounded-[28px] border border-white/10 bg-black/40 p-5 sm:p-8 shadow-inner overflow-hidden">
+              <div className="pointer-events-none absolute inset-0">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.16),transparent_55%)]" />
+                <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(15,23,42,0.4),transparent)]" />
+              </div>
+
+              <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-center">
+                <div className="relative mx-auto" style={{ width: dogView.w, height: dogView.h }}>
+                  <div className={`absolute inset-0 transition-opacity duration-300 ${pixiStatus === "ready" ? "opacity-100" : "opacity-0"}`}>
+                    <DogPixiView
+                      stage={renderModel.stage}
+                      condition={renderModel.condition}
+                      anim={renderModel.anim}
+                      width={dogView.w}
+                      height={dogView.h}
+                      scale={dogView.scale}
+                      onStatus={setPixiStatus}
+                    />
+                  </div>
+
+                  <div
+                    className={`absolute inset-0 flex items-center justify-center transition-opacity duration-200 ${
+                      pixiStatus === "ready" ? "opacity-0" : "opacity-100"
+                    }`}
+                  >
+                    {wantsRealistic && !realisticFailed ? (
+                      <RealisticDog
+                        stage={renderModel.stage}
+                        src={REALISTIC_SRC}
+                        size={dogView.w}
+                        onLoadSuccess={() => setRealisticFailed(false)}
+                        onLoadError={() => setRealisticFailed(true)}
+                        className={isWalking ? "opacity-95" : ""}
+                      />
+                    ) : (
+                      <AnimatedDog
+                        src={spriteSrc}
+                        cols={9}
+                        rows={3}
+                        frameDelay={80}
+                        className="w-full max-w-[420px]"
+                      />
+                    )}
+                  </div>
+
+                  {fxOn ? (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <LottieBurst
+                        playKey={fxKey}
+                        animationData={pulseAnim}
+                        size={Math.round(dogView.w * 1.05)}
+                        className="opacity-90"
+                        style={{
+                          filter: "drop-shadow(0 0 28px rgba(52,211,153,0.25))",
+                        }}
+                      />
+                    </div>
+                  ) : null}
                 </div>
               </div>
             </div>
 
-            {toast ? (
-              <div className="mt-3 text-sm font-semibold text-emerald-200">
-                {toast}
-              </div>
-            ) : (
-              <div className="mt-3 text-xs text-zinc-400">
-                Care first. Potty training unlocks trick training.
-              </div>
-            )}
-          </div>
-
-          {/* Dog stage */}
-          <div className="p-6 sm:p-8">
-            {/* Depth + glow frame */}
-            <div className="relative rounded-3xl border border-white/10 bg-black/30 p-6 sm:p-10 overflow-hidden">
-              {/* Soft vignette */}
-              <div className="pointer-events-none absolute inset-0">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.18),transparent_55%)]" />
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,rgba(56,189,248,0.10),transparent_55%)]" />
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(0,0,0,0.0),rgba(0,0,0,0.65))]" />
-              </div>
-
-              {/* Dog platform */}
-              <div className="relative flex items-center justify-center">
-                <div className="absolute -bottom-6 h-16 w-72 rounded-[999px] bg-black/35 blur-xl" />
-                <div className="absolute -bottom-6 h-10 w-56 rounded-[999px] bg-emerald-500/15 blur-xl" />
-
-                {wantsRealistic && !realisticFailed ? (
-                  <RealisticDog
-                    stage={renderModel.stage}
-                    src={REALISTIC_SRC}
-                    size={420}
-                    onLoadSuccess={() => setRealisticFailed(false)}
-                    onLoadError={() => setRealisticFailed(true)}
-                    className={isWalking ? "opacity-95" : ""}
-                  />
-                ) : (
-                    <div
-                      className="relative"
-                      style={{ width: dogView.w, height: dogView.h }}
-                    >
-                      <div
-                        className={`absolute inset-0 transition-opacity duration-300 ${pixiStatus === "ready" ? "opacity-100" : "opacity-0"}`}
-                      >
-                        <DogPixiView
-                          stage={renderModel.stage}
-                          condition={renderModel.condition}
-                          anim={renderModel.anim}
-                          width={dogView.w}
-                          height={dogView.h}
-                          scale={dogView.scale}
-                          onStatus={setPixiStatus}
-                        />
-                      </div>
-
-                      <div
-                        className={`absolute inset-0 flex items-center justify-center transition-opacity duration-200 ${pixiStatus === "ready" ? "opacity-0" : "opacity-100"}`}
-                      >
-                        <AnimatedDog
-                          src={spriteSrc}
-                          cols={9}
-                          rows={9}
-                          fps={8}
-                          scale={3.55 * (dogView.w / 420)}
-                          pixelated={false}
-                          mood={moodHint}
-                          pulseKey={dog?.lastAction || ""}
-                          action={actionName}
-                          actionKey={actionKey}
-                        />
-                      </div>
-
-                      {fxOn ? (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <LottieBurst
-                            playKey={fxKey}
-                            animationData={pulseAnim}
-                            size={Math.round(dogView.w * 1.05)}
-                            className="opacity-90"
-                            style={{ filter: "drop-shadow(0 0 28px rgba(52,211,153,0.25))" }}
-                          />
-                        </div>
-                      ) : null}
-                    </div>
-                )}
-              </div>            </div>
-
-            {/* ACTION DOCK (replaces tiny button row) */}
-            <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <ActionDockButton label="Feed" icon="bowl" onClick={onFeed} />
               <ActionDockButton label="Play" icon="ball" onClick={onPlay} />
-              <ActionDockButton
-                label="Bathe"
-                icon="sparkle"
-                onClick={onBathe}
-              />
+              <ActionDockButton label="Bathe" icon="sparkle" onClick={onBathe} />
               <ActionDockButton
                 label="Potty Training"
                 icon="toilet"
@@ -716,14 +697,14 @@ export default function MainGame() {
               />
             </div>
 
-            <div className="mt-3">
+            <div>
               <button
                 disabled={!pottyTrained}
-                className={`w-full rounded-2xl px-4 py-3 sm:py-4 text-sm sm:text-base font-extrabold transition
-                  ${pottyTrained
+                className={`w-full rounded-2xl px-4 py-3 sm:py-4 text-sm sm:text-base font-extrabold transition ${
+                  pottyTrained
                     ? "bg-emerald-400 text-black shadow-[0_0_35px_rgba(52,211,153,0.35)] hover:shadow-[0_0_50px_rgba(52,211,153,0.60)]"
                     : "bg-white/5 text-zinc-500 border border-white/10 cursor-not-allowed"
-                  }`}
+                }`}
                 onClick={onTrain}
                 type="button"
               >
@@ -731,75 +712,79 @@ export default function MainGame() {
               </button>
 
               {!pottyTrained && (
-                <div className="mt-2 text-xs text-zinc-400">
+                <div className="mt-2 text-xs text-zinc-300/80">
                   Trick training is locked until Potty Training reaches 100%.
                 </div>
               )}
             </div>
           </div>
-        </section>
 
-        {/* RIGHT: STICKY PANEL */}
-        <aside className="lg:col-span-5">
-          <div className="lg:sticky lg:top-4 space-y-4">
-            {/* Care stats */}
-            <section className="rounded-3xl border border-emerald-500/15 bg-black/35 backdrop-blur-md shadow-[0_0_60px_rgba(16,185,129,0.08)] overflow-hidden">
-              <div className="px-5 sm:px-6 py-4 border-b border-emerald-500/10 bg-black/25">
-                <div className="text-xs uppercase tracking-[0.2em] text-zinc-400">
-                  Care
+          <aside className="relative bg-black/30 backdrop-blur-sm p-5 sm:p-7 space-y-4">
+            <div className="space-y-3 rounded-2xl border border-white/10 bg-white/5 p-4 shadow-inner">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-[0.7rem] uppercase tracking-[0.2em] text-zinc-300/80">
+                    Care
+                  </div>
+                  <div className="text-lg font-extrabold text-emerald-200">Needs</div>
                 </div>
-                <div className="text-lg font-extrabold text-emerald-200">
-                  Needs Overview
-                </div>
-                <div className="mt-1 text-xs text-zinc-400">
-                  This is your dog’s current state.
-                </div>
+                <div className="text-xs text-zinc-400">Live pulse</div>
               </div>
-
-              <div className="p-5 sm:p-6 space-y-4">
+              <div className="space-y-3">
                 <StatRow label="Hunger" value={hunger} />
                 <StatRow label="Happiness" value={happiness} />
                 <StatRow label="Energy" value={energy} />
                 <StatRow label="Cleanliness" value={cleanliness} />
               </div>
-            </section>
+            </div>
 
-            {/* Long-term progression */}
-            <LongTermProgressionCard progression={progression} now={Date.now()} />
-
-            {/* Dog polls (initiative) */}
-            <DogPollCard
-              activePoll={activePoll}
-              pollCountdown={pollCountdown}
-              onPollResponse={onPollResponse}
-            />
-
-            {/* Potty progress */}
-            <section className="rounded-3xl border border-emerald-500/15 bg-black/35 backdrop-blur-md shadow-[0_0_60px_rgba(16,185,129,0.08)] overflow-hidden">
-              <div className="px-5 sm:px-6 py-4 border-b border-emerald-500/10 bg-black/25">
-                <div className="text-xs uppercase tracking-[0.2em] text-zinc-400">
-                  Progression
+            <div className="rounded-2xl border border-emerald-500/20 bg-black/45 p-4 shadow-[0_0_30px_rgba(16,185,129,0.12)]">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <div className="text-[0.65rem] uppercase tracking-[0.2em] text-emerald-200/80">Polls</div>
+                  <div className="text-sm font-semibold text-emerald-50">Dog choices</div>
                 </div>
-                <div className="text-lg font-extrabold text-emerald-200">
-                  Potty Training Tracker
-                </div>
-                <div className="mt-1 text-xs text-zinc-400">
-                  Complete this milestone to unlock tricks.
-                </div>
+                <div className="text-xs text-emerald-200/80">{typeof pollCountdown === "number" ? `${pollCountdown}s` : ""}</div>
               </div>
+              <DogPollCard
+                activePoll={activePoll}
+                pollCountdown={pollCountdown}
+                onPollResponse={onPollResponse}
+              />
+            </div>
 
-              <div className="p-5 sm:p-6">
-                <PottyTrackerCard percent={pottyPercent} />
-                <div className="mt-3 text-xs text-zinc-400">
-                  {pottyTrained
-                    ? "Potty training complete. Trick training is now unlocked."
-                    : "Train consistently. When this hits 100%, tricks unlock permanently."}
+            <div className="rounded-2xl border border-emerald-500/20 bg-black/40 p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-[0.65rem] uppercase tracking-[0.2em] text-emerald-200/80">
+                    Potty Training
+                  </div>
+                  <div className="text-sm font-semibold text-emerald-50">Tracker</div>
                 </div>
+                <div className="text-xs text-emerald-200">{pottyTrained ? "Complete" : `${pottyPercent}%`}</div>
               </div>
-            </section>
-          </div>
-        </aside>
-      </div>
+              <PottyTrackerCard percent={pottyPercent} />
+              <div className="text-[0.75rem] text-zinc-300/90">
+                {pottyTrained
+                  ? "Potty training complete. Trick training is now unlocked."
+                  : "Train consistently. When this hits 100%, tricks unlock permanently."}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-emerald-500/20 bg-black/40 p-4">
+              <div className="flex items-center justify-between mb-2">
+                <div>
+                  <div className="text-[0.65rem] uppercase tracking-[0.2em] text-emerald-200/80">Progression</div>
+                  <div className="text-sm font-semibold text-emerald-50">Long term</div>
+                </div>
+                <div className="text-[0.7rem] text-emerald-200/80">Season &amp; journey</div>
+              </div>
+              <LongTermProgressionCard progression={progression} now={Date.now()} />
+            </div>
+          </aside>
+        </div>
+      </section>
     </div>
   );
 }
+
