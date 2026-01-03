@@ -1,18 +1,20 @@
 // src/pages/Adopt.jsx
+// @ts-nocheck
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
-import jackRussellPhotoPng from "../Transparent-jack-russell-puppy-dog.png";
-import jackRussellPhotoWebp from "../Transparent-jack-russell-puppy-dog.webp";
+import { withBaseUrl } from "@/utils/assetUrl.js";
 
 import {
   selectDog,
   setDogName,
   setAdoptedAt,
 } from "@/redux/dogSlice.js";
-import PageShell from "@/components/PageShell.jsx";
+
+import Header from "@/components/Header.jsx";
+import Footer from "@/components/Footer.jsx";
 
 export default function AdoptPage() {
   const dispatch = useDispatch();
@@ -45,16 +47,14 @@ export default function AdoptPage() {
   if (alreadyAdopted) {
     // If we already have a dog, don’t let the user “adopt” another silently.
     return (
-      <PageShell>
-        <div className="mx-auto w-full max-w-md">
-          <div className="rounded-2xl border border-zinc-200 bg-white/80 p-6 shadow-xl dark:border-zinc-800 dark:bg-zinc-900/70">
-            <p className="text-[11px] uppercase tracking-[0.26em] text-emerald-700 dark:text-emerald-300/90">
-              Adopt
-            </p>
-            <h2 className="mt-2 text-xl font-semibold text-zinc-900 dark:text-white">
+      <>
+        <Header />
+        <div className="flex flex-col items-center w-full h-full pt-6 pb-10 bg-gradient-to-b from-zinc-950 to-zinc-900 text-white">
+          <div className="w-full max-w-md bg-zinc-900/80 border border-zinc-800 rounded-2xl p-6 shadow-xl">
+            <h2 className="text-xl font-semibold mb-2 text-emerald-300">
               You already adopted a pup
             </h2>
-            <p className="mt-2 text-sm text-zinc-700 dark:text-zinc-300">
+            <p className="text-sm text-zinc-300 mb-4">
               Your current dog is{" "}
               <span className="font-semibold">{dog?.name || "your pup"}</span>.
               Future versions will support multiple pups and kennels, but right
@@ -64,51 +64,47 @@ export default function AdoptPage() {
             <button
               type="button"
               onClick={() => navigate("/game")}
-              className="mt-5 w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-sm font-semibold text-black shadow-lg"
+              className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-sm font-semibold shadow-lg"
             >
               Go back to your yard
             </button>
           </div>
         </div>
-      </PageShell>
+
+        <Footer />
+      </>
     );
   }
 
   return (
-    <PageShell>
-      <div className="mx-auto w-full max-w-md">
-        <div className="rounded-2xl border border-zinc-200 bg-white/80 p-6 shadow-xl dark:border-zinc-800 dark:bg-zinc-900/70">
-          <p className="text-[11px] uppercase tracking-[0.26em] text-emerald-700 dark:text-emerald-300/90">
-            Adopt
-          </p>
-          <h2 className="mt-2 text-xl font-semibold text-zinc-900 dark:text-white">
-            Adopt your first pup
-          </h2>
-          <p className="mt-2 text-sm text-zinc-700 dark:text-zinc-300">
+    <>
+      <Header />
+      <div className="flex flex-col items-center w-full h-full pt-6 pb-10 bg-gradient-to-b from-zinc-950 to-zinc-900 text-white">
+        {/* Card */}
+        <div className="w-full max-w-md bg-zinc-900/80 border border-zinc-800 rounded-2xl p-6 shadow-xl">
+          <div className="relative mb-5 flex aspect-[4/3] items-center justify-center overflow-hidden rounded-2xl border border-zinc-800 bg-gradient-to-br from-zinc-900 via-zinc-950 to-black">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(16,185,129,0.25),_transparent_60%)]" />
+            <img
+              src={withBaseUrl("/sprites/jack_russell_puppy.webp")}
+              alt="Your new puppy"
+              width={360}
+              height={360}
+              decoding="async"
+              className="relative h-44 w-auto drop-shadow-[0_14px_28px_rgba(0,0,0,0.75)]"
+            />
+          </div>
+
+          <h2 className="text-xl font-semibold mb-2">Adopt your first pup</h2>
+          <p className="text-sm text-zinc-400 mb-4">
             This is your forever dog in Doggerz. You’ll feed, play, train, and
             keep them alive through your questionable life choices.
           </p>
-
-          <div className="relative mt-5 mb-5 flex aspect-[4/3] items-center justify-center overflow-hidden rounded-2xl border border-zinc-200 bg-gradient-to-br from-white via-zinc-50 to-zinc-100 dark:border-zinc-800 dark:from-zinc-900 dark:via-zinc-950 dark:to-black">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(16,185,129,0.25),_transparent_60%)]" />
-            <picture>
-              <source type="image/webp" srcSet={jackRussellPhotoWebp} />
-              <img
-                src={jackRussellPhotoPng}
-                alt="Jack Russell puppy"
-                width={360}
-                height={360}
-                decoding="async"
-                className="relative h-44 w-auto drop-shadow-[0_14px_28px_rgba(0,0,0,0.35)] dark:drop-shadow-[0_14px_28px_rgba(0,0,0,0.75)]"
-              />
-            </picture>
-          </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label
                 htmlFor="dog-name"
-                className="block text-sm font-medium text-zinc-800 dark:text-zinc-200 mb-1"
+                className="block text-sm font-medium text-zinc-200 mb-1"
               >
                 Pup&apos;s name
               </label>
@@ -117,7 +113,7 @@ export default function AdoptPage() {
                 type="text"
                 value={name}
                 onChange={(e) => setNameValue(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-white border border-zinc-300 text-zinc-900 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm dark:bg-zinc-950 dark:border-zinc-700 dark:text-white dark:placeholder:text-zinc-500"
+                className="w-full px-3 py-2 rounded-lg bg-zinc-950 border border-zinc-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
                 placeholder="Fireball"
                 maxLength={24}
                 autoComplete="off"
@@ -125,14 +121,14 @@ export default function AdoptPage() {
             </div>
 
             {error && (
-              <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+              <p className="text-xs text-red-400 mt-1">
                 {error}
               </p>
             )}
 
             <button
               type="submit"
-              className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-sm font-semibold text-black shadow-lg"
+              className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-sm font-semibold shadow-lg"
             >
               Adopt this pup
             </button>
@@ -144,6 +140,8 @@ export default function AdoptPage() {
           </p>
         </div>
       </div>
-    </PageShell>
+
+      <Footer />
+    </>
   );
 }

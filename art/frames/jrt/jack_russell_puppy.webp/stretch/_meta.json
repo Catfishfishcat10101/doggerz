@@ -1,0 +1,6 @@
+{
+  "fps": 8,
+  "frameSize": 1024,
+  "frames": 10,
+  "source": "mock-generator"
+}

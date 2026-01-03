@@ -29,7 +29,58 @@ const saveToStorage = (state) => {
 
 const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
 
-const initialState = loadFromStorage() || {
+function normalizeTrainingInputMode(value, fallback = 'both') {
+  const v = String(value || '').toLowerCase();
+  if (v === 'buttons' || v === 'voice' || v === 'both') return v;
+  return fallback;
+}
+
+function normalizeLoadedSettings(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+
+  const next = { ...raw };
+
+  // New setting with backward-compatible default derived from legacy toggle.
+  if (!next.trainingInputMode) {
+    next.trainingInputMode = next.voiceCommandsEnabled ? 'both' : 'buttons';
+  }
+  next.trainingInputMode = normalizeTrainingInputMode(next.trainingInputMode);
+  next.voiceCommandsEnabled =
+    next.trainingInputMode === 'voice' || next.trainingInputMode === 'both';
+
+  // Game UI
+  next.showGameMicroHud = next.showGameMicroHud !== false;
+  next.showCritters = next.showCritters !== false;
+  next.roamIntensity = clamp(Number(next.roamIntensity ?? 1), 0, 1);
+
+  // Haptics (mobile vibration)
+  next.hapticsEnabled = next.hapticsEnabled !== false;
+
+  // Ensure nested audio exists
+  next.audio = {
+    enabled: true,
+    masterVolume: 0.8,
+    musicVolume: 0.5,
+    sfxVolume: 0.7,
+    sleepEnabled: true,
+    sleepVolume: 0.25,
+    ...(next.audio || {}),
+  };
+  next.audio.enabled = Boolean(next.audio.enabled);
+  next.audio.masterVolume = clamp(Number(next.audio.masterVolume ?? 0.8), 0, 1);
+  next.audio.musicVolume = clamp(Number(next.audio.musicVolume ?? 0.5), 0, 1);
+  next.audio.sfxVolume = clamp(Number(next.audio.sfxVolume ?? 0.7), 0, 1);
+  next.audio.sleepEnabled = Boolean(next.audio.sleepEnabled);
+  next.audio.sleepVolume = clamp(Number(next.audio.sleepVolume ?? 0.25), 0, 1);
+
+  // Performance
+  const perfMode = String(next.perfMode || 'auto').toLowerCase();
+  next.perfMode = ['auto', 'on', 'off'].includes(perfMode) ? perfMode : 'auto';
+
+  return next;
+}
+
+const initialState = normalizeLoadedSettings(loadFromStorage()) || {
   // Theme: system | dark | light
   theme: 'system',
 
@@ -44,14 +95,36 @@ const initialState = loadFromStorage() || {
   // UI preferences
   showHints: true,
 
+  // Haptics
+  hapticsEnabled: true,
+
+  // Game UI
+  showGameMicroHud: true,
+  showCritters: true,
+  roamIntensity: 1,
+
+  // Performance
+  // Battery-friendly mode: reduce heavy visual effects (canvas particles, ambient animations, etc.)
+  batterySaver: false,
+
+  // Extra perf mode (separate from accessibility reduce-motion)
+  // - auto: reduce effects on low-power devices/hints
+  // - on: always reduce effects
+  // - off: never auto-reduce (batterySaver can still be used manually)
+  perfMode: 'auto',
+
   // Input / features
   voiceCommandsEnabled: false,
+  trainingInputMode: 'both',
 
   // Audio (not all screens use this yet, but we persist it for future wiring)
   audio: {
     enabled: true,
-    musicVolume: 0.6,
-    sfxVolume: 0.8,
+    masterVolume: 0.8,
+    musicVolume: 0.5,
+    sfxVolume: 0.7,
+    sleepEnabled: true,
+    sleepVolume: 0.25,
   },
 
   // Safety
@@ -62,6 +135,12 @@ const settingsSlice = createSlice({
   name: 'settings',
   initialState,
   reducers: {
+    setPerfMode(state, action) {
+      const mode = String(action.payload || '').toLowerCase();
+      if (!['auto', 'on', 'off'].includes(mode)) return;
+      state.perfMode = mode;
+      saveToStorage(state);
+    },
     setTheme(state, action) {
       const mode = String(action.payload || '').toLowerCase();
       if (!['system', 'dark', 'light'].includes(mode)) return;
@@ -112,13 +191,69 @@ const settingsSlice = createSlice({
       saveToStorage(state);
     },
 
+    setHapticsEnabled(state, action) {
+      state.hapticsEnabled = Boolean(action.payload);
+      saveToStorage(state);
+    },
+
+    setBatterySaver(state, action) {
+      state.batterySaver = Boolean(action.payload);
+      saveToStorage(state);
+    },
+
     setVoiceCommandsEnabled(state, action) {
-      state.voiceCommandsEnabled = Boolean(action.payload);
+      const enabled = Boolean(action.payload);
+      state.voiceCommandsEnabled = enabled;
+      // Keep new setting in sync.
+      const currentMode = normalizeTrainingInputMode(
+        state.trainingInputMode,
+        enabled ? 'both' : 'buttons'
+      );
+      if (!enabled && (currentMode === 'voice' || currentMode === 'both')) {
+        state.trainingInputMode = 'buttons';
+      }
+      if (enabled && currentMode === 'buttons') {
+        state.trainingInputMode = 'both';
+      }
+      saveToStorage(state);
+    },
+
+    setTrainingInputMode(state, action) {
+      const mode = normalizeTrainingInputMode(
+        action.payload,
+        state.trainingInputMode
+      );
+      state.trainingInputMode = mode;
+      state.voiceCommandsEnabled = mode === 'voice' || mode === 'both';
+      saveToStorage(state);
+    },
+
+    setShowGameMicroHud(state, action) {
+      state.showGameMicroHud = Boolean(action.payload);
+      saveToStorage(state);
+    },
+
+    setShowCritters(state, action) {
+      state.showCritters = Boolean(action.payload);
+      saveToStorage(state);
+    },
+
+    setRoamIntensity(state, action) {
+      const raw = Number(action.payload);
+      if (!Number.isFinite(raw)) return;
+      state.roamIntensity = clamp(raw, 0, 1);
       saveToStorage(state);
     },
 
     setAudioEnabled(state, action) {
       state.audio.enabled = Boolean(action.payload);
+      saveToStorage(state);
+    },
+
+    setMasterVolume(state, action) {
+      const raw = Number(action.payload);
+      if (!Number.isFinite(raw)) return;
+      state.audio.masterVolume = clamp(raw, 0, 1);
       saveToStorage(state);
     },
 
@@ -136,6 +271,18 @@ const settingsSlice = createSlice({
       saveToStorage(state);
     },
 
+    setSleepAudioEnabled(state, action) {
+      state.audio.sleepEnabled = Boolean(action.payload);
+      saveToStorage(state);
+    },
+
+    setSleepVolume(state, action) {
+      const raw = Number(action.payload);
+      if (!Number.isFinite(raw)) return;
+      state.audio.sleepVolume = clamp(raw, 0, 1);
+      saveToStorage(state);
+    },
+
     setConfirmDangerousActions(state, action) {
       state.confirmDangerousActions = Boolean(action.payload);
       saveToStorage(state);
@@ -144,8 +291,9 @@ const settingsSlice = createSlice({
     hydrateSettings(state, action) {
       if (!action.payload || typeof action.payload !== 'object') return;
       // Shallow merge + nested audio merge.
-      const next = { ...state, ...action.payload };
-      next.audio = { ...state.audio, ...(action.payload.audio || {}) };
+      const merged = { ...state, ...action.payload };
+      merged.audio = { ...state.audio, ...(action.payload.audio || {}) };
+      const next = normalizeLoadedSettings(merged) || merged;
 
       state.theme = next.theme;
       state.reduceMotion = next.reduceMotion;
@@ -154,15 +302,37 @@ const settingsSlice = createSlice({
       state.focusRings = next.focusRings;
       state.hitTargets = next.hitTargets;
       state.fontScale = clamp(Number(next.fontScale ?? 1), 0.9, 1.15);
+
+      state.perfMode = next.perfMode || state.perfMode || 'auto';
       state.showHints = Boolean(next.showHints);
+
+      state.showGameMicroHud = next.showGameMicroHud !== false;
+      state.showCritters = next.showCritters !== false;
+      state.roamIntensity = clamp(Number(next.roamIntensity ?? 1), 0, 1);
+      state.batterySaver = Boolean(next.batterySaver);
+      state.trainingInputMode = normalizeTrainingInputMode(
+        next.trainingInputMode,
+        next.voiceCommandsEnabled ? 'both' : 'buttons'
+      );
       state.voiceCommandsEnabled = Boolean(next.voiceCommandsEnabled);
       state.audio.enabled = Boolean(next.audio?.enabled);
-      state.audio.musicVolume = clamp(
-        Number(next.audio?.musicVolume ?? 0.6),
+      state.audio.masterVolume = clamp(
+        Number(next.audio?.masterVolume ?? 0.8),
         0,
         1
       );
-      state.audio.sfxVolume = clamp(Number(next.audio?.sfxVolume ?? 0.8), 0, 1);
+      state.audio.musicVolume = clamp(
+        Number(next.audio?.musicVolume ?? 0.5),
+        0,
+        1
+      );
+      state.audio.sfxVolume = clamp(Number(next.audio?.sfxVolume ?? 0.7), 0, 1);
+      state.audio.sleepEnabled = Boolean(next.audio?.sleepEnabled);
+      state.audio.sleepVolume = clamp(
+        Number(next.audio?.sleepVolume ?? 0.25),
+        0,
+        1
+      );
       state.confirmDangerousActions = Boolean(next.confirmDangerousActions);
 
       saveToStorage(state);
@@ -178,8 +348,21 @@ const settingsSlice = createSlice({
         hitTargets: 'auto',
         fontScale: 1,
         showHints: true,
+        showGameMicroHud: true,
+        showCritters: true,
+        roamIntensity: 1,
+        batterySaver: false,
+        perfMode: 'auto',
         voiceCommandsEnabled: true,
-        audio: { enabled: true, musicVolume: 0.6, sfxVolume: 0.8 },
+        trainingInputMode: 'both',
+        audio: {
+          enabled: true,
+          masterVolume: 0.8,
+          musicVolume: 0.5,
+          sfxVolume: 0.7,
+          sleepEnabled: true,
+          sleepVolume: 0.25,
+        },
         confirmDangerousActions: true,
       };
 
@@ -200,6 +383,7 @@ const settingsSlice = createSlice({
 });
 
 export const {
+  setPerfMode,
   setTheme,
   setReduceMotion,
   setHighContrast,
@@ -208,10 +392,19 @@ export const {
   setHitTargets,
   setFontScale,
   setShowHints,
+  setHapticsEnabled,
+  setBatterySaver,
   setVoiceCommandsEnabled,
+  setTrainingInputMode,
+  setShowGameMicroHud,
+  setShowCritters,
+  setRoamIntensity,
   setAudioEnabled,
+  setMasterVolume,
   setMusicVolume,
   setSfxVolume,
+  setSleepAudioEnabled,
+  setSleepVolume,
   setConfirmDangerousActions,
   hydrateSettings,
   resetSettings,

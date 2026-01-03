@@ -3,9 +3,15 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#10b981" />
-  <meta name="color-scheme" content="light dark" />
+  <meta name="color-scheme" content="dark light" />
+  <meta name="application-name" content="Doggerz" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
 
   <meta name="description"
     content="Doggerz is a virtual pup simulator: adopt a Jack Russell, manage needs, train, and level up your companion." />
@@ -14,180 +20,183 @@
   <meta property="og:description" content="Adopt a virtual pup and make choices that shape its behavior." />
   <meta property="og:type" content="website" />
   <meta property="og:image" content="/icons/doggerz-512.png" />
-  <meta name="twitter:card" content="summary_large_image" />
+  <meta property="og:image:alt" content="Doggerz app icon" />
+  <meta property="og:locale" content="en_US" />
+  
+  <meta name="twitter:card" content="summary" />
   <meta name="twitter:title" content="Doggerz" />
-  <meta name="twitter:description" content="Adopt a virtual pup and make choices that shape its behavior." />
+  <meta name="twitter:description" content="Adopt a virtual pup and shape its behavior over time." />
   <meta name="twitter:image" content="/icons/doggerz-512.png" />
 
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="icon" href="/favicon.ico" />
   <link rel="apple-touch-icon" sizes="180x180" href="/icons/doggerz-180.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/icons/doggerz-192.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="/icons/doggerz-512.png" />
+  <link rel="preload" as="image" href="/icons/doggerz-logo.svg" />
   
+  <title>Doggerz</title>
+
   <style>
-    /* App-shell splash: shows immediately, removed by React once assets preload. */
-    #app-shell-splash {
-      position: fixed;
-      inset: 0;
-      z-index: 9999;
+    /* Minimal boot UI so the app feels responsive before React mounts */
+    :root {
+      --dg-bg: #090a0f;
+      --dg-fg: #e5e7eb;
+      --dg-muted: rgba(229, 231, 235, 0.65);
+      --dg-accent: #10b981;
+      --dg-accent2: #38bdf8;
+      --dg-ring: rgba(16, 185, 129, 0.55);
+      color-scheme: dark;
+    }
+
+    html,
+    body {
+      height: 100%;
+      background: radial-gradient(circle at top, #1e293b 0, #020617 55%, #000 100%);
+    }
+
+    /* Better default tap behavior */
+    * {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    ::selection {
+      background: rgba(16, 185, 129, 0.35);
+    }
+
+    .dg-boot {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      color: var(--dg-fg);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial,
+        "Apple Color Emoji", "Segoe UI Emoji";
+    }
+
+    .dg-boot__card {
+      width: 100%;
+      max-width: 560px;
+      border-radius: 28px;
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      background: rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 0 70px rgba(16, 185, 129, 0.12);
+      padding: 22px 20px;
+    }
+
+    .dg-boot__row {
       display: flex;
       align-items: center;
-      justify-content: center;
-      background: radial-gradient(circle at top, #1e293b 0, #020617 55%, #000 100%);
-      color: #e5e7eb;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      transition: opacity 260ms ease;
+      gap: 14px;
     }
-  
-    #app-shell-splash[data-hide="1"] {
-      opacity: 0;
-      pointer-events: none;
-    }
-  
-    .dz-splash-card {
-      width: min(760px, calc(100vw - 32px));
-      border-radius: 18px;
-      border: 1px solid rgba(255, 255, 255, 0.10);
-      background: rgba(0, 0, 0, 0.18);
-      box-shadow: 0 18px 60px rgba(0, 0, 0, 0.55);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      padding: 18px;
-    }
-  
-    .dz-splash-title {
-      font-weight: 800;
-      letter-spacing: 0.18em;
-      font-size: 28px;
-      text-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
-      margin: 0;
-    }
-  
-    .dz-splash-sub {
-      margin-top: 6px;
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.28em;
-      color: rgba(255, 255, 255, 0.70);
-    }
-  
-    .dz-splash-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 12px;
-      margin-top: 16px;
-    }
-  
-    @media (min-width: 640px) {
-      .dz-splash-grid {
-        grid-template-columns: 1fr 1fr;
-      }
-    }
-  
-    .dz-skeleton {
+
+    .dg-boot__logo {
+      width: 48px;
+      height: 48px;
       border-radius: 14px;
-      border: 1px solid rgba(255, 255, 255, 0.10);
-      background: rgba(255, 255, 255, 0.05);
-      padding: 14px;
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      background: rgba(16, 185, 129, 0.10);
+      padding: 8px;
+      box-sizing: border-box;
     }
-  
-    .dz-skel-bar {
+
+    .dg-boot__title {
+      font-weight: 900;
+      letter-spacing: 0.02em;
+      font-size: 26px;
+      line-height: 1.05;
+      margin: 0;
+      color: rgba(167, 243, 208, 0.95);
+      text-shadow: 0 0 18px rgba(16, 185, 129, 0.55);
+    }
+
+    .dg-boot__sub {
+      margin: 6px 0 0;
+      font-size: 12px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(229, 231, 235, 0.6);
+    }
+
+    .dg-boot__hint {
+      margin-top: 16px;
+      font-size: 13px;
+      color: var(--dg-muted);
+    }
+
+    .dg-boot__bar {
+      margin-top: 14px;
       height: 10px;
       border-radius: 999px;
-      background: rgba(255, 255, 255, 0.10);
+      background: rgba(255, 255, 255, 0.08);
       overflow: hidden;
-      position: relative;
+      border: 1px solid rgba(255, 255, 255, 0.10);
     }
-  
-    .dz-skel-bar::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      transform: translateX(-60%);
-      background: linear-gradient(90deg,
-          transparent,
-          rgba(34, 197, 94, 0.35),
-          rgba(249, 115, 22, 0.35),
-          transparent);
-      animation: dz-shimmer 1.05s ease-in-out infinite;
+
+    .dg-boot__bar > span {
+      display: block;
+      height: 100%;
+      width: 42%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(16, 185, 129, 0.25), rgba(56, 189, 248, 0.30));
+      animation: dg-boot-load 1.15s ease-in-out infinite alternate;
     }
-  
-    @keyframes dz-shimmer {
+
+    @keyframes dg-boot-load {
       0% {
-        transform: translateX(-60%);
+        transform: translateX(-40%);
       }
-  
       100% {
-        transform: translateX(60%);
+        transform: translateX(140%);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .dg-boot__bar > span {
+        animation: none;
+        width: 60%;
+        transform: translateX(0);
       }
     }
   </style>
-  
-  <script>
-    // React will call this once it has preloaded core sprites/backgrounds.
-    window.__DOGGERZ_HIDE_SPLASH__ = function () {
-      var el = document.getElementById('app-shell-splash');
-      if (!el) return;
-      el.setAttribute('data-hide', '1');
-      window.setTimeout(function () {
-        try { el.remove(); } catch (e) { }
-      }, 420);
-    };
-  </script>
 
-  <title>Doggerz</title>
+  <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "VideoGame",
+        "name": "Doggerz",
+        "applicationCategory": "GameApplication",
+        "operatingSystem": "Web",
+        "description": "A virtual pup simulator where you adopt, train, and bond over time.",
+        "inLanguage": "en"
+      }
+  </script>
 </head>
 
-<body class="bg-white text-slate-900 dark:bg-zinc-950 dark:text-zinc-50 antialiased">
-  <div id="app-shell-splash" aria-label="Loading Doggerz" role="status">
-    <div class="dz-splash-card">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;">
-        <div>
-          <h1 class="dz-splash-title">DOGGERZ</h1>
-          <div class="dz-splash-sub">Adopt • Train • Thrive</div>
-        </div>
-        <div
-          style="width:40px;height:40px;border-radius:999px;background:radial-gradient(circle at 30% 30%, rgba(34,197,94,.85), rgba(249,115,22,.75), rgba(2,6,23,.35));box-shadow:0 10px 24px rgba(249,115,22,.28), 0 10px 24px rgba(34,197,94,.18);">
-        </div>
-      </div>
+<body class="bg-zinc-950 text-zinc-50">
+  <noscript>
+    <div style="padding:16px; color:#e5e7eb; background:#090a0f; font-family:system-ui">
+      Doggerz needs JavaScript enabled to run.
+    </div>
+  </noscript>
 
-      <div class="dz-splash-grid">
-        <div class="dz-skeleton">
-          <div style="height:10px;width:120px;border-radius:999px;background:rgba(255,255,255,.10);"></div>
-          <div style="margin-top:12px;height:160px;border-radius:12px;background:rgba(255,255,255,.10);"></div>
-          <div style="margin-top:12px;height:10px;width:160px;border-radius:999px;background:rgba(255,255,255,.10);">
+  <div id="root">
+    <div class="dg-boot" aria-hidden="true">
+      <div class="dg-boot__card">
+        <div class="dg-boot__row">
+          <img class="dg-boot__logo" src="/icons/doggerz-logo.svg" alt="" decoding="async" />
+          <div>
+            <p class="dg-boot__title">DOGGERZ</p>
+            <p class="dg-boot__sub">Adopt. Train. Bond.</p>
           </div>
         </div>
-        <div class="dz-skeleton">
-          <div style="height:10px;width:110px;border-radius:999px;background:rgba(255,255,255,.10);"></div>
-          <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px;">
-            <div style="height:10px;width:100%;border-radius:999px;background:rgba(255,255,255,.10);"></div>
-            <div style="height:10px;width:86%;border-radius:999px;background:rgba(255,255,255,.10);"></div>
-            <div style="height:10px;width:70%;border-radius:999px;background:rgba(255,255,255,.10);"></div>
-          </div>
-          <div style="margin-top:14px;display:flex;gap:10px;">
-            <div style="height:32px;flex:1;border-radius:999px;background:rgba(255,255,255,.10);"></div>
-            <div style="height:32px;flex:1;border-radius:999px;background:rgba(255,255,255,.10);"></div>
-          </div>
-        </div>
-      </div>
 
-      <div style="margin-top:16px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
-          <div style="font-size:13px;color:rgba(255,255,255,.80);">Loading sprites & backgrounds…</div>
-          <div style="font-size:11px;color:rgba(255,255,255,.55);">Please wait</div>
-        </div>
-        <div class="dz-skel-bar" style="margin-top:8px;"></div>
+        <div class="dg-boot__hint">Loading your yard…</div>
+        <div class="dg-boot__bar"><span></span></div>
       </div>
     </div>
   </div>
-
-  <div id="root"></div>
-  <noscript>
-    <div style="padding:16px;font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;max-width:680px;margin:0 auto;">
-      <h1 style="margin:0 0 8px 0;">Doggerz</h1>
-      <p style="margin:0;opacity:.85;">Doggerz needs JavaScript enabled to run. Please enable JavaScript and reload.</p>
-    </div>
-  </noscript>
   <script type="module" src="/src/main.jsx"></script>
 </body>
 

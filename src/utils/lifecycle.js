@@ -3,10 +3,13 @@
 // src/utils/lifecycle.js
 // @ts-nocheck
 
+import { withBaseUrl } from '@/utils/assetUrl.js';
+
 // Keep this file self-contained so it can't break if constants imports are wrong.
 
-// How many in-game days pass per real day
-export const GAME_DAYS_PER_REAL_DAY = 4;
+// How many in-game days pass per real day.
+// Tuning: keep this low so puppies don't age up too fast.
+export const GAME_DAYS_PER_REAL_DAY = 1;
 
 // Lifecycle / age stages (in-game days)
 export const LIFE_STAGES = {
@@ -90,12 +93,12 @@ export function calculateDogAge(adoptedAtMs, now = Date.now()) {
 export function getSpriteForLifeStage(stageId) {
   switch (stageId) {
     case 'PUPPY':
-      return '/sprites/jack_russell_puppy.webp';
+      return withBaseUrl('/sprites/jack_russell_puppy.webp');
     case 'ADULT':
-      return '/sprites/jack_russell_adult.webp';
+      return withBaseUrl('/sprites/jack_russell_adult.webp');
     case 'SENIOR':
     default:
-      return '/sprites/jack_russell_senior.webp';
+      return withBaseUrl('/sprites/jack_russell_senior.webp');
   }
 }
 
@@ -129,7 +132,9 @@ export function getSpriteForStageAndTier(stageOrObj, cleanlinessTier) {
   stageKey = String(stageKey || 'PUPPY')
     .toUpperCase()
     .trim();
-  tier = String(tier || 'FRESH')
+  // Keep the tier parsing for future art variants, but don't treat it as a hard requirement.
+  // (Prefix with _ to avoid lint warnings until tier-specific sprites exist.)
+  const _tierKey = String(tier || 'FRESH')
     .toUpperCase()
     .trim();
 

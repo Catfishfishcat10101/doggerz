@@ -7,6 +7,7 @@ dist/
 # local env files (never commit secrets)
 .env
 .env.*
+!.env.example
 
 # logs
 npm-debug.log*
@@ -28,6 +29,10 @@ public/optimized-sprites/
 # Bundle reports
 dist/stats.html
 stats.html
+
+# Local build logs (generated during asset work)
+build-from-art.log
+build-sprites.log
 
 # Firebase
 .firebase/

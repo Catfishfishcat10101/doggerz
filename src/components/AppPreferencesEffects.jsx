@@ -29,6 +29,15 @@ function getEffectiveReduceMotion(mode) {
   return getSystemReducedMotion();
 }
 
+function isCoarsePointer() {
+  if (typeof window === "undefined") return false;
+  const hasTouchPoints =
+    typeof navigator !== "undefined" && Number(navigator.maxTouchPoints || 0) > 0;
+  const coarse =
+    window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+  return Boolean(hasTouchPoints || coarse);
+}
+
 export default function AppPreferencesEffects() {
   const settings = useSelector(selectSettings);
 
@@ -54,7 +63,11 @@ export default function AppPreferencesEffects() {
       else delete root.dataset.transparency;
 
       root.dataset.focusRings = settings?.focusRings || "auto";
-      root.dataset.hitTargets = settings?.hitTargets || "auto";
+
+      const hitTargetsMode = settings?.hitTargets || "auto";
+      const effectiveHitTargets =
+        hitTargetsMode === "auto" && isCoarsePointer() ? "large" : hitTargetsMode;
+      root.dataset.hitTargets = effectiveHitTargets;
 
       const fontScale = Number(settings?.fontScale ?? 1);
       if (Number.isFinite(fontScale) && fontScale !== 1) {

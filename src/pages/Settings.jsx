@@ -1,8 +1,15 @@
 // src/pages/Settings.jsx
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import PageShell from "@/components/PageShell.jsx";
-import { resetDogState, DOG_STORAGE_KEY } from "@/redux/dogSlice.js";
+import {
+  resetDogState,
+  DOG_STORAGE_KEY,
+  DOG_SAVE_SCHEMA_VERSION,
+  selectDogCosmetics,
+  selectCosmeticCatalog,
+  equipCosmetic,
+} from "@/redux/dogSlice.js";
 import { selectUserZip, setZip } from "@/redux/userSlice.js";
 import { auth, db, firebaseReady } from "@/firebase.js";
 import { signOut, deleteUser } from "firebase/auth";
@@ -17,15 +24,29 @@ import {
   setFocusRings,
   setHighContrast,
   setHitTargets,
+  setMasterVolume,
   setMusicVolume,
+  setBatterySaver,
+  setPerfMode,
   setReduceMotion,
   setReduceTransparency,
+  setSleepAudioEnabled,
+  setSleepVolume,
+  setTrainingInputMode,
+  setShowGameMicroHud,
+  setShowCritters,
+  setRoamIntensity,
   setSfxVolume,
   setShowHints,
   setTheme,
   setVoiceCommandsEnabled,
+  setHapticsEnabled,
   SETTINGS_STORAGE_KEY,
 } from "@/redux/settingsSlice.js";
+
+import Header from "@/components/Header.jsx";
+import Footer from "@/components/Footer.jsx";
+import { APP_VERSION } from "@/utils/appVersion.js";
 
 const USER_STORAGE_KEY = "doggerz:userState";
 
@@ -141,6 +162,24 @@ export default function Settings() {
   const dispatch = useDispatch();
   const settings = useSelector(selectSettings);
   const currentZip = useSelector(selectUserZip);
+  const cosmetics = useSelector(selectDogCosmetics);
+  const cosmeticCatalog = useSelector(selectCosmeticCatalog);
+
+  const unlockedBySlot = useMemo(() => {
+    const unlocked = new Set(cosmetics?.unlockedIds || []);
+    const items = Array.isArray(cosmeticCatalog) ? cosmeticCatalog : [];
+    const bySlot = { collar: [], tag: [], backdrop: [] };
+    for (const it of items) {
+      if (!it || typeof it !== 'object') continue;
+      if (!unlocked.has(it.id)) continue;
+      if (!it.slot || !(it.slot in bySlot)) continue;
+      bySlot[it.slot].push(it);
+    }
+    for (const slot of Object.keys(bySlot)) {
+      bySlot[slot].sort((a, b) => (a.threshold || 0) - (b.threshold || 0));
+    }
+    return bySlot;
+  }, [cosmetics?.unlockedIds, cosmeticCatalog]);
 
   const [zipInput, setZipInput] = useState(currentZip || "");
   const fileInputRef = useRef(null);
@@ -152,6 +191,7 @@ export default function Settings() {
   const zipIsValid = useMemo(() => !zipInput || /^\d{5}$/.test(zipInput), [zipInput]);
 
   const [cloudActionStatus, setCloudActionStatus] = useState(null);
+  const [localActionStatus, setLocalActionStatus] = useState(null);
   const [cloudBusy, setCloudBusy] = useState(false);
 
   const cloudUser = firebaseReady ? auth?.currentUser : null;
@@ -262,13 +302,13 @@ export default function Settings() {
     try {
       parsed = JSON.parse(text);
     } catch {
-      alert("That file doesn't look like valid JSON.");
+      setLocalActionStatus("That file doesn't look like valid JSON.");
       return;
     }
 
     const data = parsed?.data;
     if (!data || parsed?.format !== "doggerz-export") {
-      alert("That file doesn't look like a Doggerz export.");
+      setLocalActionStatus("That file doesn't look like a Doggerz export.");
       return;
     }
 
@@ -278,16 +318,27 @@ export default function Settings() {
     if (!ok) return;
 
     try {
-      if (data.dog) localStorage.setItem(DOG_STORAGE_KEY, JSON.stringify(data.dog));
+      if (data.dog) {
+        const persistedDog = {
+          ...data.dog,
+          meta: {
+            ...(data.dog?.meta || {}),
+            schemaVersion: DOG_SAVE_SCHEMA_VERSION,
+            savedAt: new Date().toISOString(),
+          },
+        };
+        localStorage.setItem(DOG_STORAGE_KEY, JSON.stringify(persistedDog));
+      }
       if (data.user) localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(data.user));
       if (data.settings) {
         localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(data.settings));
         dispatch(hydrateSettings(data.settings));
       }
+      setLocalActionStatus("Import successful. Reloading…");
       window.location.reload();
     } catch (e) {
       console.error(e);
-      alert("Import failed. Check the console for details.");
+      setLocalActionStatus("Import failed. Check the console for details.");
     }
   }
 
@@ -306,7 +357,7 @@ export default function Settings() {
       window.location.reload();
     } catch (err) {
       console.error(err);
-      alert("Could not clear storage.");
+      setLocalActionStatus("Could not clear storage.");
     }
   }
 
@@ -316,11 +367,21 @@ export default function Settings() {
       const ok = window.confirm("Reset your local pup progress on this device?");
       if (!ok) return;
     }
+
+    try {
+      localStorage.removeItem(DOG_STORAGE_KEY);
+    } catch {
+      // ignore
+    }
+
     dispatch(resetDogState());
+    setLocalActionStatus("Local pup reset.");
   }
 
   return (
-    <PageShell mainClassName="px-4 py-10">
+    <>
+      <Header />
+      <main className="min-h-dvh px-6 py-10">
       <div className="mx-auto max-w-5xl space-y-8">
         <header className="space-y-2">
           <h1 className="text-4xl font-black tracking-tight text-zinc-900 dark:text-zinc-100">Settings</h1>
@@ -425,12 +486,82 @@ export default function Settings() {
               checked={settings?.reduceTransparency}
               onChange={(v) => dispatch(setReduceTransparency(v))}
             />
+
+              <SelectRow
+                id="perfMode"
+                label="Performance mode"
+                description="Controls automatic reduced effects in the yard (separate from Reduce motion)."
+                value={settings?.perfMode || "auto"}
+                onChange={(v) => dispatch(setPerfMode(v))}
+                options={[
+                  { value: "auto", label: "Auto (recommended)" },
+                  { value: "on", label: "On (reduce effects)" },
+                  { value: "off", label: "Off (full effects)" },
+                ]}
+              />
+
+              <Switch
+                id="batterySaver"
+                label="Battery-friendly mode"
+                description="Disables heavy visual effects (weather particles, ambient animations) to save battery and reduce heat."
+                checked={settings?.batterySaver}
+                onChange={(v) => dispatch(setBatterySaver(v))}
+              />
           </Card>
 
           <Card
             title="Accessibility"
             subtitle="Motion, focus, and touch targets"
           >
+              <div className="rounded-2xl border border-zinc-200 bg-white/70 p-4 dark:border-zinc-800 dark:bg-black/30">
+                <div className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Presets</div>
+                <div className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+                  One-tap comfort profiles (you can fine-tune below).
+                </div>
+
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-xs font-semibold text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-black/30 dark:text-zinc-100 dark:hover:bg-black/40"
+                    onClick={() => {
+                      dispatch(setReduceMotion("system"));
+                      dispatch(setReduceTransparency(false));
+                      dispatch(setHighContrast(false));
+                      dispatch(setHitTargets("auto"));
+                      dispatch(setFocusRings("auto"));
+                      dispatch(setFontScale(1));
+                    }}
+                  >
+                    Default
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-xs font-semibold text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-black/30 dark:text-zinc-100 dark:hover:bg-black/40"
+                    onClick={() => {
+                      dispatch(setReduceMotion("on"));
+                      dispatch(setReduceTransparency(true));
+                      dispatch(setHighContrast(false));
+                      dispatch(setHitTargets("large"));
+                      dispatch(setFocusRings("always"));
+                      dispatch(setFontScale(1.06));
+                    }}
+                  >
+                    Comfort
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-xs font-semibold text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-black/30 dark:text-zinc-100 dark:hover:bg-black/40"
+                    onClick={() => {
+                      dispatch(setHighContrast(true));
+                      dispatch(setFocusRings("always"));
+                      dispatch(setHitTargets("large"));
+                    }}
+                  >
+                    High-visibility
+                  </button>
+                </div>
+              </div>
+
             <SelectRow
               id="reduceMotion"
               label="Reduce motion"
@@ -485,6 +616,114 @@ export default function Settings() {
             />
           </Card>
 
+            <Card
+              title="Game controls"
+              subtitle="How you train and what shows up on the Game screen"
+            >
+              <div className="flex flex-wrap gap-2">
+                <Link
+                  to="/rainbow-bridge"
+                  className="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-3 py-2 text-xs font-semibold text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-black/30 dark:text-zinc-100 dark:hover:bg-black/40"
+                >
+                  Visit Rainbow Bridge
+                </Link>
+              </div>
+
+              <SelectRow
+                id="trainingInputMode"
+                label="Training input"
+                description="Choose button training, voice training, or both."
+                value={settings?.trainingInputMode || (settings?.voiceCommandsEnabled ? "both" : "buttons")}
+                onChange={(v) => dispatch(setTrainingInputMode(v))}
+                options={[
+                  { value: "buttons", label: "Buttons only" },
+                  { value: "voice", label: "Voice only" },
+                  { value: "both", label: "Buttons + voice" },
+                ]}
+              />
+
+              <Switch
+                id="showGameMicroHud"
+                label="Show Weather/Time/Coach chips"
+                description="Toggles the small chips row at the top of the Game screen."
+                checked={settings?.showGameMicroHud !== false}
+                onChange={(v) => dispatch(setShowGameMicroHud(v))}
+              />
+
+              <Switch
+                id="showCritters"
+                label="Show critters (bugs/butterflies)"
+                description="Adds little critters that your pup can notice while wandering."
+                checked={settings?.showCritters !== false}
+                onChange={(v) => dispatch(setShowCritters(v))}
+              />
+
+              <SliderRow
+                id="roamIntensity"
+                label="Roaming intensity"
+                value={Number(settings?.roamIntensity ?? 1)}
+                onChange={(v) => dispatch(setRoamIntensity(v))}
+                min={0}
+                max={1}
+                step={0.05}
+                rightLabel={`${pct(settings?.roamIntensity ?? 1)}%`}
+              />
+            </Card>
+
+            <Card
+              title="Cosmetics"
+              subtitle="Streak rewards you can equip. More visuals coming soon."
+            >
+              <div className="text-xs text-zinc-600 dark:text-zinc-400">
+                Unlocked: <span className="font-semibold text-zinc-900 dark:text-zinc-100">{cosmetics?.unlockedIds?.length || 0}</span>
+              </div>
+
+              <SelectRow
+                id="cosmetic_collar"
+                label="Collar"
+                description="Equipped collar cosmetic"
+                value={cosmetics?.equipped?.collar || ""}
+                onChange={(v) => dispatch(equipCosmetic({ slot: "collar", id: v }))}
+                options={[
+                  { value: "", label: "None" },
+                  ...(unlockedBySlot.collar || []).map((c) => ({
+                    value: c.id,
+                    label: c.label || c.id,
+                  })),
+                ]}
+              />
+
+              <SelectRow
+                id="cosmetic_tag"
+                label="Tag"
+                description="Equipped tag cosmetic"
+                value={cosmetics?.equipped?.tag || ""}
+                onChange={(v) => dispatch(equipCosmetic({ slot: "tag", id: v }))}
+                options={[
+                  { value: "", label: "None" },
+                  ...(unlockedBySlot.tag || []).map((c) => ({
+                    value: c.id,
+                    label: c.label || c.id,
+                  })),
+                ]}
+              />
+
+              <SelectRow
+                id="cosmetic_backdrop"
+                label="Backdrop"
+                description="Equipped background cosmetic"
+                value={cosmetics?.equipped?.backdrop || ""}
+                onChange={(v) => dispatch(equipCosmetic({ slot: "backdrop", id: v }))}
+                options={[
+                  { value: "", label: "None" },
+                  ...(unlockedBySlot.backdrop || []).map((c) => ({
+                    value: c.id,
+                    label: c.label || c.id,
+                  })),
+                ]}
+              />
+            </Card>
+
           <Card
             title="Audio"
             subtitle="Controls are saved now; full app-wide wiring is ongoing"
@@ -496,6 +735,68 @@ export default function Settings() {
               checked={settings?.audio?.enabled}
               onChange={(v) => dispatch(setAudioEnabled(v))}
             />
+
+              <div className="rounded-2xl border border-zinc-200 bg-white/70 p-4 dark:border-zinc-800 dark:bg-black/30">
+                <div className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Quick presets</div>
+                <div className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">A fast way to set sane levels.</div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-xs font-semibold text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-black/30 dark:text-zinc-100 dark:hover:bg-black/40"
+                    onClick={() => {
+                      dispatch(setAudioEnabled(true));
+                      dispatch(setMasterVolume(0.55));
+                      dispatch(setSfxVolume(0.45));
+                      dispatch(setMusicVolume(0.25));
+                    }}
+                  >
+                    Quiet
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-xs font-semibold text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-black/30 dark:text-zinc-100 dark:hover:bg-black/40"
+                    onClick={() => {
+                      dispatch(setAudioEnabled(true));
+                      dispatch(setMasterVolume(0.8));
+                      dispatch(setSfxVolume(0.7));
+                      dispatch(setMusicVolume(0.5));
+                    }}
+                  >
+                    Balanced
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded-xl border border-zinc-300 bg-white px-3 py-2 text-xs font-semibold text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-black/30 dark:text-zinc-100 dark:hover:bg-black/40"
+                    onClick={() => {
+                      dispatch(setAudioEnabled(true));
+                      dispatch(setMasterVolume(1));
+                      dispatch(setSfxVolume(0.9));
+                      dispatch(setMusicVolume(0.65));
+                    }}
+                  >
+                    Loud
+                  </button>
+                </div>
+              </div>
+
+              <Switch
+                id="hapticsEnabled"
+                label="Haptics (vibration)"
+                description="Little taps for rewards and important feedback (mobile only)."
+                checked={settings?.hapticsEnabled !== false}
+                onChange={(v) => dispatch(setHapticsEnabled(v))}
+              />
+
+              <SliderRow
+                id="masterVolume"
+                label="Master volume"
+                value={Number(settings?.audio?.masterVolume ?? 0.8)}
+                onChange={(v) => dispatch(setMasterVolume(v))}
+                min={0}
+                max={1}
+                step={0.01}
+                rightLabel={`${pct(settings?.audio?.masterVolume ?? 0.8)}%`}
+              />
 
             <SliderRow
               id="musicVolume"
@@ -518,6 +819,25 @@ export default function Settings() {
               step={0.01}
               rightLabel={`${pct(settings?.audio?.sfxVolume ?? 0.8)}%`}
             />
+
+              <Switch
+                id="sleepAudioEnabled"
+                label="Sleep ambience"
+                description="A soft breathing/snore loop while your pup sleeps. (No external audio files.)"
+                checked={settings?.audio?.sleepEnabled !== false}
+                onChange={(v) => dispatch(setSleepAudioEnabled(v))}
+              />
+
+              <SliderRow
+                id="sleepVolume"
+                label="Sleep ambience volume"
+                value={Number(settings?.audio?.sleepVolume ?? 0.25)}
+                onChange={(v) => dispatch(setSleepVolume(v))}
+                min={0}
+                max={1}
+                step={0.01}
+                rightLabel={`${pct(settings?.audio?.sleepVolume ?? 0.25)}%`}
+              />
           </Card>
 
           <Card
@@ -616,6 +936,12 @@ export default function Settings() {
               />
             </div>
 
+              {localActionStatus ? (
+                <div className="mt-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-200">
+                  {localActionStatus}
+                </div>
+              ) : null}
+
             <p className="text-xs text-zinc-600 dark:text-zinc-400">
               Exports include local dog save, local user state, and settings for this browser.
             </p>
@@ -651,12 +977,33 @@ export default function Settings() {
               </button>
             </div>
 
+              {localActionStatus ? (
+                <div className="mt-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-200">
+                  {localActionStatus}
+                </div>
+              ) : null}
+
             <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-snug">
               If you’re signed in, cloud sync may re-download your pup later. Clearing local storage does not delete cloud-stored data.
             </p>
           </Card>
+
+          <Card
+            title="About this build"
+            subtitle="Handy details for support and Play release checks"
+          >
+            <div className="text-sm text-zinc-700 dark:text-zinc-300">
+              Version: <span className="font-semibold">{APP_VERSION}</span>
+            </div>
+            <div className="text-xs text-zinc-500 dark:text-zinc-400">
+              If you report a bug, include the version above.
+            </div>
+          </Card>
         </div>
       </div>
-    </PageShell>
+      </main>
+
+      <Footer />
+    </>
   );
 }

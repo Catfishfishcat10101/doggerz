@@ -11,6 +11,7 @@ export const PATHS = Object.freeze({
   SIGNUP: '/signup',
   ABOUT: '/about',
   SETTINGS: '/settings',
+  STORE: '/store',
   CONTACT: '/contact',
   LEGAL: '/legal',
   PRIVACY: '/privacy',
@@ -19,6 +20,11 @@ export const PATHS = Object.freeze({
   DEVELOPERS: '/developers',
   FAQ: '/faq',
   HELP: '/help',
+
+  BADGES: '/badges',
+
+  // Story / scenes
+  RAINBOW_BRIDGE: '/rainbow-bridge',
 
   // Optional explicit not-found route (AppRouter currently uses "*"; this is useful for redirects)
   NOT_FOUND: '/404',
@@ -38,10 +44,19 @@ export const routes = Object.freeze([
   { path: PATHS.ABOUT, name: 'About', meta: { title: 'About Doggerz' } },
   { path: PATHS.FAQ, name: 'FAQs', meta: { title: 'FAQs' } },
   { path: PATHS.HELP, name: 'Help', meta: { title: 'Help' } },
+
+  // Scenes
+  {
+    path: PATHS.RAINBOW_BRIDGE,
+    name: 'Rainbow Bridge',
+    meta: { title: 'Rainbow Bridge' },
+  },
   { path: PATHS.CONTACT, name: 'Contact', meta: { title: 'Contact' } },
   { path: PATHS.DEVELOPERS, name: 'Developers', meta: { title: 'Developers' } },
 
   { path: PATHS.SETTINGS, name: 'Settings', meta: { title: 'Settings' } },
+  { path: PATHS.STORE, name: 'Store', meta: { title: 'Store' } },
+  { path: PATHS.BADGES, name: 'Badges', meta: { title: 'Badges' } },
   { path: PATHS.POTTY, name: 'Potty', meta: { title: 'Potty' } },
   {
     path: PATHS.TEMPERAMENT_REVEAL,
@@ -51,21 +66,22 @@ export const routes = Object.freeze([
 
   // Policy/legal
   { path: PATHS.LEGAL, name: 'Legal', meta: { title: 'Legal' } },
-  { path: PATHS.PRIVACY, name: 'Policy', meta: { title: 'Policy' } },
+  { path: PATHS.PRIVACY, name: 'Privacy', meta: { title: 'Privacy Policy' } },
 ]);
 
 /**
- * Primary nav links (matches current header: Game/About/FAQs/Contact/Help/Developers/Policy).
+ * Primary nav links (header).
+ * UX:
+ * - Keep header minimal.
+ * - Put FAQs in the footer.
+ * - Put Help under Developers (footer).
  * NOTE: We intentionally exclude Adopt here per current UX direction.
  */
 export const PRIMARY_NAV = Object.freeze([
   { path: PATHS.GAME, label: 'Game' },
   { path: PATHS.ABOUT, label: 'About' },
-  { path: PATHS.FAQ, label: 'FAQs' },
   { path: PATHS.CONTACT, label: 'Contact Us' },
-  { path: PATHS.HELP, label: 'Help' },
-  { path: PATHS.DEVELOPERS, label: 'Developers' },
-  { path: PATHS.PRIVACY, label: 'Policy' },
+  // Secondary links (policy/dev) are in the footer now.
 ]);
 
 /** Fast lookups by path. */

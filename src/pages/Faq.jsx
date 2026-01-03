@@ -1,10 +1,9 @@
 // src/pages/Faq.jsx
 import React from "react";
 import { Link } from "react-router-dom";
-import PageShell from "@/components/PageShell.jsx";
 
-const linkClass =
-  "text-emerald-700 underline-offset-2 hover:text-emerald-600 hover:underline dark:text-emerald-300 dark:hover:text-emerald-200";
+import Header from "@/components/Header.jsx";
+import Footer from "@/components/Footer.jsx";
 
 function nodeToText(node) {
   if (node == null || node === false) return "";
@@ -48,7 +47,7 @@ const FAQ_SECTIONS = [
         q: "How do I adopt a dog?",
         a: (
           <>
-            Head to <Link to="/adopt" className={linkClass}>Adopt</Link>,
+            Head to <Link to="/adopt" className="text-emerald-300 hover:text-emerald-200">Adopt</Link>,
             pick a name, and you’re in.
           </>
         ),
@@ -85,7 +84,7 @@ const FAQ_SECTIONS = [
             Local-only mode keeps everything on this device. Account mode lets
             you sync your pup across devices (when sign-in/backing services are
             configured). If you’re not sure which you’re using, check whether
-            sign-in is available on the <Link to="/login" className={linkClass}>Login</Link> page.
+            sign-in is available on the <Link to="/login" className="text-emerald-300 hover:text-emerald-200">Login</Link> page.
           </>
         ),
       },
@@ -293,13 +292,13 @@ const FAQ_SECTIONS = [
   },
   {
     id: "privacy",
-    title: "Privacy & policy",
+    title: "Privacy",
     items: [
       {
         q: "Where can I read the policy?",
         a: (
           <>
-            Visit <Link to="/privacy" className={linkClass}>Policy</Link>.
+            Visit <Link to="/privacy" className="text-emerald-300 hover:text-emerald-200">Privacy Policy</Link>.
           </>
         ),
       },
@@ -308,7 +307,7 @@ const FAQ_SECTIONS = [
         a: (
           <>
             The goal is to collect as little as possible and keep things simple.
-            For the exact details, always refer to the Policy page.
+            For the exact details, always refer to the Privacy Policy page.
           </>
         ),
       },
@@ -322,8 +321,8 @@ const FAQ_SECTIONS = [
         q: "Where can I get help?",
         a: (
           <>
-            Start with <Link to="/help" className={linkClass}>Help</Link>,
-            or reach out via <Link to="/contact" className={linkClass}>Contact Us</Link>.
+            Start with <Link to="/help" className="text-emerald-300 hover:text-emerald-200">Help</Link>,
+            or reach out via <Link to="/contact" className="text-emerald-300 hover:text-emerald-200">Contact Us</Link>.
           </>
         ),
       },
@@ -350,12 +349,15 @@ const FAQ_SECTIONS = [
 ];
 
 function FaqItem({ q, a, defaultOpen = false }) {
+  const [open, setOpen] = React.useState(Boolean(defaultOpen));
+
   return (
     <details
-      className="group rounded-xl border border-zinc-200 bg-white/80 p-4 shadow-sm shadow-black/5 dark:border-zinc-800 dark:bg-zinc-950/50 dark:shadow-none"
-      defaultOpen={defaultOpen}
+      className="group rounded-xl border border-zinc-800 bg-zinc-950/50 p-4"
+      open={open}
+      onToggle={(e) => setOpen(Boolean(e.currentTarget.open))}
     >
-      <summary className="cursor-pointer list-none text-sm font-semibold text-zinc-900 outline-none dark:text-zinc-100">
+      <summary className="cursor-pointer list-none text-sm font-semibold text-zinc-100 outline-none">
         <div className="flex items-start justify-between gap-3">
           <span>{q}</span>
           <span
@@ -366,7 +368,7 @@ function FaqItem({ q, a, defaultOpen = false }) {
           </span>
         </div>
       </summary>
-      <div className="mt-3 text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">{a}</div>
+      <div className="mt-3 text-sm leading-relaxed text-zinc-300">{a}</div>
     </details>
   );
 }
@@ -395,19 +397,18 @@ export default function FaqPage() {
   }, [filteredSections, qn]);
 
   return (
-    <PageShell>
-      <div className="mx-auto w-full max-w-4xl space-y-8">
-        <header id="top" className="space-y-3">
-          <p className="text-[11px] uppercase tracking-[0.26em] text-emerald-700 dark:text-emerald-300/90">
-            Help
-          </p>
+    <>
+      <Header />
+      <div className="flex-1 px-6 py-10 flex justify-center">
+        <div className="max-w-4xl w-full space-y-8">
+          <header id="top" className="space-y-3">
           <h1 className="text-4xl font-black tracking-tight">FAQs</h1>
-          <p className="text-sm text-zinc-700 dark:text-zinc-300 max-w-2xl">
+            <p className="text-sm text-zinc-300 max-w-2xl">
             Quick answers for curious humans. If you don’t see your question,
-            hit up <Link to="/contact" className={linkClass}>Contact Us</Link>.
+              hit up <Link to="/contact" className="text-emerald-300 hover:text-emerald-200">Contact Us</Link>.
           </p>
 
-          <div className="rounded-2xl border border-zinc-200 bg-white/80 p-4 dark:border-zinc-800 dark:bg-zinc-950/60">
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0 flex-1">
                 <label htmlFor="faq-search" className="sr-only">
@@ -420,14 +421,14 @@ export default function FaqPage() {
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="Search FAQs (try: fleas, offline, sunrise, streak…)"
-                    className="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-500 outline-none focus:border-emerald-500/70 dark:border-zinc-800 dark:bg-black/40 dark:text-zinc-100"
+                      className="w-full rounded-xl border border-zinc-800 bg-black/40 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500 outline-none focus:border-emerald-500/70"
                     aria-describedby={qn ? "faq-search-results" : undefined}
                   />
                   {qn && (
                     <button
                       type="button"
                       onClick={() => setQuery("")}
-                      className="shrink-0 rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-700 hover:border-emerald-500/60 hover:text-emerald-700 dark:border-zinc-800 dark:bg-zinc-950/60 dark:text-zinc-200 dark:hover:text-emerald-200"
+                        className="shrink-0 rounded-xl border border-zinc-800 bg-zinc-950/60 px-3 py-2 text-sm text-zinc-200 hover:border-emerald-500/60 hover:text-emerald-200"
                       aria-label="Clear search"
                     >
                       Clear
@@ -437,7 +438,7 @@ export default function FaqPage() {
 
                 {qn && (
                   <p id="faq-search-results" className="mt-2 text-xs text-zinc-500">
-                    Showing <span className="font-semibold text-zinc-900 dark:text-zinc-200">{matchCount}</span> result
+                      Showing <span className="font-semibold text-zinc-200">{matchCount}</span> result
                     {matchCount === 1 ? "" : "s"} for “{query.trim()}”.
                   </p>
                 )}
@@ -446,7 +447,7 @@ export default function FaqPage() {
               {qn && (
                 <a
                   href="#top"
-                  className="text-xs text-zinc-500 hover:text-emerald-700 dark:hover:text-emerald-200"
+                    className="text-xs text-zinc-500 hover:text-emerald-200"
                 >
                   Back to top
                 </a>
@@ -459,7 +460,7 @@ export default function FaqPage() {
               <a
                 key={s.id}
                 href={`#${s.id}`}
-                className="rounded-full border border-zinc-200 bg-white/70 px-3 py-1 text-xs text-zinc-700 hover:border-emerald-500/70 hover:text-emerald-700 dark:border-zinc-800 dark:bg-zinc-950/60 dark:text-zinc-300 dark:hover:text-emerald-200"
+                className="rounded-full border border-zinc-800 bg-zinc-950/60 px-3 py-1 text-xs text-zinc-300 hover:border-emerald-500/70 hover:text-emerald-200"
               >
                 {s.title}
               </a>
@@ -469,23 +470,23 @@ export default function FaqPage() {
 
         <div className="space-y-10">
           {qn && matchCount === 0 ? (
-            <div className="rounded-2xl border border-zinc-200 bg-white/80 p-5 dark:border-zinc-800 dark:bg-zinc-950/60">
-              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">No matches</h2>
-              <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">
+              <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-5">
+                <h2 className="text-lg font-semibold text-zinc-100">No matches</h2>
+                <p className="mt-1 text-sm text-zinc-300">
                 Try different keywords (for example: <b>cleanliness</b>, <b>offline</b>, <b>install</b>, <b>login</b>, <b>sunrise</b>),
-                or reach out via <Link to="/contact" className={linkClass}>Contact Us</Link>.
+                  or reach out via <Link to="/contact" className="text-emerald-300 hover:text-emerald-200">Contact Us</Link>.
               </p>
             </div>
           ) : (
             (qn ? filteredSections : FAQ_SECTIONS).map((section) => (
               <section key={section.id} id={section.id} className="scroll-mt-24">
                 <div className="mb-4 flex items-end justify-between gap-3">
-                  <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
+                  <h2 className="text-xl font-semibold text-zinc-100">
                     {section.title}
                   </h2>
                   <a
                     href="#top"
-                    className="text-xs text-zinc-500 hover:text-emerald-700 dark:hover:text-emerald-200"
+                    className="text-xs text-zinc-500 hover:text-emerald-200"
                   >
                     Back to top
                   </a>
@@ -506,9 +507,9 @@ export default function FaqPage() {
           )}
         </div>
 
-        <div className="rounded-2xl border border-zinc-200 bg-white/80 p-5 dark:border-zinc-800 dark:bg-zinc-950/60">
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Still stuck?</h2>
-          <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-5">
+            <h2 className="text-lg font-semibold text-zinc-100">Still stuck?</h2>
+            <p className="mt-1 text-sm text-zinc-300">
             No worries. We can help faster if you include your device + browser
             and what you were trying to do.
           </p>
@@ -521,19 +522,22 @@ export default function FaqPage() {
             </Link>
             <Link
               to="/contact"
-              className="inline-flex items-center justify-center rounded-full border border-zinc-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-zinc-900 hover:border-emerald-400/80 hover:text-emerald-700 dark:border-zinc-700 dark:bg-black/40 dark:text-zinc-100 dark:hover:text-emerald-300"
+                className="inline-flex items-center justify-center rounded-full border border-zinc-700 bg-black/40 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-zinc-100 hover:border-emerald-400/80 hover:text-emerald-300"
             >
               Contact Us
             </Link>
             <Link
               to="/"
-              className="inline-flex items-center justify-center rounded-full border border-zinc-200 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-zinc-700 hover:text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950/60 dark:text-zinc-300 dark:hover:text-zinc-100"
+                className="inline-flex items-center justify-center rounded-full border border-zinc-800 bg-zinc-950/60 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-zinc-300 hover:text-zinc-100"
             >
               Back to home
-            </Link>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
-    </PageShell>
+
+      <Footer />
+    </>
   );
 }

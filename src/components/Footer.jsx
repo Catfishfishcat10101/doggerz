@@ -1,15 +1,15 @@
-import * as React from "react";
 import { Link } from "react-router-dom";
 import { SOCIAL_LINKS } from "@/config/links.js";
 
 export default function Footer() {
+  const year = new Date().getFullYear();
   return (
-    <footer className="mt-10 border-t border-zinc-800 bg-slate-950/60 px-4 py-6 text-zinc-400">
+    <footer className="mt-10 border-t border-white/10 bg-slate-950/60 px-4 py-6 text-zinc-400 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 md:flex-row">
         <div className="text-sm">
           <div className="flex items-center gap-3">
             <span className="text-emerald-400 font-black tracking-tight">DOGGERZ</span>
-            <span className="text-zinc-500">© 2026</span>
+            <span className="text-zinc-500">© {year}</span>
           </div>
           <div className="mt-1 text-xs text-zinc-500">
             DOGGERZ is not responsible for shoes, socks, or reputations destroyed.
@@ -20,6 +20,11 @@ export default function Footer() {
           <div className="hidden md:flex gap-4">
             <Link to="/legal" className="text-sm hover:text-emerald-200">Legal</Link>
             <Link to="/privacy" className="text-sm hover:text-emerald-200">Privacy</Link>
+            <Link to="/faq" className="text-sm hover:text-emerald-200">FAQs</Link>
+            <div className="flex flex-col">
+              <Link to="/developers" className="text-sm hover:text-emerald-200">Developers</Link>
+              <Link to="/help" className="mt-1 text-xs hover:text-emerald-200">Help</Link>
+            </div>
             <Link to="/settings" className="text-sm hover:text-emerald-200">Settings</Link>
           </div>
 

@@ -1,6 +1,5 @@
 // src/pages/Potty.jsx
 
-import React from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { selectDog } from "@/redux/dogSlice.js";

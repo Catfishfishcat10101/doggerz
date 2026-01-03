@@ -8,14 +8,53 @@
 @tailwind utilities;
 
 /* -------------------------------------------------------
+   Doggerz design tokens (kept minimal + app-wide)
+   These used to live in src/styles.css; we keep only the
+   variables that are referenced by the app.
+------------------------------------------------------- */
+
+:root {
+  /* Color tokens (dark theme default) */
+  --bg: #020617;
+  --text-main: #e5e7eb;
+
+  /* Gradients */
+  --grad-shell: radial-gradient(circle at top,
+      #1e293b 0,
+      #020617 55%,
+      #000 100%);
+
+  /* Focus ring (used by focus-visible styles below) */
+  --focus-ring: #22c55e;
+  --focus-ring-soft: rgba(34, 197, 94, 0.28);
+}
+
+html[data-theme="light"] {
+  --bg: #e5e7eb;
+  --text-main: #020617;
+  --grad-shell: radial-gradient(circle at top,
+      #ffffff 0,
+      #f3f4f6 55%,
+      #e5e7eb 100%);
+}
+/* -------------------------------------------------------
    Global layout & typography
 ------------------------------------------------------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
 html,
 body,
 #root {
   height: 100%;
 }
 
+html {
+  /* Prevent layout shift when scrollbars appear/disappear (supported browsers). */
+  scrollbar-gutter: stable;
+}
 html[data-theme="dark"] {
   color-scheme: dark;
 }
@@ -38,10 +77,27 @@ body {
     "Droid Sans",
     "Helvetica Neue",
     sans-serif;
+  line-height: 1.5;
+    text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: var(--bg, #020617);
-    color: var(--text-main, #f9fafb);
+  color: var(--text-main, #f9fafb);
+  -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* Let the main app stretch full height (helps flex layouts and pages). */
+  #root {
+    min-height: 100vh;
+  }
+  
+  /* Keep form controls visually consistent with the app's typography/colors. */
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+    color: inherit;
 }
 
 /* Make links inherit color unless explicitly styled */
@@ -50,17 +106,27 @@ a {
   text-decoration: none;
 }
 
+a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Slightly nicer selection contrast on dark backgrounds. */
+::selection {
+  background: rgba(249, 115, 22, 0.35);
+}
 /* Basic focus outline for keyboard users */
 :focus-visible {
-  outline: 2px solid #22c55e;
-  /* emerald-500 */
+  outline: 2px solid var(--focus-ring, #22c55e);
   outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--focus-ring-soft, rgba(34, 197, 94, 0.28));
 }
 
 /* Optional: always show focus ring (accessibility setting) */
 html[data-focus-rings="always"] :focus {
-  outline: 2px solid #22c55e;
+  outline: 2px solid var(--focus-ring, #22c55e);
   outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--focus-ring-soft, rgba(34, 197, 94, 0.28));
 }
 
 /* Optional: large hit targets (accessibility setting) */
@@ -111,23 +177,144 @@ html[data-transparency="reduced"] .backdrop-blur-xl {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
 }
-/* Optional: subtle custom scrollbar for dark theme */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+
+/* -------------------------------------------------------
+   Doggerz: Rig animation helpers
+   (append at END of src/index.css)
+------------------------------------------------------- */
+
+@keyframes doggerz-breathe {
+
+  0%,
+  100% {
+    transform: translateY(0px) scale(1);
+  }
+
+  50% {
+    transform: translateY(2px) scale(1.01);
+  }
 }
 
-::-webkit-scrollbar-track {
-  background: #020617;
+@keyframes doggerz-walk-bob {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(3px);
+  }
 }
 
-::-webkit-scrollbar-thumb {
-  border-radius: 9999px;
-  background: #27272a;
-  /* zinc-800 */
+@keyframes doggerz-tail-wag {
+
+  0%,
+  100% {
+    transform: rotate(12deg);
+  }
+
+  50% {
+    transform: rotate(-18deg);
+  }
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #3f3f46;
-  /* zinc-700 */
+@keyframes doggerz-tail-soft {
+
+  0%,
+  100% {
+    transform: rotate(6deg);
+  }
+
+  50% {
+    transform: rotate(-6deg);
+  }
+}
+
+@keyframes doggerz-head-bob {
+
+  0%,
+  100% {
+    transform: rotate(0deg) translateY(0px);
+  }
+
+  50% {
+    transform: rotate(2deg) translateY(2px);
+  }
+}
+
+@keyframes doggerz-tongue {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+    opacity: 0.85;
+  }
+
+  50% {
+    transform: translateY(2px);
+    opacity: 1;
+  }
+}
+
+@keyframes doggerz-bowl {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(1px);
+  }
+}
+
+/* These classes are used by RigDog.jsx */
+.dog-breathe {
+  animation: doggerz-breathe 2.2s ease-in-out infinite;
+}
+
+.dog-walk-bob {
+  animation: doggerz-walk-bob 0.45s ease-in-out infinite;
+}
+
+.dog-sit-bob {
+  animation: doggerz-breathe 2.8s ease-in-out infinite;
+}
+
+.dog-lay-bob {
+  animation: doggerz-breathe 3.2s ease-in-out infinite;
+}
+
+.dog-tail-wag {
+  animation: doggerz-tail-wag 0.22s ease-in-out infinite;
+}
+
+.dog-tail-soft {
+  animation: doggerz-tail-soft 0.9s ease-in-out infinite;
+}
+
+.dog-head-bob {
+  animation: doggerz-head-bob 0.5s ease-in-out infinite;
+}
+
+.dog-tongue {
+  animation: doggerz-tongue 0.35s ease-in-out infinite;
+}
+
+.dog-bowl {
+  animation: doggerz-bowl 0.8s ease-in-out infinite;
+}
+
+/* Respect your explicit reduce-motion toggle (in addition to prefers-reduced-motion) */
+html[data-reduce-motion="1"] .dog-breathe,
+html[data-reduce-motion="1"] .dog-walk-bob,
+html[data-reduce-motion="1"] .dog-sit-bob,
+html[data-reduce-motion="1"] .dog-lay-bob,
+html[data-reduce-motion="1"] .dog-tail-wag,
+html[data-reduce-motion="1"] .dog-tail-soft,
+html[data-reduce-motion="1"] .dog-head-bob,
+html[data-reduce-motion="1"] .dog-tongue,
+html[data-reduce-motion="1"] .dog-bowl {
+  animation: none !important;
 }

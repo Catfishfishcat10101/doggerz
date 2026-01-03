@@ -4,6 +4,11 @@
 import * as React from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
+import { PATHS } from "./routes.js";
+
+import ErrorBoundary from "./components/ErrorBoundary.jsx";
+import CrashFallback from "./components/CrashFallback.jsx";
+
 // Core pages
 import Landing from "./pages/Landing.jsx";
 
@@ -18,36 +23,32 @@ const ContactPage = React.lazy(() => import("./pages/Contact.jsx"));
 const HelpPage = React.lazy(() => import("./pages/Help.jsx"));
 const DevelopersPage = React.lazy(() => import("./pages/Developers.jsx"));
 const SettingsPage = React.lazy(() => import("./pages/Settings.jsx"));
+const StorePage = React.lazy(() => import("./pages/Store.jsx"));
+const BadgesPage = React.lazy(() => import("./pages/Badges.jsx"));
 const LegalPage = React.lazy(() => import("./pages/Legal.jsx"));
+const PrivacyPage = React.lazy(() => import("./pages/Privacy.jsx"));
 const PottyPage = React.lazy(() => import("./pages/Potty.jsx"));
 const TemperamentRevealPage = React.lazy(
   () => import("./pages/TemperamentReveal.jsx"),
 );
+const RainbowBridgePage = React.lazy(() => import("./pages/RainbowBridge.jsx"));
 const NotFoundPage = React.lazy(() => import("./pages/NotFound.jsx"));
+
+function GameCrashFallback({ error }) {
+  return (
+    <CrashFallback
+      title="The yard tripped over a squirrel"
+      subtitle="The game screen crashed, but the rest of the app is OK. Refresh to recover."
+      error={error}
+    />
+  );
+}
 
 function RouteFallback() {
   return (
-    <div
-      className="min-h-[60vh] grid place-items-center"
-      style={{
-        background:
-          "var(--grad-shell, radial-gradient(circle at top, #1e293b 0, #020617 55%, #000 100%))",
-      }}
-    >
-      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-black/20 p-5 text-center text-white/80 shadow-[0_18px_60px_rgba(0,0,0,.55)] backdrop-blur">
-        <div className="text-[11px] uppercase tracking-[0.28em] text-white/60">
-          Loading
-        </div>
-        <div className="mt-2 text-lg font-semibold tracking-wide">Fetching the good stuff…</div>
-        <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-white/10">
-          <div
-            className="h-full w-1/2 animate-pulse rounded-full"
-            style={{
-              background:
-                "linear-gradient(90deg, rgba(34,197,94,.95), rgba(249,115,22,.95))",
-            }}
-          />
-        </div>
+    <div className="min-h-[60vh] grid place-items-center bg-zinc-950 text-zinc-100">
+      <div className="text-center">
+        <div className="text-sm text-zinc-400">Loading…</div>
       </div>
     </div>
   );
@@ -58,73 +59,103 @@ const suspense = (node) => (
 );
 
 // Define all routes here
-const router = createBrowserRouter([
+const router = createBrowserRouter(
+  [
   {
-    path: "/",
+      path: PATHS.HOME,
     element: <Landing />,
   },
   {
-    path: "/game",
-    element: suspense(<GamePage />),
+    path: PATHS.GAME,
+    element: suspense(
+      <ErrorBoundary fallback={GameCrashFallback}>
+        <GamePage />
+      </ErrorBoundary>
+    ),
   },
   {
-    path: "/adopt",
+    path: PATHS.ADOPT,
     element: suspense(<AdoptPage />),
   },
   {
-    path: "/login",
+    path: PATHS.LOGIN,
     element: suspense(<LoginPage />),
   },
   {
-    path: "/signup",
+    path: PATHS.SIGNUP,
     element: suspense(<SignupPage />),
   },
   {
-    path: "/about",
+    path: PATHS.ABOUT,
     element: suspense(<AboutPage />),
   },
   {
-    path: "/faq",
+    path: PATHS.FAQ,
     element: suspense(<FaqPage />),
   },
   {
-    path: "/contact",
+    path: PATHS.CONTACT,
     element: suspense(<ContactPage />),
   },
   {
-    path: "/help",
+    path: PATHS.HELP,
     element: suspense(<HelpPage />),
   },
   {
-    path: "/developers",
+    path: PATHS.DEVELOPERS,
     element: suspense(<DevelopersPage />),
   },
   {
-    path: "/settings",
+    path: PATHS.SETTINGS,
     element: suspense(<SettingsPage />),
   },
   {
-    path: "/legal",
+      path: PATHS.STORE,
+      element: suspense(<StorePage />),
+    },
+    {
+      path: PATHS.BADGES,
+      element: suspense(<BadgesPage />),
+    },
+    {
+      path: PATHS.LEGAL,
     element: suspense(<LegalPage />),
   },
   {
-    path: "/privacy",
-    element: suspense(<LegalPage />),
+    path: PATHS.PRIVACY,
+    element: suspense(<PrivacyPage />),
   },
   {
-    path: "/potty",
+    path: PATHS.POTTY,
     element: suspense(<PottyPage />),
   },
   {
-    path: "/temperament-reveal",
+    path: PATHS.TEMPERAMENT_REVEAL,
     element: suspense(<TemperamentRevealPage />),
   },
   {
+      path: PATHS.RAINBOW_BRIDGE,
+      element: suspense(<RainbowBridgePage />),
+    },
+    {
     path: "*",
     element: suspense(<NotFoundPage />),
   },
-]);
+  ],
+  {
+    future: {
+      v7_startTransition: true,
+    },
+  }
+);
 
 export default function AppRouter() {
-  return <RouterProvider router={router} />;
+  return (
+    <RouterProvider
+      router={router}
+      future={{
+        v7_startTransition: true,
+      }}
+    />
+  );
 }

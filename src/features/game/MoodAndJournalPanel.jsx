@@ -1,79 +1,10 @@
 // src/features/game/MoodAndJournalPanel.jsx
-import React from "react";
 import { useSelector } from "react-redux";
-import { selectDogMood, selectDogJournal } from "@/redux/dogSlice.js";
+import { selectDogJournal } from "@/redux/dogSlice.js";
 
-const MOOD_EMOJI = {
-  HAPPY: "🦴",
-  HUNGRY: "🍗",
-  SLEEPY: "😴",
-  DIRTY: "🛁",
-  LONELY: "💔",
-  NEUTRAL: "🙂",
-};
-
-function moodEmoji(tag) {
-  return MOOD_EMOJI[tag] || "🐶";
-}
-
-function MoodTimeline({ mood }) {
-  const history = mood?.history ?? [];
-  const recent = history.slice(0, 20); // last 20 points max
-
-  if (!recent.length) {
-    return (
-      <p className="text-xs text-zinc-500">
-        Mood history will appear here after you spend some time with your pup.
-      </p>
-    );
-  }
-
-  const maxHappiness = Math.max(1, ...recent.map((m) => m.happiness || 0));
-
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between text-xs text-zinc-400">
-        <span>Mood timeline</span>
-        <span className="text-[10px] uppercase tracking-wide text-zinc-500">
-          Last {recent.length} samples
-        </span>
-      </div>
-      <div className="relative h-16 rounded-xl bg-zinc-900/80 overflow-hidden px-1">
-        <div className="absolute inset-0 flex items-end gap-[2px] px-1 pb-1">
-          {recent.map((m, idx) => {
-            const hRatio = (m.happiness || 0) / maxHappiness;
-            const height = Math.max(6, hRatio * 56);
-            const tag = m.tag || "NEUTRAL";
-            return (
-              <div
-                key={idx}
-                className="flex-1 flex flex-col items-center justify-end"
-              >
-                <div
-                  className="w-full rounded-full bg-emerald-500/80"
-                  style={{ height: `${height}px` }}
-                  title={`${tag} • ${m.happiness}%`}
-                />
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="flex gap-2 flex-wrap text-[10px] text-zinc-400">
-        {recent.slice(0, 5).map((m, idx) => (
-          <span
-            key={idx}
-            className="inline-flex items-center gap-1 rounded-full bg-zinc-900/90 px-2 py-0.5"
-          >
-            <span>{moodEmoji(m.tag)}</span>
-            <span>{m.tag}</span>
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
+// Mood timeline intentionally removed from the UI.
+// We still record mood in Redux (used for temperament + future features),
+// but the panel focuses on the journal.
 
 function JournalList({ journal }) {
   const entries = journal?.entries ?? [];
@@ -89,7 +20,7 @@ function JournalList({ journal }) {
   }
 
   return (
-    <ul className="space-y-2 max-h-40 overflow-y-auto pr-1">
+    <ul className="space-y-2 max-h-44 overflow-y-auto pr-1">
       {recent.map((entry) => {
         const date = new Date(entry.timestamp);
         const timeString = date.toLocaleString(undefined, {
@@ -100,11 +31,18 @@ function JournalList({ journal }) {
         });
 
         return (
-          <li key={entry.id} className="rounded-xl bg-zinc-900/90 px-3 py-2">
+          <li key={entry.id} className="rounded-2xl border border-white/10 bg-black/30 px-3 py-2">
             <div className="flex items-center justify-between gap-2 text-[11px] text-zinc-400">
-              <span className="uppercase tracking-wide text-zinc-500">
-                {entry.type}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="uppercase tracking-[0.18em] text-zinc-500">
+                  {entry.type}
+                </span>
+                {entry.moodTag && (
+                  <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-zinc-300">
+                    {entry.moodTag}
+                  </span>
+                )}
+              </div>
               <span>{timeString}</span>
             </div>
             <p className="mt-1 text-xs font-medium text-zinc-100">
@@ -123,20 +61,22 @@ function JournalList({ journal }) {
 }
 
 export default function MoodAndJournalPanel() {
-  const mood = useSelector(selectDogMood);
   const journal = useSelector(selectDogJournal);
 
   return (
-    <section className="rounded-2xl border border-zinc-800 bg-zinc-950/90 p-4 space-y-4">
-      <MoodTimeline mood={mood} />
-      <div className="h-px bg-zinc-800" />
-      <div className="space-y-2">
-        <div className="flex items-center justify-between text-xs text-zinc-400">
-          <span>Dog journal</span>
-          <span className="text-[10px] text-zinc-500">
-            Auto-written by your pup
-          </span>
+    <section className="rounded-3xl border border-white/15 bg-black/35 backdrop-blur-md p-4 shadow-[0_0_60px_rgba(0,0,0,0.18)]">
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="text-xs uppercase tracking-[0.22em] text-zinc-400">Dog journal</div>
+          <div className="mt-0.5 text-sm font-extrabold text-emerald-200">Notes</div>
         </div>
+        <div className="text-right">
+          <div className="text-[10px] uppercase tracking-[0.18em] text-zinc-500">Auto</div>
+          <div className="text-xs font-semibold text-zinc-200">by your pup</div>
+        </div>
+      </div>
+
+      <div className="mt-3">
         <JournalList journal={journal} />
       </div>
     </section>

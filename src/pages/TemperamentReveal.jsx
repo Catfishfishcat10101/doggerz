@@ -1,6 +1,5 @@
 // src/pages/TemperamentReveal.jsx
 
-import React from "react";
 import { useSelector } from "react-redux";
 import { selectDog } from "@/redux/dogSlice.js";
 import PageShell from "@/components/PageShell.jsx";

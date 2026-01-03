@@ -1,6 +1,4 @@
 // src/components/PageShell.jsx
-
-import * as React from "react";
 import Header from "@/components/Header.jsx";
 import Footer from "@/components/Footer.jsx";
 
@@ -8,37 +6,35 @@ export default function PageShell({
   children,
   className = "",
   mainClassName = "",
+  containerClassName = "",
   showHeader = true,
   showFooter = true,
+  fullBleed = false,
+  disableBackground = false,
   style,
-  constrainWidth = true,
 }) {
-  const baseStyle = {
+  const shellStyle = {
     color: "var(--text-main, #e5e7eb)",
+    ...(disableBackground
+      ? {}
+      : {
+        background:
+          "var(--grad-shell, radial-gradient(circle at top, #1e293b 0, #020617 55%, #000 100%))",
+      }),
+    ...(style || {}),
   };
 
-  // If a caller provides a background/backgroundImage, don't override it.
-  const hasCustomBackground =
-    style && ("background" in style || "backgroundImage" in style);
-
-  if (!hasCustomBackground) {
-    baseStyle.background =
-      "var(--grad-shell, radial-gradient(circle at top, #1e293b 0, #020617 55%, #000 100%))";
-  }
+  const mainCls = fullBleed ? (mainClassName || "p-0") : (mainClassName || "px-4 py-10");
+  const containerCls = fullBleed
+    ? (containerClassName || "w-full")
+    : (containerClassName || "mx-auto w-full max-w-6xl");
 
   return (
-    <div
-      className={`min-h-dvh ${className}`}
-      style={{ ...baseStyle, ...(style || {}) }}
-    >
+    <div className={`min-h-[100dvh] min-h-screen ${className}`} style={shellStyle}>
       {showHeader ? <Header /> : null}
 
-      <main className={mainClassName || "px-4 py-10"}>
-        {constrainWidth ? (
-          <div className="mx-auto w-full max-w-6xl">{children}</div>
-        ) : (
-          children
-        )}
+      <main className={mainCls}>
+        <div className={containerCls}>{children}</div>
       </main>
 
       {showFooter ? <Footer /> : null}

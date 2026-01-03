@@ -1,0 +1,90 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "lint",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"lint"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "lint-check",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"npm run lint; if ($LASTEXITCODE -eq 0) { Write-Output 'LINT_OK' } else { Write-Output ('LINT_FAIL ' + $LASTEXITCODE); exit $LASTEXITCODE }"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "lint (capture output)",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"lint"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "build",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"build"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "sprites:jrt:prune (dry)",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"sprites:jrt:prune"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "sprites:jrt:prune (apply)",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"sprites:jrt:prune:yes"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "repo:prune (apply)",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"repo:prune:yes"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		}
+	]
+}

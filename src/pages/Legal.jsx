@@ -1,20 +1,22 @@
 // src/pages/Legal.jsx
-import * as React from "react";
-import PageShell from "@/components/PageShell.jsx";
+import Header from "@/components/Header.jsx";
+import Footer from "@/components/Footer.jsx";
 
 export default function LegalPage() {
   return (
-    <PageShell>
-      <div className="mx-auto w-full max-w-3xl space-y-8 text-sm text-zinc-700 dark:text-white/75">
-        <header className="space-y-2">
-          <h1 className="text-3xl font-black tracking-tight mb-2">
-            Legal, Terms &amp; Privacy
-          </h1>
-          <p className="text-xs text-zinc-500 dark:text-white/50">Last updated: 2025-12-25</p>
-        </header>
+    <>
+      <Header />
+      <div className="flex-1 px-6 py-10 flex justify-center">
+        <div className="max-w-3xl w-full space-y-8 text-sm text-zinc-300">
+          <header>
+            <h1 className="text-3xl font-black tracking-tight mb-2">
+              Legal &amp; Terms
+            </h1>
+            <p className="text-xs text-zinc-500">Last updated: 2026-01-02</p>
+          </header>
 
         <section className="space-y-2">
-          <h2 className="font-semibold text-zinc-900 dark:text-white/90 text-base">
+            <h2 className="font-semibold text-zinc-100 text-base">
             1. Terms of Service
           </h2>
           <p>
@@ -40,58 +42,16 @@ export default function LegalPage() {
         </section>
 
         <section className="space-y-2">
-          <h2 className="font-semibold text-zinc-900 dark:text-white/90 text-base">
-            2. Privacy &amp; Data
-          </h2>
+            <h2 className="font-semibold text-zinc-100 text-base">2. Privacy</h2>
           <p>
-            Doggerz is designed to work in <b>offline mode</b> by default. Your
-            pup and settings are stored locally on your device (browser storage)
-            unless you choose to enable cloud features.
-          </p>
-          <p>
-            If you enable cloud features by signing in (Firebase), Google/Firebase
-            infrastructure will process basic account details (such as email and
-            identifiers) and your game save data.
-          </p>
-          <ul className="list-disc list-inside space-y-1">
-            <li>
-              <b>Local data</b>: pup stats/progress and settings may be stored on
-              your device to keep your dog persistent across sessions.
-            </li>
-            <li>
-              <b>Cloud data (optional)</b>: when signed in, your pup save may be
-              stored in Firebase/Firestore so it can persist across devices.
-            </li>
-            <li>
-              <b>No advertising</b>: Doggerz does not include third-party ads.
-            </li>
-          </ul>
-          <p>
-            Doggerz does not intentionally collect sensitive personal info
-            beyond what&apos;s needed for auth and gameplay. Avoid putting
-            private data into pet names or free-text fields.
-          </p>
-
-          <h3 className="pt-2 font-semibold text-zinc-900 dark:text-white/90">Voice features</h3>
-          <p>
-            If you enable and use voice training, Doggerz uses your browser&apos;s
-            speech recognition capability. This may require microphone
-            permission, and speech processing may be handled by your browser or
-            device vendor. Voice controls are optional and can be disabled in
-            Settings.
-          </p>
-
-          <h3 className="pt-2 font-semibold text-zinc-900 dark:text-white/90">Location</h3>
-          <p>
-            Doggerz does not use GPS/geolocation. A user-provided ZIP code may be
-            used to improve day/night timing and weather features.
+              Privacy details live on the <b>Privacy Policy</b> page.
+              If you’re looking for what’s stored locally, what’s synced to the cloud,
+              or how voice features work, head to <b>/privacy</b>.
           </p>
         </section>
 
         <section className="space-y-2">
-          <h2 className="font-semibold text-zinc-900 dark:text-white/90 text-base">
-            3. Account deletion
-          </h2>
+            <h2 className="font-semibold text-zinc-100 text-base">3. Account deletion</h2>
           <p>
             If you created an account and enabled cloud sync, you can request
             deletion of your cloud account and cloud save from within the app in
@@ -101,7 +61,7 @@ export default function LegalPage() {
           <p>
             If you have trouble deleting your account in-app, contact support via
             <a
-              className="text-emerald-700 underline-offset-2 hover:text-emerald-600 hover:underline dark:text-emerald-300 dark:hover:text-emerald-200"
+                className="text-emerald-300 underline-offset-2 hover:text-emerald-200 hover:underline"
               href="mailto:catfishfishcat10101@gmail.com?subject=Doggerz%20Account%20Deletion"
             >
               email
@@ -111,7 +71,7 @@ export default function LegalPage() {
         </section>
 
         <section className="space-y-2">
-          <h2 className="font-semibold text-zinc-900 dark:text-white/90 text-base">
+            <h2 className="font-semibold text-zinc-100 text-base">
             4. Third-party services
           </h2>
           <p>
@@ -122,7 +82,7 @@ export default function LegalPage() {
         </section>
 
         <section className="space-y-2">
-          <h2 className="font-semibold text-zinc-900 dark:text-white/90 text-base">5. Changes</h2>
+            <h2 className="font-semibold text-zinc-100 text-base">5. Changes</h2>
           <p>
             These terms and this privacy summary may change as Doggerz evolves.
             Significant changes will be reflected here and in future release
@@ -130,12 +90,15 @@ export default function LegalPage() {
           </p>
         </section>
 
-        <p className="text-xs text-zinc-500 dark:text-white/50">
-          This is a high-level summary, not formal legal advice. For commercial
-          release on app stores, you&apos;d want a lawyer to review and adapt
-          these terms for your specific situation.
-        </p>
+          <p className="text-xs text-zinc-500">
+            This is a high-level summary, not formal legal advice. For commercial
+            release on app stores, you&apos;d want a lawyer to review and adapt
+            these terms for your specific situation.
+          </p>
+        </div>
       </div>
-    </PageShell>
+
+      <Footer />
+    </>
   );
 }

@@ -22,6 +22,15 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
+let FFMPEG_STATIC = null;
+try {
+  // Optional dependency. If present, provides a platform-specific ffmpeg binary path.
+  // eslint-disable-next-line global-require
+  FFMPEG_STATIC = require('ffmpeg-static');
+} catch {
+  FFMPEG_STATIC = null;
+}
+
 const ROOT = path.resolve(__dirname, '..');
 
 function parseArgs(argv) {
@@ -34,6 +43,26 @@ function parseArgs(argv) {
     mono: false,
     dryRun: false,
   };
+
+  // Positional (useful via `npm run` where some flags like `--format` are reserved by npm):
+  //   node scripts/optimize-audio.js <format> <bitrate> <dir> <out> <minKB>
+  // Example:
+  //   node scripts/optimize-audio.js aac 64k public/audio public/audio 0
+  const pos = Array.isArray(argv) ? argv.slice(0, 5) : [];
+  if (
+    pos[0] &&
+    ['opus', 'aac', 'both'].includes(String(pos[0]).toLowerCase())
+  ) {
+    args.format = String(pos[0]).toLowerCase();
+  }
+  if (pos[1] && /^\d+(?:\.\d+)?k$/i.test(String(pos[1]))) {
+    args.bitrate = String(pos[1]);
+  }
+  if (pos[2]) args.dir = String(pos[2]);
+  if (pos[3]) args.out = String(pos[3]);
+  if (pos[4] && /^\d+(?:\.\d+)?$/.test(String(pos[4]))) {
+    args.minKB = Number(pos[4]);
+  }
 
   for (let i = 0; i < argv.length; i += 1) {
     const a = argv[i];
@@ -65,12 +94,24 @@ function run(cmd, args, opts = {}) {
   return spawnSync(cmd, args, { stdio: 'inherit', shell: false, ...opts });
 }
 
-function hasFfmpeg() {
-  const r = spawnSync('ffmpeg', ['-version'], {
+function hasFfmpeg(cmd) {
+  const r = spawnSync(cmd, ['-version'], {
     stdio: 'ignore',
     shell: false,
   });
   return r.status === 0;
+}
+
+function resolveFfmpegCmd() {
+  if (hasFfmpeg('ffmpeg')) return 'ffmpeg';
+  if (
+    typeof FFMPEG_STATIC === 'string' &&
+    FFMPEG_STATIC &&
+    hasFfmpeg(FFMPEG_STATIC)
+  ) {
+    return FFMPEG_STATIC;
+  }
+  return null;
 }
 
 function walk(dir, results) {
@@ -151,6 +192,8 @@ function main() {
     return;
   }
 
+  const ffmpegCmd = resolveFfmpegCmd();
+
   const inDir = path.join(ROOT, args.dir);
   const outDir = path.join(ROOT, args.out);
 
@@ -159,12 +202,13 @@ function main() {
     process.exit(1);
   }
 
-  if (!hasFfmpeg()) {
+  if (!ffmpegCmd) {
+    console.error('[Doggerz] ffmpeg not found.');
     console.error(
-      '[Doggerz] ffmpeg not found on PATH. Install ffmpeg, then re-run this script.'
+      '- Option A: install ffmpeg (Windows tip: winget install Gyan.FFmpeg)'
     );
     console.error(
-      'Windows tip: install via winget (FFmpeg) or download from ffmpeg.org'
+      "- Option B: add devDependency 'ffmpeg-static' and re-run (npm i -D ffmpeg-static)"
     );
     process.exit(1);
   }
@@ -223,7 +267,7 @@ function main() {
       }
 
       console.log(`\n[ffmpeg] ${relSrc} -> ${relDst} (${t.kind})`);
-      const r = run('ffmpeg', ffArgs, { cwd: ROOT });
+      const r = run(ffmpegCmd, ffArgs, { cwd: ROOT });
       if (r.status !== 0) {
         console.error(`[Doggerz] ffmpeg failed for: ${relSrc}`);
         process.exit(1);

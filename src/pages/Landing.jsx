@@ -1,114 +1,41 @@
 // src/pages/Landing.jsx
 // Doggerz – Virtual Pup Adoption Homepage
 
-import * as React from "react";
 import { Link } from "react-router-dom";
+
+import Header from "@/components/Header.jsx";
 import Footer from "@/components/Footer.jsx";
 
 export default function Landing() {
   return (
-    <main className="min-h-screen bg-gradient-to-b from-zinc-50 via-white to-zinc-100 text-zinc-900 dark:from-black dark:via-zinc-950 dark:to-black dark:text-zinc-50">
-      <a
-        href="#landing-main"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 rounded-lg bg-emerald-400 px-3 py-2 text-sm font-semibold text-black"
-      >
-        Skip to content
-      </a>
-      <div className="mx-auto max-w-6xl px-4 py-8 md:py-12">
-        {/* HEADER */}
-        <header className="mb-10 flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
-          <div className="flex items-center gap-5">
-            <img
-              src="/icons/doggerz-logo.svg"
-              alt="Doggerz"
-              width={44}
-              height={44}
-              className="h-11 w-11 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-2"
-            />
-            <div>
-              <h1
-                className="font-extrabold leading-none text-emerald-600 dark:text-emerald-400 drop-shadow-[0_18px_40px_rgba(16,185,129,0.35)] text-5xl sm:text-6xl md:text-7xl"
-                aria-label="DOGGERZ"
-              >
-                <span className="sr-only">D O G G E R Z</span>
-                <span aria-hidden className="tracking-[0.001em]">
-                  D O G G E R Z
-                </span>
-              </h1>
-              <br></br>
-              <p className="text-xs uppercase tracking-[0.5em] text-zinc-500 dark:text-zinc-400">
-                Adopt. Train. Bond.
-              </p>
-            </div>
-          </div>
-
-          <nav className="hidden flex-wrap items-center gap-4 text-sm md:flex">
-            <Link
-              to="/game"
-              className="text-zinc-700 transition-colors hover:text-emerald-600 dark:text-zinc-100 dark:hover:text-emerald-400"
-            >
-              Game
-            </Link>
-            <Link
-              to="/about"
-              className="text-zinc-700 transition-colors hover:text-emerald-600 dark:text-zinc-100 dark:hover:text-emerald-400"
-            >
-              About
-            </Link>
-            <Link
-              to="/faq"
-              className="text-zinc-700 transition-colors hover:text-emerald-600 dark:text-zinc-100 dark:hover:text-emerald-400"
-            >
-              FAQs
-            </Link>
-            <Link
-              to="/contact"
-              className="text-zinc-700 transition-colors hover:text-emerald-600 dark:text-zinc-100 dark:hover:text-emerald-400"
-            >
-              Contact Us
-            </Link>
-            <Link
-              to="/help"
-              className="text-zinc-700 transition-colors hover:text-emerald-600 dark:text-zinc-100 dark:hover:text-emerald-400"
-            >
-              Help
-            </Link>
-            <Link
-              to="/developers"
-              className="text-zinc-700 transition-colors hover:text-emerald-600 dark:text-zinc-100 dark:hover:text-emerald-400"
-            >
-              Developers
-            </Link>
-            <Link
-              to="/privacy"
-              className="text-zinc-700 transition-colors hover:text-emerald-600 dark:text-zinc-100 dark:hover:text-emerald-400"
-            >
-              Policy
-            </Link>
-          </nav>
-        </header>
-
-        {/* HERO SECTION */}
-        <section
-          id="landing-main"
-          className="grid items-center gap-10 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]"
-
+    <>
+      <Header />
+      <main className="min-h-screen bg-gradient-to-b from-zinc-50 via-white to-zinc-100 text-zinc-900 dark:from-black dark:via-zinc-950 dark:to-black dark:text-zinc-50">
+        <a
+          href="#landing-main"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 rounded-lg bg-emerald-400 px-3 py-2 text-sm font-semibold text-black"
         >
+          Skip to content
+        </a>
+        <div className="mx-auto max-w-6xl px-4 py-8 md:py-12">
+          {/* HERO SECTION */}
+          <section
+            id="landing-main"
+            className="grid items-center gap-10 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]"
+          >
           {/* Left: copy */}
-          <div className="space-y-6">
-            <h2 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
-              Adopt your own{" "}
-              <span className="text-emerald-500">Puppy!</span>
-              <br />
-              </h2>
+            <div className="space-y-6">
               <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
-              and create your story.
+                Adopt your own <span className="text-emerald-500">puppy</span>
+                <span className="text-emerald-500">.</span>
+                <br />
+                Create your story.
               </h1>
 
             <p className="max-w-xl text-sm leading-relaxed text-zinc-600 dark:text-zinc-400 sm:text-base">
-              Feed, Play, Teach & Love your furry troublemaker. Watch
-              them grow from A Clumbsy Little Puppy to A Loyal & Trustworthy Best Friend       - if you can
-              manage their energy, moods, and mischief..
+                Feed, play, teach, and love your furry troublemaker. Watch them grow from a clumsy
+                little puppy into a loyal, trustworthy best friend—if you can manage their energy,
+                moods, and mischief.
             </p>
 
             <div className="flex flex-wrap gap-3 pt-2">
@@ -131,26 +58,23 @@ export default function Landing() {
               <div className="rounded-xl border border-zinc-200 bg-white/70 p-3 dark:border-zinc-800 dark:bg-zinc-950/60">
                 <dt className="mb-1 font-semibold text-emerald-700 dark:text-emerald-300">
                   ~ Adopt & Name ~
-                </dt>
-                <br></br>
+                  </dt>
                 <dd className="text-zinc-600 dark:text-zinc-400">
-                  Meet your pup.<br></br> Give them a name.<br></br> And start your journey!
+                    Meet your pup. Give them a name. Start your journey.
                 </dd>
               </div>
               <div className="rounded-xl border border-zinc-200 bg-white/70 p-3 dark:border-zinc-800 dark:bg-zinc-950/60">
                 <dt className="mb-1 font-semibold text-emerald-700 dark:text-emerald-300">
                   ~ Train your way ~
-                </dt>
-                <br></br>
+                  </dt>
                 <dd className="text-zinc-600 dark:text-zinc-400">
-                  Teach good habits, or embrace the chaos!<br></br> It's all up to you.
+                    Teach good habits, or embrace the chaos. It&apos;s all up to you.
                 </dd>
               </div>
               <div className="rounded-xl border border-zinc-200 bg-white/70 p-3 dark:border-zinc-800 dark:bg-zinc-950/60">
                 <dt className="mb-1 font-semibold text-emerald-700 dark:text-emerald-300">
                 ~ Bond & Grow ~
-                </dt>
-                <br></br>
+                  </dt>
                 <dd className="text-zinc-600 dark:text-zinc-400">
                   Your choices shape the story you tell together.
                 </dd>
@@ -195,11 +119,11 @@ export default function Landing() {
               {/* CTAs are already on the left side; avoid duplicate buttons here. */}
             </div>
           </div>
-        </section>
-
-      </div>
+          </section>
+        </div>
+      </main>
 
       <Footer />
-    </main>
+    </>
   );
 }

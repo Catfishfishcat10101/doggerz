@@ -73,6 +73,11 @@ function main() {
 
   const manifestPath = path.join(PUBLIC_DIR, 'manifest.webmanifest');
   const swPath = path.join(PUBLIC_DIR, 'sw.js');
+  const assetLinksPath = path.join(
+    PUBLIC_DIR,
+    '.well-known',
+    'assetlinks.json'
+  );
 
   if (!fs.existsSync(PUBLIC_DIR)) fail(`Missing public dir: ${PUBLIC_DIR}`);
   if (!fs.existsSync(manifestPath)) fail(`Missing manifest: ${manifestPath}`);
@@ -81,11 +86,35 @@ function main() {
   if (!fs.existsSync(swPath)) fail(`Missing service worker: ${swPath}`);
   else ok('sw.js present');
 
+  // Optional but recommended for Google Play (TWA / Digital Asset Links)
+  if (fs.existsSync(assetLinksPath)) {
+    ok('assetlinks.json present (for TWA / Android verification)');
+    try {
+      const raw = fs.readFileSync(assetLinksPath, 'utf8').trim();
+      if (raw === '[]') {
+        warn(
+          'assetlinks.json is an empty array. This is OK for local/dev, but must be populated for a verified TWA.'
+        );
+      }
+    } catch {
+      warn('assetlinks.json exists but could not be read');
+    }
+  } else {
+    warn(
+      'Missing public/.well-known/assetlinks.json (needed for verified TWA / Play Store web wrapper).'
+    );
+  }
+
   if (process.exitCode) return;
 
   // Manifest icons
   const manifest = readJson(manifestPath);
   const icons = Array.isArray(manifest.icons) ? manifest.icons : [];
+
+  // Quick manifest sanity that improves installability + TWA stability
+  if (!manifest.start_url) warn('Manifest missing start_url');
+  if (!manifest.scope) warn('Manifest missing scope (recommended)');
+  if (!manifest.id) warn('Manifest missing id (recommended)');
 
   if (icons.length === 0) {
     warn('Manifest has no icons array');

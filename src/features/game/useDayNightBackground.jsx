@@ -10,6 +10,18 @@ function deriveIsNightFromHour(h) {
   return !(h >= DAY_START_HOUR && h < NIGHT_START_HOUR);
 }
 
+function isUsableOpenWeatherKey(key) {
+  const k = String(key || '').trim();
+  if (!k) return false;
+  const upper = k.toUpperCase();
+  // Common placeholders / examples that should behave like "no key"
+  if (upper === 'CHANGE_ME' || upper === 'CHANGEME') return false;
+  if (upper === 'YOUR_API_KEY' || upper === 'YOUR_API_KEY_HERE') return false;
+  if (upper === 'REPLACE_ME' || upper === 'REPLACEME') return false;
+  if (upper.startsWith('EXAMPLE')) return false;
+  return true;
+}
+
 /**
  * @typedef {Object} DayNightOptions
  * @property {string} [zip]
@@ -54,7 +66,7 @@ export function useDayNightBackground(options = {}) {
         zip || import.meta.env.VITE_WEATHER_DEFAULT_ZIP || "10001"; // NYC fallback
 
       // No API key → local-only mode using client clock
-      if (!apiKey) {
+      if (!isUsableOpenWeatherKey(apiKey)) {
         const now = new Date();
         const hour = now.getHours();
         if (cancelled) return;
@@ -160,8 +172,8 @@ export function useDayNightBackground(options = {}) {
           const img = new Image();
           img.onload = () => resolve(true);
           img.onerror = () => resolve(false);
-          // Cache-bust only in dev; in prod we want normal caching/preloading to work.
-          img.src = import.meta.env.DEV ? `${url}?v=${Date.now()}` : url;
+          const cacheBust = import.meta.env.DEV ? `?v=${Date.now()}` : "";
+          img.src = `${url}${cacheBust}`;
         } catch {
           resolve(false);
         }
@@ -169,7 +181,6 @@ export function useDayNightBackground(options = {}) {
 
     const firstAvailableUrl = async (urls) => {
       for (const u of urls) {
-        // eslint-disable-next-line no-await-in-loop
         const ok = await checkImage(u);
         if (ok) return u;
       }
@@ -178,12 +189,12 @@ export function useDayNightBackground(options = {}) {
 
     const run = async () => {
       const day = await firstAvailableUrl([
+        "/backgrounds/backyard-day-wide.webp",
         "/backgrounds/backyard-day.webp",
-        "/backgrounds/backyard-day.png",
       ]);
       const night = await firstAvailableUrl([
+        "/backgrounds/backyard-night-wide.webp",
         "/backgrounds/backyard-night.webp",
-        "/backgrounds/backyard-night.png",
       ]);
 
       // Optional assets (not shipped in repo yet) — keep support for future drops.
@@ -197,7 +208,6 @@ export function useDayNightBackground(options = {}) {
       ]);
       const composite = await firstAvailableUrl([
         "/backgrounds/backyard-split.webp",
-        "/backgrounds/backyard-split.png",
       ]);
 
       if (!mounted) return;
@@ -261,7 +271,7 @@ export function useDayNightBackground(options = {}) {
       backgroundRepeat = "no-repeat, no-repeat";
     }
   } else if (imageMode === "composite") {
-    const compositeUrl = available.composite || "/backgrounds/backyard-split.png";
+    const compositeUrl = available.composite || "/backgrounds/backyard-split.webp";
     // For composite, use left half for day/dawn, right half for night/dusk
     const isRight = isNight || timeOfDayBucket === "dusk";
     const pos = isRight ? "100% 50%" : "0% 50%";

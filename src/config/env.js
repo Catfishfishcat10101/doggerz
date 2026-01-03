@@ -13,7 +13,6 @@ const REQUIRED_VITE_FIREBASE_VARS = [
 ];
 
 // Prefer Vite's runtime env (browser-safe). Fall back to process.env only for Node contexts.
-// eslint-disable-next-line no-undef
 const VITE_ENV =
   (typeof import.meta !== 'undefined' && import.meta.env) ||
   (typeof process !== 'undefined' && process.env) ||
