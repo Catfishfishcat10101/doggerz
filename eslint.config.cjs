@@ -15,6 +15,7 @@ module.exports = [
       'dist/**',
       'node_modules/**',
       'public/**',
+      'android/**',
       'scripts/**',
       'coverage/**',
       '*.min.*',

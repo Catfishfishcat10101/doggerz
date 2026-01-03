@@ -38,6 +38,7 @@ import {
   setRoamIntensity,
   setSfxVolume,
   setShowHints,
+  setDailyRemindersEnabled,
   setTheme,
   setVoiceCommandsEnabled,
   setHapticsEnabled,
@@ -648,6 +649,14 @@ export default function Settings() {
                 description="Toggles the small chips row at the top of the Game screen."
                 checked={settings?.showGameMicroHud !== false}
                 onChange={(v) => dispatch(setShowGameMicroHud(v))}
+              />
+
+              <Switch
+                id="dailyRemindersEnabled"
+                label="Daily routine reminders"
+                description="Shows a gentle in-app reminder if you haven't done a care action today."
+                checked={settings?.dailyRemindersEnabled !== false}
+                onChange={(v) => dispatch(setDailyRemindersEnabled(v))}
               />
 
               <Switch

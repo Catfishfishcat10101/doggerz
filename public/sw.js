@@ -9,7 +9,7 @@
    - Cache-first for static assets
 -------------------------------------------------------- */
 
-const CACHE_VERSION = 'doggerz-v10'; // bump this when you change cached assets or SW behaviour
+const CACHE_VERSION = 'doggerz-v11'; // bump this when you change cached assets or SW behaviour
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Support deployments under a sub-path (e.g. GitHub Pages):

@@ -1455,6 +1455,24 @@ export default function MainGame() {
     }
   }, [adopted, hunger, energy, cleanliness, happiness, showToastOncePer]);
 
+  React.useEffect(() => {
+    if (!adopted) return;
+    if (settings?.dailyRemindersEnabled === false) return;
+    const today = new Date().toISOString().slice(0, 10);
+    const careDays = Array.isArray(dog?.meta?.careDays) ? dog.meta.careDays : [];
+    if (careDays.includes(today)) return;
+
+    toast.once(
+      `daily:care:${today}`,
+      {
+        type: "info",
+        message: "Daily routine reminder: feed, play, and log a potty break.",
+        durationMs: 2600,
+      },
+      12 * 60 * 60 * 1000
+    );
+  }, [adopted, dog?.meta?.careDays, settings?.dailyRemindersEnabled, toast]);
+
   // Visual auto-sleep: when energy is critically low, show a sleeping pose immediately.
   // The actual Redux sleep flag flips on the next tick, but waiting up to 60s feels broken.
   React.useEffect(() => {
@@ -1794,6 +1812,7 @@ export default function MainGame() {
                     intent={dogIntent}
                     commandId={selectedCommandId}
                     cosmeticsEquipped={dog?.cosmetics?.equipped}
+                    onPet={onPet}
                   />
                 </div>
               </div>

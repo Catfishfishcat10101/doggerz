@@ -5,6 +5,7 @@ import { useSelector } from "react-redux";
 import {
   selectDog,
   selectDogTraining,
+  selectDogBond,
 } from "@/redux/dogSlice.js";
 
 function StatBar({ label, value = 0, color = "bg-emerald-500" }) {
@@ -63,6 +64,7 @@ function Pill({ label, value, tone = "default" }) {
 export default function NeedsHUD() {
   const dog = useSelector(selectDog);
   const training = useSelector(selectDogTraining);
+  const bond = useSelector(selectDogBond);
 
   if (!dog) return null;
 
@@ -73,6 +75,7 @@ export default function NeedsHUD() {
   const happiness = Math.round(stats.happiness ?? 0);
   const energy = Math.round(stats.energy ?? 0);
   const cleanliness = Math.round(stats.cleanliness ?? 0);
+  const bondValue = Math.round(bond?.value ?? 0);
 
   // Potty training derived from dog.training.potty
   const pottyTraining = training?.potty || {};
@@ -105,6 +108,7 @@ export default function NeedsHUD() {
         <StatBar label="Happiness" value={happiness} color="bg-sky-500" />
         <StatBar label="Energy" value={energy} color="bg-violet-500" />
         <StatBar label="Cleanliness" value={cleanliness} color="bg-amber-400" />
+        <StatBar label="Bond" value={bondValue} color="bg-rose-400" />
         {/* Thirst, weight, etc. can be added later when added to dog.stats */}
       </div>
 

@@ -10,6 +10,9 @@
  *
  * Usage:
  *   node scripts/preflight.js
+ *
+ * Strict / CI usage:
+ *   node scripts/preflight.js --strict --require assetlinks
  */
 
 const fs = require('node:fs');
@@ -18,6 +21,36 @@ const path = require('node:path');
 const ROOT = path.resolve(__dirname, '..');
 const PUBLIC_DIR = path.join(ROOT, 'public');
 const ROOT_INDEX_HTML = path.join(ROOT, 'index.html');
+
+function parseArgs(argv) {
+  const out = {
+    strict: false,
+    require: new Set()
+  };
+
+  for (let i = 0; i < argv.length; i += 1) {
+    const a = argv[i];
+    if (a === '--strict') {
+      out.strict = true;
+      continue;
+    }
+    if (a === '--require') {
+      const v = argv[i + 1];
+      if (typeof v === 'string' && v.trim()) {
+        out.require.add(v.trim());
+        i += 1;
+      }
+      continue;
+    }
+    if (a.startsWith('--require=')) {
+      const v = a.slice('--require='.length).trim();
+      if (v) out.require.add(v);
+      continue;
+    }
+  }
+
+  return out;
+}
 
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));
@@ -71,6 +104,8 @@ function ok(message) {
 function main() {
   process.exitCode = 0;
 
+  const opts = parseArgs(process.argv.slice(2));
+
   const manifestPath = path.join(PUBLIC_DIR, 'manifest.webmanifest');
   const swPath = path.join(PUBLIC_DIR, 'sw.js');
   const assetLinksPath = path.join(
@@ -86,23 +121,31 @@ function main() {
   if (!fs.existsSync(swPath)) fail(`Missing service worker: ${swPath}`);
   else ok('sw.js present');
 
-  // Optional but recommended for Google Play (TWA / Digital Asset Links)
+  // Digital Asset Links (recommended; can be required in CI)
+  const requireAssetLinks = opts.require.has('assetlinks');
   if (fs.existsSync(assetLinksPath)) {
     ok('assetlinks.json present (for TWA / Android verification)');
     try {
       const raw = fs.readFileSync(assetLinksPath, 'utf8').trim();
       if (raw === '[]') {
-        warn(
-          'assetlinks.json is an empty array. This is OK for local/dev, but must be populated for a verified TWA.'
-        );
+        const msg =
+          'assetlinks.json is an empty array. This is OK for local/dev, but must be populated for a verified TWA.';
+        if (opts.strict && requireAssetLinks) {
+          fail(`${msg} (strict + required)`);
+        } else {
+          warn(msg);
+        }
       }
     } catch {
-      warn('assetlinks.json exists but could not be read');
+      const msg = 'assetlinks.json exists but could not be read';
+      if (opts.strict && requireAssetLinks) fail(`${msg} (strict + required)`);
+      else warn(msg);
     }
   } else {
-    warn(
-      'Missing public/.well-known/assetlinks.json (needed for verified TWA / Play Store web wrapper).'
-    );
+    const msg =
+      'Missing public/.well-known/assetlinks.json (needed for verified TWA / Play Store web wrapper).';
+    if (requireAssetLinks) fail(`${msg} (required)`);
+    else warn(msg);
   }
 
   if (process.exitCode) return;

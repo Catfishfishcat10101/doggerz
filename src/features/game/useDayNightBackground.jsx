@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { getTimeOfDay } from "@/utils/weather.js";
+import { withBaseUrl } from "@/utils/assetUrl.js";
 
 const DAY_START_HOUR = 6;
 const NIGHT_START_HOUR = 19; // 7 PM → night visuals
@@ -189,25 +190,26 @@ export function useDayNightBackground(options = {}) {
 
     const run = async () => {
       const day = await firstAvailableUrl([
-        "/backgrounds/backyard-day-wide.webp",
-        "/backgrounds/backyard-day.webp",
+        withBaseUrl("/backgrounds/backyard-day-wide.webp"),
+        withBaseUrl("/backgrounds/backyard-day.webp"),
       ]);
       const night = await firstAvailableUrl([
-        "/backgrounds/backyard-night-wide.webp",
-        "/backgrounds/backyard-night.webp",
+        withBaseUrl("/backgrounds/backyard-night-wide.webp"),
+        withBaseUrl("/backgrounds/backyard-night.webp"),
       ]);
 
       // Optional assets (not shipped in repo yet) — keep support for future drops.
       const dawn = await firstAvailableUrl([
-        "/backgrounds/backyard-dawn.webp",
-        "/backgrounds/backyard-dawn.png",
+        withBaseUrl("/backgrounds/backyard-dawn.webp"),
+        withBaseUrl("/backgrounds/backyard-dawn.png"),
       ]);
       const dusk = await firstAvailableUrl([
-        "/backgrounds/backyard-dusk.webp",
-        "/backgrounds/backyard-dusk.png",
+        withBaseUrl("/backgrounds/backyard-dusk.webp"),
+        withBaseUrl("/backgrounds/backyard-dusk.png"),
       ]);
       const composite = await firstAvailableUrl([
-        "/backgrounds/backyard-split.webp",
+        withBaseUrl("/backgrounds/backyard-split.webp"),
+        withBaseUrl("/backgrounds/backyard-split.png"),
       ]);
 
       if (!mounted) return;
@@ -271,7 +273,8 @@ export function useDayNightBackground(options = {}) {
       backgroundRepeat = "no-repeat, no-repeat";
     }
   } else if (imageMode === "composite") {
-    const compositeUrl = available.composite || "/backgrounds/backyard-split.webp";
+    const compositeUrl =
+      available.composite || withBaseUrl("/backgrounds/backyard-split.webp");
     // For composite, use left half for day/dawn, right half for night/dusk
     const isRight = isNight || timeOfDayBucket === "dusk";
     const pos = isRight ? "100% 50%" : "0% 50%";

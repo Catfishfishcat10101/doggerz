@@ -1,6 +1,7 @@
 // src/pages/Legal.jsx
 import Header from "@/components/Header.jsx";
 import Footer from "@/components/Footer.jsx";
+import { SUPPORT_EMAIL_ACCOUNT_DELETION_URL } from "@/config/links.js";
 
 export default function LegalPage() {
   return (
@@ -62,7 +63,7 @@ export default function LegalPage() {
             If you have trouble deleting your account in-app, contact support via
             <a
                 className="text-emerald-300 underline-offset-2 hover:text-emerald-200 hover:underline"
-              href="mailto:catfishfishcat10101@gmail.com?subject=Doggerz%20Account%20Deletion"
+                href={SUPPORT_EMAIL_ACCOUNT_DELETION_URL}
             >
               email
             </a>

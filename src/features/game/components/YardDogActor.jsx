@@ -84,8 +84,22 @@ export default function YardDogActor({
 
   // Cosmetics
   cosmeticsEquipped,
+
+  // Interaction
+  onPet,
 }) {
   const debugSprite = React.useMemo(() => {
+    const allowDebug = (() => {
+      try {
+        const v = String(import.meta.env.VITE_ENABLE_DEBUG || 'false') === 'true';
+        return Boolean(import.meta.env.DEV) || v;
+      } catch {
+        return false;
+      }
+    })();
+
+    if (!allowDebug) return false;
+
     try {
       const qs = new URLSearchParams(window.location?.search || '');
       const viaQuery = qs.get('dgDebugSprite') === '1';
@@ -191,6 +205,10 @@ export default function YardDogActor({
 
   const [critter, setCritter] = React.useState(null);
   const critterNextAtRef = React.useRef(0);
+
+  const pettingRef = React.useRef(false);
+  const petTimerRef = React.useRef(null);
+  const lastPetAtRef = React.useRef(0);
 
   const rafRef = React.useRef(null);
   const lastTRef = React.useRef(0);
@@ -423,9 +441,40 @@ export default function YardDogActor({
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
     };
-  }, [atBowl, chooseNewTarget, critter, distToTarget, intent, intensity, isAsleep, locked, maybeSpawnCritter, pos.x, pos.y, reduceMotion, rng, speed]);
+  }, [atBall, atBowl, atHouse, atWater, chooseNewTarget, critter, distToTarget, intent, intensity, isAsleep, isPlayIntent, locked, maybeSpawnCritter, pos.x, pos.y, reduceMotion, rng, speed]);
 
   const showCritter = !!critter && !reduceTransparency;
+
+  const triggerPet = React.useCallback(() => {
+    if (typeof onPet !== "function") return;
+    const now = Date.now();
+    if (now - lastPetAtRef.current < 900) return;
+    lastPetAtRef.current = now;
+    onPet();
+  }, [onPet]);
+
+  const stopPetting = React.useCallback(() => {
+    pettingRef.current = false;
+    if (petTimerRef.current) {
+      window.clearInterval(petTimerRef.current);
+      petTimerRef.current = null;
+    }
+  }, []);
+
+  const startPetting = React.useCallback(() => {
+    if (typeof onPet !== "function") return;
+    pettingRef.current = true;
+    triggerPet();
+    if (petTimerRef.current) window.clearInterval(petTimerRef.current);
+    petTimerRef.current = window.setInterval(() => {
+      if (!pettingRef.current) return;
+      triggerPet();
+    }, 1200);
+  }, [onPet, triggerPet]);
+
+  React.useEffect(() => {
+    return () => stopPetting();
+  }, [stopPetting]);
 
   // Treat the high-level "sleep" intent as a visual sleep state too.
   // (The Redux sleep flag may flip on the next tick, but we want immediate feedback.)
@@ -630,6 +679,8 @@ export default function YardDogActor({
             height: size,
             position: "relative",
             transformOrigin: "50% 100%",
+            pointerEvents: typeof onPet === "function" ? "auto" : "none",
+            cursor: typeof onPet === "function" ? "pointer" : "default",
             // Sprite strips already animate; avoid extra pulsing/looking.
             animation: reduceMotion
               ? "none"
@@ -637,6 +688,13 @@ export default function YardDogActor({
                 ? "dg-breathe 4.4s ease-in-out infinite"
                 : "none",
           }}
+          onPointerDown={(e) => {
+            if (e.button !== 0) return;
+            startPetting();
+          }}
+          onPointerUp={() => stopPetting()}
+          onPointerLeave={() => stopPetting()}
+          onPointerCancel={() => stopPetting()}
         >
           {useRig ? (
             <LayeredDogRig

@@ -37,6 +37,17 @@ export function initRuntimeLogging({ mode } = {}) {
   if (typeof window === 'undefined') return;
 
   const isProd = mode === 'prod';
+  const allowProdWarn = (() => {
+    try {
+      const v =
+        typeof import.meta !== 'undefined' && import.meta.env
+          ? import.meta.env.VITE_ENABLE_PROD_WARNINGS
+          : undefined;
+      return String(v || 'false') === 'true';
+    } catch {
+      return false;
+    }
+  })();
 
   // Capture unhandled errors for support.
   window.addEventListener('error', (e) => {
@@ -55,6 +66,9 @@ export function initRuntimeLogging({ mode } = {}) {
       console.log = () => {};
       console.info = () => {};
       console.debug = () => {};
+
+      // Warnings can be very spammy in production; keep them behind a flag.
+      if (!allowProdWarn) console.warn = () => {};
     } catch {
       // ignore
     }

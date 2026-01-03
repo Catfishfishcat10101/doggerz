@@ -1,4 +1,5 @@
 // src/features/game/MoodAndJournalPanel.jsx
+import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { selectDogJournal } from "@/redux/dogSlice.js";
 
@@ -78,6 +79,15 @@ export default function MoodAndJournalPanel() {
 
       <div className="mt-3">
         <JournalList journal={journal} />
+      </div>
+
+      <div className="mt-4">
+        <Link
+          to="/memories"
+          className="inline-flex items-center justify-center rounded-2xl border border-white/15 bg-black/25 px-3 py-2 text-xs font-semibold text-zinc-100 hover:bg-black/35 transition"
+        >
+          Open Memory Reel
+        </Link>
       </div>
     </section>
   );

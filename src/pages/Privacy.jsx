@@ -1,6 +1,7 @@
 // src/pages/Privacy.jsx
 import Header from "@/components/Header.jsx";
 import Footer from "@/components/Footer.jsx";
+import { SUPPORT_EMAIL, SUPPORT_EMAIL_PRIVACY_URL } from "@/config/links.js";
 
 export default function PrivacyPage() {
   return (
@@ -92,9 +93,9 @@ export default function PrivacyPage() {
               Questions about privacy? Email{' '}
               <a
                 className="text-emerald-300 underline-offset-2 hover:text-emerald-200 hover:underline"
-                href="mailto:catfishfishcat10101@gmail.com?subject=Doggerz%20Privacy"
+                href={SUPPORT_EMAIL_PRIVACY_URL}
               >
-                catfishfishcat10101@gmail.com
+                {SUPPORT_EMAIL}
               </a>
               .
             </p>

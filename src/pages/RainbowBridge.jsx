@@ -1,10 +1,30 @@
 // src/pages/RainbowBridge.jsx
 import { Link } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 
 import Header from "@/components/Header.jsx";
 import Footer from "@/components/Footer.jsx";
+import {
+  selectDog,
+  selectDogLifeStage,
+  selectDogBond,
+  selectDogMemorial,
+  startRainbowBridge,
+  completeRainbowBridge,
+} from "@/redux/dogSlice.js";
 
 export default function RainbowBridge() {
+  const dispatch = useDispatch();
+  const dog = useSelector(selectDog);
+  const lifeStage = useSelector(selectDogLifeStage);
+  const bond = useSelector(selectDogBond);
+  const memorial = useSelector(selectDogMemorial);
+
+  const isSenior = String(lifeStage?.stage || "").toUpperCase() === "SENIOR";
+  const bondValue = Math.round(bond?.value ?? 0);
+  const memorialCompleted = Boolean(memorial?.completedAt);
+  const memorialActive = Boolean(memorial?.active);
+
   return (
     <div className="min-h-dvh w-full bg-zinc-950 text-zinc-100">
       <Header />
@@ -30,25 +50,54 @@ export default function RainbowBridge() {
                 When you’re ready, take a slow breath. Think of a moment your pup made you smile.
                 That’s the kind of magic we’re collecting here.
               </p>
-              <div className="mt-4 grid gap-2 text-xs text-zinc-300/80">
-                <div className="rounded-2xl border border-white/10 bg-black/25 p-3">
-                  Tip: we’ll wire this scene into the lifecycle later — for now it’s an optional route.
+              {dog?.name ? (
+                <div className="mt-4 text-xs text-zinc-400">
+                  Pup: <span className="font-semibold text-zinc-100">{dog.name}</span>{" "}
+                  · Bond: <span className="font-semibold text-emerald-200">{bondValue}%</span>{" "}
+                  · Stage: <span className="font-semibold text-zinc-200">{lifeStage?.label || "Pup"}</span>
                 </div>
+              ) : null}
+              <div className="mt-4 grid gap-2 text-xs text-zinc-300/80">
+                {!isSenior ? (
+                  <div className="rounded-2xl border border-white/10 bg-black/25 p-3">
+                    This moment unlocks once your pup reaches the senior stage.
+                  </div>
+                ) : memorialCompleted ? (
+                  <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-emerald-100">
+                    Your memorial is complete. You can revisit this space anytime.
+                  </div>
+                ) : null}
               </div>
             </div>
 
             <div className="mt-6 flex flex-col sm:flex-row gap-3">
+              {isSenior && !memorialCompleted ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const now = Date.now();
+                    if (!memorialActive) {
+                      dispatch(startRainbowBridge({ now }));
+                    } else {
+                      dispatch(completeRainbowBridge({ now }));
+                    }
+                  }}
+                  className="inline-flex items-center justify-center rounded-2xl px-5 py-3 text-sm font-extrabold bg-emerald-400 text-black shadow-[0_0_35px_rgba(52,211,153,0.25)] hover:bg-emerald-300 transition"
+                >
+                  {memorialActive ? "Complete the memorial" : "Begin the memorial"}
+                </button>
+              ) : null}
               <Link
                 to="/game"
-                className="inline-flex items-center justify-center rounded-2xl px-5 py-3 text-sm font-extrabold bg-emerald-400 text-black shadow-[0_0_35px_rgba(52,211,153,0.25)] hover:bg-emerald-300 transition"
+                className="inline-flex items-center justify-center rounded-2xl px-5 py-3 text-sm font-semibold border border-white/15 bg-black/30 text-zinc-100 hover:bg-black/45 transition"
               >
                 Back to the yard
               </Link>
               <Link
-                to="/settings"
+                to="/memories"
                 className="inline-flex items-center justify-center rounded-2xl px-5 py-3 text-sm font-semibold border border-white/15 bg-black/30 text-zinc-100 hover:bg-black/45 transition"
               >
-                Settings
+                Open Memory Reel
               </Link>
             </div>
           </div>

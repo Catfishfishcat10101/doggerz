@@ -1,6 +1,8 @@
 // src/pages/Help.jsx
 import { Link } from "react-router-dom";
 
+import { SUPPORT_CONTACT_URL } from "@/config/links.js";
+
 import Header from "@/components/Header.jsx";
 import Footer from "@/components/Footer.jsx";
 
@@ -28,7 +30,7 @@ export default function HelpPage() {
           <section className="space-y-2 text-sm text-zinc-300">
             <h2 className="font-semibold text-zinc-100">Need support?</h2>
             <p>
-              Reach out via <Link to="/contact" className="text-emerald-300 hover:text-emerald-200">Contact Us</Link>.
+              Reach out via <Link to={SUPPORT_CONTACT_URL} className="text-emerald-300 hover:text-emerald-200">Contact Us</Link>.
             </p>
           </section>
 

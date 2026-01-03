@@ -120,6 +120,8 @@ app credentials (Project settings → General → Your apps → SDK setup). The 
 will disable auth/cloud features until every required key is present to prevent
 runtime crashes.
 
+Tip: you can run `npm run env:check` to see what keys are missing. Add `-- --strict --require firebase` if you want CI/builds to fail when Firebase is not configured.
+
 ### 3. (Optional) Enable live weather
 
 Grab a free OpenWeather API key, add `VITE_OPENWEATHER_API_KEY` to `.env.local`,
@@ -130,11 +132,14 @@ the current time of day.
 ### 4. Day/Night Backgrounds (by ZIP)
 
 - Add background images to `public/backgrounds/` named:
-  - `backyard-day.png`
-  - `backyard-night.png`
+  - `backyard-day.webp`
+  - `backyard-night.webp`
 - Optional variants for more vibe:
-  - `backyard-dawn.png`
-  - `backyard-dusk.png`
+  - `backyard-dawn.webp`
+  - `backyard-dusk.webp`
+- Optional wide variants for large screens:
+  - `backyard-day-wide.webp`
+  - `backyard-night-wide.webp`
 - If these files are missing, the game gracefully falls back to a stylized
   gradient so you can play without assets.
 - Time-of-day is derived from your ZIP's local time using OpenWeather's
@@ -143,7 +148,7 @@ the current time of day.
 
 Fallback rules:
 
-- If only `backyard-split.png` exists (day|night in one image), it's cropped
+- If only `backyard-split.webp` (or `backyard-split.png`) exists (day|night in one image), it's cropped
   left/right automatically.
 - If `dawn`/`dusk` variants are missing, we fall back to `day`/`night` with a
   tinted gradient overlay.

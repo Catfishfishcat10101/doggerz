@@ -21,6 +21,10 @@ Run these locally before packaging:
 - `npm run build`
 - `npm run preflight`
 
+Optional (Play Store / verified TWA readiness):
+
+- `npm run ci:playstore`
+
 What we check:
 
 - `public/manifest.webmanifest` exists + icons exist
@@ -47,10 +51,12 @@ Make sure these URLs work:
 
 ## 2) Digital Asset Links (required for verified TWA)
 
-The file `public/.well-known/assetlinks.json` is currently an empty array so the repo builds cleanly.
+The repo includes `public/.well-known/assetlinks.json` as an empty array (`[]`) so local builds work cleanly.
 Use `docs/assetlinks.template.json` as a starting point when you are ready to verify your TWA.
 
 For a verified TWA, you must replace it with your real package name and SHA-256 certificate fingerprint.
+
+Note: `npm run preflight -- --strict --require assetlinks` will FAIL if `assetlinks.json` is missing or still `[]`.
 
 Shape:
 

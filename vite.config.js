@@ -54,12 +54,6 @@ module.exports = async () => {
             if (id.includes('@reduxjs/toolkit') || id.includes('react-redux'))
               return 'vendor-redux';
             if (id.includes('/firebase/')) return 'vendor-firebase';
-            if (
-              id.includes('/three/') ||
-              id.includes('@react-three/fiber') ||
-              id.includes('@react-three/drei')
-            )
-              return 'vendor-three';
 
             return 'vendor';
           },

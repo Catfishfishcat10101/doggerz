@@ -55,6 +55,7 @@ function normalizeLoadedSettings(raw) {
 
   // Haptics (mobile vibration)
   next.hapticsEnabled = next.hapticsEnabled !== false;
+  next.dailyRemindersEnabled = next.dailyRemindersEnabled !== false;
 
   // Ensure nested audio exists
   next.audio = {
@@ -94,6 +95,7 @@ const initialState = normalizeLoadedSettings(loadFromStorage()) || {
 
   // UI preferences
   showHints: true,
+  dailyRemindersEnabled: true,
 
   // Haptics
   hapticsEnabled: true,
@@ -188,6 +190,11 @@ const settingsSlice = createSlice({
 
     setShowHints(state, action) {
       state.showHints = Boolean(action.payload);
+      saveToStorage(state);
+    },
+
+    setDailyRemindersEnabled(state, action) {
+      state.dailyRemindersEnabled = Boolean(action.payload);
       saveToStorage(state);
     },
 
@@ -305,6 +312,7 @@ const settingsSlice = createSlice({
 
       state.perfMode = next.perfMode || state.perfMode || 'auto';
       state.showHints = Boolean(next.showHints);
+      state.dailyRemindersEnabled = next.dailyRemindersEnabled !== false;
 
       state.showGameMicroHud = next.showGameMicroHud !== false;
       state.showCritters = next.showCritters !== false;
@@ -348,6 +356,7 @@ const settingsSlice = createSlice({
         hitTargets: 'auto',
         fontScale: 1,
         showHints: true,
+        dailyRemindersEnabled: true,
         showGameMicroHud: true,
         showCritters: true,
         roamIntensity: 1,
@@ -392,6 +401,7 @@ export const {
   setHitTargets,
   setFontScale,
   setShowHints,
+  setDailyRemindersEnabled,
   setHapticsEnabled,
   setBatterySaver,
   setVoiceCommandsEnabled,

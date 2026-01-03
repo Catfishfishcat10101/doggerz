@@ -3,6 +3,7 @@
 
 import Header from "@/components/Header.jsx";
 import Footer from "@/components/Footer.jsx";
+import { SUPPORT_EMAIL_FEEDBACK_URL } from "@/config/links.js";
 
 export default function Contact() {
   return (
@@ -25,7 +26,7 @@ export default function Contact() {
             </p>
 
             <a
-              href="mailto:catfishfishcat10101@gmail.com?subject=Doggerz%20Feedback"
+              href={SUPPORT_EMAIL_FEEDBACK_URL}
               className="inline-flex items-center justify-center rounded-full bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-400 transition"
             >
               Email the developer

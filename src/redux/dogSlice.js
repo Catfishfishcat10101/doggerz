@@ -12,7 +12,7 @@ export const DOG_STORAGE_KEY = 'doggerz:dogState';
 
 // Bump when the persisted dog save shape changes.
 // Migration should remain best-effort and never throw.
-export const DOG_SAVE_SCHEMA_VERSION = 2;
+export const DOG_SAVE_SCHEMA_VERSION = 3;
 
 // Dog polls (lightweight random prompts) — currently disabled by default.
 // The logic remains for future reintroduction of a UI surface.
@@ -143,6 +143,7 @@ const initialMemory = {
   lastPlayedAt: null,
   lastBathedAt: null,
   lastTrainedAt: null,
+  lastPottyAt: null,
   lastSeenAt: null,
   neglectStrikes: 0,
 };
@@ -180,6 +181,17 @@ const initialStreak = {
   bestStreakDays: 0,
   lastActiveDate: null,
   graceUsed: false,
+};
+
+const initialBond = {
+  value: 18,
+  lastUpdatedAt: null,
+};
+
+const initialMemorial = {
+  active: false,
+  startedAt: null,
+  completedAt: null,
 };
 
 const initialCosmetics = {
@@ -369,6 +381,8 @@ const initialState = {
   mood: initialMood,
   journal: initialJournal,
   streak: initialStreak,
+  bond: initialBond,
+  memorial: initialMemorial,
   cosmetics: initialCosmetics,
   training: createInitialTrainingState(),
   polls: {
@@ -398,6 +412,19 @@ function pushJournalEntry(state, entry) {
   if (state.journal.entries.length > 200) {
     state.journal.entries.length = 200;
   }
+}
+
+function updateBond(state, delta = 0, now = nowMs()) {
+  if (!state.bond || typeof state.bond !== 'object') {
+    state.bond = { ...initialBond };
+  }
+  const next = clamp(
+    safeNumber(state.bond.value, 0) + safeNumber(delta, 0),
+    0,
+    100
+  );
+  state.bond.value = next;
+  state.bond.lastUpdatedAt = now;
 }
 
 function ensureJournalState(state) {
@@ -788,6 +815,7 @@ function applyDecay(state, now = nowMs()) {
       (state.memory.neglectStrikes || 0) + 1,
       999
     );
+    updateBond(state, -6, now);
     pushJournalEntry(
       state,
       neglectJournalEntry(state, now, state.memory.neglectStrikes)
@@ -1003,6 +1031,19 @@ function sanitizeDogState(state) {
   };
   state.meta.onboarding.rewardedAt = state.meta.onboarding.rewardedAt ?? null;
   state.meta.onboarding.completedAt = state.meta.onboarding.completedAt ?? null;
+
+  if (!state.bond || typeof state.bond !== 'object') {
+    state.bond = { ...initialBond };
+  }
+  state.bond.value = clamp(safeNumber(state.bond.value, 0), 0, 100);
+  state.bond.lastUpdatedAt = state.bond.lastUpdatedAt ?? null;
+
+  if (!state.memorial || typeof state.memorial !== 'object') {
+    state.memorial = { ...initialMemorial };
+  }
+  state.memorial.active = Boolean(state.memorial.active);
+  state.memorial.startedAt = state.memorial.startedAt ?? null;
+  state.memorial.completedAt = state.memorial.completedAt ?? null;
 
   // Keep tier in sync with current constants.
   state.cleanlinessTier = normalizeCleanlinessTier(state.cleanlinessTier);
@@ -1711,6 +1752,16 @@ const dogSlice = createSlice({
         ...(payload.memory || state.memory || {}),
       };
 
+      merged.bond = {
+        ...initialBond,
+        ...(payload.bond || state.bond || {}),
+      };
+
+      merged.memorial = {
+        ...initialMemorial,
+        ...(payload.memorial || state.memorial || {}),
+      };
+
       merged.career = {
         ...initialCareer,
         ...(payload.career || state.career || {}),
@@ -2054,6 +2105,7 @@ const dogSlice = createSlice({
 
       state.lastAction = 'feed';
 
+      updateBond(state, 2, now);
       applyXp(state, Math.round(6 * (0.25 + 0.75 * need) * cooldown), {
         now,
         reason: 'FEED',
@@ -2125,6 +2177,7 @@ const dogSlice = createSlice({
 
       state.lastAction = 'play';
 
+      updateBond(state, 3, now);
       applyXp(
         state,
         Math.round(8 * (0.25 + 0.75 * need) * energyFactor * cooldown),
@@ -2163,6 +2216,7 @@ const dogSlice = createSlice({
       state.memory.lastSeenAt = now;
       state.lastAction = 'pet';
 
+      updateBond(state, 4, now);
       applyXp(state, 2, { now, reason: 'PET' });
       maybeSampleMood(state, now, 'PET');
 
@@ -2192,6 +2246,7 @@ const dogSlice = createSlice({
       state.memory.lastSeenAt = now;
       state.lastAction = 'praise';
 
+      updateBond(state, 1, now);
       applyXp(state, 2, { now, reason: 'PRAISE' });
       maybeSampleMood(state, now, 'PRAISE');
 
@@ -2241,6 +2296,7 @@ const dogSlice = createSlice({
 
       state.lastAction = 'rest';
 
+      updateBond(state, 1, now);
       applyXp(state, Math.round(3 * (0.35 + 0.65 * need) * cooldown), {
         now,
         reason: 'REST',
@@ -2296,6 +2352,7 @@ const dogSlice = createSlice({
 
       state.lastAction = 'bathe';
 
+      updateBond(state, 1, now);
       applyXp(state, Math.round(4 * (0.25 + 0.75 * need) * cooldown), {
         now,
         reason: 'BATHE',
@@ -2338,10 +2395,12 @@ const dogSlice = createSlice({
       state.pottyLevel = 0;
       state.poopCount += 1;
       state.stats.happiness = clamp(state.stats.happiness + 3, 0, 100);
+      state.memory.lastPottyAt = now;
       state.memory.lastSeenAt = now;
 
       state.lastAction = 'potty';
 
+      updateBond(state, 1, now);
       applyXp(state, 2, { now, reason: 'POTTY' });
       maybeSampleMood(state, now, 'POTTY');
 
@@ -2637,6 +2696,7 @@ const dogSlice = createSlice({
 
       if (state.stats.energy <= 15) state.isAsleep = true;
 
+      updateBond(state, 2, now);
       applyXp(state, Math.round(10 * cooldown), { now, reason: 'TRAINING' });
       completeAdultTrainingSession(state, now);
       maybeSampleMood(state, now, 'TRAINING');
@@ -2659,6 +2719,34 @@ const dogSlice = createSlice({
 
     addJournalEntry(state, { payload }) {
       pushJournalEntry(state, payload || {});
+    },
+
+    startRainbowBridge(state, { payload }) {
+      const now = payload?.now ?? nowMs();
+      if (!state.memorial || typeof state.memorial !== 'object') {
+        state.memorial = { ...initialMemorial };
+      }
+      if (state.memorial.completedAt) return;
+      state.memorial.active = true;
+      state.memorial.startedAt = state.memorial.startedAt || now;
+      state.memorial.completedAt = null;
+    },
+
+    completeRainbowBridge(state, { payload }) {
+      const now = payload?.now ?? nowMs();
+      if (!state.memorial || typeof state.memorial !== 'object') {
+        state.memorial = { ...initialMemorial };
+      }
+      state.memorial.active = false;
+      state.memorial.completedAt = now;
+      pushJournalEntry(state, {
+        type: 'MEMORY',
+        moodTag: 'LOVE',
+        summary: 'A quiet goodbye on the Rainbow Bridge.',
+        body:
+          'We shared a soft, final moment together. The bond we built will always stay with me.',
+        timestamp: now,
+      });
     },
 
     /* ------------- dev/debug helpers ------------- */
@@ -2711,6 +2799,8 @@ export const selectDogCleanlinessTier = (state) => state.dog.cleanlinessTier;
 export const selectDogPolls = (state) => state.dog.polls;
 export const selectDogTraining = (state) => state.dog.training;
 export const selectDogCosmetics = (state) => state.dog.cosmetics;
+export const selectDogBond = (state) => state.dog.bond;
+export const selectDogMemorial = (state) => state.dog.memorial;
 export const selectDogLastUnlock = (state) =>
   state.dog.progress?.lastUnlock || null;
 
@@ -2771,6 +2861,8 @@ export const {
   respondToDogPoll,
   trainObedience,
   addJournalEntry,
+  startRainbowBridge,
+  completeRainbowBridge,
   debugSetEnergy,
   debugSetAsleep,
   toggleDebug,
