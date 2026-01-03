@@ -1,6 +1,6 @@
 // src/pages/GamePage.jsx
 
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { useSelector } from "react-redux";
 import MainGame from "@/features/game/MainGame.jsx";
 import YardBackground from "@/components/YardBackground.jsx";

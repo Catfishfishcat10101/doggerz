@@ -1,5 +1,4 @@
 // src/components/DogPollCard.jsx
-import * as React from "react";
 
 export default function DogPollCard({
   activePoll,

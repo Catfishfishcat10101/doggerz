@@ -1,18 +1,8 @@
 // src/pages/Potty.jsx
-<<<<<<< HEAD
-// @ts-nocheck
-
-import React from "react";
-import { useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
-import { selectDog } from "@/redux/dogSlice.js";
-=======
-
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { selectDog } from "@/redux/dogSlice.js";
 import PageShell from "@/components/PageShell.jsx";
->>>>>>> master
 
 function describePottyTraining(training) {
   const t = Math.round(Number(training ?? 0));
@@ -39,17 +29,10 @@ export default function Potty() {
   // If there is no dog at all, send them to adopt
   if (!dog) {
     return (
-<<<<<<< HEAD
-      <div className="min-h-[calc(100vh-7rem)] bg-zinc-950 text-zinc-50 flex items-center">
-        <div className="container mx-auto px-4 max-w-lg space-y-4">
-          <h1 className="text-2xl font-bold">No pup yet</h1>
-          <p className="text-sm text-zinc-300">
-=======
       <PageShell>
         <div className="mx-auto w-full max-w-lg space-y-4">
           <h1 className="text-2xl font-bold">No pup yet</h1>
           <p className="text-sm text-zinc-700 dark:text-zinc-300">
->>>>>>> master
             You need a Doggerz pup before you can potty train them.
           </p>
           <button
@@ -60,11 +43,7 @@ export default function Potty() {
             Adopt your pup
           </button>
         </div>
-<<<<<<< HEAD
-      </div>
-=======
       </PageShell>
->>>>>>> master
     );
   }
 
@@ -81,27 +60,16 @@ export default function Potty() {
   const summaryText = describePottyTraining(training);
 
   return (
-<<<<<<< HEAD
-    <div className="min-h-[calc(100vh-7rem)] bg-zinc-950 text-zinc-50">
-      <div className="container mx-auto px-4 py-6 max-w-3xl space-y-6">
-        <header className="space-y-1">
-          <p className="text-[11px] uppercase tracking-[0.26em] text-emerald-400/90">
-=======
     <PageShell>
       <div className="mx-auto w-full max-w-3xl space-y-6">
         <header className="space-y-1">
           <p className="text-[11px] uppercase tracking-[0.26em] text-emerald-700 dark:text-emerald-300/90">
->>>>>>> master
             Potty Training
           </p>
           <h1 className="text-2xl font-bold tracking-tight">
             Potty plan for {dog.name || "your pup"}
           </h1>
-<<<<<<< HEAD
-          <p className="text-sm text-zinc-400 max-w-xl">
-=======
           <p className="text-sm text-zinc-700 dark:text-zinc-300 max-w-xl">
->>>>>>> master
             Doggerz quietly tracks potty-training progress in the background
             every time you take your dog outside after eating, playing, or
             waking up.
@@ -109,18 +77,6 @@ export default function Potty() {
         </header>
 
         {/* Status card */}
-<<<<<<< HEAD
-        <section className="rounded-2xl border border-zinc-800 bg-zinc-950/80 p-4 space-y-4 shadow-lg shadow-black/40">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <p className="text-xs font-semibold text-zinc-100">
-                Current training level
-              </p>
-              <p className="text-sm text-zinc-300">{training}% potty trained</p>
-            </div>
-
-            <div className="w-full sm:w-64 h-2 rounded-full bg-zinc-800 overflow-hidden">
-=======
         <section className="rounded-2xl border border-zinc-200 bg-white/80 p-4 space-y-4 shadow-lg shadow-black/10 dark:border-zinc-800 dark:bg-zinc-950/60 dark:shadow-black/40">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
@@ -131,7 +87,6 @@ export default function Potty() {
             </div>
 
             <div className="w-full sm:w-64 h-2 rounded-full bg-zinc-200 overflow-hidden dark:bg-zinc-800">
->>>>>>> master
               <div
                 className="h-full rounded-full bg-emerald-500 transition-[width]"
                 style={{ width: `${Math.max(0, Math.min(100, training))}%` }}
@@ -139,17 +94,6 @@ export default function Potty() {
             </div>
           </div>
 
-<<<<<<< HEAD
-          <p className="text-xs text-zinc-400">{summaryText}</p>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-            <div className="rounded-xl border border-zinc-800 bg-zinc-900/80 p-3 space-y-1">
-              <p className="text-[11px] font-semibold text-zinc-200">
-                Total accidents
-              </p>
-              <p className="text-lg font-semibold text-rose-300">{accidents}</p>
-              <p className="text-[11px] text-zinc-500">
-=======
           <p className="text-xs text-zinc-600 dark:text-zinc-400">{summaryText}</p>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
@@ -159,59 +103,34 @@ export default function Potty() {
               </p>
               <p className="text-lg font-semibold text-rose-300">{accidents}</p>
               <p className="text-[11px] text-zinc-600 dark:text-zinc-500">
->>>>>>> master
                 Each indoor accident slows training a bit.
               </p>
             </div>
 
-<<<<<<< HEAD
-            <div className="rounded-xl border border-zinc-800 bg-zinc-900/80 p-3 space-y-1">
-              <p className="text-[11px] font-semibold text-zinc-200">
-                Last successful potty
-              </p>
-              <p className="text-xs text-zinc-300">
-=======
             <div className="rounded-xl border border-zinc-200 bg-white/70 p-3 space-y-1 dark:border-zinc-800 dark:bg-zinc-900/60">
               <p className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-200">
                 Last successful potty
               </p>
               <p className="text-xs text-zinc-700 dark:text-zinc-300">
->>>>>>> master
                 {lastSuccessAt
                   ? lastSuccessAt.toLocaleString()
                   : "No logged potty trips yet."}
               </p>
-<<<<<<< HEAD
-              <p className="text-[11px] text-zinc-500">
-=======
               <p className="text-[11px] text-zinc-600 dark:text-zinc-500">
->>>>>>> master
                 Logging regular outdoor potty trips speeds training.
               </p>
             </div>
 
-<<<<<<< HEAD
-            <div className="rounded-xl border border-zinc-800 bg-zinc-900/80 p-3 space-y-1">
-              <p className="text-[11px] font-semibold text-zinc-200">
-                Last accident
-              </p>
-              <p className="text-xs text-zinc-300">
-=======
             <div className="rounded-xl border border-zinc-200 bg-white/70 p-3 space-y-1 dark:border-zinc-800 dark:bg-zinc-900/60">
               <p className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-200">
                 Last accident
               </p>
               <p className="text-xs text-zinc-700 dark:text-zinc-300">
->>>>>>> master
                 {lastAccidentAt
                   ? lastAccidentAt.toLocaleString()
                   : "No accidents recorded yet."}
               </p>
-<<<<<<< HEAD
-              <p className="text-[11px] text-zinc-500">
-=======
               <p className="text-[11px] text-zinc-600 dark:text-zinc-500">
->>>>>>> master
                 Consistent schedule and quick cleanups help prevent repeats.
               </p>
             </div>
@@ -219,19 +138,11 @@ export default function Potty() {
         </section>
 
         {/* Tips / guide section */}
-<<<<<<< HEAD
-        <section className="rounded-2xl border border-zinc-800 bg-zinc-950/80 p-4 space-y-3">
-          <p className="text-xs font-semibold text-zinc-100">
-            Training routine tips
-          </p>
-          <ul className="list-disc list-inside text-xs text-zinc-300 space-y-1">
-=======
         <section className="rounded-2xl border border-zinc-200 bg-white/80 p-4 space-y-3 dark:border-zinc-800 dark:bg-zinc-950/60">
           <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
             Training routine tips
           </p>
           <ul className="list-disc list-inside text-xs text-zinc-700 dark:text-zinc-300 space-y-1">
->>>>>>> master
             <li>
               Take your pup out{" "}
               <span className="font-semibold">right after</span> feeding, play
@@ -255,19 +166,11 @@ export default function Potty() {
         <button
           type="button"
           onClick={() => navigate("/game")}
-<<<<<<< HEAD
-          className="text-xs text-emerald-400 hover:text-emerald-300 underline underline-offset-4"
-=======
           className="text-xs text-emerald-700 hover:text-emerald-600 underline underline-offset-4 dark:text-emerald-300 dark:hover:text-emerald-200"
->>>>>>> master
         >
           ← Back to your yard
         </button>
       </div>
-<<<<<<< HEAD
-    </div>
-=======
     </PageShell>
->>>>>>> master
   );
 }

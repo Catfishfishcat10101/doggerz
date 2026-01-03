@@ -1,29 +1,18 @@
 {
-<<<<<<< HEAD
   "name": "Doggerz",
   "short_name": "Doggerz",
   "description": "Adopt a pixel pup and shape its behavior — an offline-capable virtual pet game.",
   "lang": "en-US",
   "dir": "ltr",
+  "id": "/",
   "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
   "display_override": ["standalone", "window-controls-overlay"],
-=======
-  "name": "Doggerz – Virtual Pup Simulator",
-  "short_name": "Doggerz",
-  "description": "Adopt, care for, and level up your virtual pup over real time.",
-  "id": "/",
-  "start_url": "/",
-  "scope": "/",
-  "display": "standalone",
->>>>>>> master
   "orientation": "portrait",
   "background_color": "#020617",
   "theme_color": "#10b981",
   "categories": ["games", "entertainment"],
-<<<<<<< HEAD
-=======
   "icons": [
     {
       "src": "/icons/doggerz-180.png",
@@ -56,67 +45,41 @@
       "purpose": "any maskable"
     }
   ],
->>>>>>> master
   "shortcuts": [
     {
       "name": "Play",
       "short_name": "Play",
-<<<<<<< HEAD
-      "description": "Jump straight into the yard",
       "url": "/game",
       "icons": [
         {
-          "src": "/icons/icon-192x192.png",
+          "src": "/icons/doggerz-192.png",
           "sizes": "192x192",
           "type": "image/png"
         }
       ]
-=======
-      "url": "/game",
-      "icons": [{ "src": "/icons/doggerz-192.png", "sizes": "192x192", "type": "image/png" }]
->>>>>>> master
     },
     {
       "name": "Adopt",
       "short_name": "Adopt",
-<<<<<<< HEAD
-      "description": "Adopt a new pup",
       "url": "/adopt",
       "icons": [
         {
-          "src": "/icons/icon-192x192.png",
+          "src": "/icons/doggerz-192.png",
           "sizes": "192x192",
           "type": "image/png"
         }
       ]
-    }
-  ],
-  "icons": [
-    {
-      "src": "/icons/icon-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "/icons/icon-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    },
-    {
-      "src": "/icons/icon-512x512-maskable.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
-=======
-      "url": "/adopt",
-      "icons": [{ "src": "/icons/doggerz-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Settings",
       "short_name": "Settings",
       "url": "/settings",
-      "icons": [{ "src": "/icons/doggerz-192.png", "sizes": "192x192", "type": "image/png" }]
->>>>>>> master
+      "icons": [
+        {
+          "src": "/icons/doggerz-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     }
   ]
-}

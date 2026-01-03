@@ -1,7 +1,7 @@
 // src/features/game/components/DogPixiView.jsx
 // @ts-nocheck
 
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Stage, Container, AnimatedSprite } from "@pixi/react";
 import { Assets, Rectangle, Texture } from "pixi.js";
 import { getDogPixiSheetUrl } from "@/utils/dogSpritePaths.js";
@@ -110,7 +110,7 @@ export default function DogPixiView({
     return () => {
       alive = false;
     };
-  }, [stage, condition]);
+  }, [condition, onStatus, stage]);
 
   const textures = useMemo(() => {
     if (!baseTexture) return [];

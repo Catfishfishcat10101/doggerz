@@ -1,7 +1,6 @@
 // src/components/AppFooter.jsx
 // @ts-nocheck
 
-import React from "react";
 import { Link } from "react-router-dom";
 
 export default function AppFooter() {

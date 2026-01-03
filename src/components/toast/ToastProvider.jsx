@@ -1,3 +1,5 @@
+/* eslint-disable react-refresh/only-export-components */
+
 import * as React from "react";
 
 const ToastContext = React.createContext(null);
@@ -155,11 +157,12 @@ export function ToastProvider({ children }) {
   );
 
   React.useEffect(() => {
+    const timers = timersRef.current;
     return () => {
-      for (const handle of timersRef.current.values()) {
+      for (const handle of timers.values()) {
         clearTimeout(handle);
       }
-      timersRef.current.clear();
+      timers.clear();
     };
   }, []);
 

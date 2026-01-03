@@ -1,6 +1,5 @@
 // src/components/PottyTrackerCard.jsx
 // @ts-nocheck
-import React from "react";
 
 function clamp01(n) {
   const x = Number(n || 0);

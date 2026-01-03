@@ -105,29 +105,26 @@ export function getAmbientWeatherHint() {
   const tod = getTimeOfDay();
 
   switch (tod) {
-    case "dawn":
-      return "Faint light on the horizon. Perfect time for a quiet walk.";
-    case "morning":
-      return "Soft morning light, ideal for breakfast and a short play session.";
-    case "afternoon":
-      return "Bright and lively. Your pup’s ready for action.";
-    case "dusk":
-      return "Golden hour—great for one last walk before dark.";
-    case "evening":
-      return "Things are winding down. Your pup’s energy starts to fade.";
-    case "night":
+    case 'dawn':
+      return 'Faint light on the horizon. Perfect time for a quiet walk.';
+    case 'morning':
+      return 'Soft morning light, ideal for breakfast and a short play session.';
+    case 'afternoon':
+      return 'Bright and lively. Your pup’s ready for action.';
+    case 'dusk':
+      return 'Golden hour—great for one last walk before dark.';
+    case 'evening':
+      return 'Things are winding down. Your pup’s energy starts to fade.';
+    case 'night':
     default:
-      return "Quiet night. Ideal for howls, dreams, and naps.";
+      return 'Quiet night. Ideal for howls, dreams, and naps.';
   }
 }
-<<<<<<< HEAD
 
 /**
  * Minimal async `getWeather` fallback used by older hooks.
  * For now this returns a safe default — replace with an API call later.
  */
 export async function getWeather() {
-  return "clear";
+  return 'clear';
 }
-=======
->>>>>>> master

@@ -1,8 +1,6 @@
 // src/components/LongTermProgressionCard.jsx
 // @ts-nocheck
 
-import React from "react";
-
 function clamp(n, lo = 0, hi = 100) {
   const x = Number.isFinite(Number(n)) ? Number(n) : 0;
   return Math.max(lo, Math.min(hi, x));

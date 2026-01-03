@@ -1,24 +1,14 @@
 /* src/index.css */
-<<<<<<< HEAD
-@import "./styles.css";
-
-=======
 
 /* -------------------------------------------------------
    Tailwind layers
 ------------------------------------------------------- */
->>>>>>> master
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-<<<<<<< HEAD
-/* Root layout */
-=======
 /* -------------------------------------------------------
-   Doggerz design tokens (kept minimal + app-wide)
-   These used to live in src/styles.css; we keep only the
-   variables that are referenced by the app.
+     Doggerz design tokens (kept minimal + app-wide)
 ------------------------------------------------------- */
 
 :root {
@@ -28,9 +18,9 @@
 
   /* Gradients */
   --grad-shell: radial-gradient(circle at top,
-      #1e293b 0,
-      #020617 55%,
-      #000 100%);
+        #1e293b 0,
+        #020617 55%,
+    #000 100%);
 
   /* Focus ring (used by focus-visible styles below) */
   --focus-ring: #22c55e;
@@ -41,31 +31,32 @@ html[data-theme="light"] {
   --bg: #e5e7eb;
   --text-main: #020617;
   --grad-shell: radial-gradient(circle at top,
-      #ffffff 0,
-      #f3f4f6 55%,
-      #e5e7eb 100%);
+        #ffffff 0,
+        #f3f4f6 55%,
+    #e5e7eb 100%);
 }
+
 /* -------------------------------------------------------
    Global layout & typography
 ------------------------------------------------------- */
+
 *,
 *::before,
 *::after {
   box-sizing: border-box;
 }
->>>>>>> master
+
 html,
 body,
 #root {
   height: 100%;
 }
 
-<<<<<<< HEAD
-=======
 html {
   /* Prevent layout shift when scrollbars appear/disappear (supported browsers). */
   scrollbar-gutter: stable;
 }
+
 html[data-theme="dark"] {
   color-scheme: dark;
 }
@@ -73,7 +64,7 @@ html[data-theme="dark"] {
 html[data-theme="light"] {
   color-scheme: light;
 }
->>>>>>> master
+
 body {
   margin: 0;
   font-family:
@@ -81,193 +72,35 @@ body {
     -apple-system,
     BlinkMacSystemFont,
     "Segoe UI",
-<<<<<<< HEAD
-    sans-serif;
-  background: var(--bg);
-  color: var(--text-main);
-  scroll-behavior: smooth;
-}
-
-/* App shell using the Doggerz layout helpers from styles.css */
-.doggerz-shell {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-/* --- Realistic dog render --- */
-.dog-realistic-root {
-  /* keeps transforms smooth when micro-actions fire */
-  will-change: transform;
-}
-
-.dog-idle {
-  animation: dogIdleBreath 3.6s ease-in-out infinite;
-  will-change: transform;
-}
-
-.dog-realistic-img {
-  will-change: transform;
-}
-
-@keyframes dogIdleBreath {
-  0% {
-    transform: translateY(0px) scale(1);
-  }
-  50% {
-    transform: translateY(2px) scale(1.01);
-  }
-  100% {
-    transform: translateY(0px) scale(1);
-  }
-}
-
-.dog-shadow {
-  width: 64%;
-  height: 16%;
-  border-radius: 9999px;
-  background: radial-gradient(
-    ellipse at center,
-    rgba(0, 0, 0, 0.45) 0%,
-    rgba(0, 0, 0, 0.2) 35%,
-    rgba(0, 0, 0, 0.06) 65%,
-    rgba(0, 0, 0, 0) 75%
-  );
-  filter: blur(1px);
-  animation: dogShadowPulse 3.6s ease-in-out infinite;
-  will-change: transform, opacity;
-}
-
-@keyframes dogShadowPulse {
-  0% {
-    transform: translateX(-50%) scaleX(1);
-    opacity: 0.72;
-  }
-  50% {
-    transform: translateX(-50%) scaleX(0.96);
-    opacity: 0.62;
-  }
-  100% {
-    transform: translateX(-50%) scaleX(1);
-    opacity: 0.72;
-  }
-}
-
-/* Micro-actions (JS toggled classes) */
-.dog-blink {
-  animation: dogBlink 120ms ease-in-out 1;
-}
-
-@keyframes dogBlink {
-  0% {
-    transform: scaleY(1);
-  }
-  50% {
-    transform: scaleY(0.92);
-  }
-  100% {
-    transform: scaleY(1);
-  }
-}
-
-.dog-twitch {
-  animation: dogTwitch 280ms cubic-bezier(0.2, 0.9, 0.2, 1) 1;
-}
-
-@keyframes dogTwitch {
-  0% {
-    transform: rotate(0deg) translateY(0px);
-  }
-  40% {
-    transform: rotate(-1.8deg) translateY(-1px);
-  }
-  75% {
-    transform: rotate(1.2deg) translateY(0px);
-  }
-  100% {
-    transform: rotate(0deg) translateY(0px);
-  }
-}
-
-.dog-tilt {
-  animation: dogTilt 720ms ease-in-out 1;
-}
-
-@keyframes dogTilt {
-  0% {
-    transform: rotate(0deg);
-  }
-  35% {
-    transform: rotate(-2.5deg);
-  }
-  70% {
-    transform: rotate(1.5deg);
-  }
-  100% {
-    transform: rotate(0deg);
-  }
-}
-.dog-idle {
-  animation: dogIdleBreath 3.6s ease-in-out infinite;
-  will-change: transform;
-}
-
-@keyframes dogIdleBreath {
-  0%   { transform: translateY(0px) scale(1); }
-  50%  { transform: translateY(2px) scale(1.01); }
-  100% { transform: translateY(0px) scale(1); }
-}
-
-.dog-shadow {
-  width: 64%;
-  height: 16%;
-  border-radius: 9999px;
-  background: radial-gradient(ellipse at center,
-    rgba(0,0,0,0.45) 0%,
-    rgba(0,0,0,0.20) 35%,
-    rgba(0,0,0,0.06) 65%,
-    rgba(0,0,0,0.00) 75%
-  );
-  filter: blur(1px);
-  animation: dogShadowPulse 3.6s ease-in-out infinite;
-  will-change: transform, opacity;
-}
-
-@keyframes dogShadowPulse {
-  0%   { transform: translateX(-50%) scaleX(1.00); opacity: 0.72; }
-  50%  { transform: translateX(-50%) scaleX(0.96); opacity: 0.62; }
-  100% { transform: translateX(-50%) scaleX(1.00); opacity: 0.72; }
-}
-=======
     "Roboto",
-    "Oxygen",
-    "Ubuntu",
-    "Cantarell",
-    "Fira Sans",
-    "Droid Sans",
-    "Helvetica Neue",
+      "Oxygen",
+      "Ubuntu",
+      "Cantarell",
+      "Fira Sans",
+      "Droid Sans",
+      "Helvetica Neue",
     sans-serif;
   line-height: 1.5;
     text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background-color: var(--bg, #020617);
-  color: var(--text-main, #f9fafb);
-  -webkit-tap-highlight-color: transparent;
-  }
-  
-  /* Let the main app stretch full height (helps flex layouts and pages). */
-  #root {
-    min-height: 100vh;
-  }
-  
-  /* Keep form controls visually consistent with the app's typography/colors. */
-  button,
-  input,
-  textarea,
-  select {
-    font: inherit;
-    color: inherit;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: var(--bg, #020617);
+    color: var(--text-main, #f9fafb);
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Let the main app stretch full height (helps flex layouts and pages). */
+#root {
+  min-height: 100vh;
+}
+
+/* Keep form controls visually consistent with the app's typography/colors. */
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
 }
 
 /* Make links inherit color unless explicitly styled */
@@ -285,6 +118,7 @@ a:hover {
 ::selection {
   background: rgba(249, 115, 22, 0.35);
 }
+
 /* Basic focus outline for keyboard users */
 :focus-visible {
   outline: 2px solid var(--focus-ring, #22c55e);
@@ -307,6 +141,7 @@ html[data-hit-targets="large"] input,
 html[data-hit-targets="large"] select {
   min-height: 44px;
 }
+
 /* Respect reduced-motion preferences */
 @media (prefers-reduced-motion: reduce) {
 
@@ -349,12 +184,137 @@ html[data-transparency="reduced"] .backdrop-blur-xl {
 }
 
 /* -------------------------------------------------------
-   Doggerz: Rig animation helpers
-   (append at END of src/index.css)
+   Realistic dog render helpers (RealisticDog.jsx)
+------------------------------------------------------- */
+.dog-realistic-root {
+  /* Keeps transforms smooth when micro-actions fire */
+  will-change: transform;
+}
+
+.dog-realistic-img {
+  will-change: transform;
+}
+
+.dog-idle {
+  animation: dogIdleBreath 3.6s ease-in-out infinite;
+  will-change: transform;
+}
+
+@keyframes dogIdleBreath {
+  0% {
+    transform: translateY(0px) scale(1);
+  }
+
+  50% {
+    transform: translateY(2px) scale(1.01);
+  }
+
+  100% {
+    transform: translateY(0px) scale(1);
+  }
+}
+
+.dog-shadow {
+  width: 64%;
+  height: 16%;
+  border-radius: 9999px;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(0, 0, 0, 0.45) 0%,
+    rgba(0, 0, 0, 0.2) 35%,
+    rgba(0, 0, 0, 0.06) 65%,
+    rgba(0, 0, 0, 0) 75%
+  );
+  filter: blur(1px);
+  animation: dogShadowPulse 3.6s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+@keyframes dogShadowPulse {
+  0% {
+    transform: translateX(-50%) scaleX(1);
+    opacity: 0.72;
+  }
+
+  50% {
+    transform: translateX(-50%) scaleX(0.96);
+    opacity: 0.62;
+  }
+
+  100% {
+    transform: translateX(-50%) scaleX(1);
+    opacity: 0.72;
+  }
+}
+
+/* Micro-actions (JS toggled classes) */
+.dog-blink {
+  animation: dogBlink 120ms ease-in-out 1;
+}
+
+@keyframes dogBlink {
+  0% {
+    transform: scaleY(1);
+  }
+
+  50% {
+    transform: scaleY(0.92);
+  }
+
+  100% {
+    transform: scaleY(1);
+  }
+}
+
+.dog-twitch {
+  animation: dogTwitch 280ms cubic-bezier(0.2, 0.9, 0.2, 1) 1;
+}
+
+@keyframes dogTwitch {
+  0% {
+    transform: rotate(0deg) translateY(0px);
+  }
+
+  40% {
+    transform: rotate(-1.8deg) translateY(-1px);
+  }
+
+  75% {
+    transform: rotate(1.2deg) translateY(0px);
+  }
+
+  100% {
+    transform: rotate(0deg) translateY(0px);
+  }
+}
+
+.dog-tilt {
+  animation: dogTilt 720ms ease-in-out 1;
+}
+
+@keyframes dogTilt {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  35% {
+    transform: rotate(-2.5deg);
+  }
+
+  70% {
+    transform: rotate(1.5deg);
+  }
+
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+/* -------------------------------------------------------
+     Doggerz: Rig animation helpers (RigDog.jsx)
 ------------------------------------------------------- */
 
 @keyframes doggerz-breathe {
-
   0%,
   100% {
     transform: translateY(0px) scale(1);
@@ -366,7 +326,6 @@ html[data-transparency="reduced"] .backdrop-blur-xl {
 }
 
 @keyframes doggerz-walk-bob {
-
   0%,
   100% {
     transform: translateY(0px);
@@ -378,7 +337,6 @@ html[data-transparency="reduced"] .backdrop-blur-xl {
 }
 
 @keyframes doggerz-tail-wag {
-
   0%,
   100% {
     transform: rotate(12deg);
@@ -390,7 +348,6 @@ html[data-transparency="reduced"] .backdrop-blur-xl {
 }
 
 @keyframes doggerz-tail-soft {
-
   0%,
   100% {
     transform: rotate(6deg);
@@ -402,7 +359,6 @@ html[data-transparency="reduced"] .backdrop-blur-xl {
 }
 
 @keyframes doggerz-head-bob {
-
   0%,
   100% {
     transform: rotate(0deg) translateY(0px);
@@ -414,7 +370,6 @@ html[data-transparency="reduced"] .backdrop-blur-xl {
 }
 
 @keyframes doggerz-tongue {
-
   0%,
   100% {
     transform: translateY(0px);
@@ -428,7 +383,6 @@ html[data-transparency="reduced"] .backdrop-blur-xl {
 }
 
 @keyframes doggerz-bowl {
-
   0%,
   100% {
     transform: translateY(0px);
@@ -488,4 +442,3 @@ html[data-reduce-motion="1"] .dog-tongue,
 html[data-reduce-motion="1"] .dog-bowl {
   animation: none !important;
 }
->>>>>>> master

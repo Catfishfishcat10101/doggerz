@@ -1,88 +1,52 @@
-<<<<<<< HEAD
-# OS-generated junk
-.DS_Store
-Thumbs.db
-
-# Logs
-npm-debug.log*
-yarn-debug.log*
-pnpm-debug.log*
-*.log
-
-# Dependencies
+### Node / dependencies
 node_modules/
 
-# Build output
+### Build output
 dist/
+dist-ssr/
+*.tsbuildinfo
+
+### Vite / tool caches
+.cache/
 .vite/
 
-# Vite / temporary
-.cache/
-build/
+### Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
-# Environment / secrets
-# Ignore all env files but keep the example committed.
+### Environment / secrets
 .env
-.env.local
-.env.*.local
 .env.*
 !.env.example
 
-# Tooling & snapshots
-audit-snapshots/
-tmp.*
+### Coverage / tests
+coverage/
 
-# IDE / editor
+### OS junk
+.DS_Store
+Thumbs.db
+*.swp
+
+### IDEs
 .vscode/
 .idea/
 *.suo
 *.sln
+*.iml
 
-# Firebase emulators and local state
-.firebase/
+### Android / Capacitor generated outputs
+android/.gradle/
+android/.idea/
+android/**/build/
+android/local.properties
+android/app/src/main/assets/public/
+android/app/src/main/assets/capacitor.config.json
+android/app/src/main/assets/capacitor.plugins.json
+android/capacitor-cordova-android-plugins/
 
-# Coverage & test output
-coverage/
-
-# OS swap / lock files
-*.swp
-=======
-# dependencies
-node_modules/
-
-# build output
-dist/
-
-# local env files (never commit secrets)
-.env
-.env.*
-!.env.example
-
-# logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Vite
-.vite/
-
-# Generated optimization outputs
-public/optimized/
-public/optimized-audio/
-public/optimized-sprites/
-
-# Bundle reports
-dist/stats.html
+### Bundle reports
 stats.html
-
-# Local build logs (generated during asset work)
-build-from-art.log
-build-sprites.log
-
-# Firebase
-.firebase/
->>>>>>> master
+dist/stats.html

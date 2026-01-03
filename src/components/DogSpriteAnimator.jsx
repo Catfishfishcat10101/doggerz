@@ -1,6 +1,6 @@
 // src/components/DogSpriteAnimator.jsx
 // @ts-nocheck
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 function clampInt(n, min, max) {
   const x = Number.isFinite(Number(n)) ? Number(n) : min;

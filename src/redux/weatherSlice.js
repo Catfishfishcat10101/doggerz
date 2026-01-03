@@ -1,26 +1,5 @@
 // src/redux/weatherSlice.js
 // Lightweight weather state (local, not persisted to cloud yet)
-<<<<<<< HEAD
-// condition: 'sun' | 'rain' | 'snow'
-
-import { createSlice } from "@reduxjs/toolkit";
-
-const initialState = {
-  condition: "sun",
-  lastChangedAt: Date.now(),
-};
-
-const order = ["sun", "rain", "snow"];
-
-const weatherSlice = createSlice({
-  name: "weather",
-  initialState,
-  reducers: {
-    setWeather(state, { payload }) {
-      if (!payload || !payload.condition) return;
-      state.condition = payload.condition;
-      state.lastChangedAt = Date.now();
-=======
 // condition: 'sun' | 'cloud' | 'rain' | 'snow' | 'unknown'
 
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
@@ -166,7 +145,6 @@ const weatherSlice = createSlice({
         state.condition = next;
         state.lastChangedAt = Date.now();
       }
->>>>>>> master
     },
     cycleWeather(state) {
       const idx = order.indexOf(state.condition);
@@ -174,8 +152,6 @@ const weatherSlice = createSlice({
       state.lastChangedAt = Date.now();
     },
   },
-<<<<<<< HEAD
-=======
   extraReducers: (builder) => {
     builder
       .addCase(fetchWeatherForZip.pending, (state) => {
@@ -208,7 +184,6 @@ const weatherSlice = createSlice({
         state.error = action.error?.message || 'Weather fetch failed';
       });
   },
->>>>>>> master
 });
 
 export const { setWeather, cycleWeather } = weatherSlice.actions;

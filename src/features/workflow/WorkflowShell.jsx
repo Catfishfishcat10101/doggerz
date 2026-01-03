@@ -1,7 +1,5 @@
 // src/features/workflow/WorkflowShell.jsx
 
-import React from "react";
-
 function StepPill({ label, active, done }) {
   const base =
     "px-3 py-1 rounded-full text-xs font-semibold border transition whitespace-nowrap";

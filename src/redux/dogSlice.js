@@ -1,7 +1,5 @@
-<<<<<<< HEAD
 /** @format */
 
-// import { getIsoDate } from '@/utils/date.js';
 // src/redux/dogSlice.js
 
 import { createSlice } from '@reduxjs/toolkit';
@@ -10,113 +8,13 @@ import { CLEANLINESS_TIER_EFFECTS, LIFE_STAGES } from '@/constants/game.js';
 
 export const DOG_STORAGE_KEY = 'doggerz:dogState';
 
+// Local persistence schema marker (kept here so cloud/local persistence can version safely).
+export const DOG_SAVE_SCHEMA_VERSION = 1;
+
 /* ------------------- small helpers / constants ------------------- */
 
 const clamp = (n, lo = 0, hi = 100) =>
   Math.max(lo, Math.min(hi, Number.isFinite(n) ? n : 0));
-=======
-// src/redux/dogSlice.js
-// @ts-nocheck
-
-import { createSelector, createSlice } from '@reduxjs/toolkit';
-import { calculateDogAge } from '@/utils/lifecycle.js';
-import {
-  CLEANLINESS_THRESHOLDS,
-  CLEANLINESS_TIER_EFFECTS,
-} from '@/constants/game.js';
-
-export const DOG_STORAGE_KEY = 'doggerz:dogState';
-
-// Bump when the persisted dog save shape changes.
-// Migration should remain best-effort and never throw.
-export const DOG_SAVE_SCHEMA_VERSION = 3;
-
-// Dog polls (lightweight random prompts) — currently disabled by default.
-// The logic remains for future reintroduction of a UI surface.
-const DOG_POLL_CONFIG = {
-  intervalMs: 0,
-  timeoutMs: 60_000,
-  prompts: [],
-};
-
-const clamp = (n, lo = 0, hi = 100) =>
-  Math.max(lo, Math.min(hi, Number.isFinite(n) ? n : lo));
-
-const STAT_LO = 0;
-const STAT_HI = 100;
-
-// Game feel safety:
-// - Capped idle catch-up decay prevents "sudden death spirals" after long inactivity.
-// - Floors prevent core stats from being hard-zeroed *purely* due to idle decay.
-// - Hunger cap keeps "AFK = instant starvation" from feeling unfair.
-const MAX_CATCHUP_HOURS = 18;
-const IDLE_DECAY_FLOOR = 5;
-const IDLE_HUNGER_CAP = 95;
-
-// Anti-spam cooldown to avoid "max everything in 5 minutes" exploits.
-// We still allow actions (no hard blocks), but rewards diminish if repeated too quickly.
-const ACTION_COOLDOWN_MS = 6500;
-
-// UI safety: accidental double-taps shouldn't count as multiple actions.
-// This is intentionally short and separate from ACTION_COOLDOWN_MS.
-const ACTION_TAP_GUARD_MS = 350;
-
-function safeNumber(n, fallback = 0) {
-  const x = Number(n);
-  return Number.isFinite(x) ? x : fallback;
-}
-
-function clampStat(n) {
-  return clamp(safeNumber(n, 0), STAT_LO, STAT_HI);
-}
-
-function cooldownScale(lastAt, now, minMs = ACTION_COOLDOWN_MS) {
-  const last = safeNumber(lastAt, 0);
-  const t = safeNumber(now, nowMs());
-  const dt = Math.max(0, t - last);
-  if (!last) return 1;
-  if (dt >= minMs) return 1;
-  // Smooth-ish curve: at dt=0 => 0.25x, ramps to 1x by minMs.
-  const a = clamp(dt / minMs, 0, 1);
-  return 0.25 + 0.75 * a;
-}
-
-function shouldIgnoreRapidRepeat(state, key, now, minMs = ACTION_TAP_GUARD_MS) {
-  if (!state.meta || typeof state.meta !== 'object') {
-    state.meta = {
-      lastTickAt: null,
-      lastSessionStartAt: null,
-      actionLastAt: {},
-    };
-  }
-  if (!state.meta.actionLastAt || typeof state.meta.actionLastAt !== 'object') {
-    state.meta.actionLastAt = {};
-  }
-
-  // Streak (older saves)
-  if (!state.streak || typeof state.streak !== 'object') {
-    state.streak = { ...initialStreak };
-  }
-  state.streak.currentStreakDays = Math.max(
-    0,
-    Math.floor(safeNumber(state.streak.currentStreakDays, 0))
-  );
-  state.streak.bestStreakDays = Math.max(
-    0,
-    Math.floor(safeNumber(state.streak.bestStreakDays, 0))
-  );
-  state.streak.lastActiveDate = state.streak.lastActiveDate || null;
-  state.streak.graceUsed = Boolean(state.streak.graceUsed);
-
-  const last = safeNumber(state.meta.actionLastAt[key], 0);
-  const t = safeNumber(now, Date.now());
-  const dt = Math.max(0, t - last);
-  if (last && dt < minMs) return true;
-
-  state.meta.actionLastAt[key] = t;
-  return false;
-}
->>>>>>> master
 
 const DECAY_PER_HOUR = {
   hunger: 8,
@@ -127,70 +25,10 @@ const DECAY_PER_HOUR = {
 const DECAY_SPEED = 0.65;
 
 const MOOD_SAMPLE_MINUTES = 60;
-<<<<<<< HEAD
 const LEVEL_XP_STEP = 100;
 const SKILL_LEVEL_STEP = 50;
 
-// Long-term progression (months, not days)
-// - Season: 90-day track with a level ladder
-// - Journey: slower, account-like track that persists across seasons
-// - Weekly challenges: rotate every week-start (UTC Monday)
-const SEASON_LENGTH_DAYS = 90;
-const SEASON_LEVEL_XP_STEP = 100;
-const JOURNEY_LEVEL_XP_STEP = 150;
-
-// Caps prevent grinding a whole season in a day while still feeling rewarding.
-const DAILY_SEASON_XP_CAP = 120;
-const DAILY_JOURNEY_XP_CAP = 40;
-
-// Autonomy / "alive" behaviors
-const AUTONOMY = {
-  decisionMinIntervalMs: 15 * 1000,
-  promptCooldownMs: 2.5 * 60 * 1000,
-  emoteCooldownMs: 60 * 1000,
-  promptTimeoutMs: 45 * 1000,
-};
-
 const nowMs = () => Date.now();
-
-function getWeekKeyUtc(ms) {
-  // Returns the UTC date (YYYY-MM-DD) of the Monday that starts this week.
-  const d = new Date(ms);
-  const day = (d.getUTCDay() + 6) % 7; // Mon=0..Sun=6
-  const monday = new Date(
-    Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - day)
-  );
-  return monday.toISOString().slice(0, 10);
-}
-
-function stableHash32(str) {
-  // Small deterministic hash for weekly challenge selection.
-  let h = 2166136261;
-  const s = String(str || '');
-  for (let i = 0; i < s.length; i += 1) {
-    h ^= s.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return h >>> 0;
-}
-
-function rand01FromSeed(seed) {
-  // Deterministic 0..1 for a given seed.
-  const h = stableHash32(seed);
-  return (h % 1_000_000_000) / 1_000_000_000;
-}
-
-function getLocalHour(ms) {
-  return new Date(ms).getHours();
-}
-
-function getTimeOfDayBucket(ms) {
-  const h = getLocalHour(ms);
-  if (h >= 5 && h < 11) return 'MORNING';
-  if (h >= 11 && h < 17) return 'AFTERNOON';
-  if (h >= 17 && h < 22) return 'EVENING';
-  return 'NIGHT';
-}
 
 function parseAdoptedAt(raw) {
   if (raw === undefined || raw === null) return null;
@@ -205,23 +43,11 @@ function parseAdoptedAt(raw) {
   return null;
 }
 
-=======
-// Level progression tuning.
-// We intentionally use a scaling curve (not a flat step) so early levels are snappy
-// but mid/high levels slow down.
-const LEVEL_XP_BASE = 90;
-const LEVEL_XP_GROWTH = 1.28;
-const SKILL_LEVEL_STEP = 50;
-
-const nowMs = () => Date.now();
-
->>>>>>> master
 const getDaysBetween = (fromMs, toMs) => {
   if (!fromMs) return Infinity;
   return (toMs - fromMs) / (1000 * 60 * 60 * 24);
 };
 
-<<<<<<< HEAD
 const POTTY_TRAINING_GOAL = 8;
 const REAL_DAY_MS = 24 * 60 * 60 * 1000;
 const POTTY_TRAINED_POTTY_GAIN_MULTIPLIER = 0.65;
@@ -233,9 +59,7 @@ const CLEANLINESS_THRESHOLDS = {
   FLEAS: 20,
 };
 
-const CLEANLINESS_TIER_ORDER = ['FRESH', 'DIRTY', 'FLEAS', 'MANGE'];
-
-// Stage-based stat multipliers (legacy; decay v2 uses its own stage tuning)
+// Stage-based stat multipliers
 const LIFECYCLE_STAGE_MODIFIERS = {
   [LIFE_STAGES.PUPPY]: {
     hunger: 1.15,
@@ -286,151 +110,8 @@ const DOG_POLL_CONFIG = {
   ],
 };
 
-/* ------------------- decay v2: realistic, not punishing ------------------- */
-// Stat semantics in this slice:
-// - hunger: 0 = full, 100 = starving (need rises over time)
-// - happiness/energy/cleanliness: 0 = bad, 100 = great (good decays over time)
-// - pottyLevel: 0 = empty/comfortable, 100 = urgent (need rises over time)
-
-const DECAY_V2 = {
-  tick: {
-    stepMinutes: 10,
-    fullSimMinutes: 24 * 60, // 24h full-fidelity
-    extraSimDecayMultiplier: 0.25, // beyond 24h, gentle tail
-    extraSimGoodFloor: 25, // beyond 24h: good stats won't drift below 25 passively
-    extraSimNeedCeiling: 75, // beyond 24h: needs won't drift above 75 passively
-    hardCapMinutes: 30 * 24 * 60, // safety cap for extreme gaps
-  },
-
-  zones: {
-    greenMin: 70,
-    yellowMin: 40,
-    redMin: 15, // for good stats
-    goodFloor: 15,
-    // because hunger/potty are inverted meters, this ceiling is 100 - floor
-    needCeiling: 85,
-    greenFactor: 1.0,
-    yellowFactor: 0.65,
-    redFactor: 0.4,
-  },
-
-  wellbeing: {
-    // decayProtection = lerp(1.0, protectMin, wellbeing/100)
-    protectMin: 0.65,
-    drainPerMinute: 0.12, // * needPressure
-    regenPerMinuteWhenFine: 0.03, // when needPressure < 0.2
-    fragileThreshold: 10,
-  },
-
-  careDebt: {
-    buildPerMinute: 0.1, // * needPressure
-    buildExtraWhenWellbeingEmpty: 0.06,
-    forgivePerMinuteWhenFine: 0.1,
-    cap: 100,
-  },
-
-  sleep: {
-    autoEnterAtEnergyOrBelow: 30,
-    autoWakeAtEnergyOrAbove: 70,
-    autoMaxMinutes: 90,
-
-    hungerNeedMultiplierWhileAsleep: 0.65,
-    happinessDecayMultiplierWhileAsleep: 0.8,
-    pottyNeedMultiplierWhileAsleep: 0.85,
-    cleanlinessDecayMultiplierWhileAsleep: 1.0,
-  },
-
-  accidents: {
-    triggerAtPottyOrAbove: 95,
-    cooldownMinutes: 8 * 60, // max 1 accident per 8h simulated
-    relieveTo: 30,
-    cleanlinessPenalty: 10,
-    happinessPenalty: 6,
-    careDebtPenalty: 4,
-
-    chancePerStepUntrained: 0.2,
-    chancePerStepTrained: 0.06,
-  },
-
-  // “Hours for GOOD stat to drift from 100 → 40” (60 points) while awake & no protection.
-  // Need meters (hunger/potty): approximately 0 → 60 over the same hours.
-  lifeStages: {
-    [LIFE_STAGES.PUPPY]: {
-      hoursTo40: {
-        hunger: 12,
-        energy: 10,
-        happiness: 18,
-        cleanliness: 40,
-        potty: 4.5,
-      },
-      energyRecoverPerMinuteWhileAsleep: 0.55,
-    },
-    [LIFE_STAGES.ADULT]: {
-      hoursTo40: {
-        hunger: 22,
-        energy: 16,
-        happiness: 30,
-        cleanliness: 55,
-        potty: 7.5,
-      },
-      energyRecoverPerMinuteWhileAsleep: 0.4,
-    },
-    [LIFE_STAGES.SENIOR]: {
-      hoursTo40: {
-        hunger: 26,
-        energy: 18,
-        happiness: 32,
-        cleanliness: 50,
-        potty: 9.0,
-      },
-      energyRecoverPerMinuteWhileAsleep: 0.35,
-    },
-  },
-};
-
-const lerp = (a, b, t) => a + (b - a) * t;
-
-function avg(...nums) {
-  return nums.reduce((a, b) => a + b, 0) / Math.max(1, nums.length);
-}
-
-function basePointsPerMinuteFromHoursTo40(hoursTo40) {
-  const minutes = Math.max(1, hoursTo40 * 60);
-  return 60 / minutes;
-}
-
-// zone factor for GOOD stats (happiness/energy/cleanliness)
-function zoneFactorGood(value) {
-  const z = DECAY_V2.zones;
-  if (value >= z.greenMin) return z.greenFactor;
-  if (value >= z.yellowMin) return z.yellowFactor;
-  if (value >= z.redMin) return z.redFactor;
-  return 0.0;
-}
-
-// zone factor for NEED meters (hunger/potty)
-function zoneFactorNeed(needValue) {
-  const goodEquivalent = 100 - needValue;
-  return zoneFactorGood(goodEquivalent);
-}
-
-// urgency for GOOD stats (0..1)
-function urgencyGood(value) {
-  if (value >= 70) return 0;
-  if (value >= 40) return ((70 - value) / 30) * 0.7;
-  if (value >= 15) return 0.7 + ((40 - value) / 25) * 0.3;
-  return 1;
-}
-
-// urgency for NEED meters (0..1)
-function urgencyNeed(needValue) {
-  return urgencyGood(100 - needValue);
-}
-
 /* ------------------- initial sub-structures ------------------- */
 
-=======
->>>>>>> master
 const initialTemperament = {
   primary: 'SPICY',
   secondary: 'SWEET',
@@ -451,10 +132,6 @@ const initialMemory = {
   lastPlayedAt: null,
   lastBathedAt: null,
   lastTrainedAt: null,
-<<<<<<< HEAD
-=======
-  lastPottyAt: null,
->>>>>>> master
   lastSeenAt: null,
   neglectStrikes: 0,
 };
@@ -487,145 +164,15 @@ const initialJournal = {
   entries: [],
 };
 
-<<<<<<< HEAD
-function makeHourArray() {
-  return Array.from({ length: 24 }, () => 0);
-}
-
-const initialAutonomy = {
-  enabled: true,
-  nextDecisionAt: null,
-  lastDecisionAt: null,
-  // UI can show these as toasts for "alive" feel.
-  lastEvent: null, // { id, kind, message, createdAt, expiresAt? }
-  boredom: 20, // 0..100
-  preferences: {
-    // 0..100: how likely the dog is to ask for / enjoy these.
-    feed: 55,
-    play: 60,
-    bathe: 25,
-    potty: 45,
-    rest: 40,
-    train: 45,
-  },
-  routine: {
-    // Soft habit maps (local hour buckets).
-    byHour: {
-      feed: makeHourArray(),
-      play: makeHourArray(),
-      potty: makeHourArray(),
-      rest: makeHourArray(),
-      train: makeHourArray(),
-      bathe: makeHourArray(),
-    },
-    updatedAt: null,
-  },
-  cooldowns: {
-    promptAt: 0,
-    emoteAt: 0,
-  },
-};
-
-const WEEKLY_CHALLENGE_POOL = [
-  {
-    id: 'care_feed_14',
-    label: 'Feed your dog 14 times',
-    type: 'feed',
-    goal: 14,
-    reward: { seasonXp: 140, journeyXp: 40, coins: 60 },
-  },
-  {
-    id: 'care_play_10',
-    label: 'Play 10 times',
-    type: 'play',
-    goal: 10,
-    reward: { seasonXp: 120, journeyXp: 30, coins: 50 },
-  },
-  {
-    id: 'care_bathe_3',
-    label: 'Bathe 3 times',
-    type: 'bathe',
-    goal: 3,
-    reward: { seasonXp: 110, journeyXp: 25, coins: 45 },
-  },
-  {
-    id: 'care_potty_12',
-    label: 'Go potty 12 times',
-    type: 'potty',
-    goal: 12,
-    reward: { seasonXp: 120, journeyXp: 30, coins: 50 },
-  },
-  {
-    id: 'care_scoop_10',
-    label: 'Scoop 10 messes',
-    type: 'scoop',
-    goal: 10,
-    reward: { seasonXp: 100, journeyXp: 25, coins: 40 },
-  },
-  {
-    id: 'training_sessions_5',
-    label: 'Complete 5 trick training sessions',
-    type: 'train',
-    goal: 5,
-    reward: { seasonXp: 170, journeyXp: 55, coins: 85 },
-  },
-  {
-    id: 'sessions_5days',
-    label: 'Start 5 play sessions this week',
-    type: 'session',
-    goal: 5,
-    reward: { seasonXp: 150, journeyXp: 45, coins: 70 },
-  },
-];
-
-const initialProgression = {
-  // Journey is the slow, multi-season track.
-  journey: {
-    level: 1,
-    xp: 0,
-    startedAt: null,
-  },
-  // Season is the 90-day ladder.
-  season: {
-    id: null,
-    startedAt: null,
-    endsAt: null,
-    level: 1,
-    xp: 0,
-  },
-  // Daily caps for fairness.
-  daily: {
-    date: null, // YYYY-MM-DD (UTC)
-    seasonXpEarned: 0,
-    journeyXpEarned: 0,
-  },
-  // Weekly challenge rotation.
-  weekly: {
-    weekKey: null, // week-start YYYY-MM-DD (UTC)
-    challenges: [],
-  },
-  legacy: {
-    points: 0,
-    spent: 0,
-  },
-};
-
-=======
->>>>>>> master
 const initialStreak = {
   currentStreakDays: 0,
   bestStreakDays: 0,
   lastActiveDate: null,
-<<<<<<< HEAD
-};
-
-=======
-  graceUsed: false,
 };
 
 const initialBond = {
-  value: 18,
-  lastUpdatedAt: null,
+  value: 0,
+  updatedAt: null,
 };
 
 const initialMemorial = {
@@ -643,96 +190,18 @@ const initialCosmetics = {
   },
 };
 
-const STREAK_REWARDS = [
-  { threshold: 3, id: 'collar_leaf', slot: 'collar', label: 'Leaf Collar' },
-  { threshold: 7, id: 'tag_star', slot: 'tag', label: 'Star Tag' },
-  { threshold: 14, id: 'collar_neon', slot: 'collar', label: 'Neon Collar' },
+const DEFAULT_COSMETIC_CATALOG = Object.freeze([
+  { id: 'collar_leaf', slot: 'collar', threshold: 3, label: 'Leaf Collar' },
+  { id: 'collar_neon', slot: 'collar', threshold: 7, label: 'Neon Collar' },
+  { id: 'tag_star', slot: 'tag', threshold: 10, label: 'Star Tag' },
   {
-    threshold: 30,
     id: 'backdrop_sunset',
     slot: 'backdrop',
+    threshold: 14,
     label: 'Sunset Backdrop',
   },
-];
+]);
 
-function normalizeTemperamentTraits(traits) {
-  // Accept:
-  // - Array of { id, label, intensity }
-  // - Object keyed by trait id
-  // - Anything else -> default traits
-  const defaults = (initialTemperament.traits || []).map((t) => ({ ...t }));
-
-  if (Array.isArray(traits)) {
-    const byId = new Map();
-    for (const t of traits) {
-      if (!t || typeof t !== 'object') continue;
-      const id = String(t.id || '').trim();
-      if (!id) continue;
-      byId.set(id, {
-        id,
-        label: t.label || defaults.find((d) => d.id === id)?.label || id,
-        intensity: clamp(t.intensity ?? 0, 0, 100),
-      });
-    }
-
-    return defaults.map((d) => ({ ...d, ...(byId.get(d.id) || {}) }));
-  }
-
-  if (traits && typeof traits === 'object') {
-    // Common legacy shape: { clingy: { intensity: 70 }, ... }
-    // Also accept values that already include `id`.
-    const values = Object.values(traits);
-    const looksLikeTraitArray =
-      values.length > 0 &&
-      values.every((v) => v && typeof v === 'object' && 'id' in v);
-
-    if (looksLikeTraitArray) {
-      return normalizeTemperamentTraits(values);
-    }
-
-    return defaults.map((d) => {
-      const maybe = traits[d.id];
-      if (!maybe || typeof maybe !== 'object') return { ...d };
-      return {
-        ...d,
-        label: maybe.label || d.label,
-        intensity: clamp(maybe.intensity ?? d.intensity ?? 0, 0, 100),
-      };
-    });
-  }
-
-  return defaults;
-}
-
-const POTTY_TRAINING_GOAL = 8;
-const DEFAULT_LIFE_STAGE = { stage: 'PUPPY', label: 'Puppy', days: 0 };
-
-// Per-life-stage stat decay multipliers.
-// Used by applyDecay() via getStageMultiplier().
-const LIFECYCLE_STAGE_MODIFIERS = {
-  PUPPY: {
-    hunger: 1.1,
-    happiness: 1.05,
-    energy: 1.0,
-    cleanliness: 1.1,
-  },
-  ADULT: {
-    hunger: 1.0,
-    happiness: 1.0,
-    energy: 1.0,
-    cleanliness: 1.0,
-  },
-  SENIOR: {
-    hunger: 1.0,
-    happiness: 1.05,
-    energy: 1.1,
-    cleanliness: 1.0,
-  },
-};
-const REAL_DAY_MS = 24 * 60 * 60 * 1000;
-const POTTY_TRAINED_POTTY_GAIN_MULTIPLIER = 0.65;
-
->>>>>>> master
 function createInitialTrainingState() {
   return {
     potty: {
@@ -749,112 +218,43 @@ function createInitialTrainingState() {
   };
 }
 
-<<<<<<< HEAD
 /* ------------------- root initialState ------------------- */
 
-=======
->>>>>>> master
 const initialState = {
   name: 'Pup',
   level: 1,
   xp: 0,
   coins: 0,
   adoptedAt: null,
-<<<<<<< HEAD
   lifeStage: { ...DEFAULT_LIFE_STAGE },
 
   // Potty gauge + counters
   pottyLevel: 0,
   potty: {
     training: 0, // 0–100: how potty-trained overall (meta)
-=======
-  lifeStage: { stage: 'PUPPY', label: 'Puppy', days: 0 },
-  potty: {
-    training: 0, // 0–100: how potty-trained
->>>>>>> master
     lastSuccessAt: null,
     lastAccidentAt: null,
     totalSuccesses: 0,
     totalAccidents: 0,
   },
-<<<<<<< HEAD
 
-=======
-  // 0–100: "need to go" bladder gauge (separate from training progress)
-  pottyLevel: 0,
->>>>>>> master
   stats: {
     hunger: 50,
     happiness: 60,
     energy: 60,
     cleanliness: 60,
   },
-<<<<<<< HEAD
 
-=======
->>>>>>> master
   cleanlinessTier: 'FRESH',
   poopCount: 0,
 
   isAsleep: false,
-<<<<<<< HEAD
-
-  // Decay v2 buffers
-  wellbeing: 60, // 0–100
-  careDebt: 0, // 0–100
-  sleepState: {
-    mode: 'AWAKE', // 'AWAKE' | 'MANUAL' | 'AUTO'
-    minutesLeft: 0,
-  },
-
   debug: false,
   lastUpdatedAt: null,
 
   // Used by UI renderers/selectors to derive simple animation hints
   lastAction: null,
 
-=======
-  debug: false,
-  lastUpdatedAt: null,
-
-  // Used by EnhancedDogSprite / animations
-  lastAction: null,
-
-  // Lightweight telemetry for UX + debug view.
-  progress: {
-    lastXpGain: null, // { at, amount, reason, levelAt }
-    lastLevelUp: null, // { at, fromLevel, toLevel, reason, xpGain }
-    lastUnlock: null, // { at, id, slot, label, threshold }
-  },
-  meta: {
-    lastTickAt: null,
-    lastSessionStartAt: null,
-    actionLastAt: {},
-    schemaVersion: DOG_SAVE_SCHEMA_VERSION,
-    lastMigratedAt: null,
-    savedAt: null,
-
-    // ISO dates of days where the player performed any meaningful care action.
-    // Used to gate temperament reveal on actual gameplay over real days.
-    careDays: [],
-
-    // Onboarding progress is persisted as part of the dog save so refresh/close
-    // never feels scary. UI-level "dismiss forever" still lives in localStorage.
-    onboarding: {
-      version: 2,
-      steps: {
-        named: false,
-        // Temperament is no longer chosen up-front; it develops over time.
-        temperamentPicked: true,
-        fed: false,
-        played: false,
-      },
-      rewardedAt: null,
-      completedAt: null,
-    },
-  },
-
->>>>>>> master
   temperament: initialTemperament,
   memory: initialMemory,
   career: initialCareer,
@@ -862,21 +262,13 @@ const initialState = {
   mood: initialMood,
   journal: initialJournal,
   streak: initialStreak,
-<<<<<<< HEAD
   training: createInitialTrainingState(),
 
-  // Months-long progression: seasons + journey + weekly challenges.
-  progression: initialProgression,
-
-  // "Alive" behaviors: desire planner + routines + preferences.
-  autonomy: initialAutonomy,
-
-=======
+  // Relationship / collectibles (used by Store + Rainbow Bridge pages)
   bond: initialBond,
   memorial: initialMemorial,
   cosmetics: initialCosmetics,
-  training: createInitialTrainingState(),
->>>>>>> master
+
   polls: {
     active: null,
     lastPromptId: null,
@@ -886,11 +278,7 @@ const initialState = {
   },
 };
 
-<<<<<<< HEAD
 /* ------------------- helpers ------------------- */
-=======
-/* ---------- helpers ---------- */
->>>>>>> master
 
 function pushJournalEntry(state, entry) {
   const ts = entry.timestamp ?? nowMs();
@@ -910,656 +298,9 @@ function pushJournalEntry(state, entry) {
   }
 }
 
-<<<<<<< HEAD
-function ensureProgressionState(state) {
-  if (!state.progression || typeof state.progression !== 'object') {
-    state.progression =
-      typeof structuredClone === 'function'
-        ? structuredClone(initialProgression)
-        : JSON.parse(JSON.stringify(initialProgression));
-  }
-
-  const p = state.progression;
-
-  // shallow-merge defaults for back-compat
-  p.journey = { ...initialProgression.journey, ...(p.journey || {}) };
-  p.season = { ...initialProgression.season, ...(p.season || {}) };
-  p.daily = { ...initialProgression.daily, ...(p.daily || {}) };
-  p.weekly = { ...initialProgression.weekly, ...(p.weekly || {}) };
-  p.legacy = { ...initialProgression.legacy, ...(p.legacy || {}) };
-
-  if (!Array.isArray(p.weekly.challenges)) p.weekly.challenges = [];
-  return p;
-}
-
-function ensureAutonomyState(state) {
-  if (!state.autonomy || typeof state.autonomy !== 'object') {
-    state.autonomy =
-      typeof structuredClone === 'function'
-        ? structuredClone(initialAutonomy)
-        : JSON.parse(JSON.stringify(initialAutonomy));
-  }
-
-  const a = state.autonomy;
-  a.enabled = a.enabled !== false;
-  a.boredom = clamp(a.boredom ?? initialAutonomy.boredom, 0, 100);
-  a.preferences = { ...initialAutonomy.preferences, ...(a.preferences || {}) };
-  a.routine = { ...initialAutonomy.routine, ...(a.routine || {}) };
-  a.routine.byHour = {
-    ...initialAutonomy.routine.byHour,
-    ...(a.routine.byHour || {}),
-  };
-
-  for (const key of Object.keys(initialAutonomy.routine.byHour)) {
-    const arr = a.routine.byHour[key];
-    if (!Array.isArray(arr) || arr.length !== 24) {
-      a.routine.byHour[key] = makeHourArray();
-    }
-  }
-
-  a.cooldowns = { ...initialAutonomy.cooldowns, ...(a.cooldowns || {}) };
-  return a;
-}
-
-function recordRoutineAction(state, actionKey, now) {
-  const a = ensureAutonomyState(state);
-  const hour = getLocalHour(now);
-  const map = a.routine.byHour?.[actionKey];
-  if (!Array.isArray(map) || map.length !== 24) return;
-
-  // Exponential-ish decay to keep habits adaptive over weeks.
-  for (let i = 0; i < 24; i += 1) {
-    map[i] = Math.max(0, map[i] * 0.995);
-  }
-  map[hour] = map[hour] * 0.9 + 1.0;
-  a.routine.updatedAt = now;
-}
-
-function getTraitIntensity(state, id) {
-  const t = state.temperament?.traits || [];
-  const found = t.find((x) => x.id === id);
-  return clamp(found?.intensity ?? 0, 0, 100);
-}
-
-function habitBias(state, actionKey, now) {
-  const a = ensureAutonomyState(state);
-  const hour = getLocalHour(now);
-  const arr = a.routine.byHour?.[actionKey];
-  if (!Array.isArray(arr) || arr.length !== 24) return 0;
-  const v = Number(arr[hour] || 0);
-  // 0..~1-ish
-  return Math.max(0, Math.min(1, v / 6));
-}
-
-function buildWeeklyChallenges(weekKey) {
-  const pool = WEEKLY_CHALLENGE_POOL;
-  const h = stableHash32(weekKey);
-  const picked = [];
-  const used = new Set();
-
-  // Pick 3 distinct challenges deterministically.
-  for (let i = 0; i < 3 && used.size < pool.length; i += 1) {
-    const idx = (h + i * 97) % pool.length;
-    // probe forward if collision
-    let j = 0;
-    while (j < pool.length && used.has(pool[(idx + j) % pool.length].id)) {
-      j += 1;
-    }
-    const item = pool[(idx + j) % pool.length];
-    if (!item || used.has(item.id)) continue;
-    used.add(item.id);
-    picked.push({
-      id: item.id,
-      label: item.label,
-      type: item.type,
-      goal: item.goal,
-      progress: 0,
-      reward: item.reward,
-      completedAt: null,
-      claimedAt: null,
-    });
-  }
-
-  return picked;
-}
-
-function maybeResetDailyCaps(prog, now) {
-  const date = getIsoDate(now);
-  if (prog.daily.date !== date) {
-    prog.daily.date = date;
-    prog.daily.seasonXpEarned = 0;
-    prog.daily.journeyXpEarned = 0;
-  }
-}
-
-function ensureSeasonInitialized(state, now) {
-  const prog = ensureProgressionState(state);
-  if (prog.journey.startedAt == null) prog.journey.startedAt = now;
-
-  const season = prog.season;
-  if (season.startedAt && season.endsAt && season.id) return;
-
-  const startedAt = now;
-  const endsAt = startedAt + SEASON_LENGTH_DAYS * 24 * 60 * 60 * 1000;
-  season.startedAt = startedAt;
-  season.endsAt = endsAt;
-  season.id = `S-${new Date(startedAt).toISOString().slice(0, 10)}`;
-  season.level = Math.max(1, Number(season.level || 1));
-  season.xp = Math.max(0, Number(season.xp || 0));
-}
-
-function maybeRollSeason(state, now) {
-  const prog = ensureProgressionState(state);
-  ensureSeasonInitialized(state, now);
-
-  const season = prog.season;
-  if (!season.endsAt || now < season.endsAt) return;
-
-  // Season ended: grant legacy points based on season level.
-  const earnedLegacy = Math.max(
-    0,
-    Math.floor((Number(season.level || 1) - 1) / 10)
-  );
-  if (earnedLegacy > 0) {
-    prog.legacy.points = (prog.legacy.points || 0) + earnedLegacy;
-  }
-
-  pushJournalEntry(state, {
-    type: 'PROGRESSION',
-    moodTag: 'PROUD',
-    summary: 'A new season begins',
-    body:
-      `Season complete! You reached Season Level ${season.level}. ` +
-      (earnedLegacy > 0
-        ? `Earned ${earnedLegacy} legacy point${earnedLegacy === 1 ? '' : 's'}.`
-        : 'Keep going for legacy points next season.'),
-    timestamp: now,
-  });
-
-  // Start a new season anchored at now (simple + robust across timezones).
-  const startedAt = now;
-  const endsAt = startedAt + SEASON_LENGTH_DAYS * 24 * 60 * 60 * 1000;
-  prog.season = {
-    id: `S-${new Date(startedAt).toISOString().slice(0, 10)}`,
-    startedAt,
-    endsAt,
-    level: 1,
-    xp: 0,
-  };
-
-  // Reset weekly challenges so the new season feels fresh.
-  const weekKey = getWeekKeyUtc(now);
-  prog.weekly.weekKey = weekKey;
-  prog.weekly.challenges = buildWeeklyChallenges(weekKey);
-}
-
-function ensureWeeklyChallenges(state, now) {
-  const prog = ensureProgressionState(state);
-  const weekKey = getWeekKeyUtc(now);
-  if (prog.weekly.weekKey === weekKey && prog.weekly.challenges.length) return;
-
-  prog.weekly.weekKey = weekKey;
-  prog.weekly.challenges = buildWeeklyChallenges(weekKey);
-}
-
-function awardProgressionXp(
-  state,
-  { seasonXp = 0, journeyXp = 0, coins = 0, now }
-) {
-  const prog = ensureProgressionState(state);
-  ensureSeasonInitialized(state, now);
-  maybeResetDailyCaps(prog, now);
-
-  const addWithCap = (requested, earnedSoFar, cap) => {
-    const remaining = Math.max(0, cap - (earnedSoFar || 0));
-    return Math.max(0, Math.min(requested, remaining));
-  };
-
-  const seasonAdd = addWithCap(
-    seasonXp,
-    prog.daily.seasonXpEarned,
-    DAILY_SEASON_XP_CAP
-  );
-  const journeyAdd = addWithCap(
-    journeyXp,
-    prog.daily.journeyXpEarned,
-    DAILY_JOURNEY_XP_CAP
-  );
-
-  if (seasonAdd > 0) {
-    prog.season.xp = (prog.season.xp || 0) + seasonAdd;
-    prog.daily.seasonXpEarned += seasonAdd;
-    const targetSeasonLevel =
-      1 + Math.floor(prog.season.xp / SEASON_LEVEL_XP_STEP);
-    if (targetSeasonLevel > (prog.season.level || 1)) {
-      prog.season.level = targetSeasonLevel;
-      pushJournalEntry(state, {
-        type: 'PROGRESSION',
-        moodTag: 'HAPPY',
-        summary: `Season level up! Now level ${prog.season.level}.`,
-        body: 'Season progress unlocked. Keep completing weekly challenges to climb the track.',
-        timestamp: now,
-      });
-    }
-  }
-
-  if (journeyAdd > 0) {
-    prog.journey.xp = (prog.journey.xp || 0) + journeyAdd;
-    prog.daily.journeyXpEarned += journeyAdd;
-    const targetJourneyLevel =
-      1 + Math.floor(prog.journey.xp / JOURNEY_LEVEL_XP_STEP);
-    if (targetJourneyLevel > (prog.journey.level || 1)) {
-      prog.journey.level = targetJourneyLevel;
-      pushJournalEntry(state, {
-        type: 'PROGRESSION',
-        moodTag: 'PROUD',
-        summary: `Journey level up! Now level ${prog.journey.level}.`,
-        body: 'This is your long-term progression — it carries across seasons.',
-        timestamp: now,
-      });
-    }
-  }
-
-  if (coins) state.coins = (state.coins || 0) + coins;
-}
-
-function bumpWeeklyChallengeProgress(state, type, amount, now) {
-  const prog = ensureProgressionState(state);
-  ensureWeeklyChallenges(state, now);
-
-  const list = prog.weekly.challenges || [];
-  for (const c of list) {
-    if (!c || c.type !== type) continue;
-    if (c.claimedAt) continue;
-
-    const next = Math.min(
-      Number(c.goal || 0),
-      Number(c.progress || 0) + (amount || 0)
-    );
-    c.progress = next;
-    if (!c.completedAt && next >= Number(c.goal || 0)) {
-      c.completedAt = now;
-
-      // Auto-claim on completion to keep UX simple.
-      c.claimedAt = now;
-      const reward = c.reward || {};
-      awardProgressionXp(state, {
-        seasonXp: Number(reward.seasonXp || 0),
-        journeyXp: Number(reward.journeyXp || 0),
-        coins: Number(reward.coins || 0),
-        now,
-      });
-
-      pushJournalEntry(state, {
-        type: 'PROGRESSION',
-        moodTag: 'HAPPY',
-        summary: 'Weekly challenge complete',
-        body: `Completed: ${c.label}`,
-        timestamp: now,
-      });
-    }
-  }
-=======
-function updateBond(state, delta = 0, now = nowMs()) {
-  if (!state.bond || typeof state.bond !== 'object') {
-    state.bond = { ...initialBond };
-  }
-  const next = clamp(
-    safeNumber(state.bond.value, 0) + safeNumber(delta, 0),
-    0,
-    100
-  );
-  state.bond.value = next;
-  state.bond.lastUpdatedAt = now;
-}
-
-function ensureJournalState(state) {
-  if (!state.journal || typeof state.journal !== 'object') {
-    state.journal = { ...initialJournal };
-  }
-  if (!Array.isArray(state.journal.entries)) {
-    state.journal.entries = [];
-  }
-  // Internal journal bookkeeping (not displayed).
-  if (!state.journal._auto || typeof state.journal._auto !== 'object') {
-    state.journal._auto = { lastAtByKey: {} };
-  }
-  if (
-    !state.journal._auto.lastAtByKey ||
-    typeof state.journal._auto.lastAtByKey !== 'object'
-  ) {
-    state.journal._auto.lastAtByKey = {};
-  }
-  return state.journal;
-}
-
-function hashToUint(str) {
-  // Small deterministic hash (fast, stable across sessions).
-  let h = 2166136261;
-  const s = String(str || '');
-  for (let i = 0; i < s.length; i += 1) {
-    h ^= s.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return h >>> 0;
-}
-
-function pickDeterministic(list, seed) {
-  if (!Array.isArray(list) || list.length === 0) return null;
-  const idx = hashToUint(seed) % list.length;
-  return list[idx];
-}
-
-function deriveMoodTagFromStats(state) {
-  const { hunger, happiness, energy, cleanliness } = state.stats || {};
-  if (safeNumber(happiness, 0) > 75 && safeNumber(hunger, 0) < 60)
-    return 'HAPPY';
-  if (safeNumber(hunger, 0) > 75) return 'HUNGRY';
-  if (safeNumber(energy, 100) < 30) return 'SLEEPY';
-  if (safeNumber(cleanliness, 100) < 30) return 'DIRTY';
-  return 'NEUTRAL';
-}
-
-function shouldAutoJournal(state, key, now, opts = {}) {
-  const { minMs = 90_000, chance = 0.65 } = opts;
-  ensureJournalState(state);
-
-  const t = safeNumber(now, nowMs());
-  const last = safeNumber(state.journal._auto.lastAtByKey[key], 0);
-  if (last && t - last < minMs) return false;
-
-  // Deterministic pseudo-random gate, to avoid filling the journal too quickly.
-  const seed = `${key}:${t}:${state.name}:${state.level}:${
-    state.lifeStage?.stage || ''
-  }`;
-  const roll = (hashToUint(seed) % 1000) / 1000;
-  if (roll > clamp(chance, 0, 1)) return false;
-
-  state.journal._auto.lastAtByKey[key] = t;
-  return true;
-}
-
-function careJournalEntry(state, now, key, context = {}) {
-  const name = String(state.name || 'Pup');
-  const stage = String(state.lifeStage?.label || state.lifeStage?.stage || '');
-  const bucket = String(context.timeBucket || getLocalTimeBucket(now));
-  const moodTag = context.moodTag || deriveMoodTagFromStats(state);
-
-  const templates = {
-    feed: [
-      { s: 'Bowl: demolished.', b: `${name} ate like a champion.` },
-      { s: 'Snack audit completed.', b: `${name} approved the menu. Loudly.` },
-      {
-        s: 'Mission: feed the dog. Success.',
-        b: `Full tummy, happier pup (${stage}).`,
-      },
-      {
-        s: 'Dinner bell vibes.',
-        b: `A very ${bucket} meal, expertly inhaled.`,
-      },
-      {
-        s: 'Treat negotiations concluded.',
-        b: `Terms accepted. Payment received.`,
-      },
-      { s: 'Fuel acquired.', b: `${name} is now running on premium kibble.` },
-    ],
-    play: [
-      { s: 'Zoomies achieved.', b: `We played hard. Tail: activated.` },
-      { s: 'Toy time was a hit.', b: `${name} did a tiny victory lap.` },
-      { s: 'Play session logged.', b: `Happiness up. Dignity… questionable.` },
-      { s: 'Squeak! Squeak! Squeak!', b: `A very productive game.` },
-      {
-        s: 'Best day ever (so far).',
-        b: `We made time to play. ${name} noticed.`,
-      },
-      { s: 'Energy spent wisely.', b: `Now ${name} is pleasantly tired.` },
-    ],
-    rest: [
-      { s: 'Nap protocol initiated.', b: `${name} is recharging.` },
-      { s: 'Power nap time.', b: `Soft snores detected. (${bucket})` },
-      { s: 'Resting those paws.', b: `A little downtime goes a long way.` },
-      { s: 'Cozy mode: ON.', b: `${name} found the best spot and claimed it.` },
-      { s: 'Sleepy pup, happy home.', b: `Quiet moments count too.` },
-    ],
-    bathe: [
-      { s: 'Bubble time happened.', b: `${name} is now suspiciously clean.` },
-      { s: 'Freshly washed pup.', b: `Clean fur, big attitude.` },
-      {
-        s: 'Bath complete.',
-        b: `We survived. ${name} will forgive me… eventually.`,
-      },
-      { s: 'Spa day achieved.', b: `A very ${bucket} rinse-and-reset.` },
-      {
-        s: 'Squeaky-clean status.',
-        b: `${stage} coat restored to maximum fluff.`,
-      },
-    ],
-    potty: [
-      { s: 'Potty break successful.', b: `${name} did the responsible thing.` },
-      { s: 'Nature called.', b: `Handled like a pro.` },
-      { s: 'Outside time = success.', b: `${name} is very proud. So am I.` },
-      {
-        s: 'Bathroom business: complete.',
-        b: `No accidents today, thank you very much.`,
-      },
-    ],
-    scoop: [
-      { s: 'Cleanup crew reporting in.', b: `Backyard status: improved.` },
-      { s: 'Scoop secured.', b: `We don’t talk about it. We just scoop.` },
-      { s: 'Poop? Gone.', b: `Cleanliness restored. Order returns.` },
-    ],
-    pet: [
-      {
-        s: 'Received premium ear scritches.',
-        b: `${name} leaned in for seconds.`,
-      },
-      {
-        s: 'We had a quiet cuddle moment.',
-        b: `Tiny tail wags. Big feelings.`,
-      },
-      { s: 'Petting session: successful.', b: `${name} is now 12% calmer.` },
-      {
-        s: 'Affection delivered.',
-        b: `The pup has been emotionally refueled.`,
-      },
-    ],
-  };
-
-  const pool = templates[key] || null;
-  const chosen = pickDeterministic(
-    pool || [],
-    `${key}:${now}:${name}:${state.xp}`
-  );
-  if (!chosen) return null;
-
-  const summary =
-    typeof chosen === 'string'
-      ? chosen
-      : String(chosen.s || chosen.summary || '').trim();
-  const body =
-    typeof chosen === 'string'
-      ? ''
-      : String(chosen.b || chosen.body || '').trim();
-
-  return {
-    type: 'CARE',
-    moodTag,
-    summary,
-    body,
-    timestamp: now,
-  };
-}
-
-function formatCommandLabel(commandId) {
-  const id = String(commandId || '').trim();
-  if (!id) return 'command';
-  const map = {
-    sit: 'Sit',
-    stay: 'Stay',
-    rollOver: 'Roll over',
-    speak: 'Speak',
-  };
-  if (map[id]) return map[id];
-
-  // Fallback: split camelCase -> words
-  return id
-    .replace(/([a-z])([A-Z])/g, '$1 $2')
-    .replace(/[_-]+/g, ' ')
-    .replace(/^\w/, (c) => c.toUpperCase());
-}
-
-function trainingJournalEntry(state, now, commandId, context = {}) {
-  const name = String(state.name || 'Pup');
-  const cmd = formatCommandLabel(commandId);
-  const bucket = String(context.timeBucket || getLocalTimeBucket(now));
-
-  const templates = [
-    {
-      s: `Practiced: ${cmd}.`,
-      b: `We ran drills for "${cmd}". Treats may have been involved.`,
-    },
-    { s: `${cmd} practice logged.`, b: `${name} focused hard. I’m proud.` },
-    {
-      s: `Training time: ${cmd}.`,
-      b: `A very ${bucket} session. Lots of "good dog!" energy.`,
-    },
-    { s: `Obedience: +1 brain cell.`, b: `Worked on ${cmd}. Progress: real.` },
-    {
-      s: `Command replay: ${cmd}.`,
-      b: `We kept it short and sweet. Consistency wins.`,
-    },
-  ];
-
-  const chosen = pickDeterministic(
-    templates,
-    `train:${commandId}:${now}:${state.level}:${state.xp}`
-  );
-
-  return {
-    type: 'TRAINING',
-    moodTag: 'FOCUSED',
-    summary: chosen?.s || `Practiced: ${cmd}.`,
-    body: chosen?.b || `We worked on "${cmd}" today.`,
-    timestamp: now,
-  };
-}
-
-function levelUpJournalEntry({
-  state,
-  now,
-  fromLevel,
-  toLevel,
-  reason,
-  xpGain,
-}) {
-  const name = String(state.name || 'Pup');
-  const r = String(reason || '').toUpperCase();
-  const templates = [
-    {
-      s: `Level up! Now level ${toLevel}.`,
-      b: `${name} feels stronger. (Reason: ${r || 'XP'})`,
-    },
-    {
-      s: `New level unlocked: ${toLevel}.`,
-      b: `We gained ${xpGain || 0} XP. ${name} is thriving.`,
-    },
-    {
-      s: `Glow-up achieved: level ${toLevel}.`,
-      b: `From ${fromLevel} → ${toLevel}. Good work, hooman.`,
-    },
-    {
-      s: `Ding! Level ${toLevel}.`,
-      b: `${name} did a tiny victory wiggle. Totally scientific.`,
-    },
-  ];
-
-  const chosen = pickDeterministic(
-    templates,
-    `levelup:${toLevel}:${now}:${state.xp}:${state.coins}`
-  );
-
-  return {
-    type: 'LEVEL_UP',
-    moodTag: 'PROUD',
-    summary: chosen?.s || `Level up! Now level ${toLevel}.`,
-    body: chosen?.b || `Nice work, hooman. I’m now level ${toLevel}!`,
-    timestamp: now,
-  };
-}
-
-function unlockJournalEntry(state, now, reward) {
-  const label = String(reward?.label || 'Reward');
-  const threshold = Number(reward?.threshold || 0);
-
-  const templates = [
-    {
-      s: `Unlocked: ${label}`,
-      b: `Streak reward for ${threshold} day(s) active.`,
-    },
-    {
-      s: `${label} unlocked!`,
-      b: `Consistency pays. (Streak: ${threshold} day(s))`,
-    },
-    {
-      s: `Reward received: ${label}`,
-      b: `Your streak hit ${threshold}. The pup approves.`,
-    },
-  ];
-
-  const chosen = pickDeterministic(
-    templates,
-    `unlock:${reward?.id || label}:${threshold}:${now}`
-  );
-
-  return {
-    type: 'UNLOCK',
-    moodTag: 'HAPPY',
-    summary: chosen?.s || `Unlocked: ${label}`,
-    body: chosen?.b || `Streak reward for ${threshold} day(s) active.`,
-    timestamp: now,
-  };
-}
-
-function neglectJournalEntry(state, now, strikes = 0) {
-  const name = String(state.name || 'Pup');
-  const n = Math.max(0, Math.floor(Number(strikes) || 0));
-
-  const letters = [
-    {
-      s: 'Dear hooman… I missed you.',
-      b:
-        'Dear hooman,\n\nI wasn’t sure if you were chasing squirrels or just busy, ' +
-        'but I got pretty lonely while you were gone. Next time, can we play a little sooner?\n\n– your pup',
-    },
-    {
-      s: 'I waited by the door.',
-      b:
-        `Dear hooman,\n\nI listened for your footsteps and did a small circle every time. ` +
-        `When you come back, can we do one (1) cuddle?\n\n– ${name}`,
-    },
-    {
-      s: 'Report: zero pets for too long.',
-      b:
-        `Dear hooman,\n\nThis is an official complaint. I require pets. ` +
-        `Preferably on schedule.\n\n– ${name}`,
-    },
-  ];
-
-  const chosen = pickDeterministic(letters, `neglect:${n}:${now}:${state.xp}`);
-  return {
-    type: 'NEGLECT',
-    moodTag: 'LONELY',
-    summary: chosen?.s || 'Dear hooman… I missed you.',
-    body: chosen?.b || '',
-    timestamp: now,
-  };
->>>>>>> master
-}
-
 const isValidStat = (key) =>
   ['hunger', 'happiness', 'energy', 'cleanliness'].includes(key);
 
-<<<<<<< HEAD
 function getStageMultiplier(state, statKey) {
   const stageKey = state.lifeStage?.stage || DEFAULT_LIFE_STAGE.stage;
   const modifiers =
@@ -1569,86 +310,37 @@ function getStageMultiplier(state, statKey) {
   return modifiers[statKey] ?? 1;
 }
 
-function ensurePottyState(state) {
-  if (!state.potty || typeof state.potty !== 'object') {
-    state.potty = {
-      training: 0,
-      lastSuccessAt: null,
-      lastAccidentAt: null,
-      totalSuccesses: 0,
-      totalAccidents: 0,
-    };
-  }
-  return state.potty;
-}
-
 function applyDecay(state, now = nowMs()) {
   if (!state.lastUpdatedAt) {
     state.lastUpdatedAt = now;
     return;
   }
 
-  let dtMinutes = (now - state.lastUpdatedAt) / (1000 * 60);
-  if (!Number.isFinite(dtMinutes) || dtMinutes <= 0) return;
+  const diffHours = Math.max(0, (now - state.lastUpdatedAt) / (1000 * 60 * 60));
+  if (diffHours <= 0) return;
 
-  dtMinutes = Math.min(dtMinutes, DECAY_V2.tick.hardCapMinutes);
-
-  // ensure new fields exist for older saves
-  if (typeof state.wellbeing !== 'number') state.wellbeing = 60;
-  if (typeof state.careDebt !== 'number') state.careDebt = 0;
-  if (!state.sleepState || typeof state.sleepState !== 'object') {
-    state.sleepState = { mode: 'AWAKE', minutesLeft: 0 };
-  }
-  ensurePottyState(state);
-
-  // Neglect strike/journal (once if >= 24h since last update)
-  if (dtMinutes >= 24 * 60) {
-=======
-function applyDecay(state, now = nowMs()) {
-  if (!state.lastUpdatedAt) {
-    state.lastUpdatedAt = now;
-    return { diffHoursRaw: 0, diffHoursApplied: 0 };
-  }
-
-  const diffHoursRaw = Math.max(
-    0,
-    (now - state.lastUpdatedAt) / (1000 * 60 * 60)
-  );
-  const diffHours = Math.min(diffHoursRaw, MAX_CATCHUP_HOURS);
-  if (diffHours <= 0) return { diffHoursRaw, diffHoursApplied: 0 };
-
-  const hungerMultiplier = safeNumber(
-    state.career.perks?.hungerDecayMultiplier,
-    1.0
-  );
+  const hungerMultiplier = state.career.perks?.hungerDecayMultiplier || 1.0;
 
   Object.entries(state.stats).forEach(([key, value]) => {
     if (!isValidStat(key)) return;
 
-    const rate = safeNumber(DECAY_PER_HOUR[key], 0);
-    const stageMultiplier = safeNumber(getStageMultiplier(state, key), 1);
-    const current = clampStat(value);
+    const rate = DECAY_PER_HOUR[key] || 0;
+    const stageMultiplier = getStageMultiplier(state, key);
     let delta = rate * DECAY_SPEED * diffHours * stageMultiplier;
-    if (!Number.isFinite(delta)) delta = 0;
 
     if (key === 'hunger') {
       delta *= hungerMultiplier;
-      // Avoid "AFK = instant starvation" by capping hunger catch-up.
-      const cap = diffHoursRaw >= 2 ? IDLE_HUNGER_CAP : STAT_HI;
-      state.stats[key] = clamp(current + delta, STAT_LO, cap);
+      state.stats[key] = clamp(value + delta, 0, 100);
     } else {
-      // Idle decay should not hard-zero essential stats.
-      state.stats[key] = clamp(current - delta, IDLE_DECAY_FLOOR, STAT_HI);
+      state.stats[key] = clamp(value - delta, 0, 100);
     }
   });
 
   if (diffHours >= 24) {
->>>>>>> master
     state.memory.neglectStrikes = Math.min(
       (state.memory.neglectStrikes || 0) + 1,
       999
     );
-<<<<<<< HEAD
     pushJournalEntry(state, {
       type: 'NEGLECT',
       moodTag: 'LONELY',
@@ -1660,292 +352,7 @@ function applyDecay(state, now = nowMs()) {
     });
   }
 
-  const fullSim = Math.min(dtMinutes, DECAY_V2.tick.fullSimMinutes);
-  const extraSim = Math.max(0, dtMinutes - fullSim);
-
-  simulateDecayMinutes(state, fullSim, now, {
-    decayMultiplier: 1.0,
-    goodFloor: DECAY_V2.zones.goodFloor,
-    needCeiling: DECAY_V2.zones.needCeiling,
-    allowAccidents: true,
-  });
-
-  if (extraSim > 0) {
-    simulateDecayMinutes(state, extraSim, now, {
-      decayMultiplier: DECAY_V2.tick.extraSimDecayMultiplier,
-      goodFloor: DECAY_V2.tick.extraSimGoodFloor,
-      needCeiling: DECAY_V2.tick.extraSimNeedCeiling,
-      allowAccidents: false,
-    });
-  }
-
   state.lastUpdatedAt = now;
-}
-
-function simulateDecayMinutes(state, minutesTotal, now, opts) {
-  const step = DECAY_V2.tick.stepMinutes;
-  let remaining = minutesTotal;
-
-  const stageKey = state.lifeStage?.stage || DEFAULT_LIFE_STAGE.stage;
-  const stageCfg =
-    DECAY_V2.lifeStages[stageKey] || DECAY_V2.lifeStages[LIFE_STAGES.ADULT];
-
-  const h2 = stageCfg.hoursTo40;
-
-  const base = {
-    hungerNeed: basePointsPerMinuteFromHoursTo40(h2.hunger),
-    energyDown: basePointsPerMinuteFromHoursTo40(h2.energy),
-    happinessDown: basePointsPerMinuteFromHoursTo40(h2.happiness),
-    cleanlinessDown: basePointsPerMinuteFromHoursTo40(h2.cleanliness),
-    pottyNeed: basePointsPerMinuteFromHoursTo40(h2.potty),
-  };
-
-  // career perk: hunger increases faster/slower
-  const hungerRateMult = state.career.perks?.hungerDecayMultiplier || 1.0;
-
-  while (remaining > 0) {
-    const stepMin = Math.min(step, remaining);
-    remaining -= stepMin;
-
-    const simNow = now - remaining * 60 * 1000;
-
-    // Auto-nap: if energy low and not already asleep, enter AUTO sleep
-    if (
-      !state.isAsleep &&
-      state.stats.energy <= DECAY_V2.sleep.autoEnterAtEnergyOrBelow
-    ) {
-      state.isAsleep = true;
-      state.sleepState.mode = 'AUTO';
-      state.sleepState.minutesLeft = DECAY_V2.sleep.autoMaxMinutes;
-    }
-
-    const asleepNow = !!state.isAsleep;
-    const autoMode = state.sleepState?.mode === 'AUTO';
-
-    // count down auto nap window
-    if (asleepNow && autoMode) {
-      state.sleepState.minutesLeft = Math.max(
-        0,
-        (state.sleepState.minutesLeft || 0) - stepMin
-      );
-    }
-
-    // Need pressure drives wellbeing + debt
-    const needPressure = avg(
-      urgencyNeed(state.stats.hunger),
-      urgencyGood(state.stats.energy),
-      urgencyGood(state.stats.happiness),
-      urgencyGood(state.stats.cleanliness),
-      urgencyNeed(state.pottyLevel)
-    );
-
-    const wb = clamp(state.wellbeing, 0, 100);
-    const protect = lerp(1.0, DECAY_V2.wellbeing.protectMin, wb / 100);
-    const simMult = (opts.decayMultiplier ?? 1.0) * protect;
-
-    // multipliers while asleep
-    const sleepMult = asleepNow
-      ? {
-          hunger: DECAY_V2.sleep.hungerNeedMultiplierWhileAsleep,
-          happiness: DECAY_V2.sleep.happinessDecayMultiplierWhileAsleep,
-          potty: DECAY_V2.sleep.pottyNeedMultiplierWhileAsleep,
-          cleanliness: DECAY_V2.sleep.cleanlinessDecayMultiplierWhileAsleep,
-        }
-      : { hunger: 1, happiness: 1, potty: 1, cleanliness: 1 };
-
-    // HUNGER (need rises, soft-ceiling)
-    {
-      const ceiling = opts.needCeiling ?? DECAY_V2.zones.needCeiling;
-      const zf = zoneFactorNeed(state.stats.hunger);
-      const delta =
-        base.hungerNeed *
-        zf *
-        simMult *
-        hungerRateMult *
-        sleepMult.hunger *
-        stepMin;
-      state.stats.hunger = clamp(
-        Math.min(ceiling, state.stats.hunger + delta),
-        0,
-        100
-      );
-    }
-
-    // HAPPINESS (good decays, soft-floor)
-    {
-      const floor = opts.goodFloor ?? DECAY_V2.zones.goodFloor;
-      const zf = zoneFactorGood(state.stats.happiness);
-      const delta =
-        base.happinessDown * zf * simMult * sleepMult.happiness * stepMin;
-      state.stats.happiness = clamp(
-        Math.max(floor, state.stats.happiness - delta),
-        0,
-        100
-      );
-    }
-
-    // CLEANLINESS (good decays, soft-floor)
-    {
-      const floor = opts.goodFloor ?? DECAY_V2.zones.goodFloor;
-      const zf = zoneFactorGood(state.stats.cleanliness);
-      const delta =
-        base.cleanlinessDown * zf * simMult * sleepMult.cleanliness * stepMin;
-      state.stats.cleanliness = clamp(
-        Math.max(floor, state.stats.cleanliness - delta),
-        0,
-        100
-      );
-    }
-
-    // POTTY LEVEL (need rises; respects cleanliness + training multipliers)
-    {
-      const effects = getCleanlinessEffect(state);
-      const pottyGainMultiplier = effects.pottyGainMultiplier || 1;
-      const trainingMultiplier = getPottyTrainingMultiplier(state); // 0.65 if trained
-      const ceiling = opts.needCeiling ?? DECAY_V2.zones.needCeiling;
-
-      const zf = zoneFactorNeed(state.pottyLevel);
-      const delta =
-        base.pottyNeed *
-        zf *
-        simMult *
-        pottyGainMultiplier *
-        trainingMultiplier *
-        sleepMult.potty *
-        stepMin;
-
-      const cap = opts.allowAccidents ? 100 : ceiling;
-      state.pottyLevel = clamp(Math.min(cap, state.pottyLevel + delta), 0, 100);
-    }
-
-    // ENERGY (decay or recover while asleep)
-    if (state.isAsleep) {
-      const rec = (stageCfg.energyRecoverPerMinuteWhileAsleep || 0.4) * stepMin;
-      state.stats.energy = clamp(state.stats.energy + rec, 0, 100);
-
-      // Auto wake conditions
-      if (autoMode) {
-        if (
-          state.stats.energy >= DECAY_V2.sleep.autoWakeAtEnergyOrAbove ||
-          (state.sleepState.minutesLeft || 0) <= 0
-        ) {
-          state.isAsleep = false;
-          state.sleepState.mode = 'AWAKE';
-          state.sleepState.minutesLeft = 0;
-        }
-      }
-    } else {
-      const floor = opts.goodFloor ?? DECAY_V2.zones.goodFloor;
-      const zf = zoneFactorGood(state.stats.energy);
-      const delta = base.energyDown * zf * simMult * stepMin;
-      state.stats.energy = clamp(
-        Math.max(floor, state.stats.energy - delta),
-        0,
-        100
-      );
-    }
-
-    // ACCIDENTS (full sim only)
-    if (opts.allowAccidents) {
-      maybeTriggerAccidentV2(state, simNow);
-    }
-
-    // WELLBEING / CARE DEBT
-    if (needPressure < 0.2) {
-      state.wellbeing = clamp(
-        state.wellbeing + DECAY_V2.wellbeing.regenPerMinuteWhenFine * stepMin,
-        0,
-        100
-      );
-      state.careDebt = clamp(
-        state.careDebt - DECAY_V2.careDebt.forgivePerMinuteWhenFine * stepMin,
-        0,
-        DECAY_V2.careDebt.cap
-      );
-    } else {
-      state.wellbeing = clamp(
-        state.wellbeing -
-          DECAY_V2.wellbeing.drainPerMinute * needPressure * stepMin,
-        0,
-        100
-      );
-
-      const extra =
-        state.wellbeing <= DECAY_V2.wellbeing.fragileThreshold
-          ? DECAY_V2.careDebt.buildExtraWhenWellbeingEmpty
-          : 0;
-
-      state.careDebt = clamp(
-        state.careDebt +
-          (DECAY_V2.careDebt.buildPerMinute * needPressure + extra) * stepMin,
-        0,
-        DECAY_V2.careDebt.cap
-      );
-    }
-  }
-}
-
-function maybeTriggerAccidentV2(state, simNowMs) {
-  ensurePottyState(state);
-
-  const pottyLevel = state.pottyLevel ?? 0;
-  if (pottyLevel < DECAY_V2.accidents.triggerAtPottyOrAbove) return;
-
-  const lastAcc = state.potty.lastAccidentAt || 0;
-  const cooldownMs = DECAY_V2.accidents.cooldownMinutes * 60 * 1000;
-  if (lastAcc && simNowMs - lastAcc < cooldownMs) return;
-
-  const trained = getPottyTrainingMultiplier(state) < 1;
-  const baseChance = trained
-    ? DECAY_V2.accidents.chancePerStepTrained
-    : DECAY_V2.accidents.chancePerStepUntrained;
-
-  const scale = clamp((pottyLevel - 95) / 5, 0, 1);
-  const chance = clamp(baseChance * (1 + 0.5 * scale), 0, 0.95);
-
-  if (Math.random() > chance) return;
-
-  // Accident!
-  state.potty.lastAccidentAt = simNowMs;
-  state.potty.totalAccidents = (state.potty.totalAccidents || 0) + 1;
-
-  state.pottyLevel = clamp(DECAY_V2.accidents.relieveTo, 0, 100);
-  state.poopCount = (state.poopCount || 0) + 1;
-
-  state.stats.cleanliness = clamp(
-    (state.stats.cleanliness ?? 0) - DECAY_V2.accidents.cleanlinessPenalty,
-    0,
-    100
-  );
-  state.stats.happiness = clamp(
-    (state.stats.happiness ?? 0) - DECAY_V2.accidents.happinessPenalty,
-    0,
-    100
-  );
-  state.careDebt = clamp(
-    (state.careDebt ?? 0) + DECAY_V2.accidents.careDebtPenalty,
-    0,
-    DECAY_V2.careDebt.cap
-  );
-
-  pushJournalEntry(state, {
-    type: 'CARE',
-    moodTag: 'EMBARRASSED',
-    summary: 'Accident indoors',
-    body: 'Uh oh… your pup couldn’t hold it. Clean up the mess and try taking them out a bit sooner.',
-    timestamp: simNowMs,
-  });
-=======
-    updateBond(state, -6, now);
-    pushJournalEntry(
-      state,
-      neglectJournalEntry(state, now, state.memory.neglectStrikes)
-    );
-  }
-
-  state.lastUpdatedAt = now;
-  return { diffHoursRaw, diffHoursApplied: diffHours };
->>>>>>> master
 }
 
 function maybeSampleMood(state, now = nowMs(), reason = 'TICK') {
@@ -1977,7 +384,6 @@ function maybeSampleMood(state, now = nowMs(), reason = 'TICK') {
   state.mood.lastSampleAt = now;
 }
 
-<<<<<<< HEAD
 function applyXp(state, amount = 10) {
   state.xp += amount;
   const targetLevel = 1 + Math.floor(state.xp / LEVEL_XP_STEP);
@@ -1990,279 +396,17 @@ function applyXp(state, amount = 10) {
       body: `Nice work, hooman. I’m now level ${state.level}! New tricks unlocked soon…`,
     });
   }
-=======
-function xpRequiredForNextLevel(level) {
-  const lvl = Math.max(1, Math.floor(Number(level) || 1));
-  // Example: level 1->2 ~ 90, 5->6 ~ 260, 10->11 ~ 470
-  return Math.max(
-    60,
-    Math.round(LEVEL_XP_BASE * Math.pow(lvl, LEVEL_XP_GROWTH))
-  );
-}
-
-// Public helper: keep UI in sync with the same curve used by applyXp().
-export function getXpRequiredForNextLevel(level) {
-  return xpRequiredForNextLevel(level);
-}
-
-function xpIntoLevelFromTotal(totalXp, level) {
-  const xpTotal = Math.max(0, Math.round(safeNumber(totalXp, 0)));
-  const lvl = Math.max(1, Math.floor(safeNumber(level, 1)));
-  let used = 0;
-  for (let l = 1; l < lvl; l += 1) {
-    used += xpRequiredForNextLevel(l);
-    if (used > xpTotal) break;
-  }
-  return Math.max(0, xpTotal - Math.min(used, xpTotal));
-}
-
-// Memoized selector: returns a stable reference unless level/xp actually change.
-export const selectDogXpProgress = createSelector(
-  [(state) => state?.dog?.level, (state) => state?.dog?.xp],
-  (levelRaw, xpRaw) => {
-    const level = Math.max(1, Math.floor(safeNumber(levelRaw, 1)));
-    const xpTotal = Math.max(0, Math.round(safeNumber(xpRaw, 0)));
-    const needed = xpRequiredForNextLevel(level);
-    const current = xpIntoLevelFromTotal(xpTotal, level);
-    const ready = current >= needed;
-    const pct = needed > 0 ? clamp(current / needed, 0, 1) : 0;
-
-    return {
-      level,
-      xpTotal,
-      current,
-      needed,
-      pct,
-      ready,
-    };
-  }
-);
-
-function applyXp(state, amount = 10, meta = {}) {
-  const now = meta?.now ?? nowMs();
-  const reason = String(meta?.reason || 'XP').toUpperCase();
-  const delta = Math.max(0, Math.round(Number(amount) || 0));
-  if (!delta) return;
-
-  state.xp = Math.max(0, Math.round(Number(state.xp) || 0) + delta);
-
-  if (!state.progress || typeof state.progress !== 'object') {
-    state.progress = { lastXpGain: null, lastLevelUp: null };
-  }
-  state.progress.lastXpGain = {
-    at: now,
-    amount: delta,
-    reason,
-    levelAt: Math.max(1, Math.floor(Number(state.level) || 1)),
-  };
-
-  // Convert total XP to levels using a scaling threshold.
-  // Important: never decrease a user's existing level.
-  let targetLevel = 1;
-  let remaining = state.xp;
-  let safety = 0;
-
-  while (remaining >= xpRequiredForNextLevel(targetLevel) && safety < 300) {
-    remaining -= xpRequiredForNextLevel(targetLevel);
-    targetLevel += 1;
-    safety += 1;
-  }
-
-  const currentLevel = Math.max(1, Math.floor(Number(state.level) || 1));
-
-  // Prevent sudden multi-level jumps from a single action.
-  const cappedTarget = Math.min(targetLevel, currentLevel + 1);
-  const level = Math.max(currentLevel, cappedTarget);
-
-  if (level > state.level) {
-    const fromLevel = Math.max(1, Math.floor(Number(state.level) || 1));
-    state.level = level;
-    state.progress.lastLevelUp = {
-      at: now,
-      fromLevel,
-      toLevel: state.level,
-      reason,
-      xpGain: delta,
-    };
-    pushJournalEntry(
-      state,
-      levelUpJournalEntry({
-        state,
-        now,
-        fromLevel,
-        toLevel: state.level,
-        reason,
-        xpGain: delta,
-      })
-    );
-  }
-}
-
-function sanitizeDogState(state) {
-  // Core scalars
-  state.level = Math.max(1, Math.floor(safeNumber(state.level, 1)));
-  state.xp = Math.max(0, Math.round(safeNumber(state.xp, 0)));
-  state.coins = Math.max(0, Math.round(safeNumber(state.coins, 0)));
-  state.poopCount = Math.max(0, Math.floor(safeNumber(state.poopCount, 0)));
-  state.pottyLevel = clamp(safeNumber(state.pottyLevel, 0), 0, 100);
-
-  // Stats
-  if (!state.stats || typeof state.stats !== 'object') {
-    state.stats = { ...initialState.stats };
-  }
-  state.stats.hunger = clampStat(state.stats.hunger);
-  state.stats.happiness = clampStat(state.stats.happiness);
-  state.stats.energy = clampStat(state.stats.energy);
-  state.stats.cleanliness = clampStat(state.stats.cleanliness);
-
-  // Nested skill nodes can NaN if older saves had strings
-  const ob = state.skills?.obedience;
-  if (ob && typeof ob === 'object') {
-    Object.values(ob).forEach((node) => {
-      if (!node || typeof node !== 'object') return;
-      node.level = Math.max(0, Math.floor(safeNumber(node.level, 0)));
-      node.xp = Math.max(0, Math.round(safeNumber(node.xp, 0)));
-    });
-  }
-
-  if (!state.progress || typeof state.progress !== 'object') {
-    state.progress = { lastXpGain: null, lastLevelUp: null, lastUnlock: null };
-  }
-  if (!state.meta || typeof state.meta !== 'object') {
-    state.meta = {
-      lastTickAt: null,
-      lastSessionStartAt: null,
-      actionLastAt: {},
-      schemaVersion: DOG_SAVE_SCHEMA_VERSION,
-      lastMigratedAt: null,
-      savedAt: null,
-    };
-  }
-  if (!state.meta.actionLastAt || typeof state.meta.actionLastAt !== 'object') {
-    state.meta.actionLastAt = {};
-  }
-
-  // Persisted schema fields
-  if (!Number.isFinite(Number(state.meta.schemaVersion))) {
-    state.meta.schemaVersion = DOG_SAVE_SCHEMA_VERSION;
-  }
-  state.meta.schemaVersion = DOG_SAVE_SCHEMA_VERSION;
-
-  // Persisted onboarding progress (best-effort for older saves)
-  if (!state.meta.onboarding || typeof state.meta.onboarding !== 'object') {
-    state.meta.onboarding = { ...initialState.meta.onboarding };
-  }
-  if (state.meta.onboarding.version !== 2) {
-    state.meta.onboarding.version = 2;
-  }
-  if (
-    !state.meta.onboarding.steps ||
-    typeof state.meta.onboarding.steps !== 'object'
-  ) {
-    state.meta.onboarding.steps = { ...initialState.meta.onboarding.steps };
-  }
-  state.meta.onboarding.steps = {
-    ...initialState.meta.onboarding.steps,
-    ...state.meta.onboarding.steps,
-  };
-  state.meta.onboarding.rewardedAt = state.meta.onboarding.rewardedAt ?? null;
-  state.meta.onboarding.completedAt = state.meta.onboarding.completedAt ?? null;
-
-  if (!state.bond || typeof state.bond !== 'object') {
-    state.bond = { ...initialBond };
-  }
-  state.bond.value = clamp(safeNumber(state.bond.value, 0), 0, 100);
-  state.bond.lastUpdatedAt = state.bond.lastUpdatedAt ?? null;
-
-  if (!state.memorial || typeof state.memorial !== 'object') {
-    state.memorial = { ...initialMemorial };
-  }
-  state.memorial.active = Boolean(state.memorial.active);
-  state.memorial.startedAt = state.memorial.startedAt ?? null;
-  state.memorial.completedAt = state.memorial.completedAt ?? null;
-
-  // Keep tier in sync with current constants.
-  state.cleanlinessTier = normalizeCleanlinessTier(state.cleanlinessTier);
-
-  // Cosmetics (older saves)
-  if (!state.cosmetics || typeof state.cosmetics !== 'object') {
-    state.cosmetics = { ...initialCosmetics };
-  }
-  if (!Array.isArray(state.cosmetics.unlockedIds)) {
-    state.cosmetics.unlockedIds = [];
-  }
-  if (
-    !state.cosmetics.equipped ||
-    typeof state.cosmetics.equipped !== 'object'
-  ) {
-    state.cosmetics.equipped = { ...initialCosmetics.equipped };
-  }
-  state.cosmetics.equipped = {
-    ...initialCosmetics.equipped,
-    ...state.cosmetics.equipped,
-  };
-}
-
-function maybeUnlockStreakRewards(state, now = nowMs()) {
-  if (!state?.streak) return;
-  if (!state.cosmetics || typeof state.cosmetics !== 'object') {
-    state.cosmetics = { ...initialCosmetics };
-  }
-  if (!Array.isArray(state.cosmetics.unlockedIds))
-    state.cosmetics.unlockedIds = [];
-
-  const streakDays = Math.max(
-    0,
-    Math.floor(safeNumber(state.streak.currentStreakDays, 0))
-  );
-  if (!streakDays) return;
-
-  for (const r of STREAK_REWARDS) {
-    if (!r || typeof r !== 'object') continue;
-    if (streakDays < r.threshold) continue;
-    if (state.cosmetics.unlockedIds.includes(r.id)) continue;
-
-    state.cosmetics.unlockedIds.push(r.id);
-    // Auto-equip if the slot is empty.
-    const slot = r.slot;
-    if (slot && state.cosmetics.equipped && !state.cosmetics.equipped[slot]) {
-      state.cosmetics.equipped[slot] = r.id;
-    }
-
-    state.progress.lastUnlock = {
-      at: now,
-      id: r.id,
-      slot: r.slot,
-      label: r.label,
-      threshold: r.threshold,
-    };
-
-    // Small coin bonus for streak milestones.
-    state.coins = Math.max(0, Math.round(safeNumber(state.coins, 0)) + 25);
-
-    pushJournalEntry(state, unlockJournalEntry(state, now, r));
-  }
->>>>>>> master
 }
 
 function applySkillXp(skillBranch, skillId, skillState, amount = 5) {
   if (!skillState[skillBranch] || !skillState[skillBranch][skillId]) return;
 
   const node = skillState[skillBranch][skillId];
-<<<<<<< HEAD
   node.xp += amount;
 
   const targetLevel = Math.floor(node.xp / SKILL_LEVEL_STEP);
   if (targetLevel > node.level) {
     node.level = targetLevel;
-=======
-  const inc = Math.max(0, Math.round(safeNumber(amount, 0)));
-  node.xp = Math.max(0, Math.round(safeNumber(node.xp, 0)) + inc);
-
-  const targetLevel = Math.floor(node.xp / SKILL_LEVEL_STEP);
-  if (targetLevel > node.level) {
-    node.level = Math.max(0, Math.floor(safeNumber(targetLevel, 0)));
->>>>>>> master
   }
 }
 
@@ -2275,10 +419,6 @@ function updateStreak(streakState, isoDate) {
     streakState.currentStreakDays = 1;
     streakState.bestStreakDays = Math.max(bestStreakDays, 1);
     streakState.lastActiveDate = isoDate;
-<<<<<<< HEAD
-=======
-    streakState.graceUsed = false;
->>>>>>> master
     return;
   }
 
@@ -2288,27 +428,13 @@ function updateStreak(streakState, isoDate) {
 
   const prev = new Date(lastActiveDate);
   const curr = new Date(isoDate);
-<<<<<<< HEAD
   const diffMs = curr.getTime() - prev.getTime();
-=======
-  const diffMs = curr - prev;
->>>>>>> master
   const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
 
   if (diffDays === 1) {
     streakState.currentStreakDays = currentStreakDays + 1;
-<<<<<<< HEAD
   } else {
     streakState.currentStreakDays = 1;
-=======
-  } else if (diffDays === 2 && !streakState.graceUsed) {
-    // Forgiving miss: allow one "grace day" per streak.
-    streakState.currentStreakDays = currentStreakDays + 1;
-    streakState.graceUsed = true;
-  } else {
-    streakState.currentStreakDays = 1;
-    streakState.graceUsed = false;
->>>>>>> master
   }
 
   streakState.bestStreakDays = Math.max(
@@ -2324,7 +450,6 @@ function updateTemperamentReveal(state, now = nowMs()) {
   if (state.temperament.revealedAt) return;
 
   const days = getDaysBetween(adoptedAt, now);
-<<<<<<< HEAD
   if (days >= 3) {
     state.temperament.revealReady = true;
   }
@@ -2332,38 +457,6 @@ function updateTemperamentReveal(state, now = nowMs()) {
 
 function evaluateTemperament(state, now = nowMs()) {
   const t = state.temperament;
-=======
-  const careDays = Array.isArray(state.meta?.careDays)
-    ? state.meta.careDays
-    : [];
-  const uniqueCareDays = new Set(careDays.filter(Boolean)).size;
-  if (days >= 3 && uniqueCareDays >= 3) state.temperament.revealReady = true;
-}
-
-function recordCareDay(state, now = nowMs()) {
-  if (!state.meta || typeof state.meta !== 'object') {
-    state.meta = { ...initialState.meta };
-  }
-  if (!Array.isArray(state.meta.careDays)) state.meta.careDays = [];
-  const iso = getIsoDate(now);
-  if (!iso) return;
-  if (state.meta.careDays[0] === iso) return;
-  if (state.meta.careDays.includes(iso)) return;
-  state.meta.careDays.unshift(iso);
-  if (state.meta.careDays.length > 21) state.meta.careDays.length = 21;
-}
-
-function evaluateTemperament(state, now = nowMs()) {
-  if (!state.temperament || typeof state.temperament !== 'object') {
-    state.temperament = {
-      ...initialTemperament,
-      adoptedAt: state.adoptedAt || now,
-    };
-  }
-
-  const t = state.temperament;
-  t.traits = normalizeTemperamentTraits(t.traits);
->>>>>>> master
 
   const lastEval = t.lastEvaluatedAt || t.adoptedAt || 0;
   const days = getDaysBetween(lastEval, now);
@@ -2411,13 +504,6 @@ function evaluateTemperament(state, now = nowMs()) {
   };
 
   const recentJournal = (state.journal?.entries || []).slice(0, 20);
-<<<<<<< HEAD
-  const trainingEntries = recentJournal.filter(
-=======
-  const _trainingEntries = recentJournal.filter(
->>>>>>> master
-    (e) => e.type === 'TRAINING'
-  ).length;
   const neglectEntries = recentJournal.filter(
     (e) => e.type === 'NEGLECT'
   ).length;
@@ -2483,16 +569,9 @@ function evaluateTemperament(state, now = nowMs()) {
 }
 
 function resolveCleanlinessTierFromValue(value = 0) {
-<<<<<<< HEAD
   if (value >= CLEANLINESS_THRESHOLDS.FRESH) return 'FRESH';
   if (value >= CLEANLINESS_THRESHOLDS.DIRTY) return 'DIRTY';
   if (value >= CLEANLINESS_THRESHOLDS.FLEAS) return 'FLEAS';
-=======
-  const v = clamp(Number(value), 0, 100);
-  if (v >= CLEANLINESS_THRESHOLDS.FRESH) return 'FRESH';
-  if (v >= CLEANLINESS_THRESHOLDS.DIRTY) return 'DIRTY';
-  if (v >= CLEANLINESS_THRESHOLDS.FLEAS) return 'FLEAS';
->>>>>>> master
   return 'MANGE';
 }
 
@@ -2541,7 +620,6 @@ function applyCleanlinessPenalties(state, tierOverride) {
   const effects = CLEANLINESS_TIER_EFFECTS[tier];
   if (!effects) return;
 
-<<<<<<< HEAD
   if (effects.penalties?.happinessTickPenalty) {
     state.stats.happiness = clamp(
       state.stats.happiness - effects.penalties.happinessTickPenalty,
@@ -2555,48 +633,10 @@ function applyCleanlinessPenalties(state, tierOverride) {
       state.stats.energy - effects.penalties.energyTickPenalty,
       0,
       100
-=======
-  // Scale penalties by elapsed time so tick interval changes don't break tuning.
-  const elapsedHours = clamp(
-    safeNumber(state?.__elapsedHoursForPenalties, 0),
-    0,
-    MAX_CATCHUP_HOURS
-  );
-  if (!elapsedHours) return;
-
-  // Safety cap: penalties should feel like nudges, not a multi-hour punishment spike.
-  const effectiveHours = Math.min(elapsedHours, 2.5);
-
-  if (effects.happinessTickPenalty) {
-    state.stats.happiness = clamp(
-      state.stats.happiness - effects.happinessTickPenalty * effectiveHours,
-      STAT_LO,
-      STAT_HI
-    );
-  }
-
-  if (effects.energyTickPenalty) {
-    state.stats.energy = clamp(
-      state.stats.energy - effects.energyTickPenalty * effectiveHours,
-      STAT_LO,
-      STAT_HI
->>>>>>> master
     );
   }
 }
 
-<<<<<<< HEAD
-=======
-function getStageMultiplier(state, statKey) {
-  const stageKey = state.lifeStage?.stage || DEFAULT_LIFE_STAGE.stage;
-  const modifiers =
-    LIFECYCLE_STAGE_MODIFIERS[stageKey] ||
-    LIFECYCLE_STAGE_MODIFIERS[DEFAULT_LIFE_STAGE.stage] ||
-    {};
-  return modifiers[statKey] ?? 1;
-}
-
->>>>>>> master
 function getCleanlinessEffect(state) {
   return (
     CLEANLINESS_TIER_EFFECTS[state.cleanlinessTier] ||
@@ -2609,7 +649,6 @@ function getIsoDate(ms) {
   return new Date(ms).toISOString().slice(0, 10);
 }
 
-<<<<<<< HEAD
 function ensureTrainingState(state) {
   if (!state.training) {
     state.training = createInitialTrainingState();
@@ -2623,18 +662,6 @@ function ensureTrainingState(state) {
     state.training.adult = { ...defaults.adult };
   }
   return state.training;
-=======
-function getLocalTimeBucket(ms) {
-  try {
-    const h = new Date(ms).getHours();
-    if (h >= 21 || h < 6) return 'night';
-    if (h < 12) return 'morning';
-    if (h < 18) return 'afternoon';
-    return 'evening';
-  } catch {
-    return 'local';
-  }
->>>>>>> master
 }
 
 function recordPuppyPottySuccess(state, now = nowMs()) {
@@ -2642,50 +669,18 @@ function recordPuppyPottySuccess(state, now = nowMs()) {
   const potty = training.potty;
   if (!potty || potty.completedAt) return;
   const stage = state.lifeStage?.stage || DEFAULT_LIFE_STAGE.stage;
-<<<<<<< HEAD
   if (stage !== LIFE_STAGES.PUPPY) return;
-=======
-  if (stage !== 'PUPPY') return;
->>>>>>> master
 
   potty.successCount = Math.min(potty.successCount + 1, potty.goal);
 
   if (potty.successCount >= potty.goal) {
     potty.completedAt = now;
     state.stats.happiness = clamp(state.stats.happiness + 5, 0, 100);
-<<<<<<< HEAD
     pushJournalEntry(state, {
       type: 'TRAINING',
       moodTag: 'PROUD',
       summary: 'Potty training complete',
       body: 'Your puppy now knows how to signal when nature calls. Accidents will slow way down!',
-=======
-    const templates = [
-      {
-        s: 'Potty training complete',
-        b: 'Your puppy now knows how to signal when nature calls. Accidents will slow way down!',
-      },
-      {
-        s: 'Potty training: mastered',
-        b: 'Your pup is getting really good at going outside. Nice consistency!',
-      },
-      {
-        s: 'A proud potty moment',
-        b: 'Fewer accidents ahead. Your pup learned the routine!',
-      },
-    ];
-    const chosen = pickDeterministic(
-      templates,
-      `potty:complete:${now}:${state.name}:${state.xp}`
-    );
-    pushJournalEntry(state, {
-      type: 'TRAINING',
-      moodTag: 'PROUD',
-      summary: chosen?.s || 'Potty training complete',
-      body:
-        chosen?.b ||
-        'Your puppy now knows how to signal when nature calls. Accidents will slow way down!',
->>>>>>> master
       timestamp: now,
     });
   }
@@ -2699,11 +694,7 @@ function getPottyTrainingMultiplier(state) {
 function completeAdultTrainingSession(state, now = nowMs()) {
   const training = ensureTrainingState(state);
   const stage = state.lifeStage?.stage || DEFAULT_LIFE_STAGE.stage;
-<<<<<<< HEAD
   if (stage === LIFE_STAGES.PUPPY) return;
-=======
-  if (stage === 'PUPPY') return;
->>>>>>> master
   const adult = training.adult;
   const iso = getIsoDate(now);
   if (adult.lastCompletedDate === iso) return;
@@ -2723,40 +714,11 @@ function completeAdultTrainingSession(state, now = nowMs()) {
   adult.lastPenaltyDate = null;
   state.coins += 40;
 
-<<<<<<< HEAD
   pushJournalEntry(state, {
     type: 'TRAINING',
     moodTag: 'FOCUSED',
     summary: 'Adult training complete',
     body: `Today's obedience session is logged. Training streak: ${adult.streak}.`,
-=======
-  const templates = [
-    {
-      s: 'Adult training complete',
-      b: `Obedience session logged. Training streak: ${adult.streak}.`,
-    },
-    {
-      s: 'Training streak maintained',
-      b: `Nice routine. Current training streak: ${adult.streak}.`,
-    },
-    {
-      s: 'Obedience session done',
-      b: `A focused session. Streak: ${adult.streak}.`,
-    },
-  ];
-  const chosen = pickDeterministic(
-    templates,
-    `adultTraining:complete:${iso}:${adult.streak}:${state.xp}`
-  );
-
-  pushJournalEntry(state, {
-    type: 'TRAINING',
-    moodTag: 'FOCUSED',
-    summary: chosen?.s || 'Adult training complete',
-    body:
-      chosen?.b ||
-      `Today's obedience session is logged. Training streak: ${adult.streak}.`,
->>>>>>> master
     timestamp: now,
   });
 }
@@ -2764,11 +726,7 @@ function completeAdultTrainingSession(state, now = nowMs()) {
 function applyAdultTrainingMissPenalty(state, now = nowMs()) {
   const training = ensureTrainingState(state);
   const stage = state.lifeStage?.stage || DEFAULT_LIFE_STAGE.stage;
-<<<<<<< HEAD
   if (stage === LIFE_STAGES.PUPPY) return;
-=======
-  if (stage === 'PUPPY') return;
->>>>>>> master
 
   const adult = training.adult;
   if (!adult.lastCompletedDate) return;
@@ -2787,39 +745,11 @@ function applyAdultTrainingMissPenalty(state, now = nowMs()) {
   adult.lastPenaltyDate = iso;
   state.stats.happiness = clamp(state.stats.happiness - diffDays * 3, 0, 100);
 
-<<<<<<< HEAD
   pushJournalEntry(state, {
     type: 'TRAINING',
     moodTag: 'RESTLESS',
     summary: 'Needs adult training',
     body: 'Too many days without a training session. Schedule time to practice commands!',
-=======
-  const templates = [
-    {
-      s: 'Needs adult training',
-      b: 'Too many days without a training session. Schedule time to practice commands!',
-    },
-    {
-      s: 'Training routine slipped',
-      b: 'Let’s get back to daily practice. A short session helps a lot.',
-    },
-    {
-      s: 'Reminder: practice time',
-      b: 'A little obedience session today would really help.',
-    },
-  ];
-  const chosen = pickDeterministic(
-    templates,
-    `adultTraining:miss:${iso}:${adult.misses}:${state.xp}`
-  );
-  pushJournalEntry(state, {
-    type: 'TRAINING',
-    moodTag: 'RESTLESS',
-    summary: chosen?.s || 'Needs adult training',
-    body:
-      chosen?.b ||
-      'Too many days without a training session. Schedule time to practice commands!',
->>>>>>> master
     timestamp: now,
   });
 }
@@ -2840,24 +770,6 @@ function ensurePollState(state) {
   return state.polls;
 }
 
-<<<<<<< HEAD
-=======
-function ensureTrainingState(state) {
-  if (!state.training) {
-    state.training = createInitialTrainingState();
-    return state.training;
-  }
-  const defaults = createInitialTrainingState();
-  if (!state.training.potty) {
-    state.training.potty = { ...defaults.potty };
-  }
-  if (!state.training.adult) {
-    state.training.adult = { ...defaults.adult };
-  }
-  return state.training;
-}
-
->>>>>>> master
 function pickNextPoll(previousId) {
   const prompts = DOG_POLL_CONFIG?.prompts || [];
   if (!prompts.length) return null;
@@ -2892,27 +804,6 @@ function spawnDogPollInternal(state, now = nowMs()) {
   return pollState.active;
 }
 
-<<<<<<< HEAD
-function spawnCustomPoll(state, { id, prompt, effects, action, now }) {
-  const pollState = ensurePollState(state);
-  if (pollState.active) return null;
-
-  const safeId = String(id || 'custom');
-  pollState.active = {
-    id: safeId,
-    prompt: String(prompt || '...'),
-    effects: effects || {},
-    action: action || null,
-    startedAt: now,
-    expiresAt: now + AUTONOMY.promptTimeoutMs,
-  };
-  pollState.lastPromptId = safeId;
-  pollState.lastSpawnedAt = now;
-  return pollState.active;
-}
-
-=======
->>>>>>> master
 function resolveActivePoll(state, { accepted, reason, now = nowMs() }) {
   const pollState = ensurePollState(state);
   const active = pollState.active;
@@ -2920,11 +811,7 @@ function resolveActivePoll(state, { accepted, reason, now = nowMs() }) {
 
   if (accepted) {
     applyPollEffects(state, active.effects);
-<<<<<<< HEAD
     applyXp(state, 4);
-=======
-    applyXp(state, 4, { now, reason: 'POLL' });
->>>>>>> master
     maybeSampleMood(state, now, 'POLL_ACCEPT');
     pushJournalEntry(state, {
       type: 'POLL',
@@ -2953,26 +840,6 @@ function resolveActivePoll(state, { accepted, reason, now = nowMs() }) {
     });
   }
 
-<<<<<<< HEAD
-  // Preference learning: if the dog asked for a specific action and you declined,
-  // it becomes a bit less likely to ask again soon.
-  try {
-    const a = ensureAutonomyState(state);
-    const action = active?.action;
-    if (action && a?.preferences?.[action] != null) {
-      const delta = accepted ? 1.5 : reason === 'TIMEOUT' ? -3 : -2;
-      a.preferences[action] = clamp(
-        Number(a.preferences[action]) + delta,
-        0,
-        100
-      );
-    }
-  } catch {
-    // ignore
-  }
-
-=======
->>>>>>> master
   pollState.history.unshift({
     id: active.id,
     prompt: active.prompt,
@@ -2987,22 +854,6 @@ function resolveActivePoll(state, { accepted, reason, now = nowMs() }) {
   pollState.active = null;
   pollState.lastResolvedAt = now;
   finalizeDerivedState(state, now);
-<<<<<<< HEAD
-=======
-  sanitizeDogState(state);
-}
-
-function getIncomingSchemaVersion(payload) {
-  const v = payload?.meta?.schemaVersion;
-  const n = Number(v);
-  return Number.isFinite(n) ? n : 1;
-}
-
-function normalizeCleanlinessTier(tier) {
-  const t = String(tier || '').toUpperCase();
-  if (t && CLEANLINESS_TIER_EFFECTS && t in CLEANLINESS_TIER_EFFECTS) return t;
-  return 'FRESH';
->>>>>>> master
 }
 
 /* ---------------------- slice ---------------------- */
@@ -3014,16 +865,10 @@ const dogSlice = createSlice({
     hydrateDog(state, { payload }) {
       if (!payload || typeof payload !== 'object') return;
 
-<<<<<<< HEAD
       const adoptedAt =
         parseAdoptedAt(payload.adoptedAt) ||
         parseAdoptedAt(state.adoptedAt) ||
         nowMs();
-=======
-      const incomingSchemaVersion = getIncomingSchemaVersion(payload);
-
-      const adoptedAt = payload.adoptedAt || state.adoptedAt || nowMs();
->>>>>>> master
 
       const merged = {
         ...state,
@@ -3044,53 +889,17 @@ const dogSlice = createSlice({
         ...(payload.training || state.training || {}),
       };
 
-<<<<<<< HEAD
-      merged.progression = {
-        ...initialProgression,
-        ...(payload.progression || state.progression || {}),
-      };
-
-      // back-compat: ensure nested structures exist and are clamped
-      ensureProgressionState(merged);
-
-      merged.autonomy = {
-        ...initialAutonomy,
-        ...(payload.autonomy || state.autonomy || {}),
-      };
-      ensureAutonomyState(merged);
-
-=======
->>>>>>> master
       merged.temperament = {
         ...initialTemperament,
         ...(payload.temperament || state.temperament || {}),
         adoptedAt,
       };
-<<<<<<< HEAD
-=======
-      merged.temperament.traits = normalizeTemperamentTraits(
-        merged.temperament.traits
-      );
->>>>>>> master
 
       merged.memory = {
         ...initialMemory,
         ...(payload.memory || state.memory || {}),
       };
 
-<<<<<<< HEAD
-=======
-      merged.bond = {
-        ...initialBond,
-        ...(payload.bond || state.bond || {}),
-      };
-
-      merged.memorial = {
-        ...initialMemorial,
-        ...(payload.memorial || state.memorial || {}),
-      };
-
->>>>>>> master
       merged.career = {
         ...initialCareer,
         ...(payload.career || state.career || {}),
@@ -3118,64 +927,30 @@ const dogSlice = createSlice({
         ...(payload.streak || state.streak || {}),
       };
 
-<<<<<<< HEAD
-      merged.lastAction =
-        payload.lastAction ?? state.lastAction ?? initialState.lastAction;
-
-      merged.cleanlinessTier =
-        payload.cleanlinessTier || state.cleanlinessTier || 'FRESH';
-
-      // decay v2 fields
-      merged.wellbeing =
-        typeof payload.wellbeing === 'number'
-          ? clamp(payload.wellbeing, 0, 100)
-          : typeof state.wellbeing === 'number'
-          ? clamp(state.wellbeing, 0, 100)
-          : initialState.wellbeing;
-
-      merged.careDebt =
-        typeof payload.careDebt === 'number'
-          ? clamp(payload.careDebt, 0, 100)
-          : typeof state.careDebt === 'number'
-          ? clamp(state.careDebt, 0, 100)
-          : initialState.careDebt;
-
-      merged.sleepState = {
-        ...(initialState.sleepState || {}),
-        ...(state.sleepState || {}),
-        ...(payload.sleepState || {}),
+      merged.bond = {
+        ...initialBond,
+        ...(payload.bond || state.bond || {}),
       };
 
-      ensureTrainingState(merged);
-      ensurePollState(merged);
-      ensurePottyState(merged);
+      merged.memorial = {
+        ...initialMemorial,
+        ...(payload.memorial || state.memorial || {}),
+      };
 
-      // Ensure the season/week are initialized for older saves.
-      ensureSeasonInitialized(merged, nowMs());
-      ensureWeeklyChallenges(merged, nowMs());
-
-      // Ensure autonomy has a reasonable next decision time.
-      if (!merged.autonomy.nextDecisionAt) {
-        merged.autonomy.nextDecisionAt =
-          nowMs() + AUTONOMY.decisionMinIntervalMs;
-      }
-
-      finalizeDerivedState(merged, nowMs());
-      return merged;
-    },
-=======
       merged.cosmetics = {
         ...initialCosmetics,
         ...(payload.cosmetics || state.cosmetics || {}),
-      };
-      if (!Array.isArray(merged.cosmetics.unlockedIds))
-        merged.cosmetics.unlockedIds = [];
-      merged.cosmetics.equipped = {
-        ...initialCosmetics.equipped,
-        ...(merged.cosmetics.equipped || {}),
+        unlockedIds: Array.isArray(payload.cosmetics?.unlockedIds)
+          ? payload.cosmetics.unlockedIds
+          : Array.isArray(state.cosmetics?.unlockedIds)
+          ? state.cosmetics.unlockedIds
+          : initialCosmetics.unlockedIds,
+        equipped: {
+          ...initialCosmetics.equipped,
+          ...(payload.cosmetics?.equipped || state.cosmetics?.equipped || {}),
+        },
       };
 
-      // Keep lastAction if present, otherwise reset
       merged.lastAction =
         payload.lastAction ?? state.lastAction ?? initialState.lastAction;
 
@@ -3185,250 +960,16 @@ const dogSlice = createSlice({
       merged.cleanlinessTier =
         payload.cleanlinessTier || state.cleanlinessTier || 'FRESH';
 
-      // Ensure expected new fields exist even for older saves.
-      merged.pottyLevel = safeNumber(
-        payload.pottyLevel,
-        safeNumber(state.pottyLevel, 0)
-      );
-      merged.progress =
-        payload.progress || state.progress || initialState.progress;
-      merged.meta = {
-        ...initialState.meta,
-        ...(state.meta || {}),
-        ...(payload.meta || {}),
-      };
-
-      // Normalize care-day tracking.
-      if (!Array.isArray(merged.meta.careDays)) merged.meta.careDays = [];
-
-      // Temperament is no longer picked up-front; don't block onboarding on legacy false.
-      if (
-        !merged.meta.onboarding ||
-        typeof merged.meta.onboarding !== 'object'
-      ) {
-        merged.meta.onboarding = { ...initialState.meta.onboarding };
-      }
-      if (
-        !merged.meta.onboarding.steps ||
-        typeof merged.meta.onboarding.steps !== 'object'
-      ) {
-        merged.meta.onboarding.steps = {
-          ...initialState.meta.onboarding.steps,
-        };
-      }
-      merged.meta.onboarding.steps.temperamentPicked = true;
-
-      // Keep schema version current after hydrate/migrate.
-      if (incomingSchemaVersion !== DOG_SAVE_SCHEMA_VERSION) {
-        merged.meta.lastMigratedAt = nowMs();
-      }
-      merged.meta.schemaVersion = DOG_SAVE_SCHEMA_VERSION;
-
-      merged.cleanlinessTier = normalizeCleanlinessTier(
-        payload.cleanlinessTier || state.cleanlinessTier || 'FRESH'
-      );
-
       finalizeDerivedState(merged, nowMs());
-      sanitizeDogState(merged);
       return merged;
     },
-    equipCosmetic(state, { payload }) {
-      const slot = String(payload?.slot || '').trim();
-      const id = String(payload?.id || '').trim();
-      if (!slot) return;
-      if (!state.cosmetics || typeof state.cosmetics !== 'object') {
-        state.cosmetics = { ...initialCosmetics };
-      }
-      if (!Array.isArray(state.cosmetics.unlockedIds))
-        state.cosmetics.unlockedIds = [];
-      if (
-        !state.cosmetics.equipped ||
-        typeof state.cosmetics.equipped !== 'object'
-      ) {
-        state.cosmetics.equipped = { ...initialCosmetics.equipped };
-      }
-      if (!(slot in state.cosmetics.equipped)) return;
-      if (!id) {
-        state.cosmetics.equipped[slot] = null;
-        return;
-      }
-      if (!state.cosmetics.unlockedIds.includes(id)) return;
-      state.cosmetics.equipped[slot] = id;
-    },
-
-    purchaseCosmetic(state, { payload }) {
-      const now = payload?.now ?? nowMs();
-      const id = String(payload?.id || '').trim();
-      if (!id) return;
-
-      const entry = STREAK_REWARDS.find((r) => r && r.id === id) || null;
-      if (!entry) return;
-
-      if (!state.cosmetics || typeof state.cosmetics !== 'object') {
-        state.cosmetics = { ...initialCosmetics };
-      }
-      if (!Array.isArray(state.cosmetics.unlockedIds)) {
-        state.cosmetics.unlockedIds = [];
-      }
-      if (
-        !state.cosmetics.equipped ||
-        typeof state.cosmetics.equipped !== 'object'
-      ) {
-        state.cosmetics.equipped = { ...initialCosmetics.equipped };
-      }
-
-      // Already owned -> no charge.
-      if (state.cosmetics.unlockedIds.includes(id)) return;
-
-      const fallbackPrice = Math.max(
-        0,
-        Math.round(Number(entry.threshold || 0) * 25)
-      );
-      const price = Math.max(
-        0,
-        Math.round(
-          Number.isFinite(Number(payload?.price))
-            ? Number(payload.price)
-            : fallbackPrice
-        )
-      );
-
-      const coins = Math.max(0, Math.round(safeNumber(state.coins, 0)));
-      if (price > coins) return;
-
-      state.coins = Math.max(0, coins - price);
-      state.cosmetics.unlockedIds.push(id);
-
-      // Auto-equip if the slot is empty.
-      const slot = String(entry.slot || '').trim();
-      if (
-        slot &&
-        slot in state.cosmetics.equipped &&
-        !state.cosmetics.equipped[slot]
-      ) {
-        state.cosmetics.equipped[slot] = id;
-      }
-
-      pushJournalEntry(state, {
-        type: 'PURCHASE',
-        moodTag: 'HAPPY',
-        summary: `Purchased: ${entry.label}`,
-        body: `You bought ${entry.label} for ${price} coins.`,
-        timestamp: now,
-      });
-
-      finalizeDerivedState(state, now);
-      sanitizeDogState(state);
-    },
->>>>>>> master
 
     setDogName(state, { payload }) {
       state.name = payload || 'Pup';
     },
 
-<<<<<<< HEAD
     setAdoptedAt(state, { payload }) {
       const adoptedAt = parseAdoptedAt(payload) ?? nowMs();
-=======
-    setOnboardingStep(state, { payload }) {
-      const step = String(payload?.step || '').trim();
-      if (!step) return;
-      const now = payload?.now ?? nowMs();
-
-      if (!state.meta || typeof state.meta !== 'object')
-        state.meta = { ...initialState.meta };
-      if (!state.meta.onboarding || typeof state.meta.onboarding !== 'object') {
-        state.meta.onboarding = { ...initialState.meta.onboarding };
-      }
-      if (
-        !state.meta.onboarding.steps ||
-        typeof state.meta.onboarding.steps !== 'object'
-      ) {
-        state.meta.onboarding.steps = { ...initialState.meta.onboarding.steps };
-      }
-
-      if (step in state.meta.onboarding.steps) {
-        state.meta.onboarding.steps[step] = payload?.value !== false;
-      }
-
-      const s = state.meta.onboarding.steps;
-      const done = Boolean(s.named && s.fed && s.played);
-      if (done && !state.meta.onboarding.completedAt) {
-        state.meta.onboarding.completedAt = now;
-      }
-    },
-
-    grantOnboardingReward(state, { payload }) {
-      const now = payload?.now ?? nowMs();
-      if (
-        !state.meta?.onboarding ||
-        typeof state.meta.onboarding !== 'object'
-      ) {
-        state.meta = {
-          ...(state.meta || {}),
-          onboarding: { ...initialState.meta.onboarding },
-        };
-      }
-      if (state.meta.onboarding.rewardedAt) return;
-
-      // Starter reward: coins + XP. Keep it modest but satisfying.
-      state.coins = Math.max(0, Math.round(safeNumber(state.coins, 0)) + 50);
-      applyXp(state, 18, { now, reason: 'ONBOARDING' });
-      state.meta.onboarding.rewardedAt = now;
-
-      pushJournalEntry(state, {
-        type: 'REWARD',
-        moodTag: 'HAPPY',
-        summary: 'Starter reward unlocked',
-        body: 'Nice! You completed the first steps. Enjoy a small starter bonus.',
-        timestamp: now,
-      });
-
-      finalizeDerivedState(state, now);
-      sanitizeDogState(state);
-    },
-
-    setTemperamentPreset(state, { payload }) {
-      const now = payload?.now ?? nowMs();
-      const presetId = String(payload?.presetId || '').trim();
-      const preset =
-        payload?.preset && typeof payload.preset === 'object'
-          ? payload.preset
-          : null;
-
-      if (!state.temperament || typeof state.temperament !== 'object') {
-        state.temperament = {
-          ...initialTemperament,
-          adoptedAt: state.adoptedAt || now,
-        };
-      }
-
-      if (preset) {
-        state.temperament.primary = String(
-          preset.primary || state.temperament.primary || 'SWEET'
-        ).toUpperCase();
-        state.temperament.secondary = String(
-          preset.secondary || state.temperament.secondary || 'SPICY'
-        ).toUpperCase();
-        if (Array.isArray(preset.traits)) {
-          state.temperament.traits = normalizeTemperamentTraits(preset.traits);
-        }
-      }
-
-      state.temperament.revealedAt = now;
-      state.temperament.revealReady = false;
-      state.temperament.pickedByUser = true;
-      state.temperament.presetId =
-        presetId || state.temperament.presetId || null;
-      state.temperament.lastEvaluatedAt = now;
-
-      finalizeDerivedState(state, now);
-      sanitizeDogState(state);
-    },
-
-    setAdoptedAt(state, { payload }) {
-      const adoptedAt = payload ?? nowMs();
->>>>>>> master
       state.temperament.adoptedAt = adoptedAt;
       state.adoptedAt = adoptedAt;
       finalizeDerivedState(state, adoptedAt);
@@ -3456,7 +997,6 @@ const dogSlice = createSlice({
 
     feed(state, { payload }) {
       const now = payload?.now ?? nowMs();
-<<<<<<< HEAD
       applyDecay(state, now);
 
       const amount = payload?.amount ?? 20;
@@ -3466,89 +1006,25 @@ const dogSlice = createSlice({
       state.stats.hunger = clamp(state.stats.hunger - amount, 0, 100);
       state.stats.happiness = clamp(
         state.stats.happiness + 5 * careerMultiplier,
-=======
-      if (shouldIgnoreRapidRepeat(state, 'feed', now)) return;
-      applyDecay(state, now);
-
-      // Interactions wake the dog.
-      state.isAsleep = false;
-
-      // Feeding should feel impactful (not a clicker): one feed -> fully fed.
-      // Internally, `hunger` is a "hunger level" where 0 = full and 100 = starving.
-      const hungerBefore = clampStat(state.stats.hunger);
-      const need = clamp(hungerBefore / 100, 0, 1);
-      const cooldown = cooldownScale(state.memory.lastFedAt, now);
-
-      const careerMultiplier = safeNumber(
-        state.career.perks?.happinessGainMultiplier,
-        1.0
-      );
-
-      state.stats.hunger = 0;
-      state.stats.happiness = clamp(
-        state.stats.happiness +
-          6 * careerMultiplier * (0.35 + 0.65 * need) * cooldown,
->>>>>>> master
         0,
         100
       );
 
       state.memory.lastFedAt = now;
       state.memory.lastSeenAt = now;
-<<<<<<< HEAD
       state.lastAction = 'feed';
-
-      recordRoutineAction(state, 'feed', now);
 
       applyXp(state, 5);
       maybeSampleMood(state, now, 'FEED');
 
-      ensureSeasonInitialized(state, now);
-      ensureWeeklyChallenges(state, now);
-      maybeRollSeason(state, now);
-      awardProgressionXp(state, { seasonXp: 8, journeyXp: 3, now });
-      bumpWeeklyChallengeProgress(state, 'feed', 1, now);
-
       const date = getIsoDate(now);
       updateStreak(state.streak, date);
       updateTemperamentReveal(state, now);
       finalizeDerivedState(state, now);
-=======
-
-      state.lastAction = 'feed';
-
-      updateBond(state, 2, now);
-      applyXp(state, Math.round(6 * (0.25 + 0.75 * need) * cooldown), {
-        now,
-        reason: 'FEED',
-      });
-      maybeSampleMood(state, now, 'FEED');
-
-      if (
-        shouldAutoJournal(state, 'care:feed', now, {
-          minMs: 120_000,
-          chance: 0.8,
-        })
-      ) {
-        const entry = careJournalEntry(state, now, 'feed', {
-          timeBucket: payload?.timeBucket || payload?.timeOfDay,
-        });
-        if (entry) pushJournalEntry(state, entry);
-      }
-
-      const date = getIsoDate(now);
-      updateStreak(state.streak, date);
-      maybeUnlockStreakRewards(state, now);
-      recordCareDay(state, now);
-      updateTemperamentReveal(state, now);
-      finalizeDerivedState(state, now);
-      sanitizeDogState(state);
->>>>>>> master
     },
 
     play(state, { payload }) {
       const now = payload?.now ?? nowMs();
-<<<<<<< HEAD
       applyDecay(state, now);
 
       const zoomiesMultiplier = payload?.timeOfDay === 'MORNING' ? 2 : 1;
@@ -3565,249 +1041,39 @@ const dogSlice = createSlice({
       state.memory.lastSeenAt = now;
       state.lastAction = 'play';
 
-      recordRoutineAction(state, 'play', now);
-
       applyXp(state, 8);
       maybeSampleMood(state, now, 'PLAY');
 
-      ensureSeasonInitialized(state, now);
-      ensureWeeklyChallenges(state, now);
-      maybeRollSeason(state, now);
-      awardProgressionXp(state, { seasonXp: 10, journeyXp: 4, now });
-      bumpWeeklyChallengeProgress(state, 'play', 1, now);
-
       const date = getIsoDate(now);
       updateStreak(state.streak, date);
       updateTemperamentReveal(state, now);
       finalizeDerivedState(state, now);
-=======
-      if (shouldIgnoreRapidRepeat(state, 'play', now)) return;
-      applyDecay(state, now);
-
-      // Interactions wake the dog.
-      state.isAsleep = false;
-
-      const happinessBefore = clampStat(state.stats.happiness);
-      const energyBefore = clampStat(state.stats.energy);
-      const need = clamp((100 - happinessBefore) / 100, 0, 1);
-      const energyFactor = clamp(energyBefore / 40, 0.2, 1);
-      const cooldown = cooldownScale(state.memory.lastPlayedAt, now);
-
-      const zoomiesMultiplier = payload?.timeOfDay === 'MORNING' ? 2 : 1;
-      const careerMultiplier = safeNumber(
-        state.career.perks?.happinessGainMultiplier,
-        1.0
-      );
-
-      const baseHappiness = safeNumber(payload?.happinessGain, 15);
-      const gain =
-        baseHappiness *
-        zoomiesMultiplier *
-        careerMultiplier *
-        (0.25 + 0.75 * need) *
-        energyFactor *
-        cooldown;
-
-      state.stats.happiness = clamp(state.stats.happiness + gain, 0, 100);
-      state.stats.energy = clamp(
-        state.stats.energy - 10 * (0.7 + 0.3 * (1 - need)),
-        0,
-        100
-      );
-
-      // If they're wiped, they conk out on their own.
-      if (state.stats.energy <= 15) state.isAsleep = true;
-
-      state.memory.lastPlayedAt = now;
-      state.memory.lastSeenAt = now;
-
-      state.lastAction = 'play';
-
-      updateBond(state, 3, now);
-      applyXp(
-        state,
-        Math.round(8 * (0.25 + 0.75 * need) * energyFactor * cooldown),
-        { now, reason: 'PLAY' }
-      );
-      maybeSampleMood(state, now, 'PLAY');
-
-      if (
-        shouldAutoJournal(state, 'care:play', now, {
-          minMs: 120_000,
-          chance: 0.75,
-        })
-      ) {
-        const entry = careJournalEntry(state, now, 'play', {
-          timeBucket: payload?.timeBucket || payload?.timeOfDay,
-        });
-        if (entry) pushJournalEntry(state, entry);
-      }
-
-      const date = getIsoDate(now);
-      updateStreak(state.streak, date);
-      maybeUnlockStreakRewards(state, now);
-      recordCareDay(state, now);
-      updateTemperamentReveal(state, now);
-      finalizeDerivedState(state, now);
-      sanitizeDogState(state);
-    },
-
-    pet(state, { payload }) {
-      const now = payload?.now ?? nowMs();
-      if (shouldIgnoreRapidRepeat(state, 'pet', now)) return;
-      applyDecay(state, now);
-
-      // Petting is a gentle interaction; don't forcibly wake a sleeping pup.
-      state.stats.happiness = clamp(state.stats.happiness + 4, 0, 100);
-      state.memory.lastSeenAt = now;
-      state.lastAction = 'pet';
-
-      updateBond(state, 4, now);
-      applyXp(state, 2, { now, reason: 'PET' });
-      maybeSampleMood(state, now, 'PET');
-
-      if (
-        shouldAutoJournal(state, 'care:pet', now, {
-          minMs: 180_000,
-          chance: 0.35,
-        })
-      ) {
-        const entry = careJournalEntry(state, now, 'pet', {
-          moodTag: 'HAPPY',
-          timeBucket: payload?.timeBucket || payload?.timeOfDay,
-        });
-        if (entry) pushJournalEntry(state, entry);
-      }
-
-      finalizeDerivedState(state, now);
-      sanitizeDogState(state);
-    },
-
-    praise(state, { payload }) {
-      const now = payload?.now ?? nowMs();
-      if (shouldIgnoreRapidRepeat(state, 'praise', now)) return;
-      applyDecay(state, now);
-
-      state.stats.happiness = clamp(state.stats.happiness + 3, 0, 100);
-      state.memory.lastSeenAt = now;
-      state.lastAction = 'praise';
-
-      updateBond(state, 1, now);
-      applyXp(state, 2, { now, reason: 'PRAISE' });
-      maybeSampleMood(state, now, 'PRAISE');
-
-      if (
-        shouldAutoJournal(state, 'care:praise', now, {
-          minMs: 180_000,
-          chance: 0.35,
-        })
-      ) {
-        pushJournalEntry(state, {
-          type: 'CARE',
-          moodTag: 'PROUD',
-          summary: 'Good dog moment.',
-          body: `${
-            state.name || 'Pup'
-          } looked extremely pleased with themself.`,
-          timestamp: now,
-        });
-      }
-
-      finalizeDerivedState(state, now);
-      sanitizeDogState(state);
->>>>>>> master
     },
 
     rest(state, { payload }) {
       const now = payload?.now ?? nowMs();
-<<<<<<< HEAD
       applyDecay(state, now);
 
       state.isAsleep = true;
-      state.sleepState.mode = 'MANUAL';
-      state.sleepState.minutesLeft = 0;
-
       state.stats.energy = clamp(state.stats.energy + 20, 0, 100);
       state.stats.happiness = clamp(state.stats.happiness + 3, 0, 100);
 
       state.memory.lastSeenAt = now;
       state.lastAction = 'rest';
 
-      recordRoutineAction(state, 'rest', now);
-
       applyXp(state, 3);
       maybeSampleMood(state, now, 'REST');
-
-      ensureSeasonInitialized(state, now);
-      ensureWeeklyChallenges(state, now);
-      maybeRollSeason(state, now);
-      // Rest gives tiny long-term progress, mostly to reward checking in.
-      awardProgressionXp(state, { seasonXp: 3, journeyXp: 1, now });
       updateTemperamentReveal(state, now);
       finalizeDerivedState(state, now);
-=======
-      if (shouldIgnoreRapidRepeat(state, 'rest', now)) return;
-      applyDecay(state, now);
-
-      const energyBefore = clampStat(state.stats.energy);
-      const need = clamp((100 - energyBefore) / 100, 0, 1);
-      const cooldown = cooldownScale(state.memory.lastSeenAt, now, 5000);
-
-      state.isAsleep = true;
-      state.stats.energy = clamp(
-        state.stats.energy + 20 * (0.35 + 0.65 * need) * cooldown,
-        0,
-        100
-      );
-      state.stats.happiness = clamp(
-        state.stats.happiness + 3 * (0.25 + 0.75 * need) * cooldown,
-        0,
-        100
-      );
-
-      state.memory.lastSeenAt = now;
-
-      state.lastAction = 'rest';
-
-      updateBond(state, 1, now);
-      applyXp(state, Math.round(3 * (0.35 + 0.65 * need) * cooldown), {
-        now,
-        reason: 'REST',
-      });
-      maybeSampleMood(state, now, 'REST');
-
-      if (
-        shouldAutoJournal(state, 'care:rest', now, {
-          minMs: 150_000,
-          chance: 0.7,
-        })
-      ) {
-        const entry = careJournalEntry(state, now, 'rest', {
-          timeBucket: payload?.timeBucket || payload?.timeOfDay,
-        });
-        if (entry) pushJournalEntry(state, entry);
-      }
-      updateTemperamentReveal(state, now);
-      finalizeDerivedState(state, now);
-      sanitizeDogState(state);
->>>>>>> master
     },
 
     wakeUp(state) {
       state.isAsleep = false;
-<<<<<<< HEAD
-      if (state.sleepState) {
-        state.sleepState.mode = 'AWAKE';
-        state.sleepState.minutesLeft = 0;
-      }
-=======
->>>>>>> master
       state.lastAction = 'wake';
     },
 
     bathe(state, { payload }) {
       const now = payload?.now ?? nowMs();
-<<<<<<< HEAD
       applyDecay(state, now);
 
       state.stats.cleanliness = clamp(state.stats.cleanliness + 30, 0, 100);
@@ -3817,604 +1083,75 @@ const dogSlice = createSlice({
       state.memory.lastSeenAt = now;
       state.lastAction = 'bathe';
 
-      recordRoutineAction(state, 'bathe', now);
-
       applyXp(state, 4);
       maybeSampleMood(state, now, 'BATHE');
-
-      ensureSeasonInitialized(state, now);
-      ensureWeeklyChallenges(state, now);
-      maybeRollSeason(state, now);
-      awardProgressionXp(state, { seasonXp: 9, journeyXp: 3, now });
-      bumpWeeklyChallengeProgress(state, 'bathe', 1, now);
       updateTemperamentReveal(state, now);
       finalizeDerivedState(state, now);
     },
 
-    // Optional manual increments (keep only for special events; DO NOT also run a timer with it)
-=======
-      if (shouldIgnoreRapidRepeat(state, 'bathe', now)) return;
-      applyDecay(state, now);
-
-      state.isAsleep = false;
-
-      const cleanlinessBefore = clampStat(state.stats.cleanliness);
-      const need = clamp((100 - cleanlinessBefore) / 100, 0, 1);
-      const cooldown = cooldownScale(state.memory.lastBathedAt, now);
-
-      state.stats.cleanliness = clamp(
-        state.stats.cleanliness + 30 * (0.25 + 0.75 * need) * cooldown,
-        0,
-        100
-      );
-      // If already clean, baths are less "fun" (discourages spamming).
-      state.stats.happiness = clamp(
-        state.stats.happiness - 5 * (0.35 + 0.65 * (1 - need)),
-        0,
-        100
-      );
-
-      state.memory.lastBathedAt = now;
-      state.memory.lastSeenAt = now;
-
-      state.lastAction = 'bathe';
-
-      updateBond(state, 1, now);
-      applyXp(state, Math.round(4 * (0.25 + 0.75 * need) * cooldown), {
-        now,
-        reason: 'BATHE',
-      });
-      maybeSampleMood(state, now, 'BATHE');
-
-      if (
-        shouldAutoJournal(state, 'care:bathe', now, {
-          minMs: 240_000,
-          chance: 0.65,
-        })
-      ) {
-        const entry = careJournalEntry(state, now, 'bathe', {
-          timeBucket: payload?.timeBucket || payload?.timeOfDay,
-        });
-        if (entry) pushJournalEntry(state, entry);
-      }
-      const date = getIsoDate(now);
-      updateStreak(state.streak, date);
-      maybeUnlockStreakRewards(state, now);
-      recordCareDay(state, now);
-      updateTemperamentReveal(state, now);
-      finalizeDerivedState(state, now);
-      sanitizeDogState(state);
-    },
-
->>>>>>> master
     increasePottyLevel(state, { payload }) {
       const effects = getCleanlinessEffect(state);
       const multiplier = effects.pottyGainMultiplier || 1;
       const trainingMultiplier = getPottyTrainingMultiplier(state);
       const inc = (payload?.amount ?? 10) * multiplier * trainingMultiplier;
       state.pottyLevel = clamp(state.pottyLevel + inc, 0, 100);
-<<<<<<< HEAD
-=======
-      sanitizeDogState(state);
->>>>>>> master
     },
 
     goPotty(state, { payload }) {
       const now = payload?.now ?? nowMs();
-<<<<<<< HEAD
-      applyDecay(state, now);
-
       state.pottyLevel = 0;
       state.poopCount += 1;
-
-      ensurePottyState(state);
-      state.potty.lastSuccessAt = now;
-      state.potty.totalSuccesses = (state.potty.totalSuccesses || 0) + 1;
-
       state.stats.happiness = clamp(state.stats.happiness + 3, 0, 100);
       state.memory.lastSeenAt = now;
       state.lastAction = 'potty';
-
-      recordRoutineAction(state, 'potty', now);
 
       applyXp(state, 2);
       maybeSampleMood(state, now, 'POTTY');
-
-      ensureSeasonInitialized(state, now);
-      ensureWeeklyChallenges(state, now);
-      maybeRollSeason(state, now);
-      awardProgressionXp(state, { seasonXp: 6, journeyXp: 2, now });
-      bumpWeeklyChallengeProgress(state, 'potty', 1, now);
       recordPuppyPottySuccess(state, now);
       finalizeDerivedState(state, now);
-=======
-      if (shouldIgnoreRapidRepeat(state, 'potty', now)) return;
-      state.isAsleep = false;
-      state.pottyLevel = 0;
-      state.poopCount += 1;
-      state.stats.happiness = clamp(state.stats.happiness + 3, 0, 100);
-      state.memory.lastPottyAt = now;
-      state.memory.lastSeenAt = now;
-
-      state.lastAction = 'potty';
-
-      updateBond(state, 1, now);
-      applyXp(state, 2, { now, reason: 'POTTY' });
-      maybeSampleMood(state, now, 'POTTY');
-
-      if (
-        shouldAutoJournal(state, 'care:potty', now, {
-          minMs: 180_000,
-          chance: 0.7,
-        })
-      ) {
-        const entry = careJournalEntry(state, now, 'potty', {
-          timeBucket: payload?.timeBucket || payload?.timeOfDay,
-        });
-        if (entry) pushJournalEntry(state, entry);
-      }
-      recordPuppyPottySuccess(state, now);
-      const date = getIsoDate(now);
-      updateStreak(state.streak, date);
-      maybeUnlockStreakRewards(state, now);
-      recordCareDay(state, now);
-      updateTemperamentReveal(state, now);
-      finalizeDerivedState(state, now);
-      sanitizeDogState(state);
->>>>>>> master
     },
 
     scoopPoop(state, { payload }) {
       const now = payload?.now ?? nowMs();
-<<<<<<< HEAD
-=======
-      if (shouldIgnoreRapidRepeat(state, 'scoop', now)) return;
->>>>>>> master
       if (state.poopCount > 0) {
         state.poopCount -= 1;
         state.stats.cleanliness = clamp(state.stats.cleanliness + 10, 0, 100);
         state.stats.happiness = clamp(state.stats.happiness + 2, 0, 100);
-<<<<<<< HEAD
         applyXp(state, 2);
         maybeSampleMood(state, now, 'SCOOP');
-
-        ensureSeasonInitialized(state, now);
-        ensureWeeklyChallenges(state, now);
-        maybeRollSeason(state, now);
-        awardProgressionXp(state, { seasonXp: 5, journeyXp: 2, now });
-        bumpWeeklyChallengeProgress(state, 'scoop', 1, now);
       }
       state.memory.lastSeenAt = now;
       state.lastAction = 'scoop';
 
       finalizeDerivedState(state, now);
-=======
-        applyXp(state, 2, { now, reason: 'SCOOP' });
-        maybeSampleMood(state, now, 'SCOOP');
-
-        if (
-          shouldAutoJournal(state, 'care:scoop', now, {
-            minMs: 240_000,
-            chance: 0.7,
-          })
-        ) {
-          const entry = careJournalEntry(state, now, 'scoop', {
-            timeBucket: payload?.timeBucket || payload?.timeOfDay,
-          });
-          if (entry) pushJournalEntry(state, entry);
-        }
-      }
-      state.memory.lastSeenAt = now;
-
-      state.lastAction = 'scoop';
-
-      finalizeDerivedState(state, now);
-      sanitizeDogState(state);
->>>>>>> master
     },
 
     /* ------------- time / login ------------- */
 
     tickDog(state, { payload }) {
       const now = payload?.now ?? nowMs();
-<<<<<<< HEAD
       applyDecay(state, now);
-
-      ensureSeasonInitialized(state, now);
-      ensureWeeklyChallenges(state, now);
-      maybeRollSeason(state, now);
       const tier = finalizeDerivedState(state, now);
       applyCleanlinessPenalties(state, tier);
       maybeSampleMood(state, now, 'TICK');
       updateTemperamentReveal(state, now);
       evaluateTemperament(state, now);
-=======
-      // Capture elapsed hours before applyDecay mutates lastUpdatedAt.
-      const prevUpdatedAt = state.lastUpdatedAt;
-      const elapsedHours = prevUpdatedAt
-        ? clamp((now - prevUpdatedAt) / (1000 * 60 * 60), 0, MAX_CATCHUP_HOURS)
-        : 0;
-      applyDecay(state, now);
-
-      if (!state.meta || typeof state.meta !== 'object') {
-        state.meta = {
-          lastTickAt: null,
-          lastSessionStartAt: null,
-          actionLastAt: {},
-        };
-      }
-      state.meta.lastTickAt = now;
-
-      // Optional per-tick environmental effects (kept small + predictable).
-      // NOTE: This must live in reducers (not in components) to keep Redux state safe.
-      const weather = String(payload?.weather || '').toLowerCase();
-      const weatherHours = Math.min(elapsedHours, 2.5);
-      if (weather === 'rain') {
-        state.stats.cleanliness = clamp(
-          state.stats.cleanliness - 1.0 * weatherHours,
-          0,
-          100
-        );
-      } else if (weather === 'snow') {
-        state.stats.energy = clamp(
-          state.stats.energy - 1.4 * weatherHours,
-          0,
-          100
-        );
-      }
-
-      // Automatic sleep:
-      // - Fall asleep when energy is very low.
-      // - Regain some energy while asleep.
-      // - Wake naturally once recovered.
-      const energyNow = clampStat(state.stats.energy);
-
-      // Time-of-day schedule: nights are sleepier (but don't interrupt active play).
-      const bucket = String(
-        payload?.timeBucket || getLocalTimeBucket(now)
-      ).toLowerCase();
-      const isNightBucket = bucket === 'night' || bucket === 'evening';
-
-      const mem =
-        state?.memory && typeof state.memory === 'object' ? state.memory : {};
-      const lastActiveAt = Math.max(
-        0,
-        Number(mem.lastFedAt || 0),
-        Number(mem.lastPlayedAt || 0),
-        Number(mem.lastTrainedAt || 0),
-        Number(mem.lastBathedAt || 0),
-        Number(mem.lastPottyAt || 0),
-        Number(mem.lastSeenAt || 0)
-      );
-      const inactiveMs = lastActiveAt
-        ? Math.max(0, now - lastActiveAt)
-        : Number.POSITIVE_INFINITY;
-
-      // Hard threshold: always fall asleep if extremely low energy.
-      if (!state.isAsleep && energyNow <= 15) {
-        state.isAsleep = true;
-      }
-
-      // Soft threshold at night: if the player hasn't interacted recently, allow a nap sooner.
-      if (
-        !state.isAsleep &&
-        isNightBucket &&
-        inactiveMs >= 5 * 60 * 1000 &&
-        energyNow <= 32
-      ) {
-        state.isAsleep = true;
-      }
-
-      if (state.isAsleep) {
-        const sleepHours = Math.min(elapsedHours, 10);
-        if (sleepHours > 0) {
-          // Target: roughly 1 hour from empty -> full.
-          // Note: applyDecay() runs first and reduces energy.
-          // Current adult/puppy energy decay ~= DECAY_PER_HOUR.energy * DECAY_SPEED * stageMultiplier
-          //                         ~= 5 * 0.65 * 1.0 = 3.25 per hour.
-          // With restore=105: net ~= 105 - 3.25 = 101.75 per hour => ~1 hour from 0->100.
-          const ENERGY_RESTORE_PER_HOUR = 105;
-          state.stats.energy = clamp(
-            state.stats.energy + ENERGY_RESTORE_PER_HOUR * sleepHours,
-            0,
-            100
-          );
-          state.stats.happiness = clamp(
-            state.stats.happiness + 1.2 * sleepHours,
-            0,
-            100
-          );
-        }
-
-        // Wake naturally once fully recharged.
-        if (state.stats.energy >= 100) state.isAsleep = false;
-      }
-
-      const tier = finalizeDerivedState(state, now);
-
-      // Provide elapsed time to applyCleanlinessPenalties without changing its signature.
-      state.__elapsedHoursForPenalties = elapsedHours;
-      applyCleanlinessPenalties(state, tier);
-      delete state.__elapsedHoursForPenalties;
-
-      maybeSampleMood(state, now, 'TICK');
-      updateTemperamentReveal(state, now);
-      evaluateTemperament(state, now);
-      sanitizeDogState(state);
->>>>>>> master
     },
 
     registerSessionStart(state, { payload }) {
       const now = payload?.now ?? nowMs();
-<<<<<<< HEAD
       applyDecay(state, now);
-
-      ensureSeasonInitialized(state, now);
-      ensureWeeklyChallenges(state, now);
-      maybeRollSeason(state, now);
-
-      // Session starts are valuable long-term progress (but still capped).
-      awardProgressionXp(state, { seasonXp: 10, journeyXp: 5, now });
-      bumpWeeklyChallengeProgress(state, 'session', 1, now);
       const tier = finalizeDerivedState(state, now);
       applyCleanlinessPenalties(state, tier);
       maybeSampleMood(state, now, 'SESSION_START');
       state.memory.lastSeenAt = now;
       state.lastAction = 'session_start';
-
-      // Autonomy resets/cooldowns on session start.
-      const a = ensureAutonomyState(state);
-      a.nextDecisionAt = now + AUTONOMY.decisionMinIntervalMs;
 
       const date = new Date(now).toISOString().slice(0, 10);
       updateStreak(state.streak, date);
       updateTemperamentReveal(state, now);
       evaluateTemperament(state, now);
       applyAdultTrainingMissPenalty(state, now);
-    },
-
-    tickDogAutonomy(state, { payload }) {
-      const now = payload?.now ?? nowMs();
-      const weather = payload?.weather || null;
-
-      const a = ensureAutonomyState(state);
-      ensurePollState(state);
-
-      if (!a.enabled) return;
-      if (a.nextDecisionAt && now < a.nextDecisionAt) return;
-
-      // Never stack prompts.
-      if (state.polls?.active) {
-        a.nextDecisionAt = now + AUTONOMY.decisionMinIntervalMs;
-        return;
-      }
-
-      const adoptedAt = state.adoptedAt || state.temperament?.adoptedAt || 0;
-      const seed = `${adoptedAt}:${Math.floor(
-        now / AUTONOMY.decisionMinIntervalMs
-      )}`;
-      const r = rand01FromSeed(seed);
-
-      // Update boredom from time since last play.
-      const lastPlay = state.memory?.lastPlayedAt || 0;
-      const minsSincePlay = lastPlay ? (now - lastPlay) / 60000 : 999;
-      if (minsSincePlay > 20) a.boredom = clamp(a.boredom + 3, 0, 100);
-      else a.boredom = clamp(a.boredom - 2, 0, 100);
-
-      const hungerNeed = clamp((state.stats?.hunger ?? 0) / 100, 0, 1);
-      const pottyNeed = clamp((state.pottyLevel ?? 0) / 100, 0, 1);
-      const restNeed = clamp((45 - (state.stats?.energy ?? 0)) / 45, 0, 1);
-      const boredNeed = clamp(a.boredom / 100, 0, 1);
-      const dirtyNeed = clamp(
-        (55 - (state.stats?.cleanliness ?? 0)) / 55,
-        0,
-        1
-      );
-      const sadNeed = clamp((55 - (state.stats?.happiness ?? 0)) / 55, 0, 1);
-
-      const toy = getTraitIntensity(state, 'toyObsessed') / 100;
-      const food = getTraitIntensity(state, 'foodMotivated') / 100;
-      const cling = getTraitIntensity(state, 'clingy') / 100;
-
-      const pref = a.preferences || {};
-      const prefW = (k) => clamp(Number(pref[k] ?? 50) / 100, 0.2, 1.2);
-
-      // Habits (local hour) help the dog anticipate routine.
-      const hbFeed = habitBias(state, 'feed', now);
-      const hbPlay = habitBias(state, 'play', now);
-      const hbPotty = habitBias(state, 'potty', now);
-      const hbTrain = habitBias(state, 'train', now);
-
-      // Weather context: when it's raining/snowing, the dog is more likely to ask for play/rest.
-      const w = String(weather || '').toUpperCase();
-      const isBadWeather = ['RAIN', 'STORM', 'SNOW'].some((x) => w.includes(x));
-
-      const scores = {
-        feed: (hungerNeed * (1.0 + 0.35 * food) + 0.2 * hbFeed) * prefW('feed'),
-        potty: (pottyNeed * 1.1 + 0.15 * hbPotty) * prefW('potty'),
-        play:
-          (0.6 * sadNeed +
-            0.55 * boredNeed +
-            0.25 * toy +
-            0.15 * hbPlay +
-            0.15 * cling) *
-          prefW('play') *
-          (isBadWeather ? 1.1 : 1.0),
-        rest: (0.9 * restNeed + 0.15 * (isBadWeather ? 1 : 0)) * prefW('rest'),
-        bathe: dirtyNeed * prefW('bathe'),
-        train:
-          (0.4 * (1 - sadNeed) + 0.25 * hbTrain) *
-          prefW('train') *
-          (state.training?.potty?.completedAt ? 1.0 : 0.2),
-      };
-
-      const entries = Object.entries(scores).sort((a1, a2) => a2[1] - a1[1]);
-      const [topKey, topScore] = entries[0] || ['none', 0];
-
-      a.lastDecisionAt = now;
-      a.lastDecision = { desire: topKey, score: Number(topScore || 0) };
-
-      const canPrompt = now >= (a.cooldowns?.promptAt || 0);
-      const canEmote = now >= (a.cooldowns?.emoteAt || 0);
-      const timeOfDay = getTimeOfDayBucket(now);
-
-      // If nothing is pressing, do a small emote sometimes.
-      if (topScore < 0.35) {
-        if (canEmote && r < 0.45) {
-          const emotes = [
-            { kind: 'EMOTE', message: 'Your pup sniffs around the yard.' },
-            {
-              kind: 'EMOTE',
-              message: 'Your pup does a little stretch and settles.',
-            },
-            {
-              kind: 'EMOTE',
-              message: 'Your pup trots a small circle, tail wagging.',
-            },
-          ];
-          const pick = emotes[Math.floor(r * emotes.length)] || emotes[0];
-          const id = `${now}-emote-${Math.floor(r * 9999)}`;
-          a.lastEvent = {
-            id,
-            ...pick,
-            createdAt: now,
-            expiresAt: now + 20_000,
-          };
-          a.cooldowns.emoteAt = now + AUTONOMY.emoteCooldownMs;
-        }
-        a.nextDecisionAt = now + AUTONOMY.decisionMinIntervalMs;
-        return;
-      }
-
-      // Prompt if strong desire and cooldown allows.
-      if (topScore >= 0.65 && canPrompt) {
-        const prompts = {
-          feed: {
-            id: `ai_feed_${now}`,
-            prompt:
-              timeOfDay === 'MORNING'
-                ? 'Good morning… can I get breakfast?'
-                : 'Hooman… I’m getting hungry. Food time?',
-            effects: { happiness: 2 },
-            action: 'feed',
-          },
-          potty: {
-            id: `ai_potty_${now}`,
-            prompt: 'I need to go outside. Like… now.',
-            effects: { happiness: 1 },
-            action: 'potty',
-          },
-          play: {
-            id: `ai_play_${now}`,
-            prompt: isBadWeather
-              ? 'It’s yucky outside… can we play inside?'
-              : 'Can we play? I’ll bring you my toy!',
-            effects: { happiness: 2, energy: -2 },
-            action: 'play',
-          },
-          rest: {
-            id: `ai_rest_${now}`,
-            prompt: 'Can we chill for a bit? I’m sleepy.',
-            effects: { energy: 4, happiness: 1 },
-            action: 'rest',
-          },
-          bathe: {
-            id: `ai_bathe_${now}`,
-            prompt:
-              'I feel kinda gross… bath time? (I will complain a little.)',
-            effects: { happiness: -1 },
-            action: 'bathe',
-          },
-          train: {
-            id: `ai_train_${now}`,
-            prompt: 'Wanna practice a trick? I’m feeling sharp.',
-            effects: { happiness: 1 },
-            action: 'train',
-          },
-        };
-
-        const p = prompts[topKey];
-        if (p) {
-          spawnCustomPoll(state, { ...p, now });
-          const id = `${now}-prompt-${topKey}`;
-          a.lastEvent = {
-            id,
-            kind: 'PROMPT',
-            message: p.prompt,
-            createdAt: now,
-            expiresAt: now + AUTONOMY.promptTimeoutMs,
-          };
-          a.cooldowns.promptAt = now + AUTONOMY.promptCooldownMs;
-        }
-      } else if (canEmote && r < 0.35) {
-        // Mid-urgency: expressive behavior without interrupting.
-        const messagesByDesire = {
-          feed: 'Your pup sits near the food bowl and looks at you expectantly.',
-          potty: 'Your pup wanders toward the door and sniffs around.',
-          play: 'Your pup brings a toy over and drops it at your feet.',
-          rest: 'Your pup flops down with a dramatic sigh.',
-          bathe: 'Your pup scratches and shakes off as if annoyed by dirt.',
-          train: 'Your pup sits up straight like they’re ready for commands.',
-        };
-        const msg = messagesByDesire[topKey] || 'Your pup looks around.';
-        const id = `${now}-emote-${topKey}`;
-        a.lastEvent = {
-          id,
-          kind: 'EMOTE',
-          message: msg,
-          createdAt: now,
-          expiresAt: now + 20_000,
-        };
-        a.cooldowns.emoteAt = now + AUTONOMY.emoteCooldownMs;
-      }
-
-      a.nextDecisionAt = now + AUTONOMY.decisionMinIntervalMs;
-=======
-      const prevUpdatedAt = state.lastUpdatedAt;
-      const elapsedHours = prevUpdatedAt
-        ? clamp((now - prevUpdatedAt) / (1000 * 60 * 60), 0, MAX_CATCHUP_HOURS)
-        : 0;
-
-      applyDecay(state, now);
-      const tier = finalizeDerivedState(state, now);
-
-      if (!state.meta || typeof state.meta !== 'object') {
-        state.meta = {
-          lastTickAt: null,
-          lastSessionStartAt: null,
-          actionLastAt: {},
-        };
-      }
-      state.meta.lastSessionStartAt = now;
-
-      state.__elapsedHoursForPenalties = elapsedHours;
-      applyCleanlinessPenalties(state, tier);
-      delete state.__elapsedHoursForPenalties;
-
-      maybeSampleMood(state, now, 'SESSION_START');
-      state.memory.lastSeenAt = now;
-
-      state.lastAction = 'session_start';
-
-      const date = getIsoDate(now);
-      updateStreak(state.streak, date);
-      recordCareDay(state, now);
-
-      // Gentle night schedule on session start (so it feels consistent on refresh).
-      const bucket = String(
-        payload?.timeBucket || getLocalTimeBucket(now)
-      ).toLowerCase();
-      const isNightBucket = bucket === 'night' || bucket === 'evening';
-      const energyNow = clampStat(state.stats.energy);
-      if (!state.isAsleep && isNightBucket && energyNow <= 32) {
-        state.isAsleep = true;
-      }
-
-      updateTemperamentReveal(state, now);
-      evaluateTemperament(state, now);
-      applyAdultTrainingMissPenalty(state, now);
-      sanitizeDogState(state);
->>>>>>> master
     },
 
     tickDogPolls(state, { payload }) {
@@ -4446,24 +1183,17 @@ const dogSlice = createSlice({
       const accepted = !!payload?.accepted;
       const reason = payload?.reason || (accepted ? 'ACCEPT' : 'DECLINE');
       resolveActivePoll(state, { accepted, reason, now });
-<<<<<<< HEAD
-=======
-      sanitizeDogState(state);
->>>>>>> master
     },
 
     /* ------------- skills ------------- */
 
     trainObedience(state, { payload }) {
-<<<<<<< HEAD
       const training = ensureTrainingState(state);
       const pottyDone = !!training?.potty?.completedAt;
       if (!pottyDone) {
         state.lastAction = 'trainBlocked';
         return;
       }
-=======
->>>>>>> master
       const {
         commandId,
         success = true,
@@ -4474,58 +1204,23 @@ const dogSlice = createSlice({
       if (!commandId || !success) return;
 
       const now = payloadNow ?? nowMs();
-<<<<<<< HEAD
       applyDecay(state, now);
 
       const trainingMultiplier =
         state.career.perks?.trainingXpMultiplier || 1.0;
       const adjustedXp = Math.round(xp * trainingMultiplier);
-=======
-      if (shouldIgnoreRapidRepeat(state, `train:${commandId}`, now)) return;
-      applyDecay(state, now);
-
-      state.isAsleep = false;
-
-      const cooldown = cooldownScale(
-        state.memory.lastTrainedAt,
-        now,
-        ACTION_COOLDOWN_MS + 2500
-      );
-
-      const trainingMultiplier = safeNumber(
-        state.career.perks?.trainingXpMultiplier,
-        1.0
-      );
-      const adjustedXp = Math.round(
-        safeNumber(xp, 6) * trainingMultiplier * cooldown
-      );
->>>>>>> master
 
       applySkillXp('obedience', commandId, state.skills, adjustedXp);
       state.memory.lastTrainedAt = now;
       state.memory.lastSeenAt = now;
-<<<<<<< HEAD
       state.lastAction = 'train';
-
-      recordRoutineAction(state, 'train', now);
-=======
-
-      state.lastAction = 'train';
->>>>>>> master
 
       state.stats.happiness = clamp(state.stats.happiness + 8, 0, 100);
       state.stats.energy = clamp(state.stats.energy - 5, 0, 100);
 
-<<<<<<< HEAD
       applyXp(state, 10);
       completeAdultTrainingSession(state, now);
       maybeSampleMood(state, now, 'TRAINING');
-
-      ensureSeasonInitialized(state, now);
-      ensureWeeklyChallenges(state, now);
-      maybeRollSeason(state, now);
-      awardProgressionXp(state, { seasonXp: 14, journeyXp: 6, now });
-      bumpWeeklyChallengeProgress(state, 'train', 1, now);
 
       pushJournalEntry(state, {
         type: 'TRAINING',
@@ -4539,92 +1234,84 @@ const dogSlice = createSlice({
       updateStreak(state.streak, date);
       updateTemperamentReveal(state, now);
       finalizeDerivedState(state, now);
-=======
-      if (state.stats.energy <= 15) state.isAsleep = true;
-
-      updateBond(state, 2, now);
-      applyXp(state, Math.round(10 * cooldown), { now, reason: 'TRAINING' });
-      completeAdultTrainingSession(state, now);
-      maybeSampleMood(state, now, 'TRAINING');
-
-      pushJournalEntry(
-        state,
-        trainingJournalEntry(state, now, commandId, {
-          timeBucket: payload?.timeBucket || payload?.timeOfDay,
-        })
-      );
-
-      const date = getIsoDate(now);
-      updateStreak(state.streak, date);
-      maybeUnlockStreakRewards(state, now);
-      recordCareDay(state, now);
-      updateTemperamentReveal(state, now);
-      finalizeDerivedState(state, now);
-      sanitizeDogState(state);
->>>>>>> master
     },
 
     addJournalEntry(state, { payload }) {
       pushJournalEntry(state, payload || {});
     },
 
-<<<<<<< HEAD
-=======
-    startRainbowBridge(state, { payload }) {
-      const now = payload?.now ?? nowMs();
-      if (!state.memorial || typeof state.memorial !== 'object') {
-        state.memorial = { ...initialMemorial };
-      }
-      if (state.memorial.completedAt) return;
-      state.memorial.active = true;
-      state.memorial.startedAt = state.memorial.startedAt || now;
-      state.memorial.completedAt = null;
-    },
+    purchaseCosmetic(state, { payload }) {
+      const id = String(payload?.id || '').trim();
+      if (!id) return;
 
-    completeRainbowBridge(state, { payload }) {
-      const now = payload?.now ?? nowMs();
-      if (!state.memorial || typeof state.memorial !== 'object') {
-        state.memorial = { ...initialMemorial };
-      }
-      state.memorial.active = false;
-      state.memorial.completedAt = now;
+      const price = Math.max(0, Math.round(Number(payload?.price) || 0));
+      const now = typeof payload?.now === 'number' ? payload.now : nowMs();
+
+      if (!state.cosmetics) state.cosmetics = { ...initialCosmetics };
+      if (!Array.isArray(state.cosmetics.unlockedIds))
+        state.cosmetics.unlockedIds = [];
+      if (!state.cosmetics.equipped)
+        state.cosmetics.equipped = { ...initialCosmetics.equipped };
+
+      if (state.cosmetics.unlockedIds.includes(id)) return;
+      if (price > 0 && (state.coins || 0) < price) return;
+
+      state.coins = Math.max(0, Math.round((state.coins || 0) - price));
+      state.cosmetics.unlockedIds.push(id);
+
       pushJournalEntry(state, {
-        type: 'MEMORY',
-        moodTag: 'LOVE',
-        summary: 'A quiet goodbye on the Rainbow Bridge.',
-        body:
-          'We shared a soft, final moment together. The bond we built will always stay with me.',
+        type: 'STORE',
+        moodTag: 'HAPPY',
+        summary: 'Bought a cosmetic',
+        body: `Purchased: ${id}${price ? ` for ${price} coins` : ''}.`,
         timestamp: now,
       });
     },
 
-    /* ------------- dev/debug helpers ------------- */
+    equipCosmetic(state, { payload }) {
+      const slot = String(payload?.slot || '').toLowerCase();
+      const id = payload?.id == null ? null : String(payload.id).trim();
+      if (!slot) return;
 
-    debugSetEnergy(state, { payload }) {
-      const now = payload?.now ?? nowMs();
-      const next = Number(payload?.energy ?? payload);
-      if (!Number.isFinite(next)) return;
+      if (!state.cosmetics) state.cosmetics = { ...initialCosmetics };
+      if (!state.cosmetics.equipped)
+        state.cosmetics.equipped = { ...initialCosmetics.equipped };
 
-      state.stats.energy = clamp(next, 0, 100);
-      state.memory.lastSeenAt = now;
-      state.lastAction = 'debug_energy';
-
-      finalizeDerivedState(state, now);
-      sanitizeDogState(state);
+      if (!['collar', 'tag', 'backdrop'].includes(slot)) return;
+      state.cosmetics.equipped[slot] = id || null;
     },
 
-    debugSetAsleep(state, { payload }) {
-      const now = payload?.now ?? nowMs();
-      const next = Boolean(payload?.isAsleep ?? payload);
-      state.isAsleep = next;
-      state.memory.lastSeenAt = now;
-      state.lastAction = next ? 'debug_sleep' : 'debug_wake';
-
-      finalizeDerivedState(state, now);
-      sanitizeDogState(state);
+    startRainbowBridge(state, { payload }) {
+      const now = typeof payload?.now === 'number' ? payload.now : nowMs();
+      if (!state.memorial) state.memorial = { ...initialMemorial };
+      state.memorial.active = true;
+      state.memorial.startedAt = now;
+      if (!state.memorial.completedAt) {
+        pushJournalEntry(state, {
+          type: 'MEMORIAL',
+          moodTag: 'CALM',
+          summary: 'Visited Rainbow Bridge',
+          body: 'You began a quiet moment of remembrance.',
+          timestamp: now,
+        });
+      }
     },
 
->>>>>>> master
+    completeRainbowBridge(state, { payload }) {
+      const now = typeof payload?.now === 'number' ? payload.now : nowMs();
+      if (!state.memorial) state.memorial = { ...initialMemorial };
+      state.memorial.active = false;
+      state.memorial.completedAt = now;
+
+      pushJournalEntry(state, {
+        type: 'MEMORIAL',
+        moodTag: 'CALM',
+        summary: 'Completed the memorial',
+        body: 'The memorial is complete. You can revisit this space anytime.',
+        timestamp: now,
+      });
+    },
+
     toggleDebug(state) {
       state.debug = !state.debug;
     },
@@ -4648,72 +1335,42 @@ export const selectDogLifeStage = (state) => state.dog.lifeStage;
 export const selectDogCleanlinessTier = (state) => state.dog.cleanlinessTier;
 export const selectDogPolls = (state) => state.dog.polls;
 export const selectDogTraining = (state) => state.dog.training;
-<<<<<<< HEAD
-export const selectDogProgression = (state) => state.dog.progression;
-export const selectDogAutonomy = (state) => state.dog.autonomy;
 
-/* ----------------------- actions / reducer ----------------------- */
-=======
-export const selectDogCosmetics = (state) => state.dog.cosmetics;
 export const selectDogBond = (state) => state.dog.bond;
 export const selectDogMemorial = (state) => state.dog.memorial;
-export const selectDogLastUnlock = (state) =>
-  state.dog.progress?.lastUnlock || null;
 
-export const selectCosmeticCatalog = () => STREAK_REWARDS;
+export const selectCosmeticCatalog = () => DEFAULT_COSMETIC_CATALOG;
 
-// Memoized selector: avoids creating new {streakDays,next} objects each render.
-export const selectNextStreakReward = createSelector(
-  [
-    (state) => state?.dog?.streak?.currentStreakDays,
-    (state) => state?.dog?.cosmetics?.unlockedIds,
-  ],
-  (streakDaysRaw, unlockedIdsRaw) => {
-    const streakDays = Math.max(0, Math.floor(safeNumber(streakDaysRaw, 0)));
-    const unlocked = new Set(
-      Array.isArray(unlockedIdsRaw) ? unlockedIdsRaw : []
-    );
+export const selectNextStreakReward = (state) => {
+  const dog = state.dog;
+  const streakDays = Math.max(
+    0,
+    Math.floor(Number(dog?.streak?.currentStreakDays) || 0)
+  );
+  const unlocked = new Set(
+    Array.isArray(dog?.cosmetics?.unlockedIds) ? dog.cosmetics.unlockedIds : []
+  );
 
-    const upcoming = STREAK_REWARDS.filter((r) => r && typeof r === 'object')
-      .filter((r) => !unlocked.has(r.id))
-      .sort((a, b) => a.threshold - b.threshold);
-    const next =
-      upcoming.find((r) => r.threshold > streakDays) || upcoming[0] || null;
+  const next =
+    DEFAULT_COSMETIC_CATALOG.filter((it) => it && it.id)
+      .filter((it) => !unlocked.has(it.id))
+      .sort((a, b) => (Number(a.threshold) || 0) - (Number(b.threshold) || 0))
+      .find((it) => (Number(it.threshold) || 0) > streakDays) || null;
 
-    return {
-      streakDays,
-      next,
-    };
-  }
-);
+  return { streakDays, next };
+};
 
-/* ----------------------- actions ----------------------- */
->>>>>>> master
+/* ----------------------- actions / reducer ----------------------- */
 
 export const {
   hydrateDog,
   setDogName,
-<<<<<<< HEAD
-=======
-  setOnboardingStep,
-  grantOnboardingReward,
-  setTemperamentPreset,
->>>>>>> master
   setAdoptedAt,
   setCareerLifestyle,
   markTemperamentRevealed,
   updateFavoriteToy,
-<<<<<<< HEAD
   feed,
   play,
-=======
-  equipCosmetic,
-  purchaseCosmetic,
-  feed,
-  play,
-  pet,
-  praise,
->>>>>>> master
   rest,
   wakeUp,
   bathe,
@@ -4721,22 +1378,15 @@ export const {
   goPotty,
   scoopPoop,
   tickDog,
-<<<<<<< HEAD
-  tickDogAutonomy,
-=======
->>>>>>> master
   registerSessionStart,
   tickDogPolls,
   respondToDogPoll,
   trainObedience,
   addJournalEntry,
-<<<<<<< HEAD
-=======
+  purchaseCosmetic,
+  equipCosmetic,
   startRainbowBridge,
   completeRainbowBridge,
-  debugSetEnergy,
-  debugSetAsleep,
->>>>>>> master
   toggleDebug,
   resetDogState,
 } = dogSlice.actions;

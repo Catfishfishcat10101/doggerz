@@ -1,5 +1,4 @@
 // src/components/YardBackground.jsx
-import React from "react";
 import useYardBackground from "@/hooks/useYardBackground.js";
 
 export default function YardBackground() {

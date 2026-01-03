@@ -5,21 +5,20 @@
 export function reportError(payload) {
   try {
     // Keep the console log for local debugging
-    // eslint-disable-next-line no-console
-    console.error("[ErrorReporter]", payload);
+    console.error('[ErrorReporter]', payload);
 
     // Example hook: if a global reporting function exists, call it.
     if (
-      typeof window !== "undefined" &&
-      typeof window.__REPORT_ERROR__ === "function"
+      typeof window !== 'undefined' &&
+      typeof window.__REPORT_ERROR__ === 'function'
     ) {
       try {
         window.__REPORT_ERROR__(payload);
-      } catch (e) {
+      } catch {
         // ignore reporting failures
       }
     }
-  } catch (e) {
+  } catch {
     // Never throw from the reporter
   }
 }

@@ -1,46 +1,6 @@
+/** @format */
+
 // src/AppRouter.jsx
-<<<<<<< HEAD
-import React, { Suspense, lazy } from "react";
-import { Routes, Route } from "react-router-dom";
-
-// Lazy-load route pages to reduce initial bundle size. Add additional
-// routes here as pages are added. Keep route paths simple and stable.
-const Landing = lazy(() => import("./pages/Landing.jsx"));
-const AdoptPage = lazy(() => import("./pages/Adopt.jsx"));
-const GamePage = lazy(() => import("./pages/GamePage.jsx"));
-const Potty = lazy(() => import("./pages/Potty.jsx"));
-const TemperamentReveal = lazy(() => import("./pages/TemperamentReveal.jsx"));
-const Login = lazy(() => import("./pages/Login.jsx"));
-const Signup = lazy(() => import("./pages/Signup.jsx"));
-const Settings = lazy(() => import("./pages/Settings.jsx"));
-const About = lazy(() => import("./pages/About.jsx"));
-const Help = lazy(() => import("./pages/Help.jsx"));
-const NotFound = lazy(() => import("./pages/NotFound.jsx"));
-
-export default function AppRouter() {
-  return (
-    <Suspense
-      fallback={
-        <div style={{ padding: 20, textAlign: "center" }}>Loading…</div>
-      }
-    >
-      <Routes>
-        <Route path="/" element={<Landing />} />
-        <Route path="/adopt" element={<AdoptPage />} />
-        <Route path="/game" element={<GamePage />} />
-        <Route path="/potty" element={<Potty />} />
-        <Route path="/temperament" element={<TemperamentReveal />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/help" element={<Help />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/about" element={<About />} />
-
-        {/* Catch-all */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </Suspense>
-=======
 // Central router for Doggerz
 
 import * as React from "react";
@@ -51,10 +11,12 @@ import { PATHS } from "./routes.js";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import CrashFallback from "./components/CrashFallback.jsx";
 
-// Core pages
+// ✅ NEW: App shell layout (header/footer logic lives here)
+import AppShell from "./layout/AppShell.jsx";
+
+// Keep Landing fast; lazy-load everything else.
 import Landing from "./pages/Landing.jsx";
 
-// Route-level code splitting: keep Landing fast, lazy-load everything else.
 const GamePage = React.lazy(() => import("./pages/Game.jsx"));
 const AdoptPage = React.lazy(() => import("./pages/Adopt.jsx"));
 const LoginPage = React.lazy(() => import("./pages/Login.jsx"));
@@ -71,11 +33,14 @@ const MemoryReelPage = React.lazy(() => import("./pages/MemoryReel.jsx"));
 const LegalPage = React.lazy(() => import("./pages/Legal.jsx"));
 const PrivacyPage = React.lazy(() => import("./pages/Privacy.jsx"));
 const PottyPage = React.lazy(() => import("./pages/Potty.jsx"));
-const TemperamentRevealPage = React.lazy(
-  () => import("./pages/TemperamentReveal.jsx"),
+const TemperamentRevealPage = React.lazy(() =>
+  import("./pages/TemperamentReveal.jsx")
 );
 const RainbowBridgePage = React.lazy(() => import("./pages/RainbowBridge.jsx"));
 const NotFoundPage = React.lazy(() => import("./pages/NotFound.jsx"));
+
+// ✅ NEW: Sprite test page
+const SpriteTestPage = React.lazy(() => import("./pages/SpriteTest.jsx"));
 
 function GameCrashFallback({ error }) {
   return (
@@ -101,93 +66,58 @@ const suspense = (node) => (
   <React.Suspense fallback={<RouteFallback />}>{node}</React.Suspense>
 );
 
-// Define all routes here
 const router = createBrowserRouter(
   [
-  {
-      path: PATHS.HOME,
-    element: <Landing />,
-  },
-  {
-    path: PATHS.GAME,
-    element: suspense(
-      <ErrorBoundary fallback={GameCrashFallback}>
-        <GamePage />
-      </ErrorBoundary>
-    ),
-  },
-  {
-    path: PATHS.ADOPT,
-    element: suspense(<AdoptPage />),
-  },
-  {
-    path: PATHS.LOGIN,
-    element: suspense(<LoginPage />),
-  },
-  {
-    path: PATHS.SIGNUP,
-    element: suspense(<SignupPage />),
-  },
-  {
-    path: PATHS.ABOUT,
-    element: suspense(<AboutPage />),
-  },
-  {
-    path: PATHS.FAQ,
-    element: suspense(<FaqPage />),
-  },
-  {
-    path: PATHS.CONTACT,
-    element: suspense(<ContactPage />),
-  },
-  {
-    path: PATHS.HELP,
-    element: suspense(<HelpPage />),
-  },
-  {
-    path: PATHS.DEVELOPERS,
-    element: suspense(<DevelopersPage />),
-  },
-  {
-    path: PATHS.SETTINGS,
-    element: suspense(<SettingsPage />),
-  },
-  {
-      path: PATHS.STORE,
-      element: suspense(<StorePage />),
-    },
     {
-      path: PATHS.BADGES,
-      element: suspense(<BadgesPage />),
+      // ✅ Parent layout route provides header/footer and an <Outlet />
+      path: "/",
+      element: <AppShell />,
+      children: [
+        { index: true, element: <Landing /> },
+
+        {
+          path: PATHS.GAME.replace(/^\//, ""),
+          element: suspense(
+            <ErrorBoundary fallback={GameCrashFallback}>
+              <GamePage />
+            </ErrorBoundary>
+          ),
+        },
+
+        { path: PATHS.ADOPT.replace(/^\//, ""), element: suspense(<AdoptPage />) },
+        { path: PATHS.LOGIN.replace(/^\//, ""), element: suspense(<LoginPage />) },
+        { path: PATHS.SIGNUP.replace(/^\//, ""), element: suspense(<SignupPage />) },
+        { path: PATHS.ABOUT.replace(/^\//, ""), element: suspense(<AboutPage />) },
+        { path: PATHS.FAQ.replace(/^\//, ""), element: suspense(<FaqPage />) },
+        { path: PATHS.CONTACT.replace(/^\//, ""), element: suspense(<ContactPage />) },
+        { path: PATHS.HELP.replace(/^\//, ""), element: suspense(<HelpPage />) },
+        { path: PATHS.DEVELOPERS.replace(/^\//, ""), element: suspense(<DevelopersPage />) },
+        { path: PATHS.SETTINGS.replace(/^\//, ""), element: suspense(<SettingsPage />) },
+        { path: PATHS.STORE.replace(/^\//, ""), element: suspense(<StorePage />) },
+        { path: PATHS.BADGES.replace(/^\//, ""), element: suspense(<BadgesPage />) },
+        { path: PATHS.MEMORIES.replace(/^\//, ""), element: suspense(<MemoryReelPage />) },
+        { path: PATHS.LEGAL.replace(/^\//, ""), element: suspense(<LegalPage />) },
+        { path: PATHS.PRIVACY.replace(/^\//, ""), element: suspense(<PrivacyPage />) },
+        { path: PATHS.POTTY.replace(/^\//, ""), element: suspense(<PottyPage />) },
+        {
+          path: PATHS.TEMPERAMENT_REVEAL.replace(/^\//, ""),
+          element: suspense(<TemperamentRevealPage />),
+        },
+        {
+          path: PATHS.RAINBOW_BRIDGE.replace(/^\//, ""),
+          element: suspense(<RainbowBridgePage />),
+        },
+
+        // ✅ Sprite pipeline verification route
+        {
+          path: PATHS.SPRITE_TEST.replace(/^\//, ""),
+          element: suspense(<SpriteTestPage />),
+        },
+
+        // Catch-all (must be last)
+        { path: "*", element: suspense(<NotFoundPage />) },
+      ],
     },
-    {
-      path: PATHS.MEMORIES,
-      element: suspense(<MemoryReelPage />),
-    },
-    {
-      path: PATHS.LEGAL,
-    element: suspense(<LegalPage />),
-  },
-  {
-    path: PATHS.PRIVACY,
-    element: suspense(<PrivacyPage />),
-  },
-  {
-    path: PATHS.POTTY,
-    element: suspense(<PottyPage />),
-  },
-  {
-    path: PATHS.TEMPERAMENT_REVEAL,
-    element: suspense(<TemperamentRevealPage />),
-  },
-  {
-      path: PATHS.RAINBOW_BRIDGE,
-      element: suspense(<RainbowBridgePage />),
-    },
-    {
-    path: "*",
-    element: suspense(<NotFoundPage />),
-  },
   ],
   {
     future: {
@@ -204,6 +134,5 @@ export default function AppRouter() {
         v7_startTransition: true,
       }}
     />
->>>>>>> master
   );
 }

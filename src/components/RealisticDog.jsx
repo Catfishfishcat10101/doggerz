@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 const STAGE_TO_SRC = {
   puppy: "/assets/dogs/realistic/dog.svg",

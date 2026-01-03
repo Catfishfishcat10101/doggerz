@@ -1,7 +1,7 @@
 // src/components/AnimatedDog.jsx
 // @ts-nocheck
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import DogSpriteAnimator from "@/components/DogSpriteAnimator.jsx";
 
 /**

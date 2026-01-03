@@ -1,7 +1,7 @@
 // src/components/ui/LottieBurst.jsx
 // @ts-nocheck
 
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import Lottie from "lottie-react";
 
 /**

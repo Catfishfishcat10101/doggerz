@@ -15,7 +15,6 @@ export default class ErrorBoundary extends React.Component {
   componentDidCatch(error, info) {
     // Minimal logging — keep console visible for debugging.
     // You can extend this to send errors to analytics if desired.
-    // eslint-disable-next-line no-console
     console.error("ErrorBoundary caught:", error, info);
 
     // If parent provided an error reporting callback, call it safely,
@@ -28,7 +27,6 @@ export default class ErrorBoundary extends React.Component {
       }
     } catch (e) {
       // don't let reporting cause further crashes
-      // eslint-disable-next-line no-console
       console.warn("ErrorBoundary onError callback threw:", e);
     }
   }

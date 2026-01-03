@@ -19,7 +19,7 @@ export function registerSW() {
         .register('/sw.js')
         .catch((err) => console.warn('[Doggerz] SW registration failed', err));
     });
-  } catch (e) {
+  } catch {
     // no-op: SW support isn't critical to run the app
   }
 }

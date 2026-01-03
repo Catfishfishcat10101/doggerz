@@ -77,7 +77,6 @@ export default function useYardBackground(options = {}) {
     async function resolveList(list, setter) {
       for (const u of list) {
         try {
-          // eslint-disable-next-line no-await-in-loop
           const ok = await probeUrl(u, probeTimeout);
           if (ok && mounted) {
             setter(u);

@@ -1,8 +1,6 @@
 // src/components/NeedsDashboard.jsx
 // @ts-nocheck
 
-import React from "react";
-
 // Internal model in dogSlice:
 //   hunger: 0   → no hunger (full)
 //   hunger: 100 → max hunger (starving)

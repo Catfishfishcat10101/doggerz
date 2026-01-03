@@ -1,7 +1,6 @@
 // src/components/NeonButton.jsx
 // Reusable glowing green button; can act as a Link or regular button.
 
-import React from "react";
 import { Link } from "react-router-dom";
 
 export default function NeonButton({ to, children, className = "", ...props }) {

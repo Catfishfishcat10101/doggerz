@@ -1,18 +1,6 @@
 // src/features/game/DogAIEngine.jsx
 // @ts-nocheck
 
-<<<<<<< HEAD
-import React, { useEffect, useRef } from "react";
-import { useSelector, useDispatch } from "react-redux";
-
-// Use the firebase client we defined earlier
-import { auth } from "@/lib/firebaseClient.js";
-
-import {
-  hydrateDog,
-  tickDog,
-  tickDogAutonomy,
-=======
 import { useEffect, useRef, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { onAuthStateChanged } from "firebase/auth";
@@ -20,26 +8,15 @@ import { auth } from "@/firebase.js";
 import {
   hydrateDog,
   tickDog,
->>>>>>> master
   registerSessionStart,
   tickDogPolls,
   selectDog,
   DOG_STORAGE_KEY,
-<<<<<<< HEAD
 } from "@/redux/dogSlice.js";
-
-import { selectWeatherCondition } from "@/redux/weatherSlice.js";
-import { loadDogFromCloud, saveDogToCloud } from "@/redux/dogThunks.js";
-
-const DECAY_TICK_INTERVAL_MS = 60_000; // 60 seconds (stats/decay)
-const AUTONOMY_TICK_INTERVAL_MS = 15_000; // 15 seconds (alive-feel)
-const POLL_TICK_INTERVAL_MS = 5_000; // 5 seconds (prompt expiry feels responsive)
-const CLOUD_SAVE_DEBOUNCE = 3_000; // 3 seconds
-const LOCAL_SAVE_DEBOUNCE = 150; // debounce localStorage writes
-=======
-  DOG_SAVE_SCHEMA_VERSION,
-} from "@/redux/dogSlice.js";
-import { fetchWeatherForZip, selectWeatherCondition } from "@/redux/weatherSlice.js";
+import {
+  fetchWeatherForZip,
+  selectWeatherCondition,
+} from "@/redux/weatherSlice.js";
 import { loadDogFromCloud, saveDogToCloud } from "@/redux/dogThunks.js";
 import { selectUserZip } from "@/redux/userSlice.js";
 
@@ -49,33 +26,30 @@ const WEATHER_POLL_INTERVAL_MS = 12 * 60_000; // 12 minutes (gentle on API limit
 
 const HYDRATE_ERROR_KEY = "doggerz:hydrateError";
 
+// Local persistence schema marker (kept here so we don't require dogSlice exports).
+const DOG_SAVE_SCHEMA_VERSION = 1;
+
 function getLocalTimeBucket(ms = Date.now()) {
   try {
     const h = new Date(ms).getHours();
-    if (h >= 21 || h < 6) return 'night';
-    if (h < 12) return 'morning';
-    if (h < 18) return 'afternoon';
-    return 'evening';
+    if (h >= 21 || h < 6) return "night";
+    if (h < 12) return "morning";
+    if (h < 18) return "afternoon";
+    return "evening";
   } catch {
-    return 'local';
+    return "local";
   }
 }
->>>>>>> master
 
 export default function DogAIEngine() {
   const dispatch = useDispatch();
   const dogState = useSelector(selectDog);
   const weather = useSelector(selectWeatherCondition);
-<<<<<<< HEAD
-=======
   const zip = useSelector(selectUserZip);
->>>>>>> master
 
   const hasHydratedRef = useRef(false);
   const cloudSaveTimeoutRef = useRef(null);
   const localSaveTimeoutRef = useRef(null);
-<<<<<<< HEAD
-  const lastLocalCopyRef = useRef(null);
 
   // Helper: revive common date-like fields saved as ISO strings back to numbers
   const reviveDogDates = (raw) => {
@@ -187,7 +161,6 @@ export default function DogAIEngine() {
     return copy;
   };
 
-=======
   const dogRef = useRef(dogState);
   const weatherRef = useRef(weather);
   const zipRef = useRef(zip);
@@ -297,7 +270,6 @@ export default function DogAIEngine() {
     };
   }, []);
 
->>>>>>> master
   // 1. Hydrate on first mount (localStorage → Redux, then optional cloud)
   useEffect(() => {
     if (hasHydratedRef.current) return;
@@ -308,24 +280,11 @@ export default function DogAIEngine() {
       const localData = localStorage.getItem(DOG_STORAGE_KEY);
       if (localData) {
         const parsed = JSON.parse(localData);
-<<<<<<< HEAD
-        const revived = reviveDogDates(parsed);
-        dispatch(hydrateDog(revived));
-=======
-        dispatch(hydrateDog(parsed));
->>>>>>> master
+        dispatch(hydrateDog(reviveDogDates(parsed)));
         console.log("[Doggerz] Hydrated dog from localStorage");
       }
     } catch (err) {
       console.error("[Doggerz] Failed to parse localStorage dog data", err);
-<<<<<<< HEAD
-    }
-
-    // Cloud hydrate if logged in at mount time
-    if (auth && auth.currentUser) {
-      const thunkPromise = dispatch(loadDogFromCloud());
-
-=======
 
       // Don’t silently wipe user data. Record a recoverable error so the UI can
       // offer reset/restore options.
@@ -347,7 +306,6 @@ export default function DogAIEngine() {
       const thunkPromise = dispatch(loadDogFromCloud());
 
       // RTK's unwrap if available; fall back to raw promise
->>>>>>> master
       if (thunkPromise && typeof thunkPromise.unwrap === "function") {
         thunkPromise.unwrap().catch((err) => {
           console.error("[Doggerz] Failed to load dog from cloud", err);
@@ -360,37 +318,6 @@ export default function DogAIEngine() {
     }
 
     // Register session start (catch-up decay, penalties, streak, etc.)
-<<<<<<< HEAD
-    dispatch(registerSessionStart({ now: Date.now() }));
-  }, [dispatch]);
-
-  // 2. Debounced save to localStorage on dog state change (reduces IO)
-  useEffect(() => {
-    if (!dogState || !dogState.adoptedAt) return; // no adopted dog yet
-
-    try {
-      const copy = JSON.parse(JSON.stringify(dogState));
-      lastLocalCopyRef.current = copy;
-
-      if (localSaveTimeoutRef.current)
-        clearTimeout(localSaveTimeoutRef.current);
-      localSaveTimeoutRef.current = setTimeout(() => {
-        try {
-          localStorage.setItem(
-            DOG_STORAGE_KEY,
-            JSON.stringify(lastLocalCopyRef.current),
-          );
-        } catch (err) {
-          console.error("[Doggerz] Failed to save to localStorage", err);
-        }
-        localSaveTimeoutRef.current = null;
-        lastLocalCopyRef.current = null;
-      }, LOCAL_SAVE_DEBOUNCE);
-    } catch (err) {
-      console.error("[Doggerz] Failed to schedule localStorage save", err);
-    }
-
-=======
     const now = Date.now();
     dispatch(registerSessionStart({ now, timeBucket: getLocalTimeBucket(now) }));
   }, [dispatch]);
@@ -453,8 +380,6 @@ export default function DogAIEngine() {
         console.error("[Doggerz] Failed to save to localStorage", err);
       }
     }, 400);
-
->>>>>>> master
     return () => {
       if (localSaveTimeoutRef.current) {
         clearTimeout(localSaveTimeoutRef.current);
@@ -463,39 +388,10 @@ export default function DogAIEngine() {
     };
   }, [dogState]);
 
-<<<<<<< HEAD
-  // Flush pending local save on unload to avoid data loss
-  useEffect(() => {
-    const flush = () => {
-      try {
-        if (localSaveTimeoutRef.current && lastLocalCopyRef.current) {
-          clearTimeout(localSaveTimeoutRef.current);
-          localStorage.setItem(
-            DOG_STORAGE_KEY,
-            JSON.stringify(lastLocalCopyRef.current),
-          );
-          localSaveTimeoutRef.current = null;
-          lastLocalCopyRef.current = null;
-        }
-      } catch (e) {
-        /* ignore */
-      }
-    };
-
-    window.addEventListener("beforeunload", flush);
-    return () => window.removeEventListener("beforeunload", flush);
-  }, []);
-
-  // 3. Debounced cloud save whenever dogState changes while logged in
-  useEffect(() => {
-    if (!dogState || !dogState.adoptedAt) return;
-    if (!auth || !auth.currentUser) return;
-=======
   // 3. Debounced cloud save whenever dogState changes while logged in
   useEffect(() => {
     if (!dogState || !dogState.adoptedAt) return;
     if (!auth || !userIdRef.current) return;
->>>>>>> master
 
     // Clear existing timeout if any
     if (cloudSaveTimeoutRef.current) {
@@ -515,32 +411,6 @@ export default function DogAIEngine() {
     };
   }, [dogState, dispatch]);
 
-<<<<<<< HEAD
-  // 4. Game loop tick (every 60 seconds → decay + polls)
-  // IMPORTANT: we DO NOT mutate dogState here. All changes go through reducers.
-  useEffect(() => {
-    const decayId = setInterval(() => {
-      const now = Date.now();
-      dispatch(tickDog({ now, weather }));
-    }, DECAY_TICK_INTERVAL_MS);
-
-    const autonomyId = setInterval(() => {
-      const now = Date.now();
-      dispatch(tickDogAutonomy({ now, weather }));
-    }, AUTONOMY_TICK_INTERVAL_MS);
-
-    const pollId = setInterval(() => {
-      const now = Date.now();
-      dispatch(tickDogPolls({ now }));
-    }, POLL_TICK_INTERVAL_MS);
-
-    return () => {
-      clearInterval(decayId);
-      clearInterval(autonomyId);
-      clearInterval(pollId);
-    };
-  }, [dispatch, weather]);
-=======
   // 4. Game loop tick (every 60 seconds → decay + polls). Keep the interval stable.
   useEffect(() => {
     const tickOnce = () => {
@@ -548,7 +418,9 @@ export default function DogAIEngine() {
       if (!adoptedRef.current) return;
       const now = Date.now();
       const w = weatherRef.current;
-      dispatch(tickDog({ now, weather: w, timeBucket: getLocalTimeBucket(now) }));
+      dispatch(
+        tickDog({ now, weather: w, timeBucket: getLocalTimeBucket(now) }),
+      );
       dispatch(tickDogPolls({ now }));
     };
 
@@ -573,7 +445,6 @@ export default function DogAIEngine() {
       }
     };
   }, [dispatch]);
->>>>>>> master
 
   // Headless "brain" component: never renders UI
   return null;

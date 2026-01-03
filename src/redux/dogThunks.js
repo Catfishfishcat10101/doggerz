@@ -1,28 +1,33 @@
 // src/redux/dogThunks.js
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-<<<<<<< HEAD
-import { auth, db, assertFirebaseReady } from "@/firebase.js";
-import { hydrateDog } from "./dogSlice.js";
+import { auth, db, firebaseReady, assertFirebaseReady } from "@/firebase.js";
+import { hydrateDog, DOG_SAVE_SCHEMA_VERSION } from "./dogSlice.js";
 
 const CLOUD_DOG_VERSION = 1;
 
+function parseSavedAtToMs(value) {
+  if (!value) return 0;
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  const t = Date.parse(String(value));
+  return Number.isFinite(t) ? t : 0;
+}
+
 // ensure we only save plain JSON + meta
 const buildCloudDogPayload = (dog) => {
+  const now = Date.now();
+
   // Make a deep copy that removes functions, DOM nodes, and other non-serializable values.
   let clone;
   try {
-    // structuredClone would be ideal, but fallback to JSON stringify/parse for portability
     clone =
       typeof structuredClone === "function"
         ? structuredClone(dog)
         : JSON.parse(JSON.stringify(dog));
-  } catch (e) {
-    // Last resort: try JSON roundtrip, catching circular reference errors.
+  } catch {
     try {
       clone = JSON.parse(JSON.stringify(dog));
-    } catch (err) {
-      // If cloning fails, fall back to a minimal snapshot
+    } catch {
       clone = {
         name: dog?.name ?? null,
         lifeStage: dog?.lifeStage ?? null,
@@ -42,57 +47,17 @@ const buildCloudDogPayload = (dog) => {
     "_private",
   ];
   for (const k of volatileKeys) {
-    if (k in clone) delete clone[k];
+    if (clone && typeof clone === "object" && k in clone) delete clone[k];
   }
-
-  // Ensure adoptedAt values are normalized to milliseconds (number) or null
-  const normalizeAdoptedAt = (v) => {
-    if (v === undefined || v === null) return null;
-    if (typeof v === "number" && Number.isFinite(v)) return v;
-    if (v instanceof Date) return v.getTime();
-    if (typeof v === "string") {
-      const num = Number(v);
-      if (!Number.isNaN(num)) return num;
-      const parsed = Date.parse(v);
-      if (!Number.isNaN(parsed)) return parsed;
-    }
-    return null;
-  };
-
-  if (clone.adoptedAt) clone.adoptedAt = normalizeAdoptedAt(clone.adoptedAt);
-  if (clone.temperament && clone.temperament.adoptedAt)
-    clone.temperament.adoptedAt = normalizeAdoptedAt(
-      clone.temperament.adoptedAt,
-    );
 
   return {
     ...clone,
-    lastCloudSyncAt: Date.now(),
-=======
-import { auth, db, firebaseReady } from "@/firebase.js";
-import { hydrateDog, DOG_SAVE_SCHEMA_VERSION } from './dogSlice.js';
-
-const CLOUD_DOG_VERSION = 1;
-
-function parseSavedAtToMs(value) {
-  if (!value) return 0;
-  if (typeof value === 'number' && Number.isFinite(value)) return value;
-  const t = Date.parse(String(value));
-  return Number.isFinite(t) ? t : 0;
-}
-
-// ensure we only save plain JSON + meta
-const buildCloudDogPayload = (dog) => {
-  const now = Date.now();
-  return {
-    ...dog,
     meta: {
-      ...(dog?.meta || {}),
+      ...(clone?.meta || {}),
       schemaVersion: DOG_SAVE_SCHEMA_VERSION,
       savedAt: new Date(now).toISOString(),
     },
     lastCloudSyncAt: now,
->>>>>>> master
     version: CLOUD_DOG_VERSION,
   };
 };
@@ -100,11 +65,7 @@ const buildCloudDogPayload = (dog) => {
 // defensively unwrap data from Firestore for the client
 const parseCloudDog = (raw) => {
   if (!raw) return null;
-<<<<<<< HEAD
-  const { version, lastCloudSyncAt, userId, ...rest } = raw;
-=======
   const { version: _version, lastCloudSyncAt, userId: _userId, ...rest } = raw;
->>>>>>> master
   return {
     ...rest,
     lastCloudSyncAt: lastCloudSyncAt ?? null,
@@ -112,9 +73,8 @@ const parseCloudDog = (raw) => {
 };
 
 export const loadDogFromCloud = createAsyncThunk(
-<<<<<<< HEAD
-  "dog/loadDogFromCloud",
-  async (_, { dispatch, rejectWithValue }) => {
+  'dog/loadDogFromCloud',
+  async (_, { dispatch, getState, rejectWithValue }) => {
     try {
       try {
         assertFirebaseReady("Dog load");
@@ -122,21 +82,6 @@ export const loadDogFromCloud = createAsyncThunk(
         return rejectWithValue(String(err.message || err));
       }
 
-      if (!db || !auth?.currentUser) {
-        return rejectWithValue("Cloud sync disabled: DB or auth missing");
-      }
-
-      const userId = auth.currentUser.uid;
-      const dogRef = doc(db, "users", userId, "dog", "state");
-      const docSnap = await getDoc(dogRef);
-
-      if (!docSnap.exists()) {
-        console.log("[Doggerz] No cloud save found for this user");
-        return null;
-=======
-  'dog/loadDogFromCloud',
-  async (_, { dispatch, getState, rejectWithValue }) => {
-    try {
       if (!firebaseReady || !db || !auth?.currentUser) {
         return rejectWithValue(
           'Cloud sync disabled: Firebase not configured or user not logged in'
@@ -150,27 +95,11 @@ export const loadDogFromCloud = createAsyncThunk(
       if (!docSnap.exists()) {
         console.log('[Doggerz] No cloud save found for this user');
         return { data: null, hydrated: false, reason: 'no_cloud_save' };
->>>>>>> master
       }
 
       const cloudData = parseCloudDog(docSnap.data());
 
-      // Automatically hydrate the dog state
       if (cloudData) {
-<<<<<<< HEAD
-        dispatch(hydrateDog(cloudData));
-        console.log(
-          "[Doggerz] Dog loaded from cloud and hydrated successfully",
-        );
-      }
-
-      return cloudData;
-    } catch (err) {
-      console.error("[Doggerz] Failed to load dog from cloud", err);
-      return rejectWithValue(err.message || "loadDogFromCloud failed");
-    }
-  },
-=======
         /** @type {any} */
         const state = getState();
         const localDog = state?.dog;
@@ -218,28 +147,21 @@ export const loadDogFromCloud = createAsyncThunk(
       return rejectWithValue(err.message || 'loadDogFromCloud failed');
     }
   }
->>>>>>> master
 );
 
 export const saveDogToCloud = createAsyncThunk(
   "dog/saveDogToCloud",
   async (_, { getState, rejectWithValue }) => {
     try {
-<<<<<<< HEAD
       try {
         assertFirebaseReady("Dog save");
       } catch (err) {
         return rejectWithValue(String(err.message || err));
       }
-
-      if (!db || !auth?.currentUser) {
-        return rejectWithValue("Cloud sync disabled: DB or auth missing");
-=======
       if (!firebaseReady || !db || !auth?.currentUser) {
         return rejectWithValue(
           "Cloud sync disabled: Firebase not configured or user not logged in",
         );
->>>>>>> master
       }
 
       const userId = auth.currentUser.uid;
@@ -258,13 +180,18 @@ export const saveDogToCloud = createAsyncThunk(
       }
 
       const dogRef = doc(db, "users", userId, "dog", "state");
-<<<<<<< HEAD
-      const payload = buildCloudDogPayload({ ...dogState, userId });
+      const payload = buildCloudDogPayload({
+        ...dogState,
+        userId,
+      });
 
       // Sanity-size check: avoid writing huge blobs. 500KB threshold.
       try {
         const raw = JSON.stringify(payload);
-        const bytes = Buffer ? Buffer.byteLength(raw, "utf8") : raw.length;
+        const bytes =
+          typeof Buffer !== "undefined" && Buffer.byteLength
+            ? Buffer.byteLength(raw, "utf8")
+            : raw.length;
         const maxBytes = 500 * 1024;
         if (bytes > maxBytes) {
           console.warn("[Doggerz] Cloud payload too large (bytes)", bytes);
@@ -274,12 +201,6 @@ export const saveDogToCloud = createAsyncThunk(
         // If size check fails, continue but log
         console.warn("[Doggerz] Failed to compute payload size", e);
       }
-=======
-      const payload = buildCloudDogPayload({
-        ...dogState,
-        userId,
-      });
->>>>>>> master
 
       await setDoc(dogRef, payload, { merge: true });
       console.log("[Doggerz] Dog saved to cloud successfully");

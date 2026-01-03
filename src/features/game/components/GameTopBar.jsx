@@ -1,6 +1,5 @@
 // src/features/game/components/GameTopBar.jsx
 // @ts-nocheck
-import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { selectUser } from "@/redux/userSlice.js";
@@ -20,7 +19,7 @@ async function getLogoutDeps() {
         import("@/firebase.js"),
       ]);
       return { signOut, auth };
-    } catch (e) {
+    } catch {
       return { signOut: null, auth: null };
     }
   })();
@@ -63,7 +62,7 @@ export default function GameTopBar() {
     try {
       const { signOut, auth } = await getLogoutDeps();
       if (signOut && auth) await signOut(auth);
-    } catch (e) {
+    } catch {
       // ignore and still route out
     } finally {
       navigate("/", { replace: true });

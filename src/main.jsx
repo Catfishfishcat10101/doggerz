@@ -1,17 +1,3 @@
-<<<<<<< HEAD
-// src/main.jsx
-import React from "react";
-import ReactDOM from "react-dom/client";
-import { BrowserRouter } from "react-router-dom";
-import { Provider } from "react-redux";
-
-import App from "./App.jsx";
-import store from "@/redux/store.js";
-import { ToastProvider } from "@/components/toast/ToastProvider.jsx";
-
-import "./index.css";
-import "./App.css";
-=======
 /* eslint-disable react-refresh/only-export-components */
 
 // src/main.jsx
@@ -22,7 +8,7 @@ import ReactDOM from "react-dom/client";
 import { Provider } from "react-redux";
 
 import AppRouter from "./AppRouter.jsx";
-import store from "./redux/store"; // works for ./redux/store.js or ./redux/store/index.js
+import store from "./redux/store.js";
 
 import "./index.css";
 
@@ -96,25 +82,10 @@ function AppCrashFallback({ error }) {
     />
   );
 }
->>>>>>> master
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <Provider store={store}>
-<<<<<<< HEAD
-      <ToastProvider>
-        <BrowserRouter
-          future={{
-            v7_startTransition: true,
-            v7_relativeSplatPath: true,
-          }}
-        >
-          <App />
-        </BrowserRouter>
-      </ToastProvider>
-    </Provider>
-  </React.StrictMode>,
-=======
       <PwaProvider>
         <ToastProvider>
           <ErrorBoundary fallback={AppCrashFallback}>
@@ -127,5 +98,5 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       </PwaProvider>
     </Provider>
   </React.StrictMode>
->>>>>>> master
 );
+// End of src/main.jsx

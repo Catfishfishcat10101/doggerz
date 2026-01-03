@@ -1,9 +1,9 @@
 // src/pages/Help.jsx
-<<<<<<< HEAD
-// @ts-nocheck
 
-import React, { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import PageShell from "@/components/PageShell.jsx";
+import { SUPPORT_CONTACT_URL } from "@/config/links.js";
 import { useToast } from "@/components/toast/ToastProvider.jsx";
 
 const SURFACE =
@@ -19,7 +19,7 @@ const WORKFLOW_STORAGE_KEY = "doggerz:workflows";
 function safeJson(value) {
   try {
     return JSON.stringify(value, null, 2);
-  } catch (e) {
+  } catch {
     return String(value);
   }
 }
@@ -28,7 +28,7 @@ async function copyToClipboard(text) {
   try {
     await navigator.clipboard.writeText(text);
     return true;
-  } catch (e) {
+  } catch {
     try {
       const ta = document.createElement("textarea");
       ta.value = text;
@@ -40,7 +40,7 @@ async function copyToClipboard(text) {
       const ok = document.execCommand("copy");
       document.body.removeChild(ta);
       return ok;
-    } catch (e2) {
+    } catch {
       return false;
     }
   }
@@ -59,50 +59,72 @@ function Section({ title, children, id }) {
   );
 }
 
-function Q({ q, children, tags = "" }) {
+function Q({ q, tags, children }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-black/20 p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="font-bold text-emerald-100">{q}</div>
-        {tags ? (
-          <div className="text-[11px] text-zinc-400 shrink-0">{tags}</div>
-        ) : null}
-      </div>
-      <div className="mt-2 text-sm text-zinc-200/85 leading-relaxed">
+    <details className="rounded-2xl border border-white/10 bg-black/20 p-4">
+      <summary className="cursor-pointer select-none">
+        <div className="flex items-start justify-between gap-4">
+          <div className="font-semibold text-zinc-100">{q}</div>
+          {tags ? (
+            <div className="shrink-0 text-[11px] text-zinc-400">{tags}</div>
+          ) : null}
+        </div>
+      </summary>
+      <div className="mt-3 space-y-3 text-sm text-zinc-200/90 leading-relaxed">
         {children}
       </div>
-    </div>
+    </details>
   );
 }
 
 export default function HelpPage() {
   const toast = useToast();
   const [query, setQuery] = useState("");
-
   const [notice, setNotice] = useState(null);
 
   const diagnostics = useMemo(() => {
-    const now = new Date();
+    const hasWindow = typeof window !== "undefined";
+    const hasNavigator = typeof navigator !== "undefined";
+
+    const pwaStandalone = hasWindow
+      ? Boolean(window.matchMedia?.("(display-mode: standalone)")?.matches)
+      : false;
+
+    /** @type {Record<string, any>} */
+    const storage = {};
+    if (hasWindow) {
+      try {
+        storage.hasDogState = Boolean(window.localStorage.getItem(DOG_STORAGE_KEY));
+      } catch {
+        storage.hasDogState = null;
+      }
+      try {
+        storage.hasUserState = Boolean(window.localStorage.getItem(USER_STORAGE_KEY));
+      } catch {
+        storage.hasUserState = null;
+      }
+      try {
+        storage.hasWorkflows = Boolean(window.localStorage.getItem(WORKFLOW_STORAGE_KEY));
+      } catch {
+        storage.hasWorkflows = null;
+      }
+    }
+
     return {
-      app: "Doggerz",
-      time: now.toISOString(),
-      url: typeof window !== "undefined" ? window.location.href : undefined,
+      generatedAt: new Date().toISOString(),
       mode: import.meta.env.MODE,
-      online: typeof navigator !== "undefined" ? navigator.onLine : undefined,
-      userAgent:
-        typeof navigator !== "undefined" ? navigator.userAgent : undefined,
-      platform:
-        typeof navigator !== "undefined" ? navigator.platform : undefined,
-      language:
-        typeof navigator !== "undefined" ? navigator.language : undefined,
-      serviceWorker: {
-        supported:
-          typeof navigator !== "undefined" && "serviceWorker" in navigator,
-        controlled:
-          typeof navigator !== "undefined"
-            ? Boolean(navigator.serviceWorker?.controller)
-            : false,
+      url: hasWindow ? window.location.href : null,
+      userAgent: hasNavigator ? navigator.userAgent : null,
+      language: hasNavigator ? navigator.language : null,
+      pwa: {
+        standalone: pwaStandalone,
+        serviceWorkerSupported: hasNavigator ? "serviceWorker" in navigator : false,
+        hasServiceWorkerController: hasNavigator
+          ? Boolean(navigator.serviceWorker?.controller)
+          : false,
+        cacheStorageSupported: hasWindow ? "caches" in window : false,
       },
+      storage,
     };
   }, []);
 
@@ -170,7 +192,7 @@ export default function HelpPage() {
         window.localStorage.removeItem(USER_STORAGE_KEY);
         window.localStorage.removeItem(WORKFLOW_STORAGE_KEY);
         window.localStorage.removeItem("theme");
-      } catch (e) {
+      } catch {
         // ignore storage permissions
       }
 
@@ -418,7 +440,7 @@ export default function HelpPage() {
                 <p>
                   Temperament reveal:
                   <span className="ml-2">
-                    <Link to="/temperament" className={LINK}>/temperament</Link>
+                    <Link to="/temperament-reveal" className={LINK}>/temperament-reveal</Link>
                   </span>
                 </p>
               </>
@@ -441,7 +463,7 @@ export default function HelpPage() {
         ],
       },
     ],
-    []
+    [repoUrl]
   );
 
   const filtered = useMemo(() => {
@@ -477,10 +499,11 @@ export default function HelpPage() {
   }, [diagnostics, setNoticeAuto, toast]);
 
   return (
-    <div className="min-h-[calc(100dvh-120px)] w-full">
-      <div className="max-w-6xl mx-auto px-4 py-10">
-        <div className={`${SURFACE} overflow-hidden`}>
-          <div className="p-8 sm:p-10">
+    <PageShell mainClassName="p-0" containerClassName="w-full max-w-none">
+      <div className="min-h-[calc(100dvh-120px)] w-full">
+        <div className="max-w-6xl mx-auto px-4 py-10">
+          <div className={`${SURFACE} overflow-hidden`}>
+            <div className="p-8 sm:p-10">
             <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-5">
               <div>
                 <div className="text-emerald-700 font-extrabold tracking-[0.38em] text-xs">
@@ -493,6 +516,13 @@ export default function HelpPage() {
                   This page is your “what broke and how do I fix it” hub — plus
                   setup notes if you’re running Doggerz locally.
                 </p>
+                  <p className="mt-3 text-sm text-zinc-300">
+                    Still stuck? Head to{" "}
+                    <Link to={SUPPORT_CONTACT_URL} className={LINK}>
+                      Contact
+                    </Link>
+                    .
+                  </p>
               </div>
 
               <div className="w-full md:w-[380px]">
@@ -623,60 +653,16 @@ export default function HelpPage() {
                   we can split this into Help + Dev Docs.)
                 </p>
               </Section>
+              </div>
+
+              <div className="mt-6 text-xs text-zinc-500">
+                Tip: For the best mobile experience, consider installing Doggerz as an
+                app (PWA) via your browser’s “Install” / “Add to Home Screen” option.
+              </div>
             </div>
           </div>
         </div>
-
-        <div className="mt-6 text-xs text-zinc-500">
-          Tip: For the best mobile experience, consider installing Doggerz as an
-          app (PWA) via your browser’s “Install” / “Add to Home Screen” option.
-        </div>
       </div>
-    </div>
-=======
-import { Link } from "react-router-dom";
-
-import { SUPPORT_CONTACT_URL } from "@/config/links.js";
-
-import Header from "@/components/Header.jsx";
-import Footer from "@/components/Footer.jsx";
-
-export default function HelpPage() {
-  return (
-    <>
-      <Header />
-      <div className="flex-1 px-6 py-10 flex justify-center">
-        <div className="max-w-3xl w-full space-y-6">
-          <h1 className="text-3xl font-black tracking-tight">Help</h1>
-
-          <p className="text-sm text-zinc-300">
-            Need a hand? Here are the quickest ways to get unstuck.
-          </p>
-
-          <section className="space-y-2 text-sm text-zinc-300">
-            <h2 className="font-semibold text-zinc-100">Common fixes</h2>
-            <ul className="list-disc list-inside space-y-1">
-              <li>Try refreshing the page if something looks frozen.</li>
-              <li>If you installed the app, restarting it can clear stale state.</li>
-              <li>Check your connection if sign-in isn’t working.</li>
-            </ul>
-          </section>
-
-          <section className="space-y-2 text-sm text-zinc-300">
-            <h2 className="font-semibold text-zinc-100">Need support?</h2>
-            <p>
-              Reach out via <Link to={SUPPORT_CONTACT_URL} className="text-emerald-300 hover:text-emerald-200">Contact Us</Link>.
-            </p>
-          </section>
-
-          <div className="pt-2 text-sm">
-            <Link to="/" className="text-emerald-300 hover:text-emerald-200">← Back to home</Link>
-          </div>
-        </div>
-      </div>
-
-      <Footer />
-    </>
->>>>>>> master
+    </PageShell>
   );
 }

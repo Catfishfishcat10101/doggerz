@@ -1,8 +1,6 @@
 // src/components/CareActionsPanel.jsx
 // @ts-nocheck
 
-import React from "react";
-
 export default function CareActionsPanel({
   disabled = false,
   onFeed,

@@ -1,92 +1,64 @@
 // src/pages/About.jsx
-<<<<<<< HEAD
-// @ts-nocheck
-import React from "react";
 
-export default function About() {
+import PageShell from '@/components/PageShell.jsx';
+
+export default function AboutPage() {
   return (
-    <main className="min-h-screen w-full bg-black text-white">
-      <div className="max-w-4xl mx-auto px-4 py-10">
-        <h1 className="text-3xl font-extrabold text-emerald-300 tracking-wide">
-          About Doggerz
-        </h1>
+    <PageShell>
+      <div className="max-w-4xl space-y-8">
+        <header className="space-y-3">
+          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-emerald-200">
+            About Doggerz
+          </h1>
+          <p className="text-zinc-300 leading-relaxed">
+            Doggerz is a virtual pup simulator focused on bonding and training — not an idle clicker.
+            You adopt one dog, care for it, potty-train it, and unlock trick training as you progress.
+          </p>
+          <p className="text-zinc-400">
+            Your dog&apos;s stats, temperament, and behavior respond to the choices you make — even while
+            you&apos;re away.
+          </p>
+        </header>
 
-        <p className="mt-3 text-zinc-300 leading-relaxed">
-          Doggerz is a virtual pup simulator focused on bonding and training —
-          not an idle clicker. You adopt one dog, care for it, potty-train it,
-          and unlock trick training as you progress.
-        </p>
-
-        <section className="mt-8 rounded-2xl border border-emerald-500/15 bg-white/5 p-5">
-          <h2 className="text-lg font-bold text-emerald-200">
-            Core principles
-          </h2>
+        <section className="rounded-2xl border border-emerald-500/15 bg-white/5 p-5">
+          <h2 className="text-lg font-bold text-emerald-200">Core principles</h2>
           <ul className="mt-3 space-y-2 text-zinc-300 list-disc pl-5">
             <li>Action-based gameplay (your choices drive outcomes).</li>
             <li>Potty training gates trick training.</li>
             <li>Clear, readable UI with a dark + neon accent style.</li>
           </ul>
         </section>
-      </div>
-    </main>
-=======
-import Header from "@/components/Header.jsx";
-import Footer from "@/components/Footer.jsx";
 
-export default function AboutPage() {
-  return (
-    <>
-      <Header />
-      <div className="flex-1 px-6 py-10 flex justify-center">
-        <div className="max-w-4xl w-full space-y-6">
-          <h1 className="text-5xl font-emerald tracking-tight mb-1">
-            ~ How~Doggerz~Works ~
+        <section className="rounded-2xl border border-white/10 bg-black/20 p-5">
+          <h2 className="text-lg font-bold text-zinc-100">Core loop</h2>
+          <ul className="mt-3 list-disc list-inside space-y-2 text-zinc-300">
+            <li>Play together, learn together.</li>
+            <li>Bathe regularly to avoid fleas, mange, and disease.</li>
+            <li>Your dog will auto-sleep when tired — let them rest.</li>
+            <li>Take them outside regularly to build potty training and avoid messy accidents.</li>
+          </ul>
+        </section>
 
-          </h1>
-          <br></br>
-          <br></br>
-          <p className="text-md text-zinc-400">
-            Doggerz is your realistic virtual dog.<br></br>
-            <br></br>Their stats, temperament, and behavior are based
-            on the choices you make.<br></br>
-            Even while you are gone!
+        <section className="rounded-2xl border border-white/10 bg-black/20 p-5 space-y-2">
+          <h2 className="text-lg font-bold text-zinc-100">Aging &amp; life</h2>
+          <p className="text-zinc-300">
+            Time in Doggerz is <b>accelerated</b>: your dog ages faster than real time. With good care
+            they can live a long, happy life — but ignoring them for days has consequences.
           </p>
+          <p className="text-zinc-400">
+            Hunger, poor cleanliness, and low health can eventually lead to sickness… and yes, the sad
+            ending.
+          </p>
+        </section>
 
-          <section className="space-y-2 text-md text-zinc-400">
-            <h2 className="font-semibold text-zinc-100">Core loop</h2>
-            <ul className="list-disc list-inside space-y-1">
-              <li>Play together, Learn together.</li>
-              <li>Bathe regularly to avoid fleas, mange, and disease!</li>
-              <li>Your dog <b>will</b> auto-sleep when tired; let them sleep..</li>
-              <li>
-                Be sure to let them outside regularly to get them potty trained to avoid messy  “accidents”.
-              </li>
-            </ul>
-          </section>
-
-          <section className="space-y-2 text-md text-zinc-400">
-            <h2 className="font-semibold text-zinc-100">Aging &amp; life</h2>
-            <p>
-              Time in Doggerz is <b>accelerated:</b> Your dog ages <b>faster</b> than real time.
-              With good care they can live a long, happy life!<br></br> But Ignoring them for
-              days has consequences — hunger, poor cleanliness, and low health can
-              eventually lead to death.
-            </p>
-          </section>
-
-          <section className="space-y-2 text-md text-zinc-400">
-            <h2 className="font-semibold text-zinc-100">Potty training</h2>
-            <p>
-              Every successful potty trip outside raises their potty-training
-              meter. Once it hits 100%, they earn a potty-trained badge and indoor
-              accidents become rare.
-            </p>
-          </section>
-        </div>
+        <section className="rounded-2xl border border-white/10 bg-black/20 p-5 space-y-2">
+          <h2 className="text-lg font-bold text-zinc-100">Potty training</h2>
+          <p className="text-zinc-300">
+            Every successful potty trip outside raises their potty-training meter. Once it hits 100%,
+            they earn a potty-trained badge and indoor accidents become rare.
+          </p>
+        </section>
       </div>
-
-      <Footer />
-    </>
->>>>>>> master
+    </PageShell>
   );
 }

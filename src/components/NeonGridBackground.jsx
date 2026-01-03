@@ -1,7 +1,5 @@
 // src/components/NeonGridBackground.jsx
 
-import React from "react";
-
 export default function NeonGridBackground({ children }) {
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-gradient-to-b from-black via-[#020617] to-black text-slate-100">

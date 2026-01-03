@@ -63,12 +63,12 @@ export function setupCanvasForSprite(
   const ctx = canvas.getContext("2d");
   if (ctx) {
     // Reset any existing transform then apply DPR scaling so 1 unit == 1 CSS px
-    if (typeof ctx.setTransform === "function") {
+    if (typeof ctx.setTransform === 'function') {
       ctx.setTransform(resolvedDpr, 0, 0, resolvedDpr, 0, 0);
-    } else if (typeof ctx.scale === "function") {
+    } else if (typeof ctx.scale === 'function') {
       try {
         ctx.setTransform && ctx.setTransform(1, 0, 0, 1, 0, 0);
-      } catch (e) {
+      } catch {
         /* ignore */
       }
       ctx.scale(resolvedDpr, resolvedDpr);
@@ -79,15 +79,15 @@ export function setupCanvasForSprite(
   let resizeHandler = null;
   if (enableResize) {
     resizeHandler = () => {
-      const { cssW: newCssW, cssH: newCssH } = applySizing();
+      applySizing();
       // Only reapply transform if buffer changed; ctx is stable reference
       if (ctx) {
-        if (typeof ctx.setTransform === "function") {
+        if (typeof ctx.setTransform === 'function') {
           ctx.setTransform(resolvedDpr, 0, 0, resolvedDpr, 0, 0);
-        } else if (typeof ctx.scale === "function") {
+        } else if (typeof ctx.scale === 'function') {
           try {
             ctx.setTransform && ctx.setTransform(1, 0, 0, 1, 0, 0);
-          } catch (e) {
+          } catch {
             /* ignore */
           }
           ctx.scale(resolvedDpr, resolvedDpr);
@@ -96,14 +96,14 @@ export function setupCanvasForSprite(
       // Optional: dispatch a resize event or call a callback here if consumer needs it
     };
 
-    window.addEventListener("resize", resizeHandler, { passive: true });
+    window.addEventListener('resize', resizeHandler, { passive: true });
   }
 
   const cleanup = () => {
-    if (resizeHandler) window.removeEventListener("resize", resizeHandler);
+    if (resizeHandler) window.removeEventListener('resize', resizeHandler);
     try {
-      canvas.classList.remove("js-managed-canvas");
-    } catch (e) {
+      canvas.classList.remove('js-managed-canvas');
+    } catch {
       /* ignore */
     }
   };

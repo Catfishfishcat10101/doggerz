@@ -1,7 +1,6 @@
 // src/components/AppHeader.jsx
 // @ts-nocheck
 
-import React from "react";
 import { NavLink } from "react-router-dom";
 import nav from "@/nav.js";
 
