@@ -100,3 +100,12 @@ app/src/main/assets/public
 app/src/main/assets/capacitor.config.json
 app/src/main/assets/capacitor.plugins.json
 app/src/main/res/xml/config.xml
+
+# --- Generated/local Android artifacts ---
+.gradle/
+.idea/
+**/build/
+local.properties
+keystore.properties
+*.jks
+*.keystore

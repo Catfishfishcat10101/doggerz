@@ -54,3 +54,19 @@ android/capacitor-cordova-android-plugins/
 ### Bundle reports
 stats.html
 dist/stats.html
+
+# --- Doggerz: generated/temp assets (do not ship/commit) ---
+public/sprites/puppy/
+public/sprites/_tmp/
+
+# Android / Gradle / Android Studio
+android/.gradle/
+android/.idea/
+android/**/build/
+android/local.properties
+android/keystore.properties
+android/*.jks
+android/*.keystore
+
+# Capacitor starter template (not used)
+my-app/
