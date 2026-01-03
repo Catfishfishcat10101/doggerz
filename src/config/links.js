@@ -27,9 +27,10 @@ export const SOCIAL_LINKS = Object.freeze({
 
 // Public policy/support links (safe to reference anywhere in the app)
 export const APP_LINKS = Object.freeze({
-  // This should be your deployed Vercel route once /privacy is live.
-  // Example: "https://doggerz.vercel.app/privacy"
-  privacyPolicy: '/privacy',
+  // Public, self-hosted privacy policy URL.
+  // Using a static HTML page is Play Console-friendly (renders without JS).
+  // Example: "https://yourdomain.com/privacy-policy.html"
+  privacyPolicy: '/privacy-policy.html',
 
   // In-app support / contact page.
   supportContact: '/contact',
