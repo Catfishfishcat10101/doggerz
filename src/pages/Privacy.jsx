@@ -6,7 +6,6 @@ export default function PrivacyPage() {
   return (
     <>
       <Header />
-
       <div className="flex-1 px-6 py-10 flex justify-center">
         <div className="max-w-3xl w-full space-y-8 text-sm text-zinc-300">
           <header>
@@ -15,7 +14,6 @@ export default function PrivacyPage() {
             </h1>
             <p className="text-xs text-zinc-500">Last updated: 2026-01-02</p>
           </header>
-
           <section className="space-y-2">
             <h2 className="font-semibold text-zinc-100 text-base">1. The short version</h2>
             <p>
@@ -34,7 +32,6 @@ export default function PrivacyPage() {
               <li><b>Minimal data</b>: only what’s needed to run the features you use.</li>
             </ul>
           </section>
-
           <section className="space-y-2">
             <h2 className="font-semibold text-zinc-100 text-base">2. What we store locally</h2>
             <p>
@@ -51,7 +48,6 @@ export default function PrivacyPage() {
               your browser).
             </p>
           </section>
-
           <section className="space-y-2">
             <h2 className="font-semibold text-zinc-100 text-base">3. Cloud sync (optional)</h2>
             <p>
@@ -64,7 +60,6 @@ export default function PrivacyPage() {
               locally.
             </p>
           </section>
-
           <section className="space-y-2">
             <h2 className="font-semibold text-zinc-100 text-base">4. Voice features</h2>
             <p>
@@ -77,7 +72,6 @@ export default function PrivacyPage() {
               Voice controls are optional and can be disabled in Settings.
             </p>
           </section>
-
           <section className="space-y-2">
             <h2 className="font-semibold text-zinc-100 text-base">5. Location</h2>
             <p>
@@ -85,7 +79,6 @@ export default function PrivacyPage() {
               be used to improve day/night timing and weather features.
             </p>
           </section>
-
           <section className="space-y-2">
             <h2 className="font-semibold text-zinc-100 text-base">6. Third-party services</h2>
             <p>
@@ -93,7 +86,6 @@ export default function PrivacyPage() {
               stores). Their data handling is governed by their own policies.
             </p>
           </section>
-
           <section className="space-y-2">
             <h2 className="font-semibold text-zinc-100 text-base">7. Contact</h2>
             <p>
@@ -107,7 +99,6 @@ export default function PrivacyPage() {
               .
             </p>
           </section>
-
           <section className="space-y-2">
             <h2 className="font-semibold text-zinc-100 text-base">8. Changes</h2>
             <p>
@@ -115,13 +106,8 @@ export default function PrivacyPage() {
               will be reflected on this page.
             </p>
           </section>
-
-          <p className="text-xs text-zinc-500">
-            This is a plain-language summary, not legal advice.
-          </p>
         </div>
       </div>
-
       <Footer />
     </>
   );
