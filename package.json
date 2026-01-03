@@ -46,12 +46,13 @@
     "bundle:analyze": "node scripts/analyze-bundle.js",
     "preview": "vite preview",
     "preview:host": "vite preview --host 127.0.0.1 --port 4173",
-    "split:backyard": "node scripts/split-backyard.js public/backgrounds/backyard-split.png public/backgrounds/backyard-day.png public/backgrounds/backyard-night.png"
+    "split:backyard": "node scripts/split-backyard.js public/backgrounds/backyard-split.png public/backgrounds/backyard-day.webp public/backgrounds/backyard-night.webp"
   },
   "dependencies": {
     "@capacitor/android": "^8.0.0",
     "@capacitor/cli": "^8.0.0",
     "@capacitor/core": "^8.0.0",
+    "@capacitor/ios": "^8.0.0",
     "@pixi/react": "^7.1.2",
     "@reduxjs/toolkit": "^2.10.1",
     "@vercel/analytics": "^1.6.1",

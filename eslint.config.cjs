@@ -14,6 +14,8 @@ module.exports = [
     ignores: [
       'dist/**',
       'node_modules/**',
+      '.gradle-user-home/**',
+      'my-app/**',
       'public/**',
       'android/**',
       'scripts/**',

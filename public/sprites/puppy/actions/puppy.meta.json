@@ -1,0 +1,11 @@
+{
+  "frameSize": 256,
+  "defaultFps": 8,
+  "actions": {
+    "idle":   { "frames": 6, "fps": 6 },
+    "walk":   { "frames": 8, "fps": 10 },
+    "bark":   { "frames": 4, "fps": 12 },
+    "sit":    { "frames": 4, "fps": 6 },
+    "sleep":  { "frames": 6, "fps": 4 }
+  }
+}
