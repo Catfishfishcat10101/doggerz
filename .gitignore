@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # OS-generated junk
 .DS_Store
 Thumbs.db
@@ -45,3 +46,43 @@ coverage/
 
 # OS swap / lock files
 *.swp
+=======
+# dependencies
+node_modules/
+
+# build output
+dist/
+
+# local env files (never commit secrets)
+.env
+.env.*
+!.env.example
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Vite
+.vite/
+
+# Generated optimization outputs
+public/optimized/
+public/optimized-audio/
+public/optimized-sprites/
+
+# Bundle reports
+dist/stats.html
+stats.html
+
+# Local build logs (generated during asset work)
+build-from-art.log
+build-sprites.log
+
+# Firebase
+.firebase/
+>>>>>>> master

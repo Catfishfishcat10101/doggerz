@@ -1,0 +1,127 @@
+{
+  "version": 1,
+  "frameSize": 1024,
+  "stages": ["PUPPY", "ADULT", "SENIOR"],
+  "groups": {
+    "core": {
+      "description": "Minimum set to make the yard feel alive and cover current game actions.",
+      "anims": [
+        "idle",
+        "walk",
+        "run",
+        "sit",
+        "lay",
+        "sleep",
+        "eat",
+        "bark",
+        "poop"
+      ]
+    },
+    "comfort": {
+      "description": "Adds realism: breathing variants and common behaviors.",
+      "anims": [
+        "drink",
+        "pant",
+        "wag",
+        "sniff",
+        "yawn",
+        "stretch",
+        "lick",
+        "shake",
+        "scratch"
+      ]
+    },
+    "training_tricks": {
+      "description": "Matches current training commands + popular tricks.",
+      "anims": [
+        "stay",
+        "paw",
+        "roll",
+        "spin",
+        "bow",
+        "beg",
+        "sit_pretty",
+        "play_dead",
+        "fetch"
+      ]
+    },
+    "extended": {
+      "description": "Extra actions you may add later.",
+      "anims": ["howl", "jump", "dig", "pee", "celebrate", "sad", "surprised"]
+    }
+  },
+  "defaults": {
+    "fps": {
+      "idle": 6,
+      "walk": 12,
+      "run": 16,
+      "sit": 6,
+      "lay": 5,
+      "sleep": 4,
+      "eat": 10,
+      "drink": 8,
+      "bark": 12,
+      "howl": 10,
+      "pant": 8,
+      "wag": 10,
+      "sniff": 10,
+      "yawn": 6,
+      "stretch": 8,
+      "lick": 10,
+      "shake": 12,
+      "scratch": 10,
+      "poop": 8,
+      "pee": 8,
+      "jump": 12,
+      "dig": 12,
+      "paw": 10,
+      "roll": 10,
+      "spin": 12,
+      "bow": 10,
+      "beg": 10,
+      "sit_pretty": 10,
+      "play_dead": 8,
+      "fetch": 12,
+      "stay": 6,
+      "celebrate": 10,
+      "sad": 6,
+      "surprised": 8
+    },
+    "suggestedFrames": {
+      "idle": 12,
+      "walk": 12,
+      "run": 12,
+      "sit": 8,
+      "lay": 8,
+      "sleep": 8,
+      "eat": 8,
+      "drink": 8,
+      "bark": 6,
+      "howl": 8,
+      "pant": 8,
+      "wag": 8,
+      "sniff": 8,
+      "yawn": 8,
+      "stretch": 10,
+      "lick": 8,
+      "shake": 10,
+      "scratch": 10,
+      "poop": 8,
+      "pee": 8,
+      "jump": 8,
+      "dig": 10,
+      "paw": 8,
+      "roll": 10,
+      "spin": 10,
+      "bow": 8,
+      "beg": 8,
+      "sit_pretty": 8,
+      "play_dead": 10,
+      "fetch": 12,
+      "stay": 6,
+      "celebrate": 8,
+      "sad": 6,
+      "surprised": 6
+    }
+  }
+}

@@ -120,6 +120,7 @@ export function getAmbientWeatherHint() {
       return "Quiet night. Ideal for howls, dreams, and naps.";
   }
 }
+<<<<<<< HEAD
 
 /**
  * Minimal async `getWeather` fallback used by older hooks.
@@ -128,3 +129,5 @@ export function getAmbientWeatherHint() {
 export async function getWeather() {
   return "clear";
 }
+=======
+>>>>>>> master

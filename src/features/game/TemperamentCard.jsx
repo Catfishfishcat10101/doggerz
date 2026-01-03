@@ -14,6 +14,7 @@ function TraitPill({ label, intensity }) {
 
 export default function TemperamentCard({ temperament }) {
   const dispatch = useDispatch();
+<<<<<<< HEAD
   if (!temperament) return null;
 
   const { primary, secondary, traits = [] } = temperament;
@@ -21,6 +22,37 @@ export default function TemperamentCard({ temperament }) {
   const handleClose = () => {
     dispatch(markTemperamentRevealed());
   };
+=======
+  const closeBtnRef = React.useRef(null);
+
+  const handleClose = React.useCallback(() => {
+    dispatch(markTemperamentRevealed());
+  }, [dispatch]);
+
+  React.useEffect(() => {
+    if (!temperament) return;
+    // Focus close for keyboard users.
+    const t = window.setTimeout(() => closeBtnRef.current?.focus?.(), 0);
+    return () => window.clearTimeout(t);
+  }, [temperament]);
+
+  React.useEffect(() => {
+    if (!temperament) return;
+    const onKeyDown = (e) => {
+      if (e.key !== "Escape") return;
+      e.preventDefault();
+      handleClose();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [handleClose, temperament]);
+
+  if (!temperament) return null;
+
+  const primary = temperament?.primary;
+  const secondary = temperament?.secondary;
+  const traits = Array.isArray(temperament?.traits) ? temperament.traits : [];
+>>>>>>> master
 
   return (
     <div className="fixed inset-x-0 bottom-4 z-40 flex justify-center px-4 pointer-events-none">
@@ -31,6 +63,7 @@ export default function TemperamentCard({ temperament }) {
               Temperament reveal
             </h2>
             <p className="text-xs text-zinc-400">
+<<<<<<< HEAD
               After spending time together, your pup personality is showing.
             </p>
           </div>
@@ -38,6 +71,17 @@ export default function TemperamentCard({ temperament }) {
             type="button"
             onClick={handleClose}
             className="text-xs text-zinc-500 hover:text-zinc-200"
+=======
+              After spending time together, your pup personality is
+              showing.
+            </p>
+          </div>
+          <button
+            ref={closeBtnRef}
+            type="button"
+            onClick={handleClose}
+            className="rounded-xl px-3 py-2 text-xs font-semibold border border-white/15 bg-black/25 text-zinc-100 hover:bg-black/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+>>>>>>> master
           >
             Close
           </button>
@@ -78,6 +122,11 @@ export default function TemperamentCard({ temperament }) {
           quickly they get bored or excited. Keep playing together to discover
           more quirks.
         </p>
+<<<<<<< HEAD
+=======
+
+        <p className="text-[11px] text-zinc-500">Tip: press Esc to dismiss.</p>
+>>>>>>> master
       </div>
     </div>
   );

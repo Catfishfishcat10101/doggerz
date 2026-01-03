@@ -1,17 +1,25 @@
 /** @format */
 
 // src/redux/userSlice.js
+<<<<<<< HEAD
+=======
+
+>>>>>>> master
 import { createSlice } from '@reduxjs/toolkit';
 
 const USER_STORAGE_KEY = 'doggerz:userState';
 
+<<<<<<< HEAD
 export const DOG_RENDER_MODES = Object.freeze(['sprite', 'realistic']);
 
+=======
+>>>>>>> master
 const loadUserFromStorage = () => {
   if (typeof window === 'undefined') return null;
   try {
     const raw = window.localStorage.getItem(USER_STORAGE_KEY);
     if (!raw) return null;
+<<<<<<< HEAD
     const parsed = JSON.parse(raw);
     // Revive date-like fields (createdAt, streak.lastPlayedAt) to numbers when possible
     if (parsed) {
@@ -28,12 +36,16 @@ const loadUserFromStorage = () => {
       }
     }
     return parsed;
+=======
+    return JSON.parse(raw);
+>>>>>>> master
   } catch (e) {
     console.warn('[userSlice] Failed to parse user from storage:', e);
     return null;
   }
 };
 
+<<<<<<< HEAD
 // Debounced save to avoid frequent writes when multiple reducers fire in quick succession
 let _saveTimeout = null;
 let _lastCopy = null;
@@ -99,15 +111,30 @@ if (typeof window !== 'undefined' && window.addEventListener) {
 }
 
 const DEFAULT_USER_STATE = {
+=======
+const saveUserToStorage = (state) => {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(state));
+  } catch (e) {
+    console.warn('[userSlice] Failed to save user to storage:', e);
+  }
+};
+
+const initialState = loadUserFromStorage() || {
+>>>>>>> master
   id: null,
   displayName: 'Trainer',
   email: null,
   avatarUrl: null,
   zip: null,
 
+<<<<<<< HEAD
   // Dog visuals
   dogRenderMode: 'sprite', // "sprite" | "realistic"
 
+=======
+>>>>>>> master
   coins: 0,
   streak: {
     current: 0,
@@ -118,6 +145,7 @@ const DEFAULT_USER_STATE = {
   createdAt: null,
 };
 
+<<<<<<< HEAD
 const _loaded = loadUserFromStorage();
 const initialState = {
   ...DEFAULT_USER_STATE,
@@ -129,6 +157,8 @@ const initialState = {
     : DEFAULT_USER_STATE.dogRenderMode,
 };
 
+=======
+>>>>>>> master
 const userSlice = createSlice({
   name: 'user',
   initialState,
@@ -201,16 +231,27 @@ const userSlice = createSlice({
       const { current, best, lastPlayedAt } = action.payload || {};
       if (typeof current === 'number') state.streak.current = current;
       if (typeof best === 'number') state.streak.best = best;
+<<<<<<< HEAD
       if (lastPlayedAt !== undefined) state.streak.lastPlayedAt = lastPlayedAt;
+=======
+      if (lastPlayedAt !== undefined) {
+        state.streak.lastPlayedAt = lastPlayedAt;
+      }
+>>>>>>> master
       saveUserToStorage(state);
     },
 
     setZip(state, action) {
       const raw = String(action.payload || '').trim();
+<<<<<<< HEAD
+=======
+      // Accept 5-digit US ZIPs only for now
+>>>>>>> master
       const valid = /^[0-9]{5}$/.test(raw) ? raw : null;
       state.zip = valid;
       saveUserToStorage(state);
     },
+<<<<<<< HEAD
 
     setDogRenderMode(state, action) {
       const raw = String(action.payload || '')
@@ -242,5 +283,32 @@ export const selectDogRenderMode = (state) =>
 export const selectUserCoins = (state) => state.user?.coins ?? 0;
 export const selectUserStreak = (state) =>
   state.user?.streak ?? { current: 0, best: 0, lastPlayedAt: null };
+=======
+  },
+});
+
+export const { setUser, clearUser, addCoins, setCoins, updateStreak, setZip } =
+  userSlice.actions;
+
+/**
+ * ✅ This is the selector GameTopBar imports.
+ */
+export const selectUser = (state) => state.user;
+export const selectUserZip = (state) => state.user?.zip || null;
+
+// Authentication is considered "on" when we have an id (preferred) or an email.
+// This avoids treating the default local-only user object as authenticated.
+export const selectIsLoggedIn = (state) =>
+  Boolean(state.user?.id || state.user?.email);
+
+/** Some optional helpers if you want them later */
+export const selectUserCoins = (state) => state.user?.coins ?? 0;
+export const selectUserStreak = (state) =>
+  state.user?.streak ?? {
+    current: 0,
+    best: 0,
+    lastPlayedAt: null,
+  };
+>>>>>>> master
 
 export default userSlice.reducer;

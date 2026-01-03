@@ -1,7 +1,11 @@
 // src/features/game/VoiceCommandButton.jsx
 // @ts-nocheck  // Remove this if you want TS to type-check this file
 
+<<<<<<< HEAD
 import React, { useEffect, useRef, useState } from "react";
+=======
+import { useEffect, useRef, useState } from "react";
+>>>>>>> master
 import { useDispatch } from "react-redux";
 import { trainObedience } from "@/redux/dogSlice.js";
 
@@ -36,6 +40,33 @@ export default function VoiceCommandButton() {
   const [lastCommand, setLastCommand] = useState(null);
   const [error, setError] = useState(null);
 
+<<<<<<< HEAD
+=======
+  const startListening = () => {
+    if (!hasSpeech || !recognitionRef.current) return;
+    if (isListening) return; // avoid double-start exceptions
+
+    setError(null);
+    setLastCommand(null);
+
+    try {
+      recognitionRef.current.start();
+    } catch (e) {
+      // Chrome throws if start() is called twice
+      console.warn("[Voice] start error:", e);
+    }
+  };
+
+  const stopListening = () => {
+    if (!hasSpeech || !recognitionRef.current) return;
+    try {
+      recognitionRef.current.stop();
+    } catch (e) {
+      console.warn("[Voice] stop error:", e);
+    }
+  };
+
+>>>>>>> master
   // Setup Web Speech recognition instance
   useEffect(() => {
     if (!hasSpeech) return;
@@ -147,6 +178,7 @@ export default function VoiceCommandButton() {
     };
   }, [dispatch]);
 
+<<<<<<< HEAD
   const startListening = () => {
     if (!hasSpeech || !recognitionRef.current) return;
     if (isListening) return; // avoid double-start exceptions
@@ -171,6 +203,8 @@ export default function VoiceCommandButton() {
     }
   };
 
+=======
+>>>>>>> master
   if (!hasSpeech) {
     return (
       <div className="space-y-2">
@@ -193,6 +227,7 @@ export default function VoiceCommandButton() {
     <div className="space-y-2">
       <button
         type="button"
+<<<<<<< HEAD
         // “Hold to train” UX
         onMouseDown={startListening}
         onMouseUp={stopListening}
@@ -205,6 +240,31 @@ export default function VoiceCommandButton() {
               ? "border-emerald-500 bg-zinc-900"
               : "border-zinc-700 bg-zinc-900 hover:bg-zinc-800"
           }`}
+=======
+        aria-pressed={isListening}
+        // "Hold to train" UX — pointer covers mouse + touch.
+        onPointerDown={(e) => {
+          // prevent focus + drag weirdness on long-press
+          e.currentTarget.setPointerCapture?.(e.pointerId);
+          startListening();
+        }}
+        onPointerUp={() => stopListening()}
+        onPointerCancel={() => stopListening()}
+        onPointerLeave={() => stopListening()}
+        // Keyboard accessibility: press/hold Space or Enter.
+        onKeyDown={(e) => {
+          if (e.key !== " " && e.key !== "Enter") return;
+          e.preventDefault();
+          startListening();
+        }}
+        onKeyUp={(e) => {
+          if (e.key !== " " && e.key !== "Enter") return;
+          e.preventDefault();
+          stopListening();
+        }}
+        className={`w-full rounded-2xl border border-white/15 bg-black/25 px-4 py-2 text-sm font-semibold text-zinc-100 transition active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black
+          ${isListening ? "border-emerald-500/60 bg-emerald-500/10" : "hover:bg-black/35"}`}
+>>>>>>> master
       >
         {isListening ? "Listening…" : "Hold to Train (Voice)"}
       </button>
@@ -225,10 +285,17 @@ export default function VoiceCommandButton() {
         </p>
       )}
 
+<<<<<<< HEAD
       {error && <p className="text-xs text-red-400">{error}</p>}
 
       {!error && !lastTranscript && (
         <p className="text-[11px] text-zinc-500">
+=======
+      {error && <p className="text-xs text-red-300">{error}</p>}
+
+      {!error && !lastTranscript && (
+        <p className="text-[11px] text-zinc-300/70">
+>>>>>>> master
           Try saying{" "}
           <span className="font-medium text-zinc-300">
             &quot;sit&quot;, &quot;stay&quot;, &quot;roll over&quot;
