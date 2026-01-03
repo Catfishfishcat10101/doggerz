@@ -37,6 +37,10 @@ Thumbs.db
 *.sln
 *.iml
 
+### Local tooling caches / templates
+.gradle-user-home/
+my-app/
+
 ### Android / Capacitor generated outputs
 android/.gradle/
 android/.idea/
