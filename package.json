@@ -48,7 +48,8 @@
     "preview:host": "vite preview --host 127.0.0.1 --port 4173",
     "split:backyard": "node scripts/split-backyard.js public/backgrounds/backyard-split.png public/backgrounds/backyard-day.webp public/backgrounds/backyard-night.webp",
     "sprites:check": "node scripts/validate-sprites.js",
-    "preflight:strict": "node scripts/preflight.js --strict && npm run sprites:check"
+    "preflight:strict": "node scripts/preflight.js --strict && npm run sprites:check",
+    "play:screenshots": "node scripts/generate-play-screenshots.js"
   },
   "dependencies": {
     "@capacitor/android": "^8.0.0",
