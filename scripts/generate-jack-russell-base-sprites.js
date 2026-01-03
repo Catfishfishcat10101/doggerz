@@ -38,8 +38,9 @@ function svgForStage(stage) {
   // Simple "Jack Russell-ish" silhouette using common coat colors.
   // We vary proportions to suggest puppy/adult/senior.
   const bg = 'transparent';
-  const coat = '#f4f1ea';
-  const patch = '#8b5a2b';
+  // Mostly white coat with warm tan spots (classic JRT).
+  const coat = '#fbfbf8';
+  const patch = '#b7793b';
   const outline = 'rgba(0,0,0,0.18)';
   const gray = '#cbd5e1';
 
@@ -91,6 +92,18 @@ function svgForStage(stage) {
         <feMergeNode in="SourceGraphic"/>
       </feMerge>
     </filter>
+
+    <!-- subtle fur texture (very light, keeps file sizes reasonable) -->
+    <filter id="furTexture" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch" result="noise"/>
+      <feColorMatrix in="noise" type="matrix" values="
+        0 0 0 0 0
+        0 0 0 0 0
+        0 0 0 0 0
+        0 0 0 0.06 0" result="alphaNoise"/>
+      <feComposite in="alphaNoise" in2="SourceGraphic" operator="in" result="maskedNoise"/>
+      <feBlend in="SourceGraphic" in2="maskedNoise" mode="multiply"/>
+    </filter>
   </defs>
 
   <rect width="100%" height="100%" fill="${bg}"/>
@@ -98,7 +111,9 @@ function svgForStage(stage) {
   <!-- ground shadow -->
   <ellipse cx="520" cy="840" rx="290" ry="70" fill="rgba(0,0,0,0.25)" filter="url(#softShadow)"/>
 
-  <g transform="translate(520,560) scale(${spec.scale}) translate(-520,-560)">
+  <g transform="translate(520,560) scale(${
+    spec.scale
+  }) translate(-520,-560)" filter="url(#furTexture)">
 
     <!-- tail -->
     <g transform="translate(760,610) rotate(${
@@ -110,9 +125,19 @@ function svgForStage(stage) {
 
     <!-- body -->
     <ellipse cx="560" cy="${spec.bodyY}" rx="285" ry="185" fill="${coat}"/>
-    <ellipse cx="640" cy="${
-      spec.bodyY - 35
-    }" rx="140" ry="115" fill="${patch}" opacity="0.92"/>
+    <!-- tan spots (keep it mostly white) -->
+    <ellipse cx="670" cy="${
+      spec.bodyY - 55
+    }" rx="95" ry="78" fill="${patch}" opacity="0.92"/>
+    <ellipse cx="600" cy="${
+      spec.bodyY + 25
+    }" rx="62" ry="48" fill="${patch}" opacity="0.88"/>
+    <ellipse cx="750" cy="${
+      spec.bodyY + 15
+    }" rx="42" ry="32" fill="${patch}" opacity="0.86"/>
+    <ellipse cx="500" cy="${
+      spec.bodyY - 20
+    }" rx="44" ry="34" fill="${patch}" opacity="0.74"/>
     <ellipse cx="560" cy="${
       spec.bodyY
     }" rx="288" ry="188" fill="none" stroke="${outline}" stroke-width="10"/>
@@ -138,20 +163,35 @@ function svgForStage(stage) {
     spec.headScale
   }) translate(-380,-${spec.headY})">
       <ellipse cx="380" cy="${spec.headY}" rx="155" ry="135" fill="${coat}"/>
-      <ellipse cx="330" cy="${
-        spec.headY - 10
-      }" rx="70" ry="60" fill="${patch}" opacity="0.92"/>
+      <!-- face patch + small cheek spot (tan) -->
+      <ellipse cx="322" cy="${
+        spec.headY - 18
+      }" rx="74" ry="62" fill="${patch}" opacity="0.90"/>
+      <ellipse cx="360" cy="${
+        spec.headY + 22
+      }" rx="28" ry="22" fill="${patch}" opacity="0.68"/>
       <ellipse cx="380" cy="${
         spec.headY
       }" rx="158" ry="138" fill="none" stroke="${outline}" stroke-width="10"/>
 
       <!-- ears -->
-      <path d="M275 ${spec.headY - 80} C 235 ${spec.headY - 120}, 215 ${
-    spec.headY - 40
-  }, 260 ${spec.headY - 20}" fill="${patch}" opacity="0.95"/>
-      <path d="M485 ${spec.headY - 80} C 525 ${spec.headY - 120}, 545 ${
-    spec.headY - 40
-  }, 500 ${spec.headY - 20}" fill="${patch}" opacity="0.95"/>
+      <!-- long, pointy ears (JRT vibe; stylized but distinct) -->
+      <path d="M290 ${spec.headY - 70}
+               C 250 ${spec.headY - 160}, 208 ${spec.headY - 125}, 230 ${
+    spec.headY - 25
+  }
+               C 244 ${spec.headY + 25}, 286 ${spec.headY + 5}, 304 ${
+    spec.headY - 20
+  }
+               Z" fill="${patch}" opacity="0.94"/>
+      <path d="M470 ${spec.headY - 70}
+               C 510 ${spec.headY - 160}, 552 ${spec.headY - 125}, 530 ${
+    spec.headY - 25
+  }
+               C 516 ${spec.headY + 25}, 474 ${spec.headY + 5}, 456 ${
+    spec.headY - 20
+  }
+               Z" fill="${patch}" opacity="0.94"/>
 
       <!-- muzzle -->
       <ellipse cx="440" cy="${spec.headY + 55}" rx="105" ry="78" fill="${

@@ -53,6 +53,11 @@ const CORE_ASSETS = [
   '/sprites/jack_russell_adult.webp',
   '/sprites/jack_russell_senior.webp',
 
+  // Canonical JRT fallbacks (used by runtime + sprites:check)
+  '/sprites/jrt_puppy.webp',
+  '/sprites/jrt_adult.webp',
+  '/sprites/jrt_senior.webp',
+
   // Backgrounds
   '/backgrounds/backyard-day.webp',
   '/backgrounds/backyard-night.webp',

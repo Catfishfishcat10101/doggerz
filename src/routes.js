@@ -7,6 +7,7 @@ export const PATHS = Object.freeze({
   HOME: '/',
   ADOPT: '/adopt',
   GAME: '/game',
+  SPRITE_TEST: '/sprite-test',
   LOGIN: '/login',
   SIGNUP: '/signup',
   ABOUT: '/about',

@@ -1,5 +1,9 @@
+/** @format */
+
+// src/game/assetPaths.js
 export const ASSETS = {
-  sprite: (name) => `/assets/sprites/${name}`,
-  bg: (name) => `/assets/backgrounds/${name}`,
-  audio: (name) => `/assets/audio/${name}`,
+  // NOTE: These are PUBLIC assets (served from Vite's /public root), not bundled build artifacts.
+  sprite: (name) => `/sprites/${name}`,
+  bg: (name) => `/backgrounds/${name}`,
+  audio: (name) => `/audio/${name}`,
 };

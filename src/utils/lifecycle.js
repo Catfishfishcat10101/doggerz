@@ -92,12 +92,12 @@ export function getSpriteForLifeStage(stageId) {
       .trim()
   ) {
     case 'ADULT':
-      return withBaseUrl('/sprites/jack_russell_adult.webp');
+      return withBaseUrl('/sprites/jrt_adult.webp');
     case 'SENIOR':
-      return withBaseUrl('/sprites/jack_russell_senior.webp');
+      return withBaseUrl('/sprites/jrt_senior.webp');
     case 'PUPPY':
     default:
-      return withBaseUrl('/sprites/jack_russell_puppy.webp');
+      return withBaseUrl('/sprites/jrt_puppy.webp');
   }
 }
 

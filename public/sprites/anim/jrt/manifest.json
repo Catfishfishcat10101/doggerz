@@ -3,11 +3,31 @@
   "breed": "jrt",
   "frameSize": 1024,
   "defaultFps": 10,
-  "stages": ["puppy", "adult", "senior"],
+  "stages": [
+    "puppy",
+    "adult",
+    "senior"
+  ],
   "anims": {
-    "idle":  { "frames": 12, "fps": 10, "file": "{stage}/idle.webp"  },
-    "walk":  { "frames": 12, "fps": 12, "file": "{stage}/walk.webp"  },
-    "run":   { "frames": 12, "fps": 14, "file": "{stage}/run.webp"   },
-    "sleep": { "frames": 12, "fps":  6, "file": "{stage}/sleep.webp" }
+    "idle": {
+      "frames": 12,
+      "fps": 10,
+      "file": "{stage}/idle.webp"
+    },
+    "walk": {
+      "frames": 12,
+      "fps": 12,
+      "file": "{stage}/walk.webp"
+    },
+    "run": {
+      "frames": 12,
+      "fps": 14,
+      "file": "{stage}/run.webp"
+    },
+    "sleep": {
+      "frames": 12,
+      "fps": 6,
+      "file": "{stage}/sleep.webp"
+    }
   }
 }
