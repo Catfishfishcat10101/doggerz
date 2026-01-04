@@ -66,7 +66,7 @@ export default function Landing() {
           </div>
 
           <div className="mt-6 rounded-3xl border border-white/10 bg-gradient-to-r from-white/10 via-white/5 to-white/10 px-6 py-4 text-sm text-zinc-100 shadow-[0_0_40px_rgba(15,23,42,0.5)] backdrop-blur-2xl">
-            Tip: Best experience on desktop or "Install App" on mobile (PWA).
+            Tip: Best experience on desktop or &quot;Install App&quot; on mobile (PWA).
           </div>
 
           <div className="mt-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -81,7 +81,7 @@ export default function Landing() {
                     Potty training is a real gate. Clear it to unlock trick training and deeper routines.
                   </div>
                   <div className="dg-progress-slide text-sm text-zinc-200/90">
-                    Earn points to open new life stages and customize the pup's journey over time.
+                    Earn points to open new life stages and customize the pup&apos;s journey over time.
                   </div>
                   <div className="dg-progress-slide text-sm text-zinc-200/90">
                     Streaks and care habits compound into calmer moods and richer bonds.

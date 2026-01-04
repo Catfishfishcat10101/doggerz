@@ -172,7 +172,7 @@ export default function SkillTree() {
               The Way of the Pup
             </h1>
             <p className="mt-3 text-sm text-slate-600">
-              Spend points earned from leveling up to shape your pup's journey.
+              Spend points earned from leveling up to shape your pup&apos;s journey.
               Unlock perks for cozy bonds, steady protection, and playful athleticism.
             </p>
           </div>

@@ -82,59 +82,19 @@ export function getLifeStageLabel(stageId) {
 
 /**
  * Map a life stage → appropriate sprite sheet path.
- *
- * These are served from /public/sprites.
+ * 
+ * NOTE: Sprite assets have been removed. Returns app icon as fallback.
  */
-export function getSpriteForLifeStage(stageId) {
-  switch (
-    String(stageId || 'PUPPY')
-      .toUpperCase()
-      .trim()
-  ) {
-    case 'ADULT':
-      return withBaseUrl('/sprites/jrt_adult.webp');
-    case 'SENIOR':
-      return withBaseUrl('/sprites/jrt_senior.webp');
-    case 'PUPPY':
-    default:
-      return withBaseUrl('/sprites/jrt_puppy.webp');
-  }
+export function getSpriteForLifeStage(stageId) { // eslint-disable-line no-unused-vars
+  // All stages now return the app icon since sprites have been removed
+  return withBaseUrl('/icons/doggerz-192.png');
 }
 
 /**
  * Helper: stage + cleanliness tier → sprite path.
- * Tier-specific sprites are not shipped yet, but the interface is kept.
+ * NOTE: Sprite assets have been removed. Returns app icon as fallback.
  */
-export function getSpriteForStageAndTier(stageOrObj, cleanlinessTier) {
-  let stageKey;
-  let tier = cleanlinessTier;
-
-  if (stageOrObj && typeof stageOrObj === 'object') {
-    stageKey =
-      stageOrObj.stageId ||
-      stageOrObj.stage ||
-      stageOrObj.lifeStage ||
-      (stageOrObj.lifeStage && stageOrObj.lifeStage.stage) ||
-      stageOrObj.stageKey;
-
-    tier =
-      tier ||
-      stageOrObj.cleanlinessTier ||
-      stageOrObj.cleanliness ||
-      stageOrObj.tier;
-  } else {
-    stageKey = stageOrObj;
-  }
-
-  const stageNormalized = String(stageKey || 'PUPPY')
-    .toUpperCase()
-    .trim();
-
-  // Keep the tier parsing for future art variants. (Prefix with _ to avoid lint warnings.)
-  const _tierKey = String(tier || 'FRESH')
-    .toUpperCase()
-    .trim();
-  void _tierKey;
-
-  return getSpriteForLifeStage(stageNormalized);
+export function getSpriteForStageAndTier(stageOrObj, cleanlinessTier) { // eslint-disable-line no-unused-vars
+  // Sprites have been removed, return app icon as fallback
+  return getSpriteForLifeStage('PUPPY');
 }

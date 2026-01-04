@@ -1,9 +1,9 @@
 // src/pages/SpriteTest.jsx
-// Visual QA for the generated JRT sprite pack under /public/sprites/anim/jrt/...
+// NOTE: Sprite assets have been removed. This page shows fallback icon.
 
 import * as React from "react";
 
-import SpriteSheetDog from "@/features/game/components/SpriteSheetDog.jsx";
+import SpriteSheetDog from "@/components/SpriteSheetDog.jsx";
 import { withBaseUrl } from "@/utils/assetUrl.js";
 
 const STAGES = ["PUPPY", "ADULT", "SENIOR"];
@@ -16,16 +16,16 @@ export default function SpriteTest() {
   const [debug, setDebug] = React.useState(null);
 
   const fallbackSrc = React.useMemo(() => {
-    const s = String(stage || "PUPPY").toLowerCase();
-    return withBaseUrl(`/sprites/jrt_${s}.webp`);
-  }, [stage]);
+    // Sprite assets removed - use app icon
+    return withBaseUrl('/icons/doggerz-192.png');
+  }, []);
 
   return (
     <div className="min-h-screen bg-black text-white p-6">
       <h1 className="text-2xl font-semibold">Sprite Test</h1>
       <p className="text-white/70 mt-2">
-        This page loads <code>/sprites/anim/jrt/manifest.json</code> and the
-        generated strips in <code>/sprites/anim/jrt/&lt;stage&gt;/&lt;anim&gt;.webp</code>.
+        NOTE: Sprite assets have been removed from the repository.
+        This page now displays the app icon as a fallback.
       </p>
 
       <div className="mt-6 grid gap-4 md:grid-cols-2">
