@@ -43,10 +43,10 @@ export function usePixiTextures(urls = []) {
   const [progress, setProgress] = React.useState(0);
   const [textures, setTextures] = React.useState({});
 
+  const list = React.useMemo(() => (urls || []).filter(Boolean), [urls]);
+
   React.useEffect(() => {
     let cancelled = false;
-
-    const list = (urls || []).filter(Boolean);
     if (list.length === 0) {
       setReady(true);
       setProgress(1);
@@ -80,7 +80,7 @@ export function usePixiTextures(urls = []) {
     return () => {
       cancelled = true;
     };
-  }, [JSON.stringify(urls || [])]);
+  }, [list]);
 
   return { ready, progress, textures };
 }

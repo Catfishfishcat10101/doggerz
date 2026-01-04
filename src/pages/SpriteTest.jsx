@@ -17,15 +17,15 @@ export default function SpriteTest() {
 
   const fallbackSrc = React.useMemo(() => {
     // Sprite assets removed - use app icon
-    return withBaseUrl('/icons/doggerz-192.png');
+    return withBaseUrl("/icons/doggerz-192.png");
   }, []);
 
   return (
     <div className="min-h-screen bg-black text-white p-6">
       <h1 className="text-2xl font-semibold">Sprite Test</h1>
       <p className="text-white/70 mt-2">
-        NOTE: Sprite assets have been removed from the repository.
-        This page now displays the app icon as a fallback.
+        NOTE: Sprite assets have been removed from the repository. This page now
+        displays the app icon as a fallback.
       </p>
 
       <div className="mt-6 grid gap-4 md:grid-cols-2">

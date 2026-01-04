@@ -8,7 +8,7 @@ import {
   WORKFLOW_STORAGE_KEY,
   hydrateWorkflows,
   selectWorkflows,
-} from "@/redux/workflowSlice.js";
+} from "@/utils/redux/workflowSlice.js";
 
 const LOCAL_SAVE_DEBOUNCE = 200;
 

@@ -1,8 +1,6 @@
 /** @format */
 
 // src/config/assets.js
-// Canonical public-URL asset map for Doggerz.
-// Use these URLs directly (served from /public).
 
 export const ASSET_BASE = "/assets";
 

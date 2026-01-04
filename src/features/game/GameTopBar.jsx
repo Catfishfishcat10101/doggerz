@@ -132,4 +132,4 @@ function clamp01(n) {
   return Math.max(0, Math.min(1, x));
 }
 
-// Badge helpers moved to src/utils/badges.js
+// Badge helpers live in `src/utils/badges.js`.

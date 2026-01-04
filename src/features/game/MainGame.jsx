@@ -36,9 +36,9 @@ import {
   goPotty,
   scoopPoop,
   dismissActiveDream,
-} from "@/redux/dogSlice.js";
-import { selectWeatherCondition } from "@/redux/weatherSlice.js";
-import { selectUserZip } from "@/redux/userSlice.js";
+} from "@/utils/redux/dogSlice.js";
+import { selectWeatherCondition } from "@/utils/redux/weatherSlice.js";
+import { selectUserZip } from "@/utils/redux/userSlice.js";
 import { useDayNightBackground } from "@/features/game/useDayNightBackground.jsx";
 import {
   calculateDogAge,

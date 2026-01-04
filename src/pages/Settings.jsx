@@ -1,4 +1,5 @@
 // src/pages/Settings.jsx
+/** @format */
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -7,14 +8,14 @@ import {
   DOG_STORAGE_KEY,
   selectDogVacation,
   setVacationMode,
-} from "@/redux/dogSlice.js";
+} from "../utils/redux/dogSlice.js";
 import {
   selectDogRenderMode,
   selectUserZip,
   setDogRenderMode,
   setZip,
-} from "@/redux/userSlice.js";
-import { auth, db, firebaseReady } from "@/firebase.js";
+} from "../utils/redux/userSlice.js";
+import { auth, db, firebaseReady } from "../firebase.js";
 import { deleteUser, onAuthStateChanged, signOut } from "firebase/auth";
 import { deleteDoc, doc } from "firebase/firestore";
 import {
@@ -45,9 +46,9 @@ import {
   setTheme,
   setHapticsEnabled,
   SETTINGS_STORAGE_KEY,
-} from "@/redux/settingsSlice.js";
-import PageShell from "@/components/PageShell.jsx";
-import { APP_VERSION } from "@/utils/appVersion.js";
+} from "../utils/redux/settingsSlice.js";
+import PageShell from "../components/PageShell.jsx";
+import { APP_VERSION } from "../utils/appVersion.js";
 
 const USER_STORAGE_KEY = "doggerz:userState";
 
@@ -93,7 +94,7 @@ function Switch({ id, checked, onChange, label, description }) {
   );
 }
 
-function SelectRow({ id, label, description, value, onChange, options }) {
+function SelectRow({ id, label, description = "", value, onChange, options }) {
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
       <div className="min-w-0">
@@ -128,7 +129,7 @@ function SelectRow({ id, label, description, value, onChange, options }) {
 function SliderRow({
   id,
   label,
-  description,
+  description = "",
   value,
   onChange,
   min,
@@ -201,7 +202,7 @@ function Card({
 export default function Settings() {
   const dispatch = useDispatch();
   const settings = useSelector(selectSettings);
-  const vacation = useSelector(selectDogVacation);
+  const vacation = /** @type {any} */ (useSelector(selectDogVacation));
   const currentZip = useSelector(selectUserZip);
   const dogRenderMode = useSelector(selectDogRenderMode);
 

@@ -1,10 +1,7 @@
 <!-- @format -->
+<!-- end -->
 
 # Google Play release (Doggerz)
-
-Doggerz is a Vite/React PWA. To ship on Google Play you typically wrap the hosted PWA as an Android app using **Trusted Web Activity (TWA)**.
-
-Two common paths:
 
 - **PWABuilder** (easiest): generates an Android project/APK/AAB from your PWA URL.
 - **Bubblewrap** (more control): generates a TWA from your PWA URL.
@@ -52,7 +49,7 @@ Make sure these URLs work:
 ## 2) Digital Asset Links (required for verified TWA)
 
 The repo includes `public/.well-known/assetlinks.json` as an empty array (`[]`) so local builds work cleanly.
-Use `docs/assetlinks.template.json` as a starting point when you are ready to verify your TWA.
+Use `public/docs/assetlinks.template.json` as a starting point when you are ready to verify your TWA.
 
 For a verified TWA, you must replace it with your real package name and SHA-256 certificate fingerprint.
 

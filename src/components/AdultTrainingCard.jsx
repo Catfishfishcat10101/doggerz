@@ -6,7 +6,7 @@ import {
   selectDogTraining,
   selectDogLifeStage,
   trainObedience,
-} from "@/redux/dogSlice.js";
+} from "@/utils/redux/dogSlice.js";
 
 /**
  * Tiny util to make ISO dates readable.

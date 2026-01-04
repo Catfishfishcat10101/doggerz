@@ -6,7 +6,7 @@ import { useSelector } from "react-redux";
 
 import PageShell from "@/components/PageShell.jsx";
 import EmptySlate from "@/components/EmptySlate.jsx";
-import { selectDog } from "@/redux/dogSlice.js";
+import { selectDog } from "@/utils/redux/dogSlice.js";
 import { collectEarnedBadgeIds, normalizeBadges } from "@/utils/badges.js";
 
 function groupForBadgeId(id) {

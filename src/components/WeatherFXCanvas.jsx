@@ -31,11 +31,12 @@ export default function WeatherFXCanvas({
   const particlesRef = React.useRef([]);
   const lastTRef = React.useRef(0);
 
-  const effectiveMode = (String(mode || "none").toLowerCase() === "rain")
-    ? "rain"
-    : (String(mode || "none").toLowerCase() === "snow")
-      ? "snow"
-      : "none";
+  const effectiveMode =
+    String(mode || "none").toLowerCase() === "rain"
+      ? "rain"
+      : String(mode || "none").toLowerCase() === "snow"
+        ? "snow"
+        : "none";
 
   React.useEffect(() => {
     const canvas = canvasRef.current;
@@ -112,7 +113,16 @@ export default function WeatherFXCanvas({
           const r = 0.8 + rng() * 1.9;
           const drift = -30 + rng() * 60;
           const wobble = 0.6 + rng() * 1.6;
-          particlesRef.current.push({ type: "snow", x, y, speed, r, drift, wobble, phase: rng() * 6.28 });
+          particlesRef.current.push({
+            type: "snow",
+            x,
+            y,
+            speed,
+            r,
+            drift,
+            wobble,
+            phase: rng() * 6.28,
+          });
         }
       }
     };
@@ -127,8 +137,8 @@ export default function WeatherFXCanvas({
     };
 
     const tick = (t) => {
-      const w = canvas.clientWidth || (window.innerWidth || 1);
-      const h = canvas.clientHeight || (window.innerHeight || 1);
+      const w = canvas.clientWidth || window.innerWidth || 1;
+      const h = canvas.clientHeight || window.innerHeight || 1;
       const dt = Math.min(0.035, (t - (lastTRef.current || t)) / 1000);
       lastTRef.current = t;
 
@@ -141,7 +151,9 @@ export default function WeatherFXCanvas({
 
       if (effectiveMode === "rain") {
         ctx.lineWidth = 1;
-        ctx.strokeStyle = reduceTransparency ? "rgba(186, 230, 253, 0.18)" : "rgba(186, 230, 253, 0.26)";
+        ctx.strokeStyle = reduceTransparency
+          ? "rgba(186, 230, 253, 0.18)"
+          : "rgba(186, 230, 253, 0.26)";
         ctx.beginPath();
 
         for (const p of particlesRef.current) {
@@ -161,7 +173,9 @@ export default function WeatherFXCanvas({
 
         ctx.stroke();
       } else if (effectiveMode === "snow") {
-        ctx.fillStyle = reduceTransparency ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.32)";
+        ctx.fillStyle = reduceTransparency
+          ? "rgba(255,255,255,0.22)"
+          : "rgba(255,255,255,0.32)";
         for (const p of particlesRef.current) {
           p.phase += dt * p.wobble;
           p.y += p.speed * dt;

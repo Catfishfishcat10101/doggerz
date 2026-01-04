@@ -1,6 +1,6 @@
 import { useSelector } from "react-redux";
 
-import { selectDogPersonality } from "@/redux/dogSlice.js";
+import { selectDogPersonality } from "@/utils/redux/dogSlice.js";
 
 import PersonalityTraitCard from "@/features/personality/PersonalityTraitCard.jsx";
 import PersonalityEvolutionTimeline from "@/features/personality/PersonalityEvolutionTimeline.jsx";

@@ -65,7 +65,8 @@ function useAssetOk(src) {
   return ok;
 }
 
-function rigPath(name) { // eslint-disable-line no-unused-vars
+function rigPath(name) {
+  // eslint-disable-line no-unused-vars
   // Sprite assets have been removed
   return null;
 }
@@ -84,11 +85,16 @@ export default function LayeredDogRig({
   const s = clamp(size, 96, 512);
 
   const stageKey = String(lifeStageStage || "").toUpperCase();
-  const stageScale = stageKey === "PUPPY" ? 0.92 : stageKey === "SENIOR" ? 0.99 : 1;
+  const stageScale =
+    stageKey === "PUPPY" ? 0.92 : stageKey === "SENIOR" ? 0.99 : 1;
   const headScale = stageKey === "PUPPY" ? 1.07 : 1;
 
   const bodyName =
-    pose === "sit" ? "body-sit.svg" : pose === "lay" ? "body-lay.svg" : "body-stand.svg";
+    pose === "sit"
+      ? "body-sit.svg"
+      : pose === "lay"
+        ? "body-lay.svg"
+        : "body-stand.svg";
 
   // When walking in stand pose, we can render a leg-less body + animated leg layers.
   const useLayeredLegs = pose === "stand" && action === "walk";
@@ -168,14 +174,19 @@ export default function LayeredDogRig({
             src={fallbackSrc}
             alt=""
             draggable={false}
-            style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "contain",
+              display: "block",
+            }}
           />
         ) : null}
       </div>
     );
   }
 
-  const isSleeping = mood === "sleepy" || pose === "lay" && action === "idle";
+  const isSleeping = mood === "sleepy" || (pose === "lay" && action === "idle");
   const isPanting = !isSleeping && (mood === "curious" || action === "walk");
   const isBarking = action === "bark";
   const isEating = action === "eat";
@@ -183,7 +194,13 @@ export default function LayeredDogRig({
   const showEyesClosed = isSleeping || blink;
   const showMouthOpen = isBarking || isPanting || isEating;
 
-  const wagSpeed = reduceMotion ? "0ms" : isBarking ? "210ms" : isPanting ? "300ms" : "460ms";
+  const wagSpeed = reduceMotion
+    ? "0ms"
+    : isBarking
+      ? "210ms"
+      : isPanting
+        ? "300ms"
+        : "460ms";
   // Tail amplitude via wrapper scale so it doesn't fight the keyframed rotate() transform.
   const wagAmp = reduceMotion ? 1 : isBarking ? 1.25 : isPanting ? 1.1 : 1;
 
@@ -196,7 +213,9 @@ export default function LayeredDogRig({
         position: "relative",
         transformOrigin: "50% 100%",
         transform: stageScale !== 1 ? `scale(${stageScale})` : undefined,
-        filter: reduceTransparency ? "none" : "drop-shadow(0 18px 40px rgba(0,0,0,0.35))",
+        filter: reduceTransparency
+          ? "none"
+          : "drop-shadow(0 18px 40px rgba(0,0,0,0.35))",
       }}
       aria-hidden="true"
     >
@@ -277,7 +296,9 @@ export default function LayeredDogRig({
                 width: "100%",
                 height: "100%",
                 transformOrigin: "66% 70%",
-                animation: reduceMotion ? "none" : "dg-rig-leg-back 560ms ease-in-out infinite",
+                animation: reduceMotion
+                  ? "none"
+                  : "dg-rig-leg-back 560ms ease-in-out infinite",
                 opacity: 0.96,
               }}
             />
@@ -293,7 +314,9 @@ export default function LayeredDogRig({
                 width: "100%",
                 height: "100%",
                 transformOrigin: "56% 70%",
-                animation: reduceMotion ? "none" : "dg-rig-leg-back 560ms ease-in-out infinite",
+                animation: reduceMotion
+                  ? "none"
+                  : "dg-rig-leg-back 560ms ease-in-out infinite",
                 animationDelay: reduceMotion ? undefined : "-280ms",
                 opacity: 0.9,
               }}
@@ -310,7 +333,9 @@ export default function LayeredDogRig({
                 width: "100%",
                 height: "100%",
                 transformOrigin: "38% 70%",
-                animation: reduceMotion ? "none" : "dg-rig-leg-front 560ms ease-in-out infinite",
+                animation: reduceMotion
+                  ? "none"
+                  : "dg-rig-leg-front 560ms ease-in-out infinite",
                 animationDelay: reduceMotion ? undefined : "-280ms",
                 opacity: 0.98,
               }}
@@ -323,7 +348,12 @@ export default function LayeredDogRig({
           src={useLayeredLegs ? bodyStandCoreSrc : bodySrc}
           alt=""
           draggable={false}
-          style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
+          style={{
+            position: "absolute",
+            inset: 0,
+            width: "100%",
+            height: "100%",
+          }}
         />
 
         {/* Tail */}
@@ -348,7 +378,9 @@ export default function LayeredDogRig({
               height: "100%",
               transformOrigin: "85% 25%",
               animation:
-                reduceMotion || isSleeping ? "none" : `dg-rig-wag ${wagSpeed} ease-in-out infinite`,
+                reduceMotion || isSleeping
+                  ? "none"
+                  : `dg-rig-wag ${wagSpeed} ease-in-out infinite`,
               opacity: 0.98,
             }}
           />
@@ -435,7 +467,12 @@ export default function LayeredDogRig({
             src={showMouthOpen ? mouthOpenSrc : mouthClosedSrc}
             alt=""
             draggable={false}
-            style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+            }}
           />
           {showMouthOpen && !isBarking && !isSleeping ? (
             <img

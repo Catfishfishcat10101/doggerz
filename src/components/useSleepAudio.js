@@ -6,7 +6,7 @@
 // - Best-effort: respects autoplay restrictions and fails silently
 // @ts-nocheck
 
-import * as React from 'react';
+import * as React from "react";
 
 function clamp(n, lo, hi) {
   const x = Number(n);
@@ -27,19 +27,19 @@ export function useSleepAudio({
   React.useEffect(() => {
     if (unlocked) return;
     const unlock = () => setUnlocked(true);
-    window.addEventListener('pointerdown', unlock, {
+    window.addEventListener("pointerdown", unlock, {
       once: true,
       passive: true,
     });
-    window.addEventListener('keydown', unlock, { once: true });
-    window.addEventListener('touchstart', unlock, {
+    window.addEventListener("keydown", unlock, { once: true });
+    window.addEventListener("touchstart", unlock, {
       once: true,
       passive: true,
     });
     return () => {
-      window.removeEventListener('pointerdown', unlock);
-      window.removeEventListener('keydown', unlock);
-      window.removeEventListener('touchstart', unlock);
+      window.removeEventListener("pointerdown", unlock);
+      window.removeEventListener("keydown", unlock);
+      window.removeEventListener("touchstart", unlock);
     };
   }, [unlocked]);
 
@@ -99,7 +99,7 @@ export function useSleepAudio({
     // Best-effort resume (only after a user gesture).
     if (unlocked) {
       try {
-        if (ctx.state === 'suspended') void ctx.resume();
+        if (ctx.state === "suspended") void ctx.resume();
       } catch {
         // ignore
       }
@@ -127,7 +127,7 @@ export function useSleepAudio({
 
       // A soft "breath" tone (very quiet)
       const carrier = ctx.createOscillator();
-      carrier.type = 'sine';
+      carrier.type = "sine";
       carrier.frequency.value = 72;
 
       const carrierGain = ctx.createGain();
@@ -136,7 +136,7 @@ export function useSleepAudio({
 
       // LFO to simulate breathing (slow swell)
       const lfo = ctx.createOscillator();
-      lfo.type = 'sine';
+      lfo.type = "sine";
       lfo.frequency.value = 0.25; // ~4s per breath
 
       const lfoGain = ctx.createGain();
@@ -161,7 +161,7 @@ export function useSleepAudio({
       noiseSrc.loop = true;
 
       const noiseFilter = ctx.createBiquadFilter();
-      noiseFilter.type = 'lowpass';
+      noiseFilter.type = "lowpass";
       noiseFilter.frequency.value = 420;
       noiseFilter.Q.value = 0.7;
 

@@ -8,7 +8,7 @@ import {
 } from "firebase/auth";
 
 import { auth, firebaseReady } from "@/firebase.js";
-import { selectIsLoggedIn } from "@/redux/userSlice.js";
+import { selectIsLoggedIn } from "@/utils/redux/userSlice.js";
 
 import Header from "@/components/Header.jsx";
 import Footer from "@/components/Footer.jsx";

@@ -34,7 +34,7 @@ async function copyToClipboard(text) {
       ta.value = text;
       ta.setAttribute("readonly", "");
       ta.style.position = "fixed";
-      ta.style.left = "-9999px";
+      ta.style.left = "20px";
       document.body.appendChild(ta);
       ta.select();
       const ok = document.execCommand("copy");
@@ -329,9 +329,7 @@ export default function HelpPage() {
                   On desktop, look for an “Install” button in the address bar.
                   On mobile, use the browser menu → “Add to Home Screen”.
                 </p>
-                <p className="text-xs text-zinc-400">
-                  Doggerz can be offline-first once cached.
-                </p>
+                <p className="text-xs text-zinc-400"></p>
               </>
             ),
           },

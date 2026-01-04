@@ -1,12 +1,13 @@
 import { useEffect, useRef } from "react";
 import * as PIXI from "pixi.js";
+import { withBaseUrl } from "@/utils/assetUrl.js";
 
 export default function PixiDog({
   width = 256,
   height = 256,
   mood = "neutral",
   mode = "idle",
-  direction = "right, left",
+  direction = "right",
   onPet,
 }) {
   const containerRef = useRef(null);
@@ -104,7 +105,8 @@ export default function PixiDog({
     shadow.y = height * 0.9;
     root.addChild(shadow);
 
-    const texture = PIXI.Texture.from("/dogs/adult.png");
+    // Sprite assets were removed; use the app icon as a stable fallback.
+    const texture = PIXI.Texture.from(withBaseUrl("/icons/doggerz-192.png"));
     const dog = new PIXI.Sprite(texture);
     dog.anchor.set(0.5, 1.0);
     dog.x = width / 2;

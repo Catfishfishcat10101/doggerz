@@ -8,7 +8,7 @@ import ReactDOM from "react-dom/client";
 import { Provider } from "react-redux";
 
 import AppRouter from "./AppRouter.jsx";
-import store from "./redux/store.js";
+import store from "./utils/redux/store.js";
 
 import "./index.css";
 

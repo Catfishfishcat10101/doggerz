@@ -19,7 +19,7 @@ export default function EmptySlate({
   backTo,
   backLabel = "Back",
   className = "",
-}) {
+} = {}) {
   const shell =
     "rounded-3xl border border-white/12 bg-black/20 p-6 backdrop-blur shadow-[0_0_70px_rgba(0,0,0,0.35)]";
 

@@ -9,7 +9,7 @@
 
 import * as React from "react";
 import { useSelector } from "react-redux";
-import { selectSettings } from "@/redux/settingsSlice.js";
+import { selectSettings } from "@/utils/redux/settingsSlice.js";
 
 const ToastContext = React.createContext(null);
 

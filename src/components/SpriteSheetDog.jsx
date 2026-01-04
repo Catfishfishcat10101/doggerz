@@ -24,14 +24,17 @@ export default function SpriteSheetDog({
 
   // Use provided fallback or app icon
   const fallbackCandidates = React.useMemo(() => {
-    const src = String(fallbackSrc || '').trim();
+    const src = String(fallbackSrc || "").trim();
     const out = src ? [src] : [];
     // Always provide app icon as final fallback
-    out.push(withBaseUrl('/icons/doggerz-192.png'));
+    out.push(withBaseUrl("/icons/doggerz-192.png"));
     return out;
   }, [fallbackSrc]);
 
-  const effectiveFallbackSrc = fallbackCandidates[Math.min(fallbackIndex, Math.max(0, fallbackCandidates.length - 1))] || null;
+  const effectiveFallbackSrc =
+    fallbackCandidates[
+      Math.min(fallbackIndex, Math.max(0, fallbackCandidates.length - 1))
+    ] || null;
 
   return effectiveFallbackSrc ? (
     <img

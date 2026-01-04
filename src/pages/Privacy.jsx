@@ -1,11 +1,7 @@
 // src/pages/Privacy.jsx
 import Header from "@/components/Header.jsx";
 import Footer from "@/components/Footer.jsx";
-import {
-  PRIVACY_POLICY_URL,
-  SUPPORT_EMAIL,
-  SUPPORT_EMAIL_PRIVACY_URL,
-} from "@/config/links.js";
+import { SUPPORT_EMAIL, SUPPORT_EMAIL_PRIVACY_URL } from "@/config/links.js";
 
 export default function PrivacyPage() {
   return (
@@ -18,16 +14,6 @@ export default function PrivacyPage() {
               Privacy Policy
             </h1>
             <p className="text-xs text-zinc-500">Last updated: 2026-01-02</p>
-            <p className="text-xs text-zinc-500 mt-2">
-              Prefer a plain, shareable version?{" "}
-              <a
-                className="text-emerald-300 underline-offset-2 hover:text-emerald-200 hover:underline"
-                href={PRIVACY_POLICY_URL}
-              >
-                Open the hosted policy
-              </a>
-              .
-            </p>
           </header>
           <section className="space-y-2">
             <h2 className="font-semibold text-zinc-100 text-base">
