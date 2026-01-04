@@ -1568,3 +1568,149 @@ html[data-reduce-motion="1"] .dog-micro-yawn,
 html[data-reduce-motion="1"] .dog-micro-stretch {
   animation: none !important;
 }
+
+/* -------------------------------------------------------
+   Additional Creative UI/UX Animations
+------------------------------------------------------- */
+
+/* Confetti animation for achievements */
+@keyframes confetti {
+  0% {
+    transform: translateY(0) rotateZ(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotateZ(720deg);
+    opacity: 0;
+  }
+}
+
+/* Bounce in animation */
+@keyframes bounceIn {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Slow spin for mood ring */
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Hover lift effect */
+@keyframes hover-lift {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+/* Text reveal animation */
+@keyframes text-reveal {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Gradient shift animation */
+@keyframes gradient-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* Utility animation classes */
+.animate-confetti {
+  animation: confetti linear forwards;
+}
+
+.animate-bounceIn {
+  animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.animate-spin-slow {
+  animation: spin-slow 8s linear infinite;
+}
+
+.animate-hover-lift {
+  animation: hover-lift 2s ease-in-out infinite;
+}
+
+.animate-text-reveal {
+  animation: text-reveal 0.8s ease-out forwards;
+}
+
+.animate-gradient-shift {
+  animation: gradient-shift 3s ease infinite;
+  background-size: 200% 200%;
+}
+
+/* Scale hover effect */
+.hover\:scale-102:hover {
+  transform: scale(1.02);
+}
+
+.hover\:scale-105:hover {
+  transform: scale(1.05);
+}
+
+/* Glow effects */
+.glow-purple {
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.6);
+}
+
+.glow-pink {
+  box-shadow: 0 0 20px rgba(236, 72, 153, 0.6);
+}
+
+.glow-blue {
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.6);
+}
+
+.glow-yellow {
+  box-shadow: 0 0 20px rgba(234, 179, 8, 0.6);
+}
+
+/* Respect reduced motion for new animations */
+@media (prefers-reduced-motion: reduce) {
+  .animate-confetti,
+  .animate-bounceIn,
+  .animate-spin-slow,
+  .animate-hover-lift,
+  .animate-text-reveal,
+  .animate-gradient-shift {
+    animation: none !important;
+  }
+}
+
+html[data-reduce-motion="1"] .animate-confetti,
+html[data-reduce-motion="1"] .animate-bounceIn,
+html[data-reduce-motion="1"] .animate-spin-slow,
+html[data-reduce-motion="1"] .animate-hover-lift,
+html[data-reduce-motion="1"] .animate-text-reveal,
+html[data-reduce-motion="1"] .animate-gradient-shift {
+  animation: none !important;
+}

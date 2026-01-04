@@ -30,6 +30,7 @@ const SettingsPage = React.lazy(() => import("./pages/Settings.jsx"));
 const StorePage = React.lazy(() => import("./pages/Store.jsx"));
 const BadgesPage = React.lazy(() => import("./pages/Badges.jsx"));
 const MemoryReelPage = React.lazy(() => import("./pages/MemoryReel.jsx"));
+const PhotoAlbumPage = React.lazy(() => import("./pages/PhotoAlbum.jsx"));
 const LegalPage = React.lazy(() => import("./pages/Legal.jsx"));
 const PrivacyPage = React.lazy(() => import("./pages/Privacy.jsx"));
 const PottyPage = React.lazy(() => import("./pages/Potty.jsx"));
@@ -106,6 +107,10 @@ const router = createBrowserRouter(
         {
           path: PATHS.RAINBOW_BRIDGE.replace(/^\//, ""),
           element: suspense(<RainbowBridgePage />),
+        },
+        {
+          path: PATHS.PHOTO_ALBUM.replace(/^\//, ""),
+          element: suspense(<PhotoAlbumPage />),
         },
 
         // ✅ Sprite pipeline verification route

@@ -24,6 +24,7 @@ export const PATHS = Object.freeze({
 
   BADGES: '/badges',
   MEMORIES: '/memories',
+  PHOTO_ALBUM: '/photos', // NEW: Photo album page
 
   // Story / scenes
   RAINBOW_BRIDGE: '/rainbow-bridge',
@@ -60,6 +61,7 @@ export const routes = Object.freeze([
   { path: PATHS.STORE, name: 'Store', meta: { title: 'Store' } },
   { path: PATHS.BADGES, name: 'Badges', meta: { title: 'Badges' } },
   { path: PATHS.MEMORIES, name: 'Memory Reel', meta: { title: 'Memory Reel' } },
+  { path: PATHS.PHOTO_ALBUM, name: 'Photo Album', meta: { title: 'Photo Album' } },
   { path: PATHS.POTTY, name: 'Potty', meta: { title: 'Potty' } },
   {
     path: PATHS.TEMPERAMENT_REVEAL,
