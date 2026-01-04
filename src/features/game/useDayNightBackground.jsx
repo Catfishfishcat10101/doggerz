@@ -50,9 +50,6 @@ export function useDayNightBackground(options = {}) {
     // resolved URLs (preferred format first), or null if not present
     day: null,
     night: null,
-    dawn: null,
-    dusk: null,
-    composite: null,
   });
   const abortRef = useRef(null);
 
@@ -198,33 +195,14 @@ export function useDayNightBackground(options = {}) {
         withBaseUrl("/backgrounds/backyard-night.webp"),
       ]);
 
-      // Optional assets (not shipped in repo yet) — keep support for future drops.
-      const dawn = await firstAvailableUrl([
-        withBaseUrl("/backgrounds/backyard-dawn.webp"),
-        withBaseUrl("/backgrounds/backyard-dawn.png"),
-      ]);
-      const dusk = await firstAvailableUrl([
-        withBaseUrl("/backgrounds/backyard-dusk.webp"),
-        withBaseUrl("/backgrounds/backyard-dusk.png"),
-      ]);
-      const composite = await firstAvailableUrl([
-        withBaseUrl("/backgrounds/backyard-split.webp"),
-        withBaseUrl("/backgrounds/backyard-split.png"),
-      ]);
-
       if (!mounted) return;
       setAvailable({
         day,
         night,
-        dawn,
-        dusk,
-        composite,
       });
 
-      if (day || night || dawn || dusk) {
+      if (day || night) {
         setImageMode("single");
-      } else if (composite) {
-        setImageMode("composite");
       } else {
         setImageMode("none");
       }
@@ -254,14 +232,13 @@ export function useDayNightBackground(options = {}) {
   let backgroundRepeat = "no-repeat";
 
   const pickSingleUrl = () => {
-    if (timeOfDayBucket === "dawn" && available.dawn) return available.dawn;
-    if (timeOfDayBucket === "dusk" && available.dusk) return available.dusk;
     if (!isNight && available.day) return available.day;
     if (isNight && available.night) return available.night;
-    // Fallbacks if requested bucket asset not present
-    if (timeOfDayBucket === "dawn" && available.day) return available.day;
-    if (timeOfDayBucket === "dusk" && available.night) return available.night;
-    return null;
+    // Prefer night assets for dusk/evening if available.
+    if ((timeOfDayBucket === "dusk" || timeOfDayBucket === "evening") && available.night) {
+      return available.night;
+    }
+    return available.day || available.night || null;
   };
 
   if (imageMode === "single") {
@@ -272,16 +249,6 @@ export function useDayNightBackground(options = {}) {
       backgroundPosition = "center, center";
       backgroundRepeat = "no-repeat, no-repeat";
     }
-  } else if (imageMode === "composite") {
-    const compositeUrl =
-      available.composite || withBaseUrl("/backgrounds/backyard-split.webp");
-    // For composite, use left half for day/dawn, right half for night/dusk
-    const isRight = isNight || timeOfDayBucket === "dusk";
-    const pos = isRight ? "100% 50%" : "0% 50%";
-    backgroundImage = `${gradient}, url('${compositeUrl}')`;
-    backgroundSize = "cover, 200% 100%";
-    backgroundPosition = `center, ${pos}`;
-    backgroundRepeat = "no-repeat, no-repeat";
   }
 
   const style = {

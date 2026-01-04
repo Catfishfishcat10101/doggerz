@@ -1,4 +1,4 @@
-/* eslint-disable no-console */
+/* validate-sprites.js */
 const fs = require("node:fs");
 const path = require("node:path");
 

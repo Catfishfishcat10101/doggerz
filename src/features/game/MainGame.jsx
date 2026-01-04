@@ -101,7 +101,8 @@ export default function MainGame() {
 
   const { temperamentRevealReady, temperament } = useDogLifecycle();
 
-  const { isNight, timeOfDayBucket } = useDayNightBackground({ zip });
+  const { isNight, timeOfDayBucket, style: yardStyle } =
+    useDayNightBackground({ zip });
 
   const adopted = Boolean(dog?.adoptedAt);
   const age = React.useMemo(
@@ -186,7 +187,11 @@ export default function MainGame() {
 
       {/* Stage */}
       <div className="absolute inset-0" aria-hidden>
-        <div className="absolute inset-0 bg-black/25" />
+        <div
+          className="absolute inset-0 bg-center bg-cover"
+          style={yardStyle}
+        />
+        <div className="absolute inset-0 bg-black/15" />
         <WeatherFXCanvas
           mode={fxMode}
           reduceMotion={reduceMotion}
@@ -207,7 +212,7 @@ export default function MainGame() {
             isAsleep={isAsleep}
             intent={intent}
             useRig={false}
-            useSpritePack
+            useSpritePack={false}
           />
         </div>
       </div>
@@ -254,7 +259,7 @@ export default function MainGame() {
             </div>
           </main>
         ) : (
-          <main className="mx-auto max-w-7xl p-4 grid gap-4 lg:grid-cols-[340px,1fr,340px]">
+          <main className="mx-auto w-full max-w-[1400px] px-6 pb-10 pt-4 grid gap-6 lg:grid-cols-[minmax(280px,360px)_minmax(0,1fr)_minmax(280px,360px)]">
             <div className="space-y-4">
               <NeedsHUD />
               <MoodAndJournalPanel />
@@ -329,7 +334,7 @@ export default function MainGame() {
                 </div>
               </section>
 
-                <PersonalityPanel />
+              <PersonalityPanel />
             </div>
 
             <div className="space-y-4">

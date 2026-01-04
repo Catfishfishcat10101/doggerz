@@ -1,5 +1,3 @@
-/** @format */
-
 // src/constants/game.js
 // Shared game constants.
 

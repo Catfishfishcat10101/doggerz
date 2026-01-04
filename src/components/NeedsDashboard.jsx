@@ -1,5 +1,4 @@
 // src/components/NeedsDashboard.jsx
-// @ts-nocheck
 
 // Internal model in dogSlice:
 //   hunger: 0   → no hunger (full)

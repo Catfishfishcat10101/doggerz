@@ -1,14 +1,16 @@
 // src/components/PageShell.jsx
+import * as React from "react";
 import Header from "@/components/Header.jsx";
 import Footer from "@/components/Footer.jsx";
+import { AppShellContext } from "@/layout/AppShellContext.js";
 
 export default function PageShell({
   children,
   className = "",
   mainClassName = "",
   containerClassName = "",
-  showHeader = true,
-  showFooter = true,
+  showHeader,
+  showFooter,
   fullBleed = false,
   disableBackground = false,
   style,
@@ -29,15 +31,20 @@ export default function PageShell({
     ? (containerClassName || "w-full")
     : (containerClassName || "mx-auto w-full max-w-6xl");
 
+  const appShell = React.useContext(AppShellContext);
+  const resolvedShowHeader =
+    typeof showHeader === "boolean" ? showHeader : !appShell?.withinAppShell;
+  const resolvedShowFooter = typeof showFooter === "boolean" ? showFooter : true;
+
   return (
     <div className={`min-h-[100dvh] min-h-screen ${className}`} style={shellStyle}>
-      {showHeader ? <Header /> : null}
+      {resolvedShowHeader ? <Header /> : null}
 
       <main className={mainCls}>
         <div className={containerCls}>{children}</div>
       </main>
 
-      {showFooter ? <Footer /> : null}
+      {resolvedShowFooter ? <Footer /> : null}
     </div>
   );
 }

@@ -35,8 +35,7 @@ module.exports = {
         },
         {
           doggerz: {
-            bark: '#000000',
-            paw: '#111827',
+            paw: '#f1f2f5ff',
             sky: '#38bdf8',
             leaf: '#22c55e',
             treat: '#fbbf24',
@@ -44,8 +43,8 @@ module.exports = {
             bone: '#f9fafb',
             // back-compat shorter keys used earlier
             bg: '#0b1020',
-            neon: '#22c55e',
-            neonSoft: '#4ade80',
+            neon: '#00d61994',
+            neonSoft: '#1cb30cff',
           },
         }
       ),

@@ -23,6 +23,10 @@ export const SOCIAL_LINKS = Object.freeze({
   github: 'https://github.com/Catfishfishcat10101/doggerz',
   twitter: null,
   discord: null,
+  instagram: null,
+  tiktok: null,
+  youtube: null,
+  facebook: null,
 });
 
 // Public policy/support links (safe to reference anywhere in the app)

@@ -1,8 +1,8 @@
 // src/layout/AppShell.jsx
 import { Outlet, useLocation } from "react-router-dom";
 
-import AppHeader from "@/components/AppHeader.jsx";
-import AppFooter from "@/components/AppFooter.jsx";
+import Header from "@/components/Header.jsx";
+import { AppShellContext } from "@/layout/AppShellContext.js";
 
 export default function AppShell() {
   const { pathname } = useLocation();
@@ -17,15 +17,17 @@ export default function AppShell() {
 
   return (
     <div className="min-h-dvh flex flex-col">
-      {!isFrameless && <AppHeader />}
+      {!isFrameless && <Header />}
 
       <main className="flex-1">
         <div key={pathname} className="dz-route-frame">
-          <Outlet />
+          <AppShellContext.Provider value={{ withinAppShell: true }}>
+            <Outlet />
+          </AppShellContext.Provider>
         </div>
       </main>
 
-      {!isFrameless && <AppFooter />}
+      {/* Footer handled by PageShell */}
     </div>
   );
 }

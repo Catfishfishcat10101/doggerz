@@ -10,12 +10,12 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
 
-    "baseUrl": ".",
+    "baseUrl": ".com.doggerz.app",
     "paths": {
       "@/*": ["src/*"]
     },
 
     "types": ["vite/client", "node"]
   },
-  "include": ["src", "vite.config.*", "tailwind.config.*", "postcss.config.*"]
+  "include": ["src", "capacitor.config.json*", "vite.config.*", "eslint.config.cjs", "tailwind.config.*", "postcss.config.*"]
 }

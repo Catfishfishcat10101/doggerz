@@ -145,16 +145,18 @@ function SliderRow({ id, label, description, value, onChange, min, max, step, ri
   );
 }
 
-function Card({ title, subtitle, children }) {
+function Card({ title, subtitle, children, className = "", bodyClassName = "" }) {
   return (
-    <section className="rounded-2xl border border-zinc-200 bg-white/80 p-5 shadow-lg shadow-black/10 dark:border-zinc-800 dark:bg-zinc-950/60 dark:shadow-black/20">
+    <section
+      className={`rounded-2xl border border-zinc-200 bg-white/80 p-5 shadow-lg shadow-black/10 dark:border-zinc-800 dark:bg-zinc-950/60 dark:shadow-black/20 ${className}`}
+    >
       <div className="mb-4">
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{title}</h2>
         {subtitle ? (
           <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{subtitle}</p>
         ) : null}
       </div>
-      <div className="space-y-4">{children}</div>
+      <div className={`space-y-4 ${bodyClassName}`}>{children}</div>
     </section>
   );
 }
@@ -830,7 +832,12 @@ export default function Settings() {
             </div>
           </Card>
 
-          <Card title="About this build" subtitle="Handy details for support and release checks">
+          <Card
+            title="About this build"
+            subtitle="Handy details for support and release checks"
+            className="self-start p-4"
+            bodyClassName="space-y-2"
+          >
             <div className="text-sm text-zinc-700 dark:text-zinc-300">
               Version: <span className="font-semibold">{APP_VERSION}</span>
             </div>

@@ -1,5 +1,5 @@
 // src/components/CareActionsPanel.jsx
-// @ts-nocheck
+
 
 export default function CareActionsPanel({
   disabled = false,

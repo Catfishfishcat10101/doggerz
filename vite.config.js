@@ -9,7 +9,7 @@
 const path = require('node:path');
 const pkg = require('./package.json');
 
-function maybeVisualizer() {
+function Visualizer() {
   if (process.env.ANALYZE !== '1') return null;
 
   // Lazy-load so normal builds don't pay the require cost (and to avoid dependency issues if removed).
@@ -31,7 +31,7 @@ module.exports = async () => {
   const react = reactModule.default || reactModule;
 
   return {
-    plugins: [react(), maybeVisualizer()].filter(Boolean),
+    plugins: [react(), Visualizer()].filter(Boolean),
     resolve: {
       alias: {
         '@': path.resolve(__dirname, 'src'),

@@ -2,12 +2,12 @@ import { useEffect, useRef } from "react";
 import * as PIXI from "pixi.js";
 
 export default function PixiDog({
-  width = 420,
-  height = 420,
+  width = 256,
+  height = 256,
   mood = "neutral",
   mode = "idle",
-  direction = "right",
-  onPet,
+  direction = "right, left",
+  onPet
 }) {
   const containerRef = useRef(null);
 
@@ -73,7 +73,9 @@ export default function PixiDog({
     dog.cursor = "pointer";
     root.addChild(dog);
 
-    const cm = new PIXI.filters.ColorMatrixFilter();
+    // PixiJS v7+ no longer exposes filters under `PIXI.filters` in typings.
+    // `ColorMatrixFilter` is available as a top-level export.
+    const cm = new PIXI.ColorMatrixFilter();
     dog.filters = [cm];
 
     const fx = new PIXI.Container();
