@@ -42,7 +42,9 @@ export default function PersonalityPanel() {
   const personality = useSelector(selectDogPersonality);
 
   const traits = personality?.traits || {};
-  const history = Array.isArray(personality?.history) ? personality.history : [];
+  const history = Array.isArray(personality?.history)
+    ? personality.history
+    : [];
 
   const hint = String(personality?.animationHint || "").trim();
 
@@ -69,8 +71,8 @@ export default function PersonalityPanel() {
       </div>
 
       <p className="mt-2 text-xs text-zinc-400">
-        Traits drift gradually based on what you do (play, rest, training—and even
-        long breaks). In the future, these can drive unique animations.
+        Traits drift gradually based on what you do (play, rest, training—and
+        even long breaks). In the future, these can drive unique animations.
       </p>
 
       <div className="mt-4 grid gap-3 lg:grid-cols-2">

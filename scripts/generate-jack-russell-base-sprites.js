@@ -16,33 +16,33 @@
 // Usage:
 //   node scripts/generate-jack-russell-base-sprites.js
 
-const path = require('node:path');
-const fs = require('node:fs/promises');
+const path = require("node:path");
+const fs = require("node:fs/promises");
 
 let sharp;
 try {
   // eslint-disable-next-line global-require
-  sharp = require('sharp');
+  sharp = require("sharp");
 } catch {
-  console.error('[Doggerz] Missing dependency: sharp');
+  console.error("[Doggerz] Missing dependency: sharp");
   process.exit(1);
 }
 
-const ROOT = path.resolve(__dirname, '..');
+const ROOT = path.resolve(__dirname, "..");
 
-const OUT_DIR = path.join(ROOT, 'public', 'sprites');
+const OUT_DIR = path.join(ROOT, "public", "sprites");
 
 const SIZE = 1024;
 
 function svgForStage(stage) {
   // Simple "Jack Russell-ish" silhouette using common coat colors.
   // We vary proportions to suggest puppy/adult/senior.
-  const bg = 'transparent';
+  const bg = "transparent";
   // Mostly white coat with warm tan spots (classic JRT).
-  const coat = '#fbfbf8';
-  const patch = '#b7793b';
-  const outline = 'rgba(0,0,0,0.18)';
-  const gray = '#cbd5e1';
+  const coat = "#fbfbf8";
+  const patch = "#b7793b";
+  const outline = "rgba(0,0,0,0.18)";
+  const gray = "#cbd5e1";
 
   const spec = {
     puppy: {
@@ -145,23 +145,23 @@ function svgForStage(stage) {
     <!-- legs -->
     <g fill="${coat}" stroke="${outline}" stroke-width="8" opacity="0.98">
       <rect x="415" y="${spec.bodyY + 90}" width="78" height="${
-    spec.legLen
-  }" rx="26"/>
+        spec.legLen
+      }" rx="26"/>
       <rect x="505" y="${spec.bodyY + 105}" width="78" height="${
-    spec.legLen - 10
-  }" rx="26"/>
+        spec.legLen - 10
+      }" rx="26"/>
       <rect x="600" y="${spec.bodyY + 105}" width="78" height="${
-    spec.legLen - 10
-  }" rx="26"/>
+        spec.legLen - 10
+      }" rx="26"/>
       <rect x="690" y="${spec.bodyY + 90}" width="78" height="${
-    spec.legLen
-  }" rx="26"/>
+        spec.legLen
+      }" rx="26"/>
     </g>
 
     <!-- head -->
     <g transform="translate(380,${spec.headY}) scale(${
-    spec.headScale
-  }) translate(-380,-${spec.headY})">
+      spec.headScale
+    }) translate(-380,-${spec.headY})">
       <ellipse cx="380" cy="${spec.headY}" rx="155" ry="135" fill="${coat}"/>
       <!-- face patch + small cheek spot (tan) -->
       <ellipse cx="322" cy="${
@@ -178,25 +178,25 @@ function svgForStage(stage) {
       <!-- long, pointy ears (JRT vibe; stylized but distinct) -->
       <path d="M290 ${spec.headY - 70}
                C 250 ${spec.headY - 160}, 208 ${spec.headY - 125}, 230 ${
-    spec.headY - 25
-  }
+                 spec.headY - 25
+               }
                C 244 ${spec.headY + 25}, 286 ${spec.headY + 5}, 304 ${
-    spec.headY - 20
-  }
+                 spec.headY - 20
+               }
                Z" fill="${patch}" opacity="0.94"/>
       <path d="M470 ${spec.headY - 70}
                C 510 ${spec.headY - 160}, 552 ${spec.headY - 125}, 530 ${
-    spec.headY - 25
-  }
+                 spec.headY - 25
+               }
                C 516 ${spec.headY + 25}, 474 ${spec.headY + 5}, 456 ${
-    spec.headY - 20
-  }
+                 spec.headY - 20
+               }
                Z" fill="${patch}" opacity="0.94"/>
 
       <!-- muzzle -->
       <ellipse cx="440" cy="${spec.headY + 55}" rx="105" ry="78" fill="${
-    spec.muzzleFill
-  }"/>
+        spec.muzzleFill
+      }"/>
       <ellipse cx="440" cy="${
         spec.headY + 55
       }" rx="108" ry="81" fill="none" stroke="${outline}" stroke-width="8" opacity="0.35"/>
@@ -224,7 +224,7 @@ async function writeStage(stage) {
   await fs.mkdir(path.dirname(out), { recursive: true });
   await sharp(Buffer.from(svg))
     .resize(SIZE, SIZE, {
-      fit: 'contain',
+      fit: "contain",
       background: { r: 0, g: 0, b: 0, alpha: 0 },
     })
     .webp({ quality: 90, effort: 5 })
@@ -235,12 +235,12 @@ async function writeStage(stage) {
 
 async function main() {
   console.log(
-    '[Doggerz] Generating NEW Jack Russell base sprites (stylized)...'
+    "[Doggerz] Generating NEW Jack Russell base sprites (stylized)..."
   );
-  await writeStage('puppy');
-  await writeStage('adult');
-  await writeStage('senior');
-  console.log('[Doggerz] Done.');
+  await writeStage("puppy");
+  await writeStage("adult");
+  await writeStage("senior");
+  console.log("[Doggerz] Done.");
 }
 
 main().catch((e) => {

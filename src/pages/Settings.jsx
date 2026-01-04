@@ -60,11 +60,16 @@ function Switch({ id, checked, onChange, label, description }) {
   return (
     <div className="flex items-start justify-between gap-4">
       <div className="min-w-0">
-        <label htmlFor={id} className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+        <label
+          htmlFor={id}
+          className="text-sm font-semibold text-zinc-900 dark:text-zinc-100"
+        >
           {label}
         </label>
         {description ? (
-          <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{description}</p>
+          <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+            {description}
+          </p>
         ) : null}
       </div>
 
@@ -92,11 +97,16 @@ function SelectRow({ id, label, description, value, onChange, options }) {
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
       <div className="min-w-0">
-        <label htmlFor={id} className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+        <label
+          htmlFor={id}
+          className="text-sm font-semibold text-zinc-900 dark:text-zinc-100"
+        >
           {label}
         </label>
         {description ? (
-          <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{description}</p>
+          <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+            {description}
+          </p>
         ) : null}
       </div>
       <select
@@ -115,20 +125,37 @@ function SelectRow({ id, label, description, value, onChange, options }) {
   );
 }
 
-function SliderRow({ id, label, description, value, onChange, min, max, step, rightLabel }) {
+function SliderRow({
+  id,
+  label,
+  description,
+  value,
+  onChange,
+  min,
+  max,
+  step,
+  rightLabel,
+}) {
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <label htmlFor={id} className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+          <label
+            htmlFor={id}
+            className="text-sm font-semibold text-zinc-900 dark:text-zinc-100"
+          >
             {label}
           </label>
           {description ? (
-            <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{description}</p>
+            <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+              {description}
+            </p>
           ) : null}
         </div>
         {rightLabel ? (
-          <div className="shrink-0 text-xs text-zinc-600 dark:text-zinc-400">{rightLabel}</div>
+          <div className="shrink-0 text-xs text-zinc-600 dark:text-zinc-400">
+            {rightLabel}
+          </div>
         ) : null}
       </div>
       <input
@@ -145,15 +172,25 @@ function SliderRow({ id, label, description, value, onChange, min, max, step, ri
   );
 }
 
-function Card({ title, subtitle, children, className = "", bodyClassName = "" }) {
+function Card({
+  title,
+  subtitle,
+  children,
+  className = "",
+  bodyClassName = "",
+}) {
   return (
     <section
       className={`rounded-2xl border border-zinc-200 bg-white/80 p-5 shadow-lg shadow-black/10 dark:border-zinc-800 dark:bg-zinc-950/60 dark:shadow-black/20 ${className}`}
     >
       <div className="mb-4">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{title}</h2>
+        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+          {title}
+        </h2>
         {subtitle ? (
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{subtitle}</p>
+          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+            {subtitle}
+          </p>
         ) : null}
       </div>
       <div className={`space-y-4 ${bodyClassName}`}>{children}</div>
@@ -222,7 +259,7 @@ export default function Settings() {
     if (!user?.uid) return;
 
     const ok = window.confirm(
-      "Delete your Firebase account and attempt to remove your cloud dog docs? This cannot be undone.",
+      "Delete your Firebase account and attempt to remove your cloud dog docs? This cannot be undone."
     );
     if (!ok) return;
 
@@ -238,12 +275,12 @@ export default function Settings() {
       try {
         await deleteDoc(doc(db, "users", user.uid, "dog", "main"));
       } catch {
-      // ignore
+        // ignore
       }
 
       await deleteUser(user);
       setCloudActionStatus(
-        "Account deleted. (If this failed due to 'requires-recent-login', sign in again and retry.)",
+        "Account deleted. (If this failed due to 'requires-recent-login', sign in again and retry.)"
       );
     } catch (e) {
       console.error(e);
@@ -275,7 +312,9 @@ export default function Settings() {
         })(),
         settings: (() => {
           try {
-            return JSON.parse(localStorage.getItem(SETTINGS_STORAGE_KEY) || "null");
+            return JSON.parse(
+              localStorage.getItem(SETTINGS_STORAGE_KEY) || "null"
+            );
           } catch {
             return null;
           }
@@ -317,7 +356,7 @@ export default function Settings() {
     const confirmGate = settings?.confirmDangerousActions ?? true;
     if (confirmGate) {
       const ok = window.confirm(
-        "Importing will overwrite your local Doggerz save + settings on this device. Continue?",
+        "Importing will overwrite your local Doggerz save + settings on this device. Continue?"
       );
       if (!ok) return;
     }
@@ -330,7 +369,10 @@ export default function Settings() {
         localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(data.user));
       }
       if (data.settings) {
-        localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(data.settings));
+        localStorage.setItem(
+          SETTINGS_STORAGE_KEY,
+          JSON.stringify(data.settings)
+        );
         dispatch(hydrateSettings(data.settings));
       }
 
@@ -346,7 +388,7 @@ export default function Settings() {
     const confirmGate = settings?.confirmDangerousActions ?? true;
     if (confirmGate) {
       const ok = window.confirm(
-        "This clears ALL local Doggerz data on this device (save + settings). Cloud data (if any) is not deleted. Continue?",
+        "This clears ALL local Doggerz data on this device (save + settings). Cloud data (if any) is not deleted. Continue?"
       );
       if (!ok) return;
     }
@@ -364,7 +406,9 @@ export default function Settings() {
   function resetPupLocal() {
     const confirmGate = settings?.confirmDangerousActions ?? true;
     if (confirmGate) {
-      const ok = window.confirm("Reset your local pup progress on this device?");
+      const ok = window.confirm(
+        "Reset your local pup progress on this device?"
+      );
       if (!ok) return;
     }
 
@@ -386,7 +430,8 @@ export default function Settings() {
             Settings
           </h1>
           <p className="text-sm text-zinc-600 dark:text-zinc-400 max-w-2xl">
-            Customize your Doggerz experience on this device. Most settings save automatically.
+            Customize your Doggerz experience on this device. Most settings save
+            automatically.
           </p>
         </header>
 
@@ -397,13 +442,16 @@ export default function Settings() {
           >
             {!firebaseReady ? (
               <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                Cloud features are currently disabled because Firebase isn’t configured.
+                Cloud features are currently disabled because Firebase isn’t
+                configured.
               </p>
             ) : cloudUser ? (
               <div className="space-y-3">
                 <div className="text-sm text-zinc-700 dark:text-zinc-300">
-                    Signed in as{" "}
-                    <span className="font-semibold">{cloudUser.email || cloudUser.uid}</span>
+                  Signed in as{" "}
+                  <span className="font-semibold">
+                    {cloudUser.email || cloudUser.uid}
+                  </span>
                 </div>
 
                 <div className="flex flex-wrap gap-3">
@@ -422,24 +470,26 @@ export default function Settings() {
                     onClick={handleDeleteAccount}
                     className="inline-flex items-center justify-center rounded-xl bg-red-500/90 px-4 py-2 text-sm font-semibold text-white hover:bg-red-400 disabled:opacity-60"
                   >
-                      Delete account
+                    Delete account
                   </button>
                 </div>
 
                 {cloudActionStatus ? (
-                    <p className="text-xs text-zinc-600 dark:text-zinc-400">{cloudActionStatus}</p>
-                  ) : null}
+                  <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                    {cloudActionStatus}
+                  </p>
+                ) : null}
               </div>
             ) : (
               <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                    You’re not signed in. Visit{" "}
-                    <Link
-                      className="text-emerald-700 hover:text-emerald-600 dark:text-emerald-300 dark:hover:text-emerald-200"
-                      to="/login"
-                    >
-                      Login
-                    </Link>
-                    {" "}to enable cloud sync.
+                You’re not signed in. Visit{" "}
+                <Link
+                  className="text-emerald-700 hover:text-emerald-600 dark:text-emerald-300 dark:hover:text-emerald-200"
+                  to="/login"
+                >
+                  Login
+                </Link>{" "}
+                to enable cloud sync.
               </p>
             )}
           </Card>
@@ -508,7 +558,10 @@ export default function Settings() {
             />
           </Card>
 
-          <Card title="Accessibility" subtitle="Motion, focus, and touch targets">
+          <Card
+            title="Accessibility"
+            subtitle="Motion, focus, and touch targets"
+          >
             <SelectRow
               id="reduceMotion"
               label="Reduce motion"
@@ -695,10 +748,16 @@ export default function Settings() {
             />
           </Card>
 
-          <Card title="Location" subtitle="Used for optional sunrise/sunset timing">
+          <Card
+            title="Location"
+            subtitle="Used for optional sunrise/sunset timing"
+          >
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div className="w-full sm:w-auto">
-                <label className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1" htmlFor="zip">
+                <label
+                  className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1"
+                  htmlFor="zip"
+                >
                   ZIP (US)
                 </label>
                 <input
@@ -745,13 +804,19 @@ export default function Settings() {
 
             <div className="text-xs text-zinc-400 leading-snug space-y-1">
               <p>
-                Status: <span className="text-zinc-800 dark:text-zinc-200">Using ZIP</span>{" "}
+                Status:{" "}
+                <span className="text-zinc-800 dark:text-zinc-200">
+                  Using ZIP
+                </span>{" "}
                 {currentZip ? `(ZIP ${currentZip})` : "(none)"}
               </p>
             </div>
           </Card>
 
-          <Card title="Safety & confirmations" subtitle="Avoid accidental resets">
+          <Card
+            title="Safety & confirmations"
+            subtitle="Avoid accidental resets"
+          >
             <Switch
               id="confirmDangerous"
               label="Confirm dangerous actions"
@@ -761,7 +826,10 @@ export default function Settings() {
             />
           </Card>
 
-          <Card title="Backup & restore" subtitle="Move your local save/settings between devices">
+          <Card
+            title="Backup & restore"
+            subtitle="Move your local save/settings between devices"
+          >
             <div className="flex flex-wrap gap-3">
               <button
                 type="button"
@@ -800,11 +868,15 @@ export default function Settings() {
             ) : null}
 
             <p className="text-xs text-zinc-600 dark:text-zinc-400">
-              Exports include local dog save, local user state, and settings for this browser.
+              Exports include local dog save, local user state, and settings for
+              this browser.
             </p>
           </Card>
 
-          <Card title="Data" subtitle="Local-only actions (cloud data is not deleted)">
+          <Card
+            title="Data"
+            subtitle="Local-only actions (cloud data is not deleted)"
+          >
             <div className="flex flex-wrap gap-3">
               <button
                 type="button"

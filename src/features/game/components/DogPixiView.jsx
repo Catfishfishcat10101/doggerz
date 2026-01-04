@@ -39,7 +39,7 @@ function sliceRowTextures(baseTexture, rowIndex, frameCount) {
       col * FRAME_W,
       rowIndex * FRAME_H,
       FRAME_W,
-      FRAME_H,
+      FRAME_H
     );
     textures.push(new Texture(baseTexture, rect));
   }
@@ -93,7 +93,7 @@ export default function DogPixiView({
               "[Doggerz] Failed to load sprite sheet + fallback:",
               path,
               fallback,
-              fallbackErr,
+              fallbackErr
             );
           }
         }

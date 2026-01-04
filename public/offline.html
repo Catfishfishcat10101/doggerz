@@ -22,9 +22,22 @@
       body {
         height: 100%;
         margin: 0;
-        background: radial-gradient(circle at top, #1e293b 0, #0f172a 50%, #000 100%);
-        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
-          Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+        background: radial-gradient(
+          circle at top,
+          #1e293b 0,
+          #0f172a 50%,
+          #000 100%
+        );
+        font-family:
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          Segoe UI,
+          Roboto,
+          Helvetica,
+          Arial,
+          "Apple Color Emoji",
+          "Segoe UI Emoji";
         color: var(--dg-text);
       }
 
@@ -104,14 +117,20 @@
           <img class="logo" src="/icons/doggerz-logo.svg" alt="" />
           <div>
             <h1>You're offline</h1>
-            <p>Doggerz can't reach the network right now. Cached features should still work.</p>
+            <p>
+              Doggerz can't reach the network right now. Cached features should
+              still work.
+            </p>
           </div>
         </div>
         <div class="actions">
-          <button type="button" onclick="location.reload()">Retry connection</button>
+          <button type="button" onclick="location.reload()">
+            Retry connection
+          </button>
         </div>
         <div class="hint">
-          Tip: once you're back online, reopen the app to sync the latest updates.
+          Tip: once you're back online, reopen the app to sync the latest
+          updates.
         </div>
       </div>
     </div>

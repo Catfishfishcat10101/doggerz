@@ -15,35 +15,35 @@
  *   node scripts/preflight.js --strict --require assetlinks
  */
 
-const fs = require('node:fs');
-const path = require('node:path');
+const fs = require("node:fs");
+const path = require("node:path");
 
-const ROOT = path.resolve(__dirname, '..');
-const PUBLIC_DIR = path.join(ROOT, 'public');
-const ROOT_INDEX_HTML = path.join(ROOT, 'index.html');
+const ROOT = path.resolve(__dirname, "..");
+const PUBLIC_DIR = path.join(ROOT, "public");
+const ROOT_INDEX_HTML = path.join(ROOT, "index.html");
 
 function parseArgs(argv) {
   const out = {
     strict: false,
-    require: new Set()
+    require: new Set(),
   };
 
   for (let i = 0; i < argv.length; i += 1) {
     const a = argv[i];
-    if (a === '--strict') {
+    if (a === "--strict") {
       out.strict = true;
       continue;
     }
-    if (a === '--require') {
+    if (a === "--require") {
       const v = argv[i + 1];
-      if (typeof v === 'string' && v.trim()) {
+      if (typeof v === "string" && v.trim()) {
         out.require.add(v.trim());
         i += 1;
       }
       continue;
     }
-    if (a.startsWith('--require=')) {
-      const v = a.slice('--require='.length).trim();
+    if (a.startsWith("--require=")) {
+      const v = a.slice("--require=".length).trim();
       if (v) out.require.add(v);
       continue;
     }
@@ -53,18 +53,18 @@ function parseArgs(argv) {
 }
 
 function readJson(filePath) {
-  return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  return JSON.parse(fs.readFileSync(filePath, "utf8"));
 }
 
 function existsRelativeToPublic(urlPath) {
   // urlPath like '/icons/doggerz-192.png'
-  const cleaned = urlPath.startsWith('/') ? urlPath.slice(1) : urlPath;
+  const cleaned = urlPath.startsWith("/") ? urlPath.slice(1) : urlPath;
   const diskPath = path.join(PUBLIC_DIR, cleaned);
   return { diskPath, exists: fs.existsSync(diskPath) };
 }
 
 function existsRelativeToRoot(urlPath) {
-  const cleaned = urlPath.startsWith('/') ? urlPath.slice(1) : urlPath;
+  const cleaned = urlPath.startsWith("/") ? urlPath.slice(1) : urlPath;
   const diskPath = path.join(ROOT, cleaned);
   return { diskPath, exists: fs.existsSync(diskPath) };
 }
@@ -106,30 +106,30 @@ function main() {
 
   const opts = parseArgs(process.argv.slice(2));
 
-  const manifestPath = path.join(PUBLIC_DIR, 'manifest.webmanifest');
-  const swPath = path.join(PUBLIC_DIR, 'sw.js');
+  const manifestPath = path.join(PUBLIC_DIR, "manifest.webmanifest");
+  const swPath = path.join(PUBLIC_DIR, "sw.js");
   const assetLinksPath = path.join(
     PUBLIC_DIR,
-    '.well-known',
-    'assetlinks.json'
+    ".well-known",
+    "assetlinks.json"
   );
 
   if (!fs.existsSync(PUBLIC_DIR)) fail(`Missing public dir: ${PUBLIC_DIR}`);
   if (!fs.existsSync(manifestPath)) fail(`Missing manifest: ${manifestPath}`);
-  else ok('manifest.webmanifest present');
+  else ok("manifest.webmanifest present");
 
   if (!fs.existsSync(swPath)) fail(`Missing service worker: ${swPath}`);
-  else ok('sw.js present');
+  else ok("sw.js present");
 
   // Digital Asset Links (recommended; can be required in CI)
-  const requireAssetLinks = opts.require.has('assetlinks');
+  const requireAssetLinks = opts.require.has("assetlinks");
   if (fs.existsSync(assetLinksPath)) {
-    ok('assetlinks.json present (for TWA / Android verification)');
+    ok("assetlinks.json present (for TWA / Android verification)");
     try {
-      const raw = fs.readFileSync(assetLinksPath, 'utf8').trim();
-      if (raw === '[]') {
+      const raw = fs.readFileSync(assetLinksPath, "utf8").trim();
+      if (raw === "[]") {
         const msg =
-          'assetlinks.json is an empty array. This is OK for local/dev, but must be populated for a verified TWA.';
+          "assetlinks.json is an empty array. This is OK for local/dev, but must be populated for a verified TWA.";
         if (opts.strict && requireAssetLinks) {
           fail(`${msg} (strict + required)`);
         } else {
@@ -137,13 +137,13 @@ function main() {
         }
       }
     } catch {
-      const msg = 'assetlinks.json exists but could not be read';
+      const msg = "assetlinks.json exists but could not be read";
       if (opts.strict && requireAssetLinks) fail(`${msg} (strict + required)`);
       else warn(msg);
     }
   } else {
     const msg =
-      'Missing public/.well-known/assetlinks.json (needed for verified TWA / Play Store web wrapper).';
+      "Missing public/.well-known/assetlinks.json (needed for verified TWA / Play Store web wrapper).";
     if (requireAssetLinks) fail(`${msg} (required)`);
     else warn(msg);
   }
@@ -155,12 +155,12 @@ function main() {
   const icons = Array.isArray(manifest.icons) ? manifest.icons : [];
 
   // Quick manifest sanity that improves installability + TWA stability
-  if (!manifest.start_url) warn('Manifest missing start_url');
-  if (!manifest.scope) warn('Manifest missing scope (recommended)');
-  if (!manifest.id) warn('Manifest missing id (recommended)');
+  if (!manifest.start_url) warn("Manifest missing start_url");
+  if (!manifest.scope) warn("Manifest missing scope (recommended)");
+  if (!manifest.id) warn("Manifest missing id (recommended)");
 
   if (icons.length === 0) {
-    warn('Manifest has no icons array');
+    warn("Manifest has no icons array");
   } else {
     for (const icon of icons) {
       if (!icon?.src) continue;
@@ -172,19 +172,19 @@ function main() {
   }
 
   // Service worker CORE_ASSETS
-  const swText = fs.readFileSync(swPath, 'utf8');
+  const swText = fs.readFileSync(swPath, "utf8");
   const coreAssets = extractCoreAssetsFromServiceWorker(swText);
 
   if (coreAssets.length === 0) {
-    warn('Could not find CORE_ASSETS array in sw.js (or it is empty)');
+    warn("Could not find CORE_ASSETS array in sw.js (or it is empty)");
   } else {
     let missingCount = 0;
     for (const asset of coreAssets) {
       // ignore entries that are not file paths we can check (only same-origin absolute)
-      if (!asset.startsWith('/')) continue;
+      if (!asset.startsWith("/")) continue;
 
       // Vite serves index.html from project root (not /public)
-      if (asset === '/index.html') {
+      if (asset === "/index.html") {
         if (!fs.existsSync(ROOT_INDEX_HTML)) {
           missingCount += 1;
           fail(
@@ -195,7 +195,7 @@ function main() {
       }
 
       // '/' is a route, not a file on disk
-      if (asset === '/') continue;
+      if (asset === "/") continue;
 
       const { diskPath, exists } = existsRelativeToPublic(asset);
       if (!exists) {
@@ -208,7 +208,7 @@ function main() {
   }
 
   if (!process.exitCode) {
-    console.log('\n[Doggerz preflight] All checks passed.');
+    console.log("\n[Doggerz preflight] All checks passed.");
   }
 }
 

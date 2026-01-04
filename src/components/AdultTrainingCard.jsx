@@ -59,7 +59,7 @@ export default function AdultTrainingCard() {
         success: true,
         xp: 10,
         now: Date.now(),
-      }),
+      })
     );
   };
 

@@ -17,13 +17,13 @@
 
 /* eslint-disable no-console */
 
-const path = require('node:path');
-const fs = require('node:fs');
+const path = require("node:path");
+const fs = require("node:fs");
 
-const sharp = require('sharp');
+const sharp = require("sharp");
 
-const ROOT = path.resolve(__dirname, '..');
-const BG_DIR = path.join(ROOT, 'public', 'backgrounds');
+const ROOT = path.resolve(__dirname, "..");
+const BG_DIR = path.join(ROOT, "public", "backgrounds");
 
 function argValue(flag, fallback) {
   const idx = process.argv.indexOf(flag);
@@ -38,12 +38,20 @@ async function ensureDir(dir) {
   await fs.promises.mkdir(dir, { recursive: true });
 }
 
-async function generateWide({ inputName, outputName, width, height, position }) {
+async function generateWide({
+  inputName,
+  outputName,
+  width,
+  height,
+  position,
+}) {
   const inputPath = path.join(BG_DIR, inputName);
   const outputPath = path.join(BG_DIR, outputName);
 
   if (!fs.existsSync(inputPath)) {
-    console.warn(`[wide-backyard] Skip (missing): ${path.relative(ROOT, inputPath)}`);
+    console.warn(
+      `[wide-backyard] Skip (missing): ${path.relative(ROOT, inputPath)}`
+    );
     return { ok: false, skipped: true, outputPath };
   }
 
@@ -52,7 +60,7 @@ async function generateWide({ inputName, outputName, width, height, position }) 
   // - Use nearest kernel so pixel-art stays crisp.
   await sharp(inputPath)
     .resize(width, height, {
-      fit: 'cover',
+      fit: "cover",
       position,
       kernel: sharp.kernel.nearest,
     })
@@ -66,31 +74,31 @@ async function generateWide({ inputName, outputName, width, height, position }) 
 }
 
 async function main() {
-  const width = argValue('--width', 1920);
-  const height = argValue('--height', 1080);
+  const width = argValue("--width", 1920);
+  const height = argValue("--height", 1080);
 
   await ensureDir(BG_DIR);
 
   // Day: keep more ground.
   await generateWide({
-    inputName: 'backyard-day.webp',
-    outputName: 'backyard-day-wide.webp',
+    inputName: "backyard-day.webp",
+    outputName: "backyard-day-wide.webp",
     width,
     height,
-    position: 'south',
+    position: "south",
   });
 
   // Night: keep composition consistent.
   await generateWide({
-    inputName: 'backyard-night.webp',
-    outputName: 'backyard-night-wide.webp',
+    inputName: "backyard-night.webp",
+    outputName: "backyard-night-wide.webp",
     width,
     height,
-    position: 'south',
+    position: "south",
   });
 }
 
 main().catch((e) => {
-  console.error('[wide-backyard] FAIL', e);
+  console.error("[wide-backyard] FAIL", e);
   process.exit(1);
 });

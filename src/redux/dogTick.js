@@ -20,7 +20,7 @@ function getLifeStageKey(dog) {
 const ZONES = {
   GREEN: { min: 70, factor: 1.0 },
   YELLOW: { min: 40, factor: 0.65 },
-  RED: { min: 15, factor: 0.40 },
+  RED: { min: 15, factor: 0.4 },
   FLOOR: 15, // natural decay stops here
 };
 
@@ -35,8 +35,8 @@ function zoneFactor(value) {
 function urgency(value) {
   // 70+ => near 0, 40..70 => ramp to ~0.7, 15..40 => ramp to 1
   if (value >= 70) return 0;
-  if (value >= 40) return (70 - value) / 30 * 0.7; // 0..0.7
-  if (value >= 15) return 0.7 + (40 - value) / 25 * 0.3; // 0.7..1
+  if (value >= 40) return ((70 - value) / 30) * 0.7; // 0..0.7
+  if (value >= 15) return 0.7 + ((40 - value) / 25) * 0.3; // 0.7..1
   return 1;
 }
 
@@ -76,9 +76,9 @@ export const DECAY_TUNING = {
 
   careDebt: {
     // Debt increases when needs are ignored; decreases slowly when stable.
-    buildPerMinute: 0.10, // * NeedPressure * stepMinutes
+    buildPerMinute: 0.1, // * NeedPressure * stepMinutes
     buildExtraWhenWellbeingEmpty: 0.06, // additional if wellbeing ~ 0
-    forgivePerMinuteWhenFine: 0.10, // when NeedPressure < 0.2
+    forgivePerMinuteWhenFine: 0.1, // when NeedPressure < 0.2
     cap: 100,
   },
 
@@ -100,7 +100,7 @@ export const DECAY_TUNING = {
 
     // Sleep impacts
     hungerDecayMultiplierWhileNapping: 0.65,
-    happinessDecayMultiplierWhileNapping: 0.80,
+    happinessDecayMultiplierWhileNapping: 0.8,
     bladderDecayMultiplierWhileNapping: 0.85,
     cleanlinessDecayMultiplierWhileNapping: 1.0, // no change
   },
@@ -118,7 +118,7 @@ export const DECAY_TUNING = {
         bladder: 4.5,
       },
       energyRecoverPerMinuteWhileNapping: 0.55,
-      globalDecayMultiplier: 1.10,
+      globalDecayMultiplier: 1.1,
     },
 
     adult: {
@@ -129,7 +129,7 @@ export const DECAY_TUNING = {
         cleanliness: 55,
         bladder: 7.5,
       },
-      energyRecoverPerMinuteWhileNapping: 0.40,
+      energyRecoverPerMinuteWhileNapping: 0.4,
       globalDecayMultiplier: 1.0,
     },
 
@@ -208,7 +208,8 @@ function simulateMinutes(dog, minutesTotal, startNowMs, opts) {
   let remaining = minutesTotal;
 
   const stageKey = getLifeStageKey(dog);
-  const stage = DECAY_TUNING.lifeStages[stageKey] ?? DECAY_TUNING.lifeStages.adult;
+  const stage =
+    DECAY_TUNING.lifeStages[stageKey] ?? DECAY_TUNING.lifeStages.adult;
 
   // Precompute baseline losses
   const baseLoss = {
@@ -247,19 +248,31 @@ function simulateMinutes(dog, minutesTotal, startNowMs, opts) {
     const simMult = opts.decayMultiplier ?? 1.0;
 
     // Auto-nap logic (only when not already napping)
-    if (dog.sleep.mode !== "nap" && s.energy <= DECAY_TUNING.sleep.enterNapAtOrBelow) {
+    if (
+      dog.sleep.mode !== "nap" &&
+      s.energy <= DECAY_TUNING.sleep.enterNapAtOrBelow
+    ) {
       dog.sleep.mode = "nap";
       dog.sleep.napMinutesLeft = DECAY_TUNING.sleep.maxNapMinutes;
     }
 
-    const isNapping = dog.sleep.mode === "nap" && (dog.sleep.napMinutesLeft ?? 0) > 0;
+    const isNapping =
+      dog.sleep.mode === "nap" && (dog.sleep.napMinutesLeft ?? 0) > 0;
 
     // Stat decay multipliers while napping
     const napMult = {
-      hunger: isNapping ? DECAY_TUNING.sleep.hungerDecayMultiplierWhileNapping : 1.0,
-      happiness: isNapping ? DECAY_TUNING.sleep.happinessDecayMultiplierWhileNapping : 1.0,
-      bladder: isNapping ? DECAY_TUNING.sleep.bladderDecayMultiplierWhileNapping : 1.0,
-      cleanliness: isNapping ? DECAY_TUNING.sleep.cleanlinessDecayMultiplierWhileNapping : 1.0,
+      hunger: isNapping
+        ? DECAY_TUNING.sleep.hungerDecayMultiplierWhileNapping
+        : 1.0,
+      happiness: isNapping
+        ? DECAY_TUNING.sleep.happinessDecayMultiplierWhileNapping
+        : 1.0,
+      bladder: isNapping
+        ? DECAY_TUNING.sleep.bladderDecayMultiplierWhileNapping
+        : 1.0,
+      cleanliness: isNapping
+        ? DECAY_TUNING.sleep.cleanlinessDecayMultiplierWhileNapping
+        : 1.0,
       energy: 1.0, // energy handled separately
     };
 
@@ -297,10 +310,16 @@ function simulateMinutes(dog, minutesTotal, startNowMs, opts) {
     if (isNapping) {
       const rec = (stage.energyRecoverPerMinuteWhileNapping ?? 0.4) * stepMin;
       s.energy = clamp(s.energy + rec, 0, 100);
-      dog.sleep.napMinutesLeft = Math.max(0, (dog.sleep.napMinutesLeft ?? 0) - stepMin);
+      dog.sleep.napMinutesLeft = Math.max(
+        0,
+        (dog.sleep.napMinutesLeft ?? 0) - stepMin
+      );
 
       // Wake conditions
-      if (s.energy >= DECAY_TUNING.sleep.wakeAtOrAbove || dog.sleep.napMinutesLeft <= 0) {
+      if (
+        s.energy >= DECAY_TUNING.sleep.wakeAtOrAbove ||
+        dog.sleep.napMinutesLeft <= 0
+      ) {
         dog.sleep.mode = "awake";
         dog.sleep.napMinutesLeft = 0;
       }
@@ -326,7 +345,8 @@ function simulateMinutes(dog, minutesTotal, startNowMs, opts) {
       );
     } else {
       dog.wellbeing = clamp(
-        dog.wellbeing - DECAY_TUNING.wellbeing.drainPerMinute * needPressure * stepMin,
+        dog.wellbeing -
+          DECAY_TUNING.wellbeing.drainPerMinute * needPressure * stepMin,
         0,
         100
       );
@@ -346,7 +366,9 @@ function simulateMinutes(dog, minutesTotal, startNowMs, opts) {
           : 0;
 
       dog.careDebt = clamp(
-        dog.careDebt + (DECAY_TUNING.careDebt.buildPerMinute * needPressure + extra) * stepMin,
+        dog.careDebt +
+          (DECAY_TUNING.careDebt.buildPerMinute * needPressure + extra) *
+            stepMin,
         0,
         DECAY_TUNING.careDebt.cap
       );
@@ -355,12 +377,7 @@ function simulateMinutes(dog, minutesTotal, startNowMs, opts) {
 }
 
 function applyDecay(current, baseLossPerMinute, minutes, cfg) {
-  const {
-    floor,
-    zoneFactorFn,
-    multiplier,
-    allowBelowFloor = false,
-  } = cfg;
+  const { floor, zoneFactorFn, multiplier, allowBelowFloor = false } = cfg;
 
   const zf = zoneFactorFn(current);
   const loss = baseLossPerMinute * zf * multiplier * minutes;
@@ -377,7 +394,13 @@ function applyDecay(current, baseLossPerMinute, minutes, cfg) {
   return clamp(next, 0, 100);
 }
 
-function maybeTriggerAccident(dog, startNowMs, minutesTotal, remaining, stepMin) {
+function maybeTriggerAccident(
+  dog,
+  startNowMs,
+  minutesTotal,
+  remaining,
+  stepMin
+) {
   const s = dog.stats;
 
   const triggerAt = DECAY_TUNING.accidents.triggerAtOrBelow;
@@ -387,18 +410,28 @@ function maybeTriggerAccident(dog, startNowMs, minutesTotal, remaining, stepMin)
   // We are simulating from (startNowMs - minutesTotal) to startNowMs,
   // but for reducer logic, we just need monotonic time for cooldown.
   const minutesSimulatedSoFar = minutesTotal - remaining - stepMin;
-  const currentSimMs = startNowMs - (minutesTotal - minutesSimulatedSoFar) * 60000;
+  const currentSimMs =
+    startNowMs - (minutesTotal - minutesSimulatedSoFar) * 60000;
 
   const cooldownMs = DECAY_TUNING.accidents.cooldownMinutes * 60000;
-  if (dog.lastAccidentAt && currentSimMs - dog.lastAccidentAt < cooldownMs) return;
+  if (dog.lastAccidentAt && currentSimMs - dog.lastAccidentAt < cooldownMs)
+    return;
 
   // Trigger accident: relieve bladder, spawn mess, small penalties (not catastrophic)
   dog.lastAccidentAt = currentSimMs;
   dog.messCount = (dog.messCount ?? 0) + 1;
 
   s.bladder = clamp(DECAY_TUNING.accidents.relieveTo, 0, 100);
-  s.cleanliness = clamp(s.cleanliness - DECAY_TUNING.accidents.cleanlinessPenalty, 0, 100);
-  s.happiness = clamp(s.happiness - DECAY_TUNING.accidents.happinessPenalty, 0, 100);
+  s.cleanliness = clamp(
+    s.cleanliness - DECAY_TUNING.accidents.cleanlinessPenalty,
+    0,
+    100
+  );
+  s.happiness = clamp(
+    s.happiness - DECAY_TUNING.accidents.happinessPenalty,
+    0,
+    100
+  );
   dog.careDebt = clamp(
     (dog.careDebt ?? 0) + DECAY_TUNING.accidents.careDebtPenalty,
     0,

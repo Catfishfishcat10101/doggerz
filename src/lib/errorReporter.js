@@ -5,12 +5,12 @@
 export function reportError(payload) {
   try {
     // Keep the console log for local debugging
-    console.error('[ErrorReporter]', payload);
+    console.error("[ErrorReporter]", payload);
 
     // Example hook: if a global reporting function exists, call it.
     if (
-      typeof window !== 'undefined' &&
-      typeof window.__REPORT_ERROR__ === 'function'
+      typeof window !== "undefined" &&
+      typeof window.__REPORT_ERROR__ === "function"
     ) {
       try {
         window.__REPORT_ERROR__(payload);

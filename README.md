@@ -84,14 +84,14 @@ Notes:
 
 ### Golden flows (must succeed 100%)
 
-1) First visit: Landing → Adopt → Game
+1. First visit: Landing → Adopt → Game
 
-2) Returning visit: Game loads correctly (and routes correctly if adoption is required)
+2. Returning visit: Game loads correctly (and routes correctly if adoption is required)
 
-3) Auth (if enabled): Login/Signup must not break core play
+3. Auth (if enabled): Login/Signup must not break core play
    - If auth is unavailable/misconfigured, users should still be able to play in a safe local-only mode (or be clearly gated with a friendly message).
 
-4) Settings: Settings changes persist and take effect immediately
+4. Settings: Settings changes persist and take effect immediately
    - If a setting cannot apply instantly, the UI must say so and provide the next step.
 
 ### Launch blockers (P0)
@@ -184,3 +184,4 @@ you can split it into the expected filenames:
 
 - Run: `npm run split:backyard`
 
+```

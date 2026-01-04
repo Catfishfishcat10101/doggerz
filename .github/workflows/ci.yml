@@ -3,16 +3,16 @@ name: CI
 on:
   push:
     branches:
-      - '**'
+      - "**"
     tags:
-      - 'playstore-*'
+      - "playstore-*"
   pull_request:
   workflow_dispatch:
     inputs:
       run_playstore:
-        description: 'Run Play Store strict checks (requires secrets + real assetlinks)'
+        description: "Run Play Store strict checks (requires secrets + real assetlinks)"
         required: false
-        default: 'false'
+        default: "false"
 
 jobs:
   verify:

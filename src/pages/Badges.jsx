@@ -12,7 +12,11 @@ import { collectEarnedBadgeIds, normalizeBadges } from "@/utils/badges.js";
 function groupForBadgeId(id) {
   const raw = String(id || "");
   if (raw.startsWith("trick_")) return "Tricks";
-  if (raw.startsWith("collar_") || raw.startsWith("tag_") || raw.startsWith("backdrop_")) {
+  if (
+    raw.startsWith("collar_") ||
+    raw.startsWith("tag_") ||
+    raw.startsWith("backdrop_")
+  ) {
     return "Cosmetics";
   }
   return "Other";
@@ -42,7 +46,8 @@ export default function BadgesPage() {
         <div>
           <h1 className="text-3xl font-extrabold text-emerald-200">Badges</h1>
           <p className="mt-1 text-sm text-zinc-300">
-            Everything your pup has earned so far — tricks mastered, cosmetics unlocked, and more.
+            Everything your pup has earned so far — tricks mastered, cosmetics
+            unlocked, and more.
           </p>
         </div>
 
@@ -82,7 +87,9 @@ export default function BadgesPage() {
               <section key={groupName}>
                 <div className="text-xs font-extrabold tracking-wide text-zinc-300">
                   {groupName}
-                  <span className="ml-2 text-[11px] font-semibold text-zinc-400">({items.length})</span>
+                  <span className="ml-2 text-[11px] font-semibold text-zinc-400">
+                    ({items.length})
+                  </span>
                 </div>
 
                 <div className="mt-2 flex flex-wrap gap-2">

@@ -40,7 +40,9 @@ export default function GameTopBar({
           <div className="mt-2">
             <div className="flex items-center justify-between text-[11px] text-zinc-300/90">
               <span className="font-semibold text-emerald-200">XP</span>
-              <span className="tabular-nums">{xpLabel || `${Math.round(clamp01(xpPct) * 100)}%`}</span>
+              <span className="tabular-nums">
+                {xpLabel || `${Math.round(clamp01(xpPct) * 100)}%`}
+              </span>
             </div>
             <div className="mt-1 h-2 w-full overflow-hidden rounded-full border border-white/10 bg-black/30">
               <div
@@ -58,7 +60,9 @@ export default function GameTopBar({
             {Number(streakDays) > 0 ? (
               <span className={chip}>
                 <span className="text-emerald-200">Streak</span>
-                <span className="text-zinc-100">{Math.round(Number(streakDays) || 0)}d</span>
+                <span className="text-zinc-100">
+                  {Math.round(Number(streakDays) || 0)}d
+                </span>
               </span>
             ) : null}
             <span className={chip}>
@@ -68,7 +72,9 @@ export default function GameTopBar({
 
             <span className={chip}>
               <span className="text-emerald-200">Tokens</span>
-              <span className="text-zinc-100">{Math.round(Number(tokens) || 0)}</span>
+              <span className="text-zinc-100">
+                {Math.round(Number(tokens) || 0)}
+              </span>
             </span>
 
             <Link
@@ -81,7 +87,9 @@ export default function GameTopBar({
               }
             >
               <span className="text-emerald-200">Badges</span>
-              <span className="tabular-nums text-zinc-100">{normalizedBadges.length}</span>
+              <span className="tabular-nums text-zinc-100">
+                {normalizedBadges.length}
+              </span>
             </Link>
           </div>
         </div>

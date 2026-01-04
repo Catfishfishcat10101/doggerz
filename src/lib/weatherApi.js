@@ -14,7 +14,7 @@ export async function fetchWeatherByZip(zip, country = "US") {
   const apiKey = getEnv("VITE_OPENWEATHER_API_KEY");
   if (!apiKey) {
     console.warn(
-      "[Doggerz] No VITE_OPENWEATHER_API_KEY; using fallback clear weather.",
+      "[Doggerz] No VITE_OPENWEATHER_API_KEY; using fallback clear weather."
     );
     return {
       tempK: 293.15,
@@ -24,7 +24,7 @@ export async function fetchWeatherByZip(zip, country = "US") {
   }
 
   const url = `${OPEN_WEATHER_BASE}?zip=${encodeURIComponent(
-    zip,
+    zip
   )},${country}&appid=${apiKey}`;
 
   const res = await fetch(url);

@@ -100,7 +100,9 @@ export default function DreamSequence({ dream, onDismiss }) {
               {String(dream?.title || "A dream")}
             </h2>
             <div className="mt-2 flex flex-wrap items-center gap-2">
-              <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${tone.badge}`}>
+              <span
+                className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${tone.badge}`}
+              >
                 {String(dream?.kind || "DREAM")}
               </span>
               <span className="text-[11px] text-zinc-400">
@@ -142,7 +144,8 @@ export default function DreamSequence({ dream, onDismiss }) {
         ) : null}
 
         <p className="mt-4 text-[11px] text-zinc-500">
-          Tip: happy days can trigger lucid dreams; neglect can trigger nightmares.
+          Tip: happy days can trigger lucid dreams; neglect can trigger
+          nightmares.
         </p>
       </div>
 

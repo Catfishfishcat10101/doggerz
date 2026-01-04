@@ -5,24 +5,28 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 function isUsableOpenWeatherKey(key) {
-  const k = String(key || '').trim();
+  const k = String(key || "").trim();
   if (!k) return false;
   const upper = k.toUpperCase();
-  if (upper === 'CHANGE_ME' || upper === 'CHANGEME') return false;
-  if (upper === 'YOUR_API_KEY' || upper === 'YOUR_API_KEY_HERE') return false;
-  if (upper === 'REPLACE_ME' || upper === 'REPLACEME') return false;
-  if (upper.startsWith('EXAMPLE')) return false;
+  if (upper === "CHANGE_ME" || upper === "CHANGEME") return false;
+  if (upper === "YOUR_API_KEY" || upper === "YOUR_API_KEY_HERE") return false;
+  if (upper === "REPLACE_ME" || upper === "REPLACEME") return false;
+  if (upper.startsWith("EXAMPLE")) return false;
   return true;
 }
 
 function normalizeConditionFromOpenWeather(data) {
   const items = Array.isArray(data?.weather) ? data.weather : [];
-  const mains = items.map((w) => String(w?.main || "").toLowerCase()).filter(Boolean);
+  const mains = items
+    .map((w) => String(w?.main || "").toLowerCase())
+    .filter(Boolean);
   const descriptions = items
     .map((w) => String(w?.description || "").toLowerCase())
     .filter(Boolean);
 
-  if (mains.some((m) => m === "thunderstorm" || m === "drizzle" || m === "rain")) {
+  if (
+    mains.some((m) => m === "thunderstorm" || m === "drizzle" || m === "rain")
+  ) {
     return "rain";
   }
   if (mains.some((m) => m === "snow")) return "snow";
@@ -67,24 +71,24 @@ function normalizeConditionFromOpenWeather(data) {
 }
 
 export const fetchWeatherForZip = createAsyncThunk(
-  'weather/fetchForZip',
+  "weather/fetchForZip",
   /**
    * @param {{ zip?: string|null }} arg
    */
   async (arg = {}, thunkApi) => {
     const apiKey = import.meta.env.VITE_OPENWEATHER_API_KEY;
     const effectiveZip =
-      String(arg?.zip || '').trim() ||
+      String(arg?.zip || "").trim() ||
       import.meta.env.VITE_WEATHER_DEFAULT_ZIP ||
-      '10001'; // NYC fallback
+      "10001"; // NYC fallback
 
     // No API key -> explicitly mark weather as unknown (so UI doesn't lie).
     if (!isUsableOpenWeatherKey(apiKey)) {
       return {
-        condition: 'unknown',
+        condition: "unknown",
         zip: effectiveZip,
         fetchedAt: Date.now(),
-        source: 'none',
+        source: "none",
         details: null,
       };
     }
@@ -110,9 +114,9 @@ export const fetchWeatherForZip = createAsyncThunk(
       condition,
       zip: effectiveZip,
       fetchedAt: Date.now(),
-      source: 'openweather',
+      source: "openweather",
       details: {
-        name: typeof data?.name === 'string' ? data.name : null,
+        name: typeof data?.name === "string" ? data.name : null,
         weatherMain: first?.main ? String(first.main) : null,
         weatherId: Number.isFinite(Number(first?.id)) ? Number(first.id) : null,
         cloudsPct,
@@ -122,24 +126,24 @@ export const fetchWeatherForZip = createAsyncThunk(
 );
 
 const initialState = {
-  condition: 'unknown',
-  status: 'idle', // idle | loading | ok | error | disabled
+  condition: "unknown",
+  status: "idle", // idle | loading | ok | error | disabled
   lastChangedAt: Date.now(),
   lastFetchedAt: null,
   zip: null,
-  source: 'none', // none | openweather
+  source: "none", // none | openweather
   details: null,
   error: null,
 };
 
-const order = ['sun', 'cloud', 'rain', 'snow'];
+const order = ["sun", "cloud", "rain", "snow"];
 
 const weatherSlice = createSlice({
-  name: 'weather',
+  name: "weather",
   initialState,
   reducers: {
     setWeather(state, { payload }) {
-      const next = String(payload?.condition || '').toLowerCase();
+      const next = String(payload?.condition || "").toLowerCase();
       if (!next) return;
       if (state.condition !== next) {
         state.condition = next;
@@ -155,15 +159,15 @@ const weatherSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(fetchWeatherForZip.pending, (state) => {
-        state.status = 'loading';
+        state.status = "loading";
         state.error = null;
       })
       .addCase(fetchWeatherForZip.fulfilled, (state, action) => {
         const nextCondition = String(
-          action.payload?.condition || 'unknown'
+          action.payload?.condition || "unknown"
         ).toLowerCase();
         const nextSource = String(
-          action.payload?.source || 'none'
+          action.payload?.source || "none"
         ).toLowerCase();
         const fetchedAt = Number(action.payload?.fetchedAt) || Date.now();
 
@@ -172,7 +176,7 @@ const weatherSlice = createSlice({
         state.source = nextSource;
         state.details = action.payload?.details || null;
         state.error = null;
-        state.status = nextSource === 'none' ? 'disabled' : 'ok';
+        state.status = nextSource === "none" ? "disabled" : "ok";
 
         if (state.condition !== nextCondition) {
           state.condition = nextCondition;
@@ -180,8 +184,8 @@ const weatherSlice = createSlice({
         }
       })
       .addCase(fetchWeatherForZip.rejected, (state, action) => {
-        state.status = 'error';
-        state.error = action.error?.message || 'Weather fetch failed';
+        state.status = "error";
+        state.error = action.error?.message || "Weather fetch failed";
       });
   },
 });

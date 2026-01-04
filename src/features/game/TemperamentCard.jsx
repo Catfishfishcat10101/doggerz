@@ -53,8 +53,7 @@ export default function TemperamentCard({ temperament }) {
               Temperament reveal
             </h2>
             <p className="text-xs text-zinc-400">
-              After spending time together, your pup personality is
-              showing.
+              After spending time together, your pup personality is showing.
             </p>
           </div>
           <button

@@ -14,23 +14,23 @@ const ABSOLUTE_URL_RE = /^[a-zA-Z][a-zA-Z\d+.-]*:/; // http:, https:, data:, blo
  * - BASE_URL = '/doggerz/' => withBaseUrl('/icons/doggerz-192.png') -> '(BASE_URL)icons/doggerz-192.png'
  */
 export function withBaseUrl(path) {
-  const p = String(path || '').trim();
-  if (!p) return '';
+  const p = String(path || "").trim();
+  if (!p) return "";
   if (ABSOLUTE_URL_RE.test(p)) return p;
 
-  const base = String(import.meta.env.BASE_URL || '/');
-  const baseNormalized = base.endsWith('/') ? base.slice(0, -1) : base;
+  const base = String(import.meta.env.BASE_URL || "/");
+  const baseNormalized = base.endsWith("/") ? base.slice(0, -1) : base;
 
   // If the caller already passed a BASE_URL-prefixed path, return it unchanged.
   if (baseNormalized && p === baseNormalized) return p;
   if (baseNormalized && p.startsWith(`${baseNormalized}/`)) return p;
 
-  if (p.startsWith('/')) return `${baseNormalized}${p}`;
+  if (p.startsWith("/")) return `${baseNormalized}${p}`;
   return `${baseNormalized}/${p}`;
 }
 
 export function joinPublicPath(base, file) {
-  const b = String(base || '').replace(/\/+$/g, '');
-  const f = String(file || '').replace(/^\/+/, '');
+  const b = String(base || "").replace(/\/+$/g, "");
+  const f = String(file || "").replace(/^\/+/, "");
   return `${b}/${f}`;
 }

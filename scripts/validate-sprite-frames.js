@@ -9,35 +9,35 @@
 // Usage:
 //   node scripts/validate-sprite-frames.js
 
-const fs = require('node:fs');
-const path = require('node:path');
-const sharp = require('sharp');
+const fs = require("node:fs");
+const path = require("node:path");
+const sharp = require("sharp");
 
-const ROOT = path.resolve(__dirname, '..');
-const DEFAULT_FRAMES_ROOT = path.join(ROOT, 'art', 'frames', 'jrt');
+const ROOT = path.resolve(__dirname, "..");
+const DEFAULT_FRAMES_ROOT = path.join(ROOT, "art", "frames", "jrt");
 const LEGACY_FRAMES_ROOT = path.join(
   ROOT,
-  'public',
-  'sprites',
-  'frames',
-  'jrt'
+  "public",
+  "sprites",
+  "frames",
+  "jrt"
 );
 const FRAMES_ROOT = process.env.SPRITES_FRAMES_ROOT
   ? path.resolve(ROOT, process.env.SPRITES_FRAMES_ROOT)
   : DEFAULT_FRAMES_ROOT;
 const SPEC_PATH = path.join(
   ROOT,
-  'src',
-  'features',
-  'game',
-  'sprites',
-  'jrtAnimSpec.json'
+  "src",
+  "features",
+  "game",
+  "sprites",
+  "jrtAnimSpec.json"
 );
 
 function readJsonIfExists(p) {
   try {
     if (!fs.existsSync(p)) return null;
-    return JSON.parse(fs.readFileSync(p, 'utf8'));
+    return JSON.parse(fs.readFileSync(p, "utf8"));
   } catch {
     return null;
   }
@@ -64,7 +64,7 @@ function listDirs(p) {
 
 function isImageFile(name) {
   const ext = path.extname(name).toLowerCase();
-  return ext === '.png' || ext === '.webp';
+  return ext === ".png" || ext === ".webp";
 }
 
 function listFrameFiles(animDirAbs) {
@@ -73,23 +73,23 @@ function listFrameFiles(animDirAbs) {
     .readdirSync(animDirAbs)
     .filter((n) => isImageFile(n))
     .sort((a, b) =>
-      a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })
+      a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" })
     )
     .map((n) => path.join(animDirAbs, n));
 }
 
 async function main() {
-  console.log('[sprites] Validating JRT real-frame folders...');
+  console.log("[sprites] Validating JRT real-frame folders...");
 
-  const strict = process.argv.includes('--strict');
+  const strict = process.argv.includes("--strict");
   const spec = readJsonIfExists(SPEC_PATH);
   const requiredCore = requiredCoreAnimsFromSpec(spec);
 
   const framesRoot = fs.existsSync(FRAMES_ROOT)
     ? FRAMES_ROOT
     : fs.existsSync(LEGACY_FRAMES_ROOT)
-    ? LEGACY_FRAMES_ROOT
-    : null;
+      ? LEGACY_FRAMES_ROOT
+      : null;
 
   if (!framesRoot) {
     console.error(
@@ -105,7 +105,7 @@ async function main() {
   const stages = listDirs(framesRoot);
   if (!stages.length) {
     console.error(
-      '[sprites] No stages found. Expected puppy/adult/senior folders.'
+      "[sprites] No stages found. Expected puppy/adult/senior folders."
     );
     process.exitCode = 1;
     return;
@@ -127,7 +127,7 @@ async function main() {
       const missingCoreFolders = requiredCore.filter((a) => !anims.includes(a));
       if (missingCoreFolders.length) {
         const msg = `[sprites] ${stage}: missing core anim folder(s): ${missingCoreFolders.join(
-          ', '
+          ", "
         )}`;
         if (strict) {
           console.error(msg);
@@ -173,11 +173,11 @@ async function main() {
     console.warn(`[sprites] Validation finished with ${problems} warning(s).`);
     if (strict) process.exitCode = 1;
   } else {
-    console.log('[sprites] Validation finished clean.');
+    console.log("[sprites] Validation finished clean.");
   }
 }
 
 main().catch((err) => {
-  console.error('[sprites] Failed:', err);
+  console.error("[sprites] Failed:", err);
   process.exitCode = 1;
 });

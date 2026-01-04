@@ -5,7 +5,7 @@
 const MAX_CAPTURED_ERRORS = 25;
 
 function getBucket() {
-  if (typeof window === 'undefined') return null;
+  if (typeof window === "undefined") return null;
   if (!window.__DOGGERZ_ERROR_BUCKET__) {
     window.__DOGGERZ_ERROR_BUCKET__ = [];
   }
@@ -19,7 +19,7 @@ export function captureRuntimeError(err, context = {}) {
   const entry = {
     at: new Date().toISOString(),
     message: err?.message || String(err),
-    name: err?.name || 'Error',
+    name: err?.name || "Error",
     stack: err?.stack || null,
     context,
   };
@@ -34,29 +34,29 @@ export function getCapturedErrors() {
 }
 
 export function initRuntimeLogging({ mode } = {}) {
-  if (typeof window === 'undefined') return;
+  if (typeof window === "undefined") return;
 
-  const isProd = mode === 'prod';
+  const isProd = mode === "prod";
   const allowProdWarn = (() => {
     try {
       const v =
-        typeof import.meta !== 'undefined' && import.meta.env
+        typeof import.meta !== "undefined" && import.meta.env
           ? import.meta.env.VITE_ENABLE_PROD_WARNINGS
           : undefined;
-      return String(v || 'false') === 'true';
+      return String(v || "false") === "true";
     } catch {
       return false;
     }
   })();
 
   // Capture unhandled errors for support.
-  window.addEventListener('error', (e) => {
-    captureRuntimeError(e?.error || e, { source: 'window.error' });
+  window.addEventListener("error", (e) => {
+    captureRuntimeError(e?.error || e, { source: "window.error" });
   });
 
-  window.addEventListener('unhandledrejection', (e) => {
+  window.addEventListener("unhandledrejection", (e) => {
     captureRuntimeError(e?.reason || e, {
-      source: 'window.unhandledrejection',
+      source: "window.unhandledrejection",
     });
   });
 

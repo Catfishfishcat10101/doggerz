@@ -19,7 +19,12 @@ function styleFor(id) {
   return COSMETIC_STYLES[key] || {};
 }
 
-export default function DogCosmeticsOverlay({ equipped, size = 320, facing = 1, reduceMotion = false }) {
+export default function DogCosmeticsOverlay({
+  equipped,
+  size = 320,
+  facing = 1,
+  reduceMotion = false,
+}) {
   const collarId = equipped?.collar || null;
   const tagId = equipped?.tag || null;
 
@@ -58,8 +63,12 @@ export default function DogCosmeticsOverlay({ equipped, size = 320, facing = 1, 
         {collarId ? (
           <g
             style={{
-              filter: collarStyle?.glow ? `drop-shadow(0 0 10px ${collarStyle.glow})` : undefined,
-              animation: reduceMotion ? "none" : "dg-cosmic-shimmer 2.6s ease-in-out infinite",
+              filter: collarStyle?.glow
+                ? `drop-shadow(0 0 10px ${collarStyle.glow})`
+                : undefined,
+              animation: reduceMotion
+                ? "none"
+                : "dg-cosmic-shimmer 2.6s ease-in-out infinite",
             }}
           >
             <path
@@ -83,8 +92,12 @@ export default function DogCosmeticsOverlay({ equipped, size = 320, facing = 1, 
         {tagId ? (
           <g
             style={{
-              filter: tagStyle?.glow ? `drop-shadow(0 0 12px ${tagStyle.glow})` : undefined,
-              animation: reduceMotion ? "none" : "dg-cosmic-shimmer 2.0s ease-in-out infinite",
+              filter: tagStyle?.glow
+                ? `drop-shadow(0 0 12px ${tagStyle.glow})`
+                : undefined,
+              animation: reduceMotion
+                ? "none"
+                : "dg-cosmic-shimmer 2.0s ease-in-out infinite",
             }}
           >
             <circle

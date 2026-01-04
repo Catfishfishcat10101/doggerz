@@ -7,7 +7,7 @@ export default function PixiDog({
   mood = "neutral",
   mode = "idle",
   direction = "right, left",
-  onPet
+  onPet,
 }) {
   const containerRef = useRef(null);
 
@@ -31,18 +31,54 @@ export default function PixiDog({
     const moodParams = (m) => {
       switch (m) {
         case "happy":
-          return { breathSpeed: 1.15, breathAmp: 1.0, tiltAmp: 1.0, bright: 1.02, sat: 1.05 };
+          return {
+            breathSpeed: 1.15,
+            breathAmp: 1.0,
+            tiltAmp: 1.0,
+            bright: 1.02,
+            sat: 1.05,
+          };
         case "playful":
-          return { breathSpeed: 1.25, breathAmp: 1.15, tiltAmp: 1.2, bright: 1.02, sat: 1.08 };
+          return {
+            breathSpeed: 1.25,
+            breathAmp: 1.15,
+            tiltAmp: 1.2,
+            bright: 1.02,
+            sat: 1.08,
+          };
         case "sad":
-          return { breathSpeed: 0.85, breathAmp: 0.9, tiltAmp: 0.8, bright: 0.98, sat: 0.92 };
+          return {
+            breathSpeed: 0.85,
+            breathAmp: 0.9,
+            tiltAmp: 0.8,
+            bright: 0.98,
+            sat: 0.92,
+          };
         case "tired":
-          return { breathSpeed: 0.75, breathAmp: 0.75, tiltAmp: 0.7, bright: 0.98, sat: 0.95 };
+          return {
+            breathSpeed: 0.75,
+            breathAmp: 0.75,
+            tiltAmp: 0.7,
+            bright: 0.98,
+            sat: 0.95,
+          };
         case "sick":
-          return { breathSpeed: 0.7, breathAmp: 0.65, tiltAmp: 0.65, bright: 0.97, sat: 0.88 };
+          return {
+            breathSpeed: 0.7,
+            breathAmp: 0.65,
+            tiltAmp: 0.65,
+            bright: 0.97,
+            sat: 0.88,
+          };
         case "neutral":
         default:
-          return { breathSpeed: 1.0, breathAmp: 1.0, tiltAmp: 1.0, bright: 1.0, sat: 1.0 };
+          return {
+            breathSpeed: 1.0,
+            breathAmp: 1.0,
+            tiltAmp: 1.0,
+            bright: 1.0,
+            sat: 1.0,
+          };
       }
     };
 
@@ -51,7 +87,12 @@ export default function PixiDog({
 
     const bgDepth = new PIXI.Graphics();
     bgDepth.beginFill(0x000000, 0.08);
-    bgDepth.drawEllipse(width * 0.5, height * 0.72, width * 0.42, height * 0.28);
+    bgDepth.drawEllipse(
+      width * 0.5,
+      height * 0.72,
+      width * 0.42,
+      height * 0.28
+    );
     bgDepth.endFill();
     root.addChild(bgDepth);
 
@@ -171,21 +212,26 @@ export default function PixiDog({
 
       dog.x = laneX + walkSway;
       dog.y = height * 0.9 + breathY - walkBob - petBounce;
-      dog.rotation = tilt * 0.6 + (mode === "walk" ? Math.sin(t * 3.0) * 0.01 : 0);
+      dog.rotation =
+        tilt * 0.6 + (mode === "walk" ? Math.sin(t * 3.0) * 0.01 : 0);
 
-      dog.scale.y = (baseScale + breath * 0.0030 * mp.breathAmp) * (1 + petEase * 0.01);
-      dog.scale.x = sign * ((baseScale + breath * 0.0015 * mp.breathAmp) * petSquash);
+      dog.scale.y =
+        (baseScale + breath * 0.003 * mp.breathAmp) * (1 + petEase * 0.01);
+      dog.scale.x =
+        sign * ((baseScale + breath * 0.0015 * mp.breathAmp) * petSquash);
 
       shadow.x = dog.x;
       shadow.y = height * 0.9;
 
       const shadowPulse = 1 + breath * 0.03 * mp.breathAmp;
-      const walkShadow = mode === "walk" ? (1 - Math.abs(Math.sin(t * 6.0)) * 0.08) : 1;
+      const walkShadow =
+        mode === "walk" ? 1 - Math.abs(Math.sin(t * 6.0)) * 0.08 : 1;
       const petShadow = 1 - petEase * 0.08;
 
       shadow.scale.x = shadowPulse * walkShadow * petShadow;
       shadow.scale.y = 1 * walkShadow * (1 - petEase * 0.05);
-      shadow.alpha = 0.30 + breath * 0.02 - (mode === "walk" ? 0.02 : 0) - petEase * 0.03;
+      shadow.alpha =
+        0.3 + breath * 0.02 - (mode === "walk" ? 0.02 : 0) - petEase * 0.03;
 
       for (let i = hearts.length - 1; i >= 0; i--) {
         const p = hearts[i];

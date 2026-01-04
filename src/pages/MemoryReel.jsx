@@ -8,7 +8,15 @@ import Header from "@/components/Header.jsx";
 import Footer from "@/components/Footer.jsx";
 import EmptySlate from "@/components/EmptySlate.jsx";
 
-const TYPE_OPTIONS = ["All", "CARE", "TRAINING", "LEVEL_UP", "NEGLECT", "UNLOCK", "MEMORY"];
+const TYPE_OPTIONS = [
+  "All",
+  "CARE",
+  "TRAINING",
+  "LEVEL_UP",
+  "NEGLECT",
+  "UNLOCK",
+  "MEMORY",
+];
 
 function formatEntryDate(ts) {
   try {
@@ -58,8 +66,8 @@ export default function MemoryReel() {
               {dog?.name || "Your pup"}&rsquo;s story
             </h1>
             <p className="mt-2 text-sm text-zinc-200/90 max-w-prose">
-              Every day together leaves a trace. This is the long-form timeline of care,
-              training, and small moments that add up to a bond.
+              Every day together leaves a trace. This is the long-form timeline
+              of care, training, and small moments that add up to a bond.
             </p>
           </div>
 
@@ -79,7 +87,11 @@ export default function MemoryReel() {
                   className="w-full sm:w-44 rounded-2xl border border-white/10 bg-black/40 px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-400/50"
                 >
                   {TYPE_OPTIONS.map((opt) => (
-                    <option key={opt} value={opt} className="bg-zinc-950 text-zinc-100">
+                    <option
+                      key={opt}
+                      value={opt}
+                      className="bg-zinc-950 text-zinc-100"
+                    >
                       {opt}
                     </option>
                   ))}
@@ -87,7 +99,10 @@ export default function MemoryReel() {
               </div>
 
               <div className="text-xs text-zinc-400">
-                Showing <span className="font-semibold text-zinc-100">{entries.length}</span>{" "}
+                Showing{" "}
+                <span className="font-semibold text-zinc-100">
+                  {entries.length}
+                </span>{" "}
                 memory{entries.length === 1 ? "" : "ies"}
               </div>
             </div>

@@ -80,7 +80,7 @@ export default function DogAIEngine() {
       copy.temperament.adoptedAt = tryParse(copy.temperament.adoptedAt);
       copy.temperament.revealedAt = tryParse(copy.temperament.revealedAt);
       copy.temperament.lastEvaluatedAt = tryParse(
-        copy.temperament.lastEvaluatedAt,
+        copy.temperament.lastEvaluatedAt
       );
     }
 
@@ -89,16 +89,16 @@ export default function DogAIEngine() {
       if (copy.training.potty) {
         copy.training.potty = { ...copy.training.potty };
         copy.training.potty.completedAt = tryParse(
-          copy.training.potty.completedAt,
+          copy.training.potty.completedAt
         );
       }
       if (copy.training.adult) {
         copy.training.adult = { ...copy.training.adult };
         copy.training.adult.lastCompletedDate = tryParse(
-          copy.training.adult.lastCompletedDate,
+          copy.training.adult.lastCompletedDate
         );
         copy.training.adult.lastPenaltyDate = tryParse(
-          copy.training.adult.lastPenaltyDate,
+          copy.training.adult.lastPenaltyDate
         );
       }
     }
@@ -106,14 +106,26 @@ export default function DogAIEngine() {
     // Progression dates
     if (copy.progression && typeof copy.progression === "object") {
       copy.progression = { ...copy.progression };
-      if (copy.progression.season && typeof copy.progression.season === "object") {
+      if (
+        copy.progression.season &&
+        typeof copy.progression.season === "object"
+      ) {
         copy.progression.season = { ...copy.progression.season };
-        copy.progression.season.startedAt = tryParse(copy.progression.season.startedAt);
-        copy.progression.season.endsAt = tryParse(copy.progression.season.endsAt);
+        copy.progression.season.startedAt = tryParse(
+          copy.progression.season.startedAt
+        );
+        copy.progression.season.endsAt = tryParse(
+          copy.progression.season.endsAt
+        );
       }
-      if (copy.progression.journey && typeof copy.progression.journey === "object") {
+      if (
+        copy.progression.journey &&
+        typeof copy.progression.journey === "object"
+      ) {
         copy.progression.journey = { ...copy.progression.journey };
-        copy.progression.journey.startedAt = tryParse(copy.progression.journey.startedAt);
+        copy.progression.journey.startedAt = tryParse(
+          copy.progression.journey.startedAt
+        );
       }
     }
 
@@ -122,14 +134,23 @@ export default function DogAIEngine() {
       copy.autonomy = { ...copy.autonomy };
       copy.autonomy.nextDecisionAt = tryParse(copy.autonomy.nextDecisionAt);
       copy.autonomy.lastDecisionAt = tryParse(copy.autonomy.lastDecisionAt);
-      if (copy.autonomy.lastEvent && typeof copy.autonomy.lastEvent === "object") {
+      if (
+        copy.autonomy.lastEvent &&
+        typeof copy.autonomy.lastEvent === "object"
+      ) {
         copy.autonomy.lastEvent = { ...copy.autonomy.lastEvent };
-        copy.autonomy.lastEvent.createdAt = tryParse(copy.autonomy.lastEvent.createdAt);
-        copy.autonomy.lastEvent.expiresAt = tryParse(copy.autonomy.lastEvent.expiresAt);
+        copy.autonomy.lastEvent.createdAt = tryParse(
+          copy.autonomy.lastEvent.createdAt
+        );
+        copy.autonomy.lastEvent.expiresAt = tryParse(
+          copy.autonomy.lastEvent.expiresAt
+        );
       }
       if (copy.autonomy.routine && typeof copy.autonomy.routine === "object") {
         copy.autonomy.routine = { ...copy.autonomy.routine };
-        copy.autonomy.routine.updatedAt = tryParse(copy.autonomy.routine.updatedAt);
+        copy.autonomy.routine.updatedAt = tryParse(
+          copy.autonomy.routine.updatedAt
+        );
       }
     }
 
@@ -322,7 +343,7 @@ export default function DogAIEngine() {
           JSON.stringify({
             type: "DOG_SAVE_PARSE_FAILED",
             at: new Date().toISOString(),
-          }),
+          })
         );
       } catch {
         // ignore
@@ -347,7 +368,9 @@ export default function DogAIEngine() {
 
     // Register session start (catch-up decay, penalties, streak, etc.)
     const now = Date.now();
-    dispatch(registerSessionStart({ now, timeBucket: getLocalTimeBucket(now) }));
+    dispatch(
+      registerSessionStart({ now, timeBucket: getLocalTimeBucket(now) })
+    );
   }, [dispatch]);
 
   // 1b. If user logs in *after* mount, pull from cloud once
@@ -365,7 +388,9 @@ export default function DogAIEngine() {
         .then((res) => {
           if (res?.hydrated) {
             const now = Date.now();
-            dispatch(registerSessionStart({ now, timeBucket: getLocalTimeBucket(now) }));
+            dispatch(
+              registerSessionStart({ now, timeBucket: getLocalTimeBucket(now) })
+            );
           }
         })
         .catch((err) => {
@@ -376,7 +401,9 @@ export default function DogAIEngine() {
         .then((res) => {
           if (res?.hydrated) {
             const now = Date.now();
-            dispatch(registerSessionStart({ now, timeBucket: getLocalTimeBucket(now) }));
+            dispatch(
+              registerSessionStart({ now, timeBucket: getLocalTimeBucket(now) })
+            );
           }
         })
         .catch((err) => {
@@ -447,7 +474,7 @@ export default function DogAIEngine() {
       const now = Date.now();
       const w = weatherRef.current;
       dispatch(
-        tickDog({ now, weather: w, timeBucket: getLocalTimeBucket(now) }),
+        tickDog({ now, weather: w, timeBucket: getLocalTimeBucket(now) })
       );
       dispatch(tickDogPolls({ now }));
     };

@@ -58,7 +58,13 @@ export default function TrainingPanel({
               }
             >
               <div>
-                <div className={active ? "text-sm font-extrabold text-emerald-100" : "text-sm font-semibold text-zinc-100"}>
+                <div
+                  className={
+                    active
+                      ? "text-sm font-extrabold text-emerald-100"
+                      : "text-sm font-semibold text-zinc-100"
+                  }
+                >
                   {c.label}
                 </div>
                 <div className="text-[11px] text-zinc-400">
@@ -86,7 +92,9 @@ export default function TrainingPanel({
       {allowVoiceTraining ? (
         <div className="mt-4 flex items-center justify-between gap-3 rounded-3xl border border-white/10 bg-black/25 px-3 py-3">
           <div>
-            <div className="text-xs font-semibold text-zinc-200">Hold to train (voice)</div>
+            <div className="text-xs font-semibold text-zinc-200">
+              Hold to train (voice)
+            </div>
             <div className="mt-0.5 text-[11px] text-zinc-400">
               Try “sit”, “stay”, “roll over”, “speak”
             </div>

@@ -24,7 +24,9 @@ function StatBar({ label, value = 0, color = "bg-emerald-500" }) {
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between text-[11px] text-zinc-300/80">
-        <span className="uppercase tracking-[0.16em] text-zinc-400">{label}</span>
+        <span className="uppercase tracking-[0.16em] text-zinc-400">
+          {label}
+        </span>
         <span className="font-semibold text-zinc-200">{pct.toFixed(0)}%</span>
       </div>
       <div className="h-2.5 rounded-full bg-black/35 border border-white/10 overflow-hidden">
@@ -88,7 +90,6 @@ export default function NeedsHUD() {
     : pottyGoal
       ? Math.min(100, Math.round((pottySuccess / pottyGoal) * 100))
       : 0;
-
 
   return (
     <section className="rounded-3xl border border-white/15 bg-black/35 backdrop-blur-md p-4 shadow-[0_0_60px_rgba(0,0,0,0.18)] space-y-4">

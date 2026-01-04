@@ -2,20 +2,20 @@
 
 // src/pwa/PwaProvider.jsx
 
-import * as React from 'react';
+import * as React from "react";
 
-import { withBaseUrl } from '@/utils/assetUrl.js';
+import { withBaseUrl } from "@/utils/assetUrl.js";
 
 const PwaContext = React.createContext({
   offline: false,
   updateAvailable: false,
   canInstall: false,
-  applyUpdate: async () => { },
+  applyUpdate: async () => {},
   promptInstall: async () => ({ outcome: "dismissed" }),
 });
 
 function getOffline() {
-  if (typeof navigator === 'undefined') return false;
+  if (typeof navigator === "undefined") return false;
   return navigator.onLine === false;
 }
 
@@ -35,15 +35,16 @@ export default function PwaProvider({ children }) {
   // That can look like "the dog won't render" or old pages never updating.
   React.useEffect(() => {
     if (!import.meta.env.DEV) return;
-    if (!('serviceWorker' in navigator)) return;
+    if (!("serviceWorker" in navigator)) return;
 
-    const host = String(window.location?.hostname || '');
-    const isLocalhost = host === 'localhost' || host === '127.0.0.1' || host === '[::1]';
+    const host = String(window.location?.hostname || "");
+    const isLocalhost =
+      host === "localhost" || host === "127.0.0.1" || host === "[::1]";
     if (!isLocalhost) return;
 
     // Escape hatch for debugging PWA behavior in dev.
     try {
-      if (localStorage.getItem('DG_KEEP_SW_DEV') === '1') return;
+      if (localStorage.getItem("DG_KEEP_SW_DEV") === "1") return;
     } catch {
       // ignore
     }
@@ -60,7 +61,7 @@ export default function PwaProvider({ children }) {
       // Best-effort cache cleanup for old SW versions.
       try {
         const keys = await caches.keys();
-        const targets = keys.filter((k) => String(k).startsWith('doggerz-v'));
+        const targets = keys.filter((k) => String(k).startsWith("doggerz-v"));
         await Promise.all(targets.map((k) => caches.delete(k)));
       } catch {
         // ignore
@@ -87,18 +88,18 @@ export default function PwaProvider({ children }) {
   React.useEffect(() => {
     const onOnline = () => setOffline(false);
     const onOffline = () => setOffline(true);
-    window.addEventListener('online', onOnline);
-    window.addEventListener('offline', onOffline);
+    window.addEventListener("online", onOnline);
+    window.addEventListener("offline", onOffline);
     return () => {
-      window.removeEventListener('online', onOnline);
-      window.removeEventListener('offline', onOffline);
+      window.removeEventListener("online", onOnline);
+      window.removeEventListener("offline", onOffline);
     };
   }, []);
 
   // SW registration + update detection (prod only)
   React.useEffect(() => {
     if (!import.meta.env.PROD) return;
-    if (!('serviceWorker' in navigator)) return;
+    if (!("serviceWorker" in navigator)) return;
 
     let cancelled = false;
 
@@ -107,11 +108,16 @@ export default function PwaProvider({ children }) {
       window.location.reload();
     };
 
-    navigator.serviceWorker.addEventListener('controllerchange', onControllerChange);
+    navigator.serviceWorker.addEventListener(
+      "controllerchange",
+      onControllerChange
+    );
 
     const register = async () => {
       try {
-        const reg = await navigator.serviceWorker.register(withBaseUrl('/sw.js'));
+        const reg = await navigator.serviceWorker.register(
+          withBaseUrl("/sw.js")
+        );
         registrationRef.current = reg;
 
         // If there's already a waiting worker, we can prompt immediately.
@@ -119,13 +125,16 @@ export default function PwaProvider({ children }) {
           setUpdateAvailable(true);
         }
 
-        reg.addEventListener('updatefound', () => {
+        reg.addEventListener("updatefound", () => {
           const installing = reg.installing;
           if (!installing) return;
 
-          installing.addEventListener('statechange', () => {
+          installing.addEventListener("statechange", () => {
             // "installed" with an existing controller => update is ready and waiting.
-            if (installing.state === 'installed' && navigator.serviceWorker.controller) {
+            if (
+              installing.state === "installed" &&
+              navigator.serviceWorker.controller
+            ) {
               if (!cancelled) setUpdateAvailable(true);
             }
           });
@@ -140,10 +149,10 @@ export default function PwaProvider({ children }) {
             // ignore
           }
         };
-        window.addEventListener('visibilitychange', onVisible);
+        window.addEventListener("visibilitychange", onVisible);
 
         return () => {
-          window.removeEventListener('visibilitychange', onVisible);
+          window.removeEventListener("visibilitychange", onVisible);
         };
       } catch {
         // ignore (offline first load etc)
@@ -157,7 +166,10 @@ export default function PwaProvider({ children }) {
 
     return () => {
       cancelled = true;
-      navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange);
+      navigator.serviceWorker.removeEventListener(
+        "controllerchange",
+        onControllerChange
+      );
       if (cleanupVisible) cleanupVisible();
     };
   }, []);
@@ -189,7 +201,7 @@ export default function PwaProvider({ children }) {
 
     try {
       // Tell the waiting SW to activate now.
-      reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+      reg.waiting.postMessage({ type: "SKIP_WAITING" });
     } catch {
       // ignore
     }
@@ -210,7 +222,13 @@ export default function PwaProvider({ children }) {
   }, []);
 
   const value = React.useMemo(
-    () => ({ offline, updateAvailable, canInstall, applyUpdate, promptInstall }),
+    () => ({
+      offline,
+      updateAvailable,
+      canInstall,
+      applyUpdate,
+      promptInstall,
+    }),
     [offline, updateAvailable, canInstall, applyUpdate, promptInstall]
   );
 

@@ -6,9 +6,9 @@
 // These imports create separate chunks that can be warmed on hover/idle.
 
 export function prefetchGameRoute() {
-  return import('@/pages/Game.jsx');
+  return import("@/pages/Game.jsx");
 }
 
 export function prefetchDogAIEngine() {
-  return import('@/features/game/DogAIEngine.jsx');
+  return import("@/features/game/DogAIEngine.jsx");
 }

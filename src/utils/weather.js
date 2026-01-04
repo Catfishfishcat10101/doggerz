@@ -81,7 +81,7 @@ export function shouldHowlAtMoon(timeOfDay) {
     const distFromFakeFull = Math.min(
       Math.abs(day - 1),
       Math.abs(day - 15),
-      Math.abs(day - 29),
+      Math.abs(day - 29)
     );
 
     // Closer to 1 / 15 / 29 → slightly higher chance
@@ -126,5 +126,5 @@ export function getAmbientWeatherHint() {
  * For now this returns a safe default — replace with an API call later.
  */
 export async function getWeather() {
-  return 'clear';
+  return "clear";
 }

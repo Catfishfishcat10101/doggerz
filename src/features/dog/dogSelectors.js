@@ -6,7 +6,7 @@ import {
   getDogPixiSheetUrl,
   getDogStageLabel,
   getDogStaticSpriteUrl,
-} from '@/utils/dogSpritePaths.js';
+} from "@/utils/dogSpritePaths.js";
 
 export const selectDog = (state) => state?.dog || {}; // change if your store path differs
 
@@ -19,7 +19,7 @@ function _resolveDog(stateOrDog) {
 
   // Heuristics: if object has `lifeStage` or `cleanlinessTier` assume it's a dog
   if (
-    typeof stateOrDog === 'object' &&
+    typeof stateOrDog === "object" &&
     (stateOrDog.lifeStage || stateOrDog.cleanlinessTier || stateOrDog.stage)
   ) {
     return stateOrDog;
@@ -41,51 +41,51 @@ export function selectDogRenderParams(stateOrDog) {
 
   // life stage may be at dog.lifeStage.stage, dog.stage, or legacy `stage` strings
   const rawStage =
-    dog.lifeStage?.stage || dog.stage || dog.life_stage || 'PUPPY';
-  const lowerStage = String(rawStage || '').toLowerCase();
+    dog.lifeStage?.stage || dog.stage || dog.life_stage || "PUPPY";
+  const lowerStage = String(rawStage || "").toLowerCase();
 
   const stage =
-    lowerStage.startsWith('pup') || lowerStage.includes('puppy')
-      ? 'pup'
-      : lowerStage.startsWith('adult') || lowerStage.includes('adult')
-      ? 'adult'
-      : 'senior';
+    lowerStage.startsWith("pup") || lowerStage.includes("puppy")
+      ? "pup"
+      : lowerStage.startsWith("adult") || lowerStage.includes("adult")
+        ? "adult"
+        : "senior";
 
   // Allow multiple possible cleanliness fields and be resilient to casing
   const tierRaw =
-    dog.cleanlinessTier || dog.cleanliness_tier || dog.cleanliness || 'FRESH';
+    dog.cleanlinessTier || dog.cleanliness_tier || dog.cleanliness || "FRESH";
   const tier = String(tierRaw).toUpperCase();
   const condition =
-    tier === 'DIRTY'
-      ? 'dirty'
-      : tier === 'FLEAS'
-      ? 'fleas'
-      : tier === 'MANGE'
-      ? 'mange'
-      : 'clean';
+    tier === "DIRTY"
+      ? "dirty"
+      : tier === "FLEAS"
+        ? "fleas"
+        : tier === "MANGE"
+          ? "mange"
+          : "clean";
 
   // Animation hint: prefer explicit flags, then lastAction heuristics
   const isSleeping =
     !!dog.isAsleep ||
     !!dog.is_sleeping ||
-    (dog.lastAction || '').toLowerCase().includes('sleep');
-  const last = (dog.lastAction || dog.last_action || '')
+    (dog.lastAction || "").toLowerCase().includes("sleep");
+  const last = (dog.lastAction || dog.last_action || "")
     .toString()
     .toLowerCase();
-  const isBarking = last.includes('bark') || last === 'bark';
+  const isBarking = last.includes("bark") || last === "bark";
   const isWalking =
-    last === 'walk' ||
-    last === 'walking' ||
-    last === 'zoomies' ||
-    last.includes('run');
+    last === "walk" ||
+    last === "walking" ||
+    last === "zoomies" ||
+    last.includes("run");
 
   const anim = isSleeping
-    ? 'sleep'
+    ? "sleep"
     : isBarking
-    ? 'bark'
-    : isWalking
-    ? 'walk'
-    : 'idle';
+      ? "bark"
+      : isWalking
+        ? "walk"
+        : "idle";
 
   return { stage, condition, anim };
 }
@@ -113,7 +113,7 @@ export function selectDogRenderModel(stateOrDog) {
 
   const staticSpriteUrl = getDogStaticSpriteUrl(stage);
   const pixiSheetUrl = getDogPixiSheetUrl(stage, condition);
-  const pixiSheetFallbackUrl = getDogPixiSheetUrl(stage, 'clean');
+  const pixiSheetFallbackUrl = getDogPixiSheetUrl(stage, "clean");
 
   return {
     stage,
@@ -136,11 +136,11 @@ export function selectDogSpriteHint(stateOrDog) {
   const dog = _resolveDog(stateOrDog) || {};
   const { stage, condition } = selectDogRenderParams(dog);
 
-  const breedRaw = dog.breed || dog.species || dog.type || 'jack_russell';
+  const breedRaw = dog.breed || dog.species || dog.type || "jack_russell";
   const breed = String(breedRaw)
     .toLowerCase()
-    .replace(/\s+/g, '_')
-    .replace(/[^a-z0-9_]/g, '');
+    .replace(/\s+/g, "_")
+    .replace(/[^a-z0-9_]/g, "");
 
   return `${breed}_${stage}_${condition}.png`;
 }

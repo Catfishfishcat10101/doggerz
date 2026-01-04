@@ -14,8 +14,8 @@ export default function Contact() {
           <header className="space-y-2">
             <h1 className="text-2xl font-semibold tracking-tight">Contact</h1>
             <p className="text-sm text-zinc-400">
-              Feedback, bug reports, and feature ideas are all welcome. This is a
-              living project.
+              Feedback, bug reports, and feature ideas are all welcome. This is
+              a living project.
             </p>
           </header>
 
@@ -33,8 +33,8 @@ export default function Contact() {
             </a>
 
             <p className="text-xs text-zinc-500">
-              Please avoid sending sensitive personal information. Screenshots and
-              short videos of bugs are extremely helpful.
+              Please avoid sending sensitive personal information. Screenshots
+              and short videos of bugs are extremely helpful.
             </p>
           </section>
         </div>

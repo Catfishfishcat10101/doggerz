@@ -40,7 +40,10 @@ import {
 import { selectWeatherCondition } from "@/redux/weatherSlice.js";
 import { selectUserZip } from "@/redux/userSlice.js";
 import { useDayNightBackground } from "@/features/game/useDayNightBackground.jsx";
-import { calculateDogAge, getSpriteForStageAndTier } from "@/utils/lifecycle.js";
+import {
+  calculateDogAge,
+  getSpriteForStageAndTier,
+} from "@/utils/lifecycle.js";
 
 function getFxMode(condition) {
   const c = String(condition || "").toLowerCase();
@@ -61,7 +64,8 @@ function getPrefersReducedMotion() {
 
 function getPrefersReducedTransparency() {
   try {
-    return window.matchMedia?.("(prefers-reduced-transparency: reduce)")?.matches;
+    return window.matchMedia?.("(prefers-reduced-transparency: reduce)")
+      ?.matches;
   } catch {
     return false;
   }
@@ -101,18 +105,22 @@ export default function MainGame() {
 
   const { temperamentRevealReady, temperament } = useDogLifecycle();
 
-  const { isNight, timeOfDayBucket, style: yardStyle } =
-    useDayNightBackground({ zip });
+  const {
+    isNight,
+    timeOfDayBucket,
+    style: yardStyle,
+  } = useDayNightBackground({ zip });
 
   const adopted = Boolean(dog?.adoptedAt);
   const age = React.useMemo(
     () => (adopted ? calculateDogAge(Number(dog?.adoptedAt)) : null),
-    [adopted, dog?.adoptedAt],
+    [adopted, dog?.adoptedAt]
   );
 
   const spriteSrc = React.useMemo(
-    () => getSpriteForStageAndTier(lifeStage || dog?.lifeStage, cleanlinessTier),
-    [cleanlinessTier, dog?.lifeStage, lifeStage],
+    () =>
+      getSpriteForStageAndTier(lifeStage || dog?.lifeStage, cleanlinessTier),
+    [cleanlinessTier, dog?.lifeStage, lifeStage]
   );
 
   const reduceMotion = Boolean(getPrefersReducedMotion());
@@ -129,7 +137,7 @@ export default function MainGame() {
       { id: "rollOver", label: "Roll over" },
       { id: "speak", label: "Speak" },
     ],
-    [],
+    []
   );
 
   const onLogout = React.useCallback(() => {
@@ -204,7 +212,7 @@ export default function MainGame() {
           <YardDogActor
             spriteSrc={spriteSrc}
             lifeStageStage={String(
-              lifeStage?.stage || lifeStage?.stageId || age?.stageId || "PUPPY",
+              lifeStage?.stage || lifeStage?.stageId || age?.stageId || "PUPPY"
             )}
             reduceMotion={reduceMotion}
             reduceTransparency={reduceTransparency}
@@ -301,8 +309,10 @@ export default function MainGame() {
                       dispatch(
                         play({
                           now,
-                          timeOfDay: String(timeOfDayBucket || "").toUpperCase(),
-                        }),
+                          timeOfDay: String(
+                            timeOfDayBucket || ""
+                          ).toUpperCase(),
+                        })
                       )
                     }
                   />

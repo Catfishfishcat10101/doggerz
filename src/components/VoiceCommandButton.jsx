@@ -137,12 +137,12 @@ export default function VoiceCommandButton() {
           trainObedience({
             commandId,
             success: true,
-          }),
+          })
         );
         setError(null);
       } else {
         setError(
-          "Couldn’t catch a known command. Try 'sit', 'stay', 'roll over', or 'speak'.",
+          "Couldn’t catch a known command. Try 'sit', 'stay', 'roll over', or 'speak'."
         );
       }
     };

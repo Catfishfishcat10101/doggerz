@@ -103,7 +103,7 @@ async function pack(stage) {
     console.warn(
       "  Missing atlas files for",
       stage,
-      `(expected ${atlasJsonPath} and ${atlasPngPath})`,
+      `(expected ${atlasJsonPath} and ${atlasPngPath})`
     );
     return;
   }

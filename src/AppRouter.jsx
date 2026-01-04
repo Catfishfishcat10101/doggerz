@@ -35,8 +35,8 @@ const DreamsPage = React.lazy(() => import("./pages/Dreams.jsx"));
 const LegalPage = React.lazy(() => import("./pages/Legal.jsx"));
 const PrivacyPage = React.lazy(() => import("./pages/Privacy.jsx"));
 const PottyPage = React.lazy(() => import("./pages/Potty.jsx"));
-const TemperamentRevealPage = React.lazy(() =>
-  import("./pages/TemperamentReveal.jsx")
+const TemperamentRevealPage = React.lazy(
+  () => import("./pages/TemperamentReveal.jsx")
 );
 const RainbowBridgePage = React.lazy(() => import("./pages/RainbowBridge.jsx"));
 const NotFoundPage = React.lazy(() => import("./pages/NotFound.jsx"));
@@ -91,22 +91,67 @@ const router = createBrowserRouter(
           element: suspense(<SkillTreePage />),
         },
 
-        { path: PATHS.ADOPT.replace(/^\//, ""), element: suspense(<AdoptPage />) },
-        { path: PATHS.LOGIN.replace(/^\//, ""), element: suspense(<LoginPage />) },
-        { path: PATHS.SIGNUP.replace(/^\//, ""), element: suspense(<SignupPage />) },
-        { path: PATHS.ABOUT.replace(/^\//, ""), element: suspense(<AboutPage />) },
+        {
+          path: PATHS.ADOPT.replace(/^\//, ""),
+          element: suspense(<AdoptPage />),
+        },
+        {
+          path: PATHS.LOGIN.replace(/^\//, ""),
+          element: suspense(<LoginPage />),
+        },
+        {
+          path: PATHS.SIGNUP.replace(/^\//, ""),
+          element: suspense(<SignupPage />),
+        },
+        {
+          path: PATHS.ABOUT.replace(/^\//, ""),
+          element: suspense(<AboutPage />),
+        },
         { path: PATHS.FAQ.replace(/^\//, ""), element: suspense(<FaqPage />) },
-        { path: PATHS.CONTACT.replace(/^\//, ""), element: suspense(<ContactPage />) },
-        { path: PATHS.HELP.replace(/^\//, ""), element: suspense(<HelpPage />) },
-        { path: PATHS.DEVELOPERS.replace(/^\//, ""), element: suspense(<DevelopersPage />) },
-        { path: PATHS.SETTINGS.replace(/^\//, ""), element: suspense(<SettingsPage />) },
-        { path: PATHS.STORE.replace(/^\//, ""), element: suspense(<StorePage />) },
-        { path: PATHS.BADGES.replace(/^\//, ""), element: suspense(<BadgesPage />) },
-        { path: PATHS.MEMORIES.replace(/^\//, ""), element: suspense(<MemoryReelPage />) },
-        { path: PATHS.DREAMS.replace(/^\//, ""), element: suspense(<DreamsPage />) },
-        { path: PATHS.LEGAL.replace(/^\//, ""), element: suspense(<LegalPage />) },
-        { path: PATHS.PRIVACY.replace(/^\//, ""), element: suspense(<PrivacyPage />) },
-        { path: PATHS.POTTY.replace(/^\//, ""), element: suspense(<PottyPage />) },
+        {
+          path: PATHS.CONTACT.replace(/^\//, ""),
+          element: suspense(<ContactPage />),
+        },
+        {
+          path: PATHS.HELP.replace(/^\//, ""),
+          element: suspense(<HelpPage />),
+        },
+        {
+          path: PATHS.DEVELOPERS.replace(/^\//, ""),
+          element: suspense(<DevelopersPage />),
+        },
+        {
+          path: PATHS.SETTINGS.replace(/^\//, ""),
+          element: suspense(<SettingsPage />),
+        },
+        {
+          path: PATHS.STORE.replace(/^\//, ""),
+          element: suspense(<StorePage />),
+        },
+        {
+          path: PATHS.BADGES.replace(/^\//, ""),
+          element: suspense(<BadgesPage />),
+        },
+        {
+          path: PATHS.MEMORIES.replace(/^\//, ""),
+          element: suspense(<MemoryReelPage />),
+        },
+        {
+          path: PATHS.DREAMS.replace(/^\//, ""),
+          element: suspense(<DreamsPage />),
+        },
+        {
+          path: PATHS.LEGAL.replace(/^\//, ""),
+          element: suspense(<LegalPage />),
+        },
+        {
+          path: PATHS.PRIVACY.replace(/^\//, ""),
+          element: suspense(<PrivacyPage />),
+        },
+        {
+          path: PATHS.POTTY.replace(/^\//, ""),
+          element: suspense(<PottyPage />),
+        },
         {
           path: PATHS.TEMPERAMENT_REVEAL.replace(/^\//, ""),
           element: suspense(<TemperamentRevealPage />),

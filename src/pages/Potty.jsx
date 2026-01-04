@@ -83,7 +83,9 @@ export default function Potty() {
               <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
                 Current training level
               </p>
-              <p className="text-sm text-zinc-700 dark:text-zinc-300">{training}% potty trained</p>
+              <p className="text-sm text-zinc-700 dark:text-zinc-300">
+                {training}% potty trained
+              </p>
             </div>
 
             <div className="w-full sm:w-64 h-2 rounded-full bg-zinc-200 overflow-hidden dark:bg-zinc-800">
@@ -94,7 +96,9 @@ export default function Potty() {
             </div>
           </div>
 
-          <p className="text-xs text-zinc-600 dark:text-zinc-400">{summaryText}</p>
+          <p className="text-xs text-zinc-600 dark:text-zinc-400">
+            {summaryText}
+          </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
             <div className="rounded-xl border border-zinc-200 bg-white/70 p-3 space-y-1 dark:border-zinc-800 dark:bg-zinc-900/60">

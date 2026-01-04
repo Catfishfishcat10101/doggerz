@@ -25,7 +25,8 @@ export default function SpriteTest() {
       <h1 className="text-2xl font-semibold">Sprite Test</h1>
       <p className="text-white/70 mt-2">
         This page loads <code>/sprites/anim/jrt/manifest.json</code> and the
-        generated strips in <code>/sprites/anim/jrt/&lt;stage&gt;/&lt;anim&gt;.webp</code>.
+        generated strips in{" "}
+        <code>/sprites/anim/jrt/&lt;stage&gt;/&lt;anim&gt;.webp</code>.
       </p>
 
       <div className="mt-6 grid gap-4 md:grid-cols-2">

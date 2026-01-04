@@ -2,9 +2,9 @@
 
 // src/redux/workflowSlice.js
 
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice } from "@reduxjs/toolkit";
 
-export const WORKFLOW_STORAGE_KEY = 'doggerz:workflows';
+export const WORKFLOW_STORAGE_KEY = "doggerz:workflows";
 
 const nowMs = () => Date.now();
 
@@ -14,13 +14,13 @@ const initialState = {
 };
 
 function ensureWorkflow(state, workflowId) {
-  const id = String(workflowId || '').trim();
+  const id = String(workflowId || "").trim();
   if (!id) return null;
 
   if (!state.byId[id]) {
     state.byId[id] = {
       id,
-      status: 'idle', // idle | active | completed | cancelled
+      status: "idle", // idle | active | completed | cancelled
       stepIndex: 0,
       // arbitrary payload the wizard collects
       data: {},
@@ -36,17 +36,17 @@ function ensureWorkflow(state, workflowId) {
 }
 
 const workflowSlice = createSlice({
-  name: 'workflows',
+  name: "workflows",
   initialState,
   reducers: {
     hydrateWorkflows(state, { payload }) {
-      if (!payload || typeof payload !== 'object') return;
+      if (!payload || typeof payload !== "object") return;
       const byId = payload.byId;
-      if (!byId || typeof byId !== 'object') return;
+      if (!byId || typeof byId !== "object") return;
 
       // Merge in a conservative way so a bad payload can't brick the app
       for (const [id, wf] of Object.entries(byId)) {
-        if (!wf || typeof wf !== 'object') continue;
+        if (!wf || typeof wf !== "object") continue;
         const safeId = String(id);
         state.byId[safeId] = {
           ...ensureWorkflow(state, safeId),
@@ -62,7 +62,7 @@ const workflowSlice = createSlice({
       const wf = ensureWorkflow(state, id);
       if (!wf) return;
 
-      wf.status = 'active';
+      wf.status = "active";
       wf.stepIndex = Math.max(0, Number(stepIndex) || 0);
       wf.data = { ...(wf.data || {}), ...(initialData || {}) };
       const now = nowMs();
@@ -88,7 +88,7 @@ const workflowSlice = createSlice({
 
       wf.stepIndex = Math.max(0, Number(stepIndex) || 0);
       wf.updatedAt = nowMs();
-      if (wf.status !== 'active') wf.status = 'active';
+      if (wf.status !== "active") wf.status = "active";
     },
 
     nextStep(state, { payload }) {
@@ -102,7 +102,7 @@ const workflowSlice = createSlice({
         : next;
       wf.stepIndex = Math.max(0, capped);
       wf.updatedAt = nowMs();
-      if (wf.status !== 'active') wf.status = 'active';
+      if (wf.status !== "active") wf.status = "active";
     },
 
     prevStep(state, { payload }) {
@@ -112,7 +112,7 @@ const workflowSlice = createSlice({
 
       wf.stepIndex = Math.max(0, wf.stepIndex - 1);
       wf.updatedAt = nowMs();
-      if (wf.status !== 'active') wf.status = 'active';
+      if (wf.status !== "active") wf.status = "active";
     },
 
     completeWorkflow(state, { payload }) {
@@ -120,7 +120,7 @@ const workflowSlice = createSlice({
       const wf = ensureWorkflow(state, id);
       if (!wf) return;
 
-      wf.status = 'completed';
+      wf.status = "completed";
       wf.completedAt = nowMs();
       wf.updatedAt = nowMs();
     },
@@ -130,14 +130,14 @@ const workflowSlice = createSlice({
       const wf = ensureWorkflow(state, id);
       if (!wf) return;
 
-      wf.status = 'cancelled';
+      wf.status = "cancelled";
       wf.cancelledAt = nowMs();
       wf.updatedAt = nowMs();
     },
 
     resetWorkflow(state, { payload }) {
       const { id } = payload || {};
-      const safeId = String(id || '').trim();
+      const safeId = String(id || "").trim();
       if (!safeId) return;
       delete state.byId[safeId];
     },

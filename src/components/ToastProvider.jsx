@@ -20,7 +20,9 @@ function clamp(n, lo, hi) {
 }
 
 function canVibrate() {
-  return typeof navigator !== "undefined" && typeof navigator.vibrate === "function";
+  return (
+    typeof navigator !== "undefined" && typeof navigator.vibrate === "function"
+  );
 }
 
 function useUserGestureGate() {
@@ -29,9 +31,15 @@ function useUserGestureGate() {
   React.useEffect(() => {
     if (ready) return;
     const unlock = () => setReady(true);
-    window.addEventListener("pointerdown", unlock, { once: true, passive: true });
+    window.addEventListener("pointerdown", unlock, {
+      once: true,
+      passive: true,
+    });
     window.addEventListener("keydown", unlock, { once: true });
-    window.addEventListener("touchstart", unlock, { once: true, passive: true });
+    window.addEventListener("touchstart", unlock, {
+      once: true,
+      passive: true,
+    });
     return () => {
       window.removeEventListener("pointerdown", unlock);
       window.removeEventListener("keydown", unlock);
@@ -127,9 +135,12 @@ export function ToastProvider({ children }) {
         action:
           opts?.action && typeof opts.action === "object"
             ? {
-              label: String(opts.action.label || "Action"),
-              onClick: typeof opts.action.onClick === "function" ? opts.action.onClick : null,
-            }
+                label: String(opts.action.label || "Action"),
+                onClick:
+                  typeof opts.action.onClick === "function"
+                    ? opts.action.onClick
+                    : null,
+              }
             : null,
         dismissLabel: String(opts?.dismissLabel || "Dismiss"),
         haptic: opts?.haptic,
@@ -139,7 +150,9 @@ export function ToastProvider({ children }) {
 
       const shouldHaptic =
         hapticsEnabled &&
-        (toast.haptic === true || toast.type === "reward" || toast.type === "success");
+        (toast.haptic === true ||
+          toast.type === "reward" ||
+          toast.type === "success");
       if (shouldHaptic) {
         // Tiny "pop"; keep it short and subtle.
         if (hasUserGesture) vibrate(15);
@@ -168,11 +181,16 @@ export function ToastProvider({ children }) {
     () => ({
       show,
       once,
-      info: (message, durationMs) => show({ type: "info", message, durationMs }),
-      success: (message, durationMs) => show({ type: "success", message, durationMs }),
-      warn: (message, durationMs) => show({ type: "warn", message, durationMs }),
-      error: (message, durationMs) => show({ type: "error", message, durationMs }),
-      reward: (message, durationMs) => show({ type: "reward", message, durationMs, haptic: true }),
+      info: (message, durationMs) =>
+        show({ type: "info", message, durationMs }),
+      success: (message, durationMs) =>
+        show({ type: "success", message, durationMs }),
+      warn: (message, durationMs) =>
+        show({ type: "warn", message, durationMs }),
+      error: (message, durationMs) =>
+        show({ type: "error", message, durationMs }),
+      reward: (message, durationMs) =>
+        show({ type: "reward", message, durationMs, haptic: true }),
     }),
     [once, show]
   );
@@ -200,7 +218,9 @@ export function ToastProvider({ children }) {
                   {s.icon}
                 </div>
 
-                <div className={`min-w-0 flex-1 text-sm ${s.text}`}>{t.message}</div>
+                <div className={`min-w-0 flex-1 text-sm ${s.text}`}>
+                  {t.message}
+                </div>
 
                 <button
                   type="button"

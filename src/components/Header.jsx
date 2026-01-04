@@ -57,7 +57,9 @@ export default function Header() {
               <div className="text-emerald-600 font-extrabold tracking-[0.42em] text-sm sm:text-base">
                 D O G G E R Z
               </div>
-              <div className="text-zinc-500 text-xs sm:text-sm">Adopt. Train. Bond.</div>
+              <div className="text-zinc-500 text-xs sm:text-sm">
+                Adopt. Train. Bond.
+              </div>
             </NavLink>
           </div>
 

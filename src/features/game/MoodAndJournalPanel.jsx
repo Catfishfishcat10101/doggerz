@@ -33,7 +33,10 @@ function JournalList({ journal }) {
         });
 
         return (
-          <li key={entry.id} className="rounded-2xl border border-white/10 bg-black/30 px-3 py-2">
+          <li
+            key={entry.id}
+            className="rounded-2xl border border-white/10 bg-black/30 px-3 py-2"
+          >
             <div className="flex items-center justify-between gap-2 text-[11px] text-zinc-400">
               <div className="flex items-center gap-2">
                 <span className="uppercase tracking-[0.18em] text-zinc-500">
@@ -69,11 +72,17 @@ export default function MoodAndJournalPanel() {
     <section className="rounded-3xl border border-white/15 bg-black/35 backdrop-blur-md p-4 shadow-[0_0_60px_rgba(0,0,0,0.18)]">
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-xs uppercase tracking-[0.22em] text-zinc-400">Dog journal</div>
-          <div className="mt-0.5 text-sm font-extrabold text-emerald-200">Notes</div>
+          <div className="text-xs uppercase tracking-[0.22em] text-zinc-400">
+            Dog journal
+          </div>
+          <div className="mt-0.5 text-sm font-extrabold text-emerald-200">
+            Notes
+          </div>
         </div>
         <div className="text-right">
-          <div className="text-[10px] uppercase tracking-[0.18em] text-zinc-500">Auto</div>
+          <div className="text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+            Auto
+          </div>
           <div className="text-xs font-semibold text-zinc-200">by your pup</div>
         </div>
       </div>

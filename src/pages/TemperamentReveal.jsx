@@ -45,7 +45,9 @@ export default function TemperamentReveal() {
             {secondary && (
               <div>
                 <p className="text-xs text-zinc-400">Secondary flavor</p>
-                <p className="text-sm font-medium text-zinc-900 dark:text-zinc-200">{secondary}</p>
+                <p className="text-sm font-medium text-zinc-900 dark:text-zinc-200">
+                  {secondary}
+                </p>
               </div>
             )}
 

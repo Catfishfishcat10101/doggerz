@@ -18,27 +18,27 @@
  *   node scripts/optimize-audio.js --dryRun
  */
 
-const fs = require('node:fs');
-const path = require('node:path');
-const { spawnSync } = require('node:child_process');
+const fs = require("node:fs");
+const path = require("node:path");
+const { spawnSync } = require("node:child_process");
 
 let FFMPEG_STATIC = null;
 try {
   // Optional dependency. If present, provides a platform-specific ffmpeg binary path.
   // eslint-disable-next-line global-require
-  FFMPEG_STATIC = require('ffmpeg-static');
+  FFMPEG_STATIC = require("ffmpeg-static");
 } catch {
   FFMPEG_STATIC = null;
 }
 
-const ROOT = path.resolve(__dirname, '..');
+const ROOT = path.resolve(__dirname, "..");
 
 function parseArgs(argv) {
   const args = {
-    dir: 'public/audio',
-    out: 'public/optimized-audio',
-    format: 'both', // 'opus' | 'aac' | 'both'
-    bitrate: '64k',
+    dir: "public/audio",
+    out: "public/optimized-audio",
+    format: "both", // 'opus' | 'aac' | 'both'
+    bitrate: "64k",
     minKB: 20,
     mono: false,
     dryRun: false,
@@ -51,7 +51,7 @@ function parseArgs(argv) {
   const pos = Array.isArray(argv) ? argv.slice(0, 5) : [];
   if (
     pos[0] &&
-    ['opus', 'aac', 'both'].includes(String(pos[0]).toLowerCase())
+    ["opus", "aac", "both"].includes(String(pos[0]).toLowerCase())
   ) {
     args.format = String(pos[0]).toLowerCase();
   }
@@ -66,19 +66,19 @@ function parseArgs(argv) {
 
   for (let i = 0; i < argv.length; i += 1) {
     const a = argv[i];
-    if (a === '--dir') args.dir = String(argv[++i] ?? args.dir);
-    else if (a === '--out') args.out = String(argv[++i] ?? args.out);
-    else if (a === '--format') args.format = String(argv[++i] ?? args.format);
-    else if (a === '--bitrate')
+    if (a === "--dir") args.dir = String(argv[++i] ?? args.dir);
+    else if (a === "--out") args.out = String(argv[++i] ?? args.out);
+    else if (a === "--format") args.format = String(argv[++i] ?? args.format);
+    else if (a === "--bitrate")
       args.bitrate = String(argv[++i] ?? args.bitrate);
-    else if (a === '--minKB') args.minKB = Number(argv[++i] ?? args.minKB);
-    else if (a === '--mono') args.mono = true;
-    else if (a === '--dryRun') args.dryRun = true;
-    else if (a === '--help' || a === '-h') args.help = true;
+    else if (a === "--minKB") args.minKB = Number(argv[++i] ?? args.minKB);
+    else if (a === "--mono") args.mono = true;
+    else if (a === "--dryRun") args.dryRun = true;
+    else if (a === "--help" || a === "-h") args.help = true;
   }
 
-  args.format = String(args.format || '').toLowerCase();
-  if (!['opus', 'aac', 'both'].includes(args.format)) args.format = 'both';
+  args.format = String(args.format || "").toLowerCase();
+  if (!["opus", "aac", "both"].includes(args.format)) args.format = "both";
   if (!Number.isFinite(args.minKB) || args.minKB < 0) args.minKB = 20;
 
   return args;
@@ -91,21 +91,21 @@ function fmt(bytes) {
 }
 
 function run(cmd, args, opts = {}) {
-  return spawnSync(cmd, args, { stdio: 'inherit', shell: false, ...opts });
+  return spawnSync(cmd, args, { stdio: "inherit", shell: false, ...opts });
 }
 
 function hasFfmpeg(cmd) {
-  const r = spawnSync(cmd, ['-version'], {
-    stdio: 'ignore',
+  const r = spawnSync(cmd, ["-version"], {
+    stdio: "ignore",
     shell: false,
   });
   return r.status === 0;
 }
 
 function resolveFfmpegCmd() {
-  if (hasFfmpeg('ffmpeg')) return 'ffmpeg';
+  if (hasFfmpeg("ffmpeg")) return "ffmpeg";
   if (
-    typeof FFMPEG_STATIC === 'string' &&
+    typeof FFMPEG_STATIC === "string" &&
     FFMPEG_STATIC &&
     hasFfmpeg(FFMPEG_STATIC)
   ) {
@@ -119,7 +119,7 @@ function walk(dir, results) {
   for (const e of entries) {
     const p = path.join(dir, e.name);
     if (e.isDirectory()) {
-      if (e.name === 'node_modules' || e.name === 'dist' || e.name === '.git')
+      if (e.name === "node_modules" || e.name === "dist" || e.name === ".git")
         continue;
       walk(p, results);
     } else if (e.isFile()) {
@@ -150,35 +150,35 @@ function usage() {
 
 function targetPaths({ src, inDir, outDir, format }) {
   const rel = path.relative(inDir, src);
-  const base = rel.replace(/\.[^.]+$/, '');
+  const base = rel.replace(/\.[^.]+$/, "");
 
   const out = [];
-  if (format === 'opus' || format === 'both') {
+  if (format === "opus" || format === "both") {
     out.push({
       dst: path.join(outDir, `${base}.opus`),
-      kind: 'opus',
+      kind: "opus",
     });
   }
-  if (format === 'aac' || format === 'both') {
+  if (format === "aac" || format === "both") {
     out.push({
       dst: path.join(outDir, `${base}.m4a`),
-      kind: 'aac',
+      kind: "aac",
     });
   }
   return out;
 }
 
 function buildFfmpegArgs({ src, dst, kind, bitrate, mono }) {
-  const args = ['-y', '-i', src, '-vn', '-map_metadata', '-1'];
+  const args = ["-y", "-i", src, "-vn", "-map_metadata", "-1"];
 
-  if (mono) args.push('-ac', '1');
+  if (mono) args.push("-ac", "1");
 
-  if (kind === 'opus') {
+  if (kind === "opus") {
     // Great for web + small SFX. Note: iOS Safari support varies.
-    args.push('-c:a', 'libopus', '-b:a', bitrate);
-  } else if (kind === 'aac') {
+    args.push("-c:a", "libopus", "-b:a", bitrate);
+  } else if (kind === "aac") {
     // Very compatible (Apple platforms). Uses native AAC encoder.
-    args.push('-c:a', 'aac', '-b:a', bitrate);
+    args.push("-c:a", "aac", "-b:a", bitrate);
   }
 
   args.push(dst);
@@ -203,9 +203,9 @@ function main() {
   }
 
   if (!ffmpegCmd) {
-    console.error('[Doggerz] ffmpeg not found.');
+    console.error("[Doggerz] ffmpeg not found.");
     console.error(
-      '- Option A: install ffmpeg (Windows tip: winget install Gyan.FFmpeg)'
+      "- Option A: install ffmpeg (Windows tip: winget install Gyan.FFmpeg)"
     );
     console.error(
       "- Option B: add devDependency 'ffmpeg-static' and re-run (npm i -D ffmpeg-static)"
@@ -217,14 +217,14 @@ function main() {
   walk(inDir, files);
 
   const minBytes = args.minKB * 1024;
-  const audioExts = new Set(['.mp3', '.wav', '.m4a', '.aac', '.ogg', '.flac']);
+  const audioExts = new Set([".mp3", ".wav", ".m4a", ".aac", ".ogg", ".flac"]);
 
   const candidates = files
     .filter((p) => audioExts.has(path.extname(p).toLowerCase()))
     .filter((p) => fs.statSync(p).size >= minBytes);
 
   if (candidates.length === 0) {
-    console.log('[Doggerz] No audio files matched (try lowering --minKB).');
+    console.log("[Doggerz] No audio files matched (try lowering --minKB).");
     return;
   }
 
@@ -235,8 +235,8 @@ function main() {
   );
   console.log(
     `[Doggerz] format=${args.format} bitrate=${args.bitrate} mono=${
-      args.mono ? 'yes' : 'no'
-    } dryRun=${args.dryRun ? 'yes' : 'no'}`
+      args.mono ? "yes" : "no"
+    } dryRun=${args.dryRun ? "yes" : "no"}`
   );
 
   let totalBefore = 0;
@@ -258,8 +258,8 @@ function main() {
         mono: args.mono,
       });
 
-      const relSrc = path.relative(ROOT, src).split(path.sep).join('/');
-      const relDst = path.relative(ROOT, t.dst).split(path.sep).join('/');
+      const relSrc = path.relative(ROOT, src).split(path.sep).join("/");
+      const relDst = path.relative(ROOT, t.dst).split(path.sep).join("/");
 
       if (args.dryRun) {
         console.log(`[dryRun] ${relSrc} -> ${relDst} (${t.kind})`);
@@ -276,7 +276,7 @@ function main() {
       const after = fs.statSync(t.dst).size;
       totalAfter += after;
       const saved = before - after;
-      const pct = before ? ((saved / before) * 100).toFixed(1) : '0.0';
+      const pct = before ? ((saved / before) * 100).toFixed(1) : "0.0";
       console.log(
         `[Doggerz] Result: ${fmt(before)} -> ${fmt(after)} (saved ${fmt(
           saved
@@ -292,7 +292,7 @@ function main() {
       `[Doggerz] Total saved:       ${fmt(totalBefore - totalAfter)}`
     );
     console.log(
-      '\nNext: swap one sound effect at a time in code to verify browser support.'
+      "\nNext: swap one sound effect at a time in code to verify browser support."
     );
   }
 }

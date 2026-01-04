@@ -9,6 +9,7 @@
     "dev": "vite",
     "dev:host": "vite --host 127.0.0.1 --port 5173",
     "lint": "eslint . --max-warnings=0",
+    "format": "prettier --write .",
     "lint:fix": "eslint . --fix",
     "build": "vite build",
     "preflight": "node scripts/preflight.js",

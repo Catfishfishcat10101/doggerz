@@ -3,72 +3,72 @@
 // eslint.config.cjs
 // Flat-config ESLint setup for Vite + React (JS/JSX)
 
-const js = require('@eslint/js');
-const globals = require('globals');
-const react = require('eslint-plugin-react');
-const reactHooks = require('eslint-plugin-react-hooks');
-const reactRefresh = require('eslint-plugin-react-refresh');
+const js = require("@eslint/js");
+const globals = require("globals");
+const react = require("eslint-plugin-react");
+const reactHooks = require("eslint-plugin-react-hooks");
+const reactRefresh = require("eslint-plugin-react-refresh");
 
 module.exports = [
   {
     ignores: [
-      'dist/**',
-      'node_modules/**',
-      '.gradle-user-home/**',
-      'my-app/**',
-      'public/**',
-      'android/**',
-      'scripts/**',
-      'coverage/**',
-      '*.min.*',
+      "dist/**",
+      "node_modules/**",
+      ".gradle-user-home/**",
+      "my-app/**",
+      "public/**",
+      "android/**",
+      "scripts/**",
+      "coverage/**",
+      "*.min.*",
     ],
   },
 
   js.configs.recommended,
 
   {
-    files: ['**/*.{js,jsx}'],
+    files: ["**/*.{js,jsx}"],
     languageOptions: {
-      ecmaVersion: 'latest',
-      sourceType: 'module',
+      ecmaVersion: "latest",
+      sourceType: "module",
       globals: {
         ...globals.browser,
         ...globals.node,
-        __APP_VERSION__: 'readonly',
+        __APP_VERSION__: "readonly",
       },
       parserOptions: {
         ecmaFeatures: { jsx: true },
       },
     },
     settings: {
-      react: { version: 'detect' },
+      react: { version: "detect" },
     },
     plugins: {
       react,
-      'react-hooks': reactHooks,
-      'react-refresh': reactRefresh,
+      "react-hooks": reactHooks,
+      "react-refresh": reactRefresh,
     },
     rules: {
       // React
       ...react.configs.recommended.rules,
-      ...(react.configs['jsx-runtime']
-        ? react.configs['jsx-runtime'].rules
+      ...(react.configs["jsx-runtime"]
+        ? react.configs["jsx-runtime"].rules
         : {}),
 
       // Hooks
       ...reactHooks.configs.recommended.rules,
 
       // Vite HMR safety
-      'react-refresh/only-export-components': [
-        'warn',
+      "react-refresh/only-export-components": [
+        "warn",
         { allowConstantExport: true },
       ],
 
       // Practical defaults for this codebase
-      'react/prop-types': 'off',
-      'no-unused-vars': [
-        'warn',
-        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      "react/prop-types": "off",
+      "no-unused-vars": [
+        "warn",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
     },
   },

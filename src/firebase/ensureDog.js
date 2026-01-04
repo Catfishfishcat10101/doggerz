@@ -1,7 +1,7 @@
 // src/firebase/ensureDog.js
 import { serverTimestamp, setDoc, getDoc } from "firebase/firestore";
-import { assertFirebaseReady } from "@/firebase.js";
-import { dogMainDoc } from "@/firebase/paths.js";
+import { assertFirebaseReady } from "../firebase.js";
+import { dogMainDoc } from "./paths.js";
 
 /**
  * Create a minimal, safe default payload for a new dog document.
@@ -64,7 +64,7 @@ export async function ensureDogMain(uid) {
       // Do not fail the creation if the immediate read-back fails; return ref.
       console.warn(
         "[Doggerz] created dog doc but failed to read it back",
-        readErr,
+        readErr
       );
       return { created: true, ref };
     }

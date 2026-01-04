@@ -33,8 +33,9 @@ export default function Dreams() {
               {dog?.name || "Your pup"}&rsquo;s dreams
             </h1>
             <p className="mt-2 text-sm text-zinc-200/90 max-w-prose">
-              When your dog rests, their brain turns your day into watercolor chaos.
-              Happy days can trigger lucid dreams; long neglect can trigger nightmares.
+              When your dog rests, their brain turns your day into watercolor
+              chaos. Happy days can trigger lucid dreams; long neglect can
+              trigger nightmares.
             </p>
           </div>
 

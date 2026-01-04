@@ -26,7 +26,10 @@ function formatDeltaLabel(key, delta) {
   return `${names[key] || key} ${sign}${Math.round(n)}`;
 }
 
-export default function PersonalityEvolutionTimeline({ history, maxItems = 10 }) {
+export default function PersonalityEvolutionTimeline({
+  history,
+  maxItems = 10,
+}) {
   const rows = Array.isArray(history) ? history.slice(0, maxItems) : [];
 
   if (!rows.length) {
@@ -41,8 +44,11 @@ export default function PersonalityEvolutionTimeline({ history, maxItems = 10 })
     <div className="space-y-2">
       <ul className="space-y-2 max-h-56 overflow-y-auto pr-1">
         {rows.map((e) => {
-          const deltas = e?.deltas && typeof e.deltas === "object" ? e.deltas : {};
-          const deltaKeys = Object.keys(deltas).filter((k) => Number(deltas[k] || 0) !== 0);
+          const deltas =
+            e?.deltas && typeof e.deltas === "object" ? e.deltas : {};
+          const deltaKeys = Object.keys(deltas).filter(
+            (k) => Number(deltas[k] || 0) !== 0
+          );
 
           return (
             <li
@@ -67,7 +73,10 @@ export default function PersonalityEvolutionTimeline({ history, maxItems = 10 })
                 <div className="mt-1 flex flex-wrap gap-1">
                   {deltaKeys.map((k) => {
                     const n = Number(deltas[k] || 0);
-                    const tone = n >= 0 ? "border-emerald-400/30 bg-emerald-500/10 text-emerald-100" : "border-sky-400/25 bg-sky-500/10 text-sky-100";
+                    const tone =
+                      n >= 0
+                        ? "border-emerald-400/30 bg-emerald-500/10 text-emerald-100"
+                        : "border-sky-400/25 bg-sky-500/10 text-sky-100";
                     return (
                       <span
                         key={k}
@@ -79,7 +88,9 @@ export default function PersonalityEvolutionTimeline({ history, maxItems = 10 })
                   })}
                 </div>
               ) : (
-                <p className="mt-1 text-[11px] text-zinc-400">No trait deltas recorded.</p>
+                <p className="mt-1 text-[11px] text-zinc-400">
+                  No trait deltas recorded.
+                </p>
               )}
             </li>
           );

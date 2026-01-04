@@ -5,7 +5,7 @@ try {
   sharp = require("sharp");
 } catch (e) {
   console.error(
-    "sharp is required to run this script. Install with `npm install sharp --save-dev`",
+    "sharp is required to run this script. Install with `npm install sharp --save-dev`"
   );
   process.exit(1);
 }
@@ -20,7 +20,7 @@ function arg(name, def) {
 }
 
 const OUT_DIR = path.resolve(
-  arg("out", path.join(__dirname, "..", "public", "assets", "atlas")),
+  arg("out", path.join(__dirname, "..", "public", "assets", "atlas"))
 );
 if (!fs.existsSync(OUT_DIR)) fs.mkdirSync(OUT_DIR, { recursive: true });
 
@@ -40,8 +40,8 @@ const frameCounts = JSON.parse(
       shake: 6,
       scratch: 6,
       sleep: 6,
-    }),
-  ),
+    })
+  )
 );
 const condition = arg("condition", "clean");
 const body = arg("body", "normal");

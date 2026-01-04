@@ -6,7 +6,8 @@ import { selectSettings } from "../redux/settingsSlice.js";
 
 function getSystemTheme() {
   if (typeof window === "undefined") return "dark";
-  return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
+  return window.matchMedia &&
+    window.matchMedia("(prefers-color-scheme: dark)").matches
     ? "dark"
     : "light";
 }
@@ -19,7 +20,8 @@ function getEffectiveTheme(mode) {
 function getSystemReducedMotion() {
   if (typeof window === "undefined") return false;
   return (
-    window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    window.matchMedia &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
   );
 }
 
@@ -32,7 +34,8 @@ function getEffectiveReduceMotion(mode) {
 function isCoarsePointer() {
   if (typeof window === "undefined") return false;
   const hasTouchPoints =
-    typeof navigator !== "undefined" && Number(navigator.maxTouchPoints || 0) > 0;
+    typeof navigator !== "undefined" &&
+    Number(navigator.maxTouchPoints || 0) > 0;
   const coarse =
     window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
   return Boolean(hasTouchPoints || coarse);
@@ -66,7 +69,9 @@ export default function AppPreferencesEffects() {
 
       const hitTargetsMode = settings?.hitTargets || "auto";
       const effectiveHitTargets =
-        hitTargetsMode === "auto" && isCoarsePointer() ? "large" : hitTargetsMode;
+        hitTargetsMode === "auto" && isCoarsePointer()
+          ? "large"
+          : hitTargetsMode;
       root.dataset.hitTargets = effectiveHitTargets;
 
       const fontScale = Number(settings?.fontScale ?? 1);

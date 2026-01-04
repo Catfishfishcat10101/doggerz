@@ -18,7 +18,7 @@ export { auth, db };
 export async function ensureAnonSignIn() {
   if (!firebaseReady || !auth) {
     console.warn(
-      "[Doggerz] ensureAnonSignIn called but Firebase is not ready.",
+      "[Doggerz] ensureAnonSignIn called but Firebase is not ready."
     );
     return null;
   }

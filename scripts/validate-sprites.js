@@ -3,7 +3,14 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const ROOT = path.resolve(__dirname, "..");
-const MANIFEST = path.join(ROOT, "public", "sprites", "anim", "jrt", "manifest.json");
+const MANIFEST = path.join(
+  ROOT,
+  "public",
+  "sprites",
+  "anim",
+  "jrt",
+  "manifest.json"
+);
 
 const REQUIRED_STAGES = ["puppy", "adult", "senior"];
 const REQUIRED_ANIMS = ["idle", "walk", "run", "sleep"];
@@ -36,17 +43,29 @@ function main() {
   try {
     manifest = JSON.parse(fs.readFileSync(MANIFEST, "utf8"));
   } catch (e) {
-    fail(`Manifest invalid JSON: ${path.relative(ROOT, MANIFEST)} (${e.message})`);
+    fail(
+      `Manifest invalid JSON: ${path.relative(ROOT, MANIFEST)} (${e.message})`
+    );
     return;
   }
 
   if (!manifest?.frameSize || !manifest?.stages || !manifest?.anims) {
-    console.warn("[sprites] WARN: manifest missing expected keys (frameSize/stages/anims).");
+    console.warn(
+      "[sprites] WARN: manifest missing expected keys (frameSize/stages/anims)."
+    );
   }
 
   for (const stage of REQUIRED_STAGES) {
     for (const anim of REQUIRED_ANIMS) {
-      const p = path.join(ROOT, "public", "sprites", "anim", "jrt", stage, `${anim}.webp`);
+      const p = path.join(
+        ROOT,
+        "public",
+        "sprites",
+        "anim",
+        "jrt",
+        stage,
+        `${anim}.webp`
+      );
       if (!exists(p)) fail(`Missing strip: ${path.relative(ROOT, p)}`);
     }
   }

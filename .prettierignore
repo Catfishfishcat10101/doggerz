@@ -1,0 +1,8 @@
+node_modules
+dist
+build
+coverage
+.firebase
+.env
+.env.*
+*.lock

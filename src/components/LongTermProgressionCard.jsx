@@ -10,12 +10,18 @@ function ProgressBar({ value = 0, accent = "bg-emerald-400" }) {
   const v = clamp(value, 0, 100);
   return (
     <div className="h-2.5 rounded-full bg-white/10 overflow-hidden">
-      <div className={`h-full rounded-full ${accent}`} style={{ width: `${v}%` }} />
+      <div
+        className={`h-full rounded-full ${accent}`}
+        style={{ width: `${v}%` }}
+      />
     </div>
   );
 }
 
-export default function LongTermProgressionCard({ progression, now = Date.now() }) {
+export default function LongTermProgressionCard({
+  progression,
+  now = Date.now(),
+}) {
   const p = progression || {};
   const season = p.season || {};
   const journey = p.journey || {};
@@ -48,7 +54,9 @@ export default function LongTermProgressionCard({ progression, now = Date.now() 
   return (
     <div className="rounded-3xl border border-emerald-500/15 bg-black/35 backdrop-blur-md shadow-[0_0_60px_rgba(16,185,129,0.08)] overflow-hidden">
       <div className="px-5 sm:px-6 py-4 border-b border-emerald-500/10 bg-black/25">
-        <div className="text-xs uppercase tracking-[0.2em] text-zinc-400">Long-term</div>
+        <div className="text-xs uppercase tracking-[0.2em] text-zinc-400">
+          Long-term
+        </div>
         <div className="text-lg font-extrabold text-emerald-200">Progress</div>
         <div className="mt-1 text-xs text-zinc-400">
           Built to last weeks and months — not a single weekend binge.
@@ -60,7 +68,10 @@ export default function LongTermProgressionCard({ progression, now = Date.now() 
           <div className="flex items-baseline justify-between">
             <div className="text-sm font-extrabold text-zinc-100">Season</div>
             <div className="text-xs text-zinc-400">
-              Lvl <span className="text-emerald-200 font-semibold">{seasonLevel}</span>
+              Lvl{" "}
+              <span className="text-emerald-200 font-semibold">
+                {seasonLevel}
+              </span>
               {daysLeft !== null ? (
                 <span className="ml-2">• {daysLeft}d left</span>
               ) : null}
@@ -69,8 +80,12 @@ export default function LongTermProgressionCard({ progression, now = Date.now() 
           <div className="mt-2">
             <ProgressBar value={seasonPct} accent="bg-emerald-400" />
             <div className="mt-1 flex justify-between text-[0.72rem] text-zinc-400">
-              <span>In-level XP: {seasonInLevel}/{seasonStep}</span>
-              <span>Today: {seasonDaily}/{120}</span>
+              <span>
+                In-level XP: {seasonInLevel}/{seasonStep}
+              </span>
+              <span>
+                Today: {seasonDaily}/{120}
+              </span>
             </div>
           </div>
         </div>
@@ -79,22 +94,33 @@ export default function LongTermProgressionCard({ progression, now = Date.now() 
           <div className="flex items-baseline justify-between">
             <div className="text-sm font-extrabold text-zinc-100">Journey</div>
             <div className="text-xs text-zinc-400">
-              Lvl <span className="text-emerald-200 font-semibold">{journeyLevel}</span>
+              Lvl{" "}
+              <span className="text-emerald-200 font-semibold">
+                {journeyLevel}
+              </span>
             </div>
           </div>
           <div className="mt-2">
             <ProgressBar value={journeyPct} accent="bg-sky-300" />
             <div className="mt-1 flex justify-between text-[0.72rem] text-zinc-400">
-              <span>In-level XP: {journeyInLevel}/{journeyStep}</span>
-              <span>Today: {journeyDaily}/{40}</span>
+              <span>
+                In-level XP: {journeyInLevel}/{journeyStep}
+              </span>
+              <span>
+                Today: {journeyDaily}/{40}
+              </span>
             </div>
           </div>
         </div>
 
         <div>
           <div className="flex items-center justify-between">
-            <div className="text-sm font-extrabold text-zinc-100">Weekly challenges</div>
-            <div className="text-[0.72rem] text-zinc-400">Week of {weekly.weekKey || "—"}</div>
+            <div className="text-sm font-extrabold text-zinc-100">
+              Weekly challenges
+            </div>
+            <div className="text-[0.72rem] text-zinc-400">
+              Week of {weekly.weekKey || "—"}
+            </div>
           </div>
 
           {challenges.length ? (
@@ -108,21 +134,27 @@ export default function LongTermProgressionCard({ progression, now = Date.now() 
                 return (
                   <li
                     key={c.id}
-                    className={`rounded-2xl border px-3 py-2 ${done
-                      ? "border-emerald-500/25 bg-emerald-500/10"
-                      : "border-white/10 bg-black/25"
-                      }`}
+                    className={`rounded-2xl border px-3 py-2 ${
+                      done
+                        ? "border-emerald-500/25 bg-emerald-500/10"
+                        : "border-white/10 bg-black/25"
+                    }`}
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div className="text-xs text-zinc-200 font-semibold">
                         {c.label}
                       </div>
-                      <div className={`text-[0.72rem] ${done ? "text-emerald-200" : "text-zinc-400"}`}>
+                      <div
+                        className={`text-[0.72rem] ${done ? "text-emerald-200" : "text-zinc-400"}`}
+                      >
                         {done ? "Claimed" : `${progress}/${goal}`}
                       </div>
                     </div>
                     <div className="mt-2">
-                      <ProgressBar value={pct} accent={done ? "bg-emerald-400" : "bg-white/30"} />
+                      <ProgressBar
+                        value={pct}
+                        accent={done ? "bg-emerald-400" : "bg-white/30"}
+                      />
                     </div>
                   </li>
                 );
@@ -135,7 +167,8 @@ export default function LongTermProgressionCard({ progression, now = Date.now() 
           )}
 
           <div className="mt-3 text-[0.72rem] text-zinc-400">
-            Challenges auto-claim on completion. Rewards feed your season + journey progress.
+            Challenges auto-claim on completion. Rewards feed your season +
+            journey progress.
           </div>
         </div>
       </div>

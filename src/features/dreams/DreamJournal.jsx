@@ -15,8 +15,10 @@ function formatEntryDate(ts) {
 
 function kindBadge(kind) {
   const k = String(kind || "").toUpperCase();
-  if (k === "NIGHTMARE") return "border-fuchsia-400/25 bg-fuchsia-500/10 text-fuchsia-100";
-  if (k === "LUCID") return "border-emerald-400/25 bg-emerald-500/10 text-emerald-100";
+  if (k === "NIGHTMARE")
+    return "border-fuchsia-400/25 bg-fuchsia-500/10 text-fuchsia-100";
+  if (k === "LUCID")
+    return "border-emerald-400/25 bg-emerald-500/10 text-emerald-100";
   return "border-sky-400/25 bg-sky-500/10 text-sky-100";
 }
 
@@ -46,14 +48,17 @@ export default function DreamJournal({ dreams }) {
           className="w-full sm:w-72 rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-400/50"
         />
         <div className="text-xs text-zinc-400">
-          Showing <span className="font-semibold text-zinc-100">{entries.length}</span> dream{entries.length === 1 ? "" : "s"}
+          Showing{" "}
+          <span className="font-semibold text-zinc-100">{entries.length}</span>{" "}
+          dream{entries.length === 1 ? "" : "s"}
         </div>
       </div>
 
       <div className="mt-6 space-y-4">
         {entries.length === 0 ? (
           <div className="rounded-2xl border border-white/10 bg-black/30 px-4 py-5 text-sm text-zinc-300">
-            No dreams match that search yet. Let your pup rest to start collecting dreams.
+            No dreams match that search yet. Let your pup rest to start
+            collecting dreams.
           </div>
         ) : (
           entries.map((d) => (
@@ -63,10 +68,14 @@ export default function DreamJournal({ dreams }) {
             >
               <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-zinc-400">
                 <div className="flex items-center gap-2">
-                  <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${kindBadge(d.kind)}`}>
+                  <span
+                    className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${kindBadge(d.kind)}`}
+                  >
                     {String(d.kind || "DREAM")}
                   </span>
-                  <span className="uppercase tracking-[0.2em] text-zinc-500">Dream</span>
+                  <span className="uppercase tracking-[0.2em] text-zinc-500">
+                    Dream
+                  </span>
                 </div>
                 <span>{formatEntryDate(d.timestamp)}</span>
               </div>

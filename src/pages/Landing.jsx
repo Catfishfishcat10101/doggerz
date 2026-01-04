@@ -1,10 +1,10 @@
 // src/pages/Landing.jsx
 
-import { useSelector } from 'react-redux';
-import { Link } from 'react-router-dom';
+import { useSelector } from "react-redux";
+import { Link } from "react-router-dom";
 
-import PageShell from '@/components/PageShell.jsx';
-import { PATHS } from '@/routes.js';
+import PageShell from "@/components/PageShell.jsx";
+import { PATHS } from "@/routes.js";
 
 export default function Landing() {
   const dog = useSelector((s) => s?.dog?.current || s?.dog || {});
@@ -60,7 +60,6 @@ export default function Landing() {
                     {secondaryLabel}
                   </Link>
                 </div>
-
               </div>
             </div>
           </div>
@@ -71,43 +70,57 @@ export default function Landing() {
 
           <div className="mt-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="rounded-2xl border border-emerald-400/15 bg-white/5 p-6 backdrop-blur-md">
-              <h3 className="text-base font-bold text-emerald-200">Progression that matters</h3>
+              <h3 className="text-base font-bold text-emerald-200">
+                Progression that matters
+              </h3>
               <div
                 className="mt-3 dg-progress-window"
-                style={{ '--slide-h': '88px', '--slide-gap': '12px' }}
+                style={{ "--slide-h": "88px", "--slide-gap": "12px" }}
               >
                 <div className="dg-progress-track">
                   <div className="dg-progress-slide text-sm text-zinc-200/90">
-                    Potty training is a real gate. Clear it to unlock trick training and deeper routines.
+                    Potty training is a real gate. Clear it to unlock trick
+                    training and deeper routines.
                   </div>
                   <div className="dg-progress-slide text-sm text-zinc-200/90">
-                    Earn points to open new life stages and customize the pup's journey over time.
+                    Earn points to open new life stages and customize the pup's
+                    journey over time.
                   </div>
                   <div className="dg-progress-slide text-sm text-zinc-200/90">
-                    Streaks and care habits compound into calmer moods and richer bonds.
+                    Streaks and care habits compound into calmer moods and
+                    richer bonds.
                   </div>
                 </div>
               </div>
             </div>
 
             <div className="rounded-2xl border border-emerald-500/10 bg-black/25 p-6">
-              <h3 className="text-base font-bold text-emerald-200">Built for clean UI</h3>
+              <h3 className="text-base font-bold text-emerald-200">
+                Built for clean UI
+              </h3>
               <p className="mt-2 text-sm text-zinc-300">
-                Neon-black theme, readable spacing, and a layout that feels like a real product.
+                Neon-black theme, readable spacing, and a layout that feels like
+                a real product.
               </p>
             </div>
 
             <div className="rounded-2xl border border-emerald-500/10 bg-black/25 p-6">
-              <h3 className="text-base font-bold text-emerald-200">Ready to ship</h3>
+              <h3 className="text-base font-bold text-emerald-200">
+                Ready to ship
+              </h3>
               <p className="mt-2 text-sm text-zinc-300">
-                Vite + React + Tailwind + Firebase. Deploy to Vercel and iterate fast.
+                Vite + React + Tailwind + Firebase. Deploy to Vercel and iterate
+                fast.
               </p>
             </div>
 
             <div className="rounded-2xl border border-emerald-500/10 bg-black/25 p-6">
-              <h3 className="text-base font-bold text-emerald-200">Storybook moments</h3>
+              <h3 className="text-base font-bold text-emerald-200">
+                Storybook moments
+              </h3>
               <p className="mt-2 text-sm text-zinc-300">
-                Cozy yard moments, gentle hints, and a pace that feels like a lived-in companion.
+                Cozy yard moments, gentle hints, and a pace that feels like a
+                lived-in companion.
               </p>
             </div>
           </div>

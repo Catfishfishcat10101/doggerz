@@ -54,7 +54,7 @@ export default class ErrorBoundary extends React.Component {
           this.state.error &&
             (this.state.error.stack ||
               this.state.error.message ||
-              this.state.error),
+              this.state.error)
         )}
       </pre>
     ) : null;

@@ -35,7 +35,9 @@ const ACTIVITY_MAP = Object.freeze({
 
 function normalizeWeather(raw) {
   const w = String(raw || "unknown").toLowerCase();
-  return ["sun", "cloud", "rain", "snow", "unknown"].includes(w) ? w : "unknown";
+  return ["sun", "cloud", "rain", "snow", "unknown"].includes(w)
+    ? w
+    : "unknown";
 }
 
 function normalizeTimeOfDay(raw) {
@@ -91,9 +93,7 @@ function selectScene(ctx) {
 }
 
 function resolveTracks(trackIds) {
-  return (trackIds || [])
-    .map((id) => DYNAMIC_MUSIC_TRACKS[id])
-    .filter(Boolean);
+  return (trackIds || []).map((id) => DYNAMIC_MUSIC_TRACKS[id]).filter(Boolean);
 }
 
 function pickTrack(scene, currentTrackId) {
@@ -239,42 +239,37 @@ export default function DynamicMusicSystem({
     }
   }, []);
 
-  const fadeBetween = React.useCallback(
-    (fromEl, toEl, durationMs) => {
-      if (fadeRafRef.current) {
-        cancelAnimationFrame(fadeRafRef.current);
-        fadeRafRef.current = null;
+  const fadeBetween = React.useCallback((fromEl, toEl, durationMs) => {
+    if (fadeRafRef.current) {
+      cancelAnimationFrame(fadeRafRef.current);
+      fadeRafRef.current = null;
+    }
+
+    const target = clamp01(targetVolumeRef.current * sceneVolumeRef.current);
+
+    const start = performance.now();
+    const tick = (now) => {
+      const pct = Math.min(1, (now - start) / durationMs);
+      if (fromEl) {
+        fromEl.volume = clamp01(target * (1 - pct));
+      }
+      if (toEl) {
+        toEl.volume = clamp01(target * pct);
       }
 
-      const target = clamp01(
-        targetVolumeRef.current * sceneVolumeRef.current
-      );
+      if (pct < 1) {
+        fadeRafRef.current = requestAnimationFrame(tick);
+        return;
+      }
 
-      const start = performance.now();
-      const tick = (now) => {
-        const pct = Math.min(1, (now - start) / durationMs);
-        if (fromEl) {
-          fromEl.volume = clamp01(target * (1 - pct));
-        }
-        if (toEl) {
-          toEl.volume = clamp01(target * pct);
-        }
+      if (fromEl) {
+        safeStop(fromEl);
+      }
+      fadeRafRef.current = null;
+    };
 
-        if (pct < 1) {
-          fadeRafRef.current = requestAnimationFrame(tick);
-          return;
-        }
-
-        if (fromEl) {
-          safeStop(fromEl);
-        }
-        fadeRafRef.current = null;
-      };
-
-      fadeRafRef.current = requestAnimationFrame(tick);
-    },
-    []
-  );
+    fadeRafRef.current = requestAnimationFrame(tick);
+  }, []);
 
   const switchTrack = React.useCallback(
     async (track, scene) => {

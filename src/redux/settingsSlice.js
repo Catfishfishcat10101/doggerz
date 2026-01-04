@@ -2,51 +2,51 @@
 
 // src/redux/settingsSlice.js
 
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice } from "@reduxjs/toolkit";
 
-const SETTINGS_STORAGE_KEY = 'doggerz:settingsState';
+const SETTINGS_STORAGE_KEY = "doggerz:settingsState";
 
 const loadFromStorage = () => {
-  if (typeof window === 'undefined') return null;
+  if (typeof window === "undefined") return null;
   try {
     const raw = window.localStorage.getItem(SETTINGS_STORAGE_KEY);
     if (!raw) return null;
     return JSON.parse(raw);
   } catch (e) {
-    console.warn('[settingsSlice] Failed to parse settings from storage:', e);
+    console.warn("[settingsSlice] Failed to parse settings from storage:", e);
     return null;
   }
 };
 
 const saveToStorage = (state) => {
-  if (typeof window === 'undefined') return;
+  if (typeof window === "undefined") return;
   try {
     window.localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(state));
   } catch (e) {
-    console.warn('[settingsSlice] Failed to save settings to storage:', e);
+    console.warn("[settingsSlice] Failed to save settings to storage:", e);
   }
 };
 
 const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
 
-function normalizeTrainingInputMode(value, fallback = 'both') {
-  const v = String(value || '').toLowerCase();
-  if (v === 'buttons' || v === 'voice' || v === 'both') return v;
+function normalizeTrainingInputMode(value, fallback = "both") {
+  const v = String(value || "").toLowerCase();
+  if (v === "buttons" || v === "voice" || v === "both") return v;
   return fallback;
 }
 
 function normalizeLoadedSettings(raw) {
-  if (!raw || typeof raw !== 'object') return null;
+  if (!raw || typeof raw !== "object") return null;
 
   const next = { ...raw };
 
   // New setting with backward-compatible default derived from legacy toggle.
   if (!next.trainingInputMode) {
-    next.trainingInputMode = next.voiceCommandsEnabled ? 'both' : 'buttons';
+    next.trainingInputMode = next.voiceCommandsEnabled ? "both" : "buttons";
   }
   next.trainingInputMode = normalizeTrainingInputMode(next.trainingInputMode);
   next.voiceCommandsEnabled =
-    next.trainingInputMode === 'voice' || next.trainingInputMode === 'both';
+    next.trainingInputMode === "voice" || next.trainingInputMode === "both";
 
   // Game UI
   next.showGameMicroHud = next.showGameMicroHud !== false;
@@ -75,22 +75,22 @@ function normalizeLoadedSettings(raw) {
   next.audio.sleepVolume = clamp(Number(next.audio.sleepVolume ?? 0.25), 0, 1);
 
   // Performance
-  const perfMode = String(next.perfMode || 'auto').toLowerCase();
-  next.perfMode = ['auto', 'on', 'off'].includes(perfMode) ? perfMode : 'auto';
+  const perfMode = String(next.perfMode || "auto").toLowerCase();
+  next.perfMode = ["auto", "on", "off"].includes(perfMode) ? perfMode : "auto";
 
   return next;
 }
 
 const initialState = normalizeLoadedSettings(loadFromStorage()) || {
   // Theme: system | dark | light
-  theme: 'system',
+  theme: "system",
 
   // Accessibility
-  reduceMotion: 'system', // system | on | off
+  reduceMotion: "system", // system | on | off
   highContrast: false,
   reduceTransparency: false,
-  focusRings: 'auto', // auto | always
-  hitTargets: 'auto', // auto | large
+  focusRings: "auto", // auto | always
+  hitTargets: "auto", // auto | large
   fontScale: 1, // 0.9–1.15
 
   // UI preferences
@@ -113,11 +113,11 @@ const initialState = normalizeLoadedSettings(loadFromStorage()) || {
   // - auto: reduce effects on low-power devices/hints
   // - on: always reduce effects
   // - off: never auto-reduce (batterySaver can still be used manually)
-  perfMode: 'auto',
+  perfMode: "auto",
 
   // Input / features
   voiceCommandsEnabled: false,
-  trainingInputMode: 'both',
+  trainingInputMode: "both",
 
   // Audio (not all screens use this yet, but we persist it for future wiring)
   audio: {
@@ -134,25 +134,25 @@ const initialState = normalizeLoadedSettings(loadFromStorage()) || {
 };
 
 const settingsSlice = createSlice({
-  name: 'settings',
+  name: "settings",
   initialState,
   reducers: {
     setPerfMode(state, action) {
-      const mode = String(action.payload || '').toLowerCase();
-      if (!['auto', 'on', 'off'].includes(mode)) return;
+      const mode = String(action.payload || "").toLowerCase();
+      if (!["auto", "on", "off"].includes(mode)) return;
       state.perfMode = mode;
       saveToStorage(state);
     },
     setTheme(state, action) {
-      const mode = String(action.payload || '').toLowerCase();
-      if (!['system', 'dark', 'light'].includes(mode)) return;
+      const mode = String(action.payload || "").toLowerCase();
+      if (!["system", "dark", "light"].includes(mode)) return;
       state.theme = mode;
       saveToStorage(state);
     },
 
     setReduceMotion(state, action) {
-      const mode = String(action.payload || '').toLowerCase();
-      if (!['system', 'on', 'off'].includes(mode)) return;
+      const mode = String(action.payload || "").toLowerCase();
+      if (!["system", "on", "off"].includes(mode)) return;
       state.reduceMotion = mode;
       saveToStorage(state);
     },
@@ -168,15 +168,15 @@ const settingsSlice = createSlice({
     },
 
     setFocusRings(state, action) {
-      const mode = String(action.payload || '').toLowerCase();
-      if (!['auto', 'always'].includes(mode)) return;
+      const mode = String(action.payload || "").toLowerCase();
+      if (!["auto", "always"].includes(mode)) return;
       state.focusRings = mode;
       saveToStorage(state);
     },
 
     setHitTargets(state, action) {
-      const mode = String(action.payload || '').toLowerCase();
-      if (!['auto', 'large'].includes(mode)) return;
+      const mode = String(action.payload || "").toLowerCase();
+      if (!["auto", "large"].includes(mode)) return;
       state.hitTargets = mode;
       saveToStorage(state);
     },
@@ -214,13 +214,13 @@ const settingsSlice = createSlice({
       // Keep new setting in sync.
       const currentMode = normalizeTrainingInputMode(
         state.trainingInputMode,
-        enabled ? 'both' : 'buttons'
+        enabled ? "both" : "buttons"
       );
-      if (!enabled && (currentMode === 'voice' || currentMode === 'both')) {
-        state.trainingInputMode = 'buttons';
+      if (!enabled && (currentMode === "voice" || currentMode === "both")) {
+        state.trainingInputMode = "buttons";
       }
-      if (enabled && currentMode === 'buttons') {
-        state.trainingInputMode = 'both';
+      if (enabled && currentMode === "buttons") {
+        state.trainingInputMode = "both";
       }
       saveToStorage(state);
     },
@@ -231,7 +231,7 @@ const settingsSlice = createSlice({
         state.trainingInputMode
       );
       state.trainingInputMode = mode;
-      state.voiceCommandsEnabled = mode === 'voice' || mode === 'both';
+      state.voiceCommandsEnabled = mode === "voice" || mode === "both";
       saveToStorage(state);
     },
 
@@ -296,7 +296,7 @@ const settingsSlice = createSlice({
     },
 
     hydrateSettings(state, action) {
-      if (!action.payload || typeof action.payload !== 'object') return;
+      if (!action.payload || typeof action.payload !== "object") return;
       // Shallow merge + nested audio merge.
       const merged = { ...state, ...action.payload };
       merged.audio = { ...state.audio, ...(action.payload.audio || {}) };
@@ -310,7 +310,7 @@ const settingsSlice = createSlice({
       state.hitTargets = next.hitTargets;
       state.fontScale = clamp(Number(next.fontScale ?? 1), 0.9, 1.15);
 
-      state.perfMode = next.perfMode || state.perfMode || 'auto';
+      state.perfMode = next.perfMode || state.perfMode || "auto";
       state.showHints = Boolean(next.showHints);
       state.dailyRemindersEnabled = next.dailyRemindersEnabled !== false;
 
@@ -320,7 +320,7 @@ const settingsSlice = createSlice({
       state.batterySaver = Boolean(next.batterySaver);
       state.trainingInputMode = normalizeTrainingInputMode(
         next.trainingInputMode,
-        next.voiceCommandsEnabled ? 'both' : 'buttons'
+        next.voiceCommandsEnabled ? "both" : "buttons"
       );
       state.voiceCommandsEnabled = Boolean(next.voiceCommandsEnabled);
       state.audio.enabled = Boolean(next.audio?.enabled);
@@ -348,12 +348,12 @@ const settingsSlice = createSlice({
 
     resetSettings() {
       const fresh = {
-        theme: 'system',
-        reduceMotion: 'system',
+        theme: "system",
+        reduceMotion: "system",
         highContrast: false,
         reduceTransparency: false,
-        focusRings: 'auto',
-        hitTargets: 'auto',
+        focusRings: "auto",
+        hitTargets: "auto",
         fontScale: 1,
         showHints: true,
         dailyRemindersEnabled: true,
@@ -361,9 +361,9 @@ const settingsSlice = createSlice({
         showCritters: true,
         roamIntensity: 1,
         batterySaver: false,
-        perfMode: 'auto',
+        perfMode: "auto",
         voiceCommandsEnabled: true,
-        trainingInputMode: 'both',
+        trainingInputMode: "both",
         audio: {
           enabled: true,
           masterVolume: 0.8,
@@ -375,7 +375,7 @@ const settingsSlice = createSlice({
         confirmDangerousActions: true,
       };
 
-      if (typeof window !== 'undefined') {
+      if (typeof window !== "undefined") {
         try {
           window.localStorage.setItem(
             SETTINGS_STORAGE_KEY,
@@ -421,7 +421,7 @@ export const {
 } = settingsSlice.actions;
 
 export const selectSettings = (state) => state.settings;
-export const selectThemeMode = (state) => state.settings?.theme || 'system';
+export const selectThemeMode = (state) => state.settings?.theme || "system";
 
 export { SETTINGS_STORAGE_KEY };
 export default settingsSlice.reducer;

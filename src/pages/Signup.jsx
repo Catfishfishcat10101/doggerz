@@ -22,7 +22,7 @@ export default function Signup() {
 
     if (!firebaseReady || !auth) {
       setError(
-        "Cloud signup is disabled because Firebase isn't configured. You can still play in offline mode.",
+        "Cloud signup is disabled because Firebase isn't configured. You can still play in offline mode."
       );
       return;
     }
@@ -35,7 +35,11 @@ export default function Signup() {
 
     try {
       setSubmitting(true);
-      const cred = await createUserWithEmailAndPassword(auth, trimmedEmail, password);
+      const cred = await createUserWithEmailAndPassword(
+        auth,
+        trimmedEmail,
+        password
+      );
 
       const name = String(displayName || "").trim();
       if (name) {
@@ -78,8 +82,9 @@ export default function Signup() {
             <div className="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-200">
               <p className="font-medium">Cloud signup is currently disabled.</p>
               <p className="mt-1 text-amber-200/80">
-                To enable it, set your Firebase web config in <code>.env.local</code> (see{' '}
-                <code>.env.example</code>). Until then, you can still play in local-only mode.
+                To enable it, set your Firebase web config in{" "}
+                <code>.env.local</code> (see <code>.env.example</code>). Until
+                then, you can still play in local-only mode.
               </p>
               <button
                 type="button"
@@ -114,7 +119,10 @@ export default function Signup() {
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="email" className="block text-sm font-medium text-zinc-800 dark:text-zinc-200">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-zinc-800 dark:text-zinc-200"
+              >
                 Email
               </label>
               <input
@@ -164,8 +172,11 @@ export default function Signup() {
             {error ? <p className="text-xs text-red-400">{error}</p> : null}
 
             <p className="text-xs text-zinc-600 dark:text-zinc-400 text-center">
-              Already have an account?{' '}
-              <Link to="/login" className="text-emerald-400 hover:text-emerald-300">
+              Already have an account?{" "}
+              <Link
+                to="/login"
+                className="text-emerald-400 hover:text-emerald-300"
+              >
                 Log in
               </Link>
               .

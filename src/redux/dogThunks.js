@@ -73,7 +73,7 @@ const parseCloudDog = (raw) => {
 };
 
 export const loadDogFromCloud = createAsyncThunk(
-  'dog/loadDogFromCloud',
+  "dog/loadDogFromCloud",
   async (_, { dispatch, getState, rejectWithValue }) => {
     try {
       try {
@@ -84,17 +84,17 @@ export const loadDogFromCloud = createAsyncThunk(
 
       if (!firebaseReady || !db || !auth?.currentUser) {
         return rejectWithValue(
-          'Cloud sync disabled: Firebase not configured or user not logged in'
+          "Cloud sync disabled: Firebase not configured or user not logged in"
         );
       }
 
       const userId = auth.currentUser.uid;
-      const dogRef = doc(db, 'users', userId, 'dog', 'state');
+      const dogRef = doc(db, "users", userId, "dog", "state");
       const docSnap = await getDoc(dogRef);
 
       if (!docSnap.exists()) {
-        console.log('[Doggerz] No cloud save found for this user');
-        return { data: null, hydrated: false, reason: 'no_cloud_save' };
+        console.log("[Doggerz] No cloud save found for this user");
+        return { data: null, hydrated: false, reason: "no_cloud_save" };
       }
 
       const cloudData = parseCloudDog(docSnap.data());
@@ -127,10 +127,10 @@ export const loadDogFromCloud = createAsyncThunk(
         if (shouldHydrateFromCloud) {
           dispatch(hydrateDog(cloudData));
           console.log(
-            '[Doggerz] Dog loaded from cloud and hydrated successfully'
+            "[Doggerz] Dog loaded from cloud and hydrated successfully"
           );
         } else {
-          console.log('[Doggerz] Cloud save ignored (local appears newer)');
+          console.log("[Doggerz] Cloud save ignored (local appears newer)");
         }
 
         return {
@@ -141,10 +141,10 @@ export const loadDogFromCloud = createAsyncThunk(
         };
       }
 
-      return { data: null, hydrated: false, reason: 'empty_cloud_payload' };
+      return { data: null, hydrated: false, reason: "empty_cloud_payload" };
     } catch (err) {
-      console.error('[Doggerz] Failed to load dog from cloud', err);
-      return rejectWithValue(err.message || 'loadDogFromCloud failed');
+      console.error("[Doggerz] Failed to load dog from cloud", err);
+      return rejectWithValue(err.message || "loadDogFromCloud failed");
     }
   }
 );
@@ -160,7 +160,7 @@ export const saveDogToCloud = createAsyncThunk(
       }
       if (!firebaseReady || !db || !auth?.currentUser) {
         return rejectWithValue(
-          "Cloud sync disabled: Firebase not configured or user not logged in",
+          "Cloud sync disabled: Firebase not configured or user not logged in"
         );
       }
 
@@ -209,5 +209,5 @@ export const saveDogToCloud = createAsyncThunk(
       console.error("[Doggerz] Failed to save dog to cloud", err);
       return rejectWithValue(err.message || "saveDogToCloud failed");
     }
-  },
+  }
 );

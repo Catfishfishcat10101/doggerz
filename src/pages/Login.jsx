@@ -2,7 +2,10 @@
 import { useState } from "react";
 import { useSelector } from "react-redux";
 import { Navigate, useNavigate, Link, useLocation } from "react-router-dom";
-import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
+import {
+  signInWithEmailAndPassword,
+  sendPasswordResetEmail,
+} from "firebase/auth";
 
 import { auth, firebaseReady } from "@/firebase.js";
 import { selectIsLoggedIn } from "@/redux/userSlice.js";
@@ -37,7 +40,7 @@ export default function LoginPage() {
 
     if (!firebaseReady || !auth) {
       setError(
-        "Firebase is not configured. Add your VITE_FIREBASE_* keys to .env.local to enable login, or continue in offline mode.",
+        "Firebase is not configured. Add your VITE_FIREBASE_* keys to .env.local to enable login, or continue in offline mode."
       );
       return;
     }
@@ -63,7 +66,8 @@ export default function LoginPage() {
         err?.code === "auth/invalid-credential" ||
         err?.code === "auth/invalid-login-credentials"
       ) {
-        message = "Incorrect email or password. If you’re not sure, use ‘Forgot password?’";
+        message =
+          "Incorrect email or password. If you’re not sure, use ‘Forgot password?’";
       } else if (err.code === "auth/too-many-requests") {
         message =
           "Too many attempts. Take a breath, wait a bit, and try again.";
@@ -81,7 +85,7 @@ export default function LoginPage() {
 
     if (!firebaseReady || !auth) {
       setError(
-        "Password reset requires cloud login. Add your Firebase config to .env.local, or continue in offline mode.",
+        "Password reset requires cloud login. Add your Firebase config to .env.local, or continue in offline mode."
       );
       return;
     }
@@ -96,7 +100,7 @@ export default function LoginPage() {
       setResetSending(true);
       await sendPasswordResetEmail(auth, cleanEmail);
       setNotice(
-        "If an account exists for that email, a password reset link has been sent.",
+        "If an account exists for that email, a password reset link has been sent."
       );
     } catch (err) {
       console.error("[Login] password reset error:", err);
@@ -127,17 +131,20 @@ export default function LoginPage() {
         <div className="w-full max-w-md bg-white/80 border border-zinc-200 dark:bg-zinc-900/80 dark:border-zinc-800 rounded-2xl p-6 shadow-xl">
           <h2 className="text-xl font-semibold mb-2">Log in</h2>
           <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-4">
-            Log in to keep your pup synced, protect your progress, and eventually
-            unlock cross-device play.
+            Log in to keep your pup synced, protect your progress, and
+            eventually unlock cross-device play.
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {!firebaseReady && (
               <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-200">
-                <p className="font-medium">Cloud login is currently disabled.</p>
+                <p className="font-medium">
+                  Cloud login is currently disabled.
+                </p>
                 <p className="mt-1 text-amber-200/80">
-                  To enable it, set your Firebase web config in <code>.env.local</code> (see <code>.env.example</code>).
-                  Until then, you can still play in local-only mode.
+                  To enable it, set your Firebase web config in{" "}
+                  <code>.env.local</code> (see <code>.env.example</code>). Until
+                  then, you can still play in local-only mode.
                 </p>
                 <button
                   type="button"
@@ -149,40 +156,40 @@ export default function LoginPage() {
               </div>
             )}
 
-          <div>
-            <label
-              htmlFor="login-email"
+            <div>
+              <label
+                htmlFor="login-email"
                 className="block text-sm font-medium text-zinc-800 dark:text-zinc-200 mb-1"
-            >
-              Email
-            </label>
-            <input
-              id="login-email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              >
+                Email
+              </label>
+              <input
+                id="login-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-3 py-2 rounded-lg bg-white border border-zinc-300 text-zinc-900 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm dark:bg-zinc-950 dark:border-zinc-700 dark:text-white dark:placeholder:text-zinc-500"
-              autoComplete="email"
-              placeholder="you@example.com"
-            />
-          </div>
+                autoComplete="email"
+                placeholder="you@example.com"
+              />
+            </div>
 
-          <div>
-            <label
-              htmlFor="login-password"
+            <div>
+              <label
+                htmlFor="login-password"
                 className="block text-sm font-medium text-zinc-800 dark:text-zinc-200 mb-1"
-            >
-              Password
-            </label>
-            <input
-              id="login-password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              >
+                Password
+              </label>
+              <input
+                id="login-password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-3 py-2 rounded-lg bg-white border border-zinc-300 text-zinc-900 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm dark:bg-zinc-950 dark:border-zinc-700 dark:text-white dark:placeholder:text-zinc-500"
-              autoComplete="current-password"
-              placeholder="••••••••"
-            />
+                autoComplete="current-password"
+                placeholder="••••••••"
+              />
               <div className="mt-2 flex items-center justify-end">
                 <button
                   type="button"
@@ -193,27 +200,21 @@ export default function LoginPage() {
                   {resetSending ? "Sending reset link…" : "Forgot password?"}
                 </button>
               </div>
-          </div>
+            </div>
 
             {notice && (
-              <p className="text-xs text-emerald-300 mt-1">
-                {notice}
-              </p>
+              <p className="text-xs text-emerald-300 mt-1">{notice}</p>
             )}
 
-          {error && (
-            <p className="text-xs text-red-400 mt-1">
-              {error}
-            </p>
-          )}
+            {error && <p className="text-xs text-red-400 mt-1">{error}</p>}
 
-          <button
-            type="submit"
-            disabled={submitting || !firebaseReady}
+            <button
+              type="submit"
+              disabled={submitting || !firebaseReady}
               className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-sm font-semibold shadow-lg"
-          >
-            {submitting ? "Logging in…" : "Log in"}
-          </button>
+            >
+              {submitting ? "Logging in…" : "Log in"}
+            </button>
 
             {/* Always allow local-only play, even if Firebase is configured but auth fails. */}
             <button
@@ -223,12 +224,10 @@ export default function LoginPage() {
             >
               Continue offline
             </button>
-        </form>
+          </form>
 
           <div className="mt-4 text-xs text-zinc-600 dark:text-zinc-400 flex items-center justify-between">
-            <span>
-              Don&apos;t have an account?
-            </span>
+            <span>Don&apos;t have an account?</span>
             <Link
               to="/signup"
               className="text-emerald-400 hover:text-emerald-300 font-medium"

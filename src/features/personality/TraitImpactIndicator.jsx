@@ -137,7 +137,7 @@ function getImpactCopy(traitKey, value) {
 export default function TraitImpactIndicator({ traitKey, value }) {
   const impacts = React.useMemo(
     () => getImpactCopy(String(traitKey || ""), Number(value || 0)),
-    [traitKey, value],
+    [traitKey, value]
   );
 
   const magnitude = clamp01(Math.abs(Number(value || 0)) / 100);
@@ -151,7 +151,10 @@ export default function TraitImpactIndicator({ traitKey, value }) {
         <div className="text-[10px] text-zinc-500">Intensity</div>
       </div>
 
-      <div className="mt-1 h-1.5 w-full rounded-full bg-white/10 overflow-hidden" aria-hidden>
+      <div
+        className="mt-1 h-1.5 w-full rounded-full bg-white/10 overflow-hidden"
+        aria-hidden
+      >
         <div
           className="h-full rounded-full bg-emerald-400/70"
           style={{ width: `${Math.round(magnitude * 100)}%` }}

@@ -14,13 +14,13 @@ function toAbsoluteUrl(pathname) {
 }
 
 function makeMailto(email, subject) {
-  const s = typeof subject === 'string' ? subject.trim() : '';
-  const query = s ? `?subject=${encodeURIComponent(s)}` : '';
+  const s = typeof subject === "string" ? subject.trim() : "";
+  const query = s ? `?subject=${encodeURIComponent(s)}` : "";
   return `mailto:${email}${query}`;
 }
 
 export const SOCIAL_LINKS = Object.freeze({
-  github: 'https://github.com/Catfishfishcat10101/doggerz',
+  github: "https://github.com/Catfishfishcat10101/doggerz",
   twitter: null,
   discord: null,
   instagram: null,
@@ -34,15 +34,15 @@ export const APP_LINKS = Object.freeze({
   // Public, self-hosted privacy policy URL.
   // Using a static HTML page is Play Console-friendly (renders without JS).
   // Example: "https://yourdomain.com/privacy-policy.html"
-  privacyPolicy: '/privacy-policy.html',
+  privacyPolicy: "/privacy-policy.html",
 
   // In-app support / contact page.
-  supportContact: '/contact',
+  supportContact: "/contact",
 
   // Optional, but strongly recommended for Play Console consistency.
   // If you have no website, keep mailto.
   supportEmail:
-    'mailto:catfishfishcat10101@gmail.com?subject=Doggerz%20Support',
+    "mailto:catfishfishcat10101@gmail.com?subject=Doggerz%20Support",
 });
 
 // Convenience named exports (so call-sites can import a single constant)
@@ -54,19 +54,19 @@ export const PRIVACY_POLICY_ABSOLUTE_URL = toAbsoluteUrl(PRIVACY_POLICY_URL);
 export const SUPPORT_CONTACT_ABSOLUTE_URL = toAbsoluteUrl(SUPPORT_CONTACT_URL);
 
 // Support contact methods
-export const SUPPORT_EMAIL = 'catfishfishcat10101@gmail.com';
-export const SUPPORT_EMAIL_URL = makeMailto(SUPPORT_EMAIL, 'Doggerz Support');
+export const SUPPORT_EMAIL = "catfishfishcat10101@gmail.com";
+export const SUPPORT_EMAIL_URL = makeMailto(SUPPORT_EMAIL, "Doggerz Support");
 export const SUPPORT_EMAIL_FEEDBACK_URL = makeMailto(
   SUPPORT_EMAIL,
-  'Doggerz Feedback'
+  "Doggerz Feedback"
 );
 export const SUPPORT_EMAIL_PRIVACY_URL = makeMailto(
   SUPPORT_EMAIL,
-  'Doggerz Privacy'
+  "Doggerz Privacy"
 );
 export const SUPPORT_EMAIL_ACCOUNT_DELETION_URL = makeMailto(
   SUPPORT_EMAIL,
-  'Doggerz Account Deletion'
+  "Doggerz Account Deletion"
 );
 
 export { toAbsoluteUrl, makeMailto };

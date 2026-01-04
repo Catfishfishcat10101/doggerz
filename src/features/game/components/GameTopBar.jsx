@@ -51,7 +51,7 @@ export default function GameTopBar() {
       window.dispatchEvent(
         new CustomEvent("doggerz:toast", {
           detail: { message: String(message || "") },
-        }),
+        })
       );
     } catch {
       // ignore
@@ -100,13 +100,14 @@ export default function GameTopBar() {
               pushToast(
                 next === "realistic"
                   ? "Realistic mode enabled"
-                  : "Sprite mode enabled",
+                  : "Sprite mode enabled"
               );
             }}
-            className={`px-3 py-2 rounded-lg text-sm font-semibold border transition ${dogRenderMode === "realistic"
-              ? "bg-emerald-500 text-black border-emerald-400"
-              : "bg-black/20 text-emerald-200 border-emerald-500/25 hover:border-emerald-400/40 hover:bg-emerald-500/10"
-              }`}
+            className={`px-3 py-2 rounded-lg text-sm font-semibold border transition ${
+              dogRenderMode === "realistic"
+                ? "bg-emerald-500 text-black border-emerald-400"
+                : "bg-black/20 text-emerald-200 border-emerald-500/25 hover:border-emerald-400/40 hover:bg-emerald-500/10"
+            }`}
             title="Toggle dog render mode"
           >
             {dogRenderMode === "realistic" ? "Realistic" : "Sprite"}

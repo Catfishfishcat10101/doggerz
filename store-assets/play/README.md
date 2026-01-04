@@ -1,6 +1,6 @@
 # Play Store assets
 
-This folder is for *store listing* assets (not shipped inside the app bundle).
+This folder is for _store listing_ assets (not shipped inside the app bundle).
 
 ## Screenshots (Google Play)
 
@@ -19,7 +19,6 @@ Google Play requires **4–8 screenshots** that are:
    Supported input types: `png`, `jpg`, `jpeg`, `webp`.
 
 2. Generate Play-ready screenshots:
-
    - Landscape phone preset (default): 1920×1080
    - Portrait phone preset: 1080×1920
 

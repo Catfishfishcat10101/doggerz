@@ -12,14 +12,14 @@ function deriveIsNightFromHour(h) {
 }
 
 function isUsableOpenWeatherKey(key) {
-  const k = String(key || '').trim();
+  const k = String(key || "").trim();
   if (!k) return false;
   const upper = k.toUpperCase();
   // Common placeholders / examples that should behave like "no key"
-  if (upper === 'CHANGE_ME' || upper === 'CHANGEME') return false;
-  if (upper === 'YOUR_API_KEY' || upper === 'YOUR_API_KEY_HERE') return false;
-  if (upper === 'REPLACE_ME' || upper === 'REPLACEME') return false;
-  if (upper.startsWith('EXAMPLE')) return false;
+  if (upper === "CHANGE_ME" || upper === "CHANGEME") return false;
+  if (upper === "YOUR_API_KEY" || upper === "YOUR_API_KEY_HERE") return false;
+  if (upper === "REPLACE_ME" || upper === "REPLACEME") return false;
+  if (upper.startsWith("EXAMPLE")) return false;
   return true;
 }
 
@@ -34,13 +34,10 @@ function isUsableOpenWeatherKey(key) {
  * @param {DayNightOptions} [options]
  */
 export function useDayNightBackground(options = {}) {
-  const {
-    zip,
-    pollIntervalMs = 5 * 60 * 1000,
-  } = options;
+  const { zip, pollIntervalMs = 5 * 60 * 1000 } = options;
 
   const [isNight, setIsNight] = useState(() =>
-    deriveIsNightFromHour(new Date().getHours()),
+    deriveIsNightFromHour(new Date().getHours())
   );
   const [timeOfDayBucket, setTimeOfDayBucket] = useState(() => getTimeOfDay());
   const [lastUpdatedAt, setLastUpdatedAt] = useState(Date.now());
@@ -235,7 +232,10 @@ export function useDayNightBackground(options = {}) {
     if (!isNight && available.day) return available.day;
     if (isNight && available.night) return available.night;
     // Prefer night assets for dusk/evening if available.
-    if ((timeOfDayBucket === "dusk" || timeOfDayBucket === "evening") && available.night) {
+    if (
+      (timeOfDayBucket === "dusk" || timeOfDayBucket === "evening") &&
+      available.night
+    ) {
       return available.night;
     }
     return available.day || available.night || null;

@@ -17,10 +17,12 @@
   --text-main: #e5e7eb;
 
   /* Gradients */
-  --grad-shell: radial-gradient(circle at top,
-        #1e293b 0,
-        #020617 55%,
-    #000 100%);
+  --grad-shell: radial-gradient(
+    circle at top,
+    #1e293b 0,
+    #020617 55%,
+    #000 100%
+  );
 
   /* Focus ring (used by focus-visible styles below) */
   --focus-ring: #22c55e;
@@ -30,10 +32,12 @@
 html[data-theme="light"] {
   --bg: #e5e7eb;
   --text-main: #020617;
-  --grad-shell: radial-gradient(circle at top,
-        #ffffff 0,
-        #f3f4f6 55%,
-    #e5e7eb 100%);
+  --grad-shell: radial-gradient(
+    circle at top,
+    #ffffff 0,
+    #f3f4f6 55%,
+    #e5e7eb 100%
+  );
 }
 
 /* -------------------------------------------------------
@@ -73,20 +77,20 @@ body {
     BlinkMacSystemFont,
     "Segoe UI",
     "Roboto",
-      "Oxygen",
-      "Ubuntu",
-      "Cantarell",
-      "Fira Sans",
-      "Droid Sans",
-      "Helvetica Neue",
+    "Oxygen",
+    "Ubuntu",
+    "Cantarell",
+    "Fira Sans",
+    "Droid Sans",
+    "Helvetica Neue",
     sans-serif;
   line-height: 1.5;
-    text-rendering: optimizeLegibility;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    background-color: var(--bg, #020617);
-    color: var(--text-main, #f9fafb);
-    -webkit-tap-highlight-color: transparent;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--bg, #020617);
+  color: var(--text-main, #f9fafb);
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Let the main app stretch full height (helps flex layouts and pages). */
@@ -144,7 +148,6 @@ html[data-hit-targets="large"] select {
 
 /* Respect reduced-motion preferences */
 @media (prefers-reduced-motion: reduce) {
-
   *,
   *::before,
   *::after {

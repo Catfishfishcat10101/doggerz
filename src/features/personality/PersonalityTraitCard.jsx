@@ -14,7 +14,14 @@ function leanLabel(value, leftLabel, rightLabel) {
   const v = clamp(value, -100, 100);
   const abs = Math.abs(v);
 
-  const strength = abs >= 80 ? "Strongly" : abs >= 55 ? "Clearly" : abs >= 30 ? "Slightly" : "Balanced";
+  const strength =
+    abs >= 80
+      ? "Strongly"
+      : abs >= 55
+        ? "Clearly"
+        : abs >= 30
+          ? "Slightly"
+          : "Balanced";
   if (strength === "Balanced") return `Balanced`;
   return v >= 0 ? `${strength} ${rightLabel}` : `${strength} ${leftLabel}`;
 }
@@ -29,7 +36,7 @@ export default function PersonalityTraitCard({
   const pct = React.useMemo(() => pctFromSigned(Number(value || 0)), [value]);
   const lean = React.useMemo(
     () => leanLabel(Number(value || 0), leftLabel, rightLabel),
-    [leftLabel, rightLabel, value],
+    [leftLabel, rightLabel, value]
   );
 
   return (
@@ -59,7 +66,10 @@ export default function PersonalityTraitCard({
           <span>{leftLabel}</span>
           <span>{rightLabel}</span>
         </div>
-        <div className="mt-1 h-2.5 w-full rounded-full bg-white/10 overflow-hidden" aria-hidden>
+        <div
+          className="mt-1 h-2.5 w-full rounded-full bg-white/10 overflow-hidden"
+          aria-hidden
+        >
           <div
             className="h-full bg-gradient-to-r from-sky-400/50 via-white/10 to-emerald-400/60"
             style={{ width: `${pct}%` }}

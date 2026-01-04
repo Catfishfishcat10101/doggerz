@@ -1,6 +1,5 @@
 // src/components/CareActionsPanel.jsx
 
-
 export default function CareActionsPanel({
   disabled = false,
   onFeed,

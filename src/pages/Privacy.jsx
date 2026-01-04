@@ -19,7 +19,7 @@ export default function PrivacyPage() {
             </h1>
             <p className="text-xs text-zinc-500">Last updated: 2026-01-02</p>
             <p className="text-xs text-zinc-500 mt-2">
-              Prefer a plain, shareable version?{' '}
+              Prefer a plain, shareable version?{" "}
               <a
                 className="text-emerald-300 underline-offset-2 hover:text-emerald-200 hover:underline"
                 href={PRIVACY_POLICY_URL}
@@ -30,7 +30,9 @@ export default function PrivacyPage() {
             </p>
           </header>
           <section className="space-y-2">
-            <h2 className="font-semibold text-zinc-100 text-base">1. The short version</h2>
+            <h2 className="font-semibold text-zinc-100 text-base">
+              1. The short version
+            </h2>
             <p>
               Doggerz is designed to work in <b>offline / local-only mode</b>.
               By default, your dog and settings live in your browser storage on
@@ -42,13 +44,23 @@ export default function PrivacyPage() {
               save.
             </p>
             <ul className="list-disc list-inside space-y-1">
-              <li><b>No third-party ads</b> are served by Doggerz.</li>
-              <li><b>No selling data</b>: this project is not built to sell personal data.</li>
-              <li><b>Minimal data</b>: only what’s needed to run the features you use.</li>
+              <li>
+                <b>No third-party ads</b> are served by Doggerz.
+              </li>
+              <li>
+                <b>No selling data</b>: this project is not built to sell
+                personal data.
+              </li>
+              <li>
+                <b>Minimal data</b>: only what’s needed to run the features you
+                use.
+              </li>
             </ul>
           </section>
           <section className="space-y-2">
-            <h2 className="font-semibold text-zinc-100 text-base">2. What we store locally</h2>
+            <h2 className="font-semibold text-zinc-100 text-base">
+              2. What we store locally
+            </h2>
             <p>
               Doggerz stores gameplay state locally so your pup persists between
               sessions. This may include:
@@ -64,7 +76,9 @@ export default function PrivacyPage() {
             </p>
           </section>
           <section className="space-y-2">
-            <h2 className="font-semibold text-zinc-100 text-base">3. Cloud sync (optional)</h2>
+            <h2 className="font-semibold text-zinc-100 text-base">
+              3. Cloud sync (optional)
+            </h2>
             <p>
               If you sign in, Firebase may process and store basic account
               identifiers (such as email) and your cloud save data.
@@ -76,35 +90,41 @@ export default function PrivacyPage() {
             </p>
           </section>
           <section className="space-y-2">
-            <h2 className="font-semibold text-zinc-100 text-base">4. Voice features</h2>
+            <h2 className="font-semibold text-zinc-100 text-base">
+              4. Voice features
+            </h2>
             <p>
               If you enable voice training, Doggerz uses your browser’s speech
               recognition capability. This may require microphone permission,
               and speech processing may be handled by your browser or device
               vendor.
             </p>
-            <p>
-              Voice controls are optional and can be disabled in Settings.
-            </p>
+            <p>Voice controls are optional and can be disabled in Settings.</p>
           </section>
           <section className="space-y-2">
-            <h2 className="font-semibold text-zinc-100 text-base">5. Location</h2>
+            <h2 className="font-semibold text-zinc-100 text-base">
+              5. Location
+            </h2>
             <p>
               Doggerz does not use GPS/geolocation. A user-provided ZIP code may
               be used to improve day/night timing and weather features.
             </p>
           </section>
           <section className="space-y-2">
-            <h2 className="font-semibold text-zinc-100 text-base">6. Third-party services</h2>
+            <h2 className="font-semibold text-zinc-100 text-base">
+              6. Third-party services
+            </h2>
             <p>
               Doggerz may rely on third-party services (e.g. Firebase, app
               stores). Their data handling is governed by their own policies.
             </p>
           </section>
           <section className="space-y-2">
-            <h2 className="font-semibold text-zinc-100 text-base">7. Contact</h2>
+            <h2 className="font-semibold text-zinc-100 text-base">
+              7. Contact
+            </h2>
             <p>
-              Questions about privacy? Email{' '}
+              Questions about privacy? Email{" "}
               <a
                 className="text-emerald-300 underline-offset-2 hover:text-emerald-200 hover:underline"
                 href={SUPPORT_EMAIL_PRIVACY_URL}
@@ -115,7 +135,9 @@ export default function PrivacyPage() {
             </p>
           </section>
           <section className="space-y-2">
-            <h2 className="font-semibold text-zinc-100 text-base">8. Changes</h2>
+            <h2 className="font-semibold text-zinc-100 text-base">
+              8. Changes
+            </h2>
             <p>
               This policy may change as Doggerz evolves. Significant changes
               will be reflected on this page.

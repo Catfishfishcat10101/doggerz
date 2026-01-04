@@ -94,17 +94,23 @@ export default function HelpPage() {
     const storage = {};
     if (hasWindow) {
       try {
-        storage.hasDogState = Boolean(window.localStorage.getItem(DOG_STORAGE_KEY));
+        storage.hasDogState = Boolean(
+          window.localStorage.getItem(DOG_STORAGE_KEY)
+        );
       } catch {
         storage.hasDogState = null;
       }
       try {
-        storage.hasUserState = Boolean(window.localStorage.getItem(USER_STORAGE_KEY));
+        storage.hasUserState = Boolean(
+          window.localStorage.getItem(USER_STORAGE_KEY)
+        );
       } catch {
         storage.hasUserState = null;
       }
       try {
-        storage.hasWorkflows = Boolean(window.localStorage.getItem(WORKFLOW_STORAGE_KEY));
+        storage.hasWorkflows = Boolean(
+          window.localStorage.getItem(WORKFLOW_STORAGE_KEY)
+        );
       } catch {
         storage.hasWorkflows = null;
       }
@@ -118,7 +124,9 @@ export default function HelpPage() {
       language: hasNavigator ? navigator.language : null,
       pwa: {
         standalone: pwaStandalone,
-        serviceWorkerSupported: hasNavigator ? "serviceWorker" in navigator : false,
+        serviceWorkerSupported: hasNavigator
+          ? "serviceWorker" in navigator
+          : false,
         hasServiceWorkerController: hasNavigator
           ? Boolean(navigator.serviceWorker?.controller)
           : false,
@@ -166,23 +174,32 @@ export default function HelpPage() {
     try {
       if (typeof window === "undefined") return;
       if (!("serviceWorker" in navigator)) {
-        setNoticeAuto({ kind: "info", text: "Service workers aren’t supported here." });
+        setNoticeAuto({
+          kind: "info",
+          text: "Service workers aren’t supported here.",
+        });
         return;
       }
       const regs = await navigator.serviceWorker.getRegistrations();
       await Promise.all(regs.map((r) => r.unregister()));
-      setNoticeAuto({ kind: "success", text: "Service worker unregistered. Reloading…" });
+      setNoticeAuto({
+        kind: "success",
+        text: "Service worker unregistered. Reloading…",
+      });
       window.setTimeout(() => window.location.reload(), 450);
     } catch (e) {
       console.warn("[Help] unregisterSW failed", e);
-      setNoticeAuto({ kind: "error", text: "Couldn’t unregister the service worker." });
+      setNoticeAuto({
+        kind: "error",
+        text: "Couldn’t unregister the service worker.",
+      });
     }
   }, [setNoticeAuto]);
 
   const handleResetLocalData = useCallback(async () => {
     try {
       const ok = window.confirm(
-        "Reset local Doggerz data on this device? This clears your pup + settings and cannot be undone.",
+        "Reset local Doggerz data on this device? This clears your pup + settings and cannot be undone."
       );
       if (!ok) return;
 
@@ -249,7 +266,11 @@ export default function HelpPage() {
                   try toggling the options there.
                 </p>
                 <p>
-                  Go to <Link to="/settings" className={LINK}>Settings</Link>.
+                  Go to{" "}
+                  <Link to="/settings" className={LINK}>
+                    Settings
+                  </Link>
+                  .
                 </p>
               </>
             ),
@@ -276,10 +297,18 @@ export default function HelpPage() {
               <>
                 <ol className="list-decimal list-inside space-y-1">
                   <li>
-                    Go to <Link to="/adopt" className={LINK}>Adopt</Link> and pick your pup.
+                    Go to{" "}
+                    <Link to="/adopt" className={LINK}>
+                      Adopt
+                    </Link>{" "}
+                    and pick your pup.
                   </li>
                   <li>
-                    Head to <Link to="/game" className={LINK}>Play</Link> to care, potty train, and progress.
+                    Head to{" "}
+                    <Link to="/game" className={LINK}>
+                      Play
+                    </Link>{" "}
+                    to care, potty train, and progress.
                   </li>
                 </ol>
               </>
@@ -330,8 +359,8 @@ export default function HelpPage() {
             a: (
               <>
                 <p>
-                  Potty training is an early “gate” — it unlocks more actions and
-                  progression.
+                  Potty training is an early “gate” — it unlocks more actions
+                  and progression.
                 </p>
               </>
             ),
@@ -362,14 +391,19 @@ export default function HelpPage() {
                 <p>
                   They’re available as routes:
                   <span className="ml-2">
-                    <Link to="/login" className={LINK}>/login</Link>
+                    <Link to="/login" className={LINK}>
+                      /login
+                    </Link>
                   </span>
                   <span className="ml-2">
-                    <Link to="/signup" className={LINK}>/signup</Link>
+                    <Link to="/signup" className={LINK}>
+                      /signup
+                    </Link>
                   </span>
                 </p>
                 <p className="text-xs text-zinc-400">
-                  (Auth may still be “stubbed” depending on your Firebase config.)
+                  (Auth may still be “stubbed” depending on your Firebase
+                  config.)
                 </p>
               </>
             ),
@@ -403,13 +437,16 @@ export default function HelpPage() {
             a: (
               <>
                 <p>
-                  This is a Vite + React app. Use <code>npm install</code> then <code>npm run dev</code>.
+                  This is a Vite + React app. Use <code>npm install</code> then{" "}
+                  <code>npm run dev</code>.
                 </p>
                 <p>
-                  Environment variables go in <code>.env.local</code> (start from <code>.env.example</code>).
+                  Environment variables go in <code>.env.local</code> (start
+                  from <code>.env.example</code>).
                 </p>
                 <p className="text-xs text-zinc-400">
-                  If your UI looks stale in production, it’s usually service-worker caching.
+                  If your UI looks stale in production, it’s usually
+                  service-worker caching.
                 </p>
               </>
             ),
@@ -420,8 +457,8 @@ export default function HelpPage() {
             a: (
               <>
                 <p>
-                  Yep. Doggerz is designed to work offline-first. Firebase powers
-                  sign-in/sync features when configured.
+                  Yep. Doggerz is designed to work offline-first. Firebase
+                  powers sign-in/sync features when configured.
                 </p>
               </>
             ),
@@ -434,13 +471,17 @@ export default function HelpPage() {
                 <p>
                   Potty training guide:
                   <span className="ml-2">
-                    <Link to="/potty" className={LINK}>/potty</Link>
+                    <Link to="/potty" className={LINK}>
+                      /potty
+                    </Link>
                   </span>
                 </p>
                 <p>
                   Temperament reveal:
                   <span className="ml-2">
-                    <Link to="/temperament-reveal" className={LINK}>/temperament-reveal</Link>
+                    <Link to="/temperament-reveal" className={LINK}>
+                      /temperament-reveal
+                    </Link>
                   </span>
                 </p>
               </>
@@ -452,10 +493,19 @@ export default function HelpPage() {
             a: (
               <>
                 <p>
-                  Here you go: <a className={LINK} href={repoUrl} target="_blank" rel="noreferrer">{repoUrl}</a>
+                  Here you go:{" "}
+                  <a
+                    className={LINK}
+                    href={repoUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {repoUrl}
+                  </a>
                 </p>
                 <p className="text-xs text-zinc-400">
-                  Tip: if you hit a bug, open an issue and paste the diagnostics below.
+                  Tip: if you hit a bug, open an issue and paste the diagnostics
+                  below.
                 </p>
               </>
             ),
@@ -504,18 +554,18 @@ export default function HelpPage() {
         <div className="max-w-6xl mx-auto px-4 py-10">
           <div className={`${SURFACE} overflow-hidden`}>
             <div className="p-8 sm:p-10">
-            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-5">
-              <div>
-                <div className="text-emerald-700 font-extrabold tracking-[0.38em] text-xs">
-                  H E L P
-                </div>
-                <h1 className="mt-2 text-3xl sm:text-4xl font-extrabold text-emerald-200">
-                  FAQs, troubleshooting, and developer info
-                </h1>
-                <p className="mt-3 text-sm text-zinc-300 max-w-2xl">
-                  This page is your “what broke and how do I fix it” hub — plus
-                  setup notes if you’re running Doggerz locally.
-                </p>
+              <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-5">
+                <div>
+                  <div className="text-emerald-700 font-extrabold tracking-[0.38em] text-xs">
+                    H E L P
+                  </div>
+                  <h1 className="mt-2 text-3xl sm:text-4xl font-extrabold text-emerald-200">
+                    FAQs, troubleshooting, and developer info
+                  </h1>
+                  <p className="mt-3 text-sm text-zinc-300 max-w-2xl">
+                    This page is your “what broke and how do I fix it” hub —
+                    plus setup notes if you’re running Doggerz locally.
+                  </p>
                   <p className="mt-3 text-sm text-zinc-300">
                     Still stuck? Head to{" "}
                     <Link to={SUPPORT_CONTACT_URL} className={LINK}>
@@ -523,141 +573,148 @@ export default function HelpPage() {
                     </Link>
                     .
                   </p>
+                </div>
+
+                <div className="w-full md:w-[380px]">
+                  <label className="text-xs text-zinc-400 font-semibold">
+                    Search
+                  </label>
+                  <input
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Try: cache, firebase, potty, mobile…"
+                    className="mt-1 w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                  />
+                </div>
               </div>
 
-              <div className="w-full md:w-[380px]">
-                <label className="text-xs text-zinc-400 font-semibold">
-                  Search
-                </label>
-                <input
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Try: cache, firebase, potty, mobile…"
-                  className="mt-1 w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
-                />
-              </div>
-            </div>
-
-            {notice ? (
-              <div
-                className={
-                  [
+              {notice ? (
+                <div
+                  className={[
                     "mt-6 rounded-2xl border px-4 py-3 text-sm",
                     notice.kind === "success"
                       ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-100"
                       : notice.kind === "error"
                         ? "border-red-500/25 bg-red-500/10 text-red-100"
                         : "border-sky-500/25 bg-sky-500/10 text-sky-100",
-                  ].join(" ")
-                }
-                role="status"
-                aria-live="polite"
-              >
-                {notice.text}
-              </div>
-            ) : null}
+                  ].join(" ")}
+                  role="status"
+                  aria-live="polite"
+                >
+                  {notice.text}
+                </div>
+              ) : null}
 
-            <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-3">
-              <button
-                type="button"
-                onClick={handleClearCache}
-                className="rounded-2xl border border-white/10 bg-black/25 p-4 text-left hover:bg-black/35 transition"
-              >
-                <div className="text-sm font-extrabold text-emerald-200">
-                  Clear cache + reload
-                </div>
-                <div className="mt-1 text-xs text-zinc-400">
-                  Fixes stale assets after updates.
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleUnregisterSW}
-                className="rounded-2xl border border-white/10 bg-black/25 p-4 text-left hover:bg-black/35 transition"
-              >
-                <div className="text-sm font-extrabold text-emerald-200">
-                  Unregister service worker
-                </div>
-                <div className="mt-1 text-xs text-zinc-400">
-                  Nuclear option for stubborn PWA caching.
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleResetLocalData}
-                className="rounded-2xl border border-amber-500/25 bg-amber-500/10 p-4 text-left hover:bg-amber-500/15 transition"
-              >
-                <div className="text-sm font-extrabold text-amber-100">
-                  Reset local data
-                </div>
-                <div className="mt-1 text-xs text-amber-100/70">
-                  Clears your pup + settings on this device.
-                </div>
-              </button>
-            </div>
-
-            <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {filtered.map((t) => (
-                <Section key={t.id} id={t.id} title={t.title}>
-                  <div className="space-y-3">
-                    {t.items.map((it) => (
-                      <Q key={it.q} q={it.q} tags={it.tags}>
-                        {it.a}
-                      </Q>
-                    ))}
+              <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-3">
+                <button
+                  type="button"
+                  onClick={handleClearCache}
+                  className="rounded-2xl border border-white/10 bg-black/25 p-4 text-left hover:bg-black/35 transition"
+                >
+                  <div className="text-sm font-extrabold text-emerald-200">
+                    Clear cache + reload
                   </div>
+                  <div className="mt-1 text-xs text-zinc-400">
+                    Fixes stale assets after updates.
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleUnregisterSW}
+                  className="rounded-2xl border border-white/10 bg-black/25 p-4 text-left hover:bg-black/35 transition"
+                >
+                  <div className="text-sm font-extrabold text-emerald-200">
+                    Unregister service worker
+                  </div>
+                  <div className="mt-1 text-xs text-zinc-400">
+                    Nuclear option for stubborn PWA caching.
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleResetLocalData}
+                  className="rounded-2xl border border-amber-500/25 bg-amber-500/10 p-4 text-left hover:bg-amber-500/15 transition"
+                >
+                  <div className="text-sm font-extrabold text-amber-100">
+                    Reset local data
+                  </div>
+                  <div className="mt-1 text-xs text-amber-100/70">
+                    Clears your pup + settings on this device.
+                  </div>
+                </button>
+              </div>
+
+              <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {filtered.map((t) => (
+                  <Section key={t.id} id={t.id} title={t.title}>
+                    <div className="space-y-3">
+                      {t.items.map((it) => (
+                        <Q key={it.q} q={it.q} tags={it.tags}>
+                          {it.a}
+                        </Q>
+                      ))}
+                    </div>
+                  </Section>
+                ))}
+              </div>
+
+              <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <Section title="Diagnostics (copy/paste for bug reports)">
+                  <p className="text-sm text-zinc-300">
+                    This is safe to share. It helps debug caching, platform
+                    issues, and environment problems.
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-3">
+                    <button
+                      type="button"
+                      onClick={copyDiag}
+                      className="rounded-2xl px-4 py-2 text-sm font-extrabold bg-emerald-400 text-black shadow-[0_0_25px_rgba(52,211,153,0.25)] hover:shadow-[0_0_35px_rgba(52,211,153,0.40)] transition"
+                    >
+                      Copy diagnostics
+                    </button>
+                    <a
+                      href={repoUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-2xl px-4 py-2 text-sm font-bold border border-emerald-500/25 bg-black/30 text-emerald-100 hover:bg-black/45 transition"
+                    >
+                      Open GitHub
+                    </a>
+                  </div>
+                  <pre className="mt-4 max-h-64 overflow-auto rounded-2xl border border-white/10 bg-black/30 p-4 text-[11px] text-zinc-200/85">
+                    {safeJson(diagnostics)}
+                  </pre>
                 </Section>
-              ))}
-            </div>
 
-            <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <Section title="Diagnostics (copy/paste for bug reports)">
-                <p className="text-sm text-zinc-300">
-                  This is safe to share. It helps debug caching, platform issues,
-                  and environment problems.
-                </p>
-                <div className="mt-3 flex flex-wrap gap-3">
-                  <button
-                    type="button"
-                    onClick={copyDiag}
-                    className="rounded-2xl px-4 py-2 text-sm font-extrabold bg-emerald-400 text-black shadow-[0_0_25px_rgba(52,211,153,0.25)] hover:shadow-[0_0_35px_rgba(52,211,153,0.40)] transition"
-                  >
-                    Copy diagnostics
-                  </button>
-                  <a
-                    href={repoUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="rounded-2xl px-4 py-2 text-sm font-bold border border-emerald-500/25 bg-black/30 text-emerald-100 hover:bg-black/45 transition"
-                  >
-                    Open GitHub
-                  </a>
-                </div>
-                <pre className="mt-4 max-h-64 overflow-auto rounded-2xl border border-white/10 bg-black/30 p-4 text-[11px] text-zinc-200/85">
-{safeJson(diagnostics)}
-                </pre>
-              </Section>
-
-              <Section title="Need something added?">
-                <p>
-                  Want more FAQs, a feature, or a UI tweak? Drop it on GitHub and
-                  we’ll ship it.
-                </p>
-                <p>
-                  Repo: <a className={LINK} href={repoUrl} target="_blank" rel="noreferrer">{repoUrl}</a>
-                </p>
-                <p className="text-sm text-zinc-400">
-                  (If you want a dedicated “Developer” page too, say the word —
-                  we can split this into Help + Dev Docs.)
-                </p>
-              </Section>
+                <Section title="Need something added?">
+                  <p>
+                    Want more FAQs, a feature, or a UI tweak? Drop it on GitHub
+                    and we’ll ship it.
+                  </p>
+                  <p>
+                    Repo:{" "}
+                    <a
+                      className={LINK}
+                      href={repoUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {repoUrl}
+                    </a>
+                  </p>
+                  <p className="text-sm text-zinc-400">
+                    (If you want a dedicated “Developer” page too, say the word
+                    — we can split this into Help + Dev Docs.)
+                  </p>
+                </Section>
               </div>
 
               <div className="mt-6 text-xs text-zinc-500">
-                Tip: For the best mobile experience, consider installing Doggerz as an
-                app (PWA) via your browser’s “Install” / “Add to Home Screen” option.
+                Tip: For the best mobile experience, consider installing Doggerz
+                as an app (PWA) via your browser’s “Install” / “Add to Home
+                Screen” option.
               </div>
             </div>
           </div>

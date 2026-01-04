@@ -138,8 +138,8 @@ export default function DevelopersPage() {
                   Developers
                 </h1>
                 <p className="max-w-2xl text-zinc-300">
-                  Build features, fix bugs, and ship delightful chaos. This page is a
-                  practical starting point for contributing to Doggerz.
+                  Build features, fix bugs, and ship delightful chaos. This page
+                  is a practical starting point for contributing to Doggerz.
                 </p>
 
                 <div className="flex flex-wrap gap-2 pt-1">
@@ -219,9 +219,13 @@ export default function DevelopersPage() {
                 <li>
                   <span className="text-zinc-400">Security: </span>
                   {securityUrl ? (
-                    <ExternalLink href={securityUrl}>{securityUrl}</ExternalLink>
+                    <ExternalLink href={securityUrl}>
+                      {securityUrl}
+                    </ExternalLink>
                   ) : (
-                    <span className="text-zinc-500">See SECURITY.md in repo</span>
+                    <span className="text-zinc-500">
+                      See SECURITY.md in repo
+                    </span>
                   )}
                 </li>
                 <li>
@@ -255,10 +259,12 @@ npm run build`}
               />
 
               <p className="mt-3 text-xs text-zinc-500">
-                Tip: if you see Firebase missing-env warnings in development, add
-                values to <span className="font-semibold">.env.local</span> or set
+                Tip: if you see Firebase missing-env warnings in development,
+                add values to <span className="font-semibold">.env.local</span>{" "}
+                or set
                 <span className="font-semibold">
-                  {" "}VITE_SUPPRESS_ENV_MISSING_WARNINGS=true
+                  {" "}
+                  VITE_SUPPRESS_ENV_MISSING_WARNINGS=true
                 </span>
                 .
               </p>
@@ -278,10 +284,11 @@ npm run build`}
                 <p className="mt-2 text-sm text-zinc-300">
                   The headless engine lives in
                   <span className="font-semibold text-zinc-200">
-                    {" "}src/features/game/DogAIEngine.jsx
+                    {" "}
+                    src/features/game/DogAIEngine.jsx
                   </span>
-                  . It hydrates from localStorage, runs ticks, and optionally syncs
-                  to Firebase when configured.
+                  . It hydrates from localStorage, runs ticks, and optionally
+                  syncs to Firebase when configured.
                 </p>
               </div>
 
@@ -290,7 +297,8 @@ npm run build`}
                 <p className="mt-2 text-sm text-zinc-300">
                   Core state and reducers live in
                   <span className="font-semibold text-zinc-200">
-                    {" "}src/redux/dogSlice.js
+                    {" "}
+                    src/redux/dogSlice.js
                   </span>
                   . This is where stats decay, cleanliness tiers, moods, and
                   training are applied.
@@ -302,15 +310,18 @@ npm run build`}
                 <p className="mt-2 text-sm text-zinc-300">
                   Page routes live in
                   <span className="font-semibold text-zinc-200">
-                    {" "}src/pages
+                    {" "}
+                    src/pages
                   </span>
                   , reusable components in
                   <span className="font-semibold text-zinc-200">
-                    {" "}src/components
+                    {" "}
+                    src/components
                   </span>
                   , and game UI in
                   <span className="font-semibold text-zinc-200">
-                    {" "}src/features/game
+                    {" "}
+                    src/features/game
                   </span>
                   .
                 </p>
@@ -321,7 +332,8 @@ npm run build`}
                 <p className="mt-2 text-sm text-zinc-300">
                   Firebase env handling is in
                   <span className="font-semibold text-zinc-200">
-                    {" "}src/config/env.js
+                    {" "}
+                    src/config/env.js
                   </span>
                   . If keys are missing, the app stays playable locally.
                 </p>
@@ -353,8 +365,8 @@ VITE_FIREBASE_MEASUREMENT_ID=`}
             </div>
 
             <p className="mt-3 text-xs text-zinc-500">
-              If you’re contributing and don’t need Firebase, you can safely leave
-              these empty.
+              If you’re contributing and don’t need Firebase, you can safely
+              leave these empty.
             </p>
           </section>
 
@@ -370,9 +382,16 @@ VITE_FIREBASE_MEASUREMENT_ID=`}
                 <h3 className="font-semibold">PR checklist</h3>
                 <ul className="mt-2 list-disc list-inside space-y-1 text-sm text-zinc-300">
                   <li>Keep changes focused and easy to review.</li>
-                  <li>Prefer reducer-safe updates (no direct state mutation in components).</li>
-                  <li>Test in dev and run a production build before submitting.</li>
-                  <li>Include screenshots for UI changes (mobile + desktop).</li>
+                  <li>
+                    Prefer reducer-safe updates (no direct state mutation in
+                    components).
+                  </li>
+                  <li>
+                    Test in dev and run a production build before submitting.
+                  </li>
+                  <li>
+                    Include screenshots for UI changes (mobile + desktop).
+                  </li>
                 </ul>
               </div>
 
@@ -380,21 +399,26 @@ VITE_FIREBASE_MEASUREMENT_ID=`}
                 <h3 className="font-semibold">Where to start</h3>
                 <ul className="mt-2 space-y-2 text-sm text-zinc-300">
                   <li>
-                    Look for small wins: UI polish, copy fixes, a11y improvements,
-                    and performance tweaks.
+                    Look for small wins: UI polish, copy fixes, a11y
+                    improvements, and performance tweaks.
                   </li>
                   <li>
-                    For bigger changes, open an issue first so we can align on the
-                    approach.
+                    For bigger changes, open an issue first so we can align on
+                    the approach.
                   </li>
                   <li>
                     {contributingUrl ? (
                       <>
-                        See <ExternalLink href={contributingUrl}>README</ExternalLink> for
-                        more project details.
+                        See{" "}
+                        <ExternalLink href={contributingUrl}>
+                          README
+                        </ExternalLink>{" "}
+                        for more project details.
                       </>
                     ) : (
-                      <span className="text-zinc-400">See README.md in the repo.</span>
+                      <span className="text-zinc-400">
+                        See README.md in the repo.
+                      </span>
                     )}
                   </li>
                 </ul>

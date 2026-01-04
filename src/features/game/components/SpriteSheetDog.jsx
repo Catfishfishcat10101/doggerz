@@ -58,7 +58,8 @@ export default function SpriteSheetDog({
 
   const stageKey = String(stage || "PUPPY").toUpperCase();
   const manifestStage = manifest?.stages?.[stageKey];
-  const manifestAnim = manifestStage?.anims?.[anim] || manifestStage?.anims?.idle;
+  const manifestAnim =
+    manifestStage?.anims?.[anim] || manifestStage?.anims?.idle;
 
   const pack = getJrtPackForStage(stage);
 
@@ -95,14 +96,17 @@ export default function SpriteSheetDog({
         setSheetFailed(true);
         setSheetLoaded(false);
         try {
-          console.warn('[SpriteSheetDog] loaded image is not a strip; falling back:', {
-            sheetSrc,
-            frames,
-            w,
-            h,
-            ratio,
-            minRatio,
-          });
+          console.warn(
+            "[SpriteSheetDog] loaded image is not a strip; falling back:",
+            {
+              sheetSrc,
+              frames,
+              w,
+              h,
+              ratio,
+              minRatio,
+            }
+          );
         } catch {
           // ignore
         }
@@ -117,7 +121,7 @@ export default function SpriteSheetDog({
       setSheetFailed(true);
       setSheetLoaded(false);
       try {
-        console.warn('[SpriteSheetDog] strip load failed:', sheetSrc);
+        console.warn("[SpriteSheetDog] strip load failed:", sheetSrc);
       } catch {
         // ignore
       }
@@ -131,7 +135,7 @@ export default function SpriteSheetDog({
   }, [frames, sheetSrc]);
 
   const fallbackCandidates = React.useMemo(() => {
-    const src = String(fallbackSrc || '').trim();
+    const src = String(fallbackSrc || "").trim();
     if (!src) return [];
 
     const out = [src];
@@ -141,27 +145,33 @@ export default function SpriteSheetDog({
     // (We only add these when it looks like the caller passed a jrt_* path.)
     try {
       const s = src.toLowerCase();
-      if (s.includes('/sprites/jrt_puppy.')) out.push(withBaseUrl('/sprites/jack_russell_puppy.webp'));
-      if (s.includes('/sprites/jrt_adult.')) out.push(withBaseUrl('/sprites/jack_russell_adult.webp'));
-      if (s.includes('/sprites/jrt_senior.')) out.push(withBaseUrl('/sprites/jack_russell_senior.webp'));
+      if (s.includes("/sprites/jrt_puppy."))
+        out.push(withBaseUrl("/sprites/jack_russell_puppy.webp"));
+      if (s.includes("/sprites/jrt_adult."))
+        out.push(withBaseUrl("/sprites/jack_russell_adult.webp"));
+      if (s.includes("/sprites/jrt_senior."))
+        out.push(withBaseUrl("/sprites/jack_russell_senior.webp"));
     } catch {
       // ignore
     }
 
     // If webp fails to decode/load, try a best-effort png path.
-    if (src.toLowerCase().endsWith('.webp')) {
-      out.push(src.slice(0, -'.webp'.length) + '.png');
+    if (src.toLowerCase().endsWith(".webp")) {
+      out.push(src.slice(0, -".webp".length) + ".png");
     }
 
     // Final fallback: app icon so we never render nothing.
-    out.push(withBaseUrl('/icons/doggerz-192.png'));
+    out.push(withBaseUrl("/icons/doggerz-192.png"));
     return out;
   }, [fallbackSrc]);
 
-  const effectiveFallbackSrc = fallbackCandidates[Math.min(fallbackIndex, Math.max(0, fallbackCandidates.length - 1))] || null;
+  const effectiveFallbackSrc =
+    fallbackCandidates[
+      Math.min(fallbackIndex, Math.max(0, fallbackCandidates.length - 1))
+    ] || null;
 
   React.useEffect(() => {
-    if (typeof onDebug !== 'function') return;
+    if (typeof onDebug !== "function") return;
     try {
       onDebug({
         stage: stageKey,
@@ -170,7 +180,7 @@ export default function SpriteSheetDog({
         sheetFailed,
         sheetLoaded,
         sheetNatural,
-        fallbackSrc: String(fallbackSrc || '') || null,
+        fallbackSrc: String(fallbackSrc || "") || null,
         effectiveFallbackSrc,
         fallbackIndex,
         frames,
@@ -179,7 +189,20 @@ export default function SpriteSheetDog({
     } catch {
       // ignore
     }
-  }, [anim, effectiveFallbackSrc, fallbackIndex, fallbackSrc, fps, frames, onDebug, sheetFailed, sheetLoaded, sheetSrc, sheetNatural, stageKey]);
+  }, [
+    anim,
+    effectiveFallbackSrc,
+    fallbackIndex,
+    fallbackSrc,
+    fps,
+    frames,
+    onDebug,
+    sheetFailed,
+    sheetLoaded,
+    sheetSrc,
+    sheetNatural,
+    stageKey,
+  ]);
 
   // While the strip loads, keep the dog visible via fallback.
   if (!sheetSrc || sheetFailed || !sheetLoaded) {
@@ -194,7 +217,10 @@ export default function SpriteSheetDog({
           // Try the next candidate.
           setFallbackIndex((i) => i + 1);
           try {
-            console.warn('[SpriteSheetDog] fallback load failed:', effectiveFallbackSrc);
+            console.warn(
+              "[SpriteSheetDog] fallback load failed:",
+              effectiveFallbackSrc
+            );
           } catch {
             // ignore
           }

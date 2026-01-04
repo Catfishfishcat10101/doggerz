@@ -83,10 +83,11 @@ export default function WorkflowShell({
             type="button"
             disabled={!canGoBack}
             onClick={onBack}
-            className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition ${canGoBack
+            className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition ${
+              canGoBack
                 ? "bg-white/5 border-white/10 hover:bg-white/10"
                 : "bg-white/3 border-white/5 text-zinc-500 cursor-not-allowed"
-              }`}
+            }`}
           >
             Back
           </button>
@@ -95,10 +96,11 @@ export default function WorkflowShell({
             type="button"
             onClick={onPrimary}
             disabled={!!primaryDisabled}
-            className={`flex-1 py-2.5 rounded-xl text-sm font-semibold shadow-lg transition ${primaryDisabled
+            className={`flex-1 py-2.5 rounded-xl text-sm font-semibold shadow-lg transition ${
+              primaryDisabled
                 ? "bg-emerald-900/30 text-emerald-200/60 border border-emerald-500/10 cursor-not-allowed"
                 : "bg-emerald-600 hover:bg-emerald-500"
-              }`}
+            }`}
           >
             {primaryLabel || "Continue"}
           </button>
