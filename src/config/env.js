@@ -72,3 +72,5 @@ export const missingFirebaseKeys = REQUIRED_VITE_FIREBASE_VARS.filter(
 
 // True when all required VITE_* firebase vars are present
 export const isFirebaseConfigured = missingFirebaseKeys.length === 0;
+
+// precommit-hook-test
