@@ -36,6 +36,24 @@ subprojects { subproj ->
             }
         }
     }
+
+    // Kotlin compilation should match the Java toolchain target.
+    // Some plugin modules may default Kotlin's jvmTarget to 21, which breaks builds
+    // when Gradle/JDK is pinned to 17.
+    subproj.plugins.withId('org.jetbrains.kotlin.android') {
+        subproj.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+            kotlinOptions {
+                jvmTarget = '17'
+            }
+        }
+    }
+    subproj.plugins.withId('kotlin-android') {
+        subproj.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+            kotlinOptions {
+                jvmTarget = '17'
+            }
+        }
+    }
 }
 
 task clean(type: Delete) {
