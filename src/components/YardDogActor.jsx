@@ -3,6 +3,8 @@
 
 import * as React from "react";
 
+import PixiDog from "@/components/PixiDog.jsx";
+
 import LayeredDogRig from "@/components/LayeredDogRig.jsx";
 import SpriteSheetDog from "@/components/SpriteSheetDog.jsx";
 import DogCosmeticsOverlay from "@/components/DogCosmeticsOverlay.jsx";
@@ -62,7 +64,7 @@ function isNear(a, b, threshold = 2.2) {
 export default function YardDogActor({
   spriteSrc,
   lifeStageStage,
-  size = 320,
+  size = 190,
   reduceMotion = false,
   reduceTransparency = false,
   isNight = false,

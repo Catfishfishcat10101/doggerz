@@ -6,7 +6,7 @@
 import * as React from "react";
 import { useSelector } from "react-redux";
 
-import { selectSettings } from "@/utils/redux/settingsSlice.js";
+import { selectSettings } from "@/redux/settingsSlice.js";
 import {
   DYNAMIC_MUSIC_CONFIG,
   DYNAMIC_MUSIC_TRACKS,

@@ -41,6 +41,92 @@ html[data-theme="light"] {
 }
 
 /* -------------------------------------------------------
+   Doggerz: dynamic game CSS hooks (HTML data-attributes)
+
+   Driven by src/components/AppGameEffects.jsx
+------------------------------------------------------- */
+
+:root {
+  /* Default accent (emerald) */
+  --dz-accent: #10b981;
+  --dz-accent-soft: rgba(16, 185, 129, 0.22);
+  --dz-accent-strong: rgba(16, 185, 129, 0.38);
+}
+
+html[data-skill-branch="companion"] {
+  --dz-accent: #e11d48;
+  --dz-accent-soft: rgba(244, 63, 94, 0.22);
+  --dz-accent-strong: rgba(244, 63, 94, 0.38);
+}
+
+html[data-skill-branch="guardian"] {
+  --dz-accent: #b45309;
+  --dz-accent-soft: rgba(245, 158, 11, 0.2);
+  --dz-accent-strong: rgba(245, 158, 11, 0.34);
+}
+
+html[data-skill-branch="athlete"] {
+  --dz-accent: #047857;
+  --dz-accent-soft: rgba(16, 185, 129, 0.22);
+  --dz-accent-strong: rgba(16, 185, 129, 0.38);
+}
+
+@keyframes dzSkillPulse {
+  0% {
+    transform: translateZ(0) scale(1);
+    box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
+  }
+
+  55% {
+    transform: translateZ(0) scale(1.012);
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.08),
+      0 0 50px var(--dz-accent-soft);
+  }
+
+  100% {
+    transform: translateZ(0) scale(1);
+    box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
+  }
+}
+
+.dz-perk-card {
+  position: relative;
+}
+
+.dz-perk-card::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: 16px;
+  /* matches rounded-2xl */
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 180ms ease;
+  background: radial-gradient(
+    circle at 25% 20%,
+    var(--dz-accent-soft),
+    rgba(255, 255, 255, 0) 60%
+  );
+}
+
+.dz-perk-card[data-state="available"]:hover::after {
+  opacity: 1;
+}
+
+html[data-skill-pulse="1"] .dz-perk-card[data-state="unlocked"] {
+  animation: dzSkillPulse 650ms ease-out 1;
+}
+
+/* Micro-story moment should feel like an event */
+html[data-story-active="1"] .dz-moment-card {
+  border-color: rgba(255, 255, 255, 0.24) !important;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 0 60px var(--dz-accent-soft),
+    0 0 120px rgba(0, 0, 0, 0.22);
+}
+/* -------------------------------------------------------
    Global layout & typography
 ------------------------------------------------------- */
 
@@ -125,14 +211,14 @@ a:hover {
 
 /* Basic focus outline for keyboard users */
 :focus-visible {
-  outline: 2px solid var(--focus-ring, #22c55e);
+  outline: 2px solid var(--focus-ring, #027b21);
   outline-offset: 2px;
   box-shadow: 0 0 0 4px var(--focus-ring-soft, rgba(34, 197, 94, 0.28));
 }
 
 /* Optional: always show focus ring (accessibility setting) */
 html[data-focus-rings="always"] :focus {
-  outline: 2px solid var(--focus-ring, #22c55e);
+  outline: 2px solid var(--focus-ring, #027b21);
   outline-offset: 2px;
   box-shadow: 0 0 0 4px var(--focus-ring-soft, rgba(34, 197, 94, 0.28));
 }

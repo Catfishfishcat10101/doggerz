@@ -12,13 +12,13 @@ import {
   tickDogPolls,
   selectDog,
   DOG_STORAGE_KEY,
-} from "@/utils/redux/dogSlice.js";
+} from "@/redux/dogSlice.js";
 import {
   fetchWeatherForZip,
   selectWeatherCondition,
-} from "@/utils/redux/weatherSlice.js";
-import { loadDogFromCloud, saveDogToCloud } from "@/utils/redux/dogThunks.js";
-import { selectUserZip } from "@/utils/redux/userSlice.js";
+} from "@/redux/weatherSlice.js";
+import { loadDogFromCloud, saveDogToCloud } from "@/redux/dogThunks.js";
+import { selectUserZip } from "@/redux/userSlice.js";
 
 const TICK_INTERVAL_MS = 60_000; // 60 seconds
 const CLOUD_SAVE_DEBOUNCE = 3_000; // 3 seconds

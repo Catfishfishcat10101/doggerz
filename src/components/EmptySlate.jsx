@@ -5,21 +5,37 @@ import { Link } from "react-router-dom";
 import BackPill from "@/components/BackPill.jsx";
 
 /**
+ * @typedef {Object} EmptySlateProps
+ * @property {string=} kicker
+ * @property {string=} title
+ * @property {string=} description
+ * @property {string=} primaryLabel
+ * @property {string=} primaryTo
+ * @property {(() => void)=} onPrimary
+ * @property {string=} backTo
+ * @property {string=} backLabel
+ * @property {string=} className
+ */
+
+/**
  * A single-decision empty state.
  * - One primary action (button or link)
  * - Optional subtle back affordance
  */
-export default function EmptySlate({
-  kicker,
-  title,
-  description,
-  primaryLabel,
-  primaryTo,
-  onPrimary,
-  backTo,
-  backLabel = "Back",
-  className = "",
-} = {}) {
+/** @param {EmptySlateProps} props */
+export default function EmptySlate(props = {}) {
+  const {
+    kicker,
+    title,
+    description,
+    primaryLabel,
+    primaryTo,
+    onPrimary,
+    backTo,
+    backLabel = "Back",
+    className = "",
+  } = props;
+
   const shell =
     "rounded-3xl border border-white/12 bg-black/20 p-6 backdrop-blur shadow-[0_0_70px_rgba(0,0,0,0.35)]";
 

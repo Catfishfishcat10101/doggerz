@@ -6,7 +6,7 @@ import * as React from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import nav from "@/nav.js";
-import { selectIsLoggedIn } from "@/utils/redux/userSlice.js";
+import { selectIsLoggedIn } from "@/redux/userSlice.js";
 
 function NavPill({ to, children }) {
   return (

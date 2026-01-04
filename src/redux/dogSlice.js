@@ -5,6 +5,12 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { calculateDogAge } from "@/utils/lifecycle.js";
 import { CLEANLINESS_TIER_EFFECTS, LIFE_STAGES } from "@/constants/game.js";
+import {
+  computeSkillTreeModifiers,
+  getSkillTreeBranchIdForPerk,
+  getSkillTreePerk,
+  getSkillTreeRequiredPerkId,
+} from "@/constants/skillTree.js";
 
 export const DOG_STORAGE_KEY = "doggerz:dogState";
 
@@ -158,6 +164,8 @@ const initialMemory = {
   lastPlayedAt: null,
   lastBathedAt: null,
   lastTrainedAt: null,
+  // Used by YardDogActor to map training into a specific anim.
+  lastTrainedCommandId: null,
   lastSeenAt: null,
   neglectStrikes: 0,
 };
@@ -220,6 +228,13 @@ const initialCosmetics = {
     tag: null,
     backdrop: null,
   },
+};
+
+const initialSkillTree = {
+  unlockedIds: [],
+  lastUnlockedId: null,
+  lastUnlockedAt: null,
+  lastBranchId: null,
 };
 
 const DEFAULT_COSMETIC_CATALOG = Object.freeze([
@@ -305,6 +320,9 @@ const initialState = {
   memorial: initialMemorial,
   cosmetics: initialCosmetics,
 
+  // Skill tree progression (training as a long-term path)
+  skillTree: initialSkillTree,
+
   polls: {
     active: null,
     lastPromptId: null,
@@ -346,6 +364,49 @@ function ensureDreamState(state) {
     state.dreams.lastGeneratedAt = null;
   }
   return state.dreams;
+}
+
+function ensureSkillTreeState(state) {
+  if (!state.skillTree || typeof state.skillTree !== "object") {
+    state.skillTree = { ...initialSkillTree };
+  }
+
+  if (!Array.isArray(state.skillTree.unlockedIds)) {
+    state.skillTree.unlockedIds = [];
+  }
+  state.skillTree.unlockedIds = state.skillTree.unlockedIds
+    .map((x) => String(x))
+    .filter(Boolean);
+
+  state.skillTree.lastUnlockedId = state.skillTree.lastUnlockedId
+    ? String(state.skillTree.lastUnlockedId)
+    : null;
+
+  if (typeof state.skillTree.lastUnlockedAt !== "number") {
+    state.skillTree.lastUnlockedAt = null;
+  }
+
+  state.skillTree.lastBranchId = state.skillTree.lastBranchId
+    ? String(state.skillTree.lastBranchId)
+    : null;
+
+  return state.skillTree;
+}
+
+function getSkillTreePointsFromDogState(dogState) {
+  const level = Math.max(1, Math.floor(Number(dogState?.level || 1)));
+  const pointsEarned = Math.max(0, level - 1);
+  const unlocked = Array.isArray(dogState?.skillTree?.unlockedIds)
+    ? dogState.skillTree.unlockedIds
+    : [];
+  const pointsSpent = unlocked.length;
+  const pointsAvailable = Math.max(0, pointsEarned - pointsSpent);
+  return { pointsEarned, pointsSpent, pointsAvailable };
+}
+
+function getSkillTreeModifiersFromDogState(dogState) {
+  const skillTree = ensureSkillTreeState(dogState);
+  return computeSkillTreeModifiers(skillTree.unlockedIds);
 }
 
 function pushDream(state, dream) {
@@ -523,7 +584,8 @@ function pushPersonalityHistory(state, entry) {
   }
 }
 
-function applyPersonalityShift(state, { now, source, deltas, note } = {}) {
+function applyPersonalityShift(state, opts) {
+  const { now, source, deltas, note } = opts || {};
   const personality = ensurePersonalityState(state);
   const t = personality.traits;
   const d = deltas || {};
@@ -594,7 +656,20 @@ function applyDecay(state, now = nowMs()) {
     : 1;
   const effectiveHours = diffHours * decayMultiplier;
 
-  const hungerMultiplier = state.career.perks?.hungerDecayMultiplier || 1.0;
+  const careerHungerMultiplier =
+    state.career.perks?.hungerDecayMultiplier || 1.0;
+  const skillMods = getSkillTreeModifiersFromDogState(state);
+  const hungerMultiplier =
+    careerHungerMultiplier * (skillMods.hungerDecayMultiplier || 1);
+  const happinessDecayMultiplier = skillMods.happinessDecayMultiplier || 1;
+  const cleanlinessDecayMultiplier = skillMods.cleanlinessDecayMultiplier || 1;
+  const idleEnergyDecayMultiplier = skillMods.idleEnergyDecayMultiplier || 1;
+  const idleish = (() => {
+    const a = String(state.lastAction || "")
+      .trim()
+      .toLowerCase();
+    return !a || a === "idle";
+  })();
 
   Object.entries(state.stats).forEach(([key, value]) => {
     if (!isValidStat(key)) return;
@@ -607,6 +682,9 @@ function applyDecay(state, now = nowMs()) {
       delta *= hungerMultiplier;
       state.stats[key] = clamp(value + delta, 0, 100);
     } else {
+      if (key === "happiness") delta *= happinessDecayMultiplier;
+      if (key === "cleanliness") delta *= cleanlinessDecayMultiplier;
+      if (key === "energy" && idleish) delta *= idleEnergyDecayMultiplier;
       state.stats[key] = clamp(value - delta, 0, 100);
     }
   });
@@ -1353,6 +1431,11 @@ const dogSlice = createSlice({
         },
       };
 
+      merged.skillTree = {
+        ...initialSkillTree,
+        ...(payload.skillTree || state.skillTree || {}),
+      };
+
       merged.lastAction =
         payload.lastAction ?? state.lastAction ?? initialState.lastAction;
 
@@ -1361,6 +1444,7 @@ const dogSlice = createSlice({
       ensurePersonalityState(merged);
       ensureDreamState(merged);
       ensureVacationState(merged);
+      ensureSkillTreeState(merged);
 
       merged.cleanlinessTier =
         payload.cleanlinessTier || state.cleanlinessTier || "FRESH";
@@ -1491,10 +1575,13 @@ const dogSlice = createSlice({
       applyDecay(state, now);
 
       const perks = getPersonalityPerks(state);
+      const skillMods = getSkillTreeModifiersFromDogState(state);
+      const restEnergyGainMultiplier = skillMods.restEnergyGainMultiplier || 1;
 
       state.isAsleep = true;
       state.stats.energy = clamp(
-        state.stats.energy + 20 * perks.restEnergyBonus,
+        state.stats.energy +
+          20 * perks.restEnergyBonus * restEnergyGainMultiplier,
         0,
         100
       );
@@ -1683,13 +1770,17 @@ const dogSlice = createSlice({
       applyDecay(state, now);
 
       const perks = getPersonalityPerks(state);
+      const skillMods = getSkillTreeModifiersFromDogState(state);
 
       const trainingMultiplier =
         state.career.perks?.trainingXpMultiplier || 1.0;
-      const adjustedXp = Math.round(xp * trainingMultiplier);
+      const adjustedXp = Math.round(
+        xp * trainingMultiplier * (skillMods.trainingSkillXpMultiplier || 1)
+      );
 
       applySkillXp("obedience", commandId, state.skills, adjustedXp);
       state.memory.lastTrainedAt = now;
+      state.memory.lastTrainedCommandId = commandId;
       state.memory.lastSeenAt = now;
       state.lastAction = "train";
 
@@ -1722,6 +1813,108 @@ const dogSlice = createSlice({
       updateStreak(state.streak, date);
       updateTemperamentReveal(state, now);
       finalizeDerivedState(state, now);
+    },
+
+    /* ------------- skill tree ------------- */
+
+    unlockSkillTreePerk(state, { payload }) {
+      const perkId = String(payload?.perkId || "").trim();
+      if (!perkId) return;
+
+      const perk = getSkillTreePerk(perkId);
+      if (!perk) return;
+
+      const skillTree = ensureSkillTreeState(state);
+      if (skillTree.unlockedIds.includes(perkId)) return;
+
+      const requiredId = getSkillTreeRequiredPerkId(perkId);
+      if (requiredId && !skillTree.unlockedIds.includes(requiredId)) return;
+
+      const points = getSkillTreePointsFromDogState(state);
+      if (points.pointsAvailable <= 0) return;
+
+      const now = typeof payload?.now === "number" ? payload.now : nowMs();
+
+      skillTree.unlockedIds.push(perkId);
+      skillTree.lastUnlockedId = perkId;
+      skillTree.lastUnlockedAt = now;
+      skillTree.lastBranchId =
+        getSkillTreeBranchIdForPerk(perkId) || skillTree.lastBranchId || null;
+
+      // Some perks unlock cosmetics that should be immediately available.
+      // Keep this mapping here so it remains deterministic + saveable.
+      const cosmeticUnlockByPerk = {
+        // Companion branch
+        "scrapbook-charm": { id: "tag_star", slot: "tag" },
+        // Guardian branch
+        "cozy-fort": { id: "collar_leaf", slot: "collar" },
+        // Athlete branch
+        "agility-path": { id: "collar_neon", slot: "collar" },
+      };
+
+      const cosmeticUnlock = cosmeticUnlockByPerk[perkId] || null;
+      if (cosmeticUnlock?.id) {
+        if (!state.cosmetics) state.cosmetics = { ...initialCosmetics };
+        if (!Array.isArray(state.cosmetics.unlockedIds)) {
+          state.cosmetics.unlockedIds = [];
+        }
+        if (!state.cosmetics.equipped) {
+          state.cosmetics.equipped = { ...initialCosmetics.equipped };
+        }
+
+        const cosmeticId = String(cosmeticUnlock.id);
+        const cosmeticSlot = String(cosmeticUnlock.slot || "").toLowerCase();
+
+        if (!state.cosmetics.unlockedIds.includes(cosmeticId)) {
+          state.cosmetics.unlockedIds.push(cosmeticId);
+        }
+
+        // Auto-equip if slot is empty (keeps UX snappy, but doesn't override player choice).
+        if (
+          cosmeticSlot &&
+          Object.prototype.hasOwnProperty.call(
+            state.cosmetics.equipped,
+            cosmeticSlot
+          ) &&
+          !state.cosmetics.equipped[cosmeticSlot]
+        ) {
+          state.cosmetics.equipped[cosmeticSlot] = cosmeticId;
+        }
+
+        pushJournalEntry(state, {
+          type: "SKILL_TREE",
+          moodTag: "PROUD",
+          summary: "Unlocked a cosmetic.",
+          body: `New cosmetic unlocked: ${cosmeticId}.`,
+          timestamp: now,
+        });
+      }
+
+      pushJournalEntry(state, {
+        type: "SKILL_TREE",
+        moodTag: "PROUD",
+        summary: `Unlocked perk: ${perk.name}.`,
+        body: perk.effect || "",
+        timestamp: now,
+      });
+    },
+
+    respecSkillTree(state, { payload }) {
+      const skillTree = ensureSkillTreeState(state);
+      if (!skillTree.unlockedIds.length) return;
+      const now = typeof payload?.now === "number" ? payload.now : nowMs();
+
+      skillTree.unlockedIds = [];
+      skillTree.lastUnlockedId = null;
+      skillTree.lastBranchId = null;
+
+      pushJournalEntry(state, {
+        type: "SKILL_TREE",
+        moodTag: "CALM",
+        summary: "Reset skill tree.",
+        body: "All perk points were refunded.",
+        timestamp: now,
+      });
     },
 
     addJournalEntry(state, { payload }) {
@@ -1873,6 +2066,14 @@ export const selectDogCleanlinessTier = (state) => state.dog.cleanlinessTier;
 export const selectDogPolls = (state) => state.dog.polls;
 export const selectDogTraining = (state) => state.dog.training;
 
+export const selectDogSkillTree = (state) => state.dog.skillTree;
+export const selectDogSkillTreeUnlockedIds = (state) =>
+  Array.isArray(state.dog?.skillTree?.unlockedIds)
+    ? state.dog.skillTree.unlockedIds
+    : [];
+export const selectDogSkillTreePoints = (state) =>
+  getSkillTreePointsFromDogState(state.dog);
+
 export const selectDogBond = (state) => state.dog.bond;
 export const selectDogMemorial = (state) => state.dog.memorial;
 export const selectDogVacation = (state) => state.dog.vacation;
@@ -1921,6 +2122,8 @@ export const {
   tickDogPolls,
   respondToDogPoll,
   trainObedience,
+  unlockSkillTreePerk,
+  respecSkillTree,
   addJournalEntry,
   purchaseCosmetic,
   equipCosmetic,

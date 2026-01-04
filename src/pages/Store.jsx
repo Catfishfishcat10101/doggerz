@@ -1,25 +1,21 @@
 // src/pages/Store.jsx
 // Store: buy + preview cosmetics (collars/tags/backdrops).
-
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-
 import { useToast } from "@/components/ToastProvider.jsx";
 import BackPill from "@/components/BackPill.jsx";
-
 import SpriteSheetDog from "@/components/SpriteSheetDog.jsx";
 import DogCosmeticsOverlay from "@/components/DogCosmeticsOverlay.jsx";
 import { getSpriteForStageAndTier } from "@/utils/lifecycle.js";
-
 import {
   purchaseCosmetic,
   selectCosmeticCatalog,
   selectDog,
   equipCosmetic,
   selectNextStreakReward,
-} from "@/utils/redux/dogSlice.js";
-import { selectUserCoins } from "@/utils/redux/userSlice.js";
+} from "@/redux/dogSlice.js";
+import { selectUserCoins } from "@/redux/userSlice.js";
 
 const EMPTY_EQUIPPED = Object.freeze({
   collar: null,

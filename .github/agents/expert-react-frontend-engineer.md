@@ -8,13 +8,9 @@ tools:
     "edit/editFiles",
     "vscode/extensions",
     "web/fetch",
-    "find TestFiles",
     "web/githubRepo",
-    "vscode/new",
     "vscode/openSimpleBrowser",
     "read/problems",
-    "execute/Commands",
-    "execute/runTasks",
     "execute/runTests",
     "search",
     "search/searchResults",
@@ -23,7 +19,6 @@ tools:
     "execute/testFailure",
     "search/usages",
     "vscode/vscodeAPI",
-    "microsoft.docs.mcp",
   ]
 ---
 
@@ -72,13 +67,9 @@ tools:
     "edit/editFiles",
     "vscode/extensions",
     "web/fetch",
-    "find TestFiles",
     "web/githubRepo",
-    "vscode/new",
     "vscode/openSimpleBrowser",
     "read/problems",
-    "execute/Commands",
-    "execute/runTasks",
     "execute/runTests",
     "search",
     "search/searchResults",
@@ -87,7 +78,6 @@ tools:
     "execute/testFailure",
     "search/usages",
     "vscode/vscodeAPI",
-    "microsoft.docs.mcp",
   ]
 ---
 

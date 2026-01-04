@@ -3,7 +3,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
-import { trainObedience } from "@/utils/redux/dogSlice.js";
+import { trainObedience } from "@/redux/dogSlice.js";
 
 const hasSpeech =
   typeof window !== "undefined" &&

@@ -2,7 +2,7 @@
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { PATHS } from "@/routes.js";
-import { selectDog } from "@/utils/redux/dogSlice.js";
+import { selectDog } from "@/redux/dogSlice.js";
 import PageShell from "@/components/PageShell.jsx";
 import EmptySlate from "@/components/EmptySlate.jsx";
 

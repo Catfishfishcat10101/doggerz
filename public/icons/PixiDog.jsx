@@ -1,4 +1,4 @@
-// src/components/PixiDog.jsx
+// src/icons/PixiDog.jsx
 import { useEffect, useRef } from "react";
 import * as PIXI from "pixi.js";
 import { withBaseUrl } from "@/utils/assetUrl.js";

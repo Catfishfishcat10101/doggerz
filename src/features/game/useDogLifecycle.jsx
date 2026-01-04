@@ -1,7 +1,7 @@
 // src/features/game/useDogLifecycle.jsx
 // @ts-nocheck
 import { useSelector } from "react-redux";
-import { selectDogTemperament } from "@/utils/redux/dogSlice.js";
+import { selectDogTemperament } from "@/redux/dogSlice.js";
 
 /**
  * Lightweight lifecycle hook:
