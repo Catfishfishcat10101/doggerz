@@ -1,4 +1,4 @@
-// src/features/game/components/DogCosmeticsOverlay.jsx
+// src/components/DogCosmeticsOverlay.jsx
 // Lightweight vector overlays for equipped cosmetics.
 // @ts-nocheck
 

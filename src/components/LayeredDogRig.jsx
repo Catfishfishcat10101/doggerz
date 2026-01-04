@@ -1,4 +1,4 @@
-// src/features/game/components/LayeredDogRig.jsx
+// src/components/LayeredDogRig.jsx
 // A lightweight "rig" made of separate sprite layers.
 // - Supports pose switching (stand/sit/lay)
 // - Supports expressive micro-animations (blink, pant, wag, bark)

@@ -1,6 +1,6 @@
 /** @format */
 
-// src/features/game/components/YardSetDressing.jsx
+// src/components/YardSetDressing.jsx
 // Lightweight "props" layer for the yard stage.
 // - Covers the pool (we don't have background-painting tools in code)
 // - Adds a dog house + back door + porch light so day/night feel like the same yard

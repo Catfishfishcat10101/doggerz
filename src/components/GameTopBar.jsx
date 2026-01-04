@@ -1,4 +1,4 @@
-// src/features/game/components/GameTopBar.jsx
+// src/components/GameTopBar.jsx
 // @ts-nocheck
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";

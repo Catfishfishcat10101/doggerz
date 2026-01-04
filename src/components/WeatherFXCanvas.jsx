@@ -1,4 +1,4 @@
-// src/features/game/components/WeatherFXCanvas.jsx
+// src/components/WeatherFXCanvas.jsx
 // @ts-nocheck
 
 import * as React from "react";

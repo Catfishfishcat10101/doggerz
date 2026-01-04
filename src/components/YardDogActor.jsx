@@ -1,4 +1,4 @@
-// src/features/game/components/YardDogActor.jsx
+// src/components/YardDogActor.jsx
 // @ts-nocheck
 
 import * as React from "react";
