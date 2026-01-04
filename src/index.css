@@ -575,6 +575,379 @@ html[data-reduce-motion="1"] .dog-bowl {
   }
 }
 
+/* Sparkle twinkle effect */
+@keyframes sparkle {
+  0%, 100% {
+    opacity: 0;
+    transform: scale(0) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1) rotate(180deg);
+  }
+}
+
+/* Glow pulse (for badges, achievements) */
+@keyframes glowPulse {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(251, 191, 36, 0.3), 0 0 20px rgba(251, 191, 36, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(251, 191, 36, 0.5), 0 0 40px rgba(251, 191, 36, 0.3);
+  }
+}
+
+/* Text shimmer effect */
+@keyframes textShimmer {
+  0% {
+    background-position: -100% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Rotate continuous */
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Swing animation (for hanging elements) */
+@keyframes swing {
+  0%, 100% {
+    transform: rotate(-3deg);
+  }
+  50% {
+    transform: rotate(3deg);
+  }
+}
+
+/* Jello wobble */
+@keyframes jello {
+  0%, 100% {
+    transform: scale(1, 1);
+  }
+  30% {
+    transform: scale(1.25, 0.75);
+  }
+  40% {
+    transform: scale(0.75, 1.25);
+  }
+  50% {
+    transform: scale(1.15, 0.85);
+  }
+  65% {
+    transform: scale(0.95, 1.05);
+  }
+  75% {
+    transform: scale(1.05, 0.95);
+  }
+}
+
+/* Rubber band elastic */
+@keyframes rubberBand {
+  0% {
+    transform: scale(1);
+  }
+  30% {
+    transform: scaleX(1.25) scaleY(0.75);
+  }
+  40% {
+    transform: scaleX(0.75) scaleY(1.25);
+  }
+  50% {
+    transform: scaleX(1.15) scaleY(0.85);
+  }
+  65% {
+    transform: scaleX(0.95) scaleY(1.05);
+  }
+  75% {
+    transform: scaleX(1.05) scaleY(0.95);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Tada celebration */
+@keyframes tada {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+  10%, 20% {
+    transform: scale(0.9) rotate(-3deg);
+  }
+  30%, 50%, 70%, 90% {
+    transform: scale(1.1) rotate(3deg);
+  }
+  40%, 60%, 80% {
+    transform: scale(1.1) rotate(-3deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+/* Bounce in */
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Flip in */
+@keyframes flipIn {
+  0% {
+    transform: perspective(400px) rotateY(90deg);
+    opacity: 0;
+  }
+  40% {
+    transform: perspective(400px) rotateY(-10deg);
+  }
+  70% {
+    transform: perspective(400px) rotateY(10deg);
+  }
+  100% {
+    transform: perspective(400px) rotateY(0deg);
+    opacity: 1;
+  }
+}
+
+/* Zoom in */
+@keyframes zoomIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Slide in from right */
+@keyframes slideInRight {
+  0% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Slide in from left */
+@keyframes slideInLeft {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Shake (attention grabber) */
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translateX(-10px);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translateX(10px);
+  }
+}
+
+/* Flip horizontal */
+@keyframes flipHorizontal {
+  0% {
+    transform: rotateY(0);
+  }
+  100% {
+    transform: rotateY(360deg);
+  }
+}
+
+/* Flip vertical */
+@keyframes flipVertical {
+  0% {
+    transform: rotateX(0);
+  }
+  100% {
+    transform: rotateX(360deg);
+  }
+}
+
+/* Roll in */
+@keyframes rollIn {
+  0% {
+    opacity: 0;
+    transform: translateX(-100%) rotate(-120deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) rotate(0deg);
+  }
+}
+
+/* Light speed (fast entry) */
+@keyframes lightSpeed {
+  0% {
+    transform: translateX(100%) skewX(-30deg);
+    opacity: 0;
+  }
+  60% {
+    transform: skewX(20deg);
+    opacity: 1;
+  }
+  80% {
+    transform: skewX(-5deg);
+  }
+  100% {
+    transform: translateX(0) skewX(0deg);
+  }
+}
+
+/* Fade in and scale */
+@keyframes fadeInScale {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Rotate and scale */
+@keyframes rotateScale {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    transform: rotate(180deg) scale(1.2);
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+  }
+}
+
+/* Wave (flowing motion) */
+@keyframes wave {
+  0% {
+    transform: translateY(0);
+  }
+  25% {
+    transform: translateY(-10px);
+  }
+  50% {
+    transform: translateY(0);
+  }
+  75% {
+    transform: translateY(10px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+/* Blink animation */
+@keyframes blink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+/* Typing cursor */
+@keyframes typingCursor {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+/* Ken Burns zoom (slow zoom for images) */
+@keyframes kenBurns {
+  0% {
+    transform: scale(1) translateX(0) translateY(0);
+  }
+  100% {
+    transform: scale(1.2) translateX(5%) translateY(5%);
+  }
+}
+
+/* Attention seeker - flash */
+@keyframes flash {
+  0%, 50%, 100% {
+    opacity: 1;
+  }
+  25%, 75% {
+    opacity: 0;
+  }
+}
+
+/* Ripple effect */
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+/* Slide and fade out */
+@keyframes slideOutDown {
+  0% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+/* Fade out */
+@keyframes fadeOut {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
 /* Utility classes for common animations */
 .animate-fadeIn {
   animation: fadeIn 0.4s ease-out;
@@ -671,4 +1044,527 @@ html[data-reduce-motion="1"] .dog-bowl {
 
 .scrollbar-thumb-amber-500\/20::-webkit-scrollbar-thumb {
   background-color: rgba(251, 191, 36, 0.2);
+}
+
+/* -------------------------------------------------------
+   Enhanced Mood-Based Dog Animations
+------------------------------------------------------- */
+
+/* Happy mood animations - bouncy and energetic */
+@keyframes dogHappyIdle {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+  }
+  25% {
+    transform: translateY(-4px) scale(1.02);
+  }
+  50% {
+    transform: translateY(-2px) scale(1.01);
+  }
+  75% {
+    transform: translateY(-3px) scale(1.015);
+  }
+}
+
+.dog-happy-idle {
+  animation: dogHappyIdle 1.8s ease-in-out infinite;
+}
+
+@keyframes dogHappyWalk {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  25% {
+    transform: translateY(-6px);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+  75% {
+    transform: translateY(-5px);
+  }
+}
+
+.dog-happy-walk {
+  animation: dogHappyWalk 0.4s ease-in-out infinite;
+}
+
+/* Playful mood animations - very energetic */
+@keyframes dogPlayfulIdle {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  20% {
+    transform: translateY(-6px) rotate(-2deg);
+  }
+  40% {
+    transform: translateY(-3px) rotate(2deg);
+  }
+  60% {
+    transform: translateY(-7px) rotate(-1deg);
+  }
+  80% {
+    transform: translateY(-4px) rotate(1deg);
+  }
+}
+
+.dog-playful-idle {
+  animation: dogPlayfulIdle 1.2s ease-in-out infinite;
+}
+
+@keyframes dogPlayfulBounce {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+  }
+  50% {
+    transform: translateY(-10px) scale(1.05);
+  }
+}
+
+.dog-playful-bounce {
+  animation: dogPlayfulBounce 0.35s ease-in-out infinite;
+}
+
+/* Sad mood animations - slow and droopy */
+@keyframes dogSadIdle {
+  0%, 100% {
+    transform: translateY(2px) scale(1);
+  }
+  50% {
+    transform: translateY(4px) scale(0.99);
+  }
+}
+
+.dog-sad-idle {
+  animation: dogSadIdle 4s ease-in-out infinite;
+}
+
+@keyframes dogSadWalk {
+  0%, 100% {
+    transform: translateY(3px);
+  }
+  50% {
+    transform: translateY(5px);
+  }
+}
+
+.dog-sad-walk {
+  animation: dogSadWalk 0.8s ease-in-out infinite;
+}
+
+/* Anxious mood animations - twitchy and nervous */
+@keyframes dogAnxiousIdle {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px);
+  }
+  10% {
+    transform: translateY(-1px) translateX(-1px);
+  }
+  20% {
+    transform: translateY(1px) translateX(1px);
+  }
+  30% {
+    transform: translateY(-1px) translateX(0px);
+  }
+  40% {
+    transform: translateY(0px) translateX(-1px);
+  }
+  50% {
+    transform: translateY(1px) translateX(1px);
+  }
+  60% {
+    transform: translateY(-1px) translateX(-1px);
+  }
+  70% {
+    transform: translateY(0px) translateX(0px);
+  }
+}
+
+.dog-anxious-idle {
+  animation: dogAnxiousIdle 2s ease-in-out infinite;
+}
+
+@keyframes dogAnxiousWalk {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px);
+  }
+  25% {
+    transform: translateY(2px) translateX(-1px);
+  }
+  50% {
+    transform: translateY(4px) translateX(1px);
+  }
+  75% {
+    transform: translateY(2px) translateX(-1px);
+  }
+}
+
+.dog-anxious-walk {
+  animation: dogAnxiousWalk 0.5s ease-in-out infinite;
+}
+
+/* Calm mood animations - gentle and serene */
+@keyframes dogCalmIdle {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+  }
+  50% {
+    transform: translateY(1px) scale(1.005);
+  }
+}
+
+.dog-calm-idle {
+  animation: dogCalmIdle 3.5s ease-in-out infinite;
+}
+
+@keyframes dogCalmWalk {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(2px);
+  }
+}
+
+.dog-calm-walk {
+  animation: dogCalmWalk 0.6s ease-in-out infinite;
+}
+
+/* Tired mood animations - very slow */
+@keyframes dogTiredIdle {
+  0%, 100% {
+    transform: translateY(3px) scale(1);
+  }
+  50% {
+    transform: translateY(5px) scale(0.995);
+  }
+}
+
+.dog-tired-idle {
+  animation: dogTiredIdle 5s ease-in-out infinite;
+}
+
+@keyframes dogTiredWalk {
+  0%, 100% {
+    transform: translateY(4px);
+  }
+  50% {
+    transform: translateY(6px);
+  }
+}
+
+.dog-tired-walk {
+  animation: dogTiredWalk 1s ease-in-out infinite;
+}
+
+/* Angry mood animations - stiff and tense */
+@keyframes dogAngryIdle {
+  0%, 100% {
+    transform: translateY(0px) scale(1.02);
+  }
+  50% {
+    transform: translateY(-1px) scale(1.025);
+  }
+}
+
+.dog-angry-idle {
+  animation: dogAngryIdle 2.5s ease-in-out infinite;
+}
+
+@keyframes dogAngryWalk {
+  0%, 100% {
+    transform: translateY(0px) scale(1.02);
+  }
+  50% {
+    transform: translateY(3px) scale(1.02);
+  }
+}
+
+.dog-angry-walk {
+  animation: dogAngryWalk 0.4s ease-in-out infinite;
+}
+
+/* Sleeping animation */
+@keyframes dogSleeping {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+  }
+  50% {
+    transform: translateY(2px) scale(1.01);
+  }
+}
+
+.dog-sleeping {
+  animation: dogSleeping 4s ease-in-out infinite;
+}
+
+/* Tail animations */
+@keyframes tailWagFast {
+  0%, 100% {
+    transform: rotate(15deg);
+  }
+  50% {
+    transform: rotate(-25deg);
+  }
+}
+
+.dog-tail-wag-fast {
+  animation: tailWagFast 0.15s ease-in-out infinite;
+}
+
+@keyframes tailDroop {
+  0%, 100% {
+    transform: rotate(-10deg) translateY(2px);
+  }
+  50% {
+    transform: rotate(-12deg) translateY(3px);
+  }
+}
+
+.dog-tail-droop {
+  animation: tailDroop 3s ease-in-out infinite;
+}
+
+@keyframes tailTuck {
+  0%, 100% {
+    transform: rotate(-25deg) translateY(3px);
+  }
+  50% {
+    transform: rotate(-27deg) translateY(4px);
+  }
+}
+
+.dog-tail-tuck {
+  animation: tailTuck 2s ease-in-out infinite;
+}
+
+@keyframes tailStiff {
+  0%, 100% {
+    transform: rotate(5deg);
+  }
+  50% {
+    transform: rotate(7deg);
+  }
+}
+
+.dog-tail-stiff {
+  animation: tailStiff 2.5s ease-in-out infinite;
+}
+
+.dog-tail-still {
+  transform: rotate(-5deg);
+}
+
+/* Ear animations */
+@keyframes earsPerk {
+  0%, 100% {
+    transform: rotate(-3deg);
+  }
+  50% {
+    transform: rotate(-5deg);
+  }
+}
+
+.dog-ears-perk {
+  animation: earsPerk 1.5s ease-in-out infinite;
+}
+
+@keyframes earsAlert {
+  0%, 100% {
+    transform: rotate(-2deg) translateY(-1px);
+  }
+  50% {
+    transform: rotate(-4deg) translateY(-2px);
+  }
+}
+
+.dog-ears-alert {
+  animation: earsAlert 1s ease-in-out infinite;
+}
+
+@keyframes earsDown {
+  0%, 100% {
+    transform: rotate(5deg) translateY(2px);
+  }
+  50% {
+    transform: rotate(6deg) translateY(3px);
+  }
+}
+
+.dog-ears-down {
+  animation: earsDown 3s ease-in-out infinite;
+}
+
+@keyframes earsBack {
+  0%, 100% {
+    transform: rotate(8deg) translateX(-1px);
+  }
+  50% {
+    transform: rotate(10deg) translateX(-2px);
+  }
+}
+
+.dog-ears-back {
+  animation: earsBack 2s ease-in-out infinite;
+}
+
+.dog-ears-neutral {
+  transform: rotate(0deg);
+}
+
+.dog-ears-relaxed {
+  transform: rotate(3deg) translateY(1px);
+}
+
+.dog-ears-forward {
+  transform: rotate(-8deg);
+}
+
+/* Micro-actions (short, one-time animations) */
+@keyframes microBounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
+}
+
+.dog-micro-bounce {
+  animation: microBounce 0.5s ease-out 1;
+}
+
+@keyframes microSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.dog-micro-spin {
+  animation: microSpin 0.8s ease-in-out 1;
+}
+
+@keyframes microPlayBow {
+  0%, 100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(0.85) translateY(3px);
+  }
+}
+
+.dog-micro-play-bow {
+  animation: microPlayBow 0.7s ease-in-out 1;
+}
+
+@keyframes microTremble {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-2px);
+  }
+  75% {
+    transform: translateX(2px);
+  }
+}
+
+.dog-micro-tremble {
+  animation: microTremble 0.1s ease-in-out 5;
+}
+
+@keyframes microYawn {
+  0%, 100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(1.15);
+  }
+}
+
+.dog-micro-yawn {
+  animation: microYawn 1.2s ease-in-out 1;
+}
+
+@keyframes microStretch {
+  0%, 100% {
+    transform: scaleX(1);
+  }
+  50% {
+    transform: scaleX(1.2);
+  }
+}
+
+.dog-micro-stretch {
+  animation: microStretch 1.5s ease-in-out 1;
+}
+
+/* Respect reduced motion for mood animations */
+@media (prefers-reduced-motion: reduce) {
+  .dog-happy-idle,
+  .dog-happy-walk,
+  .dog-playful-idle,
+  .dog-playful-bounce,
+  .dog-sad-idle,
+  .dog-sad-walk,
+  .dog-anxious-idle,
+  .dog-anxious-walk,
+  .dog-calm-idle,
+  .dog-calm-walk,
+  .dog-tired-idle,
+  .dog-tired-walk,
+  .dog-angry-idle,
+  .dog-angry-walk,
+  .dog-sleeping,
+  .dog-tail-wag-fast,
+  .dog-tail-droop,
+  .dog-tail-tuck,
+  .dog-tail-stiff,
+  .dog-ears-perk,
+  .dog-ears-alert,
+  .dog-ears-down,
+  .dog-ears-back,
+  .dog-micro-bounce,
+  .dog-micro-spin,
+  .dog-micro-play-bow,
+  .dog-micro-tremble,
+  .dog-micro-yawn,
+  .dog-micro-stretch {
+    animation: none !important;
+  }
+}
+
+html[data-reduce-motion="1"] .dog-happy-idle,
+html[data-reduce-motion="1"] .dog-happy-walk,
+html[data-reduce-motion="1"] .dog-playful-idle,
+html[data-reduce-motion="1"] .dog-playful-bounce,
+html[data-reduce-motion="1"] .dog-sad-idle,
+html[data-reduce-motion="1"] .dog-sad-walk,
+html[data-reduce-motion="1"] .dog-anxious-idle,
+html[data-reduce-motion="1"] .dog-anxious-walk,
+html[data-reduce-motion="1"] .dog-calm-idle,
+html[data-reduce-motion="1"] .dog-calm-walk,
+html[data-reduce-motion="1"] .dog-tired-idle,
+html[data-reduce-motion="1"] .dog-tired-walk,
+html[data-reduce-motion="1"] .dog-angry-idle,
+html[data-reduce-motion="1"] .dog-angry-walk,
+html[data-reduce-motion="1"] .dog-sleeping,
+html[data-reduce-motion="1"] .dog-tail-wag-fast,
+html[data-reduce-motion="1"] .dog-tail-droop,
+html[data-reduce-motion="1"] .dog-tail-tuck,
+html[data-reduce-motion="1"] .dog-tail-stiff,
+html[data-reduce-motion="1"] .dog-ears-perk,
+html[data-reduce-motion="1"] .dog-ears-alert,
+html[data-reduce-motion="1"] .dog-ears-down,
+html[data-reduce-motion="1"] .dog-ears-back,
+html[data-reduce-motion="1"] .dog-micro-bounce,
+html[data-reduce-motion="1"] .dog-micro-spin,
+html[data-reduce-motion="1"] .dog-micro-play-bow,
+html[data-reduce-motion="1"] .dog-micro-tremble,
+html[data-reduce-motion="1"] .dog-micro-yawn,
+html[data-reduce-motion="1"] .dog-micro-stretch {
+  animation: none !important;
 }
