@@ -1,187 +1,162 @@
 # 🐶 Doggerz
 
-> Adopt a pixel pup and make choices that shape its behavior. Built with **React**, **Redux Toolkit**, **Vite**, **Tailwind**, and **Firebase**. Offline-ready PWA.
+Adopt a pixel pup and make choices that shape its behavior. **Doggerz** is a **React 18 + Vite** PWA with **Redux Toolkit** state, a headless time-based “brain loop”, and optional **Firebase** cloud sync.
 
 [![React 18](https://img.shields.io/badge/React-18-61dafb)](https://react.dev/)
 [![Redux Toolkit](https://img.shields.io/badge/Redux%20Toolkit-RTK-764abc)](https://redux-toolkit.js.org/)
 [![Vite](https://img.shields.io/badge/Vite-7-646cff)](https://vitejs.dev/)
 [![Tailwind](https://img.shields.io/badge/Tailwind-CSS-38bdf8)](https://tailwindcss.com/)
-[![Firebase](https://img.shields.io/badge/Firebase-Auth%2FFirestore-ffca28)](https://firebase.google.com/)
+[![Firebase](https://img.shields.io/badge/Firebase-Optional-ffca28)](https://firebase.google.com/)
 [![PWA](https://img.shields.io/badge/PWA-Ready-5a0fc8)](https://web.dev/progressive-web-apps/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-success)](https://github.com/Catfishfishcat10101/doggerz/pulls)
 
 **Core loop:** feed → play → train → bond → level up
-**Feature pillars:** needs & mood system · sprite animations · responsive UI · installable PWA · offline gameplay
+
+### What makes it different
+
+- **Headless game loop:** `src/features/game/DogAIEngine.jsx` ticks over time and persists state (keeps UI effects out of the engine).
+- **Offline-first:** custom service worker (`public/sw.js`) + `/offline.html` fallback.
+- **Firebase is optional:** if env vars are missing, the app runs in a safe local-only mode.
 
 ---
 
-## 📸 Screenshots
+## ✨ Preview
 
-Add real captures for your store listing. (This repo doesn’t ship with placeholder screenshots.)
+Add screenshots/GIFs once you have them (recommended for store listings and contributors).
+
+| Home             | Game             | Settings         |
+| ---------------- | ---------------- | ---------------- |
+| _Add screenshot_ | _Add screenshot_ | _Add screenshot_ |
+
+Tip: store assets can live under `public/docs/` (ignored by the runtime, but easy to link from GitHub).
 
 ---
 
-## 🧱 Tech Stack
+## 🧱 Tech stack
 
 - **Frontend:** React 18, React Router, Redux Toolkit, TailwindCSS, Vite
-- **Backend:** Firebase Auth + Firestore (emulator support)
-- **PWA:** custom Service Worker (`public/sw.js`) + installable manifest
-- **DX:** ES Modules, fast HMR, strict env gating, Windows-friendly scripts
+- **Game rendering:** Pixi (`pixi.js`, `@pixi/react`)
+- **Cloud (optional):** Firebase Auth + Firestore
+- **PWA:** `public/manifest.webmanifest`, `public/sw.js`
 
 ---
 
-## 📋 Performance & PWA checklist
+## 🚀 Quick start
 
-See `docs/perf-checklist.md` for what to measure (first load/return load, /game transition timing, FPS/jank), and how to validate installability + service worker update safety.
-
-## 💾 Persistence & cloud sync policy
-
-See `docs/persistence-and-sync.md` for where the “source of truth” lives (local vs cloud), what metadata we persist, and how we avoid clobbering newer local saves with older cloud saves.
-
-## ✅ Launch Definition (v1)
-
-This section defines the minimum bar for shipping Doggerz. If any requirement below is not met, the release is not launch-ready.
-
-### Supported platforms (must work)
-
-- Chrome / Edge (Chromium)
-  - Desktop (Windows/macOS)
-  - Mobile (Android Chrome)
-- Safari (iOS)
-  - Mobile Safari + Add to Home Screen (PWA install expectations)
-
-Notes:
-
-- Firefox is a best-effort target unless explicitly promoted to supported.
-- Users with prefers-reduced-motion enabled must have a good experience (no critical UX gated behind heavy animation).
-
-### Minimum device (floor)
-
-- Mobile: iPhone 11-class device or equivalent mid-range Android
-- Desktop: typical integrated-GPU laptop (no discrete GPU assumed)
-
-### Target performance (ship criteria)
-
-- Time to interactive: < 3 seconds on a mid device on a typical connection
-- Smoothness: no frequent jank spikes; avoid > 100ms main-thread stalls during normal play
-- Sustained play: game remains responsive after 10+ minutes (no progressive slowdown)
-
-### Offline behavior expectations
-
-- App shell must load (no white screen / broken routing) when offline after a prior successful visit.
-- If offline:
-  - Gameplay is allowed to be limited, but must remain usable and clearly communicate limitations.
-  - Network-only features must fail gracefully (clear UI state, no infinite loader).
-
-### Data durability expectations
-
-- Doggerz must not silently wipe local progress.
-- Any reset/destructive action must be explicit:
-  - A clear Reset Save Data option in Settings
-  - Confirmation step (with a short explanation)
-- App updates must not corrupt existing saves; if a migration fails, show recovery options.
-
-### Golden flows (must succeed 100%)
-
-1. First visit: Landing → Adopt → Game
-
-2. Returning visit: Game loads correctly (and routes correctly if adoption is required)
-
-3. Auth (if enabled): Login/Signup must not break core play
-   - If auth is unavailable/misconfigured, users should still be able to play in a safe local-only mode (or be clearly gated with a friendly message).
-
-4. Settings: Settings changes persist and take effect immediately
-   - If a setting cannot apply instantly, the UI must say so and provide the next step.
-
-### Launch blockers (P0)
-
-Any of the following is a release blocker:
-
-- Crash that prevents play or navigation
-- Blank/white screen
-- Infinite loader without a timeout + recovery UI
-- Auth lockout that prevents access to core play (when auth is enabled)
-
-## 🚀 Quick Start
-
-### 1. Clone & Install
+### 1) Install
 
 ```bash
 git clone git@github.com:Catfishfishcat10101/doggerz.git
 cd doggerz
 npm install
+```
 
+### 2) Environment variables
 
-### 2. Configure Firebase
+- Keep `.env.example` in the repo as the template (safe to commit).
+- Put real keys in `.env.local` (ignored by git via `.gitignore`).
 
-Create `.env.local` from the provided `.env.example` and paste your Firebase web
-app credentials (Project settings → General → Your apps → SDK setup). The app
-will disable auth/cloud features until every required key is present to prevent
-runtime crashes.
+Required for Firebase features (Auth/Firestore):
 
-Tip: you can run `npm run env:check` to see what keys are missing. Add `-- --strict --require firebase` if you want CI/builds to fail when Firebase is not configured.
-### 3. (Optional) Enable live weather
+| Variable                            | Required | Notes                          |
+| ----------------------------------- | :------: | ------------------------------ |
+| `VITE_FIREBASE_API_KEY`             |    ✅    | Firebase web config            |
+| `VITE_FIREBASE_AUTH_DOMAIN`         |    ✅    | e.g. `yourapp.firebaseapp.com` |
+| `VITE_FIREBASE_PROJECT_ID`          |    ✅    | project id                     |
+| `VITE_FIREBASE_STORAGE_BUCKET`      |    ✅    | storage bucket                 |
+| `VITE_FIREBASE_MESSAGING_SENDER_ID` |    ✅    | sender id                      |
+| `VITE_FIREBASE_APP_ID`              |    ✅    | app id                         |
 
-Grab a free OpenWeather API key, add `VITE_OPENWEATHER_API_KEY` to `.env.local`,
-and (optionally) set `VITE_WEATHER_DEFAULT_ZIP`. Once set, the in-game weather
-widget auto-refreshes conditions every 30 minutes and tints the yard based on
-the current time of day.
+Optional:
 
-### 4. Day/Night Backgrounds (by ZIP)
+| Variable                   | Purpose                                     |
+| -------------------------- | ------------------------------------------- |
+| `VITE_OPENWEATHER_API_KEY` | Enables weather integration                 |
+| `VITE_SITE_URL`            | Used for absolute URLs in some tooling/docs |
 
-- Add background images to `public/backgrounds/` named:
-  - `backyard-day.webp`
-  - `backyard-night.webp`
-- Optional variants for more vibe:
-  - `backyard-dawn.webp`
-  - `backyard-dusk.webp`
-- Optional wide variants for large screens:
-  - `backyard-day-wide.webp`
-  - `backyard-night-wide.webp`
-- If these files are missing, the game gracefully falls back to a stylized
-  gradient so you can play without assets.
-- Time-of-day is derived from your ZIP's local time using OpenWeather's
-  timezone offset (no geolocation required). If `VITE_OPENWEATHER_API_KEY` is
-  not set, we fall back to your device clock.
+To see what’s missing:
 
-Fallback rules:
+- `npm run env:check`
 
-- If only `backyard-split.webp` (or `backyard-split.png`) exists (day|night in one image), it's cropped
-  left/right automatically.
-- If `dawn`/`dusk` variants are missing, we fall back to `day`/`night` with a
-  tinted gradient overlay.
+### 3) Run dev
 
-Environment variables used:
-
-- `VITE_OPENWEATHER_API_KEY` – required for ZIP-based local time.
-- `VITE_WEATHER_DEFAULT_ZIP` – default ZIP (e.g., `10001`) if the player
-  hasn't provided one elsewhere.
-
+```bash
+npm run dev
+```
 
 ---
 
-## 🧰 Asset tooling (optional)
+## 🧪 Quality gates
 
-Doggerz includes scripts under `scripts/` to help manage assets (optional, but handy).
+- Lint: `npm run lint`
+- Build: `npm run build`
+- PWA sanity: `npm run preflight`
+- Local CI sweep: `npm run ci:verify`
 
-### PWA icons
+---
 
-Generates app icons into `public/icons/`.
+## 🔥 Firebase: do you need `firebase.json` and `src/firebase.js`?
 
-- Run: `npm run icons:generate`
+### `src/firebase.js`
 
-### Sprite tooling (JRT pack)
+Yes — **keep it** unless you plan to remove Firebase from the app entirely.
 
-- Checklist (what assets are expected): `npm run sprites:jrt:checklist`
+It’s imported across the codebase (Auth/UI gating + Firestore thunks). It also intentionally supports **local-only mode** by exporting `null` instances when config is missing.
+
+### `firebase.json`
+
+Keep it if you deploy using **Firebase Hosting**.
+
+- It contains **no secrets**.
+- It configures SPA rewrites + caching headers for built assets.
+
+If you are 100% sure you will never use Firebase Hosting (e.g., Vercel/Netlify only), you _can_ remove it — it won’t affect the runtime app — but you’ll lose an easy, reproducible hosting config.
+
+---
+
+## 🧠 Architecture map
+
+- Routing: `src/AppRouter.jsx` (paths in `src/routes.js`)
+- Game UI: `src/features/game/MainGame.jsx`
+- Game engine loop: `src/features/game/DogAIEngine.jsx`
+- Redux store: `src/redux/store.js` (slices live under `src/redux/`)
+- PWA: `public/sw.js`, `public/manifest.webmanifest`, `src/pwa/PwaProvider.jsx`
+
+---
+
+## 🐾 Assets & tooling
+
+Useful scripts (optional):
+
+- PWA icons: `npm run icons:generate`
+- Sprite checklist: `npm run sprites:jrt:checklist`
 - Validate frames: `npm run sprites:jrt:validate`
-- Build sprite strips from frames: `npm run sprites:jrt:build`
+- Build sprite strips: `npm run sprites:jrt:build`
 
-### Backyard split helper
+---
 
-If you have a combined `backyard-split.png` (day on the left, night on the right)
-you can split it into the expected filenames:
+## 🧯 Troubleshooting
 
-- Run: `npm run split:backyard`
+### Firebase features look disabled
 
-```
+- Confirm `.env.local` exists and contains all required `VITE_FIREBASE_*` keys.
+- Restart dev server after editing env vars.
+- Check the console for: `[Doggerz] Firebase disabled...` (this is expected if keys are missing).
+
+### Service worker caching feels “stuck”
+
+- In dev, the app unregisters old SWs by default.
+- In prod, bump `CACHE_VERSION` in `public/sw.js` when you change precached assets.
+
+---
+
+## 🔐 Privacy
+
+- In-app privacy policy route: `/privacy`
+- Static legacy URL (if shared): `/privacy-policy.html` redirects to `/privacy`
+
+---
+
+## 📄 License
+
+MIT (see `LICENSE`).

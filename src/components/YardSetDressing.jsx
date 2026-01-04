@@ -81,24 +81,39 @@ function BallSvg() {
   return (
     <svg viewBox="0 0 80 80" width="100%" height="100%" aria-hidden="true">
       <circle cx="40" cy="44" r="22" fill="#f97316" />
-      <path d="M22 40 C 30 32, 50 32, 58 40" stroke="rgba(255,255,255,0.55)" strokeWidth="5" fill="none" strokeLinecap="round" />
+      <path
+        d="M22 40 C 30 32, 50 32, 58 40"
+        stroke="rgba(255,255,255,0.55)"
+        strokeWidth="5"
+        fill="none"
+        strokeLinecap="round"
+      />
       <circle cx="34" cy="36" r="4" fill="rgba(255,255,255,0.65)" />
     </svg>
   );
 }
 
-export default function YardSetDressing({ isNight, onBowl, onWaterBowl, onBall, onDogHouse }) {
+export default function YardSetDressing({
+  isNight,
+  onBowl,
+  onWaterBowl,
+  onBall,
+  onDogHouse,
+}) {
   // Positions are percentages of the yard stage.
   // Keep these stable so the dog can interact near the bowl.
   const hasInteraction =
-    typeof onBowl === 'function' ||
-    typeof onWaterBowl === 'function' ||
-    typeof onBall === 'function' ||
-    typeof onDogHouse === 'function';
+    typeof onBowl === "function" ||
+    typeof onWaterBowl === "function" ||
+    typeof onBall === "function" ||
+    typeof onDogHouse === "function";
   return (
-    <div className="pointer-events-none absolute inset-0" aria-hidden={!hasInteraction}>
+    <div
+      className="pointer-events-none absolute inset-0"
+      aria-hidden={!hasInteraction}
+    >
       {/* Rest pad */}
-      {typeof onDogHouse === 'function' ? (
+      {typeof onDogHouse === "function" ? (
         <button
           type="button"
           aria-label="Rest pad"
@@ -109,40 +124,40 @@ export default function YardSetDressing({ isNight, onBowl, onWaterBowl, onBall, 
             top: `${YARD_PROP_POSITIONS.house.y}%`,
             width: YARD_PROP_SIZES.house.width,
             height: YARD_PROP_SIZES.house.height,
-            transform: 'translate(-50%, -50%)',
+            transform: "translate(-50%, -50%)",
             filter: isNight
-              ? 'drop-shadow(0 18px 36px rgba(0,0,0,0.45))'
-              : 'drop-shadow(0 16px 30px rgba(0,0,0,0.25))',
+              ? "drop-shadow(0 18px 36px rgba(0,0,0,0.45))"
+              : "drop-shadow(0 16px 30px rgba(0,0,0,0.25))",
             opacity: isNight ? 0.95 : 1,
-            background: 'transparent',
-            border: 'none',
+            background: "transparent",
+            border: "none",
             padding: 0,
-            cursor: 'pointer',
+            cursor: "pointer",
           }}
         >
           <RestPadSvg isNight={isNight} />
         </button>
       ) : (
-          <div
-            className="pointer-events-none absolute"
-            style={{
-              left: `${YARD_PROP_POSITIONS.house.x}%`,
-              top: `${YARD_PROP_POSITIONS.house.y}%`,
-              width: YARD_PROP_SIZES.house.width,
-              height: YARD_PROP_SIZES.house.height,
-              transform: 'translate(-50%, -50%)',
-              filter: isNight
-                ? 'drop-shadow(0 18px 36px rgba(0,0,0,0.45))'
-                : 'drop-shadow(0 16px 30px rgba(0,0,0,0.25))',
-              opacity: isNight ? 0.95 : 1,
-            }}
-          >
-            <RestPadSvg isNight={isNight} />
-          </div>
+        <div
+          className="pointer-events-none absolute"
+          style={{
+            left: `${YARD_PROP_POSITIONS.house.x}%`,
+            top: `${YARD_PROP_POSITIONS.house.y}%`,
+            width: YARD_PROP_SIZES.house.width,
+            height: YARD_PROP_SIZES.house.height,
+            transform: "translate(-50%, -50%)",
+            filter: isNight
+              ? "drop-shadow(0 18px 36px rgba(0,0,0,0.45))"
+              : "drop-shadow(0 16px 30px rgba(0,0,0,0.25))",
+            opacity: isNight ? 0.95 : 1,
+          }}
+        >
+          <RestPadSvg isNight={isNight} />
+        </div>
       )}
 
       {/* Food bowl (fixed spot) */}
-      {typeof onBowl === 'function' ? (
+      {typeof onBowl === "function" ? (
         <button
           type="button"
           aria-label="Food bowl"
@@ -153,36 +168,40 @@ export default function YardSetDressing({ isNight, onBowl, onWaterBowl, onBall, 
             top: `${YARD_PROP_POSITIONS.bowl.y}%`,
             width: YARD_PROP_SIZES.bowl.width,
             height: YARD_PROP_SIZES.bowl.height,
-            transform: 'translate(-50%, -50%)',
+            transform: "translate(-50%, -50%)",
             opacity: isNight ? 0.85 : 0.95,
-            filter: isNight ? 'drop-shadow(0 12px 18px rgba(0,0,0,0.35))' : 'drop-shadow(0 10px 16px rgba(0,0,0,0.22))',
-            background: 'transparent',
-            border: 'none',
+            filter: isNight
+              ? "drop-shadow(0 12px 18px rgba(0,0,0,0.35))"
+              : "drop-shadow(0 10px 16px rgba(0,0,0,0.22))",
+            background: "transparent",
+            border: "none",
             padding: 0,
-            cursor: 'pointer',
+            cursor: "pointer",
           }}
         >
           <FoodBowlSvg />
         </button>
       ) : (
-          <div
-            className="pointer-events-none absolute"
-            style={{
-              left: `${YARD_PROP_POSITIONS.bowl.x}%`,
-              top: `${YARD_PROP_POSITIONS.bowl.y}%`,
-              width: YARD_PROP_SIZES.bowl.width,
-              height: YARD_PROP_SIZES.bowl.height,
-              transform: 'translate(-50%, -50%)',
-              opacity: isNight ? 0.85 : 0.95,
-              filter: isNight ? 'drop-shadow(0 12px 18px rgba(0,0,0,0.35))' : 'drop-shadow(0 10px 16px rgba(0,0,0,0.22))',
-            }}
-          >
-            <FoodBowlSvg />
-          </div>
+        <div
+          className="pointer-events-none absolute"
+          style={{
+            left: `${YARD_PROP_POSITIONS.bowl.x}%`,
+            top: `${YARD_PROP_POSITIONS.bowl.y}%`,
+            width: YARD_PROP_SIZES.bowl.width,
+            height: YARD_PROP_SIZES.bowl.height,
+            transform: "translate(-50%, -50%)",
+            opacity: isNight ? 0.85 : 0.95,
+            filter: isNight
+              ? "drop-shadow(0 12px 18px rgba(0,0,0,0.35))"
+              : "drop-shadow(0 10px 16px rgba(0,0,0,0.22))",
+          }}
+        >
+          <FoodBowlSvg />
+        </div>
       )}
 
       {/* Water bowl */}
-      {typeof onWaterBowl === 'function' ? (
+      {typeof onWaterBowl === "function" ? (
         <button
           type="button"
           aria-label="Water bowl"
@@ -193,15 +212,15 @@ export default function YardSetDressing({ isNight, onBowl, onWaterBowl, onBall, 
             top: `${YARD_PROP_POSITIONS.water.y}%`,
             width: YARD_PROP_SIZES.water.width,
             height: YARD_PROP_SIZES.water.height,
-            transform: 'translate(-50%, -50%)',
+            transform: "translate(-50%, -50%)",
             opacity: isNight ? 0.82 : 0.95,
             filter: isNight
-              ? 'drop-shadow(0 10px 16px rgba(0,0,0,0.32))'
-              : 'drop-shadow(0 10px 16px rgba(0,0,0,0.2))',
-            background: 'transparent',
-            border: 'none',
+              ? "drop-shadow(0 10px 16px rgba(0,0,0,0.32))"
+              : "drop-shadow(0 10px 16px rgba(0,0,0,0.2))",
+            background: "transparent",
+            border: "none",
             padding: 0,
-            cursor: 'pointer',
+            cursor: "pointer",
           }}
         >
           <WaterBowlSvg />
@@ -214,11 +233,11 @@ export default function YardSetDressing({ isNight, onBowl, onWaterBowl, onBall, 
             top: `${YARD_PROP_POSITIONS.water.y}%`,
             width: YARD_PROP_SIZES.water.width,
             height: YARD_PROP_SIZES.water.height,
-            transform: 'translate(-50%, -50%)',
+            transform: "translate(-50%, -50%)",
             opacity: isNight ? 0.82 : 0.95,
             filter: isNight
-              ? 'drop-shadow(0 10px 16px rgba(0,0,0,0.32))'
-              : 'drop-shadow(0 10px 16px rgba(0,0,0,0.2))',
+              ? "drop-shadow(0 10px 16px rgba(0,0,0,0.32))"
+              : "drop-shadow(0 10px 16px rgba(0,0,0,0.2))",
           }}
         >
           <WaterBowlSvg />
@@ -226,7 +245,7 @@ export default function YardSetDressing({ isNight, onBowl, onWaterBowl, onBall, 
       )}
 
       {/* Toy ball */}
-      {typeof onBall === 'function' ? (
+      {typeof onBall === "function" ? (
         <button
           type="button"
           aria-label="Toy ball"
@@ -237,19 +256,20 @@ export default function YardSetDressing({ isNight, onBowl, onWaterBowl, onBall, 
             top: `${YARD_PROP_POSITIONS.ball.y}%`,
             width: YARD_PROP_SIZES.ball.width,
             height: YARD_PROP_SIZES.ball.height,
-            transform: 'translate(-50%, -50%)',
+            transform: "translate(-50%, -50%)",
             opacity: isNight ? 0.8 : 0.95,
-            filter: isNight ? 'drop-shadow(0 10px 16px rgba(0,0,0,0.35))' : 'drop-shadow(0 10px 16px rgba(0,0,0,0.22))',
-            background: 'transparent',
-            border: 'none',
+            filter: isNight
+              ? "drop-shadow(0 10px 16px rgba(0,0,0,0.35))"
+              : "drop-shadow(0 10px 16px rgba(0,0,0,0.22))",
+            background: "transparent",
+            border: "none",
             padding: 0,
-            cursor: 'pointer',
+            cursor: "pointer",
           }}
         >
           <BallSvg />
         </button>
       ) : null}
-
     </div>
   );
 }

@@ -31,10 +31,8 @@ export const SOCIAL_LINKS = Object.freeze({
 
 // Public policy/support links (safe to reference anywhere in the app)
 export const APP_LINKS = Object.freeze({
-  // Public, self-hosted privacy policy URL.
-  // Using a static HTML page is Play Console-friendly (renders without JS).
-  // Example: "https://yourdomain.com/privacy-policy.html"
-  privacyPolicy: "/privacy-policy.html",
+  // Privacy policy route (React page).
+  privacyPolicy: "/privacy",
 
   // In-app support / contact page.
   supportContact: "/contact",

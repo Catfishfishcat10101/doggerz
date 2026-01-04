@@ -2,7 +2,7 @@
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { PATHS } from "@/routes.js";
-import { selectDog } from "@/redux/dogSlice.js";
+import { selectDog } from "@/utils/redux/dogSlice.js";
 import PageShell from "@/components/PageShell.jsx";
 import EmptySlate from "@/components/EmptySlate.jsx";
 
@@ -10,18 +10,18 @@ function describePottyTraining(training) {
   const t = Math.round(Number(training ?? 0));
 
   if (t >= 100) {
-    return "Fully potty trained. Indoor accidents are very rare.";
+    return "Fully Potty Trained!";
   }
   if (t >= 75) {
-    return "Mostly trained with occasional accidents on stressful days.";
+    return "Mostly trained! Just a few more trips needed.";
   }
   if (t >= 50) {
-    return "Getting the hang of it. Keep taking them out after meals and naps.";
+    return "Well hot dog! Keep taking them out after meals and naps.";
   }
   if (t > 0) {
-    return "Just starting out. Short, frequent potty breaks work best.";
+    return "You got this, Young pups will go often!";
   }
-  return "Not potty trained yet. Expect frequent accidents until a routine forms.";
+  return "Not potty trained yet... Expect accidents until a routine forms.";
 }
 
 export default function Potty() {
@@ -103,17 +103,17 @@ export default function Potty() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
             <div className="rounded-xl border border-zinc-200 bg-white/70 p-3 space-y-1 dark:border-zinc-800 dark:bg-zinc-900/60">
               <p className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-200">
-                Total accidents
+                Total accidents:
               </p>
               <p className="text-lg font-semibold text-rose-300">{accidents}</p>
               <p className="text-[11px] text-zinc-600 dark:text-zinc-500">
-                Each indoor accident slows training a bit.
+                Each indoor accident slows training..
               </p>
             </div>
 
             <div className="rounded-xl border border-zinc-200 bg-white/70 p-3 space-y-1 dark:border-zinc-800 dark:bg-zinc-900/60">
               <p className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-200">
-                Last successful potty
+                Successful trips
               </p>
               <p className="text-xs text-zinc-700 dark:text-zinc-300">
                 {lastSuccessAt
@@ -121,13 +121,13 @@ export default function Potty() {
                   : "No logged potty trips yet."}
               </p>
               <p className="text-[11px] text-zinc-600 dark:text-zinc-500">
-                Logging regular outdoor potty trips speeds training.
+                Regular outdoor trips help build a routine.
               </p>
             </div>
 
             <div className="rounded-xl border border-zinc-200 bg-white/70 p-3 space-y-1 dark:border-zinc-800 dark:bg-zinc-900/60">
               <p className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-200">
-                Last accident
+                Last accident:
               </p>
               <p className="text-xs text-zinc-700 dark:text-zinc-300">
                 {lastAccidentAt
@@ -135,7 +135,7 @@ export default function Potty() {
                   : "No accidents recorded yet."}
               </p>
               <p className="text-[11px] text-zinc-600 dark:text-zinc-500">
-                Consistent schedule and quick cleanups help prevent repeats.
+                Consistent & quick cleanups helps training progress.
               </p>
             </div>
           </div>
@@ -144,7 +144,7 @@ export default function Potty() {
         {/* Tips / guide section */}
         <section className="rounded-2xl border border-zinc-200 bg-white/80 p-4 space-y-3 dark:border-zinc-800 dark:bg-zinc-950/60">
           <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
-            Training routine tips
+            Training Tips
           </p>
           <ul className="list-disc list-inside text-xs text-zinc-700 dark:text-zinc-300 space-y-1">
             <li>

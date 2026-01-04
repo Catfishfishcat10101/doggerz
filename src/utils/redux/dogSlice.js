@@ -523,7 +523,7 @@ function pushPersonalityHistory(state, entry) {
   }
 }
 
-function applyPersonalityShift(state, { now, source, deltas, note }) {
+function applyPersonalityShift(state, { now, source, deltas, note } = {}) {
   const personality = ensurePersonalityState(state);
   const t = personality.traits;
   const d = deltas || {};

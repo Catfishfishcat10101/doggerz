@@ -16,7 +16,7 @@ import { DOGS, getAsset } from "@/config/assets.js";
 export function resolveDogAsset({
   lifeStage = "puppy",
   cleanlinessTier = "clean",
-  action = "clean",
+  action: _action = "idle",
 } = {}) {
   // For now, we only have "clean" renders. Map anything -> clean as fallback.
   const stage = ["puppy", "adult", "senior"].includes(lifeStage)

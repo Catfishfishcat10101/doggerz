@@ -4,16 +4,30 @@ import Header from "@/components/Header.jsx";
 import Footer from "@/components/Footer.jsx";
 import { AppShellContext } from "@/layout/AppShellContext.js";
 
+/**
+ * @typedef {Object} PageShellProps
+ * @property {any} children
+ * @property {string} [className]
+ * @property {string} [mainClassName]
+ * @property {string} [containerClassName]
+ * @property {boolean} [showHeader]
+ * @property {boolean} [showFooter]
+ * @property {boolean} [fullBleed]
+ * @property {boolean} [disableBackground]
+ * @property {import('react').CSSProperties} [style]
+ */
+
+/** @param {PageShellProps} props */
 export default function PageShell({
   children,
   className = "",
   mainClassName = "",
   containerClassName = "",
-  showHeader,
-  showFooter,
+  showHeader = undefined,
+  showFooter = undefined,
   fullBleed = false,
   disableBackground = false,
-  style,
+  style = undefined,
 }) {
   const shellStyle = {
     color: "var(--text-main, #e5e7eb)",

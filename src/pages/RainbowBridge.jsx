@@ -11,7 +11,7 @@ import {
   selectDogMemorial,
   startRainbowBridge,
   completeRainbowBridge,
-} from "@/redux/dogSlice.js";
+} from "@/utils/redux/dogSlice.js";
 
 export default function RainbowBridge() {
   const dispatch = useDispatch();

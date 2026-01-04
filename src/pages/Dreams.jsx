@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 
 import { PATHS } from "@/routes.js";
-import { selectDog, selectDogDreams } from "@/redux/dogSlice.js";
+import { selectDog, selectDogDreams } from "@/utils/redux/dogSlice.js";
 
 import Header from "@/components/Header.jsx";
 import Footer from "@/components/Footer.jsx";

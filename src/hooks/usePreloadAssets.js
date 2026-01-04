@@ -13,10 +13,10 @@ export function usePreloadAssets(urls = []) {
   const [ready, setReady] = React.useState(false);
   const [progress, setProgress] = React.useState(0);
 
+  const list = React.useMemo(() => (urls || []).filter(Boolean), [urls]);
+
   React.useEffect(() => {
     let cancelled = false;
-
-    const list = (urls || []).filter(Boolean);
     if (list.length === 0) {
       setReady(true);
       setProgress(1);
@@ -49,10 +49,12 @@ export function usePreloadAssets(urls = []) {
         try {
           img.onload = null;
           img.onerror = null;
-        } catch {}
+        } catch {
+          // ignore
+        }
       });
     };
-  }, [JSON.stringify(urls || [])]);
+  }, [list]);
 
   return { ready, progress };
 }

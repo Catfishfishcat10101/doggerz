@@ -1,5 +1,5 @@
 // src/pages/Game.jsx
-// @ts-nocheck
+/** @format */
 
 import MainGame from "@/features/game/MainGame.jsx";
 import PageShell from "@/components/PageShell.jsx";

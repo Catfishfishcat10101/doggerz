@@ -3,16 +3,16 @@
 // src/components/useYardSfx.js
 // @ts-nocheck
 
-import * as React from 'react';
+import * as React from "react";
 
 function canPlayM4a() {
   try {
-    const a = document.createElement('audio');
+    const a = document.createElement("audio");
     // Most compatible check for AAC-LC in MP4.
     return Boolean(
       a.canPlayType('audio/mp4; codecs="mp4a.40.2"') ||
-        a.canPlayType('audio/mp4') ||
-        a.canPlayType('audio/x-m4a')
+      a.canPlayType("audio/mp4") ||
+      a.canPlayType("audio/x-m4a")
     );
   } catch {
     return false;
@@ -22,7 +22,7 @@ function canPlayM4a() {
 function pickBarkSrc() {
   // Prefer optimized AAC (smaller). If the browser can't decode m4a, disable bark SFX
   // rather than referencing a missing fallback file.
-  return canPlayM4a() ? '/audio/bark.m4a' : null;
+  return canPlayM4a() ? "/audio/bark.m4a" : null;
 }
 
 /**
@@ -41,21 +41,21 @@ export function useYardSfx(settings) {
   React.useEffect(() => {
     // Pre-create audio element once.
     // NOTE: prefer /audio/bark.m4a (optimized). If unsupported, bark SFX is disabled.
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
     if (barkRef.current) return;
 
     const src = pickBarkSrc();
     if (!src) return;
 
     const el = new Audio(src);
-    el.preload = 'auto';
+    el.preload = "auto";
     barkRef.current = el;
 
     return () => {
       try {
         if (barkRef.current) {
           barkRef.current.pause();
-          barkRef.current.src = '';
+          barkRef.current.src = "";
         }
       } catch {
         // ignore
@@ -107,7 +107,7 @@ export function useYardSfx(settings) {
         el.currentTime = 0;
         // play() returns a promise in modern browsers.
         const p = el.play();
-        if (p && typeof p.then === 'function') {
+        if (p && typeof p.then === "function") {
           await p;
         }
       } catch {

@@ -1,7 +1,7 @@
 // src/features/game/MoodAndJournalPanel.jsx
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { selectDogJournal } from "@/redux/dogSlice.js";
+import { selectDogJournal } from "@/utils/redux/dogSlice.js";
 import { PATHS } from "@/routes.js";
 
 // Mood timeline intentionally removed from the UI.
