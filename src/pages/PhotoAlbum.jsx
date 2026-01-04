@@ -75,7 +75,7 @@ export default function PhotoAlbum() {
               <div>
                 <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 bg-clip-text text-transparent animate-shimmer">
                   <Camera className="inline-block w-10 h-10 mr-3 text-purple-600" />
-                  {dog?.name}'s Photo Album
+                  {dog?.name}&apos;s Photo Album
                 </h1>
                 <p className="text-gray-600 mt-2">
                   {filteredPhotos.length} precious memories captured

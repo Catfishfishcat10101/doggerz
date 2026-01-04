@@ -1714,3 +1714,202 @@ html[data-reduce-motion="1"] .animate-text-reveal,
 html[data-reduce-motion="1"] .animate-gradient-shift {
   animation: none !important;
 }
+
+/* -------------------------------------------------------
+   Premium Cozy Storybook Animations
+------------------------------------------------------- */
+
+/* Gentle bounce for mood dial */
+@keyframes bounce-gentle {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.animate-bounce-gentle {
+  animation: bounce-gentle 2s ease-in-out infinite;
+}
+
+/* Slide in from right for activity stream */
+.animate-slide-in-right {
+  animation: slideInRight 0.4s ease-out;
+}
+
+/* Float up for particles */
+@keyframes float-up {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-50px) scale(0.5);
+  }
+}
+
+.animate-float-up {
+  animation: float-up 1s ease-out forwards;
+}
+
+/* Pulse slow for atmospheric effects */
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 3s ease-in-out infinite;
+}
+
+/* Seasonal particle effects */
+@keyframes floating-petals {
+  0% {
+    transform: translateY(-10%) translateX(0) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(110vh) translateX(100px) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+.animate-floating-petals {
+  animation: floating-petals 8s linear infinite;
+}
+
+@keyframes falling-leaves {
+  0% {
+    transform: translateY(-10%) translateX(0) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(110vh) translateX(-100px) rotate(-360deg);
+    opacity: 0;
+  }
+}
+
+.animate-falling-leaves {
+  animation: falling-leaves 10s linear infinite;
+}
+
+@keyframes falling-snow {
+  0% {
+    transform: translateY(-10%) translateX(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(110vh) translateX(50px);
+    opacity: 0;
+  }
+}
+
+.animate-falling-snow {
+  animation: falling-snow 12s linear infinite;
+}
+
+/* Fireflies for summer */
+@keyframes firefly {
+  0%, 100% {
+    opacity: 0.3;
+    transform: translate(0, 0);
+  }
+  25% {
+    opacity: 1;
+    transform: translate(20px, -30px);
+  }
+  50% {
+    opacity: 0.5;
+    transform: translate(-10px, -50px);
+  }
+  75% {
+    opacity: 1;
+    transform: translate(30px, -20px);
+  }
+}
+
+.animate-firefly {
+  animation: firefly 6s ease-in-out infinite;
+}
+
+/* Storybook page turn */
+@keyframes page-turn {
+  0% {
+    transform: rotateY(0deg);
+  }
+  100% {
+    transform: rotateY(-180deg);
+  }
+}
+
+.animate-page-turn {
+  animation: page-turn 0.8s cubic-bezier(0.645, 0.045, 0.355, 1) forwards;
+  transform-origin: left center;
+}
+
+/* Cozy ambient glow */
+@keyframes ambient-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(255, 215, 0, 0.4);
+  }
+}
+
+.animate-ambient-glow {
+  animation: ambient-glow 4s ease-in-out infinite;
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .animate-bounce-gentle,
+  .animate-slide-in-right,
+  .animate-float-up,
+  .animate-pulse-slow,
+  .animate-floating-petals,
+  .animate-falling-leaves,
+  .animate-falling-snow,
+  .animate-firefly,
+  .animate-page-turn,
+  .animate-ambient-glow {
+    animation: none !important;
+  }
+}
+
+html[data-reduce-motion="1"] .animate-bounce-gentle,
+html[data-reduce-motion="1"] .animate-slide-in-right,
+html[data-reduce-motion="1"] .animate-float-up,
+html[data-reduce-motion="1"] .animate-pulse-slow,
+html[data-reduce-motion="1"] .animate-floating-petals,
+html[data-reduce-motion="1"] .animate-falling-leaves,
+html[data-reduce-motion="1"] .animate-falling-snow,
+html[data-reduce-motion="1"] .animate-firefly,
+html[data-reduce-motion="1"] .animate-page-turn,
+html[data-reduce-motion="1"] .animate-ambient-glow {
+  animation: none !important;
+}
