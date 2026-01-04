@@ -6,6 +6,7 @@
     "node": ">=18.0.0"
   },
   "scripts": {
+    "prepare": "husky",
     "dev": "vite",
     "dev:host": "vite --host 127.0.0.1 --port 5173",
     "lint": "eslint . --max-warnings=0",
@@ -50,7 +51,8 @@
     "split:backyard": "node scripts/split-backyard.js public/backgrounds/backyard-split.png public/backgrounds/backyard-day.webp public/backgrounds/backyard-night.webp",
     "sprites:check": "node scripts/validate-sprites.js",
     "preflight:strict": "node scripts/preflight.js --strict && npm run sprites:check",
-    "play:screenshots": "node scripts/generate-play-screenshots.js"
+    "play:screenshots": "node scripts/generate-play-screenshots.js",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "@capacitor-community/admob": "^8.0.0",
@@ -84,11 +86,22 @@
     "eslint-plugin-react-refresh": "^0.4.16",
     "ffmpeg-static": "^5.2.0",
     "globals": "^15.14.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
     "postcss": "^8.4.47",
+    "prettier": "^3.7.4",
     "rollup": "^4.53.2",
     "rollup-plugin-visualizer": "^5.14.0",
     "sharp": "^0.33.5",
     "tailwindcss": "^3.4.13",
     "vite": "^7.3.0"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,json,css,md}": [
+      "prettier --write"
+    ],
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --fix"
+    ]
   }
 }

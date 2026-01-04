@@ -85,8 +85,7 @@ export function getLifeStageLabel(stageId) {
  *
  * NOTE: Sprite assets have been removed. Returns app icon as fallback.
  */
-export function getSpriteForLifeStage(stageId) {
-  // eslint-disable-line no-unused-vars
+export function getSpriteForLifeStage(_stageId) {
   // All stages now return the app icon since sprites have been removed
   return withBaseUrl("/icons/doggerz-192.png");
 }
@@ -95,8 +94,7 @@ export function getSpriteForLifeStage(stageId) {
  * Helper: stage + cleanliness tier → sprite path.
  * NOTE: Sprite assets have been removed. Returns app icon as fallback.
  */
-export function getSpriteForStageAndTier(stageOrObj, cleanlinessTier) {
-  // eslint-disable-line no-unused-vars
+export function getSpriteForStageAndTier(_stageOrObj, _cleanlinessTier) {
   // Sprites have been removed, return app icon as fallback
   return getSpriteForLifeStage("PUPPY");
 }

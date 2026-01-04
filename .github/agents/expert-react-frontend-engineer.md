@@ -162,6 +162,7 @@ connection.connect();
 }, [roomId]); // theme not in dependencies!
 
 return (
+
 <div className={theme}>
 {messages.map((msg, i) => (
 <div key={i}>{msg}</div>
