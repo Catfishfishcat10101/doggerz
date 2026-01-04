@@ -17,6 +17,7 @@ import TemperamentCard from "@/features/game/TemperamentCard.jsx";
 import { useDogLifecycle } from "@/features/game/useDogLifecycle.jsx";
 import GoodbyeLetter from "@/components/narrative/GoodbyeLetter.jsx";
 import DogChat from "@/features/companion/DogChat.jsx";
+import DreamJournal from "@/features/dreams/DreamJournal.jsx";
 
 import WeatherFXCanvas from "@/features/game/components/WeatherFXCanvas.jsx";
 import YardSetDressing from "@/features/game/components/YardSetDressing.jsx";
@@ -427,6 +428,9 @@ export default function MainGame() {
 
       {/* Dog Companion Chat */}
       {adopted && <DogChat />}
+
+      {/* Dream Journal */}
+      {adopted && <DreamJournal isAsleep={isAsleep} />}
     </div>
   );
 }
