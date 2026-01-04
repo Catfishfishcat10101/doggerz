@@ -1901,6 +1901,22 @@ html[data-reduce-motion="1"] .animate-gradient-shift {
   }
 }
 
+/* Falling rain for weather diorama */
+@keyframes falling-rain {
+  0% {
+    transform: translateY(-20px);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(100vh);
+    opacity: 0;
+  }
+}
+
+.animate-falling-rain {
+  animation: falling-rain 0.8s linear infinite;
+}
+
 html[data-reduce-motion="1"] .animate-bounce-gentle,
 html[data-reduce-motion="1"] .animate-slide-in-right,
 html[data-reduce-motion="1"] .animate-float-up,
@@ -1908,6 +1924,7 @@ html[data-reduce-motion="1"] .animate-pulse-slow,
 html[data-reduce-motion="1"] .animate-floating-petals,
 html[data-reduce-motion="1"] .animate-falling-leaves,
 html[data-reduce-motion="1"] .animate-falling-snow,
+html[data-reduce-motion="1"] .animate-falling-rain,
 html[data-reduce-motion="1"] .animate-firefly,
 html[data-reduce-motion="1"] .animate-page-turn,
 html[data-reduce-motion="1"] .animate-ambient-glow {

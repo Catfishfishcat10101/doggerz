@@ -31,6 +31,7 @@ const StorePage = React.lazy(() => import("./pages/Store.jsx"));
 const BadgesPage = React.lazy(() => import("./pages/Badges.jsx"));
 const MemoryReelPage = React.lazy(() => import("./pages/MemoryReel.jsx"));
 const PhotoAlbumPage = React.lazy(() => import("./pages/PhotoAlbum.jsx"));
+const WeatherPage = React.lazy(() => import("./pages/WeatherPage.jsx"));
 const LegalPage = React.lazy(() => import("./pages/Legal.jsx"));
 const PrivacyPage = React.lazy(() => import("./pages/Privacy.jsx"));
 const PottyPage = React.lazy(() => import("./pages/Potty.jsx"));
@@ -97,6 +98,8 @@ const router = createBrowserRouter(
         { path: PATHS.STORE.replace(/^\//, ""), element: suspense(<StorePage />) },
         { path: PATHS.BADGES.replace(/^\//, ""), element: suspense(<BadgesPage />) },
         { path: PATHS.MEMORIES.replace(/^\//, ""), element: suspense(<MemoryReelPage />) },
+        { path: PATHS.PHOTO_ALBUM.replace(/^\//, ""), element: suspense(<PhotoAlbumPage />) },
+        { path: PATHS.WEATHER.replace(/^\//, ""), element: suspense(<WeatherPage />) },
         { path: PATHS.LEGAL.replace(/^\//, ""), element: suspense(<LegalPage />) },
         { path: PATHS.PRIVACY.replace(/^\//, ""), element: suspense(<PrivacyPage />) },
         { path: PATHS.POTTY.replace(/^\//, ""), element: suspense(<PottyPage />) },
