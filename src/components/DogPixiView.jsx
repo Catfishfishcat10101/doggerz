@@ -1,4 +1,4 @@
-// src/features/game/components/DogPixiView.jsx
+// src/components/DogPixiView.jsx
 // @ts-nocheck
 
 import { useEffect, useMemo, useState } from "react";

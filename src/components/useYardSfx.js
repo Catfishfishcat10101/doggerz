@@ -1,6 +1,6 @@
 /** @format */
 
-// src/features/game/components/useYardSfx.js
+// src/components/useYardSfx.js
 // @ts-nocheck
 
 import * as React from 'react';

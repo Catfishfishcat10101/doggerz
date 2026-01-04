@@ -1,4 +1,4 @@
-// src/features/game/components/SpriteSheetDog.jsx
+// src/components/SpriteSheetDog.jsx
 // STUB: Sprite assets have been removed. This component now returns a simple fallback.
 // @ts-nocheck
 

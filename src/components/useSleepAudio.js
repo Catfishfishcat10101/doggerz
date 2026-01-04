@@ -1,6 +1,6 @@
 /** @format */
 
-// src/features/game/components/useSleepAudio.js
+// src/components/useSleepAudio.js
 // A tiny WebAudio "sleep ambience" loop.
 // - No external assets (avoids missing-file issues)
 // - Best-effort: respects autoplay restrictions and fails silently
