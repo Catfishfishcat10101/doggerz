@@ -18,6 +18,7 @@ import AppShell from "./layout/AppShell.jsx";
 import Landing from "./pages/Landing.jsx";
 
 const GamePage = React.lazy(() => import("./pages/Game.jsx"));
+const SkillTreePage = React.lazy(() => import("./pages/SkillTree.jsx"));
 const AdoptPage = React.lazy(() => import("./pages/Adopt.jsx"));
 const LoginPage = React.lazy(() => import("./pages/Login.jsx"));
 const SignupPage = React.lazy(() => import("./pages/Signup.jsx"));
@@ -83,6 +84,11 @@ const router = createBrowserRouter(
               <GamePage />
             </ErrorBoundary>
           ),
+        },
+
+        {
+          path: PATHS.SKILL_TREE.replace(/^\//, ""),
+          element: suspense(<SkillTreePage />),
         },
 
         { path: PATHS.ADOPT.replace(/^\//, ""), element: suspense(<AdoptPage />) },

@@ -110,11 +110,11 @@ export function getAmbientWeatherHint() {
     case 'morning':
       return 'Soft morning light, ideal for breakfast and a short play session.';
     case 'afternoon':
-      return 'Bright and lively. Your pup’s ready for action.';
+      return 'Bright and lively. Your pup\'s ready for action.';
     case 'dusk':
       return 'Golden hour—great for one last walk before dark.';
     case 'evening':
-      return 'Things are winding down. Your pup’s energy starts to fade.';
+      return 'Things are winding down. Your pup\'s energy starts to fade.';
     case 'night':
     default:
       return 'Quiet night. Ideal for howls, dreams, and naps.';

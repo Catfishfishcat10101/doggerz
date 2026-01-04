@@ -21,6 +21,7 @@ import WeatherFXCanvas from "@/features/game/components/WeatherFXCanvas.jsx";
 import YardSetDressing from "@/features/game/components/YardSetDressing.jsx";
 import YardDogActor from "@/features/game/components/YardDogActor.jsx";
 import DreamSequence from "@/features/dreams/DreamSequence.jsx";
+import DynamicMusicSystem from "@/features/audio/DynamicMusicSystem.jsx";
 
 import {
   selectDog,
@@ -166,9 +167,18 @@ export default function MainGame() {
   const intent = String(dog?.lastAction || "idle").toLowerCase();
   const isAsleep = Boolean(dog?.isAsleep);
   const activeDream = dog?.dreams?.active || null;
+  const moodTag = dog?.mood?.history?.[0]?.tag || null;
 
   return (
     <div className="relative min-h-dvh w-full overflow-hidden bg-gradient-to-b from-zinc-950 via-zinc-950 to-emerald-950/20 text-white">
+      <DynamicMusicSystem
+        timeOfDay={timeOfDayBucket}
+        weather={weather}
+        moodTag={moodTag}
+        stats={dog?.stats}
+        activity={intent}
+        isAsleep={isAsleep}
+      />
       <DreamSequence
         dream={isAsleep ? activeDream : null}
         onDismiss={() => dispatch(dismissActiveDream())}

@@ -7,6 +7,7 @@ export const PATHS = Object.freeze({
   HOME: '/',
   ADOPT: '/adopt',
   GAME: '/game',
+  SKILL_TREE: '/skill-tree',
   SPRITE_TEST: '/sprite-test',
   LOGIN: '/login',
   SIGNUP: '/signup',
@@ -40,6 +41,7 @@ export const PATHS = Object.freeze({
 export const routes = Object.freeze([
   { path: PATHS.HOME, name: 'Home', meta: { title: 'Doggerz' } },
   { path: PATHS.GAME, name: 'Game', meta: { title: 'Your Yard' } },
+  { path: PATHS.SKILL_TREE, name: 'Skill Tree', meta: { title: 'Skill Tree' } },
   { path: PATHS.ADOPT, name: 'Adopt', meta: { title: 'Adopt a Pup' } },
   { path: PATHS.LOGIN, name: 'Login', meta: { title: 'Login' } },
   { path: PATHS.SIGNUP, name: 'Signup', meta: { title: 'Sign up' } },
@@ -88,6 +90,7 @@ export const routes = Object.freeze([
  */
 export const PRIMARY_NAV = Object.freeze([
   { path: PATHS.GAME, label: 'Game' },
+  { path: PATHS.SKILL_TREE, label: 'Skill Tree' },
   { path: PATHS.ABOUT, label: 'About' },
   { path: PATHS.CONTACT, label: 'Contact Us' },
   // Secondary links (policy/dev) are in the footer now.
