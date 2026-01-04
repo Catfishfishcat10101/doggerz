@@ -87,6 +87,16 @@ function ActionButton({ label, onClick, tone = "default", disabled }) {
   );
 }
 
+// Neglect detection thresholds (narrative layer only)
+const NEGLECT_THRESHOLDS = {
+  HUNGER_MIN: 10,
+  HAPPINESS_MIN: 10,
+  CLEANLINESS_MIN: 5,
+  HOURS_SINCE_FED: 48,
+  HOURS_SINCE_PLAYED: 72,
+  HOURS_SINCE_SEEN: 48,
+};
+
 export default function MainGame() {
   const dispatch = useDispatch();
 
@@ -192,9 +202,9 @@ export default function MainGame() {
     
     // Severe neglect conditions (narrative trigger only)
     const severeNeglect = 
-      (hunger < 10 && hoursSinceLastFed > 48) ||
-      (happiness < 10 && hoursSinceLastPlayed > 72) ||
-      (cleanliness < 5 && hoursSinceLastSeen > 48);
+      (hunger < NEGLECT_THRESHOLDS.HUNGER_MIN && hoursSinceLastFed > NEGLECT_THRESHOLDS.HOURS_SINCE_FED) ||
+      (happiness < NEGLECT_THRESHOLDS.HAPPINESS_MIN && hoursSinceLastPlayed > NEGLECT_THRESHOLDS.HOURS_SINCE_PLAYED) ||
+      (cleanliness < NEGLECT_THRESHOLDS.CLEANLINESS_MIN && hoursSinceLastSeen > NEGLECT_THRESHOLDS.HOURS_SINCE_SEEN);
     
     // Only show once per session
     const hasShownThisSession = sessionStorage.getItem('doggerz:goodbyeShown');

@@ -1,7 +1,7 @@
 // src/pages/RainbowBridge.jsx
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import * as React from "react";
+import React from "react";
 
 import Header from "@/components/Header.jsx";
 import Footer from "@/components/Footer.jsx";
