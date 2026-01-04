@@ -1,153 +1,74 @@
 // src/pages/SkillTree.jsx
 
 import * as React from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 
 import PageShell from "@/components/PageShell.jsx";
 import { PATHS } from "@/routes.js";
-import { selectDog } from "@/utils/redux/dogSlice.js";
+import {
+  respecSkillTree,
+  selectDog,
+  selectDogSkillTreePoints,
+  selectDogSkillTreeUnlockedIds,
+  unlockSkillTreePerk,
+} from "@/redux/dogSlice.js";
+import { SKILL_TREE_BRANCHES } from "@/constants/skillTree.js";
 
-const BRANCHES = [
-  {
-    id: "companion",
-    name: "Companion",
-    tagline: "Warm bonds and social sparkle.",
-    accent: "text-rose-700",
+const BRANCH_STYLES = {
+  companion: {
     border: "border-rose-200/80",
     badge: "border-rose-200/70 bg-rose-100/70 text-rose-700",
     line: "bg-rose-300/70",
-    perks: [
-      {
-        id: "foodie",
-        name: "Foodie",
-        effect: "Hunger decays 20% slower.",
-        type: "Passive",
-      },
-      {
-        id: "social-butterfly",
-        name: "Social Butterfly",
-        effect: "Happiness decays 30% slower.",
-        type: "Passive",
-      },
-      {
-        id: "cuddle-time",
-        name: "Cuddle Time",
-        effect: "Bonding gains +10% after petting.",
-        type: "Passive",
-      },
-      {
-        id: "scrapbook-charm",
-        name: "Scrapbook Charm",
-        effect: "Journals save an extra daily memory.",
-        type: "Unlock",
-        unlocks: "Storybook photo frames",
-      },
-    ],
   },
-  {
-    id: "guardian",
-    name: "Guardian",
-    tagline: "Steady, watchful, and cozy.",
-    accent: "text-amber-700",
+  guardian: {
     border: "border-amber-200/80",
     badge: "border-amber-200/70 bg-amber-100/70 text-amber-700",
     line: "bg-amber-300/70",
-    perks: [
-      {
-        id: "night-owl",
-        name: "Night Owl",
-        effect: "Play at night without waking the pup.",
-        type: "Unlock",
-        unlocks: "Nighttime yard session",
-      },
-      {
-        id: "calm-watch",
-        name: "Calm Watch",
-        effect: "Energy decays 15% slower while idle.",
-        type: "Passive",
-      },
-      {
-        id: "safe-haven",
-        name: "Safe Haven",
-        effect: "Cleanliness decays 15% slower.",
-        type: "Passive",
-      },
-      {
-        id: "cozy-fort",
-        name: "Cozy Fort",
-        effect: "Unlock a guardian blanket cosmetic.",
-        type: "Unlock",
-        unlocks: "Blanket cosmetic",
-      },
-    ],
   },
-  {
-    id: "athlete",
-    name: "Athlete",
-    tagline: "Speed, focus, and playful grit.",
-    accent: "text-emerald-700",
+  athlete: {
     border: "border-emerald-200/80",
     badge: "border-emerald-200/70 bg-emerald-100/70 text-emerald-700",
     line: "bg-emerald-300/70",
-    perks: [
-      {
-        id: "quick-learner",
-        name: "Quick Learner",
-        effect: "Training progresses 50% faster.",
-        type: "Passive",
-      },
-      {
-        id: "trail-runner",
-        name: "Trail Runner",
-        effect: "Energy recovery is 20% faster.",
-        type: "Passive",
-      },
-      {
-        id: "fetch-focus",
-        name: "Fetch Focus",
-        effect: "Mini-game scores gain a small bonus.",
-        type: "Passive",
-      },
-      {
-        id: "agility-path",
-        name: "Agility Path",
-        effect: "Unlock a new agility course activity.",
-        type: "Unlock",
-        unlocks: "Agility course",
-      },
-    ],
   },
-];
+};
 
 export default function SkillTree() {
+  const dispatch = useDispatch();
   const dog = useSelector(selectDog);
   const level = dog?.level ?? 1;
-  const pointsEarned = Math.max(0, level - 1);
-  const [unlocked, setUnlocked] = React.useState(() => new Set());
+  const unlockedIds = useSelector(selectDogSkillTreeUnlockedIds);
+  const unlocked = React.useMemo(() => new Set(unlockedIds), [unlockedIds]);
+  const points = useSelector(selectDogSkillTreePoints);
+  const pointsAvailable = points?.pointsAvailable ?? 0;
+  const pointsEarned = points?.pointsEarned ?? Math.max(0, level - 1);
+  const pointsSpent = points?.pointsSpent ?? unlockedIds.length;
 
-  const pointsSpent = unlocked.size;
-  const pointsAvailable = Math.max(0, pointsEarned - pointsSpent);
-
-  const unlockPerk = (perkId, requiredId) => {
-    setUnlocked((prev) => {
-      if (prev.has(perkId)) return prev;
-      if (requiredId && !prev.has(requiredId)) return prev;
-      if (pointsEarned - prev.size <= 0) return prev;
-      const next = new Set(prev);
-      next.add(perkId);
-      return next;
-    });
+  const unlockPerk = (perkId) => {
+    dispatch(unlockSkillTreePerk({ perkId }));
   };
 
-  const resetPreview = () => {
-    setUnlocked(new Set());
+  const onRespec = () => {
+    const ok = window.confirm(
+      "Reset your skill tree? This will refund all spent points."
+    );
+    if (!ok) return;
+    dispatch(respecSkillTree());
   };
+
+  const branches = React.useMemo(
+    () =>
+      SKILL_TREE_BRANCHES.map((b) => ({
+        ...b,
+        ...(BRANCH_STYLES[b.id] || {}),
+      })),
+    []
+  );
 
   return (
     <PageShell
       disableBackground
-      className="relative overflow-hidden bg-[#f5ecd9] text-slate-900"
+      className="dz-skilltree relative overflow-hidden bg-[#f5ecd9] text-slate-900"
     >
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-24 -left-24 h-80 w-80 rounded-full bg-amber-200/40 blur-3xl" />
@@ -209,10 +130,10 @@ export default function SkillTree() {
               {pointsSpent > 0 ? (
                 <button
                   type="button"
-                  onClick={resetPreview}
+                  onClick={onRespec}
                   className="inline-flex items-center justify-center rounded-full border border-slate-300/80 bg-white/60 px-4 py-2 text-xs font-semibold text-slate-600 transition hover:bg-white"
                 >
-                  Reset preview
+                  Reset perks
                 </button>
               ) : null}
             </div>
@@ -226,8 +147,8 @@ export default function SkillTree() {
                 How it works
               </div>
               <p className="mt-1 text-xs text-slate-500">
-                Unlock perks in order within each branch. This preview resets on
-                refresh until perk saving is wired to your profile.
+                Unlock perks in order within each branch. Perks are saved to
+                your pup’s profile.
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600">
@@ -245,7 +166,7 @@ export default function SkillTree() {
         </div>
 
         <div className="mt-8 grid gap-6 lg:grid-cols-3">
-          {BRANCHES.map((branch) => (
+          {branches.map((branch) => (
             <section
               key={branch.id}
               className={`relative overflow-hidden rounded-3xl border ${branch.border} bg-white/70 p-6 shadow-[0_20px_70px_rgba(60,35,10,0.1)]`}
@@ -276,6 +197,14 @@ export default function SkillTree() {
                     const canUnlock =
                       pointsAvailable > 0 && !isUnlocked && !isBlocked;
 
+                    const perkState = isUnlocked
+                      ? "unlocked"
+                      : isBlocked
+                        ? "blocked"
+                        : canUnlock
+                          ? "available"
+                          : "locked";
+
                     const statusLabel = isUnlocked
                       ? "Unlocked"
                       : isBlocked
@@ -295,7 +224,9 @@ export default function SkillTree() {
                         />
 
                         <div
-                          className={`rounded-2xl border p-4 transition ${
+                          data-branch={branch.id}
+                          data-state={perkState}
+                          className={`dz-perk-card rounded-2xl border p-4 transition ${
                             isUnlocked
                               ? "border-emerald-300/70 bg-emerald-50/70"
                               : "border-slate-200/80 bg-white/80"
@@ -332,7 +263,7 @@ export default function SkillTree() {
                             </span>
                             <button
                               type="button"
-                              onClick={() => unlockPerk(perk.id, requiredId)}
+                              onClick={() => unlockPerk(perk.id)}
                               disabled={!canUnlock}
                               className={`inline-flex items-center justify-center rounded-full border px-3 py-1 text-xs font-semibold transition ${
                                 isUnlocked

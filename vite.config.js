@@ -13,8 +13,11 @@ function Visualizer() {
   if (process.env.ANALYZE !== "1") return null;
 
   // Lazy-load so normal builds don't pay the require cost (and to avoid dependency issues if removed).
-  const vizImport = require("rollup-plugin-visualizer");
-  const visualizer = vizImport.visualizer || vizImport;
+  const vizImport = /** @type {any} */ (require("rollup-plugin-visualizer"));
+  const visualizer = /** @type {any} */ (
+    vizImport?.visualizer || vizImport?.default || vizImport
+  );
+  if (typeof visualizer !== "function") return null;
 
   return visualizer({
     filename: "dist/stats.html",
@@ -28,7 +31,7 @@ function Visualizer() {
 /** @returns {Promise<import('vite').UserConfig>} */
 module.exports = async () => {
   const reactModule = await import("@vitejs/plugin-react");
-  const react = reactModule.default || reactModule;
+  const react = /** @type {any} */ (reactModule.default || reactModule);
 
   return {
     plugins: [react(), Visualizer()].filter(Boolean),

@@ -2,11 +2,8 @@
 // @ts-nocheck
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { selectUser } from "@/utils/redux/userSlice.js";
-import {
-  selectDogRenderMode,
-  setDogRenderMode,
-} from "@/utils/redux/userSlice.js";
+import { selectUser } from "@/redux/userSlice.js";
+import { selectDogRenderMode, setDogRenderMode } from "@/redux/userSlice.js";
 
 // Optional Firebase logout (won't crash if Firebase isn't present).
 // Keep it lazy to avoid top-level await/module init issues.

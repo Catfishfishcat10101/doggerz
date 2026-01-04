@@ -33,8 +33,6 @@ import {
   selectDogTraining,
   feed,
   play,
-  rest,
-  wakeUp,
   bathe,
   goPotty,
   scoopPoop,
@@ -224,6 +222,7 @@ export default function MainGame() {
             isAsleep={isAsleep}
             intent={intent}
             commandId={intent === "train" ? lastTrainedCommandId : undefined}
+            cosmeticsEquipped={dog?.cosmetics?.equipped}
             useRig={false}
             useSpritePack={false}
           />

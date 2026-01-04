@@ -1,7 +1,7 @@
 // src/features/game/TemperamentCard.jsx
 import * as React from "react";
 import { useDispatch } from "react-redux";
-import { markTemperamentRevealed } from "@/utils/redux/dogSlice.js";
+import { markTemperamentRevealed } from "@/redux/dogSlice.js";
 
 function TraitPill({ label, intensity }) {
   return (

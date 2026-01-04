@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 
-import { selectDog, selectDogJournal } from "@/utils/redux/dogSlice.js";
+import { selectDog, selectDogJournal } from "@/redux/dogSlice.js";
 import Header from "@/components/Header.jsx";
 import Footer from "@/components/Footer.jsx";
 import EmptySlate from "@/components/EmptySlate.jsx";

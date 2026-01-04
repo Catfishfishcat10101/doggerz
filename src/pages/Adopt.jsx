@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
 import { PATHS } from "@/routes.js";
-import { selectDog, setAdoptedAt, setDogName } from "@/utils/redux/dogSlice.js";
+import { selectDog, setAdoptedAt, setDogName } from "@/redux/dogSlice.js";
 import {
   cancelWorkflow,
   goToStep,
@@ -15,7 +15,7 @@ import {
   selectWorkflowById,
   setWorkflowData,
   startWorkflow,
-} from "@/utils/redux/workflowSlice.js";
+} from "@/redux/workflowSlice.js";
 import WorkflowShell from "@/features/workflow/WorkflowShell.jsx";
 
 const WORKFLOW_ID = "adopt";

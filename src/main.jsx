@@ -8,11 +8,12 @@ import ReactDOM from "react-dom/client";
 import { Provider } from "react-redux";
 
 import AppRouter from "./AppRouter.jsx";
-import store from "./utils/redux/store.js";
+import store from "./redux/store.js";
 
 import "./index.css";
 
-import AppPreferencesEffects from "./components/AppPreferencesEffects.jsx";
+import AppPreferencesEffects from "./pages/AppPreferencesEffects.jsx";
+import AppGameEffects from "./components/AppGameEffects.jsx";
 import { ToastProvider } from "./components/ToastProvider.jsx";
 import PwaProvider from "./pwa/PwaProvider.jsx";
 import PwaStatusBanners from "./components/PwaStatusBanners.jsx";
@@ -90,6 +91,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <ToastProvider>
           <ErrorBoundary fallback={AppCrashFallback}>
             <AppPreferencesEffects />
+            <AppGameEffects />
             <PwaStatusBanners />
             <LazyDogAIEngine />
             <AppRouter />

@@ -659,7 +659,10 @@ export default function HelpPage() {
               </div>
 
               <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <Section title="Diagnostics (copy/paste for bug reports)">
+                <Section
+                  id="diagnostics"
+                  title="Diagnostics (copy/paste for bug reports)"
+                >
                   <p className="text-sm text-zinc-300">
                     This is safe to share. It helps debug caching, platform
                     issues, and environment problems.
@@ -686,7 +689,7 @@ export default function HelpPage() {
                   </pre>
                 </Section>
 
-                <Section title="Need something added?">
+                <Section id="requests" title="Need something added?">
                   <p>
                     Want more FAQs, a feature, or a UI tweak? Drop it on GitHub
                     and we’ll ship it.

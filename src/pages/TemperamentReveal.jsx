@@ -1,6 +1,6 @@
 // src/pages/TemperamentReveal.jsx
 import { useSelector } from "react-redux";
-import { selectDog } from "@/utils/redux/dogSlice.js";
+import { selectDog } from "@/redux/dogSlice.js";
 import PageShell from "@/components/PageShell.jsx";
 
 export default function TemperamentReveal() {

@@ -1,8 +1,9 @@
 // src/features/game/TrainingPanel.jsx
-// Right-rail training panel: commands + big voice button.
-// @ts-nocheck
+
+import { useDispatch } from "react-redux";
 
 import VoiceCommandButton from "@/components/VoiceCommandButton.jsx";
+import { trainObedience } from "@/redux/dogSlice.js";
 
 export default function TrainingPanel({
   pottyComplete,
@@ -13,6 +14,8 @@ export default function TrainingPanel({
   selectedCommandId,
   onSelectCommand,
 }) {
+  const dispatch = useDispatch();
+
   return (
     <section className="rounded-3xl border border-white/15 bg-black/35 backdrop-blur-md p-4 shadow-[0_0_60px_rgba(0,0,0,0.18)]">
       <div className="flex items-center justify-between gap-3">
@@ -87,6 +90,36 @@ export default function TrainingPanel({
           );
         })}
       </div>
+
+      {pottyComplete && allowButtonTraining ? (
+        <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl border border-emerald-400/20 bg-emerald-500/10 px-3 py-2">
+          <div>
+            <div className="text-xs font-semibold text-emerald-100">
+              Train selected
+            </div>
+            <div className="mt-0.5 text-[11px] text-zinc-300/80">
+              Click to practice{" "}
+              <span className="font-semibold">{selectedCommandId}</span>.
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() =>
+              dispatch(
+                trainObedience({
+                  commandId: selectedCommandId,
+                  success: true,
+                  xp: 6,
+                  now: Date.now(),
+                })
+              )
+            }
+            className="shrink-0 rounded-2xl border border-emerald-400/45 bg-emerald-500/15 px-3 py-2 text-xs font-extrabold text-emerald-100 hover:bg-emerald-500/20 transition"
+          >
+            Practice
+          </button>
+        </div>
+      ) : null}
 
       {/* Voice control */}
       {allowVoiceTraining ? (

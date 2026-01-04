@@ -6,7 +6,7 @@ import {
   selectDog,
   selectDogTraining,
   selectDogBond,
-} from "@/utils/redux/dogSlice.js";
+} from "@/redux/dogSlice.js";
 
 function StatBar({ label, value = 0, color = "bg-emerald-500" }) {
   const numeric = Number.isFinite(Number(value)) ? Number(value) : 0;

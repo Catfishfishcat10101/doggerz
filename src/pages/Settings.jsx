@@ -8,13 +8,13 @@ import {
   DOG_STORAGE_KEY,
   selectDogVacation,
   setVacationMode,
-} from "../utils/redux/dogSlice.js";
+} from "../redux/dogSlice.js";
 import {
   selectDogRenderMode,
   selectUserZip,
   setDogRenderMode,
   setZip,
-} from "../utils/redux/userSlice.js";
+} from "../redux/userSlice.js";
 import { auth, db, firebaseReady } from "../firebase.js";
 import { deleteUser, onAuthStateChanged, signOut } from "firebase/auth";
 import { deleteDoc, doc } from "firebase/firestore";
@@ -46,7 +46,7 @@ import {
   setTheme,
   setHapticsEnabled,
   SETTINGS_STORAGE_KEY,
-} from "../utils/redux/settingsSlice.js";
+} from "../redux/settingsSlice.js";
 import PageShell from "../components/PageShell.jsx";
 import { APP_VERSION } from "../utils/appVersion.js";
 
