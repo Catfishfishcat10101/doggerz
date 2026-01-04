@@ -50,10 +50,12 @@ async function main() {
 
   fs.mkdirSync(ICONS_DIR, { recursive: true });
 
+  const out180 = await renderIcon(180);
   const out192 = await renderIcon(192);
   const out512 = await renderIcon(512);
 
-  console.log("[Doggerz] Generated icons:");
+  console.log('[Doggerz] Generated icons:');
+  console.log(' -', out180);
   console.log(" -", out192);
   console.log(" -", out512);
 }

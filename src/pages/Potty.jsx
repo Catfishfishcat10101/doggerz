@@ -1,8 +1,10 @@
 // src/pages/Potty.jsx
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import { PATHS } from "@/routes.js";
 import { selectDog } from "@/redux/dogSlice.js";
 import PageShell from "@/components/PageShell.jsx";
+import EmptySlate from "@/components/EmptySlate.jsx";
 
 function describePottyTraining(training) {
   const t = Math.round(Number(training ?? 0));
@@ -30,18 +32,16 @@ export default function Potty() {
   if (!dog) {
     return (
       <PageShell>
-        <div className="mx-auto w-full max-w-lg space-y-4">
-          <h1 className="text-2xl font-bold">No pup yet</h1>
-          <p className="text-sm text-zinc-700 dark:text-zinc-300">
-            You need a Doggerz pup before you can potty train them.
-          </p>
-          <button
-            type="button"
-            onClick={() => navigate("/adopt")}
-            className="rounded-full bg-emerald-500 hover:bg-emerald-400 text-black text-sm font-semibold px-5 py-2.5 transition"
-          >
-            Adopt your pup
-          </button>
+        <div className="mx-auto w-full max-w-lg">
+          <EmptySlate
+            kicker="Potty Training"
+            title="No pup yet"
+            description="You’ll need to adopt a Doggerz pup before you can start potty training."
+            primaryLabel="Adopt your pup"
+            onPrimary={() => navigate(PATHS.ADOPT)}
+            backTo={PATHS.HOME}
+            backLabel="Back to home"
+          />
         </div>
       </PageShell>
     );
@@ -165,7 +165,7 @@ export default function Potty() {
 
         <button
           type="button"
-          onClick={() => navigate("/game")}
+          onClick={() => navigate(PATHS.GAME)}
           className="text-xs text-emerald-700 hover:text-emerald-600 underline underline-offset-4 dark:text-emerald-300 dark:hover:text-emerald-200"
         >
           ← Back to your yard

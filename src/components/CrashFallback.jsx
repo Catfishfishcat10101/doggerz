@@ -3,9 +3,24 @@
 import * as React from 'react';
 import { Link } from 'react-router-dom';
 import { getDebugInfo, copyDebugInfoToClipboard } from '@/utils/debugInfo.js';
+import { useToast } from '@/components/ToastProvider.jsx';
 
 export default function CrashFallback({ title = 'Something went wrong', subtitle, error }) {
   const [copied, setCopied] = React.useState(false);
+  const toast = useToast();
+
+  React.useEffect(() => {
+    // One clear fix: refresh.
+    toast.once('crash:fallback', {
+      type: 'error',
+      message: 'Doggerz ran into an error. Try refreshing to recover.',
+      durationMs: 6000,
+      action: {
+        label: 'Refresh',
+        onClick: () => window.location.reload(),
+      },
+    });
+  }, [toast]);
 
   const onCopy = async () => {
     try {

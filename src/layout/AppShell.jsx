@@ -20,7 +20,9 @@ export default function AppShell() {
       {!isFrameless && <AppHeader />}
 
       <main className="flex-1">
-        <Outlet />
+        <div key={pathname} className="dz-route-frame">
+          <Outlet />
+        </div>
       </main>
 
       {!isFrameless && <AppFooter />}

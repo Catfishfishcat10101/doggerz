@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 
 import PageShell from "@/components/PageShell.jsx";
+import EmptySlate from "@/components/EmptySlate.jsx";
 import { selectDog } from "@/redux/dogSlice.js";
 import { collectEarnedBadgeIds, normalizeBadges } from "@/utils/badges.js";
 
@@ -66,8 +67,14 @@ export default function BadgesPage() {
         </div>
 
         {normalized.length === 0 ? (
-          <div className="mt-4 rounded-2xl border border-white/10 bg-black/25 p-4 text-sm text-zinc-300">
-            No badges yet. Try training a trick (after potty training), or unlock cosmetics from streak rewards.
+          <div className="mt-4">
+            <EmptySlate
+              kicker="Badges"
+              title="No badges yet"
+              description="Your pup earns badges by living their best life: train tricks, keep routines, and unlock cosmetics."
+              primaryLabel="Go to the yard"
+              primaryTo="/game"
+            />
           </div>
         ) : (
           <div className="mt-5 space-y-5">

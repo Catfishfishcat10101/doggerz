@@ -28,6 +28,15 @@ const MOOD_SAMPLE_MINUTES = 60;
 const LEVEL_XP_STEP = 100;
 const SKILL_LEVEL_STEP = 50;
 
+// Vacation mode: reduces decay + slows aging while you’re away.
+// multiplier: 0..1 (0 = frozen, 1 = normal)
+const DEFAULT_VACATION_STATE = Object.freeze({
+  enabled: false,
+  multiplier: 0.35,
+  startedAt: null,
+  skippedMs: 0,
+});
+
 const nowMs = () => Date.now();
 
 function parseAdoptedAt(raw) {
@@ -274,6 +283,8 @@ const initialState = {
   isAsleep: false,
   debug: false,
   lastUpdatedAt: null,
+
+  vacation: { ...DEFAULT_VACATION_STATE },
 
   // Used by UI renderers/selectors to derive simple animation hints
   lastAction: null,
@@ -577,6 +588,12 @@ function applyDecay(state, now = nowMs()) {
   const diffHours = Math.max(0, (now - state.lastUpdatedAt) / (1000 * 60 * 60));
   if (diffHours <= 0) return;
 
+  const vacation = ensureVacationState(state);
+  const decayMultiplier = vacation.enabled
+    ? clamp(Number(vacation.multiplier) || 1, 0, 1)
+    : 1;
+  const effectiveHours = diffHours * decayMultiplier;
+
   const hungerMultiplier = state.career.perks?.hungerDecayMultiplier || 1.0;
 
   Object.entries(state.stats).forEach(([key, value]) => {
@@ -584,7 +601,7 @@ function applyDecay(state, now = nowMs()) {
 
     const rate = DECAY_PER_HOUR[key] || 0;
     const stageMultiplier = getStageMultiplier(state, key);
-    let delta = rate * DECAY_SPEED * diffHours * stageMultiplier;
+    let delta = rate * DECAY_SPEED * effectiveHours * stageMultiplier;
 
     if (key === 'hunger') {
       delta *= hungerMultiplier;
@@ -594,7 +611,8 @@ function applyDecay(state, now = nowMs()) {
     }
   });
 
-  if (diffHours >= 24) {
+  // Vacation mode implies your pup is cared for; we skip neglect strikes/journal.
+  if (!vacation.enabled && diffHours >= 24) {
     state.memory.neglectStrikes = Math.min(
       (state.memory.neglectStrikes || 0) + 1,
       999
@@ -850,7 +868,8 @@ function resolveCleanlinessTierFromValue(value = 0) {
 
 function syncLifecycleState(state, now = nowMs()) {
   const adoptedAt = state.adoptedAt || state.temperament?.adoptedAt || now;
-  const age = calculateDogAge(adoptedAt);
+  const ageNow = getVacationAdjustedNow(state, now);
+  const age = calculateDogAge(adoptedAt, ageNow);
   state.lifeStage = {
     stage: age.stage || DEFAULT_LIFE_STAGE.stage,
     label: age.label || DEFAULT_LIFE_STAGE.label,
@@ -886,6 +905,45 @@ function syncCleanlinessTier(state, now = nowMs()) {
 function finalizeDerivedState(state, now = nowMs()) {
   syncLifecycleState(state, now);
   return syncCleanlinessTier(state, now);
+}
+
+function ensureVacationState(state) {
+  if (!state.vacation || typeof state.vacation !== 'object') {
+    state.vacation = { ...DEFAULT_VACATION_STATE };
+    return state.vacation;
+  }
+
+  state.vacation.enabled = Boolean(state.vacation.enabled);
+
+  const mult = Number(state.vacation.multiplier);
+  state.vacation.multiplier = Number.isFinite(mult)
+    ? clamp(mult, 0, 1)
+    : DEFAULT_VACATION_STATE.multiplier;
+
+  if (typeof state.vacation.startedAt !== 'number') {
+    state.vacation.startedAt = null;
+  }
+
+  const skipped = Number(state.vacation.skippedMs);
+  state.vacation.skippedMs = Number.isFinite(skipped)
+    ? Math.max(0, skipped)
+    : 0;
+
+  return state.vacation;
+}
+
+function getVacationAdjustedNow(state, now = nowMs()) {
+  const v = ensureVacationState(state);
+  const baseSkipped = Number(v.skippedMs) || 0;
+
+  if (!v.enabled || typeof v.startedAt !== 'number') {
+    return Math.max(0, now - baseSkipped);
+  }
+
+  const mult = clamp(Number(v.multiplier) || 1, 0, 1);
+  const liveMs = Math.max(0, now - v.startedAt);
+  const liveSkipped = liveMs * (1 - mult);
+  return Math.max(0, now - baseSkipped - liveSkipped);
 }
 
 function getPersonalityPerks(state) {
@@ -1175,6 +1233,12 @@ const dogSlice = createSlice({
         adoptedAt,
       };
 
+      merged.vacation = {
+        ...DEFAULT_VACATION_STATE,
+        ...(state.vacation || {}),
+        ...(payload.vacation || {}),
+      };
+
       merged.lifeStage = payload.lifeStage ||
         state.lifeStage || { ...DEFAULT_LIFE_STAGE };
 
@@ -1296,6 +1360,7 @@ const dogSlice = createSlice({
       ensurePollState(merged);
       ensurePersonalityState(merged);
       ensureDreamState(merged);
+      ensureVacationState(merged);
 
       merged.cleanlinessTier =
         payload.cleanlinessTier || state.cleanlinessTier || 'FRESH';
@@ -1735,6 +1800,53 @@ const dogSlice = createSlice({
       });
     },
 
+    setVacationMode(state, { payload }) {
+      const now = nowMs();
+      const v = ensureVacationState(state);
+      const nextEnabled = Boolean(payload);
+
+      if (nextEnabled === v.enabled) return;
+
+      if (nextEnabled) {
+        v.enabled = true;
+        v.startedAt = now;
+        state.lastUpdatedAt = now;
+        state.lastAction = 'vacation_on';
+
+        pushJournalEntry(state, {
+          type: 'INFO',
+          moodTag: 'CALM',
+          summary: 'Vacation mode enabled',
+          body: 'Your pup is being cared for while you’re away. Decay and aging slow down.',
+          timestamp: now,
+        });
+      } else {
+        const mult = clamp(Number(v.multiplier) || 1, 0, 1);
+        if (typeof v.startedAt === 'number') {
+          const dt = Math.max(0, now - v.startedAt);
+          v.skippedMs = Math.max(
+            0,
+            (Number(v.skippedMs) || 0) + dt * (1 - mult)
+          );
+        }
+
+        v.enabled = false;
+        v.startedAt = null;
+        state.lastUpdatedAt = now;
+        state.lastAction = 'vacation_off';
+
+        pushJournalEntry(state, {
+          type: 'INFO',
+          moodTag: 'HAPPY',
+          summary: 'Vacation mode disabled',
+          body: 'Welcome back! Your pup is excited to see you.',
+          timestamp: now,
+        });
+      }
+
+      finalizeDerivedState(state, now);
+    },
+
     toggleDebug(state) {
       state.debug = !state.debug;
     },
@@ -1763,6 +1875,7 @@ export const selectDogTraining = (state) => state.dog.training;
 
 export const selectDogBond = (state) => state.dog.bond;
 export const selectDogMemorial = (state) => state.dog.memorial;
+export const selectDogVacation = (state) => state.dog.vacation;
 
 export const selectCosmeticCatalog = () => DEFAULT_COSMETIC_CATALOG;
 
@@ -1813,6 +1926,7 @@ export const {
   equipCosmetic,
   startRainbowBridge,
   completeRainbowBridge,
+  setVacationMode,
   toggleDebug,
   resetDogState,
 } = dogSlice.actions;

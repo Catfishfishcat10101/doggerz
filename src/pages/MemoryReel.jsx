@@ -6,6 +6,7 @@ import { useSelector } from "react-redux";
 import { selectDog, selectDogJournal } from "@/redux/dogSlice.js";
 import Header from "@/components/Header.jsx";
 import Footer from "@/components/Footer.jsx";
+import EmptySlate from "@/components/EmptySlate.jsx";
 
 const TYPE_OPTIONS = ["All", "CARE", "TRAINING", "LEVEL_UP", "NEGLECT", "UNLOCK", "MEMORY"];
 
@@ -93,9 +94,18 @@ export default function MemoryReel() {
 
             <div className="mt-6 space-y-4">
               {entries.length === 0 ? (
-                <div className="rounded-2xl border border-white/10 bg-black/30 px-4 py-5 text-sm text-zinc-300">
-                  No memories match that filter yet. Spend time with your pup to create new entries.
-                </div>
+                <EmptySlate
+                  kicker="Memory Reel"
+                  title="Nothing matches yet"
+                  description="Try clearing filters, then spend time with your pup to create new memories."
+                  primaryLabel="Clear filters"
+                  onPrimary={() => {
+                    setQuery("");
+                    setType("All");
+                  }}
+                  backTo="/game"
+                  backLabel="Back to the yard"
+                />
               ) : (
                 entries.map((entry) => (
                   <article
@@ -128,20 +138,22 @@ export default function MemoryReel() {
               )}
             </div>
 
-            <div className="mt-8 flex flex-col sm:flex-row gap-3">
-              <Link
-                to="/game"
-                className="inline-flex items-center justify-center rounded-2xl px-5 py-3 text-sm font-extrabold bg-emerald-400 text-black shadow-[0_0_35px_rgba(52,211,153,0.25)] hover:bg-emerald-300 transition"
-              >
-                Back to the yard
-              </Link>
-              <Link
-                to="/rainbow-bridge"
-                className="inline-flex items-center justify-center rounded-2xl px-5 py-3 text-sm font-semibold border border-white/15 bg-black/30 text-zinc-100 hover:bg-black/45 transition"
-              >
-                Visit Rainbow Bridge
-              </Link>
-            </div>
+            {entries.length > 0 ? (
+              <div className="mt-8 flex flex-col sm:flex-row gap-3">
+                <Link
+                  to="/game"
+                  className="inline-flex items-center justify-center rounded-2xl px-5 py-3 text-sm font-extrabold bg-emerald-400 text-black shadow-[0_0_35px_rgba(52,211,153,0.25)] hover:bg-emerald-300 transition"
+                >
+                  Back to the yard
+                </Link>
+                <Link
+                  to="/rainbow-bridge"
+                  className="inline-flex items-center justify-center rounded-2xl px-5 py-3 text-sm font-semibold border border-white/15 bg-black/30 text-zinc-100 hover:bg-black/45 transition"
+                >
+                  Visit Rainbow Bridge
+                </Link>
+              </div>
+            ) : null}
           </div>
         </div>
       </main>

@@ -191,6 +191,25 @@ html[data-transparency="reduced"] .backdrop-blur-xl {
   will-change: transform;
 }
 
+/* -------------------------------------------------------
+   Route transitions (keep subtle; respect reduced motion)
+------------------------------------------------------- */
+
+@keyframes dzRouteFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dz-route-frame {
+  animation: dzRouteFadeUp 180ms ease-out;
+}
 .dog-realistic-img {
   will-change: transform;
 }

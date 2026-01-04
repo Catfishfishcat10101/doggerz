@@ -5,6 +5,8 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   resetDogState,
   DOG_STORAGE_KEY,
+  selectDogVacation,
+  setVacationMode,
 } from "@/redux/dogSlice.js";
 import {
   selectDogRenderMode,
@@ -160,6 +162,7 @@ function Card({ title, subtitle, children }) {
 export default function Settings() {
   const dispatch = useDispatch();
   const settings = useSelector(selectSettings);
+  const vacation = useSelector(selectDogVacation);
   const currentZip = useSelector(selectUserZip);
   const dogRenderMode = useSelector(selectDogRenderMode);
 
@@ -578,6 +581,14 @@ export default function Settings() {
               description="Shows a gentle in-app reminder if you haven't done a care action today."
               checked={settings?.dailyRemindersEnabled !== false}
               onChange={(v) => dispatch(setDailyRemindersEnabled(v))}
+            />
+
+            <Switch
+              id="vacationMode"
+              label="Vacation mode"
+              description="Slows decay and aging while you're away (turn it on before you leave)."
+              checked={vacation?.enabled}
+              onChange={(v) => dispatch(setVacationMode(v))}
             />
 
             <Switch
