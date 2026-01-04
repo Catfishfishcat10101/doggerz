@@ -15,6 +15,7 @@ import MoodAndJournalPanel from "@/features/game/MoodAndJournalPanel.jsx";
 import TrainingPanel from "@/features/game/TrainingPanel.jsx";
 import TemperamentCard from "@/features/game/TemperamentCard.jsx";
 import { useDogLifecycle } from "@/features/game/useDogLifecycle.jsx";
+import GoodbyeLetter from "@/components/narrative/GoodbyeLetter.jsx";
 
 import WeatherFXCanvas from "@/features/game/components/WeatherFXCanvas.jsx";
 import YardSetDressing from "@/features/game/components/YardSetDressing.jsx";
@@ -32,6 +33,7 @@ import {
   bathe,
   goPotty,
   scoopPoop,
+  addJournalEntry,
 } from "@/redux/dogSlice.js";
 import { selectWeatherCondition } from "@/redux/weatherSlice.js";
 import { selectUserZip } from "@/redux/userSlice.js";
@@ -84,6 +86,16 @@ function ActionButton({ label, onClick, tone = "default", disabled }) {
     </button>
   );
 }
+
+// Neglect detection thresholds (narrative layer only)
+const NEGLECT_THRESHOLDS = {
+  HUNGER_MIN: 10,
+  HAPPINESS_MIN: 10,
+  CLEANLINESS_MIN: 5,
+  HOURS_SINCE_FED: 48,
+  HOURS_SINCE_PLAYED: 72,
+  HOURS_SINCE_SEEN: 48,
+};
 
 export default function MainGame() {
   const dispatch = useDispatch();
@@ -162,6 +174,77 @@ export default function MainGame() {
 
   const intent = String(dog?.lastAction || "idle").toLowerCase();
   const isAsleep = Boolean(dog?.isAsleep);
+
+  // Neglect detection (narrative layer only - no logic changes)
+  const [showGoodbyeLetter, setShowGoodbyeLetter] = React.useState(false);
+  const [goodbyeReason, setGoodbyeReason] = React.useState('lonely');
+
+  // Check for neglect conditions based on needs and last interaction
+  React.useEffect(() => {
+    if (!adopted || !dog) return;
+
+    const memory = dog?.memory || {};
+    const needs = dog?.needs || {};
+    const now = Date.now();
+    
+    // Calculate time since last care action
+    const lastFed = memory.lastFedAt || 0;
+    const lastPlayed = memory.lastPlayedAt || 0;
+    const lastSeen = memory.lastSeenAt || 0;
+    
+    const hoursSinceLastFed = (now - lastFed) / (1000 * 60 * 60);
+    const hoursSinceLastPlayed = (now - lastPlayed) / (1000 * 60 * 60);
+    const hoursSinceLastSeen = (now - lastSeen) / (1000 * 60 * 60);
+    
+    const hunger = needs.hunger || 100;
+    const happiness = needs.happiness || 100;
+    const cleanliness = needs.cleanliness || 100;
+    
+    // Severe neglect conditions (narrative trigger only)
+    const severeNeglect = 
+      (hunger < NEGLECT_THRESHOLDS.HUNGER_MIN && hoursSinceLastFed > NEGLECT_THRESHOLDS.HOURS_SINCE_FED) ||
+      (happiness < NEGLECT_THRESHOLDS.HAPPINESS_MIN && hoursSinceLastPlayed > NEGLECT_THRESHOLDS.HOURS_SINCE_PLAYED) ||
+      (cleanliness < NEGLECT_THRESHOLDS.CLEANLINESS_MIN && hoursSinceLastSeen > NEGLECT_THRESHOLDS.HOURS_SINCE_SEEN);
+    
+    // Only show once per session
+    const hasShownThisSession = sessionStorage.getItem('doggerz:goodbyeShown');
+    
+    if (severeNeglect && !hasShownThisSession) {
+      // Determine reason based on which need is lowest
+      let reason = 'lonely';
+      if (hunger < happiness && hunger < cleanliness) {
+        reason = 'neglected';
+      } else if (happiness < hunger && happiness < cleanliness) {
+        reason = 'lonely';
+      } else if (cleanliness < hunger && cleanliness < happiness) {
+        reason = 'neglected';
+      }
+      
+      setGoodbyeReason(reason);
+      setShowGoodbyeLetter(true);
+      sessionStorage.setItem('doggerz:goodbyeShown', 'true');
+    }
+  }, [adopted, dog]);
+
+  const handleGoodbyeClose = React.useCallback(() => {
+    setShowGoodbyeLetter(false);
+  }, []);
+
+  const handleRedemption = React.useCallback(() => {
+    // Add a journal entry about the redemption
+    dispatch(addJournalEntry({
+      timestamp: Date.now(),
+      type: 'redemption',
+      summary: `${dogName} came back! They saw you were trying to make things right.`,
+      body: `After wandering away, ${dogName} couldn't stay away for long. The bond you share brought them home. This is a second chance - let's make it count!`,
+      moodTag: 'hopeful',
+    }));
+    
+    setShowGoodbyeLetter(false);
+    
+    // Clear the session flag so they can continue playing
+    sessionStorage.removeItem('doggerz:goodbyeShown');
+  }, [dispatch, dogName]);
 
   return (
     <div className="relative min-h-dvh w-full overflow-hidden bg-gradient-to-b from-zinc-950 via-zinc-950 to-emerald-950/20 text-white">
@@ -330,6 +413,16 @@ export default function MainGame() {
       <TemperamentCard
         temperament={temperamentRevealReady ? temperament : null}
       />
+
+      {/* Goodbye Letter (Neglect Scenario) */}
+      {showGoodbyeLetter && (
+        <GoodbyeLetter
+          dogName={dogName}
+          reason={goodbyeReason}
+          onClose={handleGoodbyeClose}
+          onRedemption={handleRedemption}
+        />
+      )}
     </div>
   );
 }
