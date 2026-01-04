@@ -1,0 +1,51 @@
+/** @format */
+
+// src/config/assets.js
+// Canonical public-URL asset map for Doggerz.
+// Use these URLs directly (served from /public).
+
+export const ASSET_BASE = "/assets";
+
+/** Backgrounds */
+export const BACKGROUNDS = {
+  yard: {
+    day: `${ASSET_BASE}/backgrounds/yard/backyard-day.webp`,
+    night: `${ASSET_BASE}/backgrounds/yard/backyard-night.webp`,
+    dayWide: `${ASSET_BASE}/backgrounds/yard/backyard-day-wide.webp`,
+    nightWide: `${ASSET_BASE}/backgrounds/yard/backyard-night-wide.webp`,
+  },
+};
+
+/** Dogs (static renders for now; will extend to actions/sheets later) */
+export const DOGS = {
+  puppy: {
+    clean: `${ASSET_BASE}/dogs/puppy/clean.webp`,
+  },
+  adult: {
+    clean: `${ASSET_BASE}/dogs/adult/clean.webp`,
+  },
+  senior: {
+    clean: `${ASSET_BASE}/dogs/senior/clean.webp`,
+  },
+};
+
+/** Audio */
+export const AUDIO = {
+  bark: `${ASSET_BASE}/audio/bark.m4a`,
+  musicDir: `${ASSET_BASE}/audio/music`,
+};
+
+/**
+ * Safe getter utility for nested maps.
+ * @param {object} obj
+ * @param {string[]} path
+ * @param {string|null} fallback
+ */
+export function getAsset(obj, path, fallback = null) {
+  let cur = obj;
+  for (const k of path) {
+    if (!cur || typeof cur !== "object" || !(k in cur)) return fallback;
+    cur = cur[k];
+  }
+  return typeof cur === "string" ? cur : fallback;
+}
