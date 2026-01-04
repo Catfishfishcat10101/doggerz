@@ -1,14 +1,17 @@
 // src/pages/RainbowBridge.jsx
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import * as React from "react";
 
 import Header from "@/components/Header.jsx";
 import Footer from "@/components/Footer.jsx";
+import RainbowBridgeMemorial from "@/components/memorial/RainbowBridgeMemorial.jsx";
 import {
   selectDog,
   selectDogLifeStage,
   selectDogBond,
   selectDogMemorial,
+  selectDogJournal,
   startRainbowBridge,
   completeRainbowBridge,
 } from "@/redux/dogSlice.js";
@@ -19,11 +22,28 @@ export default function RainbowBridge() {
   const lifeStage = useSelector(selectDogLifeStage);
   const bond = useSelector(selectDogBond);
   const memorial = useSelector(selectDogMemorial);
+  const journal = useSelector(selectDogJournal);
+
+  const [showMemorial, setShowMemorial] = React.useState(false);
 
   const isSenior = String(lifeStage?.stage || "").toUpperCase() === "SENIOR";
   const bondValue = Math.round(bond?.value ?? 0);
   const memorialCompleted = Boolean(memorial?.completedAt);
-  const memorialActive = Boolean(memorial?.active);
+
+  const handleBeginMemorial = React.useCallback(() => {
+    const now = Date.now();
+    dispatch(startRainbowBridge({ now }));
+    setShowMemorial(true);
+  }, [dispatch]);
+
+  const handleMemorialComplete = React.useCallback(() => {
+    const now = Date.now();
+    dispatch(completeRainbowBridge({ now }));
+    setShowMemorial(false);
+  }, [dispatch]);
+
+  // Get memories for memorial
+  const memories = journal?.entries ?? [];
 
   return (
     <div className="min-h-dvh w-full bg-zinc-950 text-zinc-100">
@@ -74,17 +94,10 @@ export default function RainbowBridge() {
               {isSenior && !memorialCompleted ? (
                 <button
                   type="button"
-                  onClick={() => {
-                    const now = Date.now();
-                    if (!memorialActive) {
-                      dispatch(startRainbowBridge({ now }));
-                    } else {
-                      dispatch(completeRainbowBridge({ now }));
-                    }
-                  }}
-                  className="inline-flex items-center justify-center rounded-2xl px-5 py-3 text-sm font-extrabold bg-emerald-400 text-black shadow-[0_0_35px_rgba(52,211,153,0.25)] hover:bg-emerald-300 transition"
+                  onClick={handleBeginMemorial}
+                  className="inline-flex items-center justify-center rounded-2xl px-5 py-3 text-sm font-extrabold bg-gradient-to-r from-emerald-400 to-teal-400 text-black shadow-[0_0_35px_rgba(52,211,153,0.25)] hover:from-emerald-300 hover:to-teal-300 transition-all duration-300"
                 >
-                  {memorialActive ? "Complete the memorial" : "Begin the memorial"}
+                  ✨ Begin the Memorial Experience
                 </button>
               ) : null}
               <Link
@@ -105,6 +118,16 @@ export default function RainbowBridge() {
       </main>
 
       <Footer />
+
+      {/* Rainbow Bridge Memorial Experience */}
+      {showMemorial && (
+        <RainbowBridgeMemorial
+          dogName={dog?.name || 'Beloved Pup'}
+          bondValue={bondValue}
+          memories={memories}
+          onComplete={handleMemorialComplete}
+        />
+      )}
     </div>
   );
 }
