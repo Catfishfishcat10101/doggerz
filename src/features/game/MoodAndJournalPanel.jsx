@@ -2,6 +2,7 @@
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { selectDogJournal } from "@/redux/dogSlice.js";
+import { PATHS } from "@/routes.js";
 
 // Mood timeline intentionally removed from the UI.
 // We still record mood in Redux (used for temperament + future features),
@@ -82,12 +83,20 @@ export default function MoodAndJournalPanel() {
       </div>
 
       <div className="mt-4">
-        <Link
-          to="/memories"
-          className="inline-flex items-center justify-center rounded-2xl border border-white/15 bg-black/25 px-3 py-2 text-xs font-semibold text-zinc-100 hover:bg-black/35 transition"
-        >
-          Open Memory Reel
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            to={PATHS.MEMORIES}
+            className="inline-flex items-center justify-center rounded-2xl border border-white/15 bg-black/25 px-3 py-2 text-xs font-semibold text-zinc-100 hover:bg-black/35 transition"
+          >
+            Open Memory Reel
+          </Link>
+          <Link
+            to={PATHS.DREAMS}
+            className="inline-flex items-center justify-center rounded-2xl border border-sky-400/25 bg-sky-500/10 px-3 py-2 text-xs font-semibold text-sky-100 hover:bg-sky-500/15 transition"
+          >
+            Dream Journal
+          </Link>
+        </div>
       </div>
     </section>
   );

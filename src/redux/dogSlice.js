@@ -126,6 +126,23 @@ const initialTemperament = {
   lastEvaluatedAt: null,
 };
 
+// Personality is a separate, player-shaped system (five axes) and can evolve frequently.
+// Trait values are in range [-100, 100]. Positive leans toward the right-hand label.
+const initialPersonality = {
+  traits: {
+    adventurous: 0, // Adventurous (+) ↔ Cautious (-)
+    social: 0, // Social (+) ↔ Independent (-)
+    energetic: 0, // Energetic (+) ↔ Calm (-)
+    playful: 0, // Playful (+) ↔ Serious (-)
+    affectionate: 0, // Affectionate (+) ↔ Reserved (-)
+  },
+  // Most recent first
+  history: [],
+  lastUpdatedAt: null,
+  // Hint for future animation hooks (kept simple + optional)
+  animationHint: null,
+};
+
 const initialMemory = {
   favoriteToyId: null,
   lastFedAt: null,
@@ -158,6 +175,12 @@ const initialSkills = {
 const initialMood = {
   lastSampleAt: null,
   history: [],
+};
+
+const initialDreams = {
+  active: null,
+  journal: [],
+  lastGeneratedAt: null,
 };
 
 const initialJournal = {
@@ -256,10 +279,12 @@ const initialState = {
   lastAction: null,
 
   temperament: initialTemperament,
+  personality: initialPersonality,
   memory: initialMemory,
   career: initialCareer,
   skills: initialSkills,
   mood: initialMood,
+  dreams: initialDreams,
   journal: initialJournal,
   streak: initialStreak,
   training: createInitialTrainingState(),
@@ -298,8 +323,241 @@ function pushJournalEntry(state, entry) {
   }
 }
 
+function ensureDreamState(state) {
+  if (!state.dreams || typeof state.dreams !== 'object') {
+    state.dreams = { ...initialDreams };
+  }
+  if (!Array.isArray(state.dreams.journal)) {
+    state.dreams.journal = [];
+  }
+  if (!('active' in state.dreams)) state.dreams.active = null;
+  if (typeof state.dreams.lastGeneratedAt !== 'number') {
+    state.dreams.lastGeneratedAt = null;
+  }
+  return state.dreams;
+}
+
+function pushDream(state, dream) {
+  const dreams = ensureDreamState(state);
+  dreams.journal.unshift(dream);
+  if (dreams.journal.length > 100) dreams.journal.length = 100;
+}
+
+function buildDreamFromState(state, now = nowMs()) {
+  const happiness = Number(state.stats?.happiness || 0);
+  const hunger = Number(state.stats?.hunger || 0);
+  const energy = Number(state.stats?.energy || 0);
+  const cleanliness = Number(state.stats?.cleanliness || 0);
+  const neglect = Number(state.memory?.neglectStrikes || 0);
+
+  const isNeglected = neglect > 0 && happiness < 45;
+  const isLucid = !isNeglected && happiness > 82 && hunger < 60;
+
+  const kind = isNeglected ? 'NIGHTMARE' : isLucid ? 'LUCID' : 'DREAM';
+
+  const lastAction = String(state.lastAction || '').toLowerCase();
+
+  const withinMs = (t, ms) => typeof t === 'number' && now - t <= ms;
+  const playedRecently = withinMs(
+    state.memory?.lastPlayedAt,
+    4 * 60 * 60 * 1000
+  );
+  const fedRecently = withinMs(state.memory?.lastFedAt, 4 * 60 * 60 * 1000);
+  const trainedRecently = withinMs(
+    state.memory?.lastTrainedAt,
+    24 * 60 * 60 * 1000
+  );
+  const bathedRecently = withinMs(
+    state.memory?.lastBathedAt,
+    24 * 60 * 60 * 1000
+  );
+
+  let title = 'A soft dream';
+  let summary = 'Floating through a pastel backyard full of squeaky secrets.';
+  let motifs = ['clouds', 'fireflies', 'soft grass'];
+
+  if (kind === 'NIGHTMARE') {
+    title = 'A worried dream';
+    summary =
+      'The yard feels too big and too quiet. Footsteps echo, and you keep looking for your hooman.';
+    motifs = ['empty yard', 'distant thunder', 'lost leash'];
+  } else if (kind === 'LUCID') {
+    title = 'A lucid dream';
+    summary =
+      'Everything glows. You can jump higher than fences and land on moonbeams like trampoline cushions.';
+    motifs = ['moonbeams', 'sparkles', 'floating tennis balls'];
+  }
+
+  // Activity reflections
+  if (playedRecently || lastAction === 'play') {
+    title = kind === 'NIGHTMARE' ? 'Chasing shadows' : 'Chasing squirrels';
+    summary =
+      kind === 'NIGHTMARE'
+        ? 'You sprint, but the squeak keeps slipping away—like it’s hiding behind the wind.'
+        : 'You chase a legendary squirrel wearing a tiny crown. It squeaks like a tennis ball.';
+    motifs = ['squirrels', 'tennis balls', 'zoomies'];
+  } else if (fedRecently || lastAction === 'feed') {
+    title = kind === 'NIGHTMARE' ? 'Empty bowl' : 'Treat buffet';
+    summary =
+      kind === 'NIGHTMARE'
+        ? 'The bowl is there… but it’s just out of reach, like a polite ghost.'
+        : 'Biscuits drift like snowflakes. Every chomp makes a happy little *ding*.';
+    motifs = ['biscuits', 'bowls', 'crunchy stars'];
+  } else if (trainedRecently || lastAction === 'train') {
+    title = kind === 'NIGHTMARE' ? 'Commands in a maze' : 'Graduation day';
+    summary =
+      kind === 'NIGHTMARE'
+        ? 'You try to “sit”… but the floor keeps turning into wiggly grass waves.'
+        : 'You perform perfect “sit” and “stay” while confetti rains down like kibble.';
+    motifs = ['whistles', 'ribbons', 'confetti'];
+  } else if (bathedRecently || lastAction === 'bathe') {
+    title = kind === 'NIGHTMARE' ? 'Bubbles everywhere' : 'Bubble galaxy';
+    summary =
+      kind === 'NIGHTMARE'
+        ? 'The bubbles rise and rise—pop, pop—until you can’t find your paws.'
+        : 'Bubbles orbit you like tiny planets, and the shampoo smells like comet tails.';
+    motifs = ['bubbles', 'stardust shampoo', 'soft towels'];
+  }
+
+  // Small stat seasoning
+  if (energy < 25 && kind === 'DREAM') {
+    motifs = Array.from(new Set([...motifs, 'warm blankets']));
+  }
+  if (cleanliness < 25 && kind !== 'NIGHTMARE') {
+    motifs = Array.from(new Set([...motifs, 'mud puddles']));
+  }
+
+  return {
+    id: `${now}-dream-${Math.floor(Math.random() * 1e6)}`,
+    timestamp: now,
+    kind,
+    title,
+    summary,
+    motifs,
+  };
+}
+
+function maybeGenerateDream(state, now = nowMs()) {
+  const dreams = ensureDreamState(state);
+  if (dreams.active) return;
+
+  const last = dreams.lastGeneratedAt;
+  // Prevent “spam dreams” if player taps Rest repeatedly.
+  if (last && now - last < 2 * 60 * 60 * 1000) return;
+
+  const dream = buildDreamFromState(state, now);
+  dreams.active = dream;
+  dreams.lastGeneratedAt = now;
+  pushDream(state, dream);
+}
+
 const isValidStat = (key) =>
   ['hunger', 'happiness', 'energy', 'cleanliness'].includes(key);
+
+const clampSigned = (n, limit = 100) =>
+  Math.max(-limit, Math.min(limit, Number.isFinite(n) ? n : 0));
+
+const pos01 = (v) => Math.max(0, Math.min(1, v / 100));
+const neg01 = (v) => Math.max(0, Math.min(1, -v / 100));
+
+function derivePersonalityAnimationHint(traits) {
+  const t = traits || {};
+  const energetic = Number(t.energetic || 0);
+  const playful = Number(t.playful || 0);
+  const adventurous = Number(t.adventurous || 0);
+  const affectionate = Number(t.affectionate || 0);
+  const social = Number(t.social || 0);
+
+  // Keep hints small and stable; UI/actors may ignore them.
+  if (energetic > 60 && playful > 40) return 'zoomies';
+  if (affectionate > 65) return 'cuddle';
+  if (adventurous > 60) return 'explore';
+  if (social > 60) return 'greet';
+  if (energetic < -60) return 'chill';
+  return null;
+}
+
+function ensurePersonalityState(state) {
+  if (!state.personality || typeof state.personality !== 'object') {
+    state.personality = { ...initialPersonality };
+  }
+  if (
+    !state.personality.traits ||
+    typeof state.personality.traits !== 'object'
+  ) {
+    state.personality.traits = { ...initialPersonality.traits };
+  } else {
+    state.personality.traits = {
+      ...initialPersonality.traits,
+      ...state.personality.traits,
+    };
+  }
+  if (!Array.isArray(state.personality.history)) {
+    state.personality.history = [];
+  }
+  if (typeof state.personality.lastUpdatedAt !== 'number') {
+    state.personality.lastUpdatedAt = null;
+  }
+  if (!('animationHint' in state.personality)) {
+    state.personality.animationHint = null;
+  }
+  return state.personality;
+}
+
+function pushPersonalityHistory(state, entry) {
+  const personality = ensurePersonalityState(state);
+  personality.history.unshift(entry);
+  if (personality.history.length > 120) {
+    personality.history.length = 120;
+  }
+}
+
+function applyPersonalityShift(state, { now, source, deltas, note }) {
+  const personality = ensurePersonalityState(state);
+  const t = personality.traits;
+  const d = deltas || {};
+
+  const keys = Object.keys(initialPersonality.traits);
+  let changed = false;
+  const appliedDeltas = {};
+
+  // Gentle smoothing so traits feel like they “drift” instead of snapping.
+  // New value = old + (delta * smoothing)
+  const smoothing = 0.65;
+
+  keys.forEach((k) => {
+    const raw = Number(d[k] || 0);
+    if (!raw) return;
+    const prev = Number(t[k] || 0);
+    const next = clampSigned(prev + raw * smoothing, 100);
+    if (next !== prev) {
+      t[k] = next;
+      appliedDeltas[k] = Math.round((next - prev) * 10) / 10;
+      changed = true;
+    }
+  });
+
+  if (!changed) return;
+
+  const ts = typeof now === 'number' ? now : nowMs();
+  personality.lastUpdatedAt = ts;
+  personality.animationHint = derivePersonalityAnimationHint(t);
+
+  pushPersonalityHistory(state, {
+    id: `${ts}-${personality.history.length + 1}`,
+    timestamp: ts,
+    source: source || 'SYSTEM',
+    note: note || null,
+    deltas: appliedDeltas,
+    snapshot: {
+      adventurous: Math.round(Number(t.adventurous || 0)),
+      social: Math.round(Number(t.social || 0)),
+      energetic: Math.round(Number(t.energetic || 0)),
+      playful: Math.round(Number(t.playful || 0)),
+      affectionate: Math.round(Number(t.affectionate || 0)),
+    },
+  });
+}
 
 function getStageMultiplier(state, statKey) {
   const stageKey = state.lifeStage?.stage || DEFAULT_LIFE_STAGE.stage;
@@ -341,6 +599,21 @@ function applyDecay(state, now = nowMs()) {
       (state.memory.neglectStrikes || 0) + 1,
       999
     );
+
+    // Neglect nudges personality toward cautious/independent/reserved.
+    applyPersonalityShift(state, {
+      now,
+      source: 'NEGLECT',
+      note: 'Stayed away a while',
+      deltas: {
+        adventurous: -2,
+        social: -3,
+        affectionate: -3,
+        playful: -2,
+        energetic: -1,
+      },
+    });
+
     pushJournalEntry(state, {
       type: 'NEGLECT',
       moodTag: 'LONELY',
@@ -613,6 +886,27 @@ function syncCleanlinessTier(state, now = nowMs()) {
 function finalizeDerivedState(state, now = nowMs()) {
   syncLifecycleState(state, now);
   return syncCleanlinessTier(state, now);
+}
+
+function getPersonalityPerks(state) {
+  const personality = ensurePersonalityState(state);
+  const t = personality.traits;
+
+  // Map trait lean into small, safe multipliers.
+  return {
+    playHappinessBonus:
+      1 +
+      0.25 * pos01(t.playful) +
+      0.12 * pos01(t.adventurous) +
+      0.08 * pos01(t.social),
+    playEnergyCostMultiplier: 1 - 0.2 * pos01(t.energetic),
+    feedHappinessBonus:
+      1 + 0.25 * pos01(t.affectionate) + 0.08 * pos01(t.social),
+    restEnergyBonus: 1 + 0.25 * neg01(t.energetic),
+    bathHappinessPenaltyMultiplier:
+      1 - 0.2 * neg01(t.energetic) - 0.1 * pos01(t.affectionate),
+    trainingHappinessBonus: 1 + 0.2 * neg01(t.playful),
+  };
 }
 
 function applyCleanlinessPenalties(state, tierOverride) {
@@ -895,6 +1189,30 @@ const dogSlice = createSlice({
         adoptedAt,
       };
 
+      merged.personality = {
+        ...initialPersonality,
+        ...(payload.personality || state.personality || {}),
+        traits: {
+          ...initialPersonality.traits,
+          ...(payload.personality?.traits || state.personality?.traits || {}),
+        },
+        history: Array.isArray(payload.personality?.history)
+          ? payload.personality.history
+          : Array.isArray(state.personality?.history)
+          ? state.personality.history
+          : initialPersonality.history,
+        lastUpdatedAt:
+          typeof payload.personality?.lastUpdatedAt === 'number'
+            ? payload.personality.lastUpdatedAt
+            : typeof state.personality?.lastUpdatedAt === 'number'
+            ? state.personality.lastUpdatedAt
+            : null,
+        animationHint:
+          payload.personality?.animationHint ??
+          state.personality?.animationHint ??
+          null,
+      };
+
       merged.memory = {
         ...initialMemory,
         ...(payload.memory || state.memory || {}),
@@ -915,6 +1233,26 @@ const dogSlice = createSlice({
       merged.mood = {
         ...initialMood,
         ...(payload.mood || state.mood || {}),
+      };
+
+      merged.dreams = {
+        ...initialDreams,
+        ...(payload.dreams || state.dreams || {}),
+        journal: Array.isArray(payload.dreams?.journal)
+          ? payload.dreams.journal
+          : Array.isArray(state.dreams?.journal)
+          ? state.dreams.journal
+          : initialDreams.journal,
+        active:
+          payload.dreams?.active ??
+          state.dreams?.active ??
+          initialDreams.active,
+        lastGeneratedAt:
+          typeof payload.dreams?.lastGeneratedAt === 'number'
+            ? payload.dreams.lastGeneratedAt
+            : typeof state.dreams?.lastGeneratedAt === 'number'
+            ? state.dreams.lastGeneratedAt
+            : null,
       };
 
       merged.journal = {
@@ -956,6 +1294,8 @@ const dogSlice = createSlice({
 
       ensureTrainingState(merged);
       ensurePollState(merged);
+      ensurePersonalityState(merged);
+      ensureDreamState(merged);
 
       merged.cleanlinessTier =
         payload.cleanlinessTier || state.cleanlinessTier || 'FRESH';
@@ -972,6 +1312,7 @@ const dogSlice = createSlice({
       const adoptedAt = parseAdoptedAt(payload) ?? nowMs();
       state.temperament.adoptedAt = adoptedAt;
       state.adoptedAt = adoptedAt;
+      ensurePersonalityState(state);
       finalizeDerivedState(state, adoptedAt);
     },
 
@@ -1003,9 +1344,11 @@ const dogSlice = createSlice({
       const careerMultiplier =
         state.career.perks?.happinessGainMultiplier || 1.0;
 
+      const perks = getPersonalityPerks(state);
+
       state.stats.hunger = clamp(state.stats.hunger - amount, 0, 100);
       state.stats.happiness = clamp(
-        state.stats.happiness + 5 * careerMultiplier,
+        state.stats.happiness + 5 * careerMultiplier * perks.feedHappinessBonus,
         0,
         100
       );
@@ -1013,6 +1356,12 @@ const dogSlice = createSlice({
       state.memory.lastFedAt = now;
       state.memory.lastSeenAt = now;
       state.lastAction = 'feed';
+
+      applyPersonalityShift(state, {
+        now,
+        source: 'FEED',
+        deltas: { affectionate: 2, social: 1 },
+      });
 
       applyXp(state, 5);
       maybeSampleMood(state, now, 'FEED');
@@ -1032,14 +1381,36 @@ const dogSlice = createSlice({
         state.career.perks?.happinessGainMultiplier || 1.0;
 
       const baseHappiness = payload?.happinessGain ?? 15;
-      const gain = baseHappiness * zoomiesMultiplier * careerMultiplier;
+      const perks = getPersonalityPerks(state);
+      const gain =
+        baseHappiness *
+        zoomiesMultiplier *
+        careerMultiplier *
+        perks.playHappinessBonus;
 
       state.stats.happiness = clamp(state.stats.happiness + gain, 0, 100);
-      state.stats.energy = clamp(state.stats.energy - 10, 0, 100);
+
+      const energyCost = Math.max(
+        6,
+        Math.round(10 * Math.max(0.65, perks.playEnergyCostMultiplier))
+      );
+      state.stats.energy = clamp(state.stats.energy - energyCost, 0, 100);
 
       state.memory.lastPlayedAt = now;
       state.memory.lastSeenAt = now;
       state.lastAction = 'play';
+
+      applyPersonalityShift(state, {
+        now,
+        source: 'PLAY',
+        deltas: {
+          adventurous: 2,
+          social: 2,
+          energetic: 1,
+          playful: 3,
+          affectionate: 1,
+        },
+      });
 
       applyXp(state, 8);
       maybeSampleMood(state, now, 'PLAY');
@@ -1054,12 +1425,31 @@ const dogSlice = createSlice({
       const now = payload?.now ?? nowMs();
       applyDecay(state, now);
 
+      const perks = getPersonalityPerks(state);
+
       state.isAsleep = true;
-      state.stats.energy = clamp(state.stats.energy + 20, 0, 100);
+      state.stats.energy = clamp(
+        state.stats.energy + 20 * perks.restEnergyBonus,
+        0,
+        100
+      );
       state.stats.happiness = clamp(state.stats.happiness + 3, 0, 100);
 
       state.memory.lastSeenAt = now;
       state.lastAction = 'rest';
+
+      maybeGenerateDream(state, now);
+
+      applyPersonalityShift(state, {
+        now,
+        source: 'REST',
+        deltas: {
+          energetic: -2,
+          adventurous: -1,
+          playful: -1,
+          affectionate: 1,
+        },
+      });
 
       applyXp(state, 3);
       maybeSampleMood(state, now, 'REST');
@@ -1070,18 +1460,39 @@ const dogSlice = createSlice({
     wakeUp(state) {
       state.isAsleep = false;
       state.lastAction = 'wake';
+
+      const dreams = ensureDreamState(state);
+      dreams.active = null;
+    },
+
+    dismissActiveDream(state) {
+      const dreams = ensureDreamState(state);
+      dreams.active = null;
     },
 
     bathe(state, { payload }) {
       const now = payload?.now ?? nowMs();
       applyDecay(state, now);
 
+      const perks = getPersonalityPerks(state);
+
       state.stats.cleanliness = clamp(state.stats.cleanliness + 30, 0, 100);
-      state.stats.happiness = clamp(state.stats.happiness - 5, 0, 100);
+      state.stats.happiness = clamp(
+        state.stats.happiness -
+          5 * Math.max(0.6, perks.bathHappinessPenaltyMultiplier),
+        0,
+        100
+      );
 
       state.memory.lastBathedAt = now;
       state.memory.lastSeenAt = now;
       state.lastAction = 'bathe';
+
+      applyPersonalityShift(state, {
+        now,
+        source: 'BATHE',
+        deltas: { energetic: -1, adventurous: -1, affectionate: -1 },
+      });
 
       applyXp(state, 4);
       maybeSampleMood(state, now, 'BATHE');
@@ -1206,6 +1617,8 @@ const dogSlice = createSlice({
       const now = payloadNow ?? nowMs();
       applyDecay(state, now);
 
+      const perks = getPersonalityPerks(state);
+
       const trainingMultiplier =
         state.career.perks?.trainingXpMultiplier || 1.0;
       const adjustedXp = Math.round(xp * trainingMultiplier);
@@ -1215,8 +1628,18 @@ const dogSlice = createSlice({
       state.memory.lastSeenAt = now;
       state.lastAction = 'train';
 
-      state.stats.happiness = clamp(state.stats.happiness + 8, 0, 100);
+      state.stats.happiness = clamp(
+        state.stats.happiness + 8 * perks.trainingHappinessBonus,
+        0,
+        100
+      );
       state.stats.energy = clamp(state.stats.energy - 5, 0, 100);
+
+      applyPersonalityShift(state, {
+        now,
+        source: 'TRAINING',
+        deltas: { playful: -2, social: -1, adventurous: -1 },
+      });
 
       applyXp(state, 10);
       completeAdultTrainingSession(state, now);
@@ -1329,6 +1752,8 @@ export const selectDogStats = (state) => state.dog.stats;
 export const selectDogMood = (state) => state.dog.mood;
 export const selectDogJournal = (state) => state.dog.journal;
 export const selectDogTemperament = (state) => state.dog.temperament;
+export const selectDogPersonality = (state) => state.dog.personality;
+export const selectDogDreams = (state) => state.dog.dreams;
 export const selectDogSkills = (state) => state.dog.skills;
 export const selectDogStreak = (state) => state.dog.streak;
 export const selectDogLifeStage = (state) => state.dog.lifeStage;
@@ -1373,6 +1798,7 @@ export const {
   play,
   rest,
   wakeUp,
+  dismissActiveDream,
   bathe,
   increasePottyLevel,
   goPotty,

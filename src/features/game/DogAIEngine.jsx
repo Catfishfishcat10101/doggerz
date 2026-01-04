@@ -158,6 +158,34 @@ export default function DogAIEngine() {
       };
     }
 
+    if (copy.personality && typeof copy.personality === "object") {
+      copy.personality = { ...copy.personality };
+      copy.personality.lastUpdatedAt = tryParse(copy.personality.lastUpdatedAt);
+      if (Array.isArray(copy.personality.history)) {
+        copy.personality.history = copy.personality.history.map((e) => ({
+          ...e,
+          timestamp: tryParse(e.timestamp),
+        }));
+      }
+    }
+
+    if (copy.dreams && typeof copy.dreams === "object") {
+      copy.dreams = { ...copy.dreams };
+      copy.dreams.lastGeneratedAt = tryParse(copy.dreams.lastGeneratedAt);
+      if (copy.dreams.active && typeof copy.dreams.active === "object") {
+        copy.dreams.active = {
+          ...copy.dreams.active,
+          timestamp: tryParse(copy.dreams.active.timestamp),
+        };
+      }
+      if (Array.isArray(copy.dreams.journal)) {
+        copy.dreams.journal = copy.dreams.journal.map((e) => ({
+          ...e,
+          timestamp: tryParse(e.timestamp),
+        }));
+      }
+    }
+
     return copy;
   };
 

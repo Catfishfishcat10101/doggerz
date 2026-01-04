@@ -14,11 +14,13 @@ import NeedsHUD from "@/features/game/NeedsHUD.jsx";
 import MoodAndJournalPanel from "@/features/game/MoodAndJournalPanel.jsx";
 import TrainingPanel from "@/features/game/TrainingPanel.jsx";
 import TemperamentCard from "@/features/game/TemperamentCard.jsx";
+import PersonalityPanel from "@/features/game/PersonalityPanel.jsx";
 import { useDogLifecycle } from "@/features/game/useDogLifecycle.jsx";
 
 import WeatherFXCanvas from "@/features/game/components/WeatherFXCanvas.jsx";
 import YardSetDressing from "@/features/game/components/YardSetDressing.jsx";
 import YardDogActor from "@/features/game/components/YardDogActor.jsx";
+import DreamSequence from "@/features/dreams/DreamSequence.jsx";
 
 import {
   selectDog,
@@ -32,6 +34,7 @@ import {
   bathe,
   goPotty,
   scoopPoop,
+  dismissActiveDream,
 } from "@/redux/dogSlice.js";
 import { selectWeatherCondition } from "@/redux/weatherSlice.js";
 import { selectUserZip } from "@/redux/userSlice.js";
@@ -162,9 +165,15 @@ export default function MainGame() {
 
   const intent = String(dog?.lastAction || "idle").toLowerCase();
   const isAsleep = Boolean(dog?.isAsleep);
+  const activeDream = dog?.dreams?.active || null;
 
   return (
     <div className="relative min-h-dvh w-full overflow-hidden bg-gradient-to-b from-zinc-950 via-zinc-950 to-emerald-950/20 text-white">
+      <DreamSequence
+        dream={isAsleep ? activeDream : null}
+        onDismiss={() => dispatch(dismissActiveDream())}
+      />
+
       {/* Stage */}
       <div className="absolute inset-0" aria-hidden>
         <div className="absolute inset-0 bg-black/25" />
@@ -309,6 +318,8 @@ export default function MainGame() {
                   )}
                 </div>
               </section>
+
+                <PersonalityPanel />
             </div>
 
             <div className="space-y-4">

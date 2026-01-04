@@ -30,6 +30,7 @@ const SettingsPage = React.lazy(() => import("./pages/Settings.jsx"));
 const StorePage = React.lazy(() => import("./pages/Store.jsx"));
 const BadgesPage = React.lazy(() => import("./pages/Badges.jsx"));
 const MemoryReelPage = React.lazy(() => import("./pages/MemoryReel.jsx"));
+const DreamsPage = React.lazy(() => import("./pages/Dreams.jsx"));
 const LegalPage = React.lazy(() => import("./pages/Legal.jsx"));
 const PrivacyPage = React.lazy(() => import("./pages/Privacy.jsx"));
 const PottyPage = React.lazy(() => import("./pages/Potty.jsx"));
@@ -96,6 +97,7 @@ const router = createBrowserRouter(
         { path: PATHS.STORE.replace(/^\//, ""), element: suspense(<StorePage />) },
         { path: PATHS.BADGES.replace(/^\//, ""), element: suspense(<BadgesPage />) },
         { path: PATHS.MEMORIES.replace(/^\//, ""), element: suspense(<MemoryReelPage />) },
+        { path: PATHS.DREAMS.replace(/^\//, ""), element: suspense(<DreamsPage />) },
         { path: PATHS.LEGAL.replace(/^\//, ""), element: suspense(<LegalPage />) },
         { path: PATHS.PRIVACY.replace(/^\//, ""), element: suspense(<PrivacyPage />) },
         { path: PATHS.POTTY.replace(/^\//, ""), element: suspense(<PottyPage />) },
