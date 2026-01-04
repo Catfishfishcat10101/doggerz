@@ -9,6 +9,8 @@ import { signOut } from "firebase/auth";
 
 import { auth, firebaseReady } from "@/firebase.js";
 
+import PuppyAnimator from "./components/PuppyAnimator";
+
 import GameTopBar from "@/features/game/GameTopBar.jsx";
 import NeedsHUD from "@/features/game/NeedsHUD.jsx";
 import MoodAndJournalPanel from "@/features/game/MoodAndJournalPanel.jsx";
@@ -20,6 +22,7 @@ import { useDogLifecycle } from "@/features/game/useDogLifecycle.jsx";
 import WeatherFXCanvas from "@/components/WeatherFXCanvas.jsx";
 import YardSetDressing from "@/components/YardSetDressing.jsx";
 import YardDogActor from "@/components/YardDogActor.jsx";
+import DogMomentPanel from "@/features/game/DogMomentPanel.jsx";
 import DreamSequence from "@/features/dreams/DreamSequence.jsx";
 import DynamicMusicSystem from "@/features/audio/DynamicMusicSystem.jsx";
 
@@ -36,9 +39,9 @@ import {
   goPotty,
   scoopPoop,
   dismissActiveDream,
-} from "@/utils/redux/dogSlice.js";
-import { selectWeatherCondition } from "@/utils/redux/weatherSlice.js";
-import { selectUserZip } from "@/utils/redux/userSlice.js";
+} from "@/redux/dogSlice.js";
+import { selectWeatherCondition } from "@/redux/weatherSlice.js";
+import { selectUserZip } from "@/redux/userSlice.js";
 import { useDayNightBackground } from "@/features/game/useDayNightBackground.jsx";
 import {
   calculateDogAge,
@@ -177,6 +180,7 @@ export default function MainGame() {
   const isAsleep = Boolean(dog?.isAsleep);
   const activeDream = dog?.dreams?.active || null;
   const moodTag = dog?.mood?.history?.[0]?.tag || null;
+  const lastTrainedCommandId = dog?.memory?.lastTrainedCommandId || null;
 
   return (
     <div className="relative min-h-dvh w-full overflow-hidden bg-gradient-to-b from-zinc-950 via-zinc-950 to-emerald-950/20 text-white">
@@ -219,6 +223,7 @@ export default function MainGame() {
             isNight={isNight}
             isAsleep={isAsleep}
             intent={intent}
+            commandId={intent === "train" ? lastTrainedCommandId : undefined}
             useRig={false}
             useSpritePack={false}
           />
@@ -328,26 +333,20 @@ export default function MainGame() {
                     label="Scoop"
                     onClick={() => dispatch(scoopPoop({ now }))}
                   />
-                  {isAsleep ? (
-                    <ActionButton
-                      label="Wake"
-                      tone="warn"
-                      onClick={() => dispatch(wakeUp())}
-                    />
-                  ) : (
-                    <ActionButton
-                      label="Rest"
-                      tone="warn"
-                      onClick={() => dispatch(rest({ now }))}
-                    />
-                  )}
                 </div>
               </section>
 
               <PersonalityPanel />
             </div>
 
+            <div
+              style={{ position: "fixed", right: 16, bottom: 16, zIndex: 9999 }}
+            >
+              <PuppyAnimator action="idle" size={192} debug />
+            </div>
+
             <div className="space-y-4">
+              <DogMomentPanel />
               <TrainingPanel
                 pottyComplete={pottyComplete}
                 trainingInputMode="voice"
