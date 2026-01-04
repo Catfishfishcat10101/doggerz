@@ -74,3 +74,5 @@ export const missingFirebaseKeys = REQUIRED_VITE_FIREBASE_VARS.filter(
 export const isFirebaseConfigured = missingFirebaseKeys.length === 0;
 
 // precommit-hook-test
+
+// hook-smoke-test
