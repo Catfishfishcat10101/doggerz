@@ -1,74 +1,87 @@
-// src/firebase.js
-// Centralized Firebase init. When env vars are missing, exports are null and the app runs in local-only mode.
+/** @format */
 
-import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider } from "firebase/auth";
+// src/firebase.js
+// Central Firebase bootstrap for Doggerz.
+// Exports stable handles: app/auth/db (null if not configured).
+// Provides assertFirebaseReady(context) used by paths/services.
+
+import { initializeApp, getApps } from "firebase/app";
+import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+
 import {
-  FIREBASE as firebaseConfig,
+  FIREBASE,
   isFirebaseConfigured,
   missingFirebaseKeys,
-} from "./config/env.js";
+} from "@/config/env.js";
 
-let missingConfigWarned = false;
+// Stable exports (null until initialized)
+export let app = null;
+export let auth = null;
+export let db = null;
 
-const logMissingConfig = () => {
-  if (isFirebaseConfigured || missingConfigWarned) return;
-  missingConfigWarned = true;
-  const printable = missingFirebaseKeys.length
-    ? missingFirebaseKeys.join(", ")
-    : "unknown";
-  console.warn(
-    `[Doggerz] Firebase disabled. Missing config keys: ${printable}. ` +
-      "Populate .env.local or disable cloud features."
-  );
-};
+let _initError = null;
+let _initialized = false;
 
-let app = null;
-let authInstance = null;
-let dbInstance = null;
-let googleProviderInstance = null;
-let firebaseInitError = null;
+/**
+ * Initialize Firebase once (idempotent).
+ * Safe to call multiple times.
+ */
+export function initFirebase() {
+  if (_initialized) return { app, auth, db };
+  _initialized = true;
 
-if (isFirebaseConfigured) {
-  try {
-    app = initializeApp(firebaseConfig);
-    authInstance = getAuth(app);
-    dbInstance = getFirestore(app);
-    googleProviderInstance = new GoogleAuthProvider();
-    // Sensible defaults: always prompt account picker.
-    googleProviderInstance.setCustomParameters({
-      prompt: "select_account",
-    });
-  } catch (err) {
-    firebaseInitError = err;
-    console.error("[Doggerz] Firebase initialization failed", err);
+  if (!isFirebaseConfigured) {
+    // In dev, provide actionable message; in prod, keep quiet unless called explicitly.
+    _initError = new Error(
+      `[firebase] Not configured. Missing: ${missingFirebaseKeys.join(", ")}`
+    );
+    app = null;
+    auth = null;
+    db = null;
+    return { app, auth, db };
   }
-} else {
-  logMissingConfig();
+
+  try {
+    // Prevent duplicate init during hot reload
+    app = getApps().length ? getApps()[0] : initializeApp(FIREBASE);
+
+    auth = getAuth(app);
+    db = getFirestore(app);
+
+    _initError = null;
+    return { app, auth, db };
+  } catch (e) {
+    _initError = e;
+    app = null;
+    auth = null;
+    db = null;
+    return { app, auth, db };
+  }
 }
 
-export const firebaseReady = Boolean(
-  app &&
-  authInstance &&
-  dbInstance &&
-  googleProviderInstance &&
-  !firebaseInitError
-);
+/**
+ * Assert Firebase is ready for Firestore/Auth operations.
+ * Used by paths.js and data services.
+ */
+export function assertFirebaseReady(context = "Firebase") {
+  // Make sure init attempted
+  if (!_initialized) initFirebase();
 
-// Public exports used across the app. These are null in local-only mode.
-export const auth = firebaseReady ? authInstance : null;
-export const db = firebaseReady ? dbInstance : null;
-export const googleProvider = firebaseReady ? googleProviderInstance : null;
-export const firebaseMissingKeys = missingFirebaseKeys;
-export const firebaseError = firebaseInitError;
+  if (_initError) {
+    throw new Error(`${context}: Firebase init failed: ${_initError.message}`);
+  }
+  if (!isFirebaseConfigured) {
+    throw new Error(
+      `${context}: Firebase env not configured. Missing: ${missingFirebaseKeys.join(", ")}`
+    );
+  }
+  if (!app || !db) {
+    throw new Error(`${context}: Firebase not initialized (app/db missing).`);
+  }
+  return true;
+}
 
-export const assertFirebaseReady = (featureName = "this feature") => {
-  if (firebaseReady) return;
-  const missing = firebaseMissingKeys.length
-    ? `Missing keys: ${firebaseMissingKeys.join(", ")}.`
-    : firebaseError
-      ? `Init error: ${firebaseError.message}`
-      : "Unknown configuration issue.";
-  throw new Error(`[Doggerz] ${featureName} requires Firebase. ${missing}`);
-};
+// Initialize immediately so common imports work without extra calls.
+// If env is missing, this will not crash; exports remain null until asserted.
+initFirebase();
