@@ -8,7 +8,6 @@ import React from 'react';
 import { useSelector } from 'react-redux';
 import { selectDog, selectDogJournal } from '@/redux/dogSlice.js';
 import PageShell from '@/components/PageShell.jsx';
-import { Camera, Heart, Share2, Filter, Download, Sparkles } from 'lucide-react';
 
 export default function PhotoAlbum() {
   const dog = useSelector(selectDog);
@@ -74,7 +73,7 @@ export default function PhotoAlbum() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 bg-clip-text text-transparent animate-shimmer">
-                  <Camera className="inline-block w-10 h-10 mr-3 text-purple-600" />
+                  <span className="inline-block mr-3 text-4xl">📸</span>
                   {dog?.name}&apos;s Photo Album
                 </h1>
                 <p className="text-gray-600 mt-2">
@@ -83,8 +82,8 @@ export default function PhotoAlbum() {
               </div>
               
               <div className="flex gap-2">
-                <button className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl hover:shadow-lg hover:scale-105 transition-all duration-200 flex items-center gap-2">
-                  <Sparkles className="w-4 h-4" />
+                <button className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl hover:shadow-lg hover:scale-105 transition-all duration-300 flex items-center gap-2">
+                  <span className="text-xl">✨</span>
                   Add Photo
                 </button>
               </div>
@@ -215,13 +214,13 @@ function PhotoCard({ photo, index, onClick }) {
                 ${isLiked ? 'scale-125' : ''}
               `}
             >
-              <Heart className={`w-6 h-6 ${isLiked ? 'fill-red-500 text-red-500' : 'text-white'}`} />
+              <span className="text-2xl">{isLiked ? '❤️' : '🤍'}</span>
             </button>
             <button className="p-3 rounded-full bg-white/20 backdrop-blur-md hover:bg-white/30 transition-all duration-200">
-              <Share2 className="w-6 h-6 text-white" />
+              <span className="text-2xl">↗️</span>
             </button>
             <button className="p-3 rounded-full bg-white/20 backdrop-blur-md hover:bg-white/30 transition-all duration-200">
-              <Download className="w-6 h-6 text-white" />
+              <span className="text-2xl">⬇️</span>
             </button>
           </div>
         </div>
