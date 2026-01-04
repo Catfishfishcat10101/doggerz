@@ -65,8 +65,7 @@ function useAssetOk(src) {
   return ok;
 }
 
-function rigPath(name) {
-  // eslint-disable-line no-unused-vars
+function rigPath(_name) {
   // Sprite assets have been removed
   return null;
 }

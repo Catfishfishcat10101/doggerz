@@ -1,5 +1,4 @@
 <!-- @format -->
-<!-- end -->
 
 # Google Play release (Doggerz)
 

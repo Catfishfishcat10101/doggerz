@@ -20,6 +20,11 @@ export let app = null;
 export let auth = null;
 export let db = null;
 
+// Public status exports used across UI + thunks
+export let firebaseReady = false;
+export let firebaseError = null;
+export const firebaseMissingKeys = missingFirebaseKeys;
+
 let _initError = null;
 let _initialized = false;
 
@@ -39,6 +44,8 @@ export function initFirebase() {
     app = null;
     auth = null;
     db = null;
+    firebaseError = _initError;
+    firebaseReady = false;
     return { app, auth, db };
   }
 
@@ -50,12 +57,16 @@ export function initFirebase() {
     db = getFirestore(app);
 
     _initError = null;
+    firebaseError = null;
+    firebaseReady = Boolean(app && auth && db);
     return { app, auth, db };
   } catch (e) {
     _initError = e;
     app = null;
     auth = null;
     db = null;
+    firebaseError = _initError;
+    firebaseReady = false;
     return { app, auth, db };
   }
 }
@@ -78,6 +89,9 @@ export function assertFirebaseReady(context = "Firebase") {
   }
   if (!app || !db) {
     throw new Error(`${context}: Firebase not initialized (app/db missing).`);
+  }
+  if (!firebaseReady) {
+    throw new Error(`${context}: Firebase not ready.`);
   }
   return true;
 }
