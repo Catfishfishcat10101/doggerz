@@ -11,7 +11,7 @@
    - Cache-first for static assets
 -------------------------------------------------------- */
 
-const CACHE_VERSION = 'doggerz-v12'; // bump this when you change cached assets or SW behaviour
+const CACHE_VERSION = 'doggerz-v13'; // bump this when you change cached assets or SW behaviour
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Support deployments under a sub-path (e.g. GitHub Pages):
@@ -48,16 +48,6 @@ const CORE_ASSETS = [
   '/icons/doggerz-192.png',
   '/icons/doggerz-512.png',
   '/icons/doggerz-logo.svg',
-
-  // Sprites
-  '/sprites/jack_russell_puppy.webp',
-  '/sprites/jack_russell_adult.webp',
-  '/sprites/jack_russell_senior.webp',
-
-  // Canonical JRT fallbacks (used by runtime + sprites:check)
-  '/sprites/jrt_puppy.webp',
-  '/sprites/jrt_adult.webp',
-  '/sprites/jrt_senior.webp',
 
   // Backgrounds
   '/backgrounds/backyard-day.webp',

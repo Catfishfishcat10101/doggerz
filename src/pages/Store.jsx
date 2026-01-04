@@ -8,8 +8,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { useToast } from "@/components/ToastProvider.jsx";
 import BackPill from "@/components/BackPill.jsx";
 
-import SpriteSheetDog from "@/features/game/components/SpriteSheetDog.jsx";
-import DogCosmeticsOverlay from "@/features/game/components/DogCosmeticsOverlay.jsx";
+import SpriteSheetDog from "@/components/SpriteSheetDog.jsx";
+import DogCosmeticsOverlay from "@/components/DogCosmeticsOverlay.jsx";
 import { getSpriteForStageAndTier } from "@/utils/lifecycle.js";
 
 import {
