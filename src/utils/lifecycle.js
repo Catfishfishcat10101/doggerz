@@ -2,7 +2,7 @@
 
 // src/utils/lifecycle.js
 
-import { withBaseUrl } from "@/utils/assetUrl.js";
+import { withBaseUrl } from '@/utils/assetUrl.js';
 
 // How many in-game "dog days" pass per real day.
 // Tuning: higher => faster aging. Keep this high enough for visible progress,
@@ -11,9 +11,9 @@ export const GAME_DAYS_PER_REAL_DAY = 4;
 
 // Lifecycle / age stages (in-game days)
 export const LIFE_STAGES = {
-  PUPPY: { min: 0, max: 180, label: "Puppy" },
-  ADULT: { min: 181, max: 2555, label: "Adult" },
-  SENIOR: { min: 2556, max: 5475, label: "Senior" },
+  PUPPY: { min: 0, max: 180, label: 'Puppy' },
+  ADULT: { min: 181, max: 2555, label: 'Adult' },
+  SENIOR: { min: 2556, max: 5475, label: 'Senior' },
 };
 
 const ALL_STAGES = Object.entries(LIFE_STAGES).map(([id, stage]) => ({
@@ -27,13 +27,13 @@ const ALL_STAGES = Object.entries(LIFE_STAGES).map(([id, stage]) => ({
  */
 export function getLifeStageForAge(ageInGameDays) {
   if (!Number.isFinite(ageInGameDays) || ageInGameDays < 0) {
-    return { id: "PUPPY", ...LIFE_STAGES.PUPPY };
+    return { id: 'PUPPY', ...LIFE_STAGES.PUPPY };
   }
 
   return (
     ALL_STAGES.find(
       (stage) => ageInGameDays >= stage.min && ageInGameDays <= stage.max
-    ) || { id: "SENIOR", ...LIFE_STAGES.SENIOR }
+    ) || { id: 'SENIOR', ...LIFE_STAGES.SENIOR }
   );
 }
 
@@ -74,67 +74,27 @@ export function calculateDogAge(adoptedAtMs, now = Date.now()) {
  * Human-readable label for a life stage ID.
  */
 export function getLifeStageLabel(stageId) {
-  const key = String(stageId || "PUPPY")
+  const key = String(stageId || 'PUPPY')
     .toUpperCase()
     .trim();
-  return LIFE_STAGES[key]?.label ?? "Puppy";
+  return LIFE_STAGES[key]?.label ?? 'Puppy';
 }
 
 /**
  * Map a life stage → appropriate sprite sheet path.
- *
- * These are served from /public/sprites.
+ * 
+ * NOTE: Sprite assets have been removed. Returns app icon as fallback.
  */
-export function getSpriteForLifeStage(stageId) {
-  switch (
-    String(stageId || "PUPPY")
-      .toUpperCase()
-      .trim()
-  ) {
-    case "ADULT":
-      return withBaseUrl("/sprites/jrt_adult.webp");
-    case "SENIOR":
-      return withBaseUrl("/sprites/jrt_senior.webp");
-    case "PUPPY":
-    default:
-      return withBaseUrl("/sprites/jrt_puppy.webp");
-  }
+export function getSpriteForLifeStage(stageId) { // eslint-disable-line no-unused-vars
+  // All stages now return the app icon since sprites have been removed
+  return withBaseUrl('/icons/doggerz-192.png');
 }
 
 /**
  * Helper: stage + cleanliness tier → sprite path.
- * Tier-specific sprites are not shipped yet, but the interface is kept.
+ * NOTE: Sprite assets have been removed. Returns app icon as fallback.
  */
-export function getSpriteForStageAndTier(stageOrObj, cleanlinessTier) {
-  let stageKey;
-  let tier = cleanlinessTier;
-
-  if (stageOrObj && typeof stageOrObj === "object") {
-    stageKey =
-      stageOrObj.stageId ||
-      stageOrObj.stage ||
-      stageOrObj.lifeStage ||
-      (stageOrObj.lifeStage && stageOrObj.lifeStage.stage) ||
-      stageOrObj.stageKey;
-
-    tier =
-      tier ||
-      stageOrObj.cleanlinessTier ||
-      stageOrObj.cleanliness ||
-      stageOrObj.tier;
-  } else {
-    stageKey = stageOrObj;
-  }
-
-  const stageNormalized = String(stageKey || "PUPPY")
-    .toUpperCase()
-    .trim();
-
-  // Keep the tier parsing for future art variants. (Prefix with _ to avoid lint warnings.)
-  const _tierKey = String(tier || "FRESH")
-    .toUpperCase()
-    .trim();
-  void _tierKey;
-
-  return getSpriteForLifeStage(stageNormalized);
+export function getSpriteForStageAndTier(stageOrObj, cleanlinessTier) { // eslint-disable-line no-unused-vars
+  // Sprites have been removed, return app icon as fallback
+  return getSpriteForLifeStage('PUPPY');
 }

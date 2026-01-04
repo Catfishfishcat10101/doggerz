@@ -17,9 +17,9 @@ import TemperamentCard from "@/features/game/TemperamentCard.jsx";
 import PersonalityPanel from "@/features/game/PersonalityPanel.jsx";
 import { useDogLifecycle } from "@/features/game/useDogLifecycle.jsx";
 
-import WeatherFXCanvas from "@/features/game/components/WeatherFXCanvas.jsx";
-import YardSetDressing from "@/features/game/components/YardSetDressing.jsx";
-import YardDogActor from "@/features/game/components/YardDogActor.jsx";
+import WeatherFXCanvas from "@/components/WeatherFXCanvas.jsx";
+import YardSetDressing from "@/components/YardSetDressing.jsx";
+import YardDogActor from "@/components/YardDogActor.jsx";
 import DreamSequence from "@/features/dreams/DreamSequence.jsx";
 import DynamicMusicSystem from "@/features/audio/DynamicMusicSystem.jsx";
 
