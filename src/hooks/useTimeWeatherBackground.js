@@ -2,7 +2,7 @@
 // @ts-nocheck
 
 import { useMemo } from "react";
-import { useSelector } from "react-redux";
+import { useAppSelector } from "@/redux/hooks.js";
 
 /**
  * Simple hook that returns an inline style object for
@@ -13,7 +13,9 @@ import { useSelector } from "react-redux";
  */
 export default function useTimeWeatherBackground() {
   // NOTE: no TypeScript annotation here – plain JS only.
-  const condition = useSelector((state) => state.weather?.condition || "clear");
+  const condition = useAppSelector(
+    (state) => state.weather?.condition || "clear"
+  );
 
   const hour = new Date().getHours();
   const isNight = hour < 6 || hour >= 19;

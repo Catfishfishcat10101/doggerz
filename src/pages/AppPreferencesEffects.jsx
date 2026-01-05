@@ -1,4 +1,4 @@
-// src/components/AppPreferencesEffects.jsx
+// src/pages/AppPreferencesEffects.jsx
 
 import * as React from "react";
 import { useSelector } from "react-redux";

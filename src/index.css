@@ -67,8 +67,8 @@ html[data-skill-branch="guardian"] {
 
 html[data-skill-branch="athlete"] {
   --dz-accent: #047857;
-  --dz-accent-soft: rgba(16, 185, 129, 0.22);
-  --dz-accent-strong: rgba(16, 185, 129, 0.38);
+  --dz-accent-soft: rgba(4, 120, 87, 0.22);
+  --dz-accent-strong: rgba(4, 120, 87, 0.38);
 }
 
 @keyframes dzSkillPulse {
@@ -206,7 +206,7 @@ a:hover {
 
 /* Slightly nicer selection contrast on dark backgrounds. */
 ::selection {
-  background: rgba(249, 115, 22, 0.35);
+  background: var(--dz-accent-soft, rgba(16, 185, 129, 0.22));
 }
 
 /* Basic focus outline for keyboard users */
@@ -258,8 +258,8 @@ html[data-reduce-motion="1"] *::after {
 html[data-contrast="high"] {
   --border-subtle: rgba(148, 163, 184, 0.65);
   --border-strong: rgba(148, 163, 184, 0.85);
-  --text-soft: #d1d5db;
-  --text-muted: #cbd5e1;
+  --text-soft: #20252c;
+  --text-muted: #20252c;
 }
 
 /* Reduce transparency / blur (helps readability and GPU perf on low-end devices) */
@@ -549,4 +549,114 @@ html[data-reduce-motion="1"] .dog-head-bob,
 html[data-reduce-motion="1"] .dog-tongue,
 html[data-reduce-motion="1"] .dog-bowl {
   animation: none !important;
+}
+
+/* -------------------------------------------------------
+   Doggerz: Skill Tree page theming (dark + neon + glass)
+   Uses --dz-accent tokens + html[data-skill-branch]
+------------------------------------------------------- */
+
+.dz-skill-tree-page {
+  position: relative;
+  min-height: 100vh;
+  color: var(--text-main, #e5e7eb);
+  background:
+    radial-gradient(
+      circle at 18% -10%,
+      var(--dz-accent-soft),
+      rgba(0, 0, 0, 0) 55%
+    ),
+    radial-gradient(
+      circle at 80% 0%,
+      rgba(255, 255, 255, 0.06),
+      rgba(0, 0, 0, 0) 55%
+    ),
+    linear-gradient(
+      180deg,
+      #020617 0%,
+      #000000 55%,
+      rgba(16, 185, 129, 0.1) 100%
+    );
+}
+
+.dz-skill-tree-page::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.06;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+.dz-skill-tree-page::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    circle at center,
+    rgba(0, 0, 0, 0) 35%,
+    rgba(0, 0, 0, 0.55) 100%
+  );
+}
+
+.dz-skill-title {
+  text-shadow: 0 0 28px var(--dz-accent-soft);
+}
+
+.dz-info-chip {
+  cursor: default;
+  user-select: none;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 6px 10px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: rgba(228, 228, 231, 0.9);
+}
+
+.dz-skill-surface {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.28);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 0 60px rgba(0, 0, 0, 0.22),
+    0 0 90px var(--dz-accent-soft);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 24px;
+}
+
+.dz-skill-column {
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.dz-skill-column[data-branch="companion"] {
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 0 40px rgba(244, 63, 94, 0.12);
+}
+
+.dz-skill-column[data-branch="guardian"] {
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 0 40px rgba(245, 158, 11, 0.1);
+}
+
+.dz-skill-column[data-branch="athlete"] {
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 0 40px rgba(4, 120, 87, 0.12);
+}
+
+/* Ensure "rules" never read as buttons */
+.dz-info-chip:hover,
+.dz-info-chip:active {
+  background: rgba(255, 255, 255, 0.04);
 }

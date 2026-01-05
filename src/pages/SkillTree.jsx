@@ -3,7 +3,6 @@
 import * as React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
-
 import PageShell from "@/components/PageShell.jsx";
 import { PATHS } from "@/routes.js";
 import {
@@ -77,28 +76,14 @@ export default function SkillTree() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(255,255,255,0.8),_rgba(255,255,255,0))]" />
       </div>
 
-      <div className="relative">
+      <div className="absolute inset-0">
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div className="max-w-2xl">
             <div className="text-xs uppercase tracking-[0.4em] text-amber-700/70">
               Skill Tree
             </div>
-            <h1
-              className="mt-2 text-4xl sm:text-5xl font-semibold text-slate-900"
-              style={{
-                fontFamily:
-                  '"Fraunces", "Iowan Old Style", "Palatino", "Book Antiqua", serif',
-              }}
-            >
-              The Way of the Pup
-            </h1>
-            <p className="mt-3 text-sm text-slate-600">
-              Spend points earned from leveling up to shape your pup&apos;s
-              journey. Unlock perks for cozy bonds, steady protection, and
-              playful athleticism.
-            </p>
+            <p className="mt-3 text-sm text-slate-600"></p>
           </div>
-
           <div className="flex flex-wrap items-center gap-3">
             <div className="rounded-2xl border border-amber-200/70 bg-white/70 px-4 py-3 shadow-sm">
               <div className="text-[11px] uppercase tracking-[0.24em] text-amber-700/70">
@@ -143,24 +128,13 @@ export default function SkillTree() {
         <div className="mt-8 rounded-3xl border border-slate-200/80 bg-white/70 p-5 shadow-[0_20px_80px_rgba(60,35,10,0.12)]">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <div className="text-sm font-semibold text-slate-800">
-                How it works
+              <div className="text-lg font-semibold text-slate-900">
+                Skill Points
               </div>
-              <p className="mt-1 text-xs text-slate-500">
-                Unlock perks in order within each branch. Perks are saved to
-                your pup’s profile.
+              <p className="mt-1 text-md text-slate-600">
+                Spend points earned from leveling up to shape your pup&apos;s
+                journey.
               </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600">
-              <span className="rounded-full border border-slate-200/80 bg-white/70 px-3 py-1">
-                1 point per perk
-              </span>
-              <span className="rounded-full border border-slate-200/80 bg-white/70 px-3 py-1">
-                Earn points by leveling
-              </span>
-              <span className="rounded-full border border-slate-200/80 bg-white/70 px-3 py-1">
-                Some perks unlock cosmetics
-              </span>
             </div>
           </div>
         </div>
@@ -174,7 +148,6 @@ export default function SkillTree() {
               <div className="absolute left-7 top-24 bottom-8 w-px" aria-hidden>
                 <div className={`h-full w-px ${branch.line}`} />
               </div>
-
               <div className="relative">
                 <div className="flex items-start justify-between gap-4">
                   <div>
