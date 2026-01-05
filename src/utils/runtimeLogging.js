@@ -2,6 +2,17 @@
 
 // src/utils/runtimeLogging.js
 
+/**
+ * @typedef {Object} ErrorEntry
+ * @property {string} at
+ * @property {string} message
+ * @property {string} name
+ * @property {string|null} stack
+ * @property {Object} context
+ */
+
+/** @type {ErrorEntry[]} */
+// @ts-ignore - extending Window for runtime error bucket
 const MAX_CAPTURED_ERRORS = 25;
 
 function getBucket() {
