@@ -7,7 +7,7 @@ import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { signOut } from "firebase/auth";
 import { auth, firebaseReady } from "@/firebase.js";
-import PuppyAnimator from "./components/PuppyAnimator";
+import PuppyAnimator from "@/features/game/components/PuppyAnimator.jsx";
 import GameTopBar from "@/features/game/GameTopBar.jsx";
 import NeedsHUD from "@/features/game/NeedsHUD.jsx";
 import MoodAndJournalPanel from "@/features/game/MoodAndJournalPanel.jsx";
@@ -175,6 +175,12 @@ export default function MainGame() {
   const moodTag = dog?.mood?.history?.[0]?.tag || null;
   const lastTrainedCommandId = dog?.memory?.lastTrainedCommandId || null;
 
+  const stageId = String(
+    lifeStage?.stage || lifeStage?.stageId || age?.stageId || "PUPPY"
+  ).toUpperCase();
+
+  const isPuppy = stageId === "PUPPY" || stageId === "PUP";
+
   // PuppyAnimator uses the lightweight public sprites at /sprites/puppy/actions/*.
   // Map training commands to the currently-available action set.
   const puppyAction = React.useMemo(() => {
@@ -234,21 +240,23 @@ export default function MainGame() {
         <YardSetDressing isNight={isNight} />
 
         <div className="absolute inset-0 flex items-end justify-center pb-24">
-          <YardDogActor
-            spriteSrc={spriteSrc}
-            lifeStageStage={String(
-              lifeStage?.stage || lifeStage?.stageId || age?.stageId || "PUPPY"
-            )}
-            reduceMotion={reduceMotion}
-            reduceTransparency={reduceTransparency}
-            isNight={isNight}
-            isAsleep={isAsleep}
-            intent={intent}
-            commandId={intent === "train" ? lastTrainedCommandId : undefined}
-            cosmeticsEquipped={dog?.cosmetics?.equipped}
-            useRig={false}
-            useSpritePack={false}
-          />
+          {isPuppy ? (
+            <PuppyAnimator action={puppyAction} size={256} />
+          ) : (
+            <YardDogActor
+              spriteSrc={spriteSrc}
+              lifeStageStage={stageId}
+              reduceMotion={reduceMotion}
+              reduceTransparency={reduceTransparency}
+              isNight={isNight}
+              isAsleep={isAsleep}
+              intent={intent}
+              commandId={intent === "train" ? lastTrainedCommandId : undefined}
+              cosmeticsEquipped={dog?.cosmetics?.equipped}
+              useRig={false}
+              useSpritePack={false}
+            />
+          )}
         </div>
       </div>
 
@@ -359,12 +367,6 @@ export default function MainGame() {
               </section>
 
               <PersonalityPanel />
-            </div>
-
-            <div
-              style={{ position: "fixed", right: 16, bottom: 16, zIndex: 9999 }}
-            >
-              <PuppyAnimator action={puppyAction} size={192} debug />
             </div>
 
             <div className="space-y-4">
