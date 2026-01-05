@@ -8,6 +8,37 @@ function clampInt(n, min, max) {
   return Math.max(min, Math.min(max, n | 0));
 }
 
+const FALLBACK_ACTIONS = Object.freeze([
+  "idle",
+  "walk",
+  "bark",
+  "sit",
+  "sleep",
+]);
+
+function normalizePuppyAction(action) {
+  const a = String(action || "idle")
+    .trim()
+    .toLowerCase();
+  if (!a) return "idle";
+
+  // Common synonyms / cross-system names.
+  if (a === "rest" || a === "lay") return "sleep";
+  if (a === "run") return "walk";
+  if (a === "howl") return "bark";
+  if (a === "stay") return "sit";
+  if (
+    a === "roll" ||
+    a === "rollover" ||
+    a === "roll_over" ||
+    a === "rollover"
+  ) {
+    return "walk";
+  }
+
+  return a;
+}
+
 export default function PuppyAnimator({
   action = "idle",
   size = 256, // rendered size in px
@@ -40,7 +71,22 @@ export default function PuppyAnimator({
   }, []);
 
   const frameSize = meta?.frameSize ?? 256;
-  const actionDef = meta?.actions?.[action] ?? null;
+  const availableActions = React.useMemo(() => {
+    const keys =
+      meta?.actions && typeof meta.actions === "object"
+        ? Object.keys(meta.actions)
+        : null;
+    return new Set(keys && keys.length ? keys : FALLBACK_ACTIONS);
+  }, [meta]);
+
+  const requestedAction = normalizePuppyAction(action);
+  const safeAction = availableActions.has(requestedAction)
+    ? requestedAction
+    : availableActions.has("idle")
+      ? "idle"
+      : FALLBACK_ACTIONS[0];
+
+  const actionDef = meta?.actions?.[safeAction] ?? null;
   const frames = actionDef?.frames ?? 1;
   const fps = actionDef?.fps ?? meta?.defaultFps ?? 8;
 
@@ -76,7 +122,7 @@ export default function PuppyAnimator({
   }
 
   // Even with placeholder PNGs, you'll still see the box; real art will animate.
-  const src = `/sprites/puppy/actions/${action}.png`;
+  const src = `/sprites/puppy/actions/${safeAction}.png`;
 
   // One-row sheet: x offset is frame * frameSize
   const x = clampInt(frame, 0, Math.max(0, frames - 1)) * frameSize;
@@ -107,7 +153,9 @@ export default function PuppyAnimator({
             display: "inline-block",
           }}
         >
-          {action} • frame {frame + 1}/{frames} • {fps} fps
+          {safeAction}
+          {requestedAction !== safeAction ? ` (req: ${requestedAction})` : ""} •
+          frame {frame + 1}/{frames} • {fps} fps
         </div>
       ) : null}
     </div>
