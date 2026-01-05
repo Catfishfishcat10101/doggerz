@@ -6,11 +6,8 @@ import * as React from "react";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { signOut } from "firebase/auth";
-
 import { auth, firebaseReady } from "@/firebase.js";
-
 import PuppyAnimator from "./components/PuppyAnimator";
-
 import GameTopBar from "@/features/game/GameTopBar.jsx";
 import NeedsHUD from "@/features/game/NeedsHUD.jsx";
 import MoodAndJournalPanel from "@/features/game/MoodAndJournalPanel.jsx";
@@ -18,14 +15,12 @@ import TrainingPanel from "@/features/game/TrainingPanel.jsx";
 import TemperamentCard from "@/features/game/TemperamentCard.jsx";
 import PersonalityPanel from "@/features/game/PersonalityPanel.jsx";
 import { useDogLifecycle } from "@/features/game/useDogLifecycle.jsx";
-
 import WeatherFXCanvas from "@/components/WeatherFXCanvas.jsx";
 import YardSetDressing from "@/components/YardSetDressing.jsx";
 import YardDogActor from "@/components/YardDogActor.jsx";
 import DogMomentPanel from "@/features/game/DogMomentPanel.jsx";
 import DreamSequence from "@/features/dreams/DreamSequence.jsx";
 import DynamicMusicSystem from "@/features/audio/DynamicMusicSystem.jsx";
-
 import {
   selectDog,
   selectDogLifeStage,
@@ -179,6 +174,34 @@ export default function MainGame() {
   const activeDream = dog?.dreams?.active || null;
   const moodTag = dog?.mood?.history?.[0]?.tag || null;
   const lastTrainedCommandId = dog?.memory?.lastTrainedCommandId || null;
+
+  // PuppyAnimator uses the lightweight public sprites at /sprites/puppy/actions/*.
+  // Map training commands to the currently-available action set.
+  const puppyAction = React.useMemo(() => {
+    if (isAsleep || intent === "sleep" || intent === "rest") return "sleep";
+
+    if (intent === "train") {
+      const cmd = String(lastTrainedCommandId || selectedCommandId || "");
+      if (cmd === "speak") return "bark";
+      if (cmd === "sit") return "sit";
+      if (cmd === "stay") return "sit";
+      if (cmd === "rollOver") return "walk";
+      return "sit";
+    }
+
+    if (intent === "bark" || intent === "howl") return "bark";
+    if (
+      intent === "walk" ||
+      intent === "run" ||
+      intent === "play" ||
+      intent === "fetch" ||
+      intent === "potty"
+    ) {
+      return "walk";
+    }
+
+    return "idle";
+  }, [isAsleep, intent, lastTrainedCommandId, selectedCommandId]);
 
   return (
     <div className="relative min-h-dvh w-full overflow-hidden bg-gradient-to-b from-zinc-950 via-zinc-950 to-emerald-950/20 text-white">
@@ -341,7 +364,7 @@ export default function MainGame() {
             <div
               style={{ position: "fixed", right: 16, bottom: 16, zIndex: 9999 }}
             >
-              <PuppyAnimator action="idle" size={192} debug />
+              <PuppyAnimator action={puppyAction} size={192} debug />
             </div>
 
             <div className="space-y-4">
