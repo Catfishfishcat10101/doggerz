@@ -41,6 +41,22 @@ import {
   getSpriteForStageAndTier,
 } from "@/utils/lifecycle.js";
 
+function mapTrainingCommandToPuppyAction(commandId) {
+  const cmd = String(commandId || "")
+    .trim()
+    .toLowerCase();
+  if (!cmd) return "sit";
+
+  // Match current available sheets in /public/sprites/puppy/actions
+  if (cmd === "sit" || cmd === "stay") return "sit";
+  if (cmd === "speak") return "bark";
+
+  // TrainingPanel uses camelCase (e.g. rollOver). After lowercasing we see "rollover".
+  if (cmd === "rollover" || cmd === "roll_over") return "walk";
+
+  return "sit";
+}
+
 function getFxMode(condition) {
   const c = String(condition || "").toLowerCase();
   if (c.includes("snow")) return "snow";
@@ -187,12 +203,9 @@ export default function MainGame() {
     if (isAsleep || intent === "sleep" || intent === "rest") return "sleep";
 
     if (intent === "train") {
-      const cmd = String(lastTrainedCommandId || selectedCommandId || "");
-      if (cmd === "speak") return "bark";
-      if (cmd === "sit") return "sit";
-      if (cmd === "stay") return "sit";
-      if (cmd === "rollOver") return "walk";
-      return "sit";
+      return mapTrainingCommandToPuppyAction(
+        lastTrainedCommandId || selectedCommandId
+      );
     }
 
     if (intent === "bark" || intent === "howl") return "bark";
