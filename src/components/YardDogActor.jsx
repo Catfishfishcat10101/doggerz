@@ -2,9 +2,6 @@
 // @ts-nocheck
 
 import * as React from "react";
-
-import PixiDog from "@/components/PixiDog.jsx";
-
 import LayeredDogRig from "@/components/LayeredDogRig.jsx";
 import SpriteSheetDog from "@/components/SpriteSheetDog.jsx";
 import DogCosmeticsOverlay from "@/components/DogCosmeticsOverlay.jsx";
@@ -15,11 +12,9 @@ function clamp(n, lo, hi) {
   if (!Number.isFinite(x)) return lo;
   return Math.max(lo, Math.min(hi, x));
 }
-
 function randRange(rng, a, b) {
   return a + (b - a) * rng();
 }
-
 function useRng(seed = 1234567) {
   return React.useMemo(() => {
     // xorshift32
