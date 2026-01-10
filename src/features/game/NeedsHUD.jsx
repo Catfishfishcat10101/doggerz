@@ -76,12 +76,29 @@ function Pill({ label, value, tone = "default" }) {
   );
 }
 
+
 const NeedsHUD = React.memo(function NeedsHUD() {
   const dog = useSelector(selectDog);
   const training = useSelector(selectDogTraining);
   const bond = useSelector(selectDogBond);
   const moodlets = useSelector(selectDogMoodlets);
   const emotionCue = useSelector(selectDogEmotionCue);
+  const [cuePulse, setCuePulse] = useState(false);
+  const [ariaCue, setAriaCue] = useState("");
+  const prevCue = useRef(emotionCue);
+  useEffect(() => {
+    if (emotionCue && prevCue.current !== emotionCue) {
+      setCuePulse(true);
+      setAriaCue(`Dog emotion: ${emotionCue}`);
+      // Play gentle sound (optional, requires public/audio/ui-cue.mp3 or similar)
+      const audio = new window.Audio && window.Audio("/audio/ui-cue.mp3");
+      if (audio) audio.play().catch(() => { });
+      const timeout = setTimeout(() => setCuePulse(false), 400);
+      const ariaTimeout = setTimeout(() => setAriaCue(""), 1200);
+      prevCue.current = emotionCue;
+      return () => { clearTimeout(timeout); clearTimeout(ariaTimeout); };
+    }
+  }, [emotionCue]);
   if (!dog) return null;
   const stats = dog.stats || {};
   const hungerLevel = Math.round(stats.hunger ?? 0);
@@ -117,15 +134,18 @@ const NeedsHUD = React.memo(function NeedsHUD() {
         {/* Show current emotion cue as a badge */}
         {emotionCue ? (
           <span
-            className="ml-2 inline-flex items-center rounded-full border border-emerald-400/30 bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-200 animate-fadein focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/80 transition-all duration-200 shadow-sm hover:scale-[1.04] active:scale-95 cursor-pointer"
+            className={`ml-2 inline-flex items-center rounded-full border border-emerald-400/30 bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-200 animate-fadein focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/80 transition-all duration-200 shadow-sm hover:scale-[1.04] active:scale-95 cursor-pointer${cuePulse ? ' ring-4 ring-emerald-300/60' : ''}`}
             title={emotionCue}
             tabIndex={0}
             aria-label={`Dog emotion: ${emotionCue}`}
             role="status"
+            aria-live="polite"
           >
             <span aria-hidden="true">{emotionCue.charAt(0).toUpperCase() + emotionCue.slice(1)}</span>
           </span>
         ) : null}
+        {/* ARIA live region for screen readers */}
+        <span aria-live="polite" style={{ position: 'absolute', left: '-9999px' }}>{ariaCue}</span>
       </div>
       {moodlets && moodlets.length > 0 ? (
         <MoodletChips moodlets={moodlets} />
