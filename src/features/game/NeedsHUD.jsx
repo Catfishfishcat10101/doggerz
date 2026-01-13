@@ -95,12 +95,16 @@ const NeedsHUD = React.memo(function NeedsHUD() {
   const [ariaCue, setAriaCue] = useState("");
   const prevCue = useRef(emotionCue);
   useEffect(() => {
-    if (emotionCue && prevCue.current !== emotionCue) {
+    const hasCue =
+      typeof emotionCue === "string"
+        ? emotionCue.trim().length > 0
+        : Boolean(emotionCue);
+    if (hasCue && prevCue.current !== emotionCue) {
       setCuePulse(true);
       setAriaCue(`Dog emotion: ${emotionCue}`);
       // Play gentle sound (optional, requires public/audio/ui-cue.mp3 or similar)
-      const audio = window.Audio("/audio/ui-cue.mp3");
-      if (audio) audio.play().catch(() => {});
+      const audio = new Audio("/audio/ui-cue.mp3");
+      audio.play().catch(() => {});
       const timeout = setTimeout(() => setCuePulse(false), 400);
       const ariaTimeout = setTimeout(() => setAriaCue(""), 1200);
       prevCue.current = emotionCue;
