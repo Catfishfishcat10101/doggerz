@@ -1,19 +1,48 @@
 {
   "name": "Doggerz",
   "short_name": "Doggerz",
-  "description": "Virtual Dog-where your actions shape your dog's behavior.",
+  "description": "Doggerz is a virtual pup simulator: adopt, train, care for, and raise your Jack Russell companion as it grows through life stages.",
   "lang": "en-US",
   "dir": "ltr",
-  "id": "/",
+
+  "id": "/?source=pwa",
   "start_url": "/?source=pwa",
   "scope": "/",
+
   "display": "standalone",
   "display_override": ["standalone", "window-controls-overlay"],
   "orientation": "portrait",
+
   "background_color": "#020617",
   "theme_color": "#10b981",
+
   "categories": ["games", "entertainment"],
+
   "icons": [
+    {
+      "src": "/icons/doggerz-72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/doggerz-96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/doggerz-128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/doggerz-144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    },
     {
       "src": "/icons/doggerz-180.png",
       "sizes": "180x180",
@@ -27,14 +56,14 @@
       "purpose": "any"
     },
     {
-      "src": "/icons/doggerz-192.png",
-      "sizes": "192x192",
+      "src": "/icons/doggerz-256.png",
+      "sizes": "256x256",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "src/components/DogPixiView.jsx",
-      "sizes": "512x512",
+      "src": "/icons/doggerz-384.png",
+      "sizes": "384x384",
       "type": "image/png",
       "purpose": "any"
     },
@@ -42,45 +71,20 @@
       "src": "/icons/doggerz-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
-    }
-  ],
-  "shortcuts": [
+      "purpose": "any"
+    },
+
     {
-      "name": "Play",
-      "short_name": "Play",
-      "url": "/game",
-      "icons": [
-        {
-          "src": "/icons/doggerz-192.png",
-          "sizes": "192x192",
-          "type": "image/png"
-        }
-      ]
+      "src": "/icons/doggerz-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
-      "name": "Adopt",
-      "short_name": "Adopt",
-      "url": "/adopt",
-      "icons": [
-        {
-          "src": "/icons/doggerz-192.png",
-          "sizes": "192x192",
-          "type": "image/png"
-        }
-      ]
-    },
-    {
-      "name": "Settings",
-      "short_name": "Settings",
-      "url": "/settings",
-      "icons": [
-        {
-          "src": "/icons/doggerz-192.png",
-          "sizes": "192x192",
-          "type": "image/png"
-        }
-      ]
+      "src": "/icons/doggerz-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
