@@ -1,7 +1,11 @@
 # 1. Query to list all public posts, accessible to anyone.
 # Includes an insecureReason because it is a public endpoint.
-query ListPublicPosts @auth(level: PUBLIC, insecureReason: "This operation is safe to expose to the public") {
-  posts(where: {visibility: {eq: "public"}}) {
+query ListPublicPosts
+@auth(
+  level: PUBLIC
+  insecureReason: "This operation is safe to expose to the public"
+) {
+  posts(where: { visibility: { eq: "public" } }) {
     id
     title
     content
@@ -15,25 +19,30 @@ query ListPublicPosts @auth(level: PUBLIC, insecureReason: "This operation is sa
 
 # 2. Mutation to create a new post, only accessible to signed-in users.
 # Uses auth.uid to automatically set the authorUid, ensuring the current user is the author.
-mutation CreatePost($title: String!, $content: String!, $visibility: String!) @auth(level: USER) {
-  post: post_insert(data: {
-    title: $title,
-    content: $content,
-    visibility: $visibility,
-    authorUid_expr: "auth.uid"
-  })
+mutation CreatePost($title: String!, $content: String!, $visibility: String!)
+@auth(level: USER) {
+  post: post_insert(
+    data: {
+      title: $title
+      content: $content
+      visibility: $visibility
+      authorUid_expr: "auth.uid"
+    }
+  )
 }
 
 # 3. Query to get a specific post by ID, accessible to signed-in users.
 # Verifies that the current user is the author or the post is public.
 query GetPost($id: UUID!) @auth(level: USER) {
-  post(key: {id: $id},
-       where: {
-         _or: [
-           {authorUid: {eq_expr: "auth.uid"}},
-           {visibility: {eq: "public"}}
-         ]
-       }) {
+  post(
+    key: { id: $id }
+    where: {
+      _or: [
+        { authorUid: { eq_expr: "auth.uid" } }
+        { visibility: { eq: "public" } }
+      ]
+    }
+  ) {
     id
     title
     content
@@ -47,10 +56,15 @@ query GetPost($id: UUID!) @auth(level: USER) {
 
 # 4. Mutation to update an existing post, only accessible to the author.
 # Uses auth.uid to ensure that only the author can update the post.
-mutation UpdatePost($id: UUID!, $title: String, $content: String, $visibility: String) @auth(level: USER) {
-  post: post_update(key: {id: $id}, data: {
-    title: $title,
-    content: $content,
-    visibility: $visibility
-  }, where: {authorUid: {eq_expr: "auth.uid"}})
+mutation UpdatePost(
+  $id: UUID!
+  $title: String
+  $content: String
+  $visibility: String
+) @auth(level: USER) {
+  post: post_update(
+    key: { id: $id }
+    data: { title: $title, content: $content, visibility: $visibility }
+    where: { authorUid: { eq_expr: "auth.uid" } }
+  )
 }
