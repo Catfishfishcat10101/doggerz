@@ -6,6 +6,7 @@
 import * as React from "react";
 import ReactDOM from "react-dom/client";
 import { Provider } from "react-redux";
+import { Analytics } from "@vercel/analytics/react";
 
 import AppRouter from "./AppRouter.jsx";
 import store from "./redux/store.js";
@@ -95,6 +96,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
             <PwaStatusBanners />
             <LazyDogAIEngine />
             <AppRouter />
+            <Analytics />
           </ErrorBoundary>
         </ToastProvider>
       </PwaProvider>
