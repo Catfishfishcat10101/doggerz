@@ -1,0 +1,44 @@
+type User @table {
+  username: String!
+  email: String
+  profilePictureUrl: String
+  currency: Int
+  createdAt: Timestamp!
+}
+
+type Dog @table {
+  owner: User!
+  name: String!
+  breed: String!
+  hunger: Int!
+  happiness: Int!
+  trainingLevel: Int!
+  lastFedAt: Timestamp
+  lastPlayedAt: Timestamp
+  lastTrainedAt: Timestamp
+  createdAt: Timestamp!
+}
+
+type Item @table {
+  name: String!
+  type: String!
+  price: Int!
+  description: String
+  imageUrl: String
+  createdAt: Timestamp!
+}
+
+type InventoryItem @table {
+  owner: User!
+  item: Item!
+  quantity: Int!
+  equippedDog: Dog
+  createdAt: Timestamp!
+}
+
+type Activity @table {
+  dog: Dog!
+  activityType: String!
+  timestamp: Timestamp!
+  outcome: String
+}
