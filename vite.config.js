@@ -43,7 +43,13 @@ module.exports = async () => {
     define: {
       __APP_VERSION__: JSON.stringify(pkg.version),
     },
+    optimizeDeps: {
+      include: ["react", "react-dom", "react/jsx-runtime"],
+    },
     build: {
+      commonjsOptions: {
+        include: [/node_modules/],
+      },
       rollupOptions: {
         output: {
           manualChunks(id) {

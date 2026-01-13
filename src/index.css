@@ -145,6 +145,8 @@ body,
 html {
   /* Prevent layout shift when scrollbars appear/disappear (supported browsers). */
   scrollbar-gutter: stable;
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
 }
 
 html[data-theme="dark"] {
@@ -264,12 +266,13 @@ html[data-contrast="high"] {
 
 /* Reduce transparency / blur (helps readability and GPU perf on low-end devices) */
 html[data-transparency="reduced"] .backdrop-blur,
+html[data-transparency="reduced"] .backdrop-blur,
 html[data-transparency="reduced"] .backdrop-blur-sm,
 html[data-transparency="reduced"] .backdrop-blur-md,
 html[data-transparency="reduced"] .backdrop-blur-lg,
 html[data-transparency="reduced"] .backdrop-blur-xl {
-  backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
 }
 
 /* -------------------------------------------------------
@@ -626,8 +629,8 @@ html[data-reduce-motion="1"] .dog-bowl {
     0 0 0 1px rgba(255, 255, 255, 0.06),
     0 0 60px rgba(0, 0, 0, 0.22),
     0 0 90px var(--dz-accent-soft);
-  backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
   border-radius: 24px;
 }
 

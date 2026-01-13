@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "1014835520506",
+    "project_id": "dogger-a8021",
+    "storage_bucket": "dogger-a8021.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1014835520506:android:24eb7a72487bd8180a3a43",
+        "android_client_info": {
+          "package_name": "com.doggerz.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1014835520506-hl8m61l9a0vttj2jgvb0t0vmhgor7ht6.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBNiz16wIICqvgiGkAcyftDUTEWSLJVx-0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1014835520506-hl8m61l9a0vttj2jgvb0t0vmhgor7ht6.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

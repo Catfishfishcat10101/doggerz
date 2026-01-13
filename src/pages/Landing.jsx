@@ -1,7 +1,6 @@
 /** @format */
 // src/pages/Landing.jsx
 
-import * as React from "react";
 import { Link } from "react-router-dom";
 import PageShell from "@/components/PageShell.jsx";
 import { PATHS } from "@/routes.js";
