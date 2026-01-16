@@ -254,7 +254,11 @@ export default function MainGame() {
 
         <div className="absolute inset-0 flex items-end justify-center pb-24">
           {isPuppy ? (
-            <PuppyAnimator action={puppyAction} size={256} />
+            <PuppyAnimator
+              action={puppyAction}
+              size={256}
+              fallbackSrc={spriteSrc}
+            />
           ) : (
             <YardDogActor
               spriteSrc={spriteSrc}
