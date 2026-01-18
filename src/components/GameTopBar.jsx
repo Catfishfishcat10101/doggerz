@@ -1,9 +1,8 @@
 // src/components/GameTopBar.jsx
 // @ts-nocheck
 import { Link, useNavigate } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { selectUser } from "@/redux/userSlice.js";
-import { selectDogRenderMode, setDogRenderMode } from "@/redux/userSlice.js";
 
 // Optional Firebase logout (won't crash if Firebase isn't present).
 // Keep it lazy to avoid top-level await/module init issues.
@@ -40,23 +39,8 @@ function TopLink({ to, children }) {
 
 export default function GameTopBar() {
   const navigate = useNavigate();
-  const dispatch = useDispatch();
-  const dogRenderMode = useSelector(selectDogRenderMode);
   const user = useSelector(selectUser);
   const isSignedIn = !!(user?.email || user?.id);
-
-  function pushToast(message) {
-    if (typeof window === "undefined") return;
-    try {
-      window.dispatchEvent(
-        new CustomEvent("doggerz:toast", {
-          detail: { message: String(message || "") },
-        })
-      );
-    } catch {
-      // ignore
-    }
-  }
 
   async function handleLogout() {
     try {
@@ -91,27 +75,6 @@ export default function GameTopBar() {
         <nav className="flex items-center gap-1">
           <TopLink to="/about">About</TopLink>
           <TopLink to="/settings">Settings</TopLink>
-          <button
-            type="button"
-            onClick={() => {
-              const next =
-                dogRenderMode === "realistic" ? "sprite" : "realistic";
-              dispatch(setDogRenderMode(next));
-              pushToast(
-                next === "realistic"
-                  ? "Realistic mode enabled"
-                  : "Sprite mode enabled"
-              );
-            }}
-            className={`px-3 py-2 rounded-lg text-sm font-semibold border transition ${
-              dogRenderMode === "realistic"
-                ? "bg-emerald-500 text-black border-emerald-400"
-                : "bg-black/20 text-emerald-200 border-emerald-500/25 hover:border-emerald-400/40 hover:bg-emerald-500/10"
-            }`}
-            title="Toggle dog render mode"
-          >
-            {dogRenderMode === "realistic" ? "Realistic" : "Sprite"}
-          </button>
           <button
             onClick={isSignedIn ? handleLogout : handleExit}
             className="px-3 py-2 rounded-lg text-sm font-semibold text-zinc-100 hover:bg-white/10 transition"

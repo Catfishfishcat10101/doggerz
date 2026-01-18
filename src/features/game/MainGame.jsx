@@ -7,7 +7,6 @@ import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { signOut } from "firebase/auth";
 import { auth, firebaseReady } from "@/firebase.js";
-import PuppyAnimator from "@/features/game/components/PuppyAnimator.jsx";
 import GameTopBar from "@/features/game/GameTopBar.jsx";
 import NeedsHUD from "@/features/game/NeedsHUD.jsx";
 import MoodAndJournalPanel from "@/features/game/MoodAndJournalPanel.jsx";
@@ -18,14 +17,19 @@ import { useDogLifecycle } from "@/features/game/useDogLifecycle.jsx";
 import WeatherFXCanvas from "@/components/WeatherFXCanvas.jsx";
 import YardSetDressing from "@/components/YardSetDressing.jsx";
 import YardDogActor from "@/components/YardDogActor.jsx";
+import { useToast } from "@/components/ToastProvider.jsx";
 import DogMomentPanel from "@/features/game/DogMomentPanel.jsx";
 import DreamSequence from "@/features/dreams/DreamSequence.jsx";
 import DynamicMusicSystem from "@/features/audio/DynamicMusicSystem.jsx";
+import { collectEarnedBadgeIds } from "@/utils/badges.js";
 import {
   selectDog,
   selectDogLifeStage,
   selectDogCleanlinessTier,
   selectDogTraining,
+  selectDogEmotionCue,
+  ackTemperamentReveal,
+  petDog,
   feed,
   play,
   bathe,
@@ -40,22 +44,6 @@ import {
   calculateDogAge,
   getSpriteForStageAndTier,
 } from "@/utils/lifecycle.js";
-
-function mapTrainingCommandToPuppyAction(commandId) {
-  const cmd = String(commandId || "")
-    .trim()
-    .toLowerCase();
-  if (!cmd) return "sit";
-
-  // Match current available sheets in /public/sprites/puppy/actions
-  if (cmd === "sit" || cmd === "stay") return "sit";
-  if (cmd === "speak") return "bark";
-
-  // TrainingPanel uses camelCase (e.g. rollOver). After lowercasing we see "rollover".
-  if (cmd === "rollover" || cmd === "roll_over") return "walk";
-
-  return "sit";
-}
 
 function getFxMode(condition) {
   const c = String(condition || "").toLowerCase();
@@ -107,11 +95,13 @@ function ActionButton({ label, onClick, tone = "default", disabled }) {
 
 export default function MainGame() {
   const dispatch = useDispatch();
+  const toast = useToast();
 
   const dog = useSelector(selectDog);
   const lifeStage = useSelector(selectDogLifeStage);
   const cleanlinessTier = useSelector(selectDogCleanlinessTier);
   const training = useSelector(selectDogTraining);
+  const emotionCue = useSelector(selectDogEmotionCue);
   const weather = useSelector(selectWeatherCondition);
   const zip = useSelector(selectUserZip);
 
@@ -168,7 +158,7 @@ export default function MainGame() {
   const level = Number(dog?.level || 1);
   const coins = Number(dog?.coins || 0);
   const tokens = Number(dog?.tokens || 0);
-  const badges = Array.isArray(dog?.badges) ? dog.badges : [];
+  const badges = React.useMemo(() => collectEarnedBadgeIds(dog), [dog]);
   const streakDays = Number(dog?.streak?.current || 0);
 
   const xpPct = (() => {
@@ -196,31 +186,39 @@ export default function MainGame() {
   ).toUpperCase();
 
   const isPuppy = stageId === "PUPPY" || stageId === "PUP";
+  const cosmeticsReady = Boolean(dog?.temperament?.revealedAt);
+  const dogSize = isPuppy ? 256 : 200;
 
-  // PuppyAnimator uses the lightweight public sprites at /sprites/puppy/actions/*.
-  // Map training commands to the currently-available action set.
-  const puppyAction = React.useMemo(() => {
-    if (isAsleep || intent === "sleep" || intent === "rest") return "sleep";
+  const [showTemperament, setShowTemperament] = React.useState(false);
 
-    if (intent === "train") {
-      return mapTrainingCommandToPuppyAction(
-        lastTrainedCommandId || selectedCommandId
-      );
+  const TEMPERAMENT_REVEAL_XP = 20;
+
+  React.useEffect(() => {
+    if (!temperamentRevealReady || showTemperament) return;
+    const now = Date.now();
+    setShowTemperament(true);
+    dispatch(ackTemperamentReveal({ now, xp: TEMPERAMENT_REVEAL_XP }));
+
+    const primary = temperament?.primary || "Unknown";
+    const secondary = temperament?.secondary;
+    const label = secondary ? `${primary} / ${secondary}` : primary;
+    toast.reward(
+      `Temperament discovered: ${label} (+${TEMPERAMENT_REVEAL_XP} XP)`
+    );
+  }, [
+    dispatch,
+    showTemperament,
+    temperament?.primary,
+    temperament?.secondary,
+    temperamentRevealReady,
+    toast,
+  ]);
+
+  React.useEffect(() => {
+    if (!dog?.adoptedAt) {
+      setShowTemperament(false);
     }
-
-    if (intent === "bark" || intent === "howl") return "bark";
-    if (
-      intent === "walk" ||
-      intent === "run" ||
-      intent === "play" ||
-      intent === "fetch" ||
-      intent === "potty"
-    ) {
-      return "walk";
-    }
-
-    return "idle";
-  }, [isAsleep, intent, lastTrainedCommandId, selectedCommandId]);
+  }, [dog?.adoptedAt]);
 
   return (
     <div className="relative min-h-dvh w-full overflow-hidden bg-gradient-to-b from-zinc-950 via-zinc-950 to-emerald-950/20 text-white">
@@ -253,23 +251,22 @@ export default function MainGame() {
         <YardSetDressing isNight={isNight} />
 
         <div className="absolute inset-0 flex items-end justify-center pb-24">
-          {isPuppy ? (
-            <PuppyAnimator action={puppyAction} size={256} />
-          ) : (
-            <YardDogActor
-              spriteSrc={spriteSrc}
-              lifeStageStage={stageId}
-              reduceMotion={reduceMotion}
-              reduceTransparency={reduceTransparency}
-              isNight={isNight}
-              isAsleep={isAsleep}
-              intent={intent}
-              commandId={intent === "train" ? lastTrainedCommandId : undefined}
-              cosmeticsEquipped={dog?.cosmetics?.equipped}
-              useRig={false}
-              useSpritePack={false}
-            />
-          )}
+          <YardDogActor
+            spriteSrc={spriteSrc}
+            lifeStageStage={stageId}
+            reduceMotion={reduceMotion}
+            reduceTransparency={reduceTransparency}
+            isNight={isNight}
+            isAsleep={isAsleep}
+            intent={intent}
+            emotionCue={emotionCue}
+            commandId={intent === "train" ? lastTrainedCommandId : undefined}
+            cosmeticsEquipped={cosmeticsReady ? dog?.cosmetics?.equipped : null}
+            useRig={false}
+            useSpritePack
+            size={dogSize}
+            onPet={() => dispatch(petDog({ now: Date.now() }))}
+          />
         </div>
       </div>
 
@@ -400,7 +397,8 @@ export default function MainGame() {
 
       {/* Temperament reveal */}
       <TemperamentCard
-        temperament={temperamentRevealReady ? temperament : null}
+        temperament={showTemperament ? temperament : null}
+        onClose={() => setShowTemperament(false)}
       />
     </div>
   );

@@ -2,8 +2,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 
-import Header from "@/components/Header.jsx";
-import Footer from "@/components/Footer.jsx";
+import PageShell from "@/components/PageShell.jsx";
 
 function nodeToText(node) {
   if (node == null || node === false) return "";
@@ -432,177 +431,170 @@ export default function FaqPage() {
   }, [filteredSections, qn]);
 
   return (
-    <>
-      <Header />
-      <div className="flex-1 px-6 py-10 flex justify-center">
-        <div className="max-w-4xl w-full space-y-8">
-          <header id="top" className="space-y-3">
-            <h1 className="text-4xl font-black tracking-tight">FAQs</h1>
-            <p className="text-sm text-zinc-300 max-w-2xl">
-              Quick answers for curious humans. If you don’t see your question,
-              hit up{" "}
-              <Link
-                to="/contact"
-                className="text-emerald-300 hover:text-emerald-200"
-              >
-                Contact Us
-              </Link>
-              .
-            </p>
+    <PageShell mainClassName="px-6 py-10" containerClassName="w-full max-w-4xl">
+      <div className="w-full space-y-8">
+        <header id="top" className="space-y-3">
+          <h1 className="text-4xl font-black tracking-tight">FAQs</h1>
+          <p className="text-sm text-zinc-300 max-w-2xl">
+            Quick answers for curious humans. If you don’t see your question,
+            hit up{" "}
+            <Link
+              to="/contact"
+              className="text-emerald-300 hover:text-emerald-200"
+            >
+              Contact Us
+            </Link>
+            .
+          </p>
 
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-4">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="min-w-0 flex-1">
-                  <label htmlFor="faq-search" className="sr-only">
-                    Search FAQs
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      id="faq-search"
-                      type="search"
-                      value={query}
-                      onChange={(e) => setQuery(e.target.value)}
-                      placeholder="Search FAQs (try: fleas, offline, sunrise, streak…)"
-                      className="w-full rounded-xl border border-zinc-800 bg-black/40 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500 outline-none focus:border-emerald-500/70"
-                      aria-describedby={qn ? "faq-search-results" : undefined}
-                    />
-                    {qn && (
-                      <button
-                        type="button"
-                        onClick={() => setQuery("")}
-                        className="shrink-0 rounded-xl border border-zinc-800 bg-zinc-950/60 px-3 py-2 text-sm text-zinc-200 hover:border-emerald-500/60 hover:text-emerald-200"
-                        aria-label="Clear search"
-                      >
-                        Clear
-                      </button>
-                    )}
-                  </div>
-
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0 flex-1">
+                <label htmlFor="faq-search" className="sr-only">
+                  Search FAQs
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    id="faq-search"
+                    type="search"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Search FAQs (try: fleas, offline, sunrise, streak…)"
+                    className="w-full rounded-xl border border-zinc-800 bg-black/40 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500 outline-none focus:border-emerald-500/70"
+                    aria-describedby={qn ? "faq-search-results" : undefined}
+                  />
                   {qn && (
-                    <p
-                      id="faq-search-results"
-                      className="mt-2 text-xs text-zinc-500"
+                    <button
+                      type="button"
+                      onClick={() => setQuery("")}
+                      className="shrink-0 rounded-xl border border-zinc-800 bg-zinc-950/60 px-3 py-2 text-sm text-zinc-200 hover:border-emerald-500/60 hover:text-emerald-200"
+                      aria-label="Clear search"
                     >
-                      Showing{" "}
-                      <span className="font-semibold text-zinc-200">
-                        {matchCount}
-                      </span>{" "}
-                      result
-                      {matchCount === 1 ? "" : "s"} for “{query.trim()}”.
-                    </p>
+                      Clear
+                    </button>
                   )}
                 </div>
 
                 {qn && (
+                  <p
+                    id="faq-search-results"
+                    className="mt-2 text-xs text-zinc-500"
+                  >
+                    Showing{" "}
+                    <span className="font-semibold text-zinc-200">
+                      {matchCount}
+                    </span>{" "}
+                    result
+                    {matchCount === 1 ? "" : "s"} for “{query.trim()}”.
+                  </p>
+                )}
+              </div>
+
+              {qn && (
+                <a
+                  href="#top"
+                  className="text-xs text-zinc-500 hover:text-emerald-200"
+                >
+                  Back to top
+                </a>
+              )}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2 pt-1">
+            {(qn ? filteredSections : FAQ_SECTIONS).map((s) => (
+              <a
+                key={s.id}
+                href={`#${s.id}`}
+                className="rounded-full border border-zinc-800 bg-zinc-950/60 px-3 py-1 text-xs text-zinc-300 hover:border-emerald-500/70 hover:text-emerald-200"
+              >
+                {s.title}
+              </a>
+            ))}
+          </div>
+        </header>
+
+        <div className="space-y-10">
+          {qn && matchCount === 0 ? (
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-5">
+              <h2 className="text-lg font-semibold text-zinc-100">
+                No matches
+              </h2>
+              <p className="mt-1 text-sm text-zinc-300">
+                Try different keywords (for example: <b>cleanliness</b>,{" "}
+                <b>offline</b>, <b>install</b>, <b>login</b>, <b>sunrise</b>),
+                or reach out via{" "}
+                <Link
+                  to="/contact"
+                  className="text-emerald-300 hover:text-emerald-200"
+                >
+                  Contact Us
+                </Link>
+                .
+              </p>
+            </div>
+          ) : (
+            (qn ? filteredSections : FAQ_SECTIONS).map((section) => (
+              <section
+                key={section.id}
+                id={section.id}
+                className="scroll-mt-24"
+              >
+                <div className="mb-4 flex items-end justify-between gap-3">
+                  <h2 className="text-xl font-semibold text-zinc-100">
+                    {section.title}
+                  </h2>
                   <a
                     href="#top"
                     className="text-xs text-zinc-500 hover:text-emerald-200"
                   >
                     Back to top
                   </a>
-                )}
-              </div>
-            </div>
+                </div>
 
-            <div className="flex flex-wrap gap-2 pt-1">
-              {(qn ? filteredSections : FAQ_SECTIONS).map((s) => (
-                <a
-                  key={s.id}
-                  href={`#${s.id}`}
-                  className="rounded-full border border-zinc-800 bg-zinc-950/60 px-3 py-1 text-xs text-zinc-300 hover:border-emerald-500/70 hover:text-emerald-200"
-                >
-                  {s.title}
-                </a>
-              ))}
-            </div>
-          </header>
+                <div className="grid gap-3">
+                  {section.items.map((item) => (
+                    <FaqItem
+                      key={`${item.q}-${qn || "all"}`}
+                      q={item.q}
+                      a={item.a}
+                      defaultOpen={Boolean(qn)}
+                    />
+                  ))}
+                </div>
+              </section>
+            ))
+          )}
+        </div>
 
-          <div className="space-y-10">
-            {qn && matchCount === 0 ? (
-              <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-5">
-                <h2 className="text-lg font-semibold text-zinc-100">
-                  No matches
-                </h2>
-                <p className="mt-1 text-sm text-zinc-300">
-                  Try different keywords (for example: <b>cleanliness</b>,{" "}
-                  <b>offline</b>, <b>install</b>, <b>login</b>, <b>sunrise</b>),
-                  or reach out via{" "}
-                  <Link
-                    to="/contact"
-                    className="text-emerald-300 hover:text-emerald-200"
-                  >
-                    Contact Us
-                  </Link>
-                  .
-                </p>
-              </div>
-            ) : (
-              (qn ? filteredSections : FAQ_SECTIONS).map((section) => (
-                <section
-                  key={section.id}
-                  id={section.id}
-                  className="scroll-mt-24"
-                >
-                  <div className="mb-4 flex items-end justify-between gap-3">
-                    <h2 className="text-xl font-semibold text-zinc-100">
-                      {section.title}
-                    </h2>
-                    <a
-                      href="#top"
-                      className="text-xs text-zinc-500 hover:text-emerald-200"
-                    >
-                      Back to top
-                    </a>
-                  </div>
-
-                  <div className="grid gap-3">
-                    {section.items.map((item) => (
-                      <FaqItem
-                        key={`${item.q}-${qn || "all"}`}
-                        q={item.q}
-                        a={item.a}
-                        defaultOpen={Boolean(qn)}
-                      />
-                    ))}
-                  </div>
-                </section>
-              ))
-            )}
-          </div>
-
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-5">
-            <h2 className="text-lg font-semibold text-zinc-100">
-              Still stuck?
-            </h2>
-            <p className="mt-1 text-sm text-zinc-300">
-              No worries. We can help faster if you include your device +
-              browser and what you were trying to do.
-            </p>
-            <div className="mt-4 flex flex-wrap gap-3">
-              <Link
-                to="/help"
-                className="inline-flex items-center justify-center rounded-full bg-emerald-500 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-black hover:bg-emerald-400"
-              >
-                Help
-              </Link>
-              <Link
-                to="/contact"
-                className="inline-flex items-center justify-center rounded-full border border-zinc-700 bg-black/40 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-zinc-100 hover:border-emerald-400/80 hover:text-emerald-300"
-              >
-                Contact Us
-              </Link>
-              <Link
-                to="/"
-                className="inline-flex items-center justify-center rounded-full border border-zinc-800 bg-zinc-950/60 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-zinc-300 hover:text-zinc-100"
-              >
-                Back to home
-              </Link>
-            </div>
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-5">
+          <h2 className="text-lg font-semibold text-zinc-100">Still stuck?</h2>
+          <p className="mt-1 text-sm text-zinc-300">
+            No worries. We can help faster if you include your device + browser
+            and what you were trying to do.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Link
+              to="/help"
+              className="inline-flex items-center justify-center rounded-full bg-emerald-500 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-black hover:bg-emerald-400"
+            >
+              Help
+            </Link>
+            <Link
+              to="/contact"
+              className="inline-flex items-center justify-center rounded-full border border-zinc-700 bg-black/40 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-zinc-100 hover:border-emerald-400/80 hover:text-emerald-300"
+            >
+              Contact Us
+            </Link>
+            <Link
+              to="/"
+              className="inline-flex items-center justify-center rounded-full border border-zinc-800 bg-zinc-950/60 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-zinc-300 hover:text-zinc-100"
+            >
+              Back to home
+            </Link>
           </div>
         </div>
       </div>
-
-      <Footer />
-    </>
+    </PageShell>
   );
 }

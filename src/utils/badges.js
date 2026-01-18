@@ -18,6 +18,8 @@ export function humanizeBadgeId(id) {
   const raw = String(id || "").trim();
   if (!raw) return "";
 
+  if (raw === "temperament_unlocked") return "Personality Unlocked";
+
   if (raw.startsWith("trick_")) {
     const name = raw.slice("trick_".length);
     const spaced = name
@@ -38,6 +40,9 @@ export function humanizeBadgeId(id) {
 
 export function badgeStyleClass(id) {
   const raw = String(id || "");
+  if (raw === "temperament_unlocked") {
+    return "border-emerald-400/25 bg-emerald-500/15 text-emerald-100";
+  }
   if (raw.startsWith("trick_")) {
     return "border-violet-400/25 bg-violet-500/15 text-violet-100";
   }
@@ -90,9 +95,13 @@ export function collectEarnedBadgeIds(dog) {
     .filter(([, skill]) => (skill?.level || 0) >= 1)
     .map(([id]) => `trick_${id}`);
 
+  const temperamentBadge = dog?.temperament?.revealedAt
+    ? ["temperament_unlocked"]
+    : [];
+
   const out = [];
   const seen = new Set();
-  for (const id of [...cosmeticIds, ...trickIds]) {
+  for (const id of [...cosmeticIds, ...trickIds, ...temperamentBadge]) {
     const key = String(id || "").trim();
     if (!key || seen.has(key)) continue;
     seen.add(key);

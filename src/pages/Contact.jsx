@@ -1,15 +1,13 @@
 // src/pages/Contact.jsx
 // @ts-nocheck
 
-import Header from "@/components/Header.jsx";
-import Footer from "@/components/Footer.jsx";
+import PageShell from "@/components/PageShell.jsx";
 import { SUPPORT_EMAIL_FEEDBACK_URL } from "@/config/links.js";
 
 export default function Contact() {
   return (
-    <>
-      <Header />
-      <main className="min-h-[calc(100vh-4rem)] bg-slate-950 text-zinc-100 flex justify-center px-4 py-10">
+    <PageShell containerClassName="w-full max-w-2xl">
+      <div className="flex justify-center px-4 py-10">
         <div className="w-full max-w-2xl space-y-6">
           <header className="space-y-2">
             <h1 className="text-2xl font-semibold tracking-tight">Contact</h1>
@@ -38,9 +36,7 @@ export default function Contact() {
             </p>
           </section>
         </div>
-      </main>
-
-      <Footer />
-    </>
+      </div>
+    </PageShell>
   );
 }

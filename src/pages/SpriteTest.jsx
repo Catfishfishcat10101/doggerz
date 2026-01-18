@@ -1,5 +1,5 @@
 // src/pages/SpriteTest.jsx
-// NOTE: Sprite assets have been removed. This page shows fallback icon.
+// Placeholder sprite sheet test page.
 
 import * as React from "react";
 
@@ -15,17 +15,17 @@ export default function SpriteTest() {
   const [reduceMotion, setReduceMotion] = React.useState(false);
   const [debug, setDebug] = React.useState(null);
 
-  const fallbackSrc = React.useMemo(() => {
-    // Sprite assets removed - use app icon
-    return withBaseUrl("/icons/doggerz-192.png");
-  }, []);
+  const fallbackSrc = React.useMemo(
+    () => withBaseUrl("/icons/doggerz-192.png"),
+    []
+  );
 
   return (
     <div className="min-h-screen bg-black text-white p-6">
       <h1 className="text-2xl font-semibold">Sprite Test</h1>
       <p className="text-white/70 mt-2">
-        NOTE: Sprite assets have been removed from the repository. This page now
-        displays the app icon as a fallback.
+        Loads the placeholder sprite atlas from /public/sprites. If it fails,
+        the app icon is used as a fallback.
       </p>
 
       <div className="mt-6 grid gap-4 md:grid-cols-2">

@@ -21,6 +21,7 @@ import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import CrashFallback from "./components/CrashFallback.jsx";
 import { initRuntimeLogging } from "./utils/runtimeLogging.js";
 import { prefetchDogAIEngine } from "./utils/prefetch.js";
+import { PupProvider } from "./state/PupContext.jsx";
 
 // Runtime logging policy + last-resort capture (DEV verbose, PROD quiet).
 initRuntimeLogging({ mode: import.meta.env.PROD ? "prod" : "dev" });
@@ -90,11 +91,13 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       <PwaProvider>
         <ToastProvider>
           <ErrorBoundary fallback={AppCrashFallback}>
-            <AppPreferencesEffects />
-            <AppGameEffects />
-            <PwaStatusBanners />
-            <LazyDogAIEngine />
-            <AppRouter />
+            <PupProvider>
+              <AppPreferencesEffects />
+              <AppGameEffects />
+              <PwaStatusBanners />
+              <LazyDogAIEngine />
+              <AppRouter />
+            </PupProvider>
           </ErrorBoundary>
         </ToastProvider>
       </PwaProvider>

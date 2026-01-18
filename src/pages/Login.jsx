@@ -10,8 +10,7 @@ import {
 import { auth, firebaseReady } from "@/firebase.js";
 import { selectIsLoggedIn } from "@/redux/userSlice.js";
 
-import Header from "@/components/Header.jsx";
-import Footer from "@/components/Footer.jsx";
+import PageShell from "@/components/PageShell.jsx";
 
 export default function LoginPage() {
   const isLoggedIn = useSelector(selectIsLoggedIn);
@@ -124,9 +123,8 @@ export default function LoginPage() {
   };
 
   return (
-    <>
-      <Header />
-      <div className="flex flex-col items-center w-full h-full pt-6 pb-10 bg-gradient-to-b from-zinc-50 to-zinc-100 text-zinc-900 dark:from-zinc-950 dark:to-zinc-900 dark:text-white">
+    <PageShell>
+      <div className="flex flex-col items-center w-full h-full pt-6 pb-10">
         {/* Card */}
         <div className="w-full max-w-md bg-white/80 border border-zinc-200 dark:bg-zinc-900/80 dark:border-zinc-800 rounded-2xl p-6 shadow-xl">
           <h2 className="text-xl font-semibold mb-2">Log in</h2>
@@ -237,8 +235,6 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
-
-      <Footer />
-    </>
+    </PageShell>
   );
 }

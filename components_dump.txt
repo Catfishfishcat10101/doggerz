@@ -1,0 +1,5311 @@
+================================================================================
+FILE: src/components/AdultTrainingCard.jsx
+--------------------------------------------------------------------------------
+// src/features/game/components/AdultTrainingCard.jsx
+// @ts-nocheck
+
+import { useDispatch, useSelector } from "react-redux";
+import {
+  selectDogTraining,
+  selectDogLifeStage,
+  trainObedience,
+} from "@/redux/dogSlice.js";
+
+/**
+ * Tiny util to make ISO dates readable.
+ */
+function formatDate(iso) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function StatRow({ label, value }) {
+  return (
+    <div className="flex items-center justify-between text-xs sm:text-sm text-zinc-300/90">
+      <span className="text-zinc-400">{label}</span>
+      <span className="font-medium text-zinc-100">{value}</span>
+    </div>
+  );
+}
+
+export default function AdultTrainingCard() {
+  const dispatch = useDispatch();
+
+  const lifeStage = useSelector(selectDogLifeStage) || {
+    stage: "PUPPY",
+    label: "Puppy",
+  };
+
+  const training = useSelector(selectDogTraining) || {};
+  const adult = training.adult || {
+    lastCompletedDate: null,
+    streak: 0,
+    misses: 0,
+    lastPenaltyDate: null,
+  };
+
+  const stageKey = (lifeStage.stage || "PUPPY").toUpperCase();
+  const isPuppy = stageKey === "PUPPY";
+
+  const handleLogSession = () => {
+    // Uses your existing trainObedience reducer,
+    // which internally calls completeAdultTrainingSession(...)
+    dispatch(
+      trainObedience({
+        commandId: "routine_session",
+        success: true,
+        xp: 10,
+        now: Date.now(),
+      })
+    );
+  };
+
+  const streakLabel =
+    adult.streak && adult.streak > 0
+      ? `${adult.streak} day${adult.streak === 1 ? "" : "s"}`
+      : "No streak yet";
+
+  const missesLabel =
+    adult.misses && adult.misses > 0
+      ? `${adult.misses} missed day${adult.misses === 1 ? "" : "s"}`
+      : "Clean";
+
+  return (
+    <section className="rounded-2xl border border-emerald-500/20 bg-slate-900/80 p-4 sm:p-5 shadow-[0_18px_50px_rgba(0,0,0,0.65)] backdrop-blur">
+      <header className="flex items-start justify-between gap-3">
+        <div>
+          <h2 className="text-sm sm:text-base font-semibold tracking-wide text-emerald-200">
+            Adult Training
+          </h2>
+          <p className="mt-1 text-[11px] sm:text-xs text-zinc-400">
+            Log daily obedience sessions to earn coins, keep happiness up, and
+            build a long-term streak.
+          </p>
+        </div>
+
+        <div className="flex flex-col items-end gap-1">
+          <span className="inline-flex items-center rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-200">
+            {lifeStage.label || lifeStage.stage || "Puppy"}
+          </span>
+          {!isPuppy && adult.streak > 0 && (
+            <span className="text-[10px] text-amber-200/80">
+              🔥 {adult.streak} day streak
+            </span>
+          )}
+        </div>
+      </header>
+
+      {/* Stats */}
+      <div className="mt-3 sm:mt-4 space-y-2 rounded-xl bg-slate-900/90 p-3 ring-1 ring-slate-800/80">
+        <StatRow
+          label="Last session"
+          value={formatDate(adult.lastCompletedDate)}
+        />
+        <StatRow label="Streak" value={streakLabel} />
+        <StatRow label="Misses" value={missesLabel} />
+        <StatRow
+          label="Last penalty"
+          value={formatDate(adult.lastPenaltyDate)}
+        />
+      </div>
+
+      {/* Call to action */}
+      <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <button
+          type="button"
+          onClick={handleLogSession}
+          disabled={isPuppy}
+          className={[
+            "inline-flex items-center justify-center rounded-full",
+            "px-4 py-1.5 text-xs sm:text-sm font-semibold tracking-wide",
+            "transition-transform duration-150",
+            "shadow-[0_10px_30px_rgba(16,185,129,0.45)]",
+            isPuppy
+              ? "opacity-40 cursor-not-allowed bg-emerald-800/60 text-emerald-100/70"
+              : "bg-emerald-500 text-slate-950 hover:translate-y-[1px] hover:bg-emerald-400 active:translate-y-[2px]",
+          ].join(" ")}
+        >
+          {!isPuppy
+            ? "Log today's training session"
+            : "Unlocks when pup grows up"}
+        </button>
+
+        <p className="text-[10px] sm:text-[11px] text-zinc-500">
+          Each logged session feeds the streak system and gives your pup a small
+          mood and coin boost.
+        </p>
+      </div>
+    </section>
+  );
+}
+
+
+================================================================================
+FILE: src/components/AppGameEffects.jsx
+--------------------------------------------------------------------------------
+// src/components/AppGameEffects.jsx
+
+import * as React from "react";
+import { useSelector } from "react-redux";
+import { selectDogPolls, selectDogSkillTree } from "@/redux/dogSlice.js";
+
+/**
+ * Writes tiny app-wide data-attributes used for dynamic CSS.
+ *
+ * Kept separate from AppPreferencesEffects so gameplay visuals stay independent
+ * from user preferences.
+ */
+export default function AppGameEffects() {
+  const skillTree = useSelector(selectDogSkillTree);
+  const polls = useSelector(selectDogPolls);
+
+  const lastUnlockedAt =
+    typeof skillTree?.lastUnlockedAt === "number"
+      ? skillTree.lastUnlockedAt
+      : 0;
+  const lastBranchId = skillTree?.lastBranchId || "";
+  const storyActive = Boolean(polls?.active);
+
+  React.useEffect(() => {
+    const root = document.documentElement;
+
+    // Branch accent (used by global CSS variables; safe to omit when unset).
+    if (lastBranchId) root.dataset.skillBranch = String(lastBranchId);
+    else delete root.dataset.skillBranch;
+
+    // Micro-story / poll moment active.
+    if (storyActive) root.dataset.storyActive = "1";
+    else delete root.dataset.storyActive;
+  }, [lastBranchId, storyActive]);
+
+  React.useEffect(() => {
+    if (!lastUnlockedAt) return;
+
+    const root = document.documentElement;
+    root.dataset.skillPulse = "1";
+
+    const t = window.setTimeout(() => {
+      // Only clear if nothing else re-triggered it.
+      try {
+        delete root.dataset.skillPulse;
+      } catch (e) {
+        void e;
+      }
+    }, 650);
+
+    return () => window.clearTimeout(t);
+  }, [lastUnlockedAt]);
+
+  return null;
+}
+
+
+================================================================================
+FILE: src/components/BackPill.jsx
+--------------------------------------------------------------------------------
+// src/components/BackPill.jsx
+
+import * as React from "react";
+import { Link, useNavigate } from "react-router-dom";
+
+/**
+ * Visually consistent "Back" control.
+ * - If `to` is provided, renders a <Link>.
+ * - Otherwise goes back in history, with a safe fallback.
+ */
+export default function BackPill({
+  to,
+  fallbackTo = "/",
+  label = "Back",
+  className = "",
+  replace = true,
+}) {
+  const navigate = useNavigate();
+
+  const base =
+    "inline-flex items-center justify-center gap-2 rounded-2xl px-3 py-2 text-xs font-semibold border border-white/15 bg-black/25 text-zinc-100 hover:bg-black/35 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40";
+
+  const text = (
+    <>
+      <span aria-hidden>←</span>
+      <span>{label}</span>
+    </>
+  );
+
+  const handleBack = React.useCallback(() => {
+    try {
+      navigate(-1);
+    } catch {
+      navigate(fallbackTo, { replace });
+    }
+  }, [fallbackTo, navigate, replace]);
+
+  if (to) {
+    return (
+      <Link to={to} className={`${base} ${className}`.trim()}>
+        {text}
+      </Link>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleBack}
+      className={`${base} ${className}`.trim()}
+    >
+      {text}
+    </button>
+  );
+}
+
+
+================================================================================
+FILE: src/components/CareActionsPanel.jsx
+--------------------------------------------------------------------------------
+// src/components/CareActionsPanel.jsx
+
+export default function CareActionsPanel({
+  disabled = false,
+  onFeed,
+  onPlay,
+  onBathe,
+  onPotty,
+}) {
+  const baseBtn =
+    "inline-flex items-center justify-center px-3 py-2 rounded-xl text-xs font-semibold transition border";
+  const enabledSolid = "bg-emerald-500 text-black border-emerald-500";
+  const enabledGhost =
+    "bg-zinc-900 text-zinc-100 border-zinc-700 hover:border-emerald-400 hover:text-emerald-300";
+  const disabledStyle = "bg-zinc-900 text-zinc-500 border-zinc-800";
+
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      {/* Feed */}
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={onFeed}
+        className={`${baseBtn} ${disabled ? disabledStyle : enabledSolid}`}
+      >
+        Feed
+      </button>
+
+      {/* Play */}
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={onPlay}
+        className={`${baseBtn} ${disabled ? disabledStyle : enabledGhost}`}
+      >
+        Play
+      </button>
+
+      {/* Bathe / Groom */}
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={onBathe}
+        className={`${baseBtn} ${disabled ? disabledStyle : enabledGhost}`}
+      >
+        Bathe
+      </button>
+
+      {/* Potty */}
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={onPotty}
+        className={`${baseBtn} ${disabled ? disabledStyle : enabledGhost}`}
+      >
+        Potty
+      </button>
+    </div>
+  );
+}
+
+
+================================================================================
+FILE: src/components/CrashFallback.jsx
+--------------------------------------------------------------------------------
+// src/components/CrashFallback.jsx
+// @ts-nocheck
+
+import * as React from "react";
+
+function safeStringify(value) {
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch {
+    try {
+      return String(value);
+    } catch {
+      return "";
+    }
+  }
+}
+
+function buildDebugText(error) {
+  const lines = [];
+  lines.push("[Doggerz crash]");
+  try {
+    lines.push(`time: ${new Date().toISOString()}`);
+  } catch {
+    // ignore
+  }
+  try {
+    lines.push(`url: ${window.location.href}`);
+  } catch {
+    // ignore
+  }
+  try {
+    lines.push(`ua: ${navigator.userAgent}`);
+  } catch {
+    // ignore
+  }
+  lines.push("");
+
+  if (error) {
+    lines.push("error:");
+    lines.push(String(error?.message || error));
+    if (error?.stack) {
+      lines.push("");
+      lines.push("stack:");
+      lines.push(String(error.stack));
+    }
+    lines.push("");
+  }
+
+  return lines.join("\n");
+}
+
+export default function CrashFallback({
+  title = "Something went wrong",
+  subtitle = "Try refreshing the page.",
+  error,
+}) {
+  const [copied, setCopied] = React.useState(false);
+  const debugText = React.useMemo(() => buildDebugText(error), [error]);
+
+  return (
+    <div className="min-h-[70vh] grid place-items-center px-4 py-12 bg-zinc-950 text-zinc-100">
+      <div className="w-full max-w-2xl rounded-3xl border border-white/10 bg-black/35 p-6 sm:p-8 backdrop-blur-md shadow-[0_0_80px_rgba(0,0,0,0.35)]">
+        <div className="text-xs uppercase tracking-[0.22em] text-emerald-200/80">
+          Crash
+        </div>
+        <h1 className="mt-2 text-2xl sm:text-3xl font-extrabold text-white">
+          {title}
+        </h1>
+        <p className="mt-2 text-sm text-zinc-300">{subtitle}</p>
+
+        <div className="mt-5 flex flex-wrap gap-2">
+          <button
+            type="button"
+            className="rounded-2xl px-4 py-2 text-sm font-semibold border border-emerald-400/35 bg-emerald-500/15 text-white hover:bg-emerald-500/20 transition"
+            onClick={() => {
+              try {
+                window.location.reload();
+              } catch {
+                // ignore
+              }
+            }}
+          >
+            Refresh
+          </button>
+
+          <button
+            type="button"
+            className="rounded-2xl px-4 py-2 text-sm font-semibold border border-white/15 bg-black/25 text-white hover:bg-black/35 transition"
+            onClick={async () => {
+              try {
+                await navigator.clipboard.writeText(debugText);
+                setCopied(true);
+                window.setTimeout(() => setCopied(false), 1200);
+              } catch {
+                try {
+                  window.prompt("Copy debug info:", debugText);
+                } catch {
+                  // ignore
+                }
+              }
+            }}
+          >
+            {copied ? "Copied" : "Copy debug"}
+          </button>
+        </div>
+
+        {error ? (
+          <details className="mt-5 rounded-2xl border border-white/10 bg-black/25 px-4 py-3">
+            <summary className="cursor-pointer select-none text-sm font-semibold text-zinc-200">
+              Technical details
+            </summary>
+            <pre className="mt-3 whitespace-pre-wrap break-words text-xs text-zinc-300">
+              {error?.stack ? String(error.stack) : safeStringify(error)}
+            </pre>
+          </details>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+
+================================================================================
+FILE: src/components/DogCosmeticsOverlay.jsx
+--------------------------------------------------------------------------------
+// src/components/DogCosmeticsOverlay.jsx
+// Lightweight vector overlays for equipped cosmetics.
+// @ts-nocheck
+
+const COSMETIC_STYLES = {
+  collar_leaf: {
+    collar: { stroke: "rgba(16,185,129,0.95)", glow: "rgba(16,185,129,0.35)" },
+  },
+  collar_neon: {
+    collar: { stroke: "rgba(56,189,248,0.95)", glow: "rgba(56,189,248,0.35)" },
+  },
+  tag_star: {
+    tag: { fill: "rgba(250,204,21,0.95)", glow: "rgba(250,204,21,0.35)" },
+  },
+};
+
+function styleFor(id) {
+  const key = String(id || "").trim();
+  return COSMETIC_STYLES[key] || {};
+}
+
+export default function DogCosmeticsOverlay({
+  equipped,
+  size = 320,
+  facing = 1,
+  reduceMotion = false,
+}) {
+  const collarId = equipped?.collar || null;
+  const tagId = equipped?.tag || null;
+
+  if (!collarId && !tagId) return null;
+
+  const collarStyle = styleFor(collarId)?.collar;
+  const tagStyle = styleFor(tagId)?.tag;
+
+  const keyframes = `
+    @keyframes dg-cosmic-shimmer {
+      0% { opacity: 0.78; transform: translate3d(0,0,0); }
+      50% { opacity: 1; transform: translate3d(0,-0.5px,0); }
+      100% { opacity: 0.78; transform: translate3d(0,0,0); }
+    }
+  `;
+
+  return (
+    <div
+      className="pointer-events-none absolute inset-0"
+      style={{
+        width: size,
+        height: size,
+        transform: `scaleX(${facing})`,
+        transformOrigin: "50% 100%",
+      }}
+      aria-hidden="true"
+    >
+      <style>{keyframes}</style>
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 100 100"
+        style={{ display: "block" }}
+      >
+        {/* Collar: simple arc around the neck area */}
+        {collarId ? (
+          <g
+            style={{
+              filter: collarStyle?.glow
+                ? `drop-shadow(0 0 10px ${collarStyle.glow})`
+                : undefined,
+              animation: reduceMotion
+                ? "none"
+                : "dg-cosmic-shimmer 2.6s ease-in-out infinite",
+            }}
+          >
+            <path
+              d="M34 57 C42 51, 58 51, 66 57"
+              fill="none"
+              stroke={collarStyle?.stroke || "rgba(16,185,129,0.9)"}
+              strokeWidth="4.8"
+              strokeLinecap="round"
+            />
+            <path
+              d="M34 57 C42 51, 58 51, 66 57"
+              fill="none"
+              stroke="rgba(0,0,0,0.25)"
+              strokeWidth="1.3"
+              strokeLinecap="round"
+            />
+          </g>
+        ) : null}
+
+        {/* Tag */}
+        {tagId ? (
+          <g
+            style={{
+              filter: tagStyle?.glow
+                ? `drop-shadow(0 0 12px ${tagStyle.glow})`
+                : undefined,
+              animation: reduceMotion
+                ? "none"
+                : "dg-cosmic-shimmer 2.0s ease-in-out infinite",
+            }}
+          >
+            <circle
+              cx="50"
+              cy="64"
+              r="6.2"
+              fill={tagStyle?.fill || "rgba(250,204,21,0.9)"}
+              stroke="rgba(0,0,0,0.35)"
+              strokeWidth="1"
+            />
+            {/* star */}
+            <path
+              d="M50 58.5 L51.8 62.2 L55.8 62.7 L52.8 65.4 L53.6 69.3 L50 67.4 L46.4 69.3 L47.2 65.4 L44.2 62.7 L48.2 62.2 Z"
+              fill="rgba(255,255,255,0.7)"
+            />
+          </g>
+        ) : null}
+      </svg>
+    </div>
+  );
+}
+
+
+================================================================================
+FILE: src/components/DogPixiView.jsx
+--------------------------------------------------------------------------------
+// src/components/DogPixiView.jsx
+// @ts-nocheck
+
+import { useEffect, useMemo, useState } from "react";
+import { Stage, Container, AnimatedSprite } from "@pixi/react";
+import { Assets, Rectangle, Texture } from "pixi.js";
+import { getDogPixiSheetUrl } from "@/utils/dogSpritePaths.js";
+
+// IMPORTANT: set these to match your sheet
+const FRAME_W = 128;
+const FRAME_H = 128;
+
+// Fixed row order in the sheet
+const ROW_BY_ANIM = {
+  idle: 0,
+  walk: 1,
+  sleep: 2,
+  bark: 3,
+  scratch: 4,
+};
+
+// Frames per row (columns used from the left)
+const FRAMES_BY_ANIM = {
+  idle: 6,
+  walk: 8,
+  sleep: 6,
+  bark: 4,
+  scratch: 6,
+};
+
+function sheetPath(stage, condition) {
+  return getDogPixiSheetUrl(stage, condition);
+}
+
+function sliceRowTextures(baseTexture, rowIndex, frameCount) {
+  const textures = [];
+  for (let col = 0; col < frameCount; col++) {
+    const rect = new Rectangle(
+      col * FRAME_W,
+      rowIndex * FRAME_H,
+      FRAME_W,
+      FRAME_H
+    );
+    textures.push(new Texture(baseTexture, rect));
+  }
+  return textures;
+}
+
+export default function DogPixiView({
+  stage = "pup",
+  condition = "clean",
+  anim = "idle",
+  width = 420,
+  height = 300,
+  scale = 2.2,
+  onStatus,
+}) {
+  const [baseTexture, setBaseTexture] = useState(null);
+
+  useEffect(() => {
+    let alive = true;
+
+    // Reset so callers don't briefly see the previous sheet while we load.
+    setBaseTexture(null);
+    onStatus?.("loading");
+
+    async function load() {
+      const path = sheetPath(stage, condition);
+
+      try {
+        // Load the png; Assets.load returns a Texture for images
+        const tex = await Assets.load(path);
+        const bt = tex?.baseTexture ?? tex;
+        if (alive) {
+          setBaseTexture(bt);
+          onStatus?.("ready");
+        }
+      } catch (err) {
+        // Missing sprite sheets should not crash the whole game.
+        // Try falling back to clean, since the placeholder pipeline always generates *_clean.png.
+        const fallback = sheetPath(stage, "clean");
+        if (fallback !== path) {
+          try {
+            const tex = await Assets.load(fallback);
+            const bt = tex?.baseTexture ?? tex;
+            if (alive) {
+              setBaseTexture(bt);
+              onStatus?.("ready");
+            }
+            return;
+          } catch (fallbackErr) {
+            console.warn(
+              "[Doggerz] Failed to load sprite sheet + fallback:",
+              path,
+              fallback,
+              fallbackErr
+            );
+          }
+        }
+
+        console.warn("[Doggerz] Failed to load sprite sheet:", path, err);
+        if (alive) {
+          setBaseTexture(null);
+          onStatus?.("error");
+        }
+      }
+    }
+
+    load();
+    return () => {
+      alive = false;
+    };
+  }, [condition, onStatus, stage]);
+
+  const textures = useMemo(() => {
+    if (!baseTexture) return [];
+    const row = ROW_BY_ANIM[anim] ?? 0;
+    const count = FRAMES_BY_ANIM[anim] ?? 1;
+    return sliceRowTextures(baseTexture, row, count);
+  }, [baseTexture, anim]);
+
+  const canAnimate = textures.length > 0;
+
+  return (
+    <Stage
+      width={width}
+      height={height}
+      options={{
+        backgroundAlpha: 0,
+        antialias: false,
+        autoDensity: true,
+        resolution: window.devicePixelRatio || 1,
+      }}
+    >
+      <Container x={width / 2} y={height / 2}>
+        {canAnimate ? (
+          <AnimatedSprite
+            textures={textures}
+            isPlaying
+            initialFrame={0}
+            animationSpeed={0.12}
+            anchor={0.5}
+            scale={scale}
+          />
+        ) : null}
+      </Container>
+    </Stage>
+  );
+}
+
+
+================================================================================
+FILE: src/components/EmptySlate.jsx
+--------------------------------------------------------------------------------
+// src/components/EmptySlate.jsx
+
+import { Link } from "react-router-dom";
+
+import BackPill from "@/components/BackPill.jsx";
+
+/**
+ * @typedef {Object} EmptySlateProps
+ * @property {string=} kicker
+ * @property {string=} title
+ * @property {string=} description
+ * @property {string=} primaryLabel
+ * @property {string=} primaryTo
+ * @property {(() => void)=} onPrimary
+ * @property {string=} backTo
+ * @property {string=} backLabel
+ * @property {string=} className
+ */
+
+/**
+ * A single-decision empty state.
+ * - One primary action (button or link)
+ * - Optional subtle back affordance
+ */
+/** @param {EmptySlateProps} props */
+export default function EmptySlate(props = {}) {
+  const {
+    kicker,
+    title,
+    description,
+    primaryLabel,
+    primaryTo,
+    onPrimary,
+    backTo,
+    backLabel = "Back",
+    className = "",
+  } = props;
+
+  const shell =
+    "rounded-3xl border border-white/12 bg-black/20 p-6 backdrop-blur shadow-[0_0_70px_rgba(0,0,0,0.35)]";
+
+  const primaryBase =
+    "inline-flex items-center justify-center rounded-2xl px-5 py-3 text-sm font-extrabold bg-emerald-400 text-black shadow-[0_0_35px_rgba(52,211,153,0.25)] hover:bg-emerald-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50";
+
+  const renderPrimary = () => {
+    if (!primaryLabel) return null;
+
+    if (primaryTo) {
+      return (
+        <Link to={primaryTo} className={primaryBase}>
+          {primaryLabel}
+        </Link>
+      );
+    }
+
+    return (
+      <button type="button" onClick={onPrimary} className={primaryBase}>
+        {primaryLabel}
+      </button>
+    );
+  };
+
+  return (
+    <section className={`${shell} ${className}`.trim()}>
+      {kicker ? (
+        <div className="text-xs uppercase tracking-[0.22em] text-zinc-400">
+          {kicker}
+        </div>
+      ) : null}
+
+      {title ? (
+        <h2 className="mt-2 text-xl font-extrabold text-emerald-200">
+          {title}
+        </h2>
+      ) : null}
+
+      {description ? (
+        <p className="mt-2 text-sm text-zinc-300 max-w-prose">{description}</p>
+      ) : null}
+
+      <div className="mt-5 flex flex-col sm:flex-row sm:items-center gap-3">
+        {renderPrimary()}
+
+        {backTo ? (
+          <BackPill
+            to={backTo}
+            label={backLabel}
+            className="bg-black/30 hover:bg-black/40"
+          />
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
+
+================================================================================
+FILE: src/components/ErrorBoundary.jsx
+--------------------------------------------------------------------------------
+// src/components/ErrorBoundary.jsx
+
+import * as React from "react";
+
+/**
+ * Simple React render error boundary.
+ * - Catches render/constructor/lifecycle errors.
+ * - Does NOT catch event handler errors.
+ */
+export default class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    try {
+      this.props?.onError?.(error, errorInfo);
+    } catch {
+      // ignore
+    }
+  }
+
+  render() {
+    const { error } = this.state;
+
+    if (error) {
+      const Fallback = this.props.fallback;
+      if (Fallback)
+        return (
+          <Fallback
+            error={error}
+            reset={() => this.setState({ error: null })}
+          />
+        );
+
+      return (
+        <div className="min-h-[60vh] grid place-items-center bg-zinc-950 text-zinc-100 px-6">
+          <div className="max-w-lg w-full rounded-2xl border border-zinc-800 bg-zinc-950/60 p-5">
+            <div className="text-lg font-semibold">Something went wrong</div>
+            <div className="mt-2 text-sm text-zinc-400">
+              Try refreshing the page.
+            </div>
+            <button
+              type="button"
+              className="mt-4 rounded-md bg-emerald-500/20 border border-emerald-500/30 px-3 py-2 text-sm text-emerald-100"
+              onClick={() => window.location.reload()}
+            >
+              Refresh
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+
+================================================================================
+FILE: src/components/Footer.jsx
+--------------------------------------------------------------------------------
+import { Link } from "react-router-dom";
+import { SOCIAL_LINKS } from "@/config/links.js";
+
+export default function Footer() {
+  const year = new Date().getFullYear();
+  const socials = [
+    { key: "twitter", label: "X" },
+    { key: "instagram", label: "Instagram" },
+    { key: "tiktok", label: "TikTok" },
+    { key: "youtube", label: "YouTube" },
+    { key: "discord", label: "Discord" },
+    { key: "facebook", label: "Facebook" },
+  ];
+
+  return (
+    <footer className="mt-10 border-t border-white/10 bg-slate-950/60 px-4 py-6 text-zinc-400 backdrop-blur-md">
+      <div className="mx-auto grid w-full max-w-6xl gap-4 md:grid-cols-[1fr_auto] md:items-center">
+        <div className="text-sm">
+          <div className="flex items-center gap-3">
+            <span className="text-emerald-400 font-black tracking-tight">
+              DOGGERZ
+            </span>
+            <span className="text-zinc-500">c {year}</span>
+          </div>
+          <div className="mt-0.5 text-xs text-zinc-500">
+            Not responsible for shoes, socks, or reputations destroyed.
+          </div>
+        </div>
+
+        <div className="flex flex-col items-start gap-3 md:items-end">
+          <nav className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm text-zinc-300 sm:grid-cols-3">
+            <Link to="/legal" className="hover:text-emerald-200">
+              Legal
+            </Link>
+            <Link to="/privacy" className="hover:text-emerald-200">
+              Privacy
+            </Link>
+            <Link to="/faq" className="hover:text-emerald-200">
+              FAQs
+            </Link>
+            <Link to="/developers" className="hover:text-emerald-200">
+              Developers
+            </Link>
+            <Link to="/help" className="hover:text-emerald-200">
+              Help
+            </Link>
+            <Link to="/settings" className="hover:text-emerald-200">
+              Settings
+            </Link>
+          </nav>
+
+          <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-500">
+            <span className="uppercase tracking-[0.2em] text-zinc-500/80">
+              Like us on
+            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              {socials.map((item) => {
+                const href = SOCIAL_LINKS[item.key];
+                return href ? (
+                  <a
+                    key={item.key}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-full border border-emerald-400/20 px-2.5 py-0.5 text-xs text-emerald-200/90 hover:border-emerald-400/50 hover:text-emerald-200"
+                  >
+                    {item.label}
+                  </a>
+                ) : (
+                  <span
+                    key={item.key}
+                    className="rounded-full border border-white/10 px-2.5 py-0.5 text-xs text-zinc-500/60"
+                    aria-disabled="true"
+                  >
+                    {item.label}
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+
+================================================================================
+FILE: src/components/GameTopBar.jsx
+--------------------------------------------------------------------------------
+// src/components/GameTopBar.jsx
+// @ts-nocheck
+import { Link, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { selectUser } from "@/redux/userSlice.js";
+import { selectDogRenderMode, setDogRenderMode } from "@/redux/userSlice.js";
+
+// Optional Firebase logout (won't crash if Firebase isn't present).
+// Keep it lazy to avoid top-level await/module init issues.
+let _logoutDepsPromise = null;
+
+async function getLogoutDeps() {
+  if (_logoutDepsPromise) return _logoutDepsPromise;
+
+  _logoutDepsPromise = (async () => {
+    try {
+      const [{ signOut }, { auth }] = await Promise.all([
+        import("firebase/auth"),
+        import("@/firebase.js"),
+      ]);
+      return { signOut, auth };
+    } catch {
+      return { signOut: null, auth: null };
+    }
+  })();
+
+  return _logoutDepsPromise;
+}
+
+function TopLink({ to, children }) {
+  return (
+    <Link
+      to={to}
+      className="px-3 py-2 rounded-lg text-sm font-semibold text-emerald-200 hover:text-emerald-100 hover:bg-emerald-500/10 transition"
+    >
+      {children}
+    </Link>
+  );
+}
+
+export default function GameTopBar() {
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const dogRenderMode = useSelector(selectDogRenderMode);
+  const user = useSelector(selectUser);
+  const isSignedIn = !!(user?.email || user?.id);
+
+  function pushToast(message) {
+    if (typeof window === "undefined") return;
+    try {
+      window.dispatchEvent(
+        new CustomEvent("doggerz:toast", {
+          detail: { message: String(message || "") },
+        })
+      );
+    } catch {
+      // ignore
+    }
+  }
+
+  async function handleLogout() {
+    try {
+      const { signOut, auth } = await getLogoutDeps();
+      if (signOut && auth) await signOut(auth);
+    } catch {
+      // ignore and still route out
+    } finally {
+      navigate("/", { replace: true });
+    }
+  }
+
+  function handleExit() {
+    navigate("/", { replace: true });
+  }
+
+  return (
+    <header className="w-full max-w-6xl mx-auto px-4 pt-4">
+      <div className="flex items-center justify-between rounded-2xl border border-emerald-500/20 bg-black/40 backdrop-blur-md px-4 py-3 shadow-[0_0_25px_rgba(16,185,129,0.15)]">
+        <div className="flex items-center gap-3">
+          <Link
+            to="/"
+            className="text-lg font-extrabold tracking-wide text-emerald-300"
+          >
+            DOGGERZ
+          </Link>
+          <span className="text-xs text-zinc-400 hidden sm:inline">
+            Virtual Pup
+          </span>
+        </div>
+
+        <nav className="flex items-center gap-1">
+          <TopLink to="/about">About</TopLink>
+          <TopLink to="/settings">Settings</TopLink>
+          <button
+            type="button"
+            onClick={() => {
+              const next =
+                dogRenderMode === "realistic" ? "sprite" : "realistic";
+              dispatch(setDogRenderMode(next));
+              pushToast(
+                next === "realistic"
+                  ? "Realistic mode enabled"
+                  : "Sprite mode enabled"
+              );
+            }}
+            className={`px-3 py-2 rounded-lg text-sm font-semibold border transition ${
+              dogRenderMode === "realistic"
+                ? "bg-emerald-500 text-black border-emerald-400"
+                : "bg-black/20 text-emerald-200 border-emerald-500/25 hover:border-emerald-400/40 hover:bg-emerald-500/10"
+            }`}
+            title="Toggle dog render mode"
+          >
+            {dogRenderMode === "realistic" ? "Realistic" : "Sprite"}
+          </button>
+          <button
+            onClick={isSignedIn ? handleLogout : handleExit}
+            className="px-3 py-2 rounded-lg text-sm font-semibold text-zinc-100 hover:bg-white/10 transition"
+            type="button"
+          >
+            {isSignedIn ? "Logout" : "Exit"}
+          </button>
+        </nav>
+      </div>
+    </header>
+  );
+}
+
+
+================================================================================
+FILE: src/components/Header.jsx
+--------------------------------------------------------------------------------
+// src/components/Header.jsx
+// Single header used across the app (nav pills + halo styling).
+// @ts-nocheck
+
+import * as React from "react";
+import { NavLink, useLocation } from "react-router-dom";
+import { useSelector } from "react-redux";
+import nav from "@/nav.js";
+import { selectIsLoggedIn } from "@/redux/userSlice.js";
+
+function NavPill({ to, children }) {
+  return (
+    <NavLink
+      to={to}
+      className={({ isActive }) =>
+        [
+          "rounded-full px-4 py-2 text-sm font-bold transition select-none",
+          "border",
+          isActive
+            ? "bg-emerald-500/20 text-emerald-100 border-emerald-400/60 shadow-[0_0_24px_rgba(16,185,129,0.45)]"
+            : "bg-black/35 text-white border-emerald-400/30 shadow-[0_0_18px_rgba(16,185,129,0.25)] hover:bg-black/45 hover:border-emerald-400/50",
+        ].join(" ")
+      }
+    >
+      {children}
+    </NavLink>
+  );
+}
+
+export default function Header() {
+  const isLoggedIn = useSelector(selectIsLoggedIn);
+  const location = useLocation();
+  const isHome = location.pathname === "/";
+  const showSettings = location.pathname === "/settings";
+  const filteredNav = React.useMemo(() => {
+    if (isHome) {
+      return [
+        { label: "FAQs", to: "/faq" },
+        { label: "Help", to: "/help" },
+        { label: "Settings", to: "/settings" },
+      ];
+    }
+
+    return (nav || []).filter((item) => {
+      if (item.to === "/game") return isLoggedIn;
+      if (item.to === "/settings") return showSettings;
+      return true;
+    });
+  }, [isHome, isLoggedIn, showSettings]);
+
+  return (
+    <header className="sticky top-0 z-50">
+      <div className="border-b border-emerald-500/15 bg-black/50 backdrop-blur-md">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 h-[72px] flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-[220px]">
+            <NavLink to="/" className="leading-tight">
+              <div className="text-emerald-600 font-extrabold tracking-[0.42em] text-sm sm:text-base">
+                D O G G E R Z
+              </div>
+              <div className="text-zinc-500 text-xs sm:text-sm">
+                Adopt. Train. Bond.
+              </div>
+            </NavLink>
+          </div>
+
+          <nav className="hidden md:flex items-center gap-2">
+            {filteredNav.map((item) => (
+              <NavPill key={item.to} to={item.to}>
+                {item.label}
+              </NavPill>
+            ))}
+          </nav>
+
+          {/* Mobile: simple compact pills */}
+          <nav className="flex md:hidden flex-wrap items-center gap-2">
+            {filteredNav.slice(0, 3).map((item) => (
+              <NavPill key={item.to} to={item.to}>
+                {item.label}
+              </NavPill>
+            ))}
+          </nav>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+
+================================================================================
+FILE: src/components/LayeredDogRig.jsx
+--------------------------------------------------------------------------------
+// src/components/LayeredDogRig.jsx
+// A lightweight "rig" made of separate sprite layers.
+// - Supports pose switching (stand/sit/lay)
+// - Supports expressive micro-animations (blink, pant, wag, bark)
+// - Uses safe fallbacks if rig assets aren't present
+// @ts-nocheck
+
+import * as React from "react";
+
+function clamp(n, lo, hi) {
+  const x = Number(n);
+  if (!Number.isFinite(x)) return lo;
+  return Math.max(lo, Math.min(hi, x));
+}
+
+function existsCacheKey(src) {
+  return `dg:asset-ok:${src}`;
+}
+
+function useAssetOk(src) {
+  const [ok, setOk] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!src) return;
+    if (typeof window === "undefined") return;
+
+    try {
+      const cached = window.sessionStorage.getItem(existsCacheKey(src));
+      if (cached === "1") {
+        setOk(true);
+        return;
+      }
+    } catch {
+      // ignore
+    }
+
+    let cancelled = false;
+    const img = new Image();
+    img.decoding = "async";
+    img.src = src;
+    img.onload = () => {
+      if (cancelled) return;
+      setOk(true);
+      try {
+        window.sessionStorage.setItem(existsCacheKey(src), "1");
+      } catch {
+        // ignore
+      }
+    };
+    img.onerror = () => {
+      if (cancelled) return;
+      setOk(false);
+      try {
+        window.sessionStorage.setItem(existsCacheKey(src), "0");
+      } catch {
+        // ignore
+      }
+    };
+
+    return () => {
+      cancelled = true;
+    };
+  }, [src]);
+
+  return ok;
+}
+
+function rigPath(_name) {
+  // Sprite assets have been removed
+  return null;
+}
+
+export default function LayeredDogRig({
+  fallbackSrc, // optional: existing full dog image
+  size = 320,
+  pose = "stand", // stand | sit | lay
+  mood = "idle", // idle | curious | sleepy
+  action = "idle", // idle | walk | eat | bark
+  lifeStageStage, // optional: 'PUPPY' | 'ADULT' | 'SENIOR'
+  reduceMotion = false,
+  reduceTransparency = false,
+  className = "",
+}) {
+  const s = clamp(size, 96, 512);
+
+  const stageKey = String(lifeStageStage || "").toUpperCase();
+  const stageScale =
+    stageKey === "PUPPY" ? 0.92 : stageKey === "SENIOR" ? 0.99 : 1;
+  const headScale = stageKey === "PUPPY" ? 1.07 : 1;
+
+  const bodyName =
+    pose === "sit"
+      ? "body-sit.svg"
+      : pose === "lay"
+        ? "body-lay.svg"
+        : "body-stand.svg";
+
+  // When walking in stand pose, we can render a leg-less body + animated leg layers.
+  const useLayeredLegs = pose === "stand" && action === "walk";
+  const bodyStandCoreSrc = rigPath("body-stand-core.svg");
+  const legFrontSrc = rigPath("leg-front.svg");
+  const legMidSrc = rigPath("leg-mid.svg");
+  const legBackSrc = rigPath("leg-back.svg");
+
+  const bodySrc = rigPath(bodyName);
+  const headSrc = rigPath("head.svg");
+  const tailSrc = rigPath("tail.svg");
+  const eyesOpenSrc = rigPath("eyes-open.svg");
+  const eyesClosedSrc = rigPath("eyes-closed.svg");
+  const mouthClosedSrc = rigPath("mouth-closed.svg");
+  const mouthOpenSrc = rigPath("mouth-open.svg");
+  const tongueSrc = rigPath("tongue.svg");
+  const bowlSrc = rigPath("bowl.svg");
+
+  // If the rig isn't present (first asset missing), fall back to the full sprite.
+  // For layered legs, body-stand-core is the critical asset.
+  const rigAvailable = useAssetOk(useLayeredLegs ? bodyStandCoreSrc : bodySrc);
+
+  const [blink, setBlink] = React.useState(false);
+
+  React.useEffect(() => {
+    if (reduceMotion) return;
+    // Simple blink timing.
+    let mounted = true;
+    let t;
+
+    const schedule = () => {
+      const ms = 2200 + Math.random() * 2600;
+      t = window.setTimeout(() => {
+        if (!mounted) return;
+        setBlink(true);
+        window.setTimeout(() => mounted && setBlink(false), 120);
+        schedule();
+      }, ms);
+    };
+
+    schedule();
+    return () => {
+      mounted = false;
+      if (t) window.clearTimeout(t);
+    };
+  }, [reduceMotion]);
+
+  if (!rigAvailable) {
+    // Fallback to a single image (still animates container subtly).
+    return (
+      <div
+        className={className}
+        style={{
+          width: s,
+          height: s,
+          position: "relative",
+          transformOrigin: "50% 100%",
+          animation: reduceMotion
+            ? "none"
+            : mood === "sleepy"
+              ? "dg-rig-breathe 3.6s ease-in-out infinite"
+              : action === "walk"
+                ? "dg-rig-breathe 1.25s ease-in-out infinite"
+                : "dg-rig-breathe 2.4s ease-in-out infinite",
+        }}
+        aria-hidden="true"
+      >
+        <style>{`
+          @keyframes dg-rig-breathe {
+            0% { transform: translate3d(0,0,0) scale(1); }
+            50% { transform: translate3d(0,-2px,0) scale(1.01); }
+            100% { transform: translate3d(0,0,0) scale(1); }
+          }
+        `}</style>
+        {fallbackSrc ? (
+          <img
+            src={fallbackSrc}
+            alt=""
+            draggable={false}
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "contain",
+              display: "block",
+            }}
+          />
+        ) : null}
+      </div>
+    );
+  }
+
+  const isSleeping = mood === "sleepy" || (pose === "lay" && action === "idle");
+  const isPanting = !isSleeping && (mood === "curious" || action === "walk");
+  const isBarking = action === "bark";
+  const isEating = action === "eat";
+
+  const showEyesClosed = isSleeping || blink;
+  const showMouthOpen = isBarking || isPanting || isEating;
+
+  const wagSpeed = reduceMotion
+    ? "0ms"
+    : isBarking
+      ? "210ms"
+      : isPanting
+        ? "300ms"
+        : "460ms";
+  // Tail amplitude via wrapper scale so it doesn't fight the keyframed rotate() transform.
+  const wagAmp = reduceMotion ? 1 : isBarking ? 1.25 : isPanting ? 1.1 : 1;
+
+  return (
+    <div
+      className={className}
+      style={{
+        width: s,
+        height: s,
+        position: "relative",
+        transformOrigin: "50% 100%",
+        transform: stageScale !== 1 ? `scale(${stageScale})` : undefined,
+        filter: reduceTransparency
+          ? "none"
+          : "drop-shadow(0 18px 40px rgba(0,0,0,0.35))",
+      }}
+      aria-hidden="true"
+    >
+      <style>{`
+        @keyframes dg-rig-breathe {
+          0% { transform: translate3d(0,0,0) scale(1); }
+          50% { transform: translate3d(0,-2px,0) scale(1.01); }
+          100% { transform: translate3d(0,0,0) scale(1); }
+        }
+        @keyframes dg-rig-wag {
+          0% { transform: rotate(-16deg); }
+          50% { transform: rotate(16deg); }
+          100% { transform: rotate(-16deg); }
+        }
+        @keyframes dg-rig-head-tilt {
+          0% { transform: translate3d(0,0,0) rotate(0deg); }
+          35% { transform: translate3d(0,-1px,0) rotate(-6deg); }
+          70% { transform: translate3d(0,0,0) rotate(5deg); }
+          100% { transform: translate3d(0,0,0) rotate(0deg); }
+        }
+        @keyframes dg-rig-head-sleep {
+          0% { transform: translate3d(0,0,0) rotate(-1deg); }
+          50% { transform: translate3d(0,1px,0) rotate(1deg); }
+          100% { transform: translate3d(0,0,0) rotate(-1deg); }
+        }
+        @keyframes dg-rig-leg-front {
+          0% { transform: rotate(18deg) translate3d(0,0,0); }
+          50% { transform: rotate(-18deg) translate3d(0,0,0); }
+          100% { transform: rotate(18deg) translate3d(0,0,0); }
+        }
+        @keyframes dg-rig-leg-back {
+          0% { transform: rotate(-14deg) translate3d(0,0,0); }
+          50% { transform: rotate(14deg) translate3d(0,0,0); }
+          100% { transform: rotate(-14deg) translate3d(0,0,0); }
+        }
+        @keyframes dg-rig-pant {
+          0% { transform: translate3d(0,0,0); }
+          50% { transform: translate3d(0,1.5px,0); }
+          100% { transform: translate3d(0,0,0); }
+        }
+        @keyframes dg-rig-bark {
+          0% { transform: scale(1); }
+          45% { transform: scale(1.06); }
+          100% { transform: scale(1); }
+        }
+        @keyframes dg-rig-walkbob {
+          0% { transform: translate3d(0,0,0); }
+          50% { transform: translate3d(0,-3px,0); }
+          100% { transform: translate3d(0,0,0); }
+        }
+      `}</style>
+
+      {/* Body breath/bob */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          animation: reduceMotion
+            ? "none"
+            : isSleeping
+              ? "dg-rig-breathe 3.8s ease-in-out infinite"
+              : action === "walk"
+                ? "dg-rig-walkbob 0.9s ease-in-out infinite"
+                : "dg-rig-breathe 2.4s ease-in-out infinite",
+        }}
+      >
+        {/* Layered legs for a true walk cycle (only when walking + standing) */}
+        {useLayeredLegs ? (
+          <>
+            {/* Back leg (behind body) */}
+            <img
+              src={legBackSrc}
+              alt=""
+              draggable={false}
+              style={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                transformOrigin: "66% 70%",
+                animation: reduceMotion
+                  ? "none"
+                  : "dg-rig-leg-back 560ms ease-in-out infinite",
+                opacity: 0.96,
+              }}
+            />
+
+            {/* Mid leg (slightly behind the front leg) */}
+            <img
+              src={legMidSrc}
+              alt=""
+              draggable={false}
+              style={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                transformOrigin: "56% 70%",
+                animation: reduceMotion
+                  ? "none"
+                  : "dg-rig-leg-back 560ms ease-in-out infinite",
+                animationDelay: reduceMotion ? undefined : "-280ms",
+                opacity: 0.9,
+              }}
+            />
+
+            {/* Front leg */}
+            <img
+              src={legFrontSrc}
+              alt=""
+              draggable={false}
+              style={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                transformOrigin: "38% 70%",
+                animation: reduceMotion
+                  ? "none"
+                  : "dg-rig-leg-front 560ms ease-in-out infinite",
+                animationDelay: reduceMotion ? undefined : "-280ms",
+                opacity: 0.98,
+              }}
+            />
+          </>
+        ) : null}
+
+        {/* Body */}
+        <img
+          src={useLayeredLegs ? bodyStandCoreSrc : bodySrc}
+          alt=""
+          draggable={false}
+          style={{
+            position: "absolute",
+            inset: 0,
+            width: "100%",
+            height: "100%",
+          }}
+        />
+
+        {/* Tail */}
+        <div
+          style={{
+            position: "absolute",
+            left: "18%",
+            top: pose === "lay" ? "54%" : pose === "sit" ? "48%" : "46%",
+            width: "26%",
+            height: "26%",
+            transform: wagAmp !== 1 ? `scale(${wagAmp})` : undefined,
+          }}
+        >
+          <img
+            src={tailSrc}
+            alt=""
+            draggable={false}
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              transformOrigin: "85% 25%",
+              animation:
+                reduceMotion || isSleeping
+                  ? "none"
+                  : `dg-rig-wag ${wagSpeed} ease-in-out infinite`,
+              opacity: 0.98,
+            }}
+          />
+        </div>
+
+        {/* Head */}
+        <img
+          src={headSrc}
+          alt=""
+          draggable={false}
+          style={{
+            position: "absolute",
+            left: pose === "lay" ? "46%" : "50%",
+            top: pose === "lay" ? "26%" : pose === "sit" ? "18%" : "14%",
+            width: "48%",
+            height: "48%",
+            transform: `translate(-50%, 0)${headScale !== 1 ? ` scale(${headScale})` : ""}`,
+            transformOrigin: "50% 70%",
+            animation: reduceMotion
+              ? "none"
+              : isSleeping
+                ? "dg-rig-head-sleep 3.2s ease-in-out infinite"
+                : mood === "curious"
+                  ? "dg-rig-head-tilt 2.1s ease-in-out infinite"
+                  : action === "walk"
+                    ? "dg-rig-breathe 1.35s ease-in-out infinite"
+                    : "dg-rig-breathe 2.6s ease-in-out infinite",
+          }}
+        />
+
+        {/* Subtle head highlight for a more "real" feel */}
+        <div
+          style={{
+            position: "absolute",
+            left: pose === "lay" ? "56%" : "60%",
+            top: pose === "lay" ? "44%" : pose === "sit" ? "36%" : "32%",
+            width: "30%",
+            height: "26%",
+            transform: "translate(-50%, -50%)",
+            background:
+              "radial-gradient(circle at 45% 55%, rgba(240,240,240,0.75), rgba(240,240,240,0.0) 68%)",
+            mixBlendMode: "screen",
+            opacity: reduceTransparency ? 0.12 : isSleeping ? 0.18 : 0.55,
+            pointerEvents: "none",
+          }}
+        />
+
+        {/* Eyes */}
+        <img
+          src={showEyesClosed ? eyesClosedSrc : eyesOpenSrc}
+          alt=""
+          draggable={false}
+          style={{
+            position: "absolute",
+            left: pose === "lay" ? "54%" : "58%",
+            top: pose === "lay" ? "38%" : pose === "sit" ? "30%" : "26%",
+            width: "18%",
+            height: "18%",
+            transform: "translate(-50%, -50%)",
+            opacity: reduceTransparency ? 0.8 : 0.95,
+          }}
+        />
+
+        {/* Mouth */}
+        <div
+          style={{
+            position: "absolute",
+            left: pose === "lay" ? "56%" : "60%",
+            top: pose === "lay" ? "46%" : pose === "sit" ? "38%" : "34%",
+            width: "22%",
+            height: "22%",
+            transform: "translate(-50%, -50%)",
+            transformOrigin: "50% 50%",
+            animation: reduceMotion
+              ? "none"
+              : isBarking
+                ? "dg-rig-bark 320ms ease-in-out infinite"
+                : isPanting || isEating
+                  ? "dg-rig-pant 220ms ease-in-out infinite"
+                  : "none",
+          }}
+        >
+          <img
+            src={showMouthOpen ? mouthOpenSrc : mouthClosedSrc}
+            alt=""
+            draggable={false}
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+            }}
+          />
+          {showMouthOpen && !isBarking && !isSleeping ? (
+            <img
+              src={tongueSrc}
+              alt=""
+              draggable={false}
+              style={{
+                position: "absolute",
+                left: "44%",
+                top: "56%",
+                width: "42%",
+                height: "42%",
+                transform: "translate(-50%, -50%)",
+                opacity: reduceTransparency ? 0.65 : 0.8,
+              }}
+            />
+          ) : null}
+        </div>
+
+        {/* Food bowl for eating */}
+        {isEating ? (
+          <img
+            src={bowlSrc}
+            alt=""
+            draggable={false}
+            style={{
+              position: "absolute",
+              left: "66%",
+              top: pose === "lay" ? "70%" : "72%",
+              width: "20%",
+              height: "20%",
+              transform: "translate(-50%, -50%)",
+              opacity: reduceTransparency ? 0.55 : 0.75,
+            }}
+          />
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+
+================================================================================
+FILE: src/components/LongTermProgressionCard.jsx
+--------------------------------------------------------------------------------
+// src/components/LongTermProgressionCard.jsx
+// @ts-nocheck
+
+function clamp(n, lo = 0, hi = 100) {
+  const x = Number.isFinite(Number(n)) ? Number(n) : 0;
+  return Math.max(lo, Math.min(hi, x));
+}
+
+function ProgressBar({ value = 0, accent = "bg-emerald-400" }) {
+  const v = clamp(value, 0, 100);
+  return (
+    <div className="h-2.5 rounded-full bg-white/10 overflow-hidden">
+      <div
+        className={`h-full rounded-full ${accent}`}
+        style={{ width: `${v}%` }}
+      />
+    </div>
+  );
+}
+
+export default function LongTermProgressionCard({
+  progression,
+  now = Date.now(),
+}) {
+  const p = progression || {};
+  const season = p.season || {};
+  const journey = p.journey || {};
+  const daily = p.daily || {};
+  const weekly = p.weekly || {};
+
+  const endsAt = Number(season.endsAt || 0);
+  const daysLeft = endsAt
+    ? Math.max(0, Math.ceil((endsAt - now) / (24 * 60 * 60 * 1000)))
+    : null;
+
+  const seasonStep = 100; // mirrors SEASON_LEVEL_XP_STEP
+  const journeyStep = 150; // mirrors JOURNEY_LEVEL_XP_STEP
+
+  const seasonXp = Number(season.xp || 0);
+  const seasonLevel = Number(season.level || 1);
+  const seasonInLevel = seasonXp % seasonStep;
+  const seasonPct = (seasonInLevel / seasonStep) * 100;
+
+  const journeyXp = Number(journey.xp || 0);
+  const journeyLevel = Number(journey.level || 1);
+  const journeyInLevel = journeyXp % journeyStep;
+  const journeyPct = (journeyInLevel / journeyStep) * 100;
+
+  const seasonDaily = clamp(daily.seasonXpEarned || 0, 0, 999);
+  const journeyDaily = clamp(daily.journeyXpEarned || 0, 0, 999);
+
+  const challenges = Array.isArray(weekly.challenges) ? weekly.challenges : [];
+
+  return (
+    <div className="rounded-3xl border border-emerald-500/15 bg-black/35 backdrop-blur-md shadow-[0_0_60px_rgba(16,185,129,0.08)] overflow-hidden">
+      <div className="px-5 sm:px-6 py-4 border-b border-emerald-500/10 bg-black/25">
+        <div className="text-xs uppercase tracking-[0.2em] text-zinc-400">
+          Long-term
+        </div>
+        <div className="text-lg font-extrabold text-emerald-200">Progress</div>
+        <div className="mt-1 text-xs text-zinc-400">
+          Built to last weeks and months — not a single weekend binge.
+        </div>
+      </div>
+
+      <div className="p-5 sm:p-6 space-y-5">
+        <div>
+          <div className="flex items-baseline justify-between">
+            <div className="text-sm font-extrabold text-zinc-100">Season</div>
+            <div className="text-xs text-zinc-400">
+              Lvl{" "}
+              <span className="text-emerald-200 font-semibold">
+                {seasonLevel}
+              </span>
+              {daysLeft !== null ? (
+                <span className="ml-2">• {daysLeft}d left</span>
+              ) : null}
+            </div>
+          </div>
+          <div className="mt-2">
+            <ProgressBar value={seasonPct} accent="bg-emerald-400" />
+            <div className="mt-1 flex justify-between text-[0.72rem] text-zinc-400">
+              <span>
+                In-level XP: {seasonInLevel}/{seasonStep}
+              </span>
+              <span>
+                Today: {seasonDaily}/{120}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div className="flex items-baseline justify-between">
+            <div className="text-sm font-extrabold text-zinc-100">Journey</div>
+            <div className="text-xs text-zinc-400">
+              Lvl{" "}
+              <span className="text-emerald-200 font-semibold">
+                {journeyLevel}
+              </span>
+            </div>
+          </div>
+          <div className="mt-2">
+            <ProgressBar value={journeyPct} accent="bg-sky-300" />
+            <div className="mt-1 flex justify-between text-[0.72rem] text-zinc-400">
+              <span>
+                In-level XP: {journeyInLevel}/{journeyStep}
+              </span>
+              <span>
+                Today: {journeyDaily}/{40}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div className="flex items-center justify-between">
+            <div className="text-sm font-extrabold text-zinc-100">
+              Weekly challenges
+            </div>
+            <div className="text-[0.72rem] text-zinc-400">
+              Week of {weekly.weekKey || "—"}
+            </div>
+          </div>
+
+          {challenges.length ? (
+            <ul className="mt-2 space-y-2">
+              {challenges.map((c) => {
+                const goal = Number(c.goal || 0);
+                const progress = clamp(Number(c.progress || 0), 0, goal || 999);
+                const done = !!c.claimedAt;
+                const pct = goal > 0 ? (progress / goal) * 100 : 0;
+
+                return (
+                  <li
+                    key={c.id}
+                    className={`rounded-2xl border px-3 py-2 ${
+                      done
+                        ? "border-emerald-500/25 bg-emerald-500/10"
+                        : "border-white/10 bg-black/25"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-xs text-zinc-200 font-semibold">
+                        {c.label}
+                      </div>
+                      <div
+                        className={`text-[0.72rem] ${done ? "text-emerald-200" : "text-zinc-400"}`}
+                      >
+                        {done ? "Claimed" : `${progress}/${goal}`}
+                      </div>
+                    </div>
+                    <div className="mt-2">
+                      <ProgressBar
+                        value={pct}
+                        accent={done ? "bg-emerald-400" : "bg-white/30"}
+                      />
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <div className="mt-2 text-xs text-zinc-400">
+              Weekly challenges will appear after your next session start.
+            </div>
+          )}
+
+          <div className="mt-3 text-[0.72rem] text-zinc-400">
+            Challenges auto-claim on completion. Rewards feed your season +
+            journey progress.
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+================================================================================
+FILE: src/components/NeedsDashboard.jsx
+--------------------------------------------------------------------------------
+// src/components/NeedsDashboard.jsx
+
+// Internal model in dogSlice:
+//   hunger: 0   → no hunger (full)
+//   hunger: 100 → max hunger (starving)
+//
+// For the UI we want the opposite feeling:
+//   Hunger 100% → dog is full
+//   Hunger 0%   → dog is starving
+//
+// So we special-case "hunger" below and invert it.
+
+const NEEDS_CONFIG = [
+  { key: "hunger", label: "Hunger", accent: "bg-rose-400" },
+  { key: "happiness", label: "Happiness", accent: "bg-amber-300" },
+  { key: "energy", label: "Energy", accent: "bg-emerald-400" },
+  { key: "cleanliness", label: "Cleanliness", accent: "bg-cyan-300" },
+];
+
+const clamp = (n, min = 0, max = 100) =>
+  Math.max(min, Math.min(max, Number.isFinite(n) ? n : 0));
+
+export default function NeedsDashboard({ needs = {} }) {
+  return (
+    <div className="bg-zinc-900/80 border border-zinc-700/80 rounded-2xl p-3 lg:p-4 shadow-lg shadow-black/50 space-y-4">
+      <p className="text-sm font-semibold text-zinc-100">Needs dashboard</p>
+
+      <div className="space-y-3">
+        {NEEDS_CONFIG.map(({ key, label, accent }) => {
+          const raw = clamp(Number(needs[key] ?? 0));
+
+          // Internal 'hunger' is "how hungry"
+          // UI should show "how full".
+          const value = key === "hunger" ? 100 - raw : raw;
+
+          return (
+            <div key={key} className="space-y-1">
+              <div className="flex items-center justify-between text-xs text-zinc-400">
+                <span>{label}</span>
+                <span>{value}%</span>
+              </div>
+              <div className="h-2 rounded-full bg-zinc-800 overflow-hidden">
+                <div
+                  className={`h-full rounded-full ${accent}`}
+                  style={{ width: `${value}%` }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+
+================================================================================
+FILE: src/components/NeonButton.jsx
+--------------------------------------------------------------------------------
+// src/components/NeonButton.jsx
+// Reusable glowing green button; can act as a Link or regular button.
+
+import { Link } from "react-router-dom";
+
+export default function NeonButton({ to, children, className = "", ...props }) {
+  const baseClasses =
+    "inline-flex items-center justify-center rounded-full px-6 py-3 " +
+    "text-base font-semibold tracking-wide " +
+    "bg-lime-400 text-black " +
+    "shadow-[0_0_30px_rgba(190,242,100,0.9)] " +
+    "hover:bg-lime-300 hover:shadow-[0_0_45px_rgba(190,242,100,1)] " +
+    "transition-transform transition-shadow duration-200 " +
+    "hover:-translate-y-0.5 " +
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-400 " +
+    "focus-visible:ring-offset-2 focus-visible:ring-offset-black";
+
+  if (to) {
+    return (
+      <Link to={to} className={`${baseClasses} ${className}`} {...props}>
+        {children}
+      </Link>
+    );
+  }
+
+  return (
+    <button type="button" className={`${baseClasses} ${className}`} {...props}>
+      {children}
+    </button>
+  );
+}
+
+
+================================================================================
+FILE: src/components/NeonGridBackground.jsx
+--------------------------------------------------------------------------------
+// src/components/NeonGridBackground.jsx
+
+export default function NeonGridBackground({ children }) {
+  return (
+    <div className="relative min-h-screen w-full overflow-hidden bg-gradient-to-b from-black via-[#020617] to-black text-slate-100">
+      {/* Neon glows */}
+      <div className="pointer-events-none absolute inset-0 opacity-70">
+        {/* Soft green / cyan blobs */}
+        <div className="absolute -inset-40 bg-[radial-gradient(circle_at_top,_rgba(74,222,128,0.18),_transparent_60%),radial-gradient(circle_at_bottom,_rgba(56,189,248,0.25),_transparent_55%)]" />
+        {/* Faint grid lines */}
+        <div className="absolute inset-x-0 top-0 h-full bg-[linear-gradient(to_right,rgba(148,163,184,0.16)_1px,transparent_1px),linear-gradient(to_bottom,rgba(148,163,184,0.12)_1px,transparent_1px)] bg-[size:80px_80px]" />
+      </div>
+
+      <div className="relative z-10">{children}</div>
+    </div>
+  );
+}
+
+
+================================================================================
+FILE: src/components/PageShell.jsx
+--------------------------------------------------------------------------------
+// src/components/PageShell.jsx
+import * as React from "react";
+import Header from "@/components/Header.jsx";
+import Footer from "@/components/Footer.jsx";
+import { AppShellContext } from "@/layout/AppShellContext.js";
+
+/**
+ * @typedef {Object} PageShellProps
+ * @property {any} children
+ * @property {string} [className]
+ * @property {string} [mainClassName]
+ * @property {string} [containerClassName]
+ * @property {boolean} [showHeader]
+ * @property {boolean} [showFooter]
+ * @property {boolean} [fullBleed]
+ * @property {boolean} [disableBackground]
+ * @property {import('react').CSSProperties} [style]
+ */
+
+/** @param {PageShellProps} props */
+export default function PageShell({
+  children,
+  className = "",
+  mainClassName = "",
+  containerClassName = "",
+  showHeader = undefined,
+  showFooter = undefined,
+  fullBleed = false,
+  disableBackground = false,
+  style = undefined,
+}) {
+  const shellStyle = {
+    color: "var(--text-main, #e5e7eb)",
+    ...(disableBackground
+      ? {}
+      : {
+          background:
+            "var(--grad-shell, radial-gradient(circle at top, #1e293b 0, #020617 55%, #000 100%))",
+        }),
+    ...(style || {}),
+  };
+
+  const mainCls = fullBleed
+    ? mainClassName || "p-0"
+    : mainClassName || "px-4 py-10";
+  const containerCls = fullBleed
+    ? containerClassName || "w-full"
+    : containerClassName || "mx-auto w-full max-w-6xl";
+
+  const appShell = React.useContext(AppShellContext);
+  const resolvedShowHeader =
+    typeof showHeader === "boolean" ? showHeader : !appShell?.withinAppShell;
+  const resolvedShowFooter =
+    typeof showFooter === "boolean" ? showFooter : true;
+
+  return (
+    <div
+      className={`min-h-[100dvh] min-h-screen ${className}`}
+      style={shellStyle}
+    >
+      {resolvedShowHeader ? <Header /> : null}
+
+      <main className={mainCls}>
+        <div className={containerCls}>{children}</div>
+      </main>
+
+      {resolvedShowFooter ? <Footer /> : null}
+    </div>
+  );
+}
+
+
+================================================================================
+FILE: src/components/PixiDog.jsx
+--------------------------------------------------------------------------------
+// src/components/PixiDog.jsx
+import { useEffect, useRef } from "react";
+import * as PIXI from "pixi.js";
+import { withBaseUrl } from "@/utils/assetUrl.js";
+
+export default function PixiDog({
+  width = 190,
+  height = 190,
+  mood = "neutral",
+  mode = "idle",
+  direction = "right",
+  onPet,
+}) {
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    const app = new PIXI.Application({
+      width,
+      height,
+      backgroundAlpha: 0,
+      antialias: true,
+      resolution: window.devicePixelRatio || 1,
+      autoDensity: true,
+    });
+
+    const host = containerRef.current;
+    if (!host) return;
+    host.appendChild(app.view);
+
+    const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+    const lerp = (a, b, t) => a + (b - a) * t;
+
+    const moodParams = (m) => {
+      switch (m) {
+        case "happy":
+          return {
+            breathSpeed: 1.15,
+            breathAmp: 1.0,
+            tiltAmp: 1.0,
+            bright: 1.02,
+            sat: 1.05,
+          };
+        case "playful":
+          return {
+            breathSpeed: 1.25,
+            breathAmp: 1.15,
+            tiltAmp: 1.2,
+            bright: 1.02,
+            sat: 1.08,
+          };
+        case "sad":
+          return {
+            breathSpeed: 0.85,
+            breathAmp: 0.9,
+            tiltAmp: 0.8,
+            bright: 0.98,
+            sat: 0.92,
+          };
+        case "tired":
+          return {
+            breathSpeed: 0.75,
+            breathAmp: 0.75,
+            tiltAmp: 0.7,
+            bright: 0.98,
+            sat: 0.95,
+          };
+        case "sick":
+          return {
+            breathSpeed: 0.7,
+            breathAmp: 0.65,
+            tiltAmp: 0.65,
+            bright: 0.97,
+            sat: 0.88,
+          };
+        case "neutral":
+        default:
+          return {
+            breathSpeed: 1.0,
+            breathAmp: 1.0,
+            tiltAmp: 1.0,
+            bright: 1.0,
+            sat: 1.0,
+          };
+      }
+    };
+
+    const root = new PIXI.Container();
+    app.stage.addChild(root);
+
+    const bgDepth = new PIXI.Graphics();
+    bgDepth.beginFill(0x000000, 0.08);
+    bgDepth.drawEllipse(
+      width * 0.5,
+      height * 0.72,
+      width * 0.42,
+      height * 0.28
+    );
+    bgDepth.endFill();
+    root.addChild(bgDepth);
+
+    const shadow = new PIXI.Graphics();
+    shadow.beginFill(0x000000, 0.33);
+    shadow.drawEllipse(0, 0, width * 0.28, height * 0.06);
+    shadow.endFill();
+    shadow.x = width / 2;
+    shadow.y = height * 0.9;
+    root.addChild(shadow);
+
+    // Sprite assets were removed; use the app icon as a stable fallback.
+    const texture = PIXI.Texture.from(withBaseUrl("/icons/doggerz-192.png"));
+    const dog = new PIXI.Sprite(texture);
+    dog.anchor.set(0.5, 1.0);
+    dog.x = width / 2;
+    dog.y = height * 0.9;
+    dog.scale.set(0.55);
+    dog.eventMode = "static";
+    dog.cursor = "pointer";
+    root.addChild(dog);
+
+    // PixiJS v7+ no longer exposes filters under `PIXI.filters` in typings.
+    // `ColorMatrixFilter` is available as a top-level export.
+    const cm = new PIXI.ColorMatrixFilter();
+    dog.filters = [cm];
+
+    const fx = new PIXI.Container();
+    root.addChild(fx);
+
+    const hearts = [];
+    const spawnHeart = (x, y) => {
+      const g = new PIXI.Graphics();
+      g.beginFill(0xff4d6d, 0.95);
+      g.drawCircle(-6, 0, 6);
+      g.drawCircle(6, 0, 6);
+      g.moveTo(-12, 2);
+      g.lineTo(0, 18);
+      g.lineTo(12, 2);
+      g.lineTo(-12, 2);
+      g.endFill();
+
+      g.x = x;
+      g.y = y;
+      g.scale.set(0.9 + Math.random() * 0.3);
+      g.alpha = 0.9;
+
+      fx.addChild(g);
+
+      hearts.push({
+        node: g,
+        vx: (Math.random() - 0.5) * 0.8,
+        vy: -1.6 - Math.random() * 1.2,
+        life: 60 + Math.floor(Math.random() * 25),
+        age: 0,
+      });
+    };
+
+    let petPulse = 0;
+    let dir = direction === "left" ? -1 : 1;
+
+    const doPet = () => {
+      petPulse = 1;
+      const hx = dog.x + (dir >= 0 ? 10 : -10);
+      const hy = dog.y - height * 0.35;
+      spawnHeart(hx, hy);
+      spawnHeart(hx + (Math.random() * 24 - 12), hy + (Math.random() * 18 - 8));
+      spawnHeart(hx + (Math.random() * 24 - 12), hy + (Math.random() * 18 - 8));
+      if (typeof onPet === "function") onPet();
+    };
+
+    dog.on("pointerdown", doPet);
+
+    let laneX = width / 2;
+    const leftBound = width * 0.33;
+    const rightBound = width * 0.67;
+
+    let t = 0;
+    app.ticker.add(() => {
+      t += 0.02;
+
+      const mp = moodParams(mood);
+
+      cm.reset();
+      cm.brightness(mp.bright, false);
+      cm.saturate(mp.sat, false);
+
+      const baseScale = 0.55;
+      const sign = dir >= 0 ? 1 : -1;
+
+      const breath = Math.sin(t * 1.6 * mp.breathSpeed);
+      const breathY = breath * 1.5 * mp.breathAmp;
+      const tilt = Math.sin(t * 0.9 * mp.breathSpeed) * 0.015 * mp.tiltAmp;
+
+      petPulse = clamp(petPulse - 0.06, 0, 1);
+      const petEase = petPulse * petPulse;
+      const petBounce = petEase * 7;
+      const petSquash = 1 + petEase * 0.02;
+
+      let walkBob = 0;
+      let walkSway = 0;
+      if (mode === "walk") {
+        const step = Math.sin(t * 6.0);
+        walkBob = Math.abs(step) * 2.4;
+        walkSway = Math.sin(t * 3.0) * 1.4;
+
+        laneX += dir * 0.9;
+        if (laneX < leftBound) {
+          laneX = leftBound;
+          dir = 1;
+        } else if (laneX > rightBound) {
+          laneX = rightBound;
+          dir = -1;
+        }
+      } else {
+        laneX = lerp(laneX, width / 2, 0.08);
+      }
+
+      dog.x = laneX + walkSway;
+      dog.y = height * 0.9 + breathY - walkBob - petBounce;
+      dog.rotation =
+        tilt * 0.6 + (mode === "walk" ? Math.sin(t * 3.0) * 0.01 : 0);
+
+      dog.scale.y =
+        (baseScale + breath * 0.003 * mp.breathAmp) * (1 + petEase * 0.01);
+      dog.scale.x =
+        sign * ((baseScale + breath * 0.0015 * mp.breathAmp) * petSquash);
+
+      shadow.x = dog.x;
+      shadow.y = height * 0.9;
+
+      const shadowPulse = 1 + breath * 0.03 * mp.breathAmp;
+      const walkShadow =
+        mode === "walk" ? 1 - Math.abs(Math.sin(t * 6.0)) * 0.08 : 1;
+      const petShadow = 1 - petEase * 0.08;
+
+      shadow.scale.x = shadowPulse * walkShadow * petShadow;
+      shadow.scale.y = 1 * walkShadow * (1 - petEase * 0.05);
+      shadow.alpha =
+        0.3 + breath * 0.02 - (mode === "walk" ? 0.02 : 0) - petEase * 0.03;
+
+      for (let i = hearts.length - 1; i >= 0; i--) {
+        const p = hearts[i];
+        p.age += 1;
+        p.node.x += p.vx;
+        p.node.y += p.vy;
+        p.node.rotation += 0.03 * (p.vx >= 0 ? 1 : -1);
+        p.node.alpha = Math.max(0, 1 - p.age / p.life);
+        p.node.scale.set(p.node.scale.x * 0.999, p.node.scale.y * 0.999);
+
+        if (p.age >= p.life) {
+          fx.removeChild(p.node);
+          p.node.destroy(true);
+          hearts.splice(i, 1);
+        }
+      }
+    });
+
+    return () => {
+      dog.removeAllListeners();
+      app.destroy(true, { children: true });
+    };
+  }, [width, height, mood, mode, direction, onPet]);
+
+  return <div ref={containerRef} style={{ width, height }} />;
+}
+
+
+================================================================================
+FILE: src/components/PottyTrackerCard.jsx
+--------------------------------------------------------------------------------
+// src/components/PottyTrackerCard.jsx
+// @ts-nocheck
+
+function clamp01(n) {
+  const x = Number(n || 0);
+  return Math.max(0, Math.min(100, x));
+}
+
+export default function PottyTrackerCard({ percent = 0 }) {
+  const v = clamp01(percent);
+
+  return (
+    <div className="rounded-2xl border border-emerald-500/15 bg-black/30 backdrop-blur-md p-4 shadow-[0_0_28px_rgba(16,185,129,0.10)]">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-bold text-emerald-200">
+          Potty Training Tracker
+        </h3>
+        <div className="text-xs font-semibold text-zinc-200">{v}%</div>
+      </div>
+
+      <div className="mt-2 h-2 rounded-full bg-white/10 overflow-hidden">
+        <div
+          className="h-full rounded-full bg-emerald-400"
+          style={{ width: `${v}%` }}
+        />
+      </div>
+
+      <p className="mt-2 text-xs text-zinc-400">
+        Potty training unlocks trick training at 100%.
+      </p>
+    </div>
+  );
+}
+
+
+================================================================================
+FILE: src/components/PwaStatusBanners.jsx
+--------------------------------------------------------------------------------
+// src/components/PwaStatusBanners.jsx
+
+import * as React from "react";
+import { usePwa } from "@/pwa/PwaProvider.jsx";
+
+export default function PwaStatusBanners() {
+  const { offline, updateAvailable, canInstall, applyUpdate, promptInstall } =
+    usePwa();
+  const [installDismissed, setInstallDismissed] = React.useState(false);
+
+  // Avoid flashing the offline badge during initial load (network jitters)
+  const [showOffline, setShowOffline] = React.useState(false);
+  React.useEffect(() => {
+    if (!offline) {
+      setShowOffline(false);
+      return;
+    }
+    const t = window.setTimeout(() => setShowOffline(true), 400);
+    return () => window.clearTimeout(t);
+  }, [offline]);
+
+  React.useEffect(() => {
+    if (!canInstall) setInstallDismissed(false);
+  }, [canInstall]);
+
+  const showInstall = canInstall && !installDismissed;
+
+  if (!showOffline && !updateAvailable && !showInstall) return null;
+
+  return (
+    <div className="fixed top-3 left-1/2 z-[9999] w-[min(92vw,720px)] -translate-x-1/2 space-y-2">
+      {showInstall && (
+        <div className="flex items-center justify-between gap-3 rounded-2xl border border-emerald-500/30 bg-zinc-950/80 px-4 py-3 text-zinc-100 backdrop-blur">
+          <div className="min-w-0">
+            <div className="text-sm font-semibold text-emerald-200">
+              Install Doggerz
+            </div>
+            <div className="text-xs text-zinc-400">
+              Get the app on your home screen.
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              className="shrink-0 rounded-md border border-zinc-700 px-3 py-2 text-xs text-zinc-200"
+              onClick={() => setInstallDismissed(true)}
+            >
+              Not now
+            </button>
+            <button
+              type="button"
+              className="shrink-0 rounded-md bg-emerald-500/20 border border-emerald-500/35 px-3 py-2 text-sm text-emerald-100"
+              onClick={() => promptInstall()}
+            >
+              Install
+            </button>
+          </div>
+        </div>
+      )}
+
+      {updateAvailable && (
+        <div className="flex items-center justify-between gap-3 rounded-2xl border border-emerald-500/30 bg-zinc-950/80 px-4 py-3 text-zinc-100 backdrop-blur">
+          <div className="min-w-0">
+            <div className="text-sm font-semibold text-emerald-200">
+              New version available
+            </div>
+            <div className="text-xs text-zinc-400">
+              Refresh to update (safe).
+            </div>
+          </div>
+          <button
+            type="button"
+            className="shrink-0 rounded-md bg-emerald-500/20 border border-emerald-500/35 px-3 py-2 text-sm text-emerald-100"
+            onClick={() => applyUpdate()}
+          >
+            Refresh
+          </button>
+        </div>
+      )}
+
+      {showOffline && (
+        <div className="flex items-center justify-between gap-3 rounded-2xl border border-zinc-800 bg-zinc-950/80 px-4 py-3 text-zinc-100 backdrop-blur">
+          <div className="min-w-0">
+            <div className="text-sm font-semibold">You’re offline</div>
+            <div className="text-xs text-zinc-400">
+              The app should still work for cached content.
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+================================================================================
+FILE: src/components/SpriteSheetDog.jsx
+--------------------------------------------------------------------------------
+// src/components/SpriteSheetDog.jsx
+// @ts-nocheck
+
+import * as React from "react";
+
+import { withBaseUrl } from "@/utils/assetUrl.js";
+
+const DEFAULT_ANIM = "idle";
+const DEFAULT_FRAME_DURATION = 120;
+
+const STAGE_MANIFESTS = Object.freeze({
+  PUPPY: "/sprites/puppy/jrt_puppy_placeholder_sheet.json",
+  ADULT: "/sprites/puppy/jrt_puppy_placeholder_sheet.json",
+  SENIOR: "/sprites/puppy/jrt_puppy_placeholder_sheet.json",
+});
+
+const ANIM_ALIASES = Object.freeze({
+  rest: "lay",
+  lay: "lay",
+  sleep: "sleep",
+  sleepy: "sleep",
+  eat: "eat",
+  drink: "eat",
+  wag: "wag",
+  bark: "bark",
+  howl: "howl",
+  whine: "whine",
+  look: "look",
+  sniff: "look",
+  walk: "chase",
+  run: "chase",
+  play: "chase",
+  fetch: "chase",
+  chase: "chase",
+  zoomies: "chase",
+  potty: "look",
+  poop: "look",
+  pee: "look",
+  scratch: "wag",
+  shake: "wag",
+  lick: "wag",
+  pant: "wag",
+  yawn: "tired",
+  stretch: "tired",
+  tired: "tired",
+  hungry: "hungry",
+  sad: "sad",
+  mad: "mad",
+  scared: "scared",
+  celebrate: "wag",
+  beg: "sit",
+  bow: "sit",
+  sit: "sit",
+  stay: "sit",
+  sit_pretty: "sit",
+  play_dead: "lay",
+  playdead: "lay",
+  roll: "wag",
+  rollover: "wag",
+  roll_over: "wag",
+  spin: "chase",
+  jump: "chase",
+  paw: "sit",
+  surprised: "look",
+});
+
+const manifestCache = new Map();
+const imageCache = new Map();
+
+function normalizeStage(stage) {
+  const s = String(stage || "PUPPY")
+    .trim()
+    .toUpperCase();
+  if (s.startsWith("ADULT")) return "ADULT";
+  if (s.startsWith("SEN")) return "SENIOR";
+  return "PUPPY";
+}
+
+function normalizeKey(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_")
+    .replace(/-+/g, "_");
+}
+
+function resolveAnim(requested, available) {
+  const key = normalizeKey(requested);
+  if (available && available.has(key)) return key;
+  const alias = ANIM_ALIASES[key];
+  if (alias && available && available.has(alias)) return alias;
+  if (available && available.has(DEFAULT_ANIM)) return DEFAULT_ANIM;
+  return key || DEFAULT_ANIM;
+}
+
+function resolveSheetSrc(manifest, manifestUrl) {
+  const raw = String(manifest?.meta?.image || "").trim();
+  if (!raw) return null;
+  if (/^[a-zA-Z][a-zA-Z\d+.-]*:/.test(raw)) return raw;
+
+  const base = String(manifestUrl || "");
+  const stripped = base.split("?")[0].split("#")[0];
+  const idx = stripped.lastIndexOf("/");
+  const dir = idx >= 0 ? stripped.slice(0, idx) : "";
+  const file = raw.replace(/^\/+/, "");
+  if (dir) return `${dir}/${file}`;
+  return withBaseUrl(file);
+}
+
+async function loadManifest(url) {
+  if (!url) throw new Error("Missing manifest url");
+  const cached = manifestCache.get(url);
+  if (cached?.data) return cached.data;
+  if (cached?.promise) return cached.promise;
+
+  const promise = fetch(url, { cache: "no-store" })
+    .then((res) => {
+      if (!res.ok) throw new Error(`Manifest load failed: ${res.status}`);
+      return res.json();
+    })
+    .then((data) => {
+      manifestCache.set(url, { data });
+      return data;
+    })
+    .catch((err) => {
+      manifestCache.delete(url);
+      throw err;
+    });
+
+  manifestCache.set(url, { promise });
+  return promise;
+}
+
+function loadImage(src) {
+  if (!src) return Promise.reject(new Error("Missing image src"));
+  const cached = imageCache.get(src);
+  if (cached?.status === "loaded") return Promise.resolve(cached);
+  if (cached?.promise) return cached.promise;
+
+  let resolve;
+  let reject;
+  const promise = new Promise((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+
+  const img = new Image();
+  img.onload = () => {
+    const entry = {
+      status: "loaded",
+      width: img.naturalWidth || 0,
+      height: img.naturalHeight || 0,
+    };
+    imageCache.set(src, entry);
+    resolve(entry);
+  };
+  img.onerror = (err) => {
+    imageCache.set(src, { status: "error" });
+    reject(err);
+  };
+  img.src = src;
+
+  imageCache.set(src, { status: "loading", promise });
+  return promise;
+}
+
+export default function SpriteSheetDog({
+  stage = "PUPPY",
+  anim = "idle",
+  facing = 1,
+  size = 320,
+  reduceMotion = false,
+  fallbackSrc,
+  className = "",
+  onDebug,
+}) {
+  const [fallbackIndex, setFallbackIndex] = React.useState(0);
+  const [manifest, setManifest] = React.useState(null);
+  const [manifestErr, setManifestErr] = React.useState(null);
+  const [sheetLoaded, setSheetLoaded] = React.useState(false);
+  const [sheetFailed, setSheetFailed] = React.useState(false);
+  const [sheetSize, setSheetSize] = React.useState(null);
+  const [frameIndex, setFrameIndex] = React.useState(0);
+
+  const stageId = normalizeStage(stage);
+  const manifestUrl = withBaseUrl(
+    STAGE_MANIFESTS[stageId] || STAGE_MANIFESTS.PUPPY
+  );
+
+  const fallbackCandidates = React.useMemo(() => {
+    const src = String(fallbackSrc || "").trim();
+    const out = src ? [src] : [];
+    out.push(withBaseUrl("/icons/doggerz-192.png"));
+    return out;
+  }, [fallbackSrc]);
+
+  const effectiveFallbackSrc =
+    fallbackCandidates[
+      Math.min(fallbackIndex, Math.max(0, fallbackCandidates.length - 1))
+    ] || null;
+
+  React.useEffect(() => {
+    let alive = true;
+    setManifest(null);
+    setManifestErr(null);
+    loadManifest(manifestUrl)
+      .then((data) => {
+        if (alive) setManifest(data);
+      })
+      .catch((err) => {
+        if (alive) setManifestErr(err);
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, [manifestUrl]);
+
+  const sheetSrc = React.useMemo(
+    () => (manifest ? resolveSheetSrc(manifest, manifestUrl) : null),
+    [manifest, manifestUrl]
+  );
+
+  React.useEffect(() => {
+    let alive = true;
+    setSheetLoaded(false);
+    setSheetFailed(false);
+    setSheetSize(null);
+
+    if (!sheetSrc) return undefined;
+
+    loadImage(sheetSrc)
+      .then((entry) => {
+        if (!alive) return;
+        setSheetLoaded(true);
+        setSheetSize({ width: entry.width, height: entry.height });
+      })
+      .catch(() => {
+        if (!alive) return;
+        setSheetFailed(true);
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, [sheetSrc]);
+
+  const availableAnims = React.useMemo(() => {
+    const keys =
+      manifest?.animations && typeof manifest.animations === "object"
+        ? Object.keys(manifest.animations)
+        : [];
+    return new Set(keys);
+  }, [manifest]);
+
+  const resolvedAnim = React.useMemo(
+    () => resolveAnim(anim, availableAnims),
+    [anim, availableAnims]
+  );
+
+  const frames = React.useMemo(() => {
+    if (!manifest?.animations || !resolvedAnim) return [];
+    const keys = Array.isArray(manifest.animations[resolvedAnim])
+      ? manifest.animations[resolvedAnim]
+      : [];
+    const list = [];
+    for (const key of keys) {
+      const def = manifest.frames?.[key];
+      if (!def?.frame) continue;
+      list.push({
+        name: key,
+        x: def.frame.x,
+        y: def.frame.y,
+        w: def.frame.w,
+        h: def.frame.h,
+        duration:
+          Number(def.duration) > 0 ? Number(def.duration) : DEFAULT_FRAME_DURATION,
+      });
+    }
+    return list;
+  }, [manifest, resolvedAnim]);
+
+  const avgDuration = React.useMemo(() => {
+    if (!frames.length) return DEFAULT_FRAME_DURATION;
+    const total = frames.reduce(
+      (sum, frame) => sum + (Number(frame.duration) || DEFAULT_FRAME_DURATION),
+      0
+    );
+    return Math.max(40, Math.round(total / frames.length));
+  }, [frames]);
+
+  const fps = Math.round(1000 / Math.max(1, avgDuration));
+
+  React.useEffect(() => {
+    setFrameIndex(0);
+  }, [resolvedAnim, frames.length]);
+
+  React.useEffect(() => {
+    if (reduceMotion || frames.length <= 1 || !sheetLoaded) {
+      setFrameIndex(0);
+      return undefined;
+    }
+
+    const id = window.setInterval(() => {
+      setFrameIndex((f) => (f + 1) % frames.length);
+    }, avgDuration);
+
+    return () => {
+      window.clearInterval(id);
+    };
+  }, [avgDuration, frames.length, reduceMotion, sheetLoaded]);
+
+  const frame = frames[Math.min(frameIndex, Math.max(0, frames.length - 1))];
+
+  const frameW = Number(frame?.w || 0);
+  const frameH = Number(frame?.h || 0);
+  const safeSize = Number(size) || 320;
+  const scale = frameW > 0 ? Math.max(0.01, safeSize / frameW) : 1;
+
+  const sheetW = Number(manifest?.meta?.size?.w || sheetSize?.width || 0);
+  const sheetH = Number(manifest?.meta?.size?.h || sheetSize?.height || 0);
+
+  const canRenderSprite =
+    !!frame &&
+    !!sheetSrc &&
+    sheetLoaded &&
+    !sheetFailed &&
+    Number.isFinite(frameW) &&
+    frameW > 0;
+
+  React.useEffect(() => {
+    if (typeof onDebug !== "function") return;
+
+    onDebug({
+      stage: stageId,
+      requestedAnim: anim,
+      resolvedAnim,
+      sheetSrc,
+      sheetLoaded,
+      sheetFailed,
+      frames: frames.length,
+      fps,
+      frameIndex,
+      manifestUrl,
+      manifestError: manifestErr ? String(manifestErr.message || manifestErr) : null,
+      effectiveFallbackSrc,
+    });
+  }, [
+    anim,
+    effectiveFallbackSrc,
+    fps,
+    frameIndex,
+    frames.length,
+    manifestErr,
+    manifestUrl,
+    onDebug,
+    resolvedAnim,
+    sheetFailed,
+    sheetLoaded,
+    sheetSrc,
+    stageId,
+  ]);
+
+  if (!canRenderSprite) {
+    return effectiveFallbackSrc ? (
+      <img
+        src={effectiveFallbackSrc}
+        alt=""
+        draggable={false}
+        className={className}
+        onError={() => {
+          setFallbackIndex((i) => i + 1);
+        }}
+        style={{
+          width: safeSize,
+          height: safeSize,
+          maxWidth: "none",
+          maxHeight: "none",
+          display: "block",
+          objectFit: "contain",
+          objectPosition: "50% 60%",
+          transform: `scaleX(${facing})`,
+          transformOrigin: "50% 100%",
+        }}
+      />
+    ) : null;
+  }
+
+  const resolvedSheetW = sheetW || frameW;
+  const resolvedSheetH = sheetH || frameH || frameW;
+  const backgroundSize = `${resolvedSheetW * scale}px ${resolvedSheetH * scale}px`;
+  const backgroundPosition = `${-frame.x * scale}px ${-frame.y * scale}px`;
+
+  return (
+    <div
+      className={className}
+      style={{
+        width: safeSize,
+        height: safeSize,
+        backgroundImage: `url("${sheetSrc}")`,
+        backgroundRepeat: "no-repeat",
+        backgroundSize,
+        backgroundPosition,
+        imageRendering: "auto",
+        transform: `scaleX(${facing})`,
+        transformOrigin: "50% 100%",
+        willChange: reduceMotion ? "auto" : "background-position",
+      }}
+    />
+  );
+}
+
+
+================================================================================
+FILE: src/components/ToastProvider.jsx
+--------------------------------------------------------------------------------
+/* eslint-disable react-refresh/only-export-components */
+
+// src/components/ToastProvider.jsx
+// Lightweight, app-wide toast system (consistent UX across screens).
+// - Supports type: info | success | warn | error | reward
+// - Supports optional action button
+// - Supports dedupe/cooldown via toast.once(key, ...)
+// - Optional haptics (respects settings)
+
+import * as React from "react";
+import { useSelector } from "react-redux";
+import { selectSettings } from "@/redux/settingsSlice.js";
+
+const ToastContext = React.createContext(null);
+
+function clamp(n, lo, hi) {
+  const x = Number(n);
+  if (!Number.isFinite(x)) return lo;
+  return Math.max(lo, Math.min(hi, x));
+}
+
+function canVibrate() {
+  return (
+    typeof navigator !== "undefined" && typeof navigator.vibrate === "function"
+  );
+}
+
+function useUserGestureGate() {
+  const [ready, setReady] = React.useState(false);
+
+  React.useEffect(() => {
+    if (ready) return;
+    const unlock = () => setReady(true);
+    window.addEventListener("pointerdown", unlock, {
+      once: true,
+      passive: true,
+    });
+    window.addEventListener("keydown", unlock, { once: true });
+    window.addEventListener("touchstart", unlock, {
+      once: true,
+      passive: true,
+    });
+    return () => {
+      window.removeEventListener("pointerdown", unlock);
+      window.removeEventListener("keydown", unlock);
+      window.removeEventListener("touchstart", unlock);
+    };
+  }, [ready]);
+
+  return ready;
+}
+
+function vibrate(pattern) {
+  try {
+    if (!canVibrate()) return;
+    navigator.vibrate(pattern);
+  } catch {
+    // ignore
+  }
+}
+
+function typeStyles(type) {
+  switch (type) {
+    case "success":
+      return {
+        border: "border-emerald-500/25",
+        bg: "bg-emerald-500/10",
+        text: "text-emerald-100",
+        glow: "shadow-[0_0_45px_rgba(16,185,129,0.14)]",
+        icon: "✓",
+      };
+    case "warn":
+      return {
+        border: "border-amber-500/30",
+        bg: "bg-amber-500/10",
+        text: "text-amber-100",
+        glow: "shadow-[0_0_45px_rgba(245,158,11,0.14)]",
+        icon: "!",
+      };
+    case "error":
+      return {
+        border: "border-rose-500/30",
+        bg: "bg-rose-500/10",
+        text: "text-rose-100",
+        glow: "shadow-[0_0_45px_rgba(244,63,94,0.14)]",
+        icon: "×",
+      };
+    case "reward":
+      return {
+        border: "border-orange-500/30",
+        bg: "bg-orange-500/10",
+        text: "text-orange-100",
+        glow: "shadow-[0_0_55px_rgba(249,115,22,0.18)]",
+        icon: "★",
+      };
+    case "info":
+    default:
+      return {
+        border: "border-white/15",
+        bg: "bg-black/45",
+        text: "text-zinc-100",
+        glow: "shadow-[0_0_45px_rgba(0,0,0,0.25)]",
+        icon: "i",
+      };
+  }
+}
+
+export function ToastProvider({ children }) {
+  const settings = useSelector(selectSettings);
+  const hapticsEnabled = Boolean(settings?.hapticsEnabled);
+  const hasUserGesture = useUserGestureGate();
+
+  const [toasts, setToasts] = React.useState([]);
+  const lastByKeyRef = React.useRef(Object.create(null));
+
+  const remove = React.useCallback((id) => {
+    setToasts((curr) => curr.filter((t) => t.id !== id));
+  }, []);
+
+  const show = React.useCallback(
+    (opts) => {
+      const message = String(opts?.message || "").trim();
+      if (!message) return null;
+
+      const type = String(opts?.type || "info").toLowerCase();
+      const durationMs = clamp(opts?.durationMs ?? 1800, 900, 8000);
+
+      const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      const toast = {
+        id,
+        type,
+        message,
+        createdAt: Date.now(),
+        durationMs,
+        action:
+          opts?.action && typeof opts.action === "object"
+            ? {
+                label: String(opts.action.label || "Action"),
+                onClick:
+                  typeof opts.action.onClick === "function"
+                    ? opts.action.onClick
+                    : null,
+              }
+            : null,
+        dismissLabel: String(opts?.dismissLabel || "Dismiss"),
+        haptic: opts?.haptic,
+      };
+
+      setToasts((curr) => [toast, ...curr].slice(0, 4));
+
+      const shouldHaptic =
+        hapticsEnabled &&
+        (toast.haptic === true ||
+          toast.type === "reward" ||
+          toast.type === "success");
+      if (shouldHaptic) {
+        // Tiny "pop"; keep it short and subtle.
+        if (hasUserGesture) vibrate(15);
+      }
+
+      window.setTimeout(() => remove(id), durationMs);
+      return id;
+    },
+    [hapticsEnabled, hasUserGesture, remove]
+  );
+
+  const once = React.useCallback(
+    (key, opts, cooldownMs = 180_000) => {
+      const k = String(key || "").trim();
+      if (!k) return show(opts);
+      const now = Date.now();
+      const last = Number(lastByKeyRef.current[k] || 0);
+      if (now - last < Math.max(0, Number(cooldownMs) || 0)) return null;
+      lastByKeyRef.current[k] = now;
+      return show(opts);
+    },
+    [show]
+  );
+
+  const api = React.useMemo(
+    () => ({
+      show,
+      once,
+      info: (message, durationMs) =>
+        show({ type: "info", message, durationMs }),
+      success: (message, durationMs) =>
+        show({ type: "success", message, durationMs }),
+      warn: (message, durationMs) =>
+        show({ type: "warn", message, durationMs }),
+      error: (message, durationMs) =>
+        show({ type: "error", message, durationMs }),
+      reward: (message, durationMs) =>
+        show({ type: "reward", message, durationMs, haptic: true }),
+    }),
+    [once, show]
+  );
+
+  return (
+    <ToastContext.Provider value={api}>
+      {children}
+
+      {/* Toast stack (fixed, non-blocking) */}
+      <div className="pointer-events-none fixed right-3 bottom-3 z-[90] flex w-[min(420px,calc(100%-1.5rem))] flex-col gap-2">
+        {toasts.map((t) => {
+          const s = typeStyles(t.type);
+          return (
+            <div
+              key={t.id}
+              className={`pointer-events-auto overflow-hidden rounded-2xl border ${s.border} ${s.bg} ${s.glow} backdrop-blur-md`}
+              role="status"
+              aria-live="polite"
+            >
+              <div className="flex items-start gap-3 px-4 py-3">
+                <div
+                  className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full border border-white/15 bg-black/30 text-xs font-extrabold text-white"
+                  aria-hidden
+                >
+                  {s.icon}
+                </div>
+
+                <div className={`min-w-0 flex-1 text-sm ${s.text}`}>
+                  {t.message}
+                </div>
+
+                <button
+                  type="button"
+                  className="rounded-xl border border-white/10 bg-black/20 px-2 py-1 text-xs font-semibold text-white/90 hover:bg-black/30"
+                  onClick={() => remove(t.id)}
+                >
+                  {t.dismissLabel}
+                </button>
+              </div>
+
+              {t.action?.label && t.action.onClick ? (
+                <div className="flex items-center justify-end gap-2 border-t border-white/10 px-4 py-2">
+                  <button
+                    type="button"
+                    className="rounded-xl bg-white/10 px-3 py-1.5 text-xs font-extrabold text-white hover:bg-white/15"
+                    onClick={() => {
+                      try {
+                        t.action.onClick?.();
+                      } finally {
+                        remove(t.id);
+                      }
+                    }}
+                  >
+                    {t.action.label}
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
+    </ToastContext.Provider>
+  );
+}
+
+export function useToast() {
+  const ctx = React.useContext(ToastContext);
+  if (!ctx) {
+    throw new Error("useToast must be used within <ToastProvider>");
+  }
+  return ctx;
+}
+
+
+================================================================================
+FILE: src/components/useSleepAudio.js
+--------------------------------------------------------------------------------
+/** @format */
+
+// src/components/useSleepAudio.js
+// A tiny WebAudio "sleep ambience" loop.
+// - No external assets (avoids missing-file issues)
+// - Best-effort: respects autoplay restrictions and fails silently
+// @ts-nocheck
+
+import * as React from "react";
+
+function clamp(n, lo, hi) {
+  const x = Number(n);
+  if (!Number.isFinite(x)) return lo;
+  return Math.max(lo, Math.min(hi, x));
+}
+
+export function useSleepAudio({
+  active = false,
+  enabled = true,
+  volume = 0.2,
+} = {}) {
+  const ctxRef = React.useRef(null);
+  const nodesRef = React.useRef(null);
+  const [unlocked, setUnlocked] = React.useState(false);
+
+  // Autoplay policies: WebAudio must be created/resumed after a user gesture.
+  React.useEffect(() => {
+    if (unlocked) return;
+    const unlock = () => setUnlocked(true);
+    window.addEventListener("pointerdown", unlock, {
+      once: true,
+      passive: true,
+    });
+    window.addEventListener("keydown", unlock, { once: true });
+    window.addEventListener("touchstart", unlock, {
+      once: true,
+      passive: true,
+    });
+    return () => {
+      window.removeEventListener("pointerdown", unlock);
+      window.removeEventListener("keydown", unlock);
+      window.removeEventListener("touchstart", unlock);
+    };
+  }, [unlocked]);
+
+  const stop = React.useCallback(() => {
+    const nodes = nodesRef.current;
+    if (nodes) {
+      try {
+        nodes.carrier?.stop?.();
+      } catch {
+        // ignore
+      }
+      try {
+        nodes.lfo?.stop?.();
+      } catch {
+        // ignore
+      }
+      try {
+        nodes.noiseSrc?.stop?.();
+      } catch {
+        // ignore
+      }
+      try {
+        nodes.master?.disconnect?.();
+      } catch {
+        // ignore
+      }
+      nodesRef.current = null;
+    }
+  }, []);
+
+  React.useEffect(() => {
+    const v = clamp(volume, 0, 1);
+    if (!enabled || !active || v <= 0) {
+      stop();
+      return;
+    }
+
+    // Create/resume AudioContext.
+    const AudioContextCtor = window?.AudioContext || window?.webkitAudioContext;
+    if (!AudioContextCtor) return;
+
+    let ctx = ctxRef.current;
+
+    // If we haven't had a user gesture yet, don't create/resume WebAudio.
+    // This prevents Chrome/Android autoplay warnings and repeated resume attempts.
+    if (!unlocked && !ctx) return;
+
+    if (!ctx) {
+      try {
+        ctx = new AudioContextCtor();
+        ctxRef.current = ctx;
+      } catch {
+        return;
+      }
+    }
+
+    // Best-effort resume (only after a user gesture).
+    if (unlocked) {
+      try {
+        if (ctx.state === "suspended") void ctx.resume();
+      } catch {
+        // ignore
+      }
+    }
+
+    // Already running.
+    if (nodesRef.current) {
+      try {
+        nodesRef.current.master.gain.setTargetAtTime(
+          0.006 * v,
+          ctx.currentTime,
+          0.08
+        );
+      } catch {
+        // ignore
+      }
+      return;
+    }
+
+    try {
+      // Master gain
+      const master = ctx.createGain();
+      master.gain.value = 0.006 * v;
+      master.connect(ctx.destination);
+
+      // A soft "breath" tone (very quiet)
+      const carrier = ctx.createOscillator();
+      carrier.type = "sine";
+      carrier.frequency.value = 72;
+
+      const carrierGain = ctx.createGain();
+      carrierGain.gain.value = 0.25; // internal gain before master
+      carrier.connect(carrierGain).connect(master);
+
+      // LFO to simulate breathing (slow swell)
+      const lfo = ctx.createOscillator();
+      lfo.type = "sine";
+      lfo.frequency.value = 0.25; // ~4s per breath
+
+      const lfoGain = ctx.createGain();
+      lfoGain.gain.value = 0.12;
+      lfo.connect(lfoGain);
+
+      // Modulate carrierGain (not master) so volume slider stays stable.
+      lfoGain.connect(carrierGain.gain);
+
+      // Tiny filtered noise layer (very subtle) for texture
+      const noiseBuf = ctx.createBuffer(
+        1,
+        ctx.sampleRate * 1.0,
+        ctx.sampleRate
+      );
+      const data = noiseBuf.getChannelData(0);
+      for (let i = 0; i < data.length; i += 1) {
+        data[i] = (Math.random() * 2 - 1) * 0.06;
+      }
+      const noiseSrc = ctx.createBufferSource();
+      noiseSrc.buffer = noiseBuf;
+      noiseSrc.loop = true;
+
+      const noiseFilter = ctx.createBiquadFilter();
+      noiseFilter.type = "lowpass";
+      noiseFilter.frequency.value = 420;
+      noiseFilter.Q.value = 0.7;
+
+      const noiseGain = ctx.createGain();
+      noiseGain.gain.value = 0.12;
+
+      noiseSrc.connect(noiseFilter).connect(noiseGain).connect(master);
+
+      carrier.start();
+      lfo.start();
+      noiseSrc.start();
+
+      nodesRef.current = {
+        master,
+        carrier,
+        carrierGain,
+        lfo,
+        lfoGain,
+        noiseSrc,
+        noiseGain,
+      };
+
+      return () => {
+        stop();
+      };
+    } catch {
+      stop();
+    }
+  }, [active, enabled, stop, unlocked, volume]);
+
+  // Cleanup on unmount.
+  React.useEffect(() => {
+    return () => {
+      stop();
+      const ctx = ctxRef.current;
+      if (ctx) {
+        try {
+          ctx.close();
+        } catch {
+          // ignore
+        }
+        ctxRef.current = null;
+      }
+    };
+  }, [stop]);
+}
+
+
+================================================================================
+FILE: src/components/useYardSfx.js
+--------------------------------------------------------------------------------
+/** @format */
+
+// src/components/useYardSfx.js
+// @ts-nocheck
+
+import * as React from "react";
+
+function canPlayM4a() {
+  try {
+    const a = document.createElement("audio");
+    // Most compatible check for AAC-LC in MP4.
+    return Boolean(
+      a.canPlayType('audio/mp4; codecs="mp4a.40.2"') ||
+      a.canPlayType("audio/mp4") ||
+      a.canPlayType("audio/x-m4a")
+    );
+  } catch {
+    return false;
+  }
+}
+
+function pickBarkSrc() {
+  // Prefer optimized AAC (smaller). If the browser can't decode m4a, disable bark SFX
+  // rather than referencing a missing fallback file.
+  return canPlayM4a() ? "/audio/bark.m4a" : null;
+}
+
+/**
+ * Small SFX helper for the yard.
+ * - Uses <audio> for simplicity.
+ * - Safe in browsers that block autoplay (we only call on user gestures).
+ */
+export function useYardSfx(settings) {
+  const audioEnabled = Boolean(settings?.audio?.enabled);
+  const masterVolume = Number(settings?.audio?.masterVolume ?? 0.8);
+  const sfxVolume = Number(settings?.audio?.sfxVolume ?? 0.7);
+
+  const barkRef = React.useRef(null);
+  const lastPlayAtRef = React.useRef(0);
+
+  React.useEffect(() => {
+    // Pre-create audio element once.
+    // NOTE: prefer /audio/bark.m4a (optimized). If unsupported, bark SFX is disabled.
+    if (typeof window === "undefined") return;
+    if (barkRef.current) return;
+
+    const src = pickBarkSrc();
+    if (!src) return;
+
+    const el = new Audio(src);
+    el.preload = "auto";
+    barkRef.current = el;
+
+    return () => {
+      try {
+        if (barkRef.current) {
+          barkRef.current.pause();
+          barkRef.current.src = "";
+        }
+      } catch {
+        // ignore
+      }
+      barkRef.current = null;
+    };
+  }, []);
+
+  // Keep volume updated.
+  React.useEffect(() => {
+    const el = barkRef.current;
+    if (!el) return;
+    const mv = Number.isFinite(masterVolume) ? masterVolume : 0.8;
+    const sv = Number.isFinite(sfxVolume) ? sfxVolume : 0.7;
+    el.volume = Math.max(0, Math.min(1, mv * sv));
+  }, [masterVolume, sfxVolume]);
+
+  // If audio gets disabled while a sound is playing, stop it immediately.
+  React.useEffect(() => {
+    const el = barkRef.current;
+    if (!el) return;
+    if (audioEnabled) return;
+    try {
+      el.pause();
+      el.currentTime = 0;
+    } catch {
+      // ignore
+    }
+  }, [audioEnabled]);
+
+  const playBark = React.useCallback(
+    async ({ throttleMs = 200 } = {}) => {
+      if (!audioEnabled) return;
+      const el = barkRef.current;
+      if (!el) return;
+
+      // Prevent overlapping/restarting the bark while it's still playing.
+      if (!el.paused && !el.ended) return;
+
+      const now = Date.now();
+      const effectiveThrottleMs = Math.max(
+        450,
+        Number.isFinite(throttleMs) ? throttleMs : 0
+      );
+      if (now - lastPlayAtRef.current < effectiveThrottleMs) return;
+      lastPlayAtRef.current = now;
+
+      try {
+        el.currentTime = 0;
+        // play() returns a promise in modern browsers.
+        const p = el.play();
+        if (p && typeof p.then === "function") {
+          await p;
+        }
+      } catch {
+        // Autoplay policy or decode errors. Ignore silently.
+      }
+    },
+    [audioEnabled]
+  );
+
+  return { playBark };
+}
+
+
+================================================================================
+FILE: src/components/VoiceCommandButton.jsx
+--------------------------------------------------------------------------------
+// src/features/game/VoiceCommandButton.jsx
+// @ts-nocheck  // Remove this if you want TS to type-check this file
+
+import { useEffect, useRef, useState } from "react";
+import { useDispatch } from "react-redux";
+import { trainObedience } from "@/redux/dogSlice.js";
+
+const hasSpeech =
+  typeof window !== "undefined" &&
+  ("SpeechRecognition" in window || "webkitSpeechRecognition" in window);
+
+const commandMap = [
+  { id: "sit", keywords: ["sit", "sit down"] },
+  { id: "stay", keywords: ["stay"] },
+  { id: "rollOver", keywords: ["roll over", "rollover", "roll"] },
+  { id: "speak", keywords: ["speak", "bark", "talk"] },
+];
+
+function findCommandFromTranscript(text) {
+  const lower = text.toLowerCase();
+  for (const cmd of commandMap) {
+    if (cmd.keywords.some((k) => lower.includes(k))) {
+      return cmd.id;
+    }
+  }
+  return null;
+}
+
+export default function VoiceCommandButton() {
+  const dispatch = useDispatch();
+  const recognitionRef = useRef(null);
+  const timeoutRef = useRef(null);
+
+  const [isListening, setIsListening] = useState(false);
+  const [lastTranscript, setLastTranscript] = useState("");
+  const [lastCommand, setLastCommand] = useState(null);
+  const [error, setError] = useState(null);
+
+  const startListening = () => {
+    if (!hasSpeech || !recognitionRef.current) return;
+    if (isListening) return; // avoid double-start exceptions
+
+    setError(null);
+    setLastCommand(null);
+
+    try {
+      recognitionRef.current.start();
+    } catch (e) {
+      // Chrome throws if start() is called twice
+      console.warn("[Voice] start error:", e);
+    }
+  };
+
+  const stopListening = () => {
+    if (!hasSpeech || !recognitionRef.current) return;
+    try {
+      recognitionRef.current.stop();
+    } catch (e) {
+      console.warn("[Voice] stop error:", e);
+    }
+  };
+
+  // Setup Web Speech recognition instance
+  useEffect(() => {
+    if (!hasSpeech) return;
+
+    const SpeechRecognition =
+      // @ts-ignore
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onstart = () => {
+      setIsListening(true);
+      setError(null);
+
+      // Timeout after 10 seconds to prevent infinite listening
+      timeoutRef.current = setTimeout(() => {
+        if (recognitionRef.current) {
+          try {
+            recognitionRef.current.stop();
+            setError("Listening timeout. Try again.");
+          } catch (e) {
+            console.warn("[Voice] timeout stop error:", e);
+          }
+        }
+      }, 10_000);
+    };
+
+    recognition.onerror = (event) => {
+      console.error("[Voice] recognition error:", event);
+
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+
+      if (event.error === "not-allowed") {
+        setError("Mic access blocked. Check browser permissions.");
+      } else if (event.error === "no-speech") {
+        setError("Didn’t hear anything. Try again a bit closer to the mic.");
+      } else {
+        setError("Speech recognition error. Try again.");
+      }
+      setIsListening(false);
+    };
+
+    recognition.onresult = (event) => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+
+      const transcript = Array.from(event.results)
+        .map((r) => r[0]?.transcript || "")
+        .join(" ")
+        .trim();
+
+      if (!transcript) {
+        setLastTranscript("");
+        setLastCommand(null);
+        setError("Heard silence. Try again.");
+        return;
+      }
+
+      setLastTranscript(transcript);
+
+      const commandId = findCommandFromTranscript(transcript);
+      setLastCommand(commandId);
+
+      if (commandId) {
+        // Hook into your training reducer
+        dispatch(
+          trainObedience({
+            commandId,
+            success: true,
+          })
+        );
+        setError(null);
+      } else {
+        setError(
+          "Couldn’t catch a known command. Try 'sit', 'stay', 'roll over', or 'speak'."
+        );
+      }
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
+
+    recognitionRef.current = recognition;
+
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+      try {
+        recognition.stop();
+      } catch {
+        // ignore cleanup errors
+      }
+      recognitionRef.current = null;
+    };
+  }, [dispatch]);
+  if (!hasSpeech) {
+    return (
+      <div className="space-y-2">
+        <button
+          type="button"
+          disabled
+          className="w-full cursor-not-allowed rounded-xl border border-zinc-800 bg-zinc-900/60 px-4 py-2 text-sm font-semibold text-zinc-500"
+        >
+          Voice Training Not Supported
+        </button>
+        <p className="text-xs text-zinc-500">
+          Your browser doesn&apos;t support in-browser speech recognition. Try
+          Chrome on desktop for voice commands.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <button
+        type="button"
+        aria-pressed={isListening}
+        // "Hold to train" UX — pointer covers mouse + touch.
+        onPointerDown={(e) => {
+          // prevent focus + drag weirdness on long-press
+          e.currentTarget.setPointerCapture?.(e.pointerId);
+          startListening();
+        }}
+        onPointerUp={() => stopListening()}
+        onPointerCancel={() => stopListening()}
+        onPointerLeave={() => stopListening()}
+        // Keyboard accessibility: press/hold Space or Enter.
+        onKeyDown={(e) => {
+          if (e.key !== " " && e.key !== "Enter") return;
+          e.preventDefault();
+          startListening();
+        }}
+        onKeyUp={(e) => {
+          if (e.key !== " " && e.key !== "Enter") return;
+          e.preventDefault();
+          stopListening();
+        }}
+        className={`w-full rounded-2xl border border-white/15 bg-black/25 px-4 py-2 text-sm font-semibold text-zinc-100 transition active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black
+          ${isListening ? "border-emerald-500/60 bg-emerald-500/10" : "hover:bg-black/35"}`}
+      >
+        {isListening ? "Listening…" : "Hold to Train (Voice)"}
+      </button>
+
+      {lastTranscript && (
+        <p className="text-xs text-zinc-400">
+          Last heard:{" "}
+          <span className="text-zinc-100">&ldquo;{lastTranscript}&rdquo;</span>
+          {lastCommand && (
+            <>
+              {" "}
+              → mapped to{" "}
+              <span className="font-semibold text-emerald-400">
+                {lastCommand}
+              </span>
+            </>
+          )}
+        </p>
+      )}
+
+      {error && <p className="text-xs text-red-300">{error}</p>}
+
+      {!error && !lastTranscript && (
+        <p className="text-[11px] text-zinc-300/70">
+          Try saying{" "}
+          <span className="font-medium text-zinc-300">
+            &quot;sit&quot;, &quot;stay&quot;, &quot;roll over&quot;
+          </span>{" "}
+          or{" "}
+          <span className="font-medium text-zinc-300">&quot;speak&quot;</span>{" "}
+          while holding the button.
+        </p>
+      )}
+    </div>
+  );
+}
+
+
+================================================================================
+FILE: src/components/WeatherFXCanvas.jsx
+--------------------------------------------------------------------------------
+// src/components/WeatherFXCanvas.jsx
+// @ts-nocheck
+
+import * as React from "react";
+
+function clamp(n, lo, hi) {
+  const x = Number(n);
+  if (!Number.isFinite(x)) return lo;
+  return Math.max(lo, Math.min(hi, x));
+}
+
+function makeRng(seed) {
+  let s = seed >>> 0;
+  return () => {
+    // xorshift32
+    s ^= s << 13;
+    s ^= s >>> 17;
+    s ^= s << 5;
+    return (s >>> 0) / 4294967296;
+  };
+}
+
+export default function WeatherFXCanvas({
+  mode, // "sun" | "rain" | "snow" | "none"
+  reduceMotion = false,
+  reduceTransparency = false,
+  className = "",
+}) {
+  const canvasRef = React.useRef(null);
+  const rafRef = React.useRef(null);
+  const particlesRef = React.useRef([]);
+  const lastTRef = React.useRef(0);
+
+  const effectiveMode =
+    String(mode || "none").toLowerCase() === "rain"
+      ? "rain"
+      : String(mode || "none").toLowerCase() === "snow"
+        ? "snow"
+        : "none";
+
+  React.useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const dpr = window.devicePixelRatio || 1;
+
+    const getClientSize = () => {
+      // Prefer the actual viewport client box (excludes scrollbars), which avoids
+      // horizontal overflow + "scrollbar jitter" compared to window.innerWidth.
+      const el = document.documentElement;
+      const w = Number(el?.clientWidth) || window.innerWidth || 1;
+      const h = Number(el?.clientHeight) || window.innerHeight || 1;
+      return { w, h };
+    };
+
+    const resize = () => {
+      const { w, h } = getClientSize();
+      canvas.width = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
+      // Keep CSS sizing relative to the parent container.
+      canvas.style.width = `100%`;
+      canvas.style.height = `100%`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+
+    resize();
+    window.addEventListener("resize", resize);
+    return () => window.removeEventListener("resize", resize);
+  }, []);
+
+  React.useEffect(() => {
+    // Reset particles when mode changes.
+    particlesRef.current = [];
+  }, [effectiveMode]);
+
+  React.useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    if (reduceMotion || effectiveMode === "none") {
+      // Clear and stop.
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+      return;
+    }
+
+    // Seeded RNG (xorshift32). Keep the seed as a valid 32-bit integer.
+    const rng = makeRng((0xd06e3a2 ^ Date.now()) >>> 0);
+
+    const spawn = (count) => {
+      const w = window.innerWidth || 1;
+      const h = window.innerHeight || 1;
+
+      for (let i = 0; i < count; i++) {
+        if (effectiveMode === "rain") {
+          const x = rng() * w;
+          const y = rng() * h;
+          const speed = 650 + rng() * 650;
+          const len = 12 + rng() * 18;
+          const wind = -80 + rng() * 160;
+          particlesRef.current.push({ type: "rain", x, y, speed, len, wind });
+        } else if (effectiveMode === "snow") {
+          const x = rng() * w;
+          const y = rng() * h;
+          const speed = 55 + rng() * 120;
+          const r = 0.8 + rng() * 1.9;
+          const drift = -30 + rng() * 60;
+          const wobble = 0.6 + rng() * 1.6;
+          particlesRef.current.push({
+            type: "snow",
+            x,
+            y,
+            speed,
+            r,
+            drift,
+            wobble,
+            phase: rng() * 6.28,
+          });
+        }
+      }
+    };
+
+    const targetCount = () => {
+      const w = window.innerWidth || 1;
+      const h = window.innerHeight || 1;
+      const area = (w * h) / (1280 * 720);
+      const base = effectiveMode === "rain" ? 110 : 80;
+      const scaled = base * clamp(area, 0.6, 1.8);
+      return Math.round(reduceTransparency ? scaled * 0.55 : scaled);
+    };
+
+    const tick = (t) => {
+      const w = canvas.clientWidth || window.innerWidth || 1;
+      const h = canvas.clientHeight || window.innerHeight || 1;
+      const dt = Math.min(0.035, (t - (lastTRef.current || t)) / 1000);
+      lastTRef.current = t;
+
+      // maintain particle count
+      const desired = targetCount();
+      const current = particlesRef.current.length;
+      if (current < desired) spawn(Math.min(desired - current, 12));
+
+      ctx.clearRect(0, 0, w, h);
+
+      if (effectiveMode === "rain") {
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = reduceTransparency
+          ? "rgba(186, 230, 253, 0.18)"
+          : "rgba(186, 230, 253, 0.26)";
+        ctx.beginPath();
+
+        for (const p of particlesRef.current) {
+          p.y += p.speed * dt;
+          p.x += p.wind * dt;
+
+          const x2 = p.x + p.wind * 0.015;
+          const y2 = p.y + p.len;
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(x2, y2);
+
+          if (p.y > h + 40 || p.x < -80 || p.x > w + 80) {
+            p.x = rng() * w;
+            p.y = -40 - rng() * 200;
+          }
+        }
+
+        ctx.stroke();
+      } else if (effectiveMode === "snow") {
+        ctx.fillStyle = reduceTransparency
+          ? "rgba(255,255,255,0.22)"
+          : "rgba(255,255,255,0.32)";
+        for (const p of particlesRef.current) {
+          p.phase += dt * p.wobble;
+          p.y += p.speed * dt;
+          p.x += (p.drift + Math.sin(p.phase) * 22) * dt;
+
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fill();
+
+          if (p.y > h + 20 || p.x < -60 || p.x > w + 60) {
+            p.x = rng() * w;
+            p.y = -20 - rng() * 150;
+          }
+        }
+      }
+
+      rafRef.current = requestAnimationFrame(tick);
+    };
+
+    rafRef.current = requestAnimationFrame(tick);
+
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    };
+  }, [effectiveMode, reduceMotion, reduceTransparency]);
+
+  // Keep canvas on top of background but behind UI.
+  return (
+    <canvas
+      ref={canvasRef}
+      className={className}
+      aria-hidden="true"
+      style={{
+        position: "absolute",
+        inset: 0,
+        width: "100%",
+        height: "100%",
+        pointerEvents: "none",
+        // blending makes it feel integrated, but keep subtle
+        mixBlendMode: reduceTransparency ? "normal" : "screen",
+        opacity: effectiveMode === "none" ? 0 : 1,
+      }}
+    />
+  );
+}
+
+
+================================================================================
+FILE: src/components/YardDogActor.jsx
+--------------------------------------------------------------------------------
+// src/components/YardDogActor.jsx
+// @ts-nocheck
+
+import * as React from "react";
+import LayeredDogRig from "@/components/LayeredDogRig.jsx";
+import SpriteSheetDog from "@/components/SpriteSheetDog.jsx";
+import DogCosmeticsOverlay from "@/components/DogCosmeticsOverlay.jsx";
+import { YARD_PROP_GROUND_POSITIONS } from "@/features/game/yardProps.js";
+
+function clamp(n, lo, hi) {
+  const x = Number(n);
+  if (!Number.isFinite(x)) return lo;
+  return Math.max(lo, Math.min(hi, x));
+}
+function randRange(rng, a, b) {
+  return a + (b - a) * rng();
+}
+function useRng(seed = 1234567) {
+  return React.useMemo(() => {
+    // xorshift32
+    let s = Number(seed) >>> 0 || 1;
+    return () => {
+      s ^= s << 13;
+      s ^= s >>> 17;
+      s ^= s << 5;
+      return (s >>> 0) / 4294967296;
+    };
+  }, [seed]);
+}
+
+const DEFAULTS = {
+  // how far (in %) the dog can roam within the stage
+  roamPaddingPct: 10,
+  // baseline speeds in % per second
+  walkSpeed: 12,
+  playSpeed: 22,
+  // how often we choose a new roam target
+  roamMinMs: 2500,
+  roamMaxMs: 5200,
+  // critter behavior
+  critterSpawnMinMs: 4200,
+  critterSpawnMaxMs: 7800,
+};
+
+// Fixed prop positions (match YardSetDressing)
+const FOOD_BOWL_POS = { ...YARD_PROP_GROUND_POSITIONS.bowl };
+const WATER_BOWL_POS = { ...YARD_PROP_GROUND_POSITIONS.water };
+const BALL_POS = { ...YARD_PROP_GROUND_POSITIONS.ball };
+const HOUSE_POS = { ...YARD_PROP_GROUND_POSITIONS.house };
+
+function distPct(a, b) {
+  return Math.hypot((a?.x ?? 0) - (b?.x ?? 0), (a?.y ?? 0) - (b?.y ?? 0));
+}
+
+function isNear(a, b, threshold = 2.2) {
+  return distPct(a, b) <= threshold;
+}
+
+export default function YardDogActor({
+  spriteSrc,
+  lifeStageStage,
+  size = 190,
+  reduceMotion = false,
+  reduceTransparency = false,
+  isNight = false,
+  isAsleep = false,
+  critterEnabled = true,
+  roamIntensity = 1,
+  // High-level intent from the yard UI (and optional commandId for training).
+  // Common intents: idle | eat | drink | sleep | rest | play | fetch | train | potty | poop | bark | shake
+  intent = "idle",
+  commandId,
+  useRig = false,
+  // SpriteSheetDog will only animate when a real-frame manifest exists.
+  // Keeping this on by default means "real" animations appear automatically
+  // after you add frames + run the build script.
+  useSpritePack = true,
+
+  // Cosmetics
+  cosmeticsEquipped,
+
+  // Interaction
+  onPet,
+}) {
+  const debugSprite = React.useMemo(() => {
+    const allowDebug = (() => {
+      try {
+        const v =
+          String(import.meta.env.VITE_ENABLE_DEBUG || "false") === "true";
+        return Boolean(import.meta.env.DEV) || v;
+      } catch {
+        return false;
+      }
+    })();
+
+    if (!allowDebug) return false;
+
+    try {
+      const qs = new URLSearchParams(window.location?.search || "");
+      const viaQuery = qs.get("dgDebugSprite") === "1";
+      const viaStorage = localStorage.getItem("DG_DEBUG_SPRITE") === "1";
+      return viaQuery || viaStorage;
+    } catch {
+      return false;
+    }
+  }, []);
+
+  const [spriteDebug, setSpriteDebug] = React.useState(null);
+  const [spriteChecks, setSpriteChecks] = React.useState(null);
+  const [copied, setCopied] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!debugSprite) return;
+
+    let cancelled = false;
+
+    const checkUrl = async (label, url) => {
+      if (!url)
+        return {
+          label,
+          url: null,
+          ok: false,
+          status: 0,
+          type: null,
+          error: "no url",
+        };
+      try {
+        const res = await fetch(url, {
+          method: "GET",
+          cache: "no-store",
+        });
+        return {
+          label,
+          url,
+          ok: res.ok,
+          status: res.status,
+          type: res.headers.get("content-type"),
+        };
+      } catch (e) {
+        return {
+          label,
+          url,
+          ok: false,
+          status: 0,
+          type: null,
+          error: String(e?.message || e),
+        };
+      }
+    };
+
+    const run = async () => {
+      const baseUrl = String(import.meta.env.BASE_URL || "/");
+
+      // NOTE: Sprite manifest has been removed
+      const manifestUrl = null;
+      const stripUrl = spriteDebug?.sheetSrc || null;
+      const fallbackUrl =
+        spriteDebug?.effectiveFallbackSrc || spriteSrc || null;
+
+      const sw = (() => {
+        try {
+          return {
+            controller: !!navigator.serviceWorker?.controller,
+          };
+        } catch {
+          return { controller: false };
+        }
+      })();
+
+      const results = await Promise.all([
+        checkUrl("manifest", manifestUrl),
+        checkUrl("strip", stripUrl),
+        checkUrl("fallback", fallbackUrl),
+      ]);
+
+      if (cancelled) return;
+      setSpriteChecks({
+        baseUrl,
+        sw,
+        results,
+      });
+    };
+
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    debugSprite,
+    spriteDebug?.effectiveFallbackSrc,
+    spriteDebug?.sheetSrc,
+    spriteSrc,
+  ]);
+
+  const rng = useRng((0xd09e5eed ^ Date.now()) >>> 0);
+
+  // NOTE: y is the "ground contact" point (we translate the sprite up by 100%).
+  // Keep it close to the bottom so the dog doesn't appear to float.
+  const [pos, setPos] = React.useState({ x: 50, y: 92 }); // in %
+  const targetRef = React.useRef({ x: 50, y: 92 });
+  const lastPickRef = React.useRef(0);
+
+  // Idle pacing: pause briefly at targets so idle animations can show.
+  const pauseUntilRef = React.useRef(0);
+
+  // Occasional idle emotes when standing still.
+  const idleEmoteRef = React.useRef(null); // 'wag' | 'sniff' | 'scratch' | null
+  const idleEmoteUntilRef = React.useRef(0);
+  const idleNextEmoteAtRef = React.useRef(0);
+
+  // 1 = moving right, -1 = moving left
+  const [facing, setFacing] = React.useState(1);
+  // The authored strips appear to face left by default, so flip the art.
+  const artFacing = -facing;
+
+  const [critter, setCritter] = React.useState(null);
+  const critterNextAtRef = React.useRef(0);
+
+  const pettingRef = React.useRef(false);
+  const petTimerRef = React.useRef(null);
+  const lastPetAtRef = React.useRef(0);
+
+  const rafRef = React.useRef(null);
+  const lastTRef = React.useRef(0);
+
+  const intensity = clamp(roamIntensity, 0, 1);
+  const speedScale = 0.15 + 0.85 * intensity;
+  const isPlayIntent = intent === "play" || intent === "fetch";
+  const speed =
+    (isPlayIntent || intent === "run"
+      ? DEFAULTS.playSpeed
+      : DEFAULTS.walkSpeed) * speedScale;
+
+  // When eating, we want the dog to WALK to the bowl first, then eat.
+  const atBowl = isNear(pos, FOOD_BOWL_POS, 2.6);
+  const atWater = isNear(pos, WATER_BOWL_POS, 2.6);
+  const atBall = isNear(pos, BALL_POS, 2.6);
+  const atHouse = isNear(pos, HOUSE_POS, 3.2);
+  const locked =
+    isAsleep ||
+    intent === "train" ||
+    intent === "poop" ||
+    intent === "pee" ||
+    (intent === "eat" && atBowl) ||
+    (intent === "drink" && atWater) ||
+    ((intent === "rest" || intent === "sleep") && atHouse) ||
+    (isPlayIntent && atBall);
+  const distToTarget = Math.hypot(
+    (targetRef.current?.x ?? pos.x) - pos.x,
+    (targetRef.current?.y ?? pos.y) - pos.y
+  );
+  const isMoving = !locked && distToTarget > 0.6;
+
+  const chooseNewTarget = React.useCallback(
+    (now) => {
+      const pad = DEFAULTS.roamPaddingPct;
+      const x = randRange(rng, pad, 100 - pad);
+      // Keep targets on the "ground" band of the background.
+      const y = randRange(rng, 90, 94);
+      targetRef.current = { x, y };
+      lastPickRef.current = now;
+    },
+    [rng]
+  );
+
+  const maybeSpawnCritter = React.useCallback(
+    (now) => {
+      if (!critterEnabled) return;
+      if (reduceMotion) return;
+      if (isNight) return;
+      if (critter) return;
+
+      if (!critterNextAtRef.current) {
+        critterNextAtRef.current =
+          now +
+          randRange(
+            rng,
+            DEFAULTS.critterSpawnMinMs,
+            DEFAULTS.critterSpawnMaxMs
+          );
+        return;
+      }
+
+      if (now < critterNextAtRef.current) return;
+
+      // Spawn a butterfly/bug that floats across.
+      const startX = randRange(rng, 5, 95);
+      const startY = randRange(rng, 38, 62);
+      const dir = rng() > 0.5 ? 1 : -1;
+      setCritter({
+        x: startX,
+        y: startY,
+        vx: dir * randRange(rng, 8, 14),
+        vy: randRange(rng, -2, 2),
+        phase: randRange(rng, 0, Math.PI * 2),
+        bornAt: now,
+      });
+
+      // schedule next spawn later
+      critterNextAtRef.current =
+        now +
+        randRange(rng, DEFAULTS.critterSpawnMinMs, DEFAULTS.critterSpawnMaxMs);
+    },
+    [critter, critterEnabled, isNight, reduceMotion, rng]
+  );
+
+  React.useEffect(() => {
+    if (reduceMotion) return;
+
+    const tick = (t) => {
+      const now = t;
+      const dt = Math.min(0.05, (now - (lastTRef.current || now)) / 1000);
+      lastTRef.current = now;
+
+      // Critter movement + expiration
+      if (critter) {
+        const ageMs = now - critter.bornAt;
+        const wiggle = Math.sin((now / 1000) * 3 + critter.phase) * 1.8;
+        const next = {
+          ...critter,
+          x: critter.x + critter.vx * dt,
+          y: clamp(critter.y + (critter.vy + wiggle) * dt, 28, 70),
+        };
+
+        // If critter goes off-screen or lives too long, despawn.
+        if (ageMs > 9000 || next.x < -10 || next.x > 110) {
+          setCritter(null);
+        } else {
+          setCritter(next);
+
+          // Dog gets curious: nudge target toward critter sometimes.
+          if (intent === "idle") {
+            const dx = next.x - pos.x;
+            const dy = next.y + 12 - pos.y; // dog is lower
+            const dist = Math.hypot(dx, dy);
+            if (dist < 28 && rng() > 0.75) {
+              // Curiosity should not pull the dog off the ground.
+              targetRef.current = {
+                x: clamp(next.x, 12, 88),
+                y: clamp(pos.y, 90, 94),
+              };
+              lastPickRef.current = now;
+            }
+          }
+        }
+      }
+
+      // Choose new roam target periodically (unless sleeping/eating/training)
+      // Eating: go to the food bowl.
+      if (intent === "eat" && !atBowl) {
+        targetRef.current = { ...FOOD_BOWL_POS };
+        lastPickRef.current = now;
+        // Cancel idle pause while heading to the bowl.
+        pauseUntilRef.current = 0;
+        idleEmoteRef.current = null;
+        idleEmoteUntilRef.current = 0;
+      } else if (intent === "drink" && !atWater) {
+        targetRef.current = { ...WATER_BOWL_POS };
+        lastPickRef.current = now;
+        pauseUntilRef.current = 0;
+        idleEmoteRef.current = null;
+        idleEmoteUntilRef.current = 0;
+      } else if (isPlayIntent && !atBall) {
+        targetRef.current = { ...BALL_POS };
+        lastPickRef.current = now;
+        pauseUntilRef.current = 0;
+        idleEmoteRef.current = null;
+        idleEmoteUntilRef.current = 0;
+      } else if ((intent === "rest" || intent === "sleep") && !atHouse) {
+        targetRef.current = { ...HOUSE_POS };
+        lastPickRef.current = now;
+        pauseUntilRef.current = 0;
+        idleEmoteRef.current = null;
+        idleEmoteUntilRef.current = 0;
+      } else if (!locked) {
+        const sincePick = now - (lastPickRef.current || 0);
+        const roamScale = 1.75 - 1.25 * intensity; // lower intensity = slower target changes
+        const nextIn =
+          randRange(rng, DEFAULTS.roamMinMs, DEFAULTS.roamMaxMs) * roamScale;
+
+        const distToTargetNow = Math.hypot(
+          (targetRef.current?.x ?? pos.x) - pos.x,
+          (targetRef.current?.y ?? pos.y) - pos.y
+        );
+        // If we just arrived at a target, pause for a beat before picking a new one.
+        if (distToTargetNow < 0.55 && now >= (pauseUntilRef.current || 0)) {
+          pauseUntilRef.current =
+            now + randRange(rng, 900, 2200) * (1.2 - 0.6 * intensity);
+        }
+
+        const paused = now < (pauseUntilRef.current || 0);
+
+        if (!paused && (!lastPickRef.current || sincePick > nextIn)) {
+          chooseNewTarget(now);
+        }
+      }
+
+      // Move toward target
+      if (!locked) {
+        const paused = now < (pauseUntilRef.current || 0);
+        // While paused, don't drift or retarget; this lets idle/emote anims read.
+        if (paused) {
+          // Occasionally trigger an idle emote while standing still.
+          if (intent === "idle") {
+            const emoteActive = now < (idleEmoteUntilRef.current || 0);
+            if (!emoteActive && now >= (idleNextEmoteAtRef.current || 0)) {
+              // 45% chance each pause window.
+              if (rng() > 0.55) {
+                // Mix in expressive anims so the dog feels alive.
+                const emotes = [
+                  "wag",
+                  "sniff",
+                  "pant",
+                  "lick",
+                  "yawn",
+                  "stretch",
+                  "shake",
+                  "scratch",
+                  "bow",
+                  "beg",
+                  "sit_pretty",
+                  "play_dead",
+                  "roll",
+                  "bark",
+                ];
+                idleEmoteRef.current =
+                  emotes[Math.floor(rng() * emotes.length)] || "wag";
+                idleEmoteUntilRef.current = now + randRange(rng, 1100, 1900);
+              }
+              idleNextEmoteAtRef.current = now + randRange(rng, 6000, 12000);
+            }
+          }
+
+          maybeSpawnCritter(now);
+          rafRef.current = requestAnimationFrame(tick);
+          return;
+        }
+
+        setPos((p) => {
+          const tx = targetRef.current.x;
+          const ty = targetRef.current.y;
+          const dx = tx - p.x;
+          const dy = ty - p.y;
+          const dist = Math.hypot(dx, dy);
+          if (dist < 0.2) return p;
+
+          // Facing should match motion direction. Doing it here ensures we use the
+          // same "p" as the movement step (avoids looking like it's walking backwards).
+          if (Math.abs(dx) > 0.4) setFacing(dx >= 0 ? 1 : -1);
+
+          const step = speed * dt;
+          const nx = p.x + (dx / dist) * Math.min(step, dist);
+          const ny = p.y + (dy / dist) * Math.min(step * 0.55, dist);
+          return { x: clamp(nx, 8, 92), y: clamp(ny, 88, 96) };
+        });
+      }
+
+      maybeSpawnCritter(now);
+      rafRef.current = requestAnimationFrame(tick);
+    };
+
+    rafRef.current = requestAnimationFrame(tick);
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    };
+  }, [
+    atBall,
+    atBowl,
+    atHouse,
+    atWater,
+    chooseNewTarget,
+    critter,
+    distToTarget,
+    intent,
+    intensity,
+    isAsleep,
+    isPlayIntent,
+    locked,
+    maybeSpawnCritter,
+    pos.x,
+    pos.y,
+    reduceMotion,
+    rng,
+    speed,
+  ]);
+
+  const showCritter = !!critter && !reduceTransparency;
+
+  const triggerPet = React.useCallback(() => {
+    if (typeof onPet !== "function") return;
+    const now = Date.now();
+    if (now - lastPetAtRef.current < 900) return;
+    lastPetAtRef.current = now;
+    onPet();
+  }, [onPet]);
+
+  const stopPetting = React.useCallback(() => {
+    pettingRef.current = false;
+    if (petTimerRef.current) {
+      window.clearInterval(petTimerRef.current);
+      petTimerRef.current = null;
+    }
+  }, []);
+
+  const startPetting = React.useCallback(() => {
+    if (typeof onPet !== "function") return;
+    pettingRef.current = true;
+    triggerPet();
+    if (petTimerRef.current) window.clearInterval(petTimerRef.current);
+    petTimerRef.current = window.setInterval(() => {
+      if (!pettingRef.current) return;
+      triggerPet();
+    }, 1200);
+  }, [onPet, triggerPet]);
+
+  React.useEffect(() => {
+    return () => stopPetting();
+  }, [stopPetting]);
+
+  // Treat the high-level "sleep" intent as a visual sleep state too.
+  // (The Redux sleep flag may flip on the next tick, but we want immediate feedback.)
+  const sleepActive = isAsleep || intent === "rest" || intent === "sleep";
+
+  // Map high-level yard intent into a more expressive rig state.
+  const rigPose = sleepActive ? "lay" : intent === "train" ? "sit" : "stand";
+
+  const rigMood = sleepActive
+    ? "sleepy"
+    : isPlayIntent || (intent === "idle" && !!critter)
+      ? "curious"
+      : "idle";
+
+  const rigAction =
+    intent === "eat"
+      ? "eat"
+      : isPlayIntent || intent === "potty"
+        ? "walk"
+        : "idle";
+
+  // Sprite-pack animation mapping
+  const isRunning =
+    (isPlayIntent || intent === "run") && isMoving && intensity > 0.55;
+
+  const spriteAnim = (() => {
+    if (isAsleep || intent === "sleep") return "sleep";
+    if (intent === "rest") return "lay";
+    if (intent === "eat") return atBowl ? "eat" : "walk";
+    if (intent === "drink") return atWater ? "drink" : "walk";
+    if (isPlayIntent) {
+      if (atBall && !isMoving) return "fetch";
+      if (isRunning) return "run";
+      return "walk";
+    }
+    if (
+      intent === "bark" ||
+      intent === "howl" ||
+      intent === "poop" ||
+      intent === "pee" ||
+      intent === "shake" ||
+      intent === "scratch" ||
+      intent === "sniff" ||
+      intent === "wag" ||
+      intent === "pant" ||
+      intent === "lick" ||
+      intent === "yawn" ||
+      intent === "stretch" ||
+      intent === "dig" ||
+      intent === "jump" ||
+      intent === "roll" ||
+      intent === "stay" ||
+      intent === "paw" ||
+      intent === "spin" ||
+      intent === "bow" ||
+      intent === "beg" ||
+      intent === "sit_pretty" ||
+      intent === "play_dead" ||
+      intent === "fetch" ||
+      intent === "celebrate" ||
+      intent === "sad" ||
+      intent === "surprised"
+    ) {
+      return intent;
+    }
+
+    // Idle emotes (only when standing still)
+    if (intent === "idle" && !isMoving) {
+      const now = Date.now();
+      if (now < (idleEmoteUntilRef.current || 0) && idleEmoteRef.current) {
+        return idleEmoteRef.current;
+      }
+    }
+
+    if (intent === "train") {
+      const cmd = String(commandId || "");
+      if (cmd === "speak") return "bark";
+      if (cmd === "rollOver") return "roll";
+      if (cmd === "stay") return "stay";
+      if (cmd === "sit") return "sit";
+      return "sit";
+    }
+
+    if (isRunning) return "run";
+    if (intent === "potty" || isMoving) return "walk";
+    return "idle";
+  })();
+
+  const stageKey = String(lifeStageStage || "PUPPY").toUpperCase();
+  const showEarOverlay = !useSpritePack && stageKey === "PUPPY";
+
+  // Intent overlays
+  const bubble = (() => {
+    if (sleepActive) return "zzz";
+    if (intent === "eat") return "nom";
+    if (intent === "train") return "sit";
+    if (intent === "bark") return "woof";
+    if (intent === "poop" || intent === "pee" || intent === "potty")
+      return "...";
+    return null;
+  })();
+
+  return (
+    <div className="absolute inset-0" aria-hidden="true">
+      <style>{`
+        @keyframes dg-breathe {
+          0% { transform: translate3d(0,0,0) scale(1); }
+          50% { transform: translate3d(0,-2px,0) scale(1.01); }
+          100% { transform: translate3d(0,0,0) scale(1); }
+        }
+        @keyframes dg-look {
+          0% { transform: translate3d(0,0,0) rotate(0deg); }
+          40% { transform: translate3d(0,0,0) rotate(-0.8deg); }
+          70% { transform: translate3d(0,0,0) rotate(0.6deg); }
+          100% { transform: translate3d(0,0,0) rotate(0deg); }
+        }
+        @keyframes dg-hop {
+          0% { transform: translate3d(0,0,0); }
+          50% { transform: translate3d(0,-6px,0); }
+          100% { transform: translate3d(0,0,0); }
+        }
+        @keyframes dg-sprite-bob {
+          0% { transform: translate3d(0,0,0) rotate(0deg); }
+          50% { transform: translate3d(0,-2px,0) rotate(0.4deg); }
+          100% { transform: translate3d(0,0,0) rotate(0deg); }
+        }
+        @keyframes dg-walk {
+          0% { transform: translate3d(0,0,0) rotate(-1.2deg) scaleY(0.99); }
+          25% { transform: translate3d(0,-2px,0) rotate(0.8deg) scaleY(1); }
+          50% { transform: translate3d(0,0,0) rotate(1.2deg) scaleY(0.99); }
+          75% { transform: translate3d(0,-2px,0) rotate(-0.8deg) scaleY(1); }
+          100% { transform: translate3d(0,0,0) rotate(-1.2deg) scaleY(0.99); }
+        }
+      `}</style>
+
+      {showCritter ? (
+        <div
+          className="absolute"
+          style={{
+            left: `${critter.x}%`,
+            top: `${critter.y}%`,
+            transform: "translate(-50%, -50%)",
+            filter: "drop-shadow(0 0 10px rgba(253,230,138,0.28))",
+            opacity: 0.9,
+            fontSize: 16,
+            animation: reduceMotion
+              ? "none"
+              : "dg-hop 1.2s ease-in-out infinite",
+          }}
+        >
+          🦋
+        </div>
+      ) : null}
+
+      <div
+        className="absolute"
+        style={{
+          left: `${pos.x}%`,
+          top: `${pos.y}%`,
+          transform: "translate(-50%, -100%)",
+        }}
+      >
+        {/* Shadow */}
+        <div
+          className="absolute left-1/2"
+          style={{
+            bottom: 4,
+            transform: "translateX(-50%)",
+            width: Math.max(140, Math.round(size * 0.68)),
+            height: 22,
+            borderRadius: 999,
+            background: "rgba(0,0,0,0.35)",
+            filter: reduceTransparency ? "none" : "blur(10px)",
+            opacity: reduceTransparency ? 0.25 : 0.5,
+          }}
+        />
+
+        {/* Thought bubble */}
+        {bubble ? (
+          <div
+            className="absolute"
+            style={{
+              left: "65%",
+              top: "-18%",
+              transform: "translate(-50%, -50%)",
+              fontSize: 12,
+              padding: "4px 8px",
+              borderRadius: 999,
+              background: "rgba(0,0,0,0.35)",
+              border: "1px solid rgba(255,255,255,0.12)",
+              color: "rgba(255,255,255,0.9)",
+              backdropFilter: reduceTransparency ? "none" : "blur(10px)",
+            }}
+          >
+            {bubble}
+          </div>
+        ) : null}
+
+        {/* Dog */}
+        <div
+          style={{
+            width: size,
+            height: size,
+            position: "relative",
+            transformOrigin: "50% 100%",
+            pointerEvents: typeof onPet === "function" ? "auto" : "none",
+            cursor: typeof onPet === "function" ? "pointer" : "default",
+            // Sprite strips already animate; avoid extra pulsing/looking.
+            animation: reduceMotion
+              ? "none"
+              : sleepActive
+                ? "dg-breathe 4.4s ease-in-out infinite"
+                : "none",
+          }}
+          onPointerDown={(e) => {
+            if (e.button !== 0) return;
+            startPetting();
+          }}
+          onPointerUp={() => stopPetting()}
+          onPointerLeave={() => stopPetting()}
+          onPointerCancel={() => stopPetting()}
+        >
+          {useRig ? (
+            <LayeredDogRig
+              fallbackSrc={spriteSrc}
+              size={size}
+              pose={rigPose}
+              mood={rigMood}
+              action={rigAction}
+              lifeStageStage={lifeStageStage}
+              reduceMotion={reduceMotion}
+              reduceTransparency={reduceTransparency}
+              className="select-none"
+            />
+          ) : (
+            <div
+              className="select-none"
+              style={{
+                width: size,
+                height: size,
+                position: "relative",
+                transformOrigin: "50% 100%",
+                // Make the pup feel less "round" without needing new art.
+                transform: "scaleX(0.92) scaleY(1.03)",
+              }}
+            >
+              {/* Pointy ear overlay to read more like a puppy */}
+              {showEarOverlay ? (
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    pointerEvents: "none",
+                    transform: `scaleX(${artFacing})`,
+                    transformOrigin: "50% 50%",
+                    opacity: reduceTransparency ? 0.6 : 0.92,
+                  }}
+                >
+                  <svg
+                    viewBox="0 0 512 512"
+                    width="100%"
+                    height="100%"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M302 132 L330 70 L354 148 Z"
+                      fill="rgba(120,72,38,0.85)"
+                    />
+                    <path
+                      d="M248 138 L214 78 L198 154 Z"
+                      fill="rgba(120,72,38,0.85)"
+                    />
+                    <path
+                      d="M305 144 L330 88 L345 152 Z"
+                      fill="rgba(255,255,255,0.12)"
+                    />
+                    <path
+                      d="M245 150 L214 96 L206 156 Z"
+                      fill="rgba(255,255,255,0.12)"
+                    />
+                  </svg>
+                </div>
+              ) : null}
+              {useSpritePack ? (
+                <SpriteSheetDog
+                  stage={lifeStageStage}
+                  anim={spriteAnim}
+                  facing={artFacing}
+                  size={size}
+                  reduceMotion={reduceMotion}
+                  fallbackSrc={spriteSrc}
+                  className="select-none"
+                  onDebug={debugSprite ? setSpriteDebug : undefined}
+                />
+              ) : spriteSrc ? (
+                <div
+                  style={{
+                    width: size,
+                    height: size,
+                    transformOrigin: "50% 100%",
+                    transform: `scaleX(${artFacing})`,
+                    animation: reduceMotion
+                      ? "none"
+                      : sleepActive
+                        ? "dg-sprite-bob 3.6s ease-in-out infinite"
+                        : intent === "play"
+                          ? isMoving
+                            ? "dg-walk 0.32s ease-in-out infinite"
+                            : "dg-sprite-bob 1.3s ease-in-out infinite"
+                          : isMoving
+                            ? "dg-walk 0.48s ease-in-out infinite"
+                            : "dg-sprite-bob 2.4s ease-in-out infinite",
+                  }}
+                >
+                  <img
+                    src={spriteSrc}
+                    alt=""
+                    draggable={false}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      display: "block",
+                      objectFit: "contain",
+                      imageRendering: "auto",
+                      filter: reduceTransparency
+                        ? "none"
+                        : "drop-shadow(0 18px 40px rgba(0,0,0,0.35))",
+                    }}
+                  />
+                </div>
+              ) : null}
+
+              {debugSprite ? (
+                <div
+                  className="pointer-events-none absolute left-2 top-2 z-30 max-w-[92%] rounded-2xl border border-white/15 bg-black/55 px-3 py-2 text-[11px] text-zinc-100 backdrop-blur"
+                  style={{ lineHeight: 1.25 }}
+                >
+                  <div className="font-extrabold text-emerald-200">
+                    Sprite debug
+                  </div>
+
+                  <div className="pointer-events-auto mt-2 flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      className="rounded-xl border border-white/15 bg-black/30 px-2.5 py-1 text-[11px] font-semibold text-zinc-100 hover:bg-black/40 transition"
+                      onClick={async () => {
+                        const lines = [];
+                        lines.push("[Doggerz sprite debug]");
+                        lines.push(
+                          `BASE_URL: ${String(spriteChecks?.baseUrl || import.meta.env.BASE_URL || "/")}`
+                        );
+                        lines.push(
+                          `SW controller: ${spriteChecks?.sw?.controller ? "yes" : "no"}`
+                        );
+                        lines.push(
+                          `stage: ${String(lifeStageStage || "PUPPY")}`
+                        );
+                        lines.push(`anim: ${String(spriteAnim)}`);
+                        lines.push(
+                          `sheet: ${String(spriteDebug?.sheetSrc || "(none)")}`
+                        );
+                        lines.push(
+                          `fallback: ${String(spriteDebug?.effectiveFallbackSrc || spriteSrc || "(none)")}`
+                        );
+                        lines.push(
+                          `strip loaded: ${spriteDebug?.sheetLoaded ? "yes" : "no"}`
+                        );
+                        lines.push(
+                          `strip failed: ${spriteDebug?.sheetFailed ? "yes" : "no"}`
+                        );
+                        if (
+                          Array.isArray(spriteChecks?.results) &&
+                          spriteChecks.results.length
+                        ) {
+                          lines.push("checks:");
+                          for (const r of spriteChecks.results) {
+                            const status = r.ok
+                              ? `OK ${r.status}`
+                              : `FAIL${r.status ? ` ${r.status}` : ""}`;
+                            const extra = [
+                              r.type ? `type=${r.type}` : null,
+                              r.error ? `error=${r.error}` : null,
+                            ]
+                              .filter(Boolean)
+                              .join(" ");
+                            lines.push(
+                              `- ${r.label}: ${status}${extra ? ` (${extra})` : ""}`
+                            );
+                            if (r.url) lines.push(`  ${r.url}`);
+                          }
+                        }
+
+                        const text = lines.join("\n");
+                        try {
+                          await navigator.clipboard.writeText(text);
+                          setCopied(true);
+                          window.setTimeout(() => setCopied(false), 1200);
+                        } catch {
+                          try {
+                            window.prompt("Copy sprite debug:", text);
+                          } catch {
+                            // ignore
+                          }
+                        }
+                      }}
+                    >
+                      {copied ? "Copied" : "Copy debug"}
+                    </button>
+                  </div>
+                  <div className="mt-1 text-zinc-400">
+                    BASE_URL:{" "}
+                    <span className="font-semibold">
+                      {String(
+                        spriteChecks?.baseUrl || import.meta.env.BASE_URL || "/"
+                      )}
+                    </span>{" "}
+                    · SW controller:{" "}
+                    <span className="font-semibold">
+                      {spriteChecks?.sw?.controller ? "yes" : "no"}
+                    </span>
+                  </div>
+                  <div className="mt-1 text-zinc-200/90">
+                    stage:{" "}
+                    <span className="font-semibold">
+                      {String(lifeStageStage || "PUPPY")}
+                    </span>{" "}
+                    · anim:{" "}
+                    <span className="font-semibold">{String(spriteAnim)}</span>
+                  </div>
+                  <div className="mt-1 break-all text-zinc-300/90">
+                    sheet: {spriteDebug?.sheetSrc || "(none)"}
+                  </div>
+                  <div className="mt-1 break-all text-zinc-400">
+                    fallback:{" "}
+                    {spriteDebug?.effectiveFallbackSrc || spriteSrc || "(none)"}
+                  </div>
+                  <div className="mt-1 text-zinc-400">
+                    strip: {spriteDebug?.sheetLoaded ? "loaded" : "not loaded"}{" "}
+                    / {spriteDebug?.sheetFailed ? "failed" : "ok"} · frames:{" "}
+                    {spriteDebug?.frames ?? "?"} @ {spriteDebug?.fps ?? "?"}fps
+                  </div>
+
+                  {spriteChecks?.results?.length ? (
+                    <div className="mt-2 space-y-1 text-zinc-300/90">
+                      {spriteChecks.results.map((r) => (
+                        <div key={r.label} className="break-all">
+                          {r.label}:{" "}
+                          <span className="font-semibold">
+                            {r.ok
+                              ? `OK ${r.status}`
+                              : `FAIL${r.status ? ` ${r.status}` : ""}`}
+                          </span>
+                          {r.type ? (
+                            <span className="text-zinc-400"> · {r.type}</span>
+                          ) : null}
+                          {r.error ? (
+                            <span className="text-red-200"> · {r.error}</span>
+                          ) : null}
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+          )}
+
+          {/* Cosmetics should sit above the dog art (rig or sprite) */}
+          <div className="absolute inset-0 z-20">
+            <DogCosmeticsOverlay
+              equipped={cosmeticsEquipped}
+              size={size}
+              facing={artFacing}
+              reduceMotion={reduceMotion}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+================================================================================
+FILE: src/components/YardSetDressing.jsx
+--------------------------------------------------------------------------------
+/** @format */
+
+// src/components/YardSetDressing.jsx
+// Lightweight "props" layer for the yard stage.
+// - Covers the pool (we don't have background-painting tools in code)
+// - Adds a dog house + back door + porch light so day/night feel like the same yard
+// - Adds a food bowl prop so "eat" feels grounded
+
+import {
+  YARD_PROP_POSITIONS,
+  YARD_PROP_SIZES,
+} from "@/features/game/yardProps.js";
+
+function RestPadSvg({ isNight }) {
+  const base = isNight ? "#6b4f3a" : "#a16207";
+  const cushion = isNight ? "#b45309" : "#f59e0b";
+
+  return (
+    <svg viewBox="0 0 240 120" width="100%" height="100%" aria-hidden="true">
+      <ellipse cx="120" cy="96" rx="90" ry="10" fill="rgba(0,0,0,0.28)" />
+      <rect x="24" y="36" width="192" height="52" rx="26" fill={base} />
+      <rect x="36" y="44" width="168" height="38" rx="20" fill={cushion} />
+      <path
+        d="M52 58c18-10 118-10 136 0"
+        stroke="rgba(255,255,255,0.22)"
+        strokeWidth="4"
+        fill="none"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function FoodBowlSvg() {
+  return (
+    <svg viewBox="0 0 120 70" width="100%" height="100%" aria-hidden="true">
+      <ellipse cx="60" cy="54" rx="46" ry="10" fill="rgba(0,0,0,0.25)" />
+      <path
+        d="M20 46c0-14 18-26 40-26s40 12 40 26c0 10-10 18-22 18H42C30 64 20 56 20 46z"
+        fill="#d97706"
+      />
+      <path
+        d="M30 44c0-10 14-18 30-18s30 8 30 18c0 7-7 12-16 12H46c-9 0-16-5-16-12z"
+        fill="#f59e0b"
+      />
+      <path
+        d="M32 40c8 2 18 2 26 0"
+        stroke="rgba(255,255,255,0.35)"
+        strokeWidth="3"
+        fill="none"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function WaterBowlSvg() {
+  return (
+    <svg viewBox="0 0 120 70" width="100%" height="100%" aria-hidden="true">
+      <ellipse cx="60" cy="54" rx="44" ry="9" fill="rgba(0,0,0,0.22)" />
+      <path
+        d="M22 46c0-12 17-23 38-23s38 11 38 23c0 9-9 16-21 16H43C31 62 22 55 22 46z"
+        fill="#94a3b8"
+      />
+      <path
+        d="M32 44c0-9 12-16 28-16s28 7 28 16c0 6-7 11-15 11H47c-8 0-15-5-15-11z"
+        fill="#38bdf8"
+      />
+      <path
+        d="M36 40c6 3 18 4 24 2 6-2 10-4 18-2"
+        stroke="rgba(255,255,255,0.5)"
+        strokeWidth="3"
+        fill="none"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function BallSvg() {
+  return (
+    <svg viewBox="0 0 80 80" width="100%" height="100%" aria-hidden="true">
+      <circle cx="40" cy="44" r="22" fill="#f97316" />
+      <path
+        d="M22 40 C 30 32, 50 32, 58 40"
+        stroke="rgba(255,255,255,0.55)"
+        strokeWidth="5"
+        fill="none"
+        strokeLinecap="round"
+      />
+      <circle cx="34" cy="36" r="4" fill="rgba(255,255,255,0.65)" />
+    </svg>
+  );
+}
+
+export default function YardSetDressing({
+  isNight,
+  onBowl,
+  onWaterBowl,
+  onBall,
+  onDogHouse,
+}) {
+  // Positions are percentages of the yard stage.
+  // Keep these stable so the dog can interact near the bowl.
+  const hasInteraction =
+    typeof onBowl === "function" ||
+    typeof onWaterBowl === "function" ||
+    typeof onBall === "function" ||
+    typeof onDogHouse === "function";
+  return (
+    <div
+      className="pointer-events-none absolute inset-0"
+      aria-hidden={!hasInteraction}
+    >
+      {/* Rest pad */}
+      {typeof onDogHouse === "function" ? (
+        <button
+          type="button"
+          aria-label="Rest pad"
+          className="pointer-events-auto absolute"
+          onClick={onDogHouse}
+          style={{
+            left: `${YARD_PROP_POSITIONS.house.x}%`,
+            top: `${YARD_PROP_POSITIONS.house.y}%`,
+            width: YARD_PROP_SIZES.house.width,
+            height: YARD_PROP_SIZES.house.height,
+            transform: "translate(-50%, -50%)",
+            filter: isNight
+              ? "drop-shadow(0 18px 36px rgba(0,0,0,0.45))"
+              : "drop-shadow(0 16px 30px rgba(0,0,0,0.25))",
+            opacity: isNight ? 0.95 : 1,
+            background: "transparent",
+            border: "none",
+            padding: 0,
+            cursor: "pointer",
+          }}
+        >
+          <RestPadSvg isNight={isNight} />
+        </button>
+      ) : (
+        <div
+          className="pointer-events-none absolute"
+          style={{
+            left: `${YARD_PROP_POSITIONS.house.x}%`,
+            top: `${YARD_PROP_POSITIONS.house.y}%`,
+            width: YARD_PROP_SIZES.house.width,
+            height: YARD_PROP_SIZES.house.height,
+            transform: "translate(-50%, -50%)",
+            filter: isNight
+              ? "drop-shadow(0 18px 36px rgba(0,0,0,0.45))"
+              : "drop-shadow(0 16px 30px rgba(0,0,0,0.25))",
+            opacity: isNight ? 0.95 : 1,
+          }}
+        >
+          <RestPadSvg isNight={isNight} />
+        </div>
+      )}
+
+      {/* Food bowl (fixed spot) */}
+      {typeof onBowl === "function" ? (
+        <button
+          type="button"
+          aria-label="Food bowl"
+          className="pointer-events-auto absolute"
+          onClick={onBowl}
+          style={{
+            left: `${YARD_PROP_POSITIONS.bowl.x}%`,
+            top: `${YARD_PROP_POSITIONS.bowl.y}%`,
+            width: YARD_PROP_SIZES.bowl.width,
+            height: YARD_PROP_SIZES.bowl.height,
+            transform: "translate(-50%, -50%)",
+            opacity: isNight ? 0.85 : 0.95,
+            filter: isNight
+              ? "drop-shadow(0 12px 18px rgba(0,0,0,0.35))"
+              : "drop-shadow(0 10px 16px rgba(0,0,0,0.22))",
+            background: "transparent",
+            border: "none",
+            padding: 0,
+            cursor: "pointer",
+          }}
+        >
+          <FoodBowlSvg />
+        </button>
+      ) : (
+        <div
+          className="pointer-events-none absolute"
+          style={{
+            left: `${YARD_PROP_POSITIONS.bowl.x}%`,
+            top: `${YARD_PROP_POSITIONS.bowl.y}%`,
+            width: YARD_PROP_SIZES.bowl.width,
+            height: YARD_PROP_SIZES.bowl.height,
+            transform: "translate(-50%, -50%)",
+            opacity: isNight ? 0.85 : 0.95,
+            filter: isNight
+              ? "drop-shadow(0 12px 18px rgba(0,0,0,0.35))"
+              : "drop-shadow(0 10px 16px rgba(0,0,0,0.22))",
+          }}
+        >
+          <FoodBowlSvg />
+        </div>
+      )}
+
+      {/* Water bowl */}
+      {typeof onWaterBowl === "function" ? (
+        <button
+          type="button"
+          aria-label="Water bowl"
+          className="pointer-events-auto absolute"
+          onClick={onWaterBowl}
+          style={{
+            left: `${YARD_PROP_POSITIONS.water.x}%`,
+            top: `${YARD_PROP_POSITIONS.water.y}%`,
+            width: YARD_PROP_SIZES.water.width,
+            height: YARD_PROP_SIZES.water.height,
+            transform: "translate(-50%, -50%)",
+            opacity: isNight ? 0.82 : 0.95,
+            filter: isNight
+              ? "drop-shadow(0 10px 16px rgba(0,0,0,0.32))"
+              : "drop-shadow(0 10px 16px rgba(0,0,0,0.2))",
+            background: "transparent",
+            border: "none",
+            padding: 0,
+            cursor: "pointer",
+          }}
+        >
+          <WaterBowlSvg />
+        </button>
+      ) : (
+        <div
+          className="pointer-events-none absolute"
+          style={{
+            left: `${YARD_PROP_POSITIONS.water.x}%`,
+            top: `${YARD_PROP_POSITIONS.water.y}%`,
+            width: YARD_PROP_SIZES.water.width,
+            height: YARD_PROP_SIZES.water.height,
+            transform: "translate(-50%, -50%)",
+            opacity: isNight ? 0.82 : 0.95,
+            filter: isNight
+              ? "drop-shadow(0 10px 16px rgba(0,0,0,0.32))"
+              : "drop-shadow(0 10px 16px rgba(0,0,0,0.2))",
+          }}
+        >
+          <WaterBowlSvg />
+        </div>
+      )}
+
+      {/* Toy ball */}
+      {typeof onBall === "function" ? (
+        <button
+          type="button"
+          aria-label="Toy ball"
+          className="pointer-events-auto absolute"
+          onClick={onBall}
+          style={{
+            left: `${YARD_PROP_POSITIONS.ball.x}%`,
+            top: `${YARD_PROP_POSITIONS.ball.y}%`,
+            width: YARD_PROP_SIZES.ball.width,
+            height: YARD_PROP_SIZES.ball.height,
+            transform: "translate(-50%, -50%)",
+            opacity: isNight ? 0.8 : 0.95,
+            filter: isNight
+              ? "drop-shadow(0 10px 16px rgba(0,0,0,0.35))"
+              : "drop-shadow(0 10px 16px rgba(0,0,0,0.22))",
+            background: "transparent",
+            border: "none",
+            padding: 0,
+            cursor: "pointer",
+          }}
+        >
+          <BallSvg />
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+

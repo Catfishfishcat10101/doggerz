@@ -20,7 +20,8 @@ export function useDogLifecycle() {
   const temperament = useSelector(selectDogTemperament);
 
   return {
-    temperamentRevealReady: temperament?.revealReady ?? false,
+    temperamentRevealReady:
+      (temperament?.revealReady ?? false) && !temperament?.revealedAt,
     temperament,
   };
 }

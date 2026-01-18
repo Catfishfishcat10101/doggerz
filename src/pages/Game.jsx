@@ -3,6 +3,7 @@
 
 import MainGame from "@/features/game/MainGame.jsx";
 import PageShell from "@/components/PageShell.jsx";
+import YardBackground from "../components/YardBackground.jsx";
 
 export default function Game() {
   return (
@@ -14,7 +15,10 @@ export default function Game() {
       mainClassName="p-0"
       containerClassName="w-full"
     >
-      <MainGame />
+      <div className="relative min-h-dvh overflow-hidden bg-zinc-950">
+        <YardBackground />
+        <MainGame />
+      </div>
     </PageShell>
   );
 }

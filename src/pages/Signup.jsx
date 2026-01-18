@@ -5,8 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 
 import { auth, firebaseReady } from "@/firebase.js";
-import Header from "@/components/Header.jsx";
-import Footer from "@/components/Footer.jsx";
+import PageShell from "@/components/PageShell.jsx";
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -69,9 +68,8 @@ export default function Signup() {
   };
 
   return (
-    <>
-      <Header />
-      <div className="min-h-[calc(100vh-7rem)] bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-50 flex items-center">
+    <PageShell>
+      <div className="min-h-[60vh] flex items-center">
         <div className="container mx-auto px-4 max-w-md">
           <h1 className="text-3xl font-bold mb-2">Create your account</h1>
           <p className="text-zinc-600 dark:text-zinc-300 mb-6">
@@ -184,7 +182,6 @@ export default function Signup() {
           </form>
         </div>
       </div>
-      <Footer />
-    </>
+    </PageShell>
   );
 }

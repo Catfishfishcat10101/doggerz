@@ -64,6 +64,7 @@ export default function YardDogActor({
   reduceTransparency = false,
   isNight = false,
   isAsleep = false,
+  emotionCue,
   critterEnabled = true,
   roamIntensity = 1,
   // High-level intent from the yard UI (and optional commandId for training).
@@ -542,6 +543,24 @@ export default function YardDogActor({
   const isRunning =
     (isPlayIntent || intent === "run") && isMoving && intensity > 0.55;
 
+  const emotionAnim = (() => {
+    const cue = String(emotionCue || "")
+      .trim()
+      .toLowerCase();
+    if (!cue) return null;
+    if (isAsleep || intent === "sleep" || intent === "rest") return null;
+
+    if (cue === "happy") return "wag";
+    if (cue === "hungry") return "hungry";
+    if (cue === "sleepy") return "tired";
+    if (cue === "dirty") return "scratch";
+    if (cue === "lonely") return "sad";
+    if (cue === "stubborn") return "mad";
+    if (cue === "scared") return "scared";
+    if (cue === "itchy") return "scratch";
+    return null;
+  })();
+
   const spriteAnim = (() => {
     if (isAsleep || intent === "sleep") return "sleep";
     if (intent === "rest") return "lay";
@@ -584,6 +603,9 @@ export default function YardDogActor({
     }
 
     // Idle emotes (only when standing still)
+    if (intent === "idle" && !isMoving && emotionAnim) {
+      return emotionAnim;
+    }
     if (intent === "idle" && !isMoving) {
       const now = Date.now();
       if (now < (idleEmoteUntilRef.current || 0) && idleEmoteRef.current) {

@@ -249,7 +249,7 @@ export default function DogAIEngine() {
       clearInterval(id);
       window.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [dispatch]);
+  }, [dispatch, dogState?.adoptedAt]);
 
   useEffect(() => {
     dogRef.current = dogState;
@@ -324,29 +324,31 @@ export default function DogAIEngine() {
     if (hasHydratedRef.current) return;
     hasHydratedRef.current = true;
 
-    // LocalStorage hydrate
-    try {
-      const localData = localStorage.getItem(DOG_STORAGE_KEY);
-      if (localData) {
-        const parsed = JSON.parse(localData);
-        dispatch(hydrateDog(reviveDogDates(parsed)));
-        console.log("[Doggerz] Hydrated dog from localStorage");
-      }
-    } catch (err) {
-      console.error("[Doggerz] Failed to parse localStorage dog data", err);
-
-      // Don’t silently wipe user data. Record a recoverable error so the UI can
-      // offer reset/restore options.
+    // LocalStorage hydrate (skip if store already preloaded it)
+    if (!dogState?.adoptedAt) {
       try {
-        localStorage.setItem(
-          HYDRATE_ERROR_KEY,
-          JSON.stringify({
-            type: "DOG_SAVE_PARSE_FAILED",
-            at: new Date().toISOString(),
-          })
-        );
-      } catch {
-        // ignore
+        const localData = localStorage.getItem(DOG_STORAGE_KEY);
+        if (localData) {
+          const parsed = JSON.parse(localData);
+          dispatch(hydrateDog(reviveDogDates(parsed)));
+          console.log("[Doggerz] Hydrated dog from localStorage");
+        }
+      } catch (err) {
+        console.error("[Doggerz] Failed to parse localStorage dog data", err);
+
+        // Don't silently wipe user data. Record a recoverable error so the UI can
+        // offer reset/restore options.
+        try {
+          localStorage.setItem(
+            HYDRATE_ERROR_KEY,
+            JSON.stringify({
+              type: "DOG_SAVE_PARSE_FAILED",
+              at: new Date().toISOString(),
+            })
+          );
+        } catch {
+          // ignore
+        }
       }
     }
 
@@ -371,7 +373,7 @@ export default function DogAIEngine() {
     dispatch(
       registerSessionStart({ now, timeBucket: getLocalTimeBucket(now) })
     );
-  }, [dispatch]);
+  }, [dispatch, dogState?.adoptedAt]);
 
   // 1b. If user logs in *after* mount, pull from cloud once
   useEffect(() => {
