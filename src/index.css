@@ -118,6 +118,34 @@ html[data-skill-pulse="1"] .dz-perk-card[data-state="unlocked"] {
   animation: dzSkillPulse 650ms ease-out 1;
 }
 
+@layer components {
+  .dz-header {
+    @apply sticky top-0 z-50 w-full border-b border-white/10 bg-black/55 backdrop-blur-md;
+  }
+
+  .dz-header__inner {
+    @apply mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8;
+  }
+
+  .dz-logo {
+    @apply text-xs font-extrabold text-emerald-300 sm:text-sm;
+    letter-spacing: 0.42em;
+  }
+
+  .dz-nav {
+    @apply flex items-center gap-2;
+  }
+
+  .dz-nav-item {
+    @apply select-none rounded-full border border-white/15 bg-black/25 px-4 py-2 text-sm font-semibold text-zinc-100 transition hover:bg-black/35;
+  }
+
+  .dz-nav-item.primary {
+    @apply border-emerald-400/45 bg-emerald-500/20 text-emerald-50 hover:bg-emerald-500/25;
+    box-shadow: 0 0 22px rgba(16, 185, 129, 0.28);
+  }
+}
+
 /* Micro-story moment should feel like an event */
 html[data-story-active="1"] .dz-moment-card {
   border-color: rgba(255, 255, 255, 0.24) !important;

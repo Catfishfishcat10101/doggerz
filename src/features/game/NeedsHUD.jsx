@@ -1,4 +1,3 @@
-
 // src/features/game/NeedsHUD.jsx
 // @ts-nocheck
 
@@ -12,7 +11,11 @@ import {
   selectDogEmotionCue,
 } from "@/redux/dogSlice.js";
 
-const StatBar = React.memo(function StatBar({ label, value = 0, color = "bg-emerald-500" }) {
+const StatBar = React.memo(function StatBar({
+  label,
+  value = 0,
+  color = "bg-emerald-500",
+}) {
   const numeric = Number.isFinite(Number(value)) ? Number(value) : 0;
   const pct = Math.max(0, Math.min(100, numeric));
   const glow =
@@ -36,7 +39,9 @@ const StatBar = React.memo(function StatBar({ label, value = 0, color = "bg-emer
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between text-[11px] text-zinc-300/80">
-        <span className="uppercase tracking-[0.16em] text-zinc-400">{label}</span>
+        <span className="uppercase tracking-[0.16em] text-zinc-400">
+          {label}
+        </span>
         <span className="font-semibold text-zinc-200">{pct.toFixed(0)}%</span>
       </div>
       <div
@@ -49,7 +54,7 @@ const StatBar = React.memo(function StatBar({ label, value = 0, color = "bg-emer
         tabIndex={0}
       >
         <div
-          className={`h-full ${color} ${glow} transition-all duration-700 ease-out${pulse ? ' animate-pulse-bar' : ''}`}
+          className={`h-full ${color} ${glow} transition-all duration-700 ease-out${pulse ? " animate-pulse-bar" : ""}`}
           style={{
             width: `${pct}%`,
             backgroundImage:
@@ -69,13 +74,16 @@ function Pill({ label, value, tone = "default" }) {
         ? "bg-amber-500/10 border-amber-500/25 text-amber-100"
         : "bg-black/25 border-white/15 text-zinc-100";
   return (
-    <div className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs ${toneClasses}`}>
-      <span className="uppercase tracking-wide text-[0.65rem] text-zinc-300/70">{label}</span>
+    <div
+      className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs ${toneClasses}`}
+    >
+      <span className="uppercase tracking-wide text-[0.65rem] text-zinc-300/70">
+        {label}
+      </span>
       <span className="font-semibold">{value}</span>
     </div>
   );
 }
-
 
 const NeedsHUD = React.memo(function NeedsHUD() {
   const dog = useSelector(selectDog);
@@ -90,13 +98,13 @@ const NeedsHUD = React.memo(function NeedsHUD() {
     if (emotionCue && prevCue.current !== emotionCue) {
       setCuePulse(true);
       setAriaCue(`Dog emotion: ${emotionCue}`);
-      // Play gentle sound (optional, requires public/audio/ui-cue.mp3 or similar)
-      const audio = new window.Audio && window.Audio("/audio/ui-cue.mp3");
-      if (audio) audio.play().catch(() => { });
       const timeout = setTimeout(() => setCuePulse(false), 400);
       const ariaTimeout = setTimeout(() => setAriaCue(""), 1200);
       prevCue.current = emotionCue;
-      return () => { clearTimeout(timeout); clearTimeout(ariaTimeout); };
+      return () => {
+        clearTimeout(timeout);
+        clearTimeout(ariaTimeout);
+      };
     }
   }, [emotionCue]);
   if (!dog) return null;
@@ -128,24 +136,34 @@ const NeedsHUD = React.memo(function NeedsHUD() {
           </p>
         </div>
         {/* Neon green/black theme, pulse-glowing DOGGERZ */}
-        <span className="ml-2 px-3 py-1 rounded-full border border-emerald-400/40 bg-black/80 text-emerald-300 font-extrabold text-lg tracking-widest shadow-[0_0_18px_#00ffae99] animate-pulse-bar select-none" style={{ textShadow: '0 0 8px #00ffae, 0 0 2px #00ffae' }}>
+        <span
+          className="ml-2 px-3 py-1 rounded-full border border-emerald-400/40 bg-black/80 text-emerald-300 font-extrabold text-lg tracking-widest shadow-[0_0_18px_#00ffae99] animate-pulse-bar select-none"
+          style={{ textShadow: "0 0 8px #00ffae, 0 0 2px #00ffae" }}
+        >
           DOGGERZ
         </span>
         {/* Show current emotion cue as a badge */}
         {emotionCue ? (
           <span
-            className={`ml-2 inline-flex items-center rounded-full border border-emerald-400/30 bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-200 animate-fadein focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/80 transition-all duration-200 shadow-sm hover:scale-[1.04] active:scale-95 cursor-pointer${cuePulse ? ' ring-4 ring-emerald-300/60' : ''}`}
+            className={`ml-2 inline-flex items-center rounded-full border border-emerald-400/30 bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-200 animate-fadein focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/80 transition-all duration-200 shadow-sm hover:scale-[1.04] active:scale-95 cursor-pointer${cuePulse ? " ring-4 ring-emerald-300/60" : ""}`}
             title={emotionCue}
             tabIndex={0}
             aria-label={`Dog emotion: ${emotionCue}`}
             role="status"
             aria-live="polite"
           >
-            <span aria-hidden="true">{emotionCue.charAt(0).toUpperCase() + emotionCue.slice(1)}</span>
+            <span aria-hidden="true">
+              {emotionCue.charAt(0).toUpperCase() + emotionCue.slice(1)}
+            </span>
           </span>
         ) : null}
         {/* ARIA live region for screen readers */}
-        <span aria-live="polite" style={{ position: 'absolute', left: '-9999px' }}>{ariaCue}</span>
+        <span
+          aria-live="polite"
+          style={{ position: "absolute", left: "-9999px" }}
+        >
+          {ariaCue}
+        </span>
       </div>
       {moodlets && moodlets.length > 0 ? (
         <MoodletChips moodlets={moodlets} />
@@ -181,7 +199,9 @@ const NeedsHUD = React.memo(function NeedsHUD() {
             >
               <div
                 className="h-full bg-emerald-500 transition-all duration-700 ease-out"
-                style={{ width: `${Math.max(0, Math.min(100, pottyTrainingProgress))}%` }}
+                style={{
+                  width: `${Math.max(0, Math.min(100, pottyTrainingProgress))}%`,
+                }}
               ></div>
             </div>
             <div className="flex justify-between text-[0.7rem] text-zinc-400/80 mt-1">
@@ -210,7 +230,8 @@ function MoodletChips({ moodlets }) {
   useEffect(() => {
     if (popoverIdx === null) return;
     function handle(e) {
-      if (popoverRef.current && !popoverRef.current.contains(e.target)) setPopoverIdx(null);
+      if (popoverRef.current && !popoverRef.current.contains(e.target))
+        setPopoverIdx(null);
     }
     document.addEventListener("mousedown", handle);
     document.addEventListener("focusin", handle);
@@ -220,12 +241,19 @@ function MoodletChips({ moodlets }) {
     };
   }, [popoverIdx]);
   return (
-    <div className="flex flex-wrap gap-2 mt-1" role="list" aria-label="Dog moodlets">
+    <div
+      className="flex flex-wrap gap-2 mt-1"
+      role="list"
+      aria-label="Dog moodlets"
+    >
       {moodlets.map((m, i) => {
         let tone = "info";
-        if (["sick", "injured", "starving", "fear"].includes(m.type)) tone = "danger";
-        else if (["hungry", "tired", "dirty", "bored"].includes(m.type)) tone = "warn";
-        else if (["happy", "playful", "excited", "loved"].includes(m.type)) tone = "happy";
+        if (["sick", "injured", "starving", "fear"].includes(m.type))
+          tone = "danger";
+        else if (["hungry", "tired", "dirty", "bored"].includes(m.type))
+          tone = "warn";
+        else if (["happy", "playful", "excited", "loved"].includes(m.type))
+          tone = "happy";
         const toneClasses =
           tone === "danger"
             ? "bg-red-500/10 border-red-500/25 text-red-200"
@@ -245,12 +273,21 @@ function MoodletChips({ moodlets }) {
             role="listitem"
             onClick={() => setPopoverIdx(showPopover ? null : i)}
             onFocus={() => setPopoverIdx(i)}
-            onBlur={() => setTimeout(() => setPopoverIdx(idx => idx === i ? null : idx), 100)}
+            onBlur={() =>
+              setTimeout(
+                () => setPopoverIdx((idx) => (idx === i ? null : idx)),
+                100
+              )
+            }
             aria-haspopup="dialog"
             aria-expanded={showPopover}
           >
-            <span aria-hidden="true">{m.type.charAt(0).toUpperCase() + m.type.slice(1)}</span>
-            {m.intensity > 1 ? <span aria-hidden="true">{` ×${m.intensity}`}</span> : null}
+            <span aria-hidden="true">
+              {m.type.charAt(0).toUpperCase() + m.type.slice(1)}
+            </span>
+            {m.intensity > 1 ? (
+              <span aria-hidden="true">{` ×${m.intensity}`}</span>
+            ) : null}
             {showPopover && (
               <span
                 ref={popoverRef}
@@ -259,11 +296,38 @@ function MoodletChips({ moodlets }) {
                 aria-modal="false"
                 tabIndex={-1}
               >
-                <div className="font-bold mb-1 text-emerald-200">{m.type.charAt(0).toUpperCase() + m.type.slice(1)} {m.intensity > 1 ? `×${m.intensity}` : ""}</div>
-                {m.source && <div className="mb-1"><span className="text-zinc-400">Source:</span> {m.source}</div>}
-                {m.duration != null && <div className="mb-1"><span className="text-zinc-400">Duration:</span> {m.duration}s</div>}
-                {m.effect && <div className="mb-1"><span className="text-zinc-400">Effect:</span> {m.effect}</div>}
-                <div className="mt-1 text-right"><button className="text-xs text-emerald-300 hover:underline" tabIndex={0} onClick={e => { e.stopPropagation(); setPopoverIdx(null); }}>Close</button></div>
+                <div className="font-bold mb-1 text-emerald-200">
+                  {m.type.charAt(0).toUpperCase() + m.type.slice(1)}{" "}
+                  {m.intensity > 1 ? `×${m.intensity}` : ""}
+                </div>
+                {m.source && (
+                  <div className="mb-1">
+                    <span className="text-zinc-400">Source:</span> {m.source}
+                  </div>
+                )}
+                {m.duration != null && (
+                  <div className="mb-1">
+                    <span className="text-zinc-400">Duration:</span>{" "}
+                    {m.duration}s
+                  </div>
+                )}
+                {m.effect && (
+                  <div className="mb-1">
+                    <span className="text-zinc-400">Effect:</span> {m.effect}
+                  </div>
+                )}
+                <div className="mt-1 text-right">
+                  <button
+                    className="text-xs text-emerald-300 hover:underline"
+                    tabIndex={0}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPopoverIdx(null);
+                    }}
+                  >
+                    Close
+                  </button>
+                </div>
               </span>
             )}
           </span>

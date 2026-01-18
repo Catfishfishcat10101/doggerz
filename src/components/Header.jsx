@@ -31,22 +31,38 @@ export default function Header() {
   const isLoggedIn = useSelector(selectIsLoggedIn);
   const location = useLocation();
   const isHome = location.pathname === "/";
+  const isPotty = location.pathname.startsWith("/potty");
   const showSettings = location.pathname === "/settings";
   const filteredNav = React.useMemo(() => {
-    if (isHome) {
-      return [
-        { label: "FAQs", to: "/faq" },
-        { label: "Help", to: "/help" },
-        { label: "Settings", to: "/settings" },
-      ];
-    }
-
     return (nav || []).filter((item) => {
       if (item.to === "/game") return isLoggedIn;
       if (item.to === "/settings") return showSettings;
+      if (isPotty && item.to === "/skill-tree") return false;
       return true;
     });
-  }, [isHome, isLoggedIn, showSettings]);
+  }, [isLoggedIn, isPotty, showSettings]);
+
+  if (isHome) {
+    return (
+      <header className="dz-header">
+        <div className="dz-header__inner">
+          <NavLink to="/" className="dz-logo" aria-label="Doggerz home">
+            DOGGERZ
+          </NavLink>
+
+          <nav className="dz-nav" aria-label="Primary navigation">
+            <NavLink to="/adopt" className="dz-nav-item primary">
+              Adopt
+            </NavLink>
+            <NavLink to="/login" className="dz-nav-item">
+              Login
+            </NavLink>
+            {/* <NavLink to="/store" className="dz-nav-item">Store</NavLink> */}
+          </nav>
+        </div>
+      </header>
+    );
+  }
 
   return (
     <header className="sticky top-0 z-50">

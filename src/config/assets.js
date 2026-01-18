@@ -7,10 +7,10 @@ export const ASSET_BASE = "/assets";
 /** Backgrounds */
 export const BACKGROUNDS = {
   yard: {
-    day: `${ASSET_BASE}/backgrounds/yard/backyard-day.webp`,
-    night: `${ASSET_BASE}/backgrounds/yard/backyard-night.webp`,
-    dayWide: `${ASSET_BASE}/backgrounds/yard/backyard-day-wide.webp`,
-    nightWide: `${ASSET_BASE}/backgrounds/yard/backyard-night-wide.webp`,
+    day: "/backgrounds/backyard-day.webp",
+    night: "/backgrounds/backyard-night.webp",
+    dayWide: "/backgrounds/backyard-day-wide.webp",
+    nightWide: "/backgrounds/backyard-night-wide.webp",
   },
 };
 

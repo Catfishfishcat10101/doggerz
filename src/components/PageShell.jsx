@@ -26,12 +26,18 @@ export default function PageShell({
   showHeader = undefined,
   showFooter = undefined,
   fullBleed = false,
-  disableBackground = false,
+  disableBackground = undefined,
   style = undefined,
 }) {
+  const appShell = React.useContext(AppShellContext);
+  const withinAppShell = Boolean(appShell?.withinAppShell);
+
+  const resolvedDisableBackground =
+    typeof disableBackground === "boolean" ? disableBackground : withinAppShell;
+
   const shellStyle = {
     color: "var(--text-main, #e5e7eb)",
-    ...(disableBackground
+    ...(resolvedDisableBackground
       ? {}
       : {
           background:
@@ -47,15 +53,14 @@ export default function PageShell({
     ? containerClassName || "w-full"
     : containerClassName || "mx-auto w-full max-w-6xl";
 
-  const appShell = React.useContext(AppShellContext);
   const resolvedShowHeader =
-    typeof showHeader === "boolean" ? showHeader : !appShell?.withinAppShell;
+    typeof showHeader === "boolean" ? showHeader : !withinAppShell;
   const resolvedShowFooter =
-    typeof showFooter === "boolean" ? showFooter : true;
+    typeof showFooter === "boolean" ? showFooter : !withinAppShell;
 
   return (
     <div
-      className={`min-h-[100dvh] min-h-screen ${className}`}
+      className={`${withinAppShell ? "" : "min-h-[100dvh] min-h-screen"} ${className}`}
       style={shellStyle}
     >
       {resolvedShowHeader ? <Header /> : null}

@@ -9,12 +9,7 @@ import {
   selectDogVacation,
   setVacationMode,
 } from "../redux/dogSlice.js";
-import {
-  selectDogRenderMode,
-  selectUserZip,
-  setDogRenderMode,
-  setZip,
-} from "../redux/userSlice.js";
+import { selectUserZip, setZip } from "../redux/userSlice.js";
 import { auth, db, firebaseReady } from "../firebase.js";
 import { deleteUser, onAuthStateChanged, signOut } from "firebase/auth";
 import { deleteDoc, doc } from "firebase/firestore";
@@ -204,7 +199,6 @@ export default function Settings() {
   const settings = useSelector(selectSettings);
   const vacation = /** @type {any} */ (useSelector(selectDogVacation));
   const currentZip = useSelector(selectUserZip);
-  const dogRenderMode = useSelector(selectDogRenderMode);
 
   const [zipInput, setZipInput] = useState(currentZip || "");
   const fileInputRef = useRef(null);
@@ -664,18 +658,6 @@ export default function Settings() {
               max={1}
               step={0.05}
               rightLabel={`${pct(settings?.roamIntensity ?? 1)}%`}
-            />
-
-            <SelectRow
-              id="dogRenderMode"
-              label="Dog visuals"
-              description="Switch between sprite and realistic render modes."
-              value={dogRenderMode || "sprite"}
-              onChange={(v) => dispatch(setDogRenderMode(v))}
-              options={[
-                { value: "sprite", label: "Sprite" },
-                { value: "realistic", label: "Realistic" },
-              ]}
             />
           </Card>
 

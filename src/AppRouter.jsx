@@ -1,7 +1,7 @@
 /** @format */
 
 // src/AppRouter.jsx
-// Central router for Doggerz
+// Central router for Doggerz (layout-safe)
 
 import * as React from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
@@ -10,8 +10,6 @@ import { PATHS } from "./routes.js";
 
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import CrashFallback from "./components/CrashFallback.jsx";
-
-// ✅ NEW: App shell layout (header/footer logic lives here)
 import AppShell from "./layout/AppShell.jsx";
 
 // Keep Landing fast; lazy-load everything else.
@@ -40,8 +38,6 @@ const TemperamentRevealPage = React.lazy(
 );
 const RainbowBridgePage = React.lazy(() => import("./pages/RainbowBridge.jsx"));
 const NotFoundPage = React.lazy(() => import("./pages/NotFound.jsx"));
-
-// ✅ NEW: Sprite test page
 const SpriteTestPage = React.lazy(() => import("./pages/SpriteTest.jsx"));
 
 const stripLeadingSlash = (path) => String(path || "").replace(/^\//, "");
@@ -67,7 +63,7 @@ function RouteFallback() {
     <div className="min-h-[60vh] grid place-items-center bg-zinc-950 text-zinc-100 px-4">
       <div className="w-full max-w-md text-center">
         <div className="inline-flex items-center justify-center rounded-full border border-white/10 bg-black/35 px-4 py-2 text-xs font-semibold text-zinc-200">
-          Loading…
+          Loading.
         </div>
 
         <div className="mt-4 space-y-2">
@@ -100,113 +96,107 @@ const withCrashBoundary = (node, fallback = DefaultRouteCrashFallback) => (
   <ErrorBoundary fallback={fallback}>{node}</ErrorBoundary>
 );
 
-const router = createBrowserRouter(
-  [
-    {
-      // ✅ Parent layout route provides header/footer and an <Outlet />
-      path: "/",
-      element: <AppShell />,
-      children: [
-        { index: true, element: <Landing /> },
-
-        {
-          path: stripLeadingSlash(PATHS.GAME),
-          element: suspense(withCrashBoundary(<GamePage />, GameCrashFallback)),
-        },
-
-        {
-          path: stripLeadingSlash(PATHS.SKILL_TREE),
-          element: suspense(withCrashBoundary(<SkillTreePage />)),
-        },
-
-        {
-          path: stripLeadingSlash(PATHS.ADOPT),
-          element: suspense(withCrashBoundary(<AdoptPage />)),
-        },
-        {
-          path: stripLeadingSlash(PATHS.LOGIN),
-          element: suspense(withCrashBoundary(<LoginPage />)),
-        },
-        {
-          path: stripLeadingSlash(PATHS.SIGNUP),
-          element: suspense(withCrashBoundary(<SignupPage />)),
-        },
-        {
-          path: stripLeadingSlash(PATHS.ABOUT),
-          element: suspense(withCrashBoundary(<AboutPage />)),
-        },
-        {
-          path: stripLeadingSlash(PATHS.FAQ),
-          element: suspense(withCrashBoundary(<FaqPage />)),
-        },
-        {
-          path: stripLeadingSlash(PATHS.CONTACT),
-          element: suspense(withCrashBoundary(<ContactPage />)),
-        },
-        {
-          path: stripLeadingSlash(PATHS.HELP),
-          element: suspense(withCrashBoundary(<HelpPage />)),
-        },
-        {
-          path: stripLeadingSlash(PATHS.DEVELOPERS),
-          element: suspense(withCrashBoundary(<DevelopersPage />)),
-        },
-        {
-          path: stripLeadingSlash(PATHS.SETTINGS),
-          element: suspense(withCrashBoundary(<SettingsPage />)),
-        },
-        {
-          path: stripLeadingSlash(PATHS.STORE),
-          element: suspense(withCrashBoundary(<StorePage />)),
-        },
-        {
-          path: stripLeadingSlash(PATHS.BADGES),
-          element: suspense(withCrashBoundary(<BadgesPage />)),
-        },
-        {
-          path: stripLeadingSlash(PATHS.MEMORIES),
-          element: suspense(withCrashBoundary(<MemoryReelPage />)),
-        },
-        {
-          path: stripLeadingSlash(PATHS.DREAMS),
-          element: suspense(withCrashBoundary(<DreamsPage />)),
-        },
-        {
-          path: stripLeadingSlash(PATHS.LEGAL),
-          element: suspense(withCrashBoundary(<LegalPage />)),
-        },
-        {
-          path: stripLeadingSlash(PATHS.PRIVACY),
-          element: suspense(withCrashBoundary(<PrivacyPage />)),
-        },
-        {
-          path: stripLeadingSlash(PATHS.POTTY),
-          element: suspense(withCrashBoundary(<PottyPage />)),
-        },
-        {
-          path: stripLeadingSlash(PATHS.TEMPERAMENT_REVEAL),
-          element: suspense(withCrashBoundary(<TemperamentRevealPage />)),
-        },
-        {
-          path: stripLeadingSlash(PATHS.RAINBOW_BRIDGE),
-          element: suspense(withCrashBoundary(<RainbowBridgePage />)),
-        },
-
-        // ✅ Sprite pipeline verification route
-        {
-          path: stripLeadingSlash(PATHS.SPRITE_TEST),
-          element: suspense(withCrashBoundary(<SpriteTestPage />)),
-        },
-
-        // Catch-all (must be last)
-        { path: "*", element: suspense(withCrashBoundary(<NotFoundPage />)) },
-      ],
-    },
-  ],
+// Layout-safe router: keep `/game` outside AppShell
+const router = createBrowserRouter([
+  // Game route: full-screen, no AppShell
   {
-    // Future flags removed to keep type-checking happy across router versions.
-  }
-);
+    path: stripLeadingSlash(PATHS.GAME),
+    element: suspense(withCrashBoundary(<GamePage />, GameCrashFallback)),
+  },
+
+  // Everything else: inside AppShell
+  {
+    path: "/",
+    element: <AppShell />,
+    children: [
+      { index: true, element: <Landing /> },
+
+      {
+        path: stripLeadingSlash(PATHS.SKILL_TREE),
+        element: suspense(withCrashBoundary(<SkillTreePage />)),
+      },
+      {
+        path: stripLeadingSlash(PATHS.ADOPT),
+        element: suspense(withCrashBoundary(<AdoptPage />)),
+      },
+      {
+        path: stripLeadingSlash(PATHS.LOGIN),
+        element: suspense(withCrashBoundary(<LoginPage />)),
+      },
+      {
+        path: stripLeadingSlash(PATHS.SIGNUP),
+        element: suspense(withCrashBoundary(<SignupPage />)),
+      },
+      {
+        path: stripLeadingSlash(PATHS.ABOUT),
+        element: suspense(withCrashBoundary(<AboutPage />)),
+      },
+      {
+        path: stripLeadingSlash(PATHS.FAQ),
+        element: suspense(withCrashBoundary(<FaqPage />)),
+      },
+      {
+        path: stripLeadingSlash(PATHS.CONTACT),
+        element: suspense(withCrashBoundary(<ContactPage />)),
+      },
+      {
+        path: stripLeadingSlash(PATHS.HELP),
+        element: suspense(withCrashBoundary(<HelpPage />)),
+      },
+      {
+        path: stripLeadingSlash(PATHS.DEVELOPERS),
+        element: suspense(withCrashBoundary(<DevelopersPage />)),
+      },
+      {
+        path: stripLeadingSlash(PATHS.SETTINGS),
+        element: suspense(withCrashBoundary(<SettingsPage />)),
+      },
+      {
+        path: stripLeadingSlash(PATHS.STORE),
+        element: suspense(withCrashBoundary(<StorePage />)),
+      },
+      {
+        path: stripLeadingSlash(PATHS.BADGES),
+        element: suspense(withCrashBoundary(<BadgesPage />)),
+      },
+      {
+        path: stripLeadingSlash(PATHS.MEMORIES),
+        element: suspense(withCrashBoundary(<MemoryReelPage />)),
+      },
+      {
+        path: stripLeadingSlash(PATHS.DREAMS),
+        element: suspense(withCrashBoundary(<DreamsPage />)),
+      },
+      {
+        path: stripLeadingSlash(PATHS.LEGAL),
+        element: suspense(withCrashBoundary(<LegalPage />)),
+      },
+      {
+        path: stripLeadingSlash(PATHS.PRIVACY),
+        element: suspense(withCrashBoundary(<PrivacyPage />)),
+      },
+      {
+        path: stripLeadingSlash(PATHS.POTTY),
+        element: suspense(withCrashBoundary(<PottyPage />)),
+      },
+      {
+        path: stripLeadingSlash(PATHS.TEMPERAMENT_REVEAL),
+        element: suspense(withCrashBoundary(<TemperamentRevealPage />)),
+      },
+      {
+        path: stripLeadingSlash(PATHS.RAINBOW_BRIDGE),
+        element: suspense(withCrashBoundary(<RainbowBridgePage />)),
+      },
+      {
+        path: stripLeadingSlash(PATHS.SPRITE_TEST),
+        element: suspense(withCrashBoundary(<SpriteTestPage />)),
+      },
+
+      // Catch-all (must be last)
+      { path: "*", element: suspense(withCrashBoundary(<NotFoundPage />)) },
+    ],
+  },
+]);
 
 export default function AppRouter() {
   return <RouterProvider router={router} />;

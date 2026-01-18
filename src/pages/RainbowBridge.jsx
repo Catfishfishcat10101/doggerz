@@ -2,8 +2,7 @@
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 
-import Header from "@/components/Header.jsx";
-import Footer from "@/components/Footer.jsx";
+import PageShell from "@/components/PageShell.jsx";
 import {
   selectDog,
   selectDogLifeStage,
@@ -26,10 +25,8 @@ export default function RainbowBridge() {
   const memorialActive = Boolean(memorial?.active);
 
   return (
-    <div className="min-h-dvh w-full bg-zinc-950 text-zinc-100">
-      <Header />
-
-      <main className="mx-auto w-full max-w-4xl px-4 py-10">
+    <PageShell mainClassName="px-4 py-10" containerClassName="w-full max-w-4xl">
+      <div className="w-full">
         <div className="rounded-[2rem] border border-white/10 bg-black/40 backdrop-blur-md shadow-[0_0_80px_rgba(0,0,0,0.55)] overflow-hidden">
           <div className="p-6 sm:p-8 border-b border-white/10">
             <div className="text-xs uppercase tracking-[0.22em] text-zinc-300/90">
@@ -115,9 +112,7 @@ export default function RainbowBridge() {
             </div>
           </div>
         </div>
-      </main>
-
-      <Footer />
-    </div>
+      </div>
+    </PageShell>
   );
 }

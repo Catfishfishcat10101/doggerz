@@ -1,8 +1,8 @@
 // src/pages/Potty.jsx
-import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { PATHS } from "@/routes.js";
-import { selectDog } from "@/redux/dogSlice.js";
+import { useToast } from "@/components/ToastProvider.jsx";
+import { usePup } from "@/state/PupContext.jsx";
 import PageShell from "@/components/PageShell.jsx";
 import EmptySlate from "@/components/EmptySlate.jsx";
 
@@ -26,7 +26,9 @@ function describePottyTraining(training) {
 
 export default function Potty() {
   const navigate = useNavigate();
-  const dog = useSelector(selectDog);
+  const toast = useToast();
+  const { pup, addXP, removeXP, logPottySuccess } = usePup();
+  const dog = pup;
 
   // If there is no dog at all, send them to adopt
   if (!dog) {
@@ -47,17 +49,34 @@ export default function Potty() {
     );
   }
 
-  const potty = dog.potty || {};
-  const training = Math.round(Number(potty.training ?? 0));
-  const accidents = potty.accidents ?? 0;
-  const lastSuccessAt = potty.lastSuccessAt
-    ? new Date(potty.lastSuccessAt)
+  const trainingGoal = Number(dog.pottyGoal || 0);
+  const trainingCount = Number(dog.pottySuccesses || 0);
+  const training = Number(dog.pottyTrainingPct || 0);
+  const accidents = Number(dog.accidents || 0);
+  const lastSuccessAt = dog.lastPottySuccessAt
+    ? new Date(dog.lastPottySuccessAt)
     : null;
-  const lastAccidentAt = potty.lastAccidentAt
-    ? new Date(potty.lastAccidentAt)
+  const lastAccidentAt = dog.lastPottyAccidentAt
+    ? new Date(dog.lastPottyAccidentAt)
     : null;
 
   const summaryText = describePottyTraining(training);
+
+  const onPottyWalk = () => {
+    const nextCount = trainingGoal
+      ? Math.min(trainingGoal, trainingCount + 1)
+      : trainingCount + 1;
+    const nextPct = trainingGoal
+      ? Math.round((nextCount / Math.max(1, trainingGoal)) * 100)
+      : null;
+
+    logPottySuccess();
+    toast.reward(
+      `Potty trip logged (+2 XP)${
+        typeof nextPct === "number" ? ` • Training ${nextPct}%` : ""
+      }`
+    );
+  };
 
   return (
     <PageShell>
@@ -138,6 +157,58 @@ export default function Potty() {
                 Consistent & quick cleanups helps training progress.
               </p>
             </div>
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-zinc-200 bg-white/80 p-4 space-y-3 dark:border-zinc-800 dark:bg-zinc-950/60">
+          <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+            Potty Walk
+          </p>
+          <p className="text-xs text-zinc-700 dark:text-zinc-300">
+            Log a successful outdoor trip. This helps build routine and nudges
+            training progress.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={onPottyWalk}
+              className="rounded-full px-4 py-2 text-xs font-semibold border border-emerald-400/35 bg-emerald-500/10 text-emerald-100 hover:bg-emerald-500/15 transition"
+            >
+              Potty Walk (Success)
+            </button>
+
+            <button
+              type="button"
+              onClick={() => navigate(PATHS.GAME)}
+              className="rounded-full px-4 py-2 text-xs font-semibold border border-white/15 bg-black/25 text-zinc-100 hover:bg-black/35 transition"
+            >
+              Back to yard
+            </button>
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-zinc-200 bg-white/80 p-4 space-y-3 dark:border-zinc-800 dark:bg-zinc-950/60">
+          <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+            XP controls
+          </p>
+          <p className="text-xs text-zinc-700 dark:text-zinc-300">
+            Current XP: <span className="font-semibold">{dog.xp ?? 0}</span>
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => addXP(5)}
+              className="rounded-full px-4 py-2 text-xs font-semibold border border-emerald-400/35 bg-emerald-500/10 text-emerald-100 hover:bg-emerald-500/15 transition"
+            >
+              XP +5
+            </button>
+            <button
+              type="button"
+              onClick={() => removeXP(5)}
+              className="rounded-full px-4 py-2 text-xs font-semibold border border-white/15 bg-black/25 text-zinc-100 hover:bg-black/35 transition"
+            >
+              XP -5
+            </button>
           </div>
         </section>
 
