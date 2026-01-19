@@ -10,6 +10,7 @@ import {
   selectDogMoodlets,
   selectDogEmotionCue,
 } from "@/redux/dogSlice.js";
+import { getLastReminder, REMINDER_EVENT } from "@/utils/reminders.js";
 
 const StatBar = React.memo(function StatBar({
   label,
@@ -91,9 +92,13 @@ const NeedsHUD = React.memo(function NeedsHUD() {
   const bond = useSelector(selectDogBond);
   const moodlets = useSelector(selectDogMoodlets);
   const emotionCue = useSelector(selectDogEmotionCue);
+  const [reminder, setReminder] = useState(() => getLastReminder());
+  const [reminderPulse, setReminderPulse] = useState(false);
+  const reminderKeyRef = useRef(reminder?.key || null);
   const [cuePulse, setCuePulse] = useState(false);
   const [ariaCue, setAriaCue] = useState("");
   const prevCue = useRef(emotionCue);
+  const REMINDER_TTL_MS = 10 * 60 * 1000;
   useEffect(() => {
     if (emotionCue && prevCue.current !== emotionCue) {
       setCuePulse(true);
@@ -107,6 +112,23 @@ const NeedsHUD = React.memo(function NeedsHUD() {
       };
     }
   }, [emotionCue]);
+  useEffect(() => {
+    const onReminder = (event) => {
+      const next = event?.detail || getLastReminder();
+      setReminder(next || null);
+      if (next?.key && next.key !== reminderKeyRef.current) {
+        reminderKeyRef.current = next.key;
+        setReminderPulse(true);
+        window.setTimeout(() => setReminderPulse(false), 500);
+      }
+    };
+    window.addEventListener(REMINDER_EVENT, onReminder);
+    window.addEventListener("storage", onReminder);
+    return () => {
+      window.removeEventListener(REMINDER_EVENT, onReminder);
+      window.removeEventListener("storage", onReminder);
+    };
+  }, []);
   if (!dog) return null;
   const stats = dog.stats || {};
   const hungerLevel = Math.round(stats.hunger ?? 0);
@@ -124,6 +146,9 @@ const NeedsHUD = React.memo(function NeedsHUD() {
     : pottyGoal
       ? Math.min(100, Math.round((pottySuccess / pottyGoal) * 100))
       : 0;
+  const reminderFresh =
+    reminder?.at && Date.now() - Number(reminder.at) <= REMINDER_TTL_MS;
+
   return (
     <section className="rounded-3xl border border-white/15 bg-black/35 backdrop-blur-md p-4 shadow-[0_0_60px_rgba(0,0,0,0.18)] space-y-4">
       <div className="flex items-center justify-between">
@@ -155,6 +180,18 @@ const NeedsHUD = React.memo(function NeedsHUD() {
             <span aria-hidden="true">
               {emotionCue.charAt(0).toUpperCase() + emotionCue.slice(1)}
             </span>
+          </span>
+        ) : null}
+        {reminderFresh ? (
+          <span
+            className={`ml-2 inline-flex items-center rounded-full border border-amber-400/35 bg-amber-500/10 px-3 py-1 text-[11px] font-semibold text-amber-100 animate-fadein focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/80 transition-all duration-200 shadow-sm${reminderPulse ? " ring-4 ring-amber-300/50" : ""}`}
+            title={reminder.message || "Reminder"}
+            tabIndex={0}
+            aria-label={`Reminder: ${reminder.label || reminder.key}`}
+            role="status"
+            aria-live="polite"
+          >
+            Reminder: {reminder.label || reminder.key}
           </span>
         ) : null}
         {/* ARIA live region for screen readers */}
