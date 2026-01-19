@@ -44,12 +44,27 @@ import {
 } from "../redux/settingsSlice.js";
 import PageShell from "../components/PageShell.jsx";
 import { APP_VERSION } from "../utils/appVersion.js";
+import { useToast } from "../components/ToastProvider.jsx";
+import {
+  canUseNotifications,
+  requestNotificationsPermission,
+  showDoggerzNotification,
+} from "../utils/notifications.js";
+import { getLastReminder, REMINDER_EVENT } from "../utils/reminders.js";
 
 const USER_STORAGE_KEY = "doggerz:userState";
 
 function pct(n) {
   const v = Math.round(Number(n) * 100);
   return Number.isFinite(v) ? v : 0;
+}
+
+function formatTimestamp(ts) {
+  try {
+    return new Date(ts).toLocaleString();
+  } catch {
+    return "";
+  }
 }
 
 function Switch({ id, checked, onChange, label, description }) {
@@ -199,6 +214,7 @@ export default function Settings() {
   const settings = useSelector(selectSettings);
   const vacation = /** @type {any} */ (useSelector(selectDogVacation));
   const currentZip = useSelector(selectUserZip);
+  const toast = useToast();
 
   const [zipInput, setZipInput] = useState(currentZip || "");
   const fileInputRef = useRef(null);
@@ -213,6 +229,39 @@ export default function Settings() {
   const [cloudBusy, setCloudBusy] = useState(false);
   const [cloudActionStatus, setCloudActionStatus] = useState("");
   const [localActionStatus, setLocalActionStatus] = useState("");
+  const [notificationPermission, setNotificationPermission] = useState(() => {
+    if (!canUseNotifications()) return "unsupported";
+    return Notification.permission;
+  });
+  const [lastReminder, setLastReminder] = useState(() => getLastReminder());
+
+  useEffect(() => {
+    const update = () => {
+      if (!canUseNotifications()) {
+        setNotificationPermission("unsupported");
+      } else {
+        setNotificationPermission(Notification.permission);
+      }
+    };
+    update();
+    document.addEventListener("visibilitychange", update);
+    return () => {
+      document.removeEventListener("visibilitychange", update);
+    };
+  }, []);
+
+  useEffect(() => {
+    const onReminder = (event) => {
+      const next = event?.detail || getLastReminder();
+      setLastReminder(next || null);
+    };
+    window.addEventListener(REMINDER_EVENT, onReminder);
+    window.addEventListener("storage", onReminder);
+    return () => {
+      window.removeEventListener(REMINDER_EVENT, onReminder);
+      window.removeEventListener("storage", onReminder);
+    };
+  }, []);
 
   useEffect(() => {
     if (!auth) {
@@ -626,14 +675,6 @@ export default function Settings() {
             />
 
             <Switch
-              id="dailyRemindersEnabled"
-              label="Daily routine reminders"
-              description="Shows a gentle in-app reminder if you haven't done a care action today."
-              checked={settings?.dailyRemindersEnabled !== false}
-              onChange={(v) => dispatch(setDailyRemindersEnabled(v))}
-            />
-
-            <Switch
               id="vacationMode"
               label="Vacation mode"
               description="Slows decay and aging while you're away (turn it on before you leave)."
@@ -659,6 +700,93 @@ export default function Settings() {
               step={0.05}
               rightLabel={`${pct(settings?.roamIntensity ?? 1)}%`}
             />
+          </Card>
+
+          <Card
+            title="Notifications"
+            subtitle="Gentle reminders and status"
+            bodyClassName="space-y-3"
+          >
+            <Switch
+              id="dailyRemindersEnabled"
+              label="Daily routine reminders"
+              description="Shows a gentle reminder when your pup needs attention."
+              checked={settings?.dailyRemindersEnabled !== false}
+              onChange={(v) => dispatch(setDailyRemindersEnabled(v))}
+            />
+
+            <div className="flex flex-col gap-3 rounded-xl border border-white/10 bg-black/10 px-4 py-3 dark:bg-black/20">
+              <div className="text-xs text-zinc-600 dark:text-zinc-400">
+                <div className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                  Status
+                </div>
+                <div className="mt-1">
+                  Permission:{" "}
+                  <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                    {notificationPermission === "unsupported"
+                      ? "Not supported"
+                      : notificationPermission}
+                  </span>
+                </div>
+                <div className="mt-1">
+                  Last reminder:{" "}
+                  <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                    {lastReminder?.at
+                      ? `${lastReminder.label || lastReminder.key} - ${formatTimestamp(
+                          lastReminder.at
+                        )}`
+                      : "None yet"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!canUseNotifications()) {
+                      toast.info("Notifications are not supported here.");
+                      setNotificationPermission("unsupported");
+                      return;
+                    }
+                    const perm = await requestNotificationsPermission();
+                    setNotificationPermission(perm);
+                    if (perm === "granted") {
+                      toast.success("Notifications enabled.");
+                    } else {
+                      toast.info("Notifications not enabled.");
+                    }
+                  }}
+                  className="inline-flex items-center justify-center rounded-full border border-emerald-400/35 bg-emerald-500/10 px-4 py-2 text-xs font-semibold text-emerald-100 hover:bg-emerald-500/15 transition"
+                >
+                  Enable notifications
+                </button>
+
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!canUseNotifications()) {
+                      toast.info("Notifications are not supported here.");
+                      return;
+                    }
+                    if (notificationPermission !== "granted") {
+                      toast.info("Enable notifications to send a test ping.");
+                      return;
+                    }
+                    const ok = await showDoggerzNotification({
+                      title: "Doggerz",
+                      body: "Test ping. Your pup is ready to play.",
+                      tag: "dz-test",
+                    });
+                    if (ok) toast.success("Test notification sent.");
+                    else toast.warn("Unable to show notification.");
+                  }}
+                  className="inline-flex items-center justify-center rounded-full border border-white/15 bg-black/25 px-4 py-2 text-xs font-semibold text-zinc-100 hover:bg-black/35 transition"
+                >
+                  Send test ping
+                </button>
+              </div>
+            </div>
           </Card>
 
           <Card title="Audio" subtitle="Controls are saved; wiring is ongoing">

@@ -10,59 +10,15 @@ import {
   requestNotificationsPermission,
   showDoggerzNotification,
 } from "@/utils/notifications.js";
-
-const REMINDER_STORAGE_KEY = "doggerz:reminders:v1";
-
-function safeParseJson(raw) {
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
-}
-
-function loadReminderState() {
-  try {
-    if (typeof localStorage === "undefined") return { lastByKey: {} };
-    const raw = localStorage.getItem(REMINDER_STORAGE_KEY);
-    const parsed = raw ? safeParseJson(raw) : null;
-    const lastByKey =
-      parsed && typeof parsed === "object" && parsed.lastByKey
-        ? parsed.lastByKey
-        : {};
-    return { lastByKey: { ...(lastByKey || {}) } };
-  } catch {
-    return { lastByKey: {} };
-  }
-}
-
-function saveReminderState(next) {
-  try {
-    if (typeof localStorage === "undefined") return;
-    localStorage.setItem(REMINDER_STORAGE_KEY, JSON.stringify(next));
-  } catch {
-    // ignore
-  }
-}
+import {
+  dispatchReminderEvent,
+  loadReminderState,
+  markReminderFired,
+  shouldFire,
+} from "@/utils/reminders.js";
 
 function minutes(n) {
   return Math.max(0, Number(n) || 0) * 60_000;
-}
-
-function shouldFire(state, key, cooldownMs, now) {
-  const last = Number(state?.lastByKey?.[key] || 0);
-  return !last || now - last >= cooldownMs;
-}
-
-function markFired(state, key, now) {
-  const next = {
-    lastByKey: {
-      ...(state?.lastByKey || {}),
-      [key]: now,
-    },
-  };
-  saveReminderState(next);
-  return next;
 }
 
 function getPrimaryReminder(dog, now) {
@@ -80,6 +36,7 @@ function getPrimaryReminder(dog, now) {
   if (hunger >= 80) {
     return {
       key: "hungry",
+      label: "Hungry",
       title: "Doggerz",
       message: "Your pup is hungry. Quick feed?",
       cooldownMs: minutes(90),
@@ -89,6 +46,7 @@ function getPrimaryReminder(dog, now) {
   if (!dog?.isAsleep && energy <= 22) {
     return {
       key: "sleepy",
+      label: "Sleepy",
       title: "Doggerz",
       message: "Your pup looks sleepy. Time for a nap?",
       cooldownMs: minutes(120),
@@ -98,6 +56,7 @@ function getPrimaryReminder(dog, now) {
   if (cleanliness <= 22) {
     return {
       key: "dirty",
+      label: "Dirty",
       title: "Doggerz",
       message: "Your pup is getting dirty. Bath time soon.",
       cooldownMs: minutes(180),
@@ -107,6 +66,7 @@ function getPrimaryReminder(dog, now) {
   if (pottyLevel >= 85) {
     return {
       key: "potty",
+      label: "Potty Break",
       title: "Doggerz",
       message: "Potty break? Take your pup out.",
       cooldownMs: minutes(60),
@@ -116,6 +76,7 @@ function getPrimaryReminder(dog, now) {
   if (msSinceSeen >= 6 * 60 * 60_000) {
     return {
       key: "checkin",
+      label: "Check-in",
       title: "Doggerz",
       message: "Your pup misses you. Quick check-in?",
       cooldownMs: minutes(240),
@@ -123,6 +84,74 @@ function getPrimaryReminder(dog, now) {
   }
 
   return null;
+}
+
+function getForcedReminder(input) {
+  if (!input) return null;
+  if (typeof input === "object" && input.key && input.message) {
+    return {
+      key: `force-${String(input.key)}`,
+      label: input.label || input.key,
+      title: input.title || "Doggerz",
+      message: String(input.message),
+      cooldownMs: 0,
+    };
+  }
+
+  const raw = String(input || "").trim();
+  if (!raw) return null;
+  const key = raw.toLowerCase();
+
+  switch (key) {
+    case "hungry":
+      return {
+        key: "force-hungry",
+        label: "Hungry",
+        title: "Doggerz",
+        message: "Your pup is hungry. Quick feed?",
+        cooldownMs: 0,
+      };
+    case "sleepy":
+      return {
+        key: "force-sleepy",
+        label: "Sleepy",
+        title: "Doggerz",
+        message: "Your pup looks sleepy. Time for a nap?",
+        cooldownMs: 0,
+      };
+    case "dirty":
+      return {
+        key: "force-dirty",
+        label: "Dirty",
+        title: "Doggerz",
+        message: "Your pup is getting dirty. Bath time soon.",
+        cooldownMs: 0,
+      };
+    case "potty":
+      return {
+        key: "force-potty",
+        label: "Potty Break",
+        title: "Doggerz",
+        message: "Potty break? Take your pup out.",
+        cooldownMs: 0,
+      };
+    case "checkin":
+      return {
+        key: "force-checkin",
+        label: "Check-in",
+        title: "Doggerz",
+        message: "Your pup misses you. Quick check-in?",
+        cooldownMs: 0,
+      };
+    default:
+      return {
+        key: "force-custom",
+        label: "Reminder",
+        title: "Doggerz",
+        message: raw,
+        cooldownMs: 0,
+      };
+  }
 }
 
 export default function AppReminderEffects() {
@@ -168,6 +197,33 @@ export default function AppReminderEffects() {
       if (!dog?.adoptedAt) return;
 
       const now = Date.now();
+      const forcedInput =
+        typeof window !== "undefined"
+          ? window.__DOGGERZ_FORCE_REMINDER__
+          : null;
+      const forcedReminder = getForcedReminder(forcedInput);
+      if (forcedReminder) {
+        if (typeof window !== "undefined") {
+          window.__DOGGERZ_FORCE_REMINDER__ = null;
+        }
+        reminderState = markReminderFired(reminderState, forcedReminder, now);
+        dispatchReminderEvent(reminderState.lastReminder);
+
+        const canNotify =
+          canUseNotifications() && Notification.permission === "granted";
+        if (document.hidden && canNotify) {
+          await showDoggerzNotification({
+            title: forcedReminder.title,
+            body: forcedReminder.message,
+            tag: `dz-${forcedReminder.key}`,
+          });
+          return;
+        }
+
+        toast.info(forcedReminder.message, 2200);
+        return;
+      }
+
       const reminder = getPrimaryReminder(dog, now);
       if (!reminder) return;
 
@@ -181,7 +237,8 @@ export default function AppReminderEffects() {
       );
       if (!should) return;
 
-      reminderState = markFired(reminderState, reminder.key, now);
+      reminderState = markReminderFired(reminderState, reminder, now);
+      dispatchReminderEvent(reminderState.lastReminder);
 
       // If the app is backgrounded, prefer a system notification.
       if (document.hidden && canNotify) {
@@ -198,11 +255,17 @@ export default function AppReminderEffects() {
     };
 
     const interval = window.setInterval(tick, 60_000);
+    const forceInterval = window.setInterval(() => {
+      if (typeof window !== "undefined" && window.__DOGGERZ_FORCE_REMINDER__) {
+        tick();
+      }
+    }, 1500);
     tick();
 
     return () => {
       cancelled = true;
       window.clearInterval(interval);
+      window.clearInterval(forceInterval);
     };
   }, [dog, settings?.dailyRemindersEnabled, toast]);
 
