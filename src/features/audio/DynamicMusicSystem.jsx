@@ -25,7 +25,10 @@ const ACTIVITY_MAP = Object.freeze({
   train: "train",
   trainblocked: "train",
   rest: "rest",
+  sleep_auto: "rest",
   feed: "care",
+  water: "care",
+  pet: "care",
   bathe: "care",
   potty: "care",
   scoop: "care",
@@ -58,9 +61,10 @@ function deriveMoodTone(moodTag, stats) {
 
   const happiness = Number(stats?.happiness ?? 0);
   const hunger = Number(stats?.hunger ?? 0);
+  const thirst = Number(stats?.thirst ?? 0);
   const energy = Number(stats?.energy ?? 0);
 
-  if (hunger > 75 || happiness < 35) return "low";
+  if (hunger > 75 || thirst > 75 || happiness < 35) return "low";
   if (energy < 30) return "calm";
   if (happiness > 75 && hunger < 60) return "bright";
   return "neutral";

@@ -20,9 +20,18 @@ function canPlayM4a() {
 }
 
 function pickBarkSrc() {
-  // Prefer optimized AAC (smaller). If the browser can't decode m4a, disable bark SFX
-  // rather than referencing a missing fallback file.
-  return canPlayM4a() ? "/audio/bark.m4a" : null;
+  // Prefer optimized AAC (smaller) but always fall back to WAV.
+  return canPlayM4a() ? "/audio/bark.m4a" : "/audio/bark.wav";
+}
+
+function safeCreateAudio(src) {
+  try {
+    const el = new Audio(src);
+    el.preload = "auto";
+    return el;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -36,60 +45,69 @@ export function useYardSfx(settings) {
   const sfxVolume = Number(settings?.audio?.sfxVolume ?? 0.7);
 
   const barkRef = React.useRef(null);
-  const lastPlayAtRef = React.useRef(0);
+  const whineRef = React.useRef(null);
+  const scratchRef = React.useRef(null);
+  const lastPlayAtRef = React.useRef({
+    bark: 0,
+    whine: 0,
+    scratch: 0,
+  });
 
   React.useEffect(() => {
     // Pre-create audio element once.
-    // NOTE: prefer /audio/bark.m4a (optimized). If unsupported, bark SFX is disabled.
     if (typeof window === "undefined") return;
-    if (barkRef.current) return;
+    if (barkRef.current || whineRef.current || scratchRef.current) return;
 
     const src = pickBarkSrc();
-    if (!src) return;
-
-    const el = new Audio(src);
-    el.preload = "auto";
-    barkRef.current = el;
+    barkRef.current = src ? safeCreateAudio(src) : null;
+    whineRef.current = safeCreateAudio("/audio/whine.wav");
+    scratchRef.current = safeCreateAudio("/audio/scratch.wav");
 
     return () => {
       try {
-        if (barkRef.current) {
-          barkRef.current.pause();
-          barkRef.current.src = "";
-        }
+        [barkRef, whineRef, scratchRef].forEach((ref) => {
+          if (!ref.current) return;
+          ref.current.pause();
+          ref.current.src = "";
+        });
       } catch {
         // ignore
       }
       barkRef.current = null;
+      whineRef.current = null;
+      scratchRef.current = null;
     };
   }, []);
 
   // Keep volume updated.
   React.useEffect(() => {
-    const el = barkRef.current;
-    if (!el) return;
     const mv = Number.isFinite(masterVolume) ? masterVolume : 0.8;
     const sv = Number.isFinite(sfxVolume) ? sfxVolume : 0.7;
-    el.volume = Math.max(0, Math.min(1, mv * sv));
+    const volume = Math.max(0, Math.min(1, mv * sv));
+    [barkRef, whineRef, scratchRef].forEach((ref) => {
+      if (!ref.current) return;
+      ref.current.volume = volume;
+    });
   }, [masterVolume, sfxVolume]);
 
   // If audio gets disabled while a sound is playing, stop it immediately.
   React.useEffect(() => {
-    const el = barkRef.current;
-    if (!el) return;
     if (audioEnabled) return;
     try {
-      el.pause();
-      el.currentTime = 0;
+      [barkRef, whineRef, scratchRef].forEach((ref) => {
+        if (!ref.current) return;
+        ref.current.pause();
+        ref.current.currentTime = 0;
+      });
     } catch {
       // ignore
     }
   }, [audioEnabled]);
 
-  const playBark = React.useCallback(
-    async ({ throttleMs = 200 } = {}) => {
+  const playSound = React.useCallback(
+    async (key, ref, { throttleMs = 200 } = {}) => {
       if (!audioEnabled) return;
-      const el = barkRef.current;
+      const el = ref.current;
       if (!el) return;
 
       // Prevent overlapping/restarting the bark while it's still playing.
@@ -97,11 +115,11 @@ export function useYardSfx(settings) {
 
       const now = Date.now();
       const effectiveThrottleMs = Math.max(
-        450,
+        350,
         Number.isFinite(throttleMs) ? throttleMs : 0
       );
-      if (now - lastPlayAtRef.current < effectiveThrottleMs) return;
-      lastPlayAtRef.current = now;
+      if (now - (lastPlayAtRef.current[key] || 0) < effectiveThrottleMs) return;
+      lastPlayAtRef.current[key] = now;
 
       try {
         el.currentTime = 0;
@@ -117,5 +135,20 @@ export function useYardSfx(settings) {
     [audioEnabled]
   );
 
-  return { playBark };
+  const playBark = React.useCallback(
+    (opts) => playSound("bark", barkRef, opts),
+    [playSound]
+  );
+
+  const playWhine = React.useCallback(
+    (opts) => playSound("whine", whineRef, opts),
+    [playSound]
+  );
+
+  const playScratch = React.useCallback(
+    (opts) => playSound("scratch", scratchRef, opts),
+    [playSound]
+  );
+
+  return { playBark, playWhine, playScratch };
 }

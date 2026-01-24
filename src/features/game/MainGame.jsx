@@ -19,15 +19,22 @@ import DreamSequence from "@/features/dreams/DreamSequence.jsx";
 import DynamicMusicSystem from "@/features/audio/DynamicMusicSystem.jsx";
 import { collectEarnedBadgeIds } from "@/utils/badges.js";
 import { selectDogRenderModel } from "@/features/dog/dogSelectors.js";
+import { selectSettings } from "@/redux/settingsSlice.js";
+import { useYardSfx } from "@/components/useYardSfx.js";
 import {
   selectDog,
   selectDogLifeStage,
   selectDogCleanlinessTier,
   selectDogTraining,
   ackTemperamentReveal,
+  petDog,
   feed,
+  giveWater,
   play,
+  rest,
+  wakeUp,
   bathe,
+  goPotty,
   scoopPoop,
   dismissActiveDream,
   LEVEL_XP_STEP,
@@ -121,6 +128,9 @@ export default function MainGame() {
   const training = useSelector(selectDogTraining);
   const weather = useSelector(selectWeatherCondition);
   const zip = useSelector(selectUserZip);
+  const settings = useSelector(selectSettings);
+
+  const { playBark, playWhine, playScratch } = useYardSfx(settings);
 
   const { temperamentRevealReady, temperament } = useDogLifecycle();
 
@@ -151,7 +161,19 @@ export default function MainGame() {
     () => [
       { id: "sit", label: "Sit" },
       { id: "stay", label: "Stay" },
+      { id: "down", label: "Down" },
+      { id: "come", label: "Come" },
+      { id: "heel", label: "Heel" },
       { id: "rollOver", label: "Roll over" },
+      { id: "spin", label: "Spin" },
+      { id: "jump", label: "Jump" },
+      { id: "shake", label: "Shake" },
+      { id: "highFive", label: "High five" },
+      { id: "wave", label: "Wave" },
+      { id: "bow", label: "Bow" },
+      { id: "playDead", label: "Play dead" },
+      { id: "fetch", label: "Fetch" },
+      { id: "dance", label: "Dance" },
       { id: "speak", label: "Speak" },
     ],
     []
@@ -197,6 +219,47 @@ export default function MainGame() {
     () => formatMoodLabel(rawMoodLabel),
     [rawMoodLabel]
   );
+
+  // Lightweight action-driven SFX (only on state transitions).
+  const sfxPrevRef = React.useRef({
+    action: null,
+    trained: null,
+    cue: null,
+  });
+  React.useEffect(() => {
+    if (!dog?.adoptedAt) return;
+
+    const action = String(dog?.lastAction || "");
+    const trained = String(dog?.memory?.lastTrainedCommandId || "");
+    const cue = String(dog?.emotionCue || "");
+    const prev = sfxPrevRef.current || {};
+
+    if (action && action !== prev.action) {
+      if (action === "train" && trained === "speak") {
+        playBark?.({ throttleMs: 650 });
+      } else if (action === "scratch") {
+        playScratch?.({ throttleMs: 500 });
+      } else if (action === "accident") {
+        playWhine?.({ throttleMs: 900 });
+      }
+    }
+
+    if (cue && cue !== prev.cue) {
+      if (cue === "hungry" || cue === "thirsty") {
+        playWhine?.({ throttleMs: 1400 });
+      }
+    }
+
+    sfxPrevRef.current = { action, trained, cue };
+  }, [
+    dog?.adoptedAt,
+    dog?.emotionCue,
+    dog?.lastAction,
+    dog?.memory?.lastTrainedCommandId,
+    playBark,
+    playScratch,
+    playWhine,
+  ]);
 
   const [pixiStatus, setPixiStatus] = React.useState("loading");
   const [dogView, setDogView] = React.useState({ w: 420, h: 300, scale: 2.6 });
@@ -415,9 +478,20 @@ export default function MainGame() {
 
                     <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2">
                       <ActionButton
+                        label="Pet"
+                        onClick={() => dispatch(petDog({ now }))}
+                        disabled={false}
+                      />
+                      <ActionButton
                         label="Feed"
                         tone="primary"
                         onClick={() => dispatch(feed({ now }))}
+                        disabled={false}
+                      />
+                      <ActionButton
+                        label="Water"
+                        tone="primary"
+                        onClick={() => dispatch(giveWater({ now }))}
                         disabled={false}
                       />
                       <ActionButton
@@ -435,8 +509,21 @@ export default function MainGame() {
                         disabled={false}
                       />
                       <ActionButton
+                        label={isAsleep ? "Wake" : "Rest"}
+                        tone={isAsleep ? "warn" : "default"}
+                        onClick={() =>
+                          dispatch(isAsleep ? wakeUp({ now }) : rest({ now }))
+                        }
+                        disabled={false}
+                      />
+                      <ActionButton
                         label="Bathe"
                         onClick={() => dispatch(bathe({ now }))}
+                        disabled={false}
+                      />
+                      <ActionButton
+                        label="Potty walk"
+                        onClick={() => dispatch(goPotty({ now }))}
                         disabled={false}
                       />
                       <ActionButton
