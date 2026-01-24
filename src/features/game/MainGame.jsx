@@ -1,7 +1,4 @@
 // src/features/game/MainGame.jsx
-// AAA-ish Backyard Sim screen (simplified + conflict-free)
-// @ts-nocheck
-
 import * as React from "react";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -15,27 +12,25 @@ import TemperamentCard from "@/features/game/TemperamentCard.jsx";
 import PersonalityPanel from "@/features/game/PersonalityPanel.jsx";
 import { useDogLifecycle } from "@/features/game/useDogLifecycle.jsx";
 import WeatherFXCanvas from "@/components/WeatherFXCanvas.jsx";
-import YardSetDressing from "@/components/YardSetDressing.jsx";
-import YardDogActor from "@/components/YardDogActor.jsx";
+import DogPixiView from "@/components/DogPixiView.jsx";
 import { useToast } from "@/components/ToastProvider.jsx";
 import DogMomentPanel from "@/features/game/DogMomentPanel.jsx";
 import DreamSequence from "@/features/dreams/DreamSequence.jsx";
 import DynamicMusicSystem from "@/features/audio/DynamicMusicSystem.jsx";
 import { collectEarnedBadgeIds } from "@/utils/badges.js";
+import { selectDogRenderModel } from "@/features/dog/dogSelectors.js";
 import {
   selectDog,
   selectDogLifeStage,
   selectDogCleanlinessTier,
   selectDogTraining,
-  selectDogEmotionCue,
   ackTemperamentReveal,
-  petDog,
   feed,
   play,
   bathe,
-  goPotty,
   scoopPoop,
   dismissActiveDream,
+  LEVEL_XP_STEP,
 } from "@/redux/dogSlice.js";
 import { selectWeatherCondition } from "@/redux/weatherSlice.js";
 import { selectUserZip } from "@/redux/userSlice.js";
@@ -93,6 +88,29 @@ function ActionButton({ label, onClick, tone = "default", disabled }) {
   );
 }
 
+const MOOD_LABEL_ALIASES = {
+  exhaused: "Exhausted",
+};
+
+/**
+ * @typedef {Object.<string, string>} MoodLabelAliases
+ */
+
+function formatMoodLabel(raw) {
+  const text = String(raw || "").trim();
+  if (!text) return "Content";
+  const key = text.toLowerCase();
+  if (MOOD_LABEL_ALIASES[key]) return MOOD_LABEL_ALIASES[key];
+  const segments = key.split(/[\s_-]+/).filter(Boolean);
+  if (!segments.length) return "Content";
+  return segments
+    .map((segment) => {
+      if (!segment) return "";
+      return `${segment.charAt(0).toUpperCase()}${segment.slice(1)}`;
+    })
+    .join(" ");
+}
+
 export default function MainGame() {
   const dispatch = useDispatch();
   const toast = useToast();
@@ -101,17 +119,12 @@ export default function MainGame() {
   const lifeStage = useSelector(selectDogLifeStage);
   const cleanlinessTier = useSelector(selectDogCleanlinessTier);
   const training = useSelector(selectDogTraining);
-  const emotionCue = useSelector(selectDogEmotionCue);
   const weather = useSelector(selectWeatherCondition);
   const zip = useSelector(selectUserZip);
 
   const { temperamentRevealReady, temperament } = useDogLifecycle();
 
-  const {
-    isNight,
-    timeOfDayBucket,
-    style: yardStyle,
-  } = useDayNightBackground({ zip });
+  const { timeOfDayBucket, style: yardStyle } = useDayNightBackground({ zip });
 
   const adopted = Boolean(dog?.adoptedAt);
   const age = React.useMemo(
@@ -124,6 +137,8 @@ export default function MainGame() {
       getSpriteForStageAndTier(lifeStage || dog?.lifeStage, cleanlinessTier),
     [cleanlinessTier, dog?.lifeStage, lifeStage]
   );
+
+  const renderModel = React.useMemo(() => selectDogRenderModel(dog), [dog]);
 
   const reduceMotion = Boolean(getPrefersReducedMotion());
   const reduceTransparency = Boolean(getPrefersReducedTransparency());
@@ -157,37 +172,52 @@ export default function MainGame() {
   const dogName = dog?.name || "Pup";
   const level = Number(dog?.level || 1);
   const coins = Number(dog?.coins || 0);
-  const tokens = Number(dog?.tokens || 0);
   const badges = React.useMemo(() => collectEarnedBadgeIds(dog), [dog]);
   const streakDays = Number(dog?.streak?.current || 0);
 
-  const xpPct = (() => {
-    const current = Number(dog?.xp || 0);
-    const next = Number(dog?.xpToNextLevel || 0);
-    if (!next || next <= 0) return 0;
-    return Math.max(0, Math.min(1, current / next));
-  })();
-
-  const xpLabel = (() => {
-    const current = Math.round(Number(dog?.xp || 0));
-    const next = Math.round(Number(dog?.xpToNextLevel || 0));
-    if (!next || next <= 0) return "";
-    return `${current}/${next}`;
-  })();
+  const xpStep =
+    Number.isFinite(LEVEL_XP_STEP) && LEVEL_XP_STEP > 0 ? LEVEL_XP_STEP : 100;
+  const normalizedLevel = Math.max(1, level);
+  const xpTotal = Number(dog?.xp || 0);
+  const xpForPreviousLevels = xpStep * (normalizedLevel - 1);
+  const xpIntoLevel = Math.max(
+    0,
+    Math.min(xpStep, xpTotal - xpForPreviousLevels)
+  );
+  const xpPct = xpStep > 0 ? Math.min(1, xpIntoLevel / xpStep) : 0;
+  const xpLabel = `${Math.round(xpIntoLevel)}/${xpStep}`;
 
   const intent = String(dog?.lastAction || "idle").toLowerCase();
   const isAsleep = Boolean(dog?.isAsleep);
   const activeDream = dog?.dreams?.active || null;
   const moodTag = dog?.mood?.history?.[0]?.tag || null;
-  const lastTrainedCommandId = dog?.memory?.lastTrainedCommandId || null;
+  const rawMoodLabel =
+    dog?.mood?.current || dog?.mood?.history?.[0]?.tag || "Content";
+  const moodLabel = React.useMemo(
+    () => formatMoodLabel(rawMoodLabel),
+    [rawMoodLabel]
+  );
 
-  const stageId = String(
-    lifeStage?.stage || lifeStage?.stageId || age?.stageId || "PUPPY"
-  ).toUpperCase();
+  const [pixiStatus, setPixiStatus] = React.useState("loading");
+  const [dogView, setDogView] = React.useState({ w: 420, h: 300, scale: 2.6 });
 
-  const isPuppy = stageId === "PUPPY" || stageId === "PUP";
-  const cosmeticsReady = Boolean(dog?.temperament?.revealedAt);
-  const dogSize = isPuppy ? 256 : 200;
+  React.useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
+    const calc = () => {
+      const maxW = 520;
+      const minW = 280;
+      const available = Math.max(0, (window.innerWidth || maxW) - 120);
+      const w = Math.max(minW, Math.min(maxW, available));
+      const h = Math.round((w * 300) / 420);
+      const scale = 2.6 * (w / 420);
+      setDogView({ w, h, scale });
+    };
+
+    calc();
+    window.addEventListener("resize", calc);
+    return () => window.removeEventListener("resize", calc);
+  }, []);
 
   const [showTemperament, setShowTemperament] = React.useState(false);
 
@@ -235,41 +265,6 @@ export default function MainGame() {
         onDismiss={() => dispatch(dismissActiveDream())}
       />
 
-      {/* Stage */}
-      <div className="absolute inset-0" aria-hidden>
-        <div
-          className="absolute inset-0 bg-center bg-cover"
-          style={yardStyle}
-        />
-        <div className="absolute inset-0 bg-black/15" />
-        <WeatherFXCanvas
-          mode={fxMode}
-          reduceMotion={reduceMotion}
-          reduceTransparency={reduceTransparency}
-          className="absolute inset-0"
-        />
-        <YardSetDressing isNight={isNight} />
-
-        <div className="absolute inset-0 flex items-end justify-center pb-24">
-          <YardDogActor
-            spriteSrc={spriteSrc}
-            lifeStageStage={stageId}
-            reduceMotion={reduceMotion}
-            reduceTransparency={reduceTransparency}
-            isNight={isNight}
-            isAsleep={isAsleep}
-            intent={intent}
-            emotionCue={emotionCue}
-            commandId={intent === "train" ? lastTrainedCommandId : undefined}
-            cosmeticsEquipped={cosmeticsReady ? dog?.cosmetics?.equipped : null}
-            useRig={false}
-            useSpritePack
-            size={dogSize}
-            onPet={() => dispatch(petDog({ now: Date.now() }))}
-          />
-        </div>
-      </div>
-
       <div className="relative z-10">
         <GameTopBar
           dogName={dogName}
@@ -277,12 +272,11 @@ export default function MainGame() {
           xpPct={xpPct}
           xpLabel={xpLabel}
           coins={coins}
-          tokens={tokens}
           badges={badges}
           onLogout={onLogout}
           lifeStageLabel={age?.stageLabel || "Puppy"}
           lifeStageDay={Number(age?.days || 0) + 1}
-          moodLabel={String(dog?.mood?.current || "Content")}
+          moodLabel={moodLabel}
           streakDays={streakDays}
         />
 
@@ -312,85 +306,163 @@ export default function MainGame() {
             </div>
           </main>
         ) : (
-          <main className="mx-auto w-full max-w-[1400px] px-6 pb-10 pt-4 grid gap-6 lg:grid-cols-[minmax(280px,360px)_minmax(0,1fr)_minmax(280px,360px)]">
-            <div className="space-y-4">
-              <NeedsHUD />
-              <MoodAndJournalPanel />
-            </div>
+          <main className="w-full px-4 pb-12 pt-4">
+            <section className="relative overflow-hidden rounded-[32px] border border-white/15 bg-black/35 shadow-[0_0_90px_rgba(0,0,0,0.25)]">
+              <div className="absolute inset-0" aria-hidden>
+                <div
+                  className="absolute inset-0 bg-center bg-cover"
+                  style={yardStyle}
+                />
+                <div className="absolute inset-0 bg-black/25" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(34,197,94,0.18),transparent_40%),radial-gradient(circle_at_80%_80%,rgba(56,189,248,0.12),transparent_45%)]" />
+                <WeatherFXCanvas
+                  mode={fxMode}
+                  reduceMotion={reduceMotion}
+                  reduceTransparency={reduceTransparency}
+                  className="absolute inset-0"
+                />
+              </div>
 
-            <div className="space-y-4">
-              <section className="rounded-3xl border border-white/15 bg-black/35 backdrop-blur-md p-4 shadow-[0_0_60px_rgba(0,0,0,0.18)]">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-xs uppercase tracking-[0.22em] text-zinc-400">
-                      Yard
+              <div className="relative grid grid-cols-1 lg:grid-cols-[1fr_360px]">
+                <div className="p-5 sm:p-7 lg:p-9 space-y-5 border-b border-white/10 lg:border-b-0 lg:border-r lg:border-white/10">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                    <div>
+                      <div className="text-xs uppercase tracking-[0.22em] text-zinc-200/80">
+                        Backyard Scene
+                      </div>
+                      <div className="mt-1 text-2xl sm:text-3xl font-extrabold text-emerald-100 leading-tight">
+                        {dogName} <span className="text-zinc-500">·</span>{" "}
+                        {String(age?.stageLabel || "Puppy")}
+                      </div>
+                      <div className="mt-1 text-xs sm:text-sm text-zinc-200/90">
+                        Weather:{" "}
+                        <span className="font-semibold text-zinc-100">
+                          {String(weather || "unknown")}
+                        </span>{" "}
+                        <span className="text-zinc-500">·</span>{" "}
+                        <span className="text-zinc-200">
+                          {String(timeOfDayBucket || "local")}
+                        </span>
+                      </div>
                     </div>
-                    <div className="mt-0.5 text-sm font-extrabold text-emerald-200">
-                      Actions
+
+                    <div className="rounded-2xl border border-white/15 bg-black/35 px-3 py-2 text-xs text-zinc-200/90">
+                      XP:{" "}
+                      <span className="font-semibold text-emerald-200">
+                        {xpLabel || "—"}
+                      </span>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-                      Weather
-                    </div>
-                    <div className="text-xs font-semibold text-zinc-200">
-                      {String(weather || "unknown")}
-                    </div>
-                    <div className="text-[11px] text-zinc-400">
-                      {String(timeOfDayBucket || "local")}
+
+                  <div className="relative rounded-3xl border border-white/15 bg-black/20 p-4 sm:p-6 overflow-hidden">
+                    <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.18),transparent_60%)]" />
+                    <div
+                      className="relative mx-auto"
+                      style={{ width: dogView.w, height: dogView.h }}
+                    >
+                      <div
+                        className={`absolute inset-0 transition-opacity duration-300 ${
+                          pixiStatus === "ready" ? "opacity-100" : "opacity-0"
+                        }`}
+                      >
+                        <DogPixiView
+                          stage={renderModel.stage}
+                          condition={renderModel.condition}
+                          anim={renderModel.anim}
+                          width={dogView.w}
+                          height={dogView.h}
+                          scale={dogView.scale}
+                          onStatus={() => {}}
+                          onStatusChange={setPixiStatus}
+                        />
+                      </div>
+
+                      <div
+                        className={`absolute inset-0 flex items-center justify-center transition-opacity duration-200 ${
+                          pixiStatus === "ready" ? "opacity-0" : "opacity-100"
+                        }`}
+                      >
+                        <img
+                          src={spriteSrc}
+                          alt=""
+                          draggable={false}
+                          style={{
+                            width: dogView.w,
+                            height: dogView.h,
+                            display: "block",
+                            objectFit: "contain",
+                            imageRendering: "auto",
+                          }}
+                        />
+                      </div>
                     </div>
                   </div>
+
+                  <section className="rounded-3xl border border-white/15 bg-black/30 p-4 shadow-[0_0_50px_rgba(0,0,0,0.18)]">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-xs uppercase tracking-[0.22em] text-zinc-200/80">
+                          Actions
+                        </div>
+                        <div className="mt-0.5 text-sm font-extrabold text-emerald-200">
+                          Care &amp; Play
+                        </div>
+                      </div>
+                      <div className="text-[11px] text-zinc-300/80">
+                        Tap to interact
+                      </div>
+                    </div>
+
+                    <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      <ActionButton
+                        label="Feed"
+                        tone="primary"
+                        onClick={() => dispatch(feed({ now }))}
+                        disabled={false}
+                      />
+                      <ActionButton
+                        label="Play"
+                        onClick={() =>
+                          dispatch(
+                            play({
+                              now,
+                              timeOfDay: String(
+                                timeOfDayBucket || ""
+                              ).toUpperCase(),
+                            })
+                          )
+                        }
+                        disabled={false}
+                      />
+                      <ActionButton
+                        label="Bathe"
+                        onClick={() => dispatch(bathe({ now }))}
+                        disabled={false}
+                      />
+                      <ActionButton
+                        label="Scoop"
+                        onClick={() => dispatch(scoopPoop({ now }))}
+                        disabled={false}
+                      />
+                    </div>
+                  </section>
                 </div>
 
-                <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  <ActionButton
-                    label="Feed"
-                    tone="primary"
-                    onClick={() => dispatch(feed({ now }))}
+                <aside className="p-5 sm:p-7 lg:p-9 space-y-4 bg-black/30">
+                  <NeedsHUD />
+                  <DogMomentPanel />
+                  <TrainingPanel
+                    pottyComplete={pottyComplete}
+                    allowButtonTraining
+                    commands={commands}
+                    selectedCommandId={selectedCommandId}
+                    onSelectCommand={setSelectedCommandId}
                   />
-                  <ActionButton
-                    label="Play"
-                    onClick={() =>
-                      dispatch(
-                        play({
-                          now,
-                          timeOfDay: String(
-                            timeOfDayBucket || ""
-                          ).toUpperCase(),
-                        })
-                      )
-                    }
-                  />
-                  <ActionButton
-                    label="Bathe"
-                    onClick={() => dispatch(bathe({ now }))}
-                  />
-                  <ActionButton
-                    label="Potty"
-                    onClick={() => dispatch(goPotty({ now }))}
-                  />
-                  <ActionButton
-                    label="Scoop"
-                    onClick={() => dispatch(scoopPoop({ now }))}
-                  />
-                </div>
-              </section>
-
-              <PersonalityPanel />
-            </div>
-
-            <div className="space-y-4">
-              <DogMomentPanel />
-              <TrainingPanel
-                pottyComplete={pottyComplete}
-                trainingInputMode="voice"
-                allowButtonTraining
-                allowVoiceTraining
-                commands={commands}
-                selectedCommandId={selectedCommandId}
-                onSelectCommand={setSelectedCommandId}
-              />
-            </div>
+                  <MoodAndJournalPanel />
+                  <PersonalityPanel />
+                </aside>
+              </div>
+            </section>
           </main>
         )}
       </div>

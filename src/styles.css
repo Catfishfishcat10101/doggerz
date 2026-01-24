@@ -14,7 +14,7 @@
   --stage-w: 350px;
   --stage-h: 350px;
   --sprite-size: 128px;
-  --sprite-scale: 2; /* 128px → 256px render */
+  --sprite-scale: 2; /* 128px ΓåÆ 256px render */
   /* logical CSS render size (used for stylesheet sizing) */
   --sprite-render-w: calc(var(--sprite-size) * var(--sprite-scale));
   --sprite-render-h: calc(var(--sprite-size) * var(--sprite-scale));

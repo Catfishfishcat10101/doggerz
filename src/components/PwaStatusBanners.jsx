@@ -1,93 +1,115 @@
 // src/components/PwaStatusBanners.jsx
 
 import * as React from "react";
+
 import { usePwa } from "@/pwa/PwaProvider.jsx";
+
+function Banner({ tone, children }) {
+  const toneClass =
+    tone === "warn"
+      ? "border-amber-500/30 bg-amber-500/10 text-amber-50"
+      : tone === "danger"
+        ? "border-rose-500/30 bg-rose-500/10 text-rose-50"
+        : "border-emerald-500/30 bg-emerald-500/10 text-emerald-50";
+
+  return (
+    <div
+      className={`fixed left-3 right-3 bottom-3 z-[1000] rounded-xl border px-3 py-2 backdrop-blur ${toneClass}`}
+      role="status"
+      aria-live="polite"
+    >
+      {children}
+    </div>
+  );
+}
 
 export default function PwaStatusBanners() {
   const { offline, updateAvailable, canInstall, applyUpdate, promptInstall } =
     usePwa();
-  const [installDismissed, setInstallDismissed] = React.useState(false);
+  const [hidden, setHidden] = React.useState(false);
+  const [installing, setInstalling] = React.useState(false);
 
-  // Avoid flashing the offline badge during initial load (network jitters)
-  const [showOffline, setShowOffline] = React.useState(false);
-  React.useEffect(() => {
-    if (!offline) {
-      setShowOffline(false);
-      return;
-    }
-    const t = window.setTimeout(() => setShowOffline(true), 400);
-    return () => window.clearTimeout(t);
-  }, [offline]);
+  if (hidden) return null;
 
-  React.useEffect(() => {
-    if (!canInstall) setInstallDismissed(false);
-  }, [canInstall]);
-
-  const showInstall = canInstall && !installDismissed;
-
-  if (!showOffline && !updateAvailable && !showInstall) return null;
-
-  return (
-    <div className="fixed top-3 left-1/2 z-[9999] w-[min(92vw,720px)] -translate-x-1/2 space-y-2">
-      {showInstall && (
-        <div className="flex items-center justify-between gap-3 rounded-2xl border border-emerald-500/30 bg-zinc-950/80 px-4 py-3 text-zinc-100 backdrop-blur">
-          <div className="min-w-0">
-            <div className="text-sm font-semibold text-emerald-200">
-              Install Doggerz
-            </div>
-            <div className="text-xs text-zinc-400">
-              Get the app on your home screen.
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
+  if (updateAvailable) {
+    return (
+      <Banner tone="ok">
+        <div className="flex items-center gap-3">
+          <div className="text-sm font-medium">Update available</div>
+          <div className="ml-auto flex items-center gap-2">
             <button
               type="button"
-              className="shrink-0 rounded-md border border-zinc-700 px-3 py-2 text-xs text-zinc-200"
-              onClick={() => setInstallDismissed(true)}
+              className="rounded-md bg-emerald-500/20 border border-emerald-500/30 px-2.5 py-1.5 text-xs"
+              onClick={() => applyUpdate()}
+            >
+              Update
+            </button>
+            <button
+              type="button"
+              className="rounded-md bg-transparent border border-white/15 px-2.5 py-1.5 text-xs"
+              onClick={() => setHidden(true)}
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      </Banner>
+    );
+  }
+
+  if (offline) {
+    return (
+      <Banner tone="warn">
+        <div className="flex items-center gap-3">
+          <div className="text-sm font-medium">You’re offline</div>
+          <div className="ml-auto">
+            <button
+              type="button"
+              className="rounded-md bg-transparent border border-white/15 px-2.5 py-1.5 text-xs"
+              onClick={() => setHidden(true)}
+            >
+              Hide
+            </button>
+          </div>
+        </div>
+      </Banner>
+    );
+  }
+
+  // Optional install affordance (quiet unless the browser signals installability).
+  if (canInstall) {
+    return (
+      <Banner tone="ok">
+        <div className="flex items-center gap-3">
+          <div className="text-sm font-medium">Install Doggerz</div>
+          <div className="ml-auto flex items-center gap-2">
+            <button
+              type="button"
+              className="rounded-md bg-emerald-500/20 border border-emerald-500/30 px-2.5 py-1.5 text-xs disabled:opacity-50"
+              disabled={installing}
+              onClick={async () => {
+                setInstalling(true);
+                try {
+                  await promptInstall();
+                } finally {
+                  setInstalling(false);
+                }
+              }}
+            >
+              {installing ? "Opening…" : "Install"}
+            </button>
+            <button
+              type="button"
+              className="rounded-md bg-transparent border border-white/15 px-2.5 py-1.5 text-xs"
+              onClick={() => setHidden(true)}
             >
               Not now
             </button>
-            <button
-              type="button"
-              className="shrink-0 rounded-md bg-emerald-500/20 border border-emerald-500/35 px-3 py-2 text-sm text-emerald-100"
-              onClick={() => promptInstall()}
-            >
-              Install
-            </button>
           </div>
         </div>
-      )}
+      </Banner>
+    );
+  }
 
-      {updateAvailable && (
-        <div className="flex items-center justify-between gap-3 rounded-2xl border border-emerald-500/30 bg-zinc-950/80 px-4 py-3 text-zinc-100 backdrop-blur">
-          <div className="min-w-0">
-            <div className="text-sm font-semibold text-emerald-200">
-              New version available
-            </div>
-            <div className="text-xs text-zinc-400">
-              Refresh to update (safe).
-            </div>
-          </div>
-          <button
-            type="button"
-            className="shrink-0 rounded-md bg-emerald-500/20 border border-emerald-500/35 px-3 py-2 text-sm text-emerald-100"
-            onClick={() => applyUpdate()}
-          >
-            Refresh
-          </button>
-        </div>
-      )}
-
-      {showOffline && (
-        <div className="flex items-center justify-between gap-3 rounded-2xl border border-zinc-800 bg-zinc-950/80 px-4 py-3 text-zinc-100 backdrop-blur">
-          <div className="min-w-0">
-            <div className="text-sm font-semibold">You’re offline</div>
-            <div className="text-xs text-zinc-400">
-              The app should still work for cached content.
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+  return null;
 }

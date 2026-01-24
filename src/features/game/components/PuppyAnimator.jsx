@@ -28,6 +28,7 @@ export default function PuppyAnimator({
         reduceMotion={reduceMotion}
         className="block"
         onDebug={debug ? setDebugInfo : undefined}
+        fallbackSrc={null}
       />
 
       {debug && debugInfo ? (

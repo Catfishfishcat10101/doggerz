@@ -151,112 +151,122 @@ const NeedsHUD = React.memo(function NeedsHUD() {
 
   return (
     <section className="rounded-3xl border border-white/15 bg-black/35 backdrop-blur-md p-4 shadow-[0_0_60px_rgba(0,0,0,0.18)] space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-xs uppercase tracking-[0.22em] text-zinc-400">
-            Pup needs
-          </p>
-          <p className="mt-0.5 text-sm font-extrabold text-emerald-200">
-            Status
-          </p>
-        </div>
-        {/* Neon green/black theme, pulse-glowing DOGGERZ */}
+      <div className="relative pt-8">
         <span
-          className="ml-2 px-3 py-1 rounded-full border border-emerald-400/40 bg-black/80 text-emerald-300 font-extrabold text-lg tracking-widest shadow-[0_0_18px_#00ffae99] animate-pulse-bar select-none"
+          className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2 px-3 py-1 rounded-full border border-emerald-400/40 bg-black/80 text-emerald-300 font-extrabold text-lg tracking-widest shadow-[0_0_18px_#00ffae99] animate-pulse-bar select-none"
           style={{ textShadow: "0 0 8px #00ffae, 0 0 2px #00ffae" }}
+          aria-hidden="true"
         >
           DOGGERZ
         </span>
-        {/* Show current emotion cue as a badge */}
-        {emotionCue ? (
-          <span
-            className={`ml-2 inline-flex items-center rounded-full border border-emerald-400/30 bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-200 animate-fadein focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/80 transition-all duration-200 shadow-sm hover:scale-[1.04] active:scale-95 cursor-pointer${cuePulse ? " ring-4 ring-emerald-300/60" : ""}`}
-            title={emotionCue}
-            tabIndex={0}
-            aria-label={`Dog emotion: ${emotionCue}`}
-            role="status"
-            aria-live="polite"
-          >
-            <span aria-hidden="true">
-              {emotionCue.charAt(0).toUpperCase() + emotionCue.slice(1)}
-            </span>
-          </span>
-        ) : null}
-        {reminderFresh ? (
-          <span
-            className={`ml-2 inline-flex items-center rounded-full border border-amber-400/35 bg-amber-500/10 px-3 py-1 text-[11px] font-semibold text-amber-100 animate-fadein focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/80 transition-all duration-200 shadow-sm${reminderPulse ? " ring-4 ring-amber-300/50" : ""}`}
-            title={reminder.message || "Reminder"}
-            tabIndex={0}
-            aria-label={`Reminder: ${reminder.label || reminder.key}`}
-            role="status"
-            aria-live="polite"
-          >
-            Reminder: {reminder.label || reminder.key}
-          </span>
-        ) : null}
-        {/* ARIA live region for screen readers */}
-        <span
-          aria-live="polite"
-          style={{ position: "absolute", left: "-9999px" }}
-        >
-          {ariaCue}
-        </span>
-      </div>
-      {moodlets && moodlets.length > 0 ? (
-        <MoodletChips moodlets={moodlets} />
-      ) : null}
-      <div className="space-y-3">
-        <StatBar label="Food" value={food} color="bg-emerald-500" />
-        <StatBar label="Happiness" value={happiness} color="bg-sky-500" />
-        <StatBar label="Energy" value={energy} color="bg-violet-500" />
-        <StatBar label="Cleanliness" value={cleanliness} color="bg-amber-400" />
-        <StatBar label="Bond" value={bondValue} color="bg-rose-400" />
-      </div>
-      {!pottyTrainingComplete ? (
-        <div className="mt-3 border-t border-white/10 pt-3 text-xs text-zinc-300/80 space-y-2">
-          <div className="flex items-center justify-between">
-            <p className="uppercase tracking-wide text-[0.65rem]">
-              Potty training
+        <div className="flex items-center justify-between gap-3 pt-3">
+          <div>
+            <p className="text-xs uppercase tracking-[0.22em] text-zinc-400">
+              Pup needs
             </p>
-            <Pill
-              label="Status"
-              value={pottyTrainingProgress >= 99 ? "Almost" : "In training"}
-              tone={pottyTrainingProgress >= 99 ? "default" : "warn"}
-            />
+            <p className="mt-0.5 text-sm font-extrabold text-emerald-200">
+              Status
+            </p>
           </div>
-          <div className="mt-1">
-            <div
-              className="h-2 rounded-full bg-black/35 border border-white/10 overflow-hidden"
-              role="progressbar"
-              aria-valuenow={Math.max(0, Math.min(100, pottyTrainingProgress))}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-label="Potty training progress"
+          {/* Show current emotion cue as a badge */}
+          {emotionCue ? (
+            <span
+              className={`ml-2 inline-flex items-center rounded-full border border-emerald-400/30 bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-200 animate-fadein focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/80 transition-all duration-200 shadow-sm hover:scale-[1.04] active:scale-95 cursor-pointer${cuePulse ? " ring-4 ring-emerald-300/60" : ""}`}
+              title={emotionCue}
               tabIndex={0}
+              aria-label={`Dog emotion: ${emotionCue}`}
+              role="status"
+              aria-live="polite"
             >
-              <div
-                className="h-full bg-emerald-500 transition-all duration-700 ease-out"
-                style={{
-                  width: `${Math.max(0, Math.min(100, pottyTrainingProgress))}%`,
-                }}
-              ></div>
-            </div>
-            <div className="flex justify-between text-[0.7rem] text-zinc-400/80 mt-1">
-              <span>Progress</span>
-              <span>{Math.round(pottyTrainingProgress || 0)}%</span>
-            </div>
-          </div>
-          {pottyGoal > 0 ? (
-            <p className="text-[0.65rem] text-zinc-300/80">
-              {pottySuccess}/{pottyGoal} successful breaks logged.
-            </p>
-          ) : (
-            <p className="text-[0.65rem] text-zinc-400/80">
-              Start potty training from the Potty page to unlock trick training.
-            </p>
-          )}
+              <span aria-hidden="true">
+                {emotionCue.charAt(0).toUpperCase() + emotionCue.slice(1)}
+              </span>
+            </span>
+          ) : null}
+          {reminderFresh ? (
+            <span
+              className={`ml-2 inline-flex items-center rounded-full border border-amber-400/35 bg-amber-500/10 px-3 py-1 text-[11px] font-semibold text-amber-100 animate-fadein focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/80 transition-all duration-200 shadow-sm${reminderPulse ? " ring-4 ring-amber-300/50" : ""}`}
+              title={reminder.message || "Reminder"}
+              tabIndex={0}
+              aria-label={`Reminder: ${reminder.label || reminder.key}`}
+              role="status"
+              aria-live="polite"
+            >
+              Reminder: {reminder.label || reminder.key}
+            </span>
+          ) : null}
+          {/* ARIA live region for screen readers */}
+          <span
+            aria-live="polite"
+            style={{ position: "absolute", left: "-9999px" }}
+          >
+            {ariaCue}
+          </span>
         </div>
-      ) : null}
+        {moodlets && moodlets.length > 0 ? (
+          <MoodletChips moodlets={moodlets} />
+        ) : null}
+        <div className="space-y-3">
+          <StatBar label="Food" value={food} color="bg-emerald-500" />
+          <StatBar label="Happiness" value={happiness} color="bg-sky-500" />
+          <StatBar label="Energy" value={energy} color="bg-violet-500" />
+          <StatBar
+            label="Cleanliness"
+            value={cleanliness}
+            color="bg-amber-400"
+          />
+          <StatBar label="Bond" value={bondValue} color="bg-rose-400" />
+        </div>
+        {!pottyTrainingComplete ? (
+          <div className="mt-3 border-t border-white/10 pt-3 text-xs text-zinc-300/80 space-y-2">
+            <div className="flex items-center justify-between">
+              <p className="uppercase tracking-wide text-[0.65rem]">
+                Potty training
+              </p>
+              <Pill
+                label="Status"
+                value={pottyTrainingProgress >= 99 ? "Almost" : "In training"}
+                tone={pottyTrainingProgress >= 99 ? "default" : "warn"}
+              />
+            </div>
+            <div className="mt-1">
+              <div
+                className="h-2 rounded-full bg-black/35 border border-white/10 overflow-hidden"
+                role="progressbar"
+                aria-valuenow={Math.max(
+                  0,
+                  Math.min(100, pottyTrainingProgress)
+                )}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label="Potty training progress"
+                tabIndex={0}
+              >
+                <div
+                  className="h-full bg-emerald-500 transition-all duration-700 ease-out"
+                  style={{
+                    width: `${Math.max(0, Math.min(100, pottyTrainingProgress))}%`,
+                  }}
+                ></div>
+              </div>
+              <div className="flex justify-between text-[0.7rem] text-zinc-400/80 mt-1">
+                <span>Progress</span>
+                <span>{Math.round(pottyTrainingProgress || 0)}%</span>
+              </div>
+            </div>
+            {pottyGoal > 0 ? (
+              <p className="text-[0.65rem] text-zinc-300/80">
+                {pottySuccess}/{pottyGoal} successful breaks logged.
+              </p>
+            ) : (
+              <p className="text-[0.65rem] text-zinc-400/80">
+                Start potty training from the Potty page to unlock trick
+                training.
+              </p>
+            )}
+          </div>
+        ) : null}
+      </div>
     </section>
   );
 });
@@ -309,6 +319,10 @@ function MoodletChips({ moodlets }) {
             aria-label={`Moodlet: ${m.type}${m.intensity > 1 ? `, intensity ${m.intensity}` : ""}${m.source ? ", source: " + m.source : ""}`}
             role="listitem"
             onClick={() => setPopoverIdx(showPopover ? null : i)}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              setPopoverIdx(showPopover ? null : i);
+            }}
             onFocus={() => setPopoverIdx(i)}
             onBlur={() =>
               setTimeout(

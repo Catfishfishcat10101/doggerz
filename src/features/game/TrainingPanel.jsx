@@ -2,14 +2,11 @@
 
 import { useDispatch } from "react-redux";
 
-import VoiceCommandButton from "@/components/VoiceCommandButton.jsx";
 import { trainObedience } from "@/redux/dogSlice.js";
 
 export default function TrainingPanel({
   pottyComplete,
-  trainingInputMode,
   allowButtonTraining,
-  allowVoiceTraining,
   commands,
   selectedCommandId,
   onSelectCommand,
@@ -25,15 +22,6 @@ export default function TrainingPanel({
           </div>
           <div className="mt-0.5 text-sm font-extrabold text-emerald-200">
             {pottyComplete ? "Commands" : "Locked"}
-          </div>
-        </div>
-
-        <div className="text-right">
-          <div className="text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-            Mode
-          </div>
-          <div className="text-xs font-semibold text-zinc-200">
-            {String(trainingInputMode || "buttons")}
           </div>
         </div>
       </div>
@@ -118,23 +106,6 @@ export default function TrainingPanel({
           >
             Practice
           </button>
-        </div>
-      ) : null}
-
-      {/* Voice control */}
-      {allowVoiceTraining ? (
-        <div className="mt-4 flex items-center justify-between gap-3 rounded-3xl border border-white/10 bg-black/25 px-3 py-3">
-          <div>
-            <div className="text-xs font-semibold text-zinc-200">
-              Hold to train (voice)
-            </div>
-            <div className="mt-0.5 text-[11px] text-zinc-400">
-              Try “sit”, “stay”, “roll over”, “speak”
-            </div>
-          </div>
-          <div className="shrink-0">
-            <VoiceCommandButton />
-          </div>
         </div>
       ) : null}
     </section>

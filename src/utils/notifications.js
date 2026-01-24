@@ -16,6 +16,9 @@ export async function requestNotificationsPermission() {
   }
 }
 
+/**
+ * @param {{ title?: string, body?: string, tag?: string }} [params]
+ */
 export async function showDoggerzNotification({ title, body, tag } = {}) {
   try {
     if (!canUseNotifications()) return false;

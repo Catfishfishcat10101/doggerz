@@ -17,13 +17,13 @@ export const BACKGROUNDS = {
 /** Dogs (static renders for now; will extend to actions/sheets later) */
 export const DOGS = {
   puppy: {
-    clean: `${ASSET_BASE}/dogs/puppy/clean.webp`,
+    clean: `/sprites/jack_russell_puppy.webp`,
   },
   adult: {
-    clean: `${ASSET_BASE}/dogs/adult/clean.webp`,
+    clean: `/sprites/jack_russell_adult.webp`,
   },
   senior: {
-    clean: `${ASSET_BASE}/dogs/senior/clean.webp`,
+    clean: `/sprites/jack_russell_senior.webp`,
   },
 };
 

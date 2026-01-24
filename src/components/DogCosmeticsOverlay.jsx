@@ -1,121 +1,48 @@
 // src/components/DogCosmeticsOverlay.jsx
-// Lightweight vector overlays for equipped cosmetics.
-// @ts-nocheck
+//
+// Minimal cosmetics overlay for the Store preview.
+// The "real" rendering can evolve later (sprites, SVGs, etc). For now this keeps
+// the app building even if cosmetic art assets aren't present.
 
-const COSMETIC_STYLES = {
-  collar_leaf: {
-    collar: { stroke: "rgba(16,185,129,0.95)", glow: "rgba(16,185,129,0.35)" },
-  },
-  collar_neon: {
-    collar: { stroke: "rgba(56,189,248,0.95)", glow: "rgba(56,189,248,0.35)" },
-  },
-  tag_star: {
-    tag: { fill: "rgba(250,204,21,0.95)", glow: "rgba(250,204,21,0.35)" },
-  },
-};
-
-function styleFor(id) {
-  const key = String(id || "").trim();
-  return COSMETIC_STYLES[key] || {};
+function labelFor(id) {
+  return String(id || "")
+    .replace(/^(collar_|tag_|backdrop_)/, "")
+    .replace(/[_-]+/g, " ")
+    .trim();
 }
 
-export default function DogCosmeticsOverlay({
-  equipped,
-  size = 320,
-  facing = 1,
-  reduceMotion = false,
-}) {
-  const collarId = equipped?.collar || null;
-  const tagId = equipped?.tag || null;
+export default function DogCosmeticsOverlay({ equipped, size = 360 }) {
+  const collar = equipped?.collar ? labelFor(equipped.collar) : "";
+  const tag = equipped?.tag ? labelFor(equipped.tag) : "";
+  const backdrop = equipped?.backdrop ? labelFor(equipped.backdrop) : "";
 
-  if (!collarId && !tagId) return null;
+  // No cosmetics equipped => render nothing (keeps layout clean).
+  if (!collar && !tag && !backdrop) return null;
 
-  const collarStyle = styleFor(collarId)?.collar;
-  const tagStyle = styleFor(tagId)?.tag;
-
-  const keyframes = `
-    @keyframes dg-cosmic-shimmer {
-      0% { opacity: 0.78; transform: translate3d(0,0,0); }
-      50% { opacity: 1; transform: translate3d(0,-0.5px,0); }
-      100% { opacity: 0.78; transform: translate3d(0,0,0); }
-    }
-  `;
-
+  // Simple, non-asset overlay that won't break if images are missing.
   return (
     <div
-      className="pointer-events-none absolute inset-0"
-      style={{
-        width: size,
-        height: size,
-        transform: `scaleX(${facing})`,
-        transformOrigin: "50% 100%",
-      }}
+      className="absolute inset-0"
+      style={{ width: size, height: size }}
       aria-hidden="true"
     >
-      <style>{keyframes}</style>
-      <svg
-        width={size}
-        height={size}
-        viewBox="0 0 100 100"
-        style={{ display: "block" }}
-      >
-        {/* Collar: simple arc around the neck area */}
-        {collarId ? (
-          <g
-            style={{
-              filter: collarStyle?.glow
-                ? `drop-shadow(0 0 10px ${collarStyle.glow})`
-                : undefined,
-              animation: reduceMotion
-                ? "none"
-                : "dg-cosmic-shimmer 2.6s ease-in-out infinite",
-            }}
-          >
-            <path
-              d="M34 57 C42 51, 58 51, 66 57"
-              fill="none"
-              stroke={collarStyle?.stroke || "rgba(16,185,129,0.9)"}
-              strokeWidth="4.8"
-              strokeLinecap="round"
-            />
-            <path
-              d="M34 57 C42 51, 58 51, 66 57"
-              fill="none"
-              stroke="rgba(0,0,0,0.25)"
-              strokeWidth="1.3"
-              strokeLinecap="round"
-            />
-          </g>
+      <div className="absolute left-2 top-2 flex flex-col gap-1">
+        {collar ? (
+          <span className="inline-flex rounded-full border border-emerald-400/25 bg-emerald-500/10 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-100">
+            Collar: {collar}
+          </span>
         ) : null}
-
-        {/* Tag */}
-        {tagId ? (
-          <g
-            style={{
-              filter: tagStyle?.glow
-                ? `drop-shadow(0 0 12px ${tagStyle.glow})`
-                : undefined,
-              animation: reduceMotion
-                ? "none"
-                : "dg-cosmic-shimmer 2.0s ease-in-out infinite",
-            }}
-          >
-            <circle
-              cx="50"
-              cy="64"
-              r="6.2"
-              fill={tagStyle?.fill || "rgba(250,204,21,0.9)"}
-              stroke="rgba(0,0,0,0.35)"
-              strokeWidth="1"
-            />
-            {/* star */}
-            <path
-              d="M50 58.5 L51.8 62.2 L55.8 62.7 L52.8 65.4 L53.6 69.3 L50 67.4 L46.4 69.3 L47.2 65.4 L44.2 62.7 L48.2 62.2 Z"
-              fill="rgba(255,255,255,0.7)"
-            />
-          </g>
+        {tag ? (
+          <span className="inline-flex rounded-full border border-amber-400/25 bg-amber-500/10 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-amber-100">
+            Tag: {tag}
+          </span>
         ) : null}
-      </svg>
+        {backdrop ? (
+          <span className="inline-flex rounded-full border border-sky-400/25 bg-sky-500/10 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-sky-100">
+            Backdrop: {backdrop}
+          </span>
+        ) : null}
+      </div>
     </div>
   );
 }

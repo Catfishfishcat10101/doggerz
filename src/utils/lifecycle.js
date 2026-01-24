@@ -38,7 +38,7 @@ export function getLifeStageForAge(ageInGameDays) {
 }
 
 /**
- * Convert adoption timestamp → age info.
+ * Convert adoption timestamp -> age info.
  *
  * Compatibility: older code expects { stage, label, days }
  * while newer code may expect { stageId, stageLabel, ageInGameDays }.
@@ -81,20 +81,27 @@ export function getLifeStageLabel(stageId) {
 }
 
 /**
- * Map a life stage → appropriate sprite sheet path.
- *
- * NOTE: Sprite assets have been removed. Returns app icon as fallback.
+ * Map a life stage to the static Jack Russell sprite.
  */
 export function getSpriteForLifeStage(_stageId) {
-  // All stages now return the app icon since sprites have been removed
-  return withBaseUrl("/icons/doggerz-192.png");
+  const stage = String(_stageId || "PUPPY").toUpperCase();
+  if (stage.startsWith("ADULT")) {
+    return withBaseUrl("/sprites/jack_russell_adult.webp");
+  }
+  if (stage.startsWith("SENIOR")) {
+    return withBaseUrl("/sprites/jack_russell_senior.webp");
+  }
+  return withBaseUrl("/sprites/jack_russell_puppy.webp");
 }
 
 /**
- * Helper: stage + cleanliness tier → sprite path.
- * NOTE: Sprite assets have been removed. Returns app icon as fallback.
+ * Helper: stage + cleanliness tier -> sprite path.
+ * For now we only ship clean renders, so condition falls back to stage base.
  */
 export function getSpriteForStageAndTier(_stageOrObj, _cleanlinessTier) {
-  // Sprites have been removed, return app icon as fallback
-  return getSpriteForLifeStage("PUPPY");
+  const stage =
+    typeof _stageOrObj === "string"
+      ? _stageOrObj
+      : _stageOrObj?.stage || _stageOrObj?.stageId || _stageOrObj?.id;
+  return getSpriteForLifeStage(stage || "PUPPY");
 }

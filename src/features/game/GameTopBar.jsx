@@ -12,7 +12,6 @@ export default function GameTopBar({
   xpPct = 0,
   xpLabel = "",
   coins = 0,
-  tokens = 0,
   badges = [],
   onLogout,
   lifeStageLabel = "Puppy",
@@ -68,13 +67,6 @@ export default function GameTopBar({
             <span className={chip}>
               <span className="text-emerald-200">Coins</span>
               <span className="text-zinc-100">{Number(coins) || 0}</span>
-            </span>
-
-            <span className={chip}>
-              <span className="text-emerald-200">Tokens</span>
-              <span className="text-zinc-100">
-                {Math.round(Number(tokens) || 0)}
-              </span>
             </span>
 
             <Link

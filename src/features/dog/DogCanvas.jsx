@@ -1,5 +1,5 @@
 /** @format */
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 /**
  * DogCanvas
@@ -33,6 +33,7 @@ export default function DogCanvas({
 
   useEffect(() => {
     let cancelled = false;
+    const hostEl = hostRef.current;
 
     async function boot() {
       try {
@@ -178,7 +179,7 @@ export default function DogCanvas({
       } catch {
         // ignore
       }
-      if (hostRef.current) hostRef.current.innerHTML = "";
+      if (hostEl) hostEl.innerHTML = "";
     };
   }, [sheetUrl, imageUrl, animation, resolvedHeight]);
 

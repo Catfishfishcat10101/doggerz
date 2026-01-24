@@ -1,7 +1,5 @@
 /** @format */
 
-/** @format */
-
 // public/sw.js
 
 /* -------------------------------------------------------
@@ -11,7 +9,7 @@
    - Cache-first for static assets
 -------------------------------------------------------- */
 
-const CACHE_VERSION = "doggerz-v14"; // bump this when you change cached assets or SW behaviour
+const CACHE_VERSION = "doggerz-v15"; // bump this when you change cached assets or SW behaviour
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Support deployments under a sub-path (e.g. GitHub Pages):
@@ -63,12 +61,9 @@ const CORE_ASSETS = [
 -------------------------------------------------------- */
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches
-      .open(RUNTIME_CACHE)
-      .then((cache) => cache.addAll(CORE_ASSETS.map(withBase)))
-      .catch(() => {
-        // silent fail; app will still work online
-      })
+    precacheCoreAssets().catch(() => {
+      // silent fail; app will still work online
+    })
   );
 });
 
@@ -88,19 +83,20 @@ self.addEventListener("message", (event) => {
 -------------------------------------------------------- */
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches
-      .keys()
-      .then((keys) =>
-        Promise.all(
-          keys
-            .filter((key) => !key.startsWith(CACHE_VERSION))
-            .map((key) => caches.delete(key))
-        )
-      )
+    Promise.all([
+      caches
+        .keys()
+        .then((keys) =>
+          Promise.all(
+            keys
+              .filter((key) => !key.startsWith(CACHE_VERSION))
+              .map((key) => caches.delete(key))
+          )
+        ),
+      // Take control of currently open clients
+      self.clients.claim(),
+    ])
   );
-
-  // Take control of currently open clients
-  self.clients.claim();
 });
 
 /* -------------------------------------------------------
@@ -158,6 +154,25 @@ self.addEventListener("fetch", (event) => {
 /* -------------------------------------------------------
    Strategies
 -------------------------------------------------------- */
+
+async function precacheCoreAssets() {
+  const cache = await caches.open(RUNTIME_CACHE);
+  const requests = CORE_ASSETS.map(withBase);
+
+  // addAll is all-or-nothing; we want to cache what exists.
+  const results = await Promise.allSettled(
+    requests.map((url) =>
+      cache.add(url).catch(() => {
+        // ignore missing/failed assets
+      })
+    )
+  );
+
+  // If everything failed, surface the rejection to match previous behavior.
+  if (results.every((r) => r.status !== "fulfilled")) {
+    throw new Error("precache failed");
+  }
+}
 
 async function networkFirst(request) {
   try {

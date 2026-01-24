@@ -1,119 +1,98 @@
 // src/components/CrashFallback.jsx
-// @ts-nocheck
 
 import * as React from "react";
 
-function safeStringify(value) {
+function formatError(error) {
   try {
-    return JSON.stringify(value, null, 2);
+    if (!error) return "Unknown error";
+    if (typeof error === "string") return error;
+    const name = error.name ? String(error.name) : "Error";
+    const message = error.message ? String(error.message) : "";
+    const stack = error.stack ? String(error.stack) : "";
+    return (
+      [name, message].filter(Boolean).join(": ") + (stack ? `\n\n${stack}` : "")
+    );
   } catch {
-    try {
-      return String(value);
-    } catch {
-      return "";
-    }
+    return "Unknown error";
   }
 }
 
-function buildDebugText(error) {
-  const lines = [];
-  lines.push("[Doggerz crash]");
+async function copyText(text) {
   try {
-    lines.push(`time: ${new Date().toISOString()}`);
-  } catch {
-    // ignore
-  }
-  try {
-    lines.push(`url: ${window.location.href}`);
-  } catch {
-    // ignore
-  }
-  try {
-    lines.push(`ua: ${navigator.userAgent}`);
-  } catch {
-    // ignore
-  }
-  lines.push("");
-
-  if (error) {
-    lines.push("error:");
-    lines.push(String(error?.message || error));
-    if (error?.stack) {
-      lines.push("");
-      lines.push("stack:");
-      lines.push(String(error.stack));
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
     }
-    lines.push("");
+  } catch {
+    // ignore
   }
 
-  return lines.join("\n");
+  // Fallback for older browsers / restricted contexts.
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "true");
+    ta.style.position = "fixed";
+    ta.style.left = "-9999px";
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand("copy");
+    document.body.removeChild(ta);
+    return ok;
+  } catch {
+    return false;
+  }
 }
 
-export default function CrashFallback({
-  title = "Something went wrong",
-  subtitle = "Try refreshing the page.",
-  error,
-}) {
+export default function CrashFallback({ title, subtitle, error, reset }) {
   const [copied, setCopied] = React.useState(false);
-  const debugText = React.useMemo(() => buildDebugText(error), [error]);
+  const details = React.useMemo(() => formatError(error), [error]);
+
+  const onCopy = React.useCallback(async () => {
+    const ok = await copyText(details);
+    setCopied(ok);
+    window.setTimeout(() => setCopied(false), 1200);
+  }, [details]);
 
   return (
-    <div className="min-h-[70vh] grid place-items-center px-4 py-12 bg-zinc-950 text-zinc-100">
-      <div className="w-full max-w-2xl rounded-3xl border border-white/10 bg-black/35 p-6 sm:p-8 backdrop-blur-md shadow-[0_0_80px_rgba(0,0,0,0.35)]">
-        <div className="text-xs uppercase tracking-[0.22em] text-emerald-200/80">
-          Crash
+    <div className="min-h-[70vh] grid place-items-center bg-zinc-950 text-zinc-100 px-6 py-10">
+      <div className="max-w-2xl w-full rounded-2xl border border-zinc-800 bg-zinc-950/60 p-6">
+        <div className="text-xl font-semibold">
+          {title || "Something went wrong"}
         </div>
-        <h1 className="mt-2 text-2xl sm:text-3xl font-extrabold text-white">
-          {title}
-        </h1>
-        <p className="mt-2 text-sm text-zinc-300">{subtitle}</p>
+        {subtitle ? (
+          <div className="mt-2 text-sm text-zinc-400">{subtitle}</div>
+        ) : null}
 
-        <div className="mt-5 flex flex-wrap gap-2">
+        <div className="mt-4 flex flex-wrap gap-2">
           <button
             type="button"
-            className="rounded-2xl px-4 py-2 text-sm font-semibold border border-emerald-400/35 bg-emerald-500/15 text-white hover:bg-emerald-500/20 transition"
-            onClick={() => {
-              try {
-                window.location.reload();
-              } catch {
-                // ignore
-              }
-            }}
+            className="rounded-md bg-emerald-500/20 border border-emerald-500/30 px-3 py-2 text-sm text-emerald-100"
+            onClick={() => window.location.reload()}
           >
             Refresh
           </button>
-
+          {typeof reset === "function" ? (
+            <button
+              type="button"
+              className="rounded-md bg-zinc-800/70 border border-zinc-700 px-3 py-2 text-sm text-zinc-100"
+              onClick={() => reset()}
+            >
+              Try again
+            </button>
+          ) : null}
           <button
             type="button"
-            className="rounded-2xl px-4 py-2 text-sm font-semibold border border-white/15 bg-black/25 text-white hover:bg-black/35 transition"
-            onClick={async () => {
-              try {
-                await navigator.clipboard.writeText(debugText);
-                setCopied(true);
-                window.setTimeout(() => setCopied(false), 1200);
-              } catch {
-                try {
-                  window.prompt("Copy debug info:", debugText);
-                } catch {
-                  // ignore
-                }
-              }
-            }}
+            className="rounded-md bg-zinc-800/70 border border-zinc-700 px-3 py-2 text-sm text-zinc-100"
+            onClick={onCopy}
           >
-            {copied ? "Copied" : "Copy debug"}
+            {copied ? "Copied" : "Copy debug info"}
           </button>
         </div>
 
-        {error ? (
-          <details className="mt-5 rounded-2xl border border-white/10 bg-black/25 px-4 py-3">
-            <summary className="cursor-pointer select-none text-sm font-semibold text-zinc-200">
-              Technical details
-            </summary>
-            <pre className="mt-3 whitespace-pre-wrap break-words text-xs text-zinc-300">
-              {error?.stack ? String(error.stack) : safeStringify(error)}
-            </pre>
-          </details>
-        ) : null}
+        <pre className="mt-4 max-h-[40vh] overflow-auto rounded-xl border border-zinc-800 bg-black/30 p-4 text-xs text-zinc-200 whitespace-pre-wrap">
+          {details}
+        </pre>
       </div>
     </div>
   );
