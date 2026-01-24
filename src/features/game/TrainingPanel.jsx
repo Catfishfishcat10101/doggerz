@@ -3,6 +3,7 @@
 import { useDispatch } from "react-redux";
 
 import { trainObedience } from "@/redux/dogSlice.js";
+import VoiceCommandButton from "@/components/VoiceCommandButton.jsx";
 
 export default function TrainingPanel({
   pottyComplete,
@@ -33,7 +34,7 @@ export default function TrainingPanel({
       ) : null}
 
       {/* Command list */}
-      <div className="mt-3 grid grid-cols-1 gap-2">
+      <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[320px] overflow-y-auto pr-1">
         {(commands || []).map((c) => {
           const active = c.id === selectedCommandId;
           return (
@@ -106,6 +107,12 @@ export default function TrainingPanel({
           >
             Practice
           </button>
+        </div>
+      ) : null}
+
+      {pottyComplete ? (
+        <div className="mt-3">
+          <VoiceCommandButton />
         </div>
       ) : null}
     </section>

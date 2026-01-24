@@ -133,6 +133,10 @@ const NeedsHUD = React.memo(function NeedsHUD() {
   const stats = dog.stats || {};
   const hungerLevel = Math.round(stats.hunger ?? 0);
   const food = Math.max(0, Math.min(100, 100 - hungerLevel));
+  const thirstLevel = Math.round(stats.thirst ?? 0);
+  const water = Math.max(0, Math.min(100, 100 - thirstLevel));
+  const pottyLevel = Math.round(dog.pottyLevel ?? 0);
+  const potty = Math.max(0, Math.min(100, 100 - pottyLevel));
   const happiness = Math.round(stats.happiness ?? 0);
   const energy = Math.round(stats.energy ?? 0);
   const cleanliness = Math.round(stats.cleanliness ?? 0);
@@ -208,6 +212,8 @@ const NeedsHUD = React.memo(function NeedsHUD() {
         ) : null}
         <div className="space-y-3">
           <StatBar label="Food" value={food} color="bg-emerald-500" />
+          <StatBar label="Water" value={water} color="bg-cyan-400" />
+          <StatBar label="Potty" value={potty} color="bg-lime-400" />
           <StatBar label="Happiness" value={happiness} color="bg-sky-500" />
           <StatBar label="Energy" value={energy} color="bg-violet-500" />
           <StatBar
@@ -297,7 +303,18 @@ function MoodletChips({ moodlets }) {
         let tone = "info";
         if (["sick", "injured", "starving", "fear"].includes(m.type))
           tone = "danger";
-        else if (["hungry", "tired", "dirty", "bored"].includes(m.type))
+        else if (
+          [
+            "hungry",
+            "thirsty",
+            "potty",
+            "tired",
+            "dirty",
+            "itchy",
+            "lonely",
+            "bored",
+          ].includes(m.type)
+        )
           tone = "warn";
         else if (["happy", "playful", "excited", "loved"].includes(m.type))
           tone = "happy";

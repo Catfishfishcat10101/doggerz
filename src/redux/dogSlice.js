@@ -28,11 +28,22 @@ const clamp = (n, lo = 0, hi = 100) =>
 
 const DECAY_PER_HOUR = {
   hunger: 8,
+  thirst: 7,
   happiness: 6,
   energy: 5,
   cleanliness: 3,
 };
 const DECAY_SPEED = 0.65;
+
+// Sleep + needs tuning (kept small and deterministic).
+const SLEEP_RECOVERY_PER_HOUR = 18;
+const SLEEP_NEEDS_MULTIPLIER = 0.85;
+const AUTO_SLEEP_THRESHOLD = 12;
+const AUTO_WAKE_THRESHOLD = 70;
+
+// Potty system: fill over time + accidents when ignored.
+const POTTY_FILL_PER_HOUR = 10;
+const MAX_ACCIDENTS_PER_DECAY = 3;
 
 const MOOD_SAMPLE_MINUTES = 60;
 export const LEVEL_XP_STEP = 100;
@@ -115,9 +126,11 @@ function getTemperamentTraitIntensity(state, traitId) {
 function computeMoodlets(state) {
   const stats = state.stats || {};
   const hunger = Number(stats.hunger || 0);
+  const thirst = Number(stats.thirst || 0);
   const happiness = Number(stats.happiness || 0);
   const energy = Number(stats.energy || 0);
   const cleanliness = Number(stats.cleanliness || 0);
+  const pottyLevel = Number(state.pottyLevel || 0);
   const moodlets = [];
 
   const add = (type, intensity, source) => {
@@ -130,6 +143,16 @@ function computeMoodlets(state) {
 
   if (hunger >= 70) {
     add("hungry", hunger >= 90 ? 3 : hunger >= 80 ? 2 : 1, "Hunger");
+  }
+  if (thirst >= 70) {
+    add("thirsty", thirst >= 90 ? 3 : thirst >= 80 ? 2 : 1, "Thirst");
+  }
+  if (pottyLevel >= 80) {
+    add(
+      "potty",
+      pottyLevel >= 95 ? 3 : pottyLevel >= 88 ? 2 : 1,
+      "Needs a bathroom break"
+    );
   }
   if (energy <= 30) {
     add("tired", energy <= 15 ? 3 : energy <= 25 ? 2 : 1, "Low energy");
@@ -164,12 +187,14 @@ function computeMoodlets(state) {
 function deriveEmotionCue(state) {
   const stats = state.stats || {};
   const hunger = Number(stats.hunger || 0);
+  const thirst = Number(stats.thirst || 0);
   const happiness = Number(stats.happiness || 0);
   const energy = Number(stats.energy || 0);
   const cleanliness = Number(stats.cleanliness || 0);
 
   if (state.lastAction === "trainFailed") return "stubborn";
   if (energy <= 20) return "sleepy";
+  if (thirst >= 85) return "thirsty";
   if (hunger >= 85) return "hungry";
   if (cleanliness <= 20) return "dirty";
   if ((state.memory?.neglectStrikes || 0) > 0 && happiness < 40)
@@ -198,18 +223,21 @@ const CLEANLINESS_THRESHOLDS = {
 const LIFECYCLE_STAGE_MODIFIERS = {
   [LIFE_STAGES.PUPPY]: {
     hunger: 1.15,
+    thirst: 1.1,
     happiness: 1.0,
     energy: 1.0,
     cleanliness: 1.1,
   },
   [LIFE_STAGES.ADULT]: {
     hunger: 1.0,
+    thirst: 1.0,
     happiness: 1.0,
     energy: 1.0,
     cleanliness: 1.0,
   },
   [LIFE_STAGES.SENIOR]: {
     hunger: 0.9,
+    thirst: 1.05,
     happiness: 0.9,
     energy: 1.1,
     cleanliness: 1.0,
@@ -224,6 +252,7 @@ const DEFAULT_LIFE_STAGE = {
 
 const DEFAULT_STATS = Object.freeze({
   hunger: 50,
+  thirst: 40,
   happiness: 60,
   energy: 60,
   cleanliness: 60,
@@ -237,7 +266,7 @@ const DOG_POLL_CONFIG = {
     {
       id: "water",
       prompt: "Can we swap my water for something fresh?",
-      effects: { happiness: 4, cleanliness: 1 },
+      effects: { happiness: 4, cleanliness: 1, thirst: -25 },
     },
     {
       id: "toy",
@@ -288,6 +317,7 @@ const initialPersonality = {
 const initialMemory = {
   favoriteToyId: null,
   lastFedAt: null,
+  lastDrankAt: null,
   lastPlayedAt: null,
   lastBathedAt: null,
   lastTrainedAt: null,
@@ -311,8 +341,20 @@ const initialSkills = {
   obedience: {
     sit: { level: 0, xp: 0 },
     stay: { level: 0, xp: 0 },
+    down: { level: 0, xp: 0 },
+    come: { level: 0, xp: 0 },
+    heel: { level: 0, xp: 0 },
     rollOver: { level: 0, xp: 0 },
     speak: { level: 0, xp: 0 },
+    shake: { level: 0, xp: 0 },
+    highFive: { level: 0, xp: 0 },
+    wave: { level: 0, xp: 0 },
+    spin: { level: 0, xp: 0 },
+    jump: { level: 0, xp: 0 },
+    bow: { level: 0, xp: 0 },
+    playDead: { level: 0, xp: 0 },
+    fetch: { level: 0, xp: 0 },
+    dance: { level: 0, xp: 0 },
   },
 };
 
@@ -490,6 +532,13 @@ function ensureDreamState(state) {
   return state.dreams;
 }
 
+function wakeForInteraction(state) {
+  if (!state.isAsleep) return;
+  state.isAsleep = false;
+  const dreams = ensureDreamState(state);
+  dreams.active = null;
+}
+
 function ensureSkillTreeState(state) {
   if (!state.skillTree || typeof state.skillTree !== "object") {
     state.skillTree = { ...initialSkillTree };
@@ -648,7 +697,7 @@ function maybeGenerateDream(state, now = nowMs()) {
 }
 
 const isValidStat = (key) =>
-  ["hunger", "happiness", "energy", "cleanliness"].includes(key);
+  ["hunger", "thirst", "happiness", "energy", "cleanliness"].includes(key);
 
 const clampSigned = (n, limit = 100) =>
   Math.max(-limit, Math.min(limit, Number.isFinite(n) ? n : 0));
@@ -797,6 +846,7 @@ function applyDecay(state, now = nowMs()) {
   const sweetHappinessMultiplier = hasTemperamentTag(state, "SWEET") ? 0.85 : 1;
   const cleanlinessDecayMultiplier = skillMods.cleanlinessDecayMultiplier || 1;
   const idleEnergyDecayMultiplier = skillMods.idleEnergyDecayMultiplier || 1;
+  const sleeping = Boolean(state.isAsleep);
   const idleish = (() => {
     const a = String(state.lastAction || "")
       .trim()
@@ -811,18 +861,77 @@ function applyDecay(state, now = nowMs()) {
     const stageMultiplier = getStageMultiplier(state, key);
     let delta = rate * DECAY_SPEED * effectiveHours * stageMultiplier;
 
+    if (sleeping && (key === "hunger" || key === "thirst")) {
+      delta *= SLEEP_NEEDS_MULTIPLIER;
+    }
+
     if (key === "hunger") {
       delta *= hungerMultiplier;
-      state.stats[key] = clamp(value + delta, 0, 100);
-    } else {
+      state.stats.hunger = clamp(value + delta, 0, 100);
+      return;
+    }
+    if (key === "thirst") {
+      state.stats.thirst = clamp(value + delta, 0, 100);
+      return;
+    }
+
+    {
       if (key === "happiness") {
         delta *= happinessDecayMultiplier * sweetHappinessMultiplier;
       }
       if (key === "cleanliness") delta *= cleanlinessDecayMultiplier;
-      if (key === "energy" && idleish) delta *= idleEnergyDecayMultiplier;
+
+      if (key === "energy") {
+        if (sleeping) {
+          const gain =
+            SLEEP_RECOVERY_PER_HOUR *
+            DECAY_SPEED *
+            effectiveHours *
+            stageMultiplier;
+          state.stats.energy = clamp(value + gain, 0, 100);
+          return;
+        }
+        if (idleish) delta *= idleEnergyDecayMultiplier;
+      }
+
       state.stats[key] = clamp(value - delta, 0, 100);
     }
   });
+
+  // Auto-sleep / auto-wake around very low energy.
+  if (!sleeping && Number(state.stats?.energy || 0) <= AUTO_SLEEP_THRESHOLD) {
+    state.isAsleep = true;
+    state.lastAction = "sleep_auto";
+  } else if (
+    sleeping &&
+    Number(state.stats?.energy || 0) >= AUTO_WAKE_THRESHOLD
+  ) {
+    state.isAsleep = false;
+    state.lastAction = "wake";
+    const dreams = ensureDreamState(state);
+    dreams.active = null;
+  }
+
+  // Potty need rises over time; trigger accidents if it overflows.
+  if (!vacation.enabled) {
+    const effects = getCleanlinessEffect(state);
+    const tierMultiplier = Number(effects?.pottyGainMultiplier || 1) || 1;
+    const trainingMultiplier = getPottyTrainingMultiplier(state);
+    const asleepMultiplier = state.isAsleep ? 0.75 : 1;
+    const perHour = POTTY_FILL_PER_HOUR * tierMultiplier * trainingMultiplier;
+    let pottyNeed =
+      Number(state.pottyLevel || 0) +
+      perHour * effectiveHours * asleepMultiplier;
+
+    let accidents = 0;
+    while (pottyNeed >= 100 && accidents < MAX_ACCIDENTS_PER_DECAY) {
+      accidents += 1;
+      pottyNeed -= 100;
+      applyAccidentInternal(state, now);
+    }
+
+    state.pottyLevel = clamp(pottyNeed, 0, 100);
+  }
 
   // Vacation mode implies your pup is cared for; we skip neglect strikes/journal.
   if (!vacation.enabled && diffHours >= 24) {
@@ -830,6 +939,7 @@ function applyDecay(state, now = nowMs()) {
       (state.memory.neglectStrikes || 0) + 1,
       999
     );
+    applyBondLoss(state, 2, now);
 
     // Neglect nudges personality toward cautious/independent/reserved.
     applyPersonalityShift(state, {
@@ -863,11 +973,12 @@ function maybeSampleMood(state, now = nowMs(), reason = "TICK") {
   const last = state.mood.lastSampleAt;
   if (last && now - last < MOOD_SAMPLE_MINUTES * 60 * 1000) return;
 
-  const { hunger, happiness, energy, cleanliness } = state.stats;
+  const { hunger, thirst, happiness, energy, cleanliness } = state.stats;
 
   let tag = "NEUTRAL";
-  if (happiness > 75 && hunger < 60) tag = "HAPPY";
+  if (happiness > 75 && hunger < 60 && thirst < 60) tag = "HAPPY";
   else if (hunger > 75) tag = "HUNGRY";
+  else if (thirst > 75) tag = "RESTLESS";
   else if (energy < 30) tag = "SLEEPY";
   else if (cleanliness < 30) tag = "DIRTY";
 
@@ -876,6 +987,7 @@ function maybeSampleMood(state, now = nowMs(), reason = "TICK") {
     tag,
     reason,
     hunger: Math.round(hunger),
+    thirst: Math.round(thirst),
     happiness: Math.round(happiness),
     energy: Math.round(energy),
     cleanliness: Math.round(cleanliness),
@@ -920,16 +1032,41 @@ function applyBondGain(state, amount = 1, now = nowMs()) {
   state.bond.updatedAt = now;
 }
 
-function applySkillXp(skillBranch, skillId, skillState, amount = 5) {
-  if (!skillState[skillBranch] || !skillState[skillBranch][skillId]) return;
+function applyBondLoss(state, amount = 1, now = nowMs()) {
+  const loss = Math.abs(Number(amount) || 0);
+  if (loss <= 0) return;
+  if (!state.bond || typeof state.bond !== "object") {
+    state.bond = { ...initialBond };
+  }
+  state.bond.value = clamp((state.bond.value || 0) - loss, 0, 100);
+  state.bond.updatedAt = now;
+}
 
-  const node = skillState[skillBranch][skillId];
-  node.xp += amount;
+function applySkillXp(skillBranch, skillId, skillState, amount = 5) {
+  if (!skillState || typeof skillState !== "object") return;
+  const branchKey = String(skillBranch || "").trim();
+  const idKey = String(skillId || "").trim();
+  if (!branchKey || !idKey) return;
+
+  if (!skillState[branchKey] || typeof skillState[branchKey] !== "object") {
+    skillState[branchKey] = {};
+  }
+
+  if (
+    !skillState[branchKey][idKey] ||
+    typeof skillState[branchKey][idKey] !== "object"
+  ) {
+    skillState[branchKey][idKey] = { level: 0, xp: 0 };
+  }
+
+  const node = skillState[branchKey][idKey];
+  if (typeof node.xp !== "number") node.xp = 0;
+  if (typeof node.level !== "number") node.level = 0;
+
+  node.xp += Number(amount) || 0;
 
   const targetLevel = Math.floor(node.xp / SKILL_LEVEL_STEP);
-  if (targetLevel > node.level) {
-    node.level = targetLevel;
-  }
+  if (targetLevel > node.level) node.level = targetLevel;
 }
 
 function updateStreak(streakState, isoDate) {
@@ -1276,6 +1413,60 @@ function recordPuppyPottySuccess(state, now = nowMs()) {
 function getPottyTrainingMultiplier(state) {
   const training = ensureTrainingState(state);
   return training.potty?.completedAt ? POTTY_TRAINED_POTTY_GAIN_MULTIPLIER : 1;
+}
+
+function gainPottyNeed(state, amount = 10) {
+  const base = Number(amount) || 0;
+  if (!base) return;
+  const effects = getCleanlinessEffect(state);
+  const tierMultiplier = Number(effects?.pottyGainMultiplier || 1) || 1;
+  const trainingMultiplier = getPottyTrainingMultiplier(state);
+  const inc = base * tierMultiplier * trainingMultiplier;
+  state.pottyLevel = clamp((state.pottyLevel || 0) + inc, 0, 100);
+}
+
+function ensurePottyMeta(state) {
+  if (!state.potty || typeof state.potty !== "object") {
+    state.potty = {
+      training: 0,
+      lastSuccessAt: null,
+      lastAccidentAt: null,
+      totalSuccesses: 0,
+      totalAccidents: 0,
+    };
+  }
+  if (typeof state.potty.totalSuccesses !== "number")
+    state.potty.totalSuccesses = 0;
+  if (typeof state.potty.totalAccidents !== "number")
+    state.potty.totalAccidents = 0;
+  return state.potty;
+}
+
+function applyAccidentInternal(state, now = nowMs()) {
+  const potty = ensurePottyMeta(state);
+  potty.totalAccidents += 1;
+  potty.lastAccidentAt = now;
+
+  // Accidents leave a mess and hurt morale/bond a bit.
+  state.poopCount = Math.max(0, Number(state.poopCount || 0)) + 1;
+  state.stats.cleanliness = clamp(
+    Number(state.stats?.cleanliness || 0) - 12,
+    0,
+    100
+  );
+  state.stats.happiness = clamp(
+    Number(state.stats?.happiness || 0) - 4,
+    0,
+    100
+  );
+  applyBondLoss(state, 1, now);
+
+  // Accidents usually wake the dog up.
+  state.isAsleep = false;
+
+  state.memory.lastSeenAt = now;
+  state.lastAction = "accident";
+  maybeSampleMood(state, now, "ACCIDENT");
 }
 
 function completeAdultTrainingSession(state, now = nowMs()) {
@@ -1659,6 +1850,7 @@ const dogSlice = createSlice({
     feed(state, { payload }) {
       const now = payload?.now ?? nowMs();
       applyDecay(state, now);
+      wakeForInteraction(state);
 
       const amount = payload?.amount ?? 20;
       const careerMultiplier =
@@ -1677,6 +1869,10 @@ const dogSlice = createSlice({
       state.memory.lastSeenAt = now;
       state.lastAction = "feed";
 
+      const sweetBondMultiplier = hasTemperamentTag(state, "SWEET") ? 1.25 : 1;
+      applyBondGain(state, 0.7 * sweetBondMultiplier, now);
+      gainPottyNeed(state, 25);
+
       applyPersonalityShift(state, {
         now,
         source: "FEED",
@@ -1692,9 +1888,35 @@ const dogSlice = createSlice({
       finalizeDerivedState(state, now);
     },
 
+    giveWater(state, { payload }) {
+      const now = payload?.now ?? nowMs();
+      applyDecay(state, now);
+      wakeForInteraction(state);
+
+      const amount = payload?.amount ?? 25;
+      state.stats.thirst = clamp(state.stats.thirst - amount, 0, 100);
+      state.stats.happiness = clamp(state.stats.happiness + 2, 0, 100);
+
+      state.memory.lastDrankAt = now;
+      state.memory.lastSeenAt = now;
+      state.lastAction = "water";
+
+      const sweetBondMultiplier = hasTemperamentTag(state, "SWEET") ? 1.25 : 1;
+      applyBondGain(state, 0.6 * sweetBondMultiplier, now);
+      gainPottyNeed(state, 18);
+
+      applyXp(state, 3);
+      maybeSampleMood(state, now, "WATER");
+      const date = getIsoDate(now);
+      updateStreak(state.streak, date);
+      updateTemperamentReveal(state, now);
+      finalizeDerivedState(state, now);
+    },
+
     play(state, { payload }) {
       const now = payload?.now ?? nowMs();
       applyDecay(state, now);
+      wakeForInteraction(state);
 
       const zoomiesMultiplier = payload?.timeOfDay === "MORNING" ? 2 : 1;
       const careerMultiplier =
@@ -1725,6 +1947,8 @@ const dogSlice = createSlice({
 
       const sweetBondMultiplier = hasTemperamentTag(state, "SWEET") ? 1.35 : 1;
       applyBondGain(state, 2 * sweetBondMultiplier, now);
+      state.stats.thirst = clamp(state.stats.thirst + 6, 0, 100);
+      gainPottyNeed(state, 12);
 
       applyPersonalityShift(state, {
         now,
@@ -1750,6 +1974,7 @@ const dogSlice = createSlice({
     petDog(state, { payload }) {
       const now = payload?.now ?? nowMs();
       applyDecay(state, now);
+      wakeForInteraction(state);
 
       const sweetBondMultiplier = hasTemperamentTag(state, "SWEET") ? 1.45 : 1;
       applyBondGain(state, 1.2 * sweetBondMultiplier, now);
@@ -1778,6 +2003,14 @@ const dogSlice = createSlice({
       const skillMods = getSkillTreeModifiersFromDogState(state);
       const restEnergyGainMultiplier = skillMods.restEnergyGainMultiplier || 1;
 
+      // Avoid "energy spam" if the user taps Rest repeatedly while already asleep.
+      if (state.isAsleep) {
+        state.memory.lastSeenAt = now;
+        state.lastAction = "rest";
+        finalizeDerivedState(state, now);
+        return;
+      }
+
       state.isAsleep = true;
       state.stats.energy = clamp(
         state.stats.energy +
@@ -1789,6 +2022,9 @@ const dogSlice = createSlice({
 
       state.memory.lastSeenAt = now;
       state.lastAction = "rest";
+
+      const sweetBondMultiplier = hasTemperamentTag(state, "SWEET") ? 1.2 : 1;
+      applyBondGain(state, 0.5 * sweetBondMultiplier, now);
 
       maybeGenerateDream(state, now);
 
@@ -1809,12 +2045,23 @@ const dogSlice = createSlice({
       finalizeDerivedState(state, now);
     },
 
-    wakeUp(state) {
+    wakeUp(state, { payload }) {
+      const now = payload?.now ?? nowMs();
+      applyDecay(state, now);
+
       state.isAsleep = false;
       state.lastAction = "wake";
 
       const dreams = ensureDreamState(state);
       dreams.active = null;
+
+      // Typical "wake up" routine: they often need a bathroom break + water.
+      gainPottyNeed(state, 20);
+      state.stats.thirst = clamp(state.stats.thirst + 3, 0, 100);
+
+      state.memory.lastSeenAt = now;
+      maybeSampleMood(state, now, "WAKE");
+      finalizeDerivedState(state, now);
     },
 
     dismissActiveDream(state) {
@@ -1825,6 +2072,7 @@ const dogSlice = createSlice({
     bathe(state, { payload }) {
       const now = payload?.now ?? nowMs();
       applyDecay(state, now);
+      wakeForInteraction(state);
 
       const perks = getPersonalityPerks(state);
 
@@ -1840,6 +2088,9 @@ const dogSlice = createSlice({
       state.memory.lastSeenAt = now;
       state.lastAction = "bathe";
 
+      const sweetBondMultiplier = hasTemperamentTag(state, "SWEET") ? 1.15 : 1;
+      applyBondGain(state, 0.35 * sweetBondMultiplier, now);
+
       applyPersonalityShift(state, {
         now,
         source: "BATHE",
@@ -1853,21 +2104,22 @@ const dogSlice = createSlice({
     },
 
     increasePottyLevel(state, { payload }) {
-      const effects = getCleanlinessEffect(state);
-      const multiplier = effects.pottyGainMultiplier || 1;
-      const trainingMultiplier = getPottyTrainingMultiplier(state);
-      const inc = (payload?.amount ?? 10) * multiplier * trainingMultiplier;
-      state.pottyLevel = clamp(state.pottyLevel + inc, 0, 100);
+      gainPottyNeed(state, payload?.amount ?? 10);
     },
 
     goPotty(state, { payload }) {
       const now = payload?.now ?? nowMs();
+      applyDecay(state, now);
+      wakeForInteraction(state);
       const training = ensureTrainingState(state).potty;
       state.pottyLevel = 0;
       state.poopCount += 1;
       state.stats.happiness = clamp(state.stats.happiness + 3, 0, 100);
       state.memory.lastSeenAt = now;
       state.lastAction = "potty";
+
+      const sweetBondMultiplier = hasTemperamentTag(state, "SWEET") ? 1.25 : 1;
+      applyBondGain(state, 0.8 * sweetBondMultiplier, now);
 
       applyXp(state, 2);
       maybeSampleMood(state, now, "POTTY");
@@ -1879,28 +2131,28 @@ const dogSlice = createSlice({
         );
         state.potty.training = clamp(pct, 0, 100);
       }
-      state.potty.totalSuccesses += 1;
-      state.potty.lastSuccessAt = now;
+      const pottyMeta = ensurePottyMeta(state);
+      pottyMeta.totalSuccesses += 1;
+      pottyMeta.lastSuccessAt = now;
       finalizeDerivedState(state, now);
     },
 
     recordAccident(state, { payload }) {
       const now = payload?.now ?? nowMs();
-      state.potty.totalAccidents += 1;
-      state.potty.lastAccidentAt = now;
-      state.stats.happiness = clamp(state.stats.happiness - 2, 0, 100);
-      state.memory.lastSeenAt = now;
-      state.lastAction = "accident";
-      maybeSampleMood(state, now, "ACCIDENT");
+      state.pottyLevel = 0;
+      applyAccidentInternal(state, now);
       finalizeDerivedState(state, now);
     },
 
     scoopPoop(state, { payload }) {
       const now = payload?.now ?? nowMs();
+      applyDecay(state, now);
+      wakeForInteraction(state);
       if (state.poopCount > 0) {
         state.poopCount -= 1;
         state.stats.cleanliness = clamp(state.stats.cleanliness + 10, 0, 100);
         state.stats.happiness = clamp(state.stats.happiness + 2, 0, 100);
+        applyBondGain(state, 0.25, now);
         applyXp(state, 2);
         maybeSampleMood(state, now, "SCOOP");
       }
@@ -1929,6 +2181,27 @@ const dogSlice = createSlice({
       applyDecay(state, now);
       const tier = finalizeDerivedState(state, now);
       applyCleanlinessPenalties(state, tier);
+
+      // Ambient behavior: itchy dogs will scratch sometimes.
+      if (!state.isAsleep && (tier === "FLEAS" || tier === "MANGE")) {
+        const last = String(state.lastAction || "").toLowerCase();
+        const protectedActions = [
+          "feed",
+          "water",
+          "play",
+          "train",
+          "bathe",
+          "potty",
+          "scoop",
+          "pet",
+        ];
+        const canOverride = !protectedActions.some((a) => last.startsWith(a));
+        const chance = tier === "MANGE" ? 0.35 : 0.25;
+        if (canOverride && Math.random() < chance) {
+          state.lastAction = "scratch";
+        }
+      }
+
       maybeSampleMood(state, now, "TICK");
       updateTemperamentReveal(state, now);
       evaluateTemperament(state, now);
@@ -2001,6 +2274,7 @@ const dogSlice = createSlice({
 
       const now = payloadNow ?? nowMs();
       applyDecay(state, now);
+      wakeForInteraction(state);
 
       const perks = getPersonalityPerks(state);
       const skillMods = getSkillTreeModifiersFromDogState(state);
@@ -2051,6 +2325,11 @@ const dogSlice = createSlice({
       state.memory.lastTrainedCommandId = commandId;
       state.memory.lastSeenAt = now;
       state.lastAction = "train";
+
+      const sweetBondMultiplier = hasTemperamentTag(state, "SWEET") ? 1.2 : 1;
+      applyBondGain(state, 1.0 * sweetBondMultiplier, now);
+      state.stats.thirst = clamp(state.stats.thirst + 4, 0, 100);
+      gainPottyNeed(state, 8);
 
       state.stats.happiness = clamp(
         state.stats.happiness + 8 * perks.trainingHappinessBonus,
@@ -2378,6 +2657,7 @@ export const {
   markTemperamentRevealed,
   updateFavoriteToy,
   feed,
+  giveWater,
   play,
   petDog,
   rest,

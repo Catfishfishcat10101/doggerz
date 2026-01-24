@@ -12,7 +12,19 @@ const hasSpeech =
 const commandMap = [
   { id: "sit", keywords: ["sit", "sit down"] },
   { id: "stay", keywords: ["stay"] },
+  { id: "down", keywords: ["down", "lay down", "lie down"] },
+  { id: "come", keywords: ["come", "come here", "here"] },
+  { id: "heel", keywords: ["heel"] },
   { id: "rollOver", keywords: ["roll over", "rollover", "roll"] },
+  { id: "spin", keywords: ["spin", "turn around"] },
+  { id: "jump", keywords: ["jump", "hop"] },
+  { id: "shake", keywords: ["shake", "paw", "give paw", "shake hands"] },
+  { id: "highFive", keywords: ["high five", "highfive"] },
+  { id: "wave", keywords: ["wave"] },
+  { id: "bow", keywords: ["bow", "take a bow"] },
+  { id: "playDead", keywords: ["play dead", "bang", "dead"] },
+  { id: "fetch", keywords: ["fetch", "get it"] },
+  { id: "dance", keywords: ["dance"] },
   { id: "speak", keywords: ["speak", "bark", "talk"] },
 ];
 
@@ -142,7 +154,7 @@ export default function VoiceCommandButton() {
         setError(null);
       } else {
         setError(
-          "Couldn’t catch a known command. Try 'sit', 'stay', 'roll over', or 'speak'."
+          "Couldn’t catch a known command. Try 'sit', 'stay', 'down', 'come', 'roll over', or 'speak'."
         );
       }
     };

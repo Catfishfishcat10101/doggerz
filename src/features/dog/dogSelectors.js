@@ -106,7 +106,10 @@ export function selectDogRenderParams(stateOrDog) {
     last.includes("sleep") ||
     last.includes("rest");
   const isBarking =
-    last.includes("bark") || last.includes("howl") || last === "speak";
+    last.includes("bark") ||
+    last.includes("howl") ||
+    last === "speak" ||
+    (last === "train" && lastTrainedCommandId === "speak");
   const isWalking =
     last === "walk" ||
     last === "walking" ||

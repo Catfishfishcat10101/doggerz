@@ -16,6 +16,7 @@
     "build": "vite build",
     "images:optimize": "node scripts/optimize-images.js",
     "audio:optimize": "node scripts/optimize-audio.js",
+    "audio:sfx": "node scripts/generate-sfx.js",
     "backgrounds:make": "node scripts/make-backgrounds.mjs",
     "backgrounds:wide": "node scripts/generate-wide-backyard.js",
     "sprites:generate": "node scripts/generate-sprites.js",
