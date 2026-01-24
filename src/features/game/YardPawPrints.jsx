@@ -1,6 +1,5 @@
 /** @format */
 /** @format */
-import React from "react";
 
 /**
  * Subtle paw-print pattern overlay for the yard.

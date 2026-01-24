@@ -2,93 +2,56 @@
 
 import { Link } from "react-router-dom";
 
-import BackPill from "@/components/BackPill.jsx";
-
-/**
- * @typedef {Object} EmptySlateProps
- * @property {string=} kicker
- * @property {string=} title
- * @property {string=} description
- * @property {string=} primaryLabel
- * @property {string=} primaryTo
- * @property {(() => void)=} onPrimary
- * @property {string=} backTo
- * @property {string=} backLabel
- * @property {string=} className
- */
-
-/**
- * A single-decision empty state.
- * - One primary action (button or link)
- * - Optional subtle back affordance
- */
-/** @param {EmptySlateProps} props */
-export default function EmptySlate(props = {}) {
-  const {
-    kicker,
-    title,
-    description,
-    primaryLabel,
-    primaryTo,
-    onPrimary,
-    backTo,
-    backLabel = "Back",
-    className = "",
-  } = props;
-
-  const shell =
-    "rounded-3xl border border-white/12 bg-black/20 p-6 backdrop-blur shadow-[0_0_70px_rgba(0,0,0,0.35)]";
-
-  const primaryBase =
-    "inline-flex items-center justify-center rounded-2xl px-5 py-3 text-sm font-extrabold bg-emerald-400 text-black shadow-[0_0_35px_rgba(52,211,153,0.25)] hover:bg-emerald-300 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50";
-
-  const renderPrimary = () => {
-    if (!primaryLabel) return null;
-
-    if (primaryTo) {
-      return (
-        <Link to={primaryTo} className={primaryBase}>
-          {primaryLabel}
-        </Link>
-      );
-    }
-
-    return (
-      <button type="button" onClick={onPrimary} className={primaryBase}>
-        {primaryLabel}
-      </button>
-    );
-  };
+export default function EmptySlate({
+  kicker,
+  title,
+  description,
+  primaryLabel,
+  primaryTo,
+  onPrimary,
+  backTo,
+  backLabel = "Back",
+}) {
+  const PrimaryTag = primaryTo ? Link : "button";
+  const primaryProps = primaryTo
+    ? { to: primaryTo }
+    : { type: "button", onClick: onPrimary };
 
   return (
-    <section className={`${shell} ${className}`.trim()}>
+    <div className="rounded-3xl border border-white/12 bg-black/25 p-6 backdrop-blur">
       {kicker ? (
-        <div className="text-xs uppercase tracking-[0.22em] text-zinc-400">
+        <div className="text-[11px] uppercase tracking-[0.26em] text-zinc-400">
           {kicker}
         </div>
       ) : null}
-
-      {title ? (
-        <h2 className="mt-2 text-xl font-extrabold text-emerald-200">
-          {title}
-        </h2>
-      ) : null}
-
+      <div className="mt-2 text-lg font-extrabold text-emerald-200">
+        {title || "Nothing here yet"}
+      </div>
       {description ? (
-        <p className="mt-2 text-sm text-zinc-300 max-w-prose">{description}</p>
+        <div className="mt-2 text-sm text-zinc-300 max-w-prose">
+          {description}
+        </div>
       ) : null}
 
-      <div className="mt-5 flex flex-col sm:flex-row sm:items-center gap-3">
-        {renderPrimary()}
+      <div className="mt-5 flex flex-wrap items-center gap-2">
+        {primaryLabel ? (
+          <PrimaryTag
+            {...primaryProps}
+            className="inline-flex items-center justify-center rounded-2xl px-4 py-2 text-xs font-extrabold bg-emerald-400 text-black hover:bg-emerald-300 transition"
+          >
+            {primaryLabel}
+          </PrimaryTag>
+        ) : null}
 
         {backTo ? (
-          <BackPill
+          <Link
             to={backTo}
-            label={backLabel}
-            className="bg-black/30 hover:bg-black/40"
-          />
+            className="inline-flex items-center justify-center rounded-2xl px-4 py-2 text-xs font-semibold border border-white/15 bg-black/30 text-zinc-100 hover:bg-black/45 transition"
+          >
+            {backLabel}
+          </Link>
         ) : null}
       </div>
-    </section>
+    </div>
   );
 }

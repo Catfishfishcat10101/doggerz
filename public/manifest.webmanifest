@@ -33,7 +33,7 @@
       "purpose": "any maskable"
     },
     {
-      "src": "src/components/DogPixiView.jsx",
+      "src": "/icons/doggerz-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"

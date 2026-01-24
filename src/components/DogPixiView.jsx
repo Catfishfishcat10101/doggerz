@@ -3,33 +3,88 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Stage, Container, AnimatedSprite } from "@pixi/react";
-import { Assets, Rectangle, Texture } from "pixi.js";
+import { Assets, Rectangle, Texture, SCALE_MODES } from "pixi.js";
 import { getDogPixiSheetUrl } from "@/utils/dogSpritePaths.js";
+import jrManifest from "@/features/game/sprites/jrManifest.json";
 
-// IMPORTANT: set these to match your sheet
-const FRAME_W = 128;
-const FRAME_H = 128;
+const FRAME_W = Number(jrManifest?.frame?.width || 128);
+const FRAME_H = Number(jrManifest?.frame?.height || 128);
+const DEFAULT_ANIM = String(jrManifest?.defaultAnim || "idle");
+const DEFAULT_FPS = Number(jrManifest?.defaultFps || 8);
+const COLUMNS = Number(jrManifest?.columns || 0);
 
-// Fixed row order in the sheet
-const ROW_BY_ANIM = {
-  idle: 0,
-  walk: 1,
-  sleep: 2,
-  bark: 3,
-  scratch: 4,
-};
+const ROW_BY_ANIM = Object.create(null);
+const FRAMES_BY_ANIM = Object.create(null);
+const FPS_BY_ANIM = Object.create(null);
+const ALIASES =
+  jrManifest?.aliases && typeof jrManifest.aliases === "object"
+    ? jrManifest.aliases
+    : {};
 
-// Frames per row (columns used from the left)
-const FRAMES_BY_ANIM = {
-  idle: 6,
-  walk: 8,
-  sleep: 6,
-  bark: 4,
-  scratch: 6,
-};
+if (Array.isArray(jrManifest?.rows)) {
+  jrManifest.rows.forEach((row, index) => {
+    if (!row?.anim) return;
+    const key = String(row.anim).trim().toLowerCase();
+    if (!key) return;
+    ROW_BY_ANIM[key] = index;
+    const frames = Number(row.frames || 0);
+    FRAMES_BY_ANIM[key] = frames > 0 ? frames : COLUMNS || 1;
+    const fps = Number(row.fps || 0);
+    FPS_BY_ANIM[key] = fps > 0 ? fps : DEFAULT_FPS;
+  });
+}
+
+function normalizeKey(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_")
+    .replace(/-+/g, "_");
+}
+
+function resolveAnim(requested) {
+  const key = normalizeKey(requested);
+  if (Object.prototype.hasOwnProperty.call(ROW_BY_ANIM, key)) return key;
+  const alias = normalizeKey(ALIASES[key]);
+  if (alias && Object.prototype.hasOwnProperty.call(ROW_BY_ANIM, alias)) {
+    return alias;
+  }
+  if (Object.prototype.hasOwnProperty.call(ROW_BY_ANIM, DEFAULT_ANIM)) {
+    return DEFAULT_ANIM;
+  }
+  return key || DEFAULT_ANIM;
+}
 
 function sheetPath(stage, condition) {
   return getDogPixiSheetUrl(stage, condition);
+}
+
+function applyNearestScaleMode(maybeTexture) {
+  const nearest = SCALE_MODES?.NEAREST ?? 0;
+  const candidates = [
+    maybeTexture,
+    maybeTexture?.baseTexture,
+    maybeTexture?.source,
+    maybeTexture?.baseTexture?.source,
+  ].filter(Boolean);
+
+  for (const c of candidates) {
+    try {
+      if ("scaleMode" in c) c.scaleMode = nearest;
+    } catch {
+      // ignore
+    }
+    try {
+      if (c?.source && "scaleMode" in c.source) c.source.scaleMode = nearest;
+    } catch {
+      // ignore
+    }
+    try {
+      if ("mipmap" in c) c.mipmap = "off";
+    } catch {
+      // ignore
+    }
+  }
 }
 
 function sliceRowTextures(baseTexture, rowIndex, frameCount) {
@@ -54,15 +109,17 @@ export default function DogPixiView({
   height = 300,
   scale = 2.2,
   onStatus,
+  onStatusChange,
 }) {
   const [baseTexture, setBaseTexture] = useState(null);
+  const emitStatus = onStatusChange || onStatus;
 
   useEffect(() => {
     let alive = true;
 
     // Reset so callers don't briefly see the previous sheet while we load.
     setBaseTexture(null);
-    onStatus?.("loading");
+    emitStatus?.("loading");
 
     async function load() {
       const path = sheetPath(stage, condition);
@@ -71,9 +128,11 @@ export default function DogPixiView({
         // Load the png; Assets.load returns a Texture for images
         const tex = await Assets.load(path);
         const bt = tex?.baseTexture ?? tex;
+        applyNearestScaleMode(tex);
+        applyNearestScaleMode(bt);
         if (alive) {
           setBaseTexture(bt);
-          onStatus?.("ready");
+          emitStatus?.("ready");
         }
       } catch (err) {
         // Missing sprite sheets should not crash the whole game.
@@ -83,9 +142,11 @@ export default function DogPixiView({
           try {
             const tex = await Assets.load(fallback);
             const bt = tex?.baseTexture ?? tex;
+            applyNearestScaleMode(tex);
+            applyNearestScaleMode(bt);
             if (alive) {
               setBaseTexture(bt);
-              onStatus?.("ready");
+              emitStatus?.("ready");
             }
             return;
           } catch (fallbackErr) {
@@ -101,7 +162,7 @@ export default function DogPixiView({
         console.warn("[Doggerz] Failed to load sprite sheet:", path, err);
         if (alive) {
           setBaseTexture(null);
-          onStatus?.("error");
+          emitStatus?.("error");
         }
       }
     }
@@ -110,14 +171,22 @@ export default function DogPixiView({
     return () => {
       alive = false;
     };
-  }, [condition, onStatus, stage]);
+  }, [condition, emitStatus, stage]);
 
   const textures = useMemo(() => {
     if (!baseTexture) return [];
-    const row = ROW_BY_ANIM[anim] ?? 0;
-    const count = FRAMES_BY_ANIM[anim] ?? 1;
+    const resolved = resolveAnim(anim);
+    const row = ROW_BY_ANIM[resolved] ?? 0;
+    const count = FRAMES_BY_ANIM[resolved] ?? (COLUMNS || 1);
     return sliceRowTextures(baseTexture, row, count);
   }, [baseTexture, anim]);
+
+  const animationSpeed = useMemo(() => {
+    const resolved = resolveAnim(anim);
+    const fps = FPS_BY_ANIM[resolved] ?? DEFAULT_FPS;
+    const speed = Number(fps) > 0 ? Number(fps) / 60 : 0.12;
+    return Math.max(0.02, speed);
+  }, [anim]);
 
   const canAnimate = textures.length > 0;
 
@@ -129,6 +198,7 @@ export default function DogPixiView({
         backgroundAlpha: 0,
         antialias: false,
         autoDensity: true,
+        roundPixels: true,
         resolution: window.devicePixelRatio || 1,
       }}
     >
@@ -138,7 +208,7 @@ export default function DogPixiView({
             textures={textures}
             isPlaying
             initialFrame={0}
-            animationSpeed={0.12}
+            animationSpeed={animationSpeed}
             anchor={0.5}
             scale={scale}
           />

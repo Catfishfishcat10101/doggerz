@@ -13,6 +13,11 @@ import {
 } from "@/redux/dogSlice.js";
 
 const PupContext = React.createContext(null);
+export default PupContext;
+
+export function usePup() {
+  return React.useContext(PupContext);
+}
 
 function buildPupFromDog(dog) {
   const safeDog = dog && typeof dog === "object" ? dog : {};
@@ -115,8 +120,5 @@ export function PupProvider({ children }) {
   return <PupContext.Provider value={value}>{children}</PupContext.Provider>;
 }
 
-export function usePup() {
-  const ctx = React.useContext(PupContext);
-  if (!ctx) throw new Error("usePup must be used within <PupProvider>");
-  return ctx;
-}
+// usePup hook was previously split for fast refresh compatibility; keeping it
+// here avoids broken imports during repo cleanup.

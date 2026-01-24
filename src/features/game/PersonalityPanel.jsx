@@ -3,7 +3,6 @@ import { useSelector } from "react-redux";
 import { selectDogPersonality } from "@/redux/dogSlice.js";
 
 import PersonalityTraitCard from "@/features/personality/PersonalityTraitCard.jsx";
-import PersonalityEvolutionTimeline from "@/features/personality/PersonalityEvolutionTimeline.jsx";
 
 const TRAITS = [
   {
@@ -42,9 +41,6 @@ export default function PersonalityPanel() {
   const personality = useSelector(selectDogPersonality);
 
   const traits = personality?.traits || {};
-  const history = Array.isArray(personality?.history)
-    ? personality.history
-    : [];
 
   const hint = String(personality?.animationHint || "").trim();
 
@@ -86,15 +82,6 @@ export default function PersonalityPanel() {
             value={Number(traits?.[t.key] || 0)}
           />
         ))}
-      </div>
-
-      <div className="mt-4">
-        <div className="text-[11px] uppercase tracking-[0.18em] text-zinc-500">
-          Evolution timeline
-        </div>
-        <div className="mt-2">
-          <PersonalityEvolutionTimeline history={history} maxItems={12} />
-        </div>
       </div>
     </section>
   );

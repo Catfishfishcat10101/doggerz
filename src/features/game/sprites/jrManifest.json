@@ -1,0 +1,40 @@
+{
+  "frame": {
+    "width": 128,
+    "height": 128
+  },
+  "columns": 12,
+  "defaultAnim": "idle",
+  "defaultFps": 8,
+  "rows": [
+    { "anim": "idle", "frames": 12, "fps": 6 },
+    { "anim": "walk", "frames": 12, "fps": 10 },
+    { "anim": "wag", "frames": 12, "fps": 8 },
+    { "anim": "trick", "frames": 12, "fps": 12 },
+    { "anim": "sleep", "frames": 12, "fps": 4 },
+    { "anim": "bark", "frames": 12, "fps": 10 },
+    { "anim": "scratch", "frames": 12, "fps": 8 }
+  ],
+  "aliases": {
+    "run": "walk",
+    "fetch": "walk",
+    "play": "walk",
+    "zoomies": "walk",
+    "rest": "sleep",
+    "nap": "sleep",
+    "sit": "trick",
+    "stay": "trick",
+    "roll": "trick",
+    "rollover": "trick",
+    "roll_over": "trick",
+    "spin": "trick",
+    "jump": "trick",
+    "paw": "trick",
+    "bow": "trick",
+    "beg": "trick",
+    "play_dead": "trick",
+    "playdead": "trick",
+    "train": "trick",
+    "celebrate": "trick"
+  }
+}

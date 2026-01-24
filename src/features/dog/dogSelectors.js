@@ -10,6 +10,35 @@ import {
 
 export const selectDog = (state) => state?.dog || {}; // change if your store path differs
 
+const TRICK_ACTIONS = new Set([
+  "sit",
+  "stay",
+  "roll",
+  "rollover",
+  "roll_over",
+  "spin",
+  "jump",
+  "paw",
+  "bow",
+  "beg",
+  "play_dead",
+  "playdead",
+  "highfive",
+  "wave",
+  "shake",
+  "crawl",
+  "fetch",
+  "dance",
+]);
+
+function normalizeAction(action) {
+  return String(action || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_")
+    .replace(/-+/g, "_");
+}
+
 /**
  * Accept either a Redux `state` or a `dog` object and return the dog object.
  * This makes the selectors tolerant to callers that pass the dog slice directly.
@@ -34,7 +63,8 @@ function _resolveDog(stateOrDog) {
  * Returns an object: `{ stage, condition, anim }` where:
  * - `stage` is one of `pup|adult|senior` (lowercase)
  * - `condition` is `clean|dirty|fleas|mange` (maps from cleanlinessTier or cleanliness)
- * - `anim` is a simple animation hint: `sleep|bark|walk|idle`
+ * - `anim` is a simple animation hint:
+ *   `sleep|bark|scratch|trick|wag|walk|idle`
  */
 export function selectDogRenderParams(stateOrDog) {
   const dog = _resolveDog(stateOrDog) || {};
@@ -65,27 +95,45 @@ export function selectDogRenderParams(stateOrDog) {
           : "clean";
 
   // Animation hint: prefer explicit flags, then lastAction heuristics
+  const last = normalizeAction(dog.lastAction || dog.last_action);
+  const lastTrainedCommandId = normalizeAction(
+    dog?.memory?.lastTrainedCommandId
+  );
+  const happiness = Number(dog?.stats?.happiness ?? 0);
   const isSleeping =
     !!dog.isAsleep ||
     !!dog.is_sleeping ||
-    (dog.lastAction || "").toLowerCase().includes("sleep");
-  const last = (dog.lastAction || dog.last_action || "")
-    .toString()
-    .toLowerCase();
-  const isBarking = last.includes("bark") || last === "bark";
+    last.includes("sleep") ||
+    last.includes("rest");
+  const isBarking =
+    last.includes("bark") || last.includes("howl") || last === "speak";
   const isWalking =
     last === "walk" ||
     last === "walking" ||
     last === "zoomies" ||
-    last.includes("run");
+    last.includes("run") ||
+    last === "play" ||
+    last === "fetch";
+  const isScratch = last.includes("scratch") || last.includes("itch");
+  const isTrick =
+    TRICK_ACTIONS.has(last) || (last === "train" && !!lastTrainedCommandId);
+  const isWag =
+    last.includes("wag") ||
+    (!isWalking && !isTrick && !isScratch && happiness >= 80);
 
   const anim = isSleeping
     ? "sleep"
     : isBarking
       ? "bark"
-      : isWalking
-        ? "walk"
-        : "idle";
+      : isScratch
+        ? "scratch"
+        : isTrick
+          ? "trick"
+          : isWag
+            ? "wag"
+            : isWalking
+              ? "walk"
+              : "idle";
 
   return { stage, condition, anim };
 }
@@ -98,7 +146,7 @@ export function selectDogRenderParams(stateOrDog) {
  *     stage: "pup"|"adult"|"senior",
  *     stageLabel: string,
  *     condition: "clean"|"dirty"|"fleas"|"mange",
- *     anim: "sleep"|"bark"|"walk"|"idle",
+ *     anim: "sleep"|"bark"|"scratch"|"trick"|"wag"|"walk"|"idle",
  *     staticSpriteUrl: string,
  *     pixiSheetUrl: string,
  *     pixiSheetFallbackUrl: string,

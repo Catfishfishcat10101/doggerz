@@ -35,7 +35,7 @@ const DECAY_PER_HOUR = {
 const DECAY_SPEED = 0.65;
 
 const MOOD_SAMPLE_MINUTES = 60;
-const LEVEL_XP_STEP = 100;
+export const LEVEL_XP_STEP = 100;
 const SKILL_LEVEL_STEP = 50;
 
 // Vacation mode: reduces decay + slows aging while you’re away.

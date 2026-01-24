@@ -23,9 +23,7 @@ function cover(p) {
 }
 
 // DAY
-await cover(sharp(src))
-  .webp({ quality: 85 })
-  .toFile(dayOut);
+await cover(sharp(src)).webp({ quality: 85 }).toFile(dayOut);
 
 // NIGHT: darker + slightly desaturated + cool overlay
 const overlay = await sharp({
