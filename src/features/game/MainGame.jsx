@@ -1,4 +1,3 @@
-/** @format */
 // src/features/game/MainGame.jsx
 
 import { useEffect, useMemo, useState } from "react";

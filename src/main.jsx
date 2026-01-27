@@ -1,3 +1,5 @@
+/* eslint-disable react-refresh/only-export-components */
+
 // src/main.jsx
 import * as React from "react";
 import ReactDOM from "react-dom/client";

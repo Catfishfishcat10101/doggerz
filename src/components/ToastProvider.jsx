@@ -1,10 +1,11 @@
+ 
+
 // src/components/ToastProvider.jsx
 
 import * as React from "react";
 import { useSelector } from "react-redux";
 import { selectSettings } from "@/redux/settingsSlice.js";
-
-const ToastContext = React.createContext(null);
+import { ToastContext } from "@/components/toastContext.js";
 
 function clamp(n, lo, hi) {
   const x = Number(n);
@@ -91,15 +92,18 @@ function typeStyles(type) {
       };
   }
 }
+
 export function ToastProvider({ children }) {
   const settings = useSelector(selectSettings);
   const hapticsEnabled = Boolean(settings?.hapticsEnabled);
   const hasUserGesture = useUserGestureGate();
   const [toasts, setToasts] = React.useState([]);
   const lastByKeyRef = React.useRef(Object.create(null));
+
   const remove = React.useCallback((id) => {
     setToasts((curr) => curr.filter((t) => t.id !== id));
   }, []);
+
   const show = React.useCallback(
     (opts) => {
       const message = String(opts?.message || "").trim();
@@ -126,21 +130,25 @@ export function ToastProvider({ children }) {
         dismissLabel: String(opts?.dismissLabel || "Dismiss"),
         haptic: opts?.haptic,
       };
+
       setToasts((curr) => [toast, ...curr].slice(0, 4));
+
       const shouldHaptic =
         hapticsEnabled &&
         (toast.haptic === true ||
           toast.type === "reward" ||
           toast.type === "success");
+
       if (shouldHaptic) {
-        // Tiny "pop"; keep it short and subtle.
         if (hasUserGesture) vibrate(15);
       }
+
       window.setTimeout(() => remove(id), durationMs);
       return id;
     },
     [hapticsEnabled, hasUserGesture, remove]
   );
+
   const once = React.useCallback(
     (key, opts, cooldownMs = 180_000) => {
       const k = String(key || "").trim();
@@ -176,7 +184,6 @@ export function ToastProvider({ children }) {
     <ToastContext.Provider value={api}>
       {children}
 
-      {/* Toast stack (fixed, non-blocking) */}
       <div className="pointer-events-none fixed right-3 bottom-3 z-[90] flex w-[min(420px,calc(100%-1.5rem))] flex-col gap-2">
         {toasts.map((t) => {
           const s = typeStyles(t.type);
@@ -231,12 +238,4 @@ export function ToastProvider({ children }) {
       </div>
     </ToastContext.Provider>
   );
-}
-
-export function useToast() {
-  const ctx = React.useContext(ToastContext);
-  if (!ctx) {
-    throw new Error("useToast must be used within <ToastProvider>");
-  }
-  return ctx;
 }
