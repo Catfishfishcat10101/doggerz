@@ -331,7 +331,7 @@ export default function DogAIEngine() {
         // ignore
       }
     };
-  }, []);
+  }, [dispatch]);
 
   // 1. Hydrate on first mount (localStorage → Redux, then optional cloud)
   useEffect(() => {
