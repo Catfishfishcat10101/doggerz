@@ -145,7 +145,9 @@ export default function LongTermProgressionCard({
                         {c.label}
                       </div>
                       <div
-                        className={`text-[0.72rem] ${done ? "text-emerald-200" : "text-zinc-400"}`}
+                        className={`text-[0.72rem] ${
+                          done ? "text-emerald-200" : "text-zinc-400"
+                        }`}
                       >
                         {done ? "Claimed" : `${progress}/${goal}`}
                       </div>
