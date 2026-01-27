@@ -10,11 +10,11 @@ import {
   useState,
 } from "react";
 import { Stage, Container, AnimatedSprite } from "@pixi/react";
-import { Assets, Rectangle, Texture, settings } from "pixi.js";
+import { Assets, Rectangle, Texture, TextureStyle } from "pixi.js";
 import { getDogPixiSheetUrl } from "@/utils/dogSpritePaths.js";
 import jrManifest from "@/features/game/jrManifest.json";
 
-settings.SCALE_MODE = "nearest";
+TextureStyle.defaultOptions.scaleMode = "nearest";
 
 const FRAME_W = Number(jrManifest?.frame?.width || 128);
 const FRAME_H = Number(jrManifest?.frame?.height || 128);
