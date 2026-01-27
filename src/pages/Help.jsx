@@ -4,7 +4,7 @@ import { useCallback, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import PageShell from "@/components/PageShell.jsx";
 import { SUPPORT_CONTACT_URL } from "@/config/links.js";
-import { useToast } from "@/components/ToastProvider.jsx";
+import { useToast } from "@/components/toastContext.js";
 
 const SURFACE =
   "rounded-3xl border border-emerald-500/15 bg-black/35 backdrop-blur-md shadow-[0_0_60px_rgba(16,185,129,0.10)]";

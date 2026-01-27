@@ -4,7 +4,11 @@
 import * as React from "react";
 
 import { withBaseUrl } from "@/utils/assetUrl.js";
-import jrManifest from "@/features/game/sprites/jrManifest.json";
+import {
+  getDogPixiSheetUrl,
+  normalizeDogCondition,
+} from "@/utils/dogSpritePaths.js";
+import jrManifest from "@/features/game/jrManifest.json";
 
 const FRAME_W = Number(jrManifest?.frame?.width || 128);
 const FRAME_H = Number(jrManifest?.frame?.height || 128);
@@ -100,6 +104,7 @@ function loadImage(src) {
 
 export default function SpriteSheetDog({
   stage = "PUPPY",
+  condition = "clean",
   anim = "idle",
   facing = 1,
   size = 320,
@@ -109,7 +114,8 @@ export default function SpriteSheetDog({
   onDebug,
 }) {
   const stageKey = normalizeStage(stage);
-  const sheetSrc = withBaseUrl(`/sprites/jr/${stageKey}_clean.png`);
+  const conditionKey = normalizeDogCondition(condition);
+  const sheetSrc = getDogPixiSheetUrl(stageKey, conditionKey);
 
   const effectiveFallbackSrc = React.useMemo(() => {
     const candidates = [];
@@ -220,6 +226,7 @@ export default function SpriteSheetDog({
     if (typeof onDebug !== "function") return;
     onDebug({
       stage: stageKey,
+      condition: conditionKey,
       requestedAnim: anim,
       resolvedAnim,
       sheetSrc,
@@ -232,6 +239,7 @@ export default function SpriteSheetDog({
     });
   }, [
     anim,
+    conditionKey,
     effectiveFallbackSrc,
     fallbackIndex,
     fps,

@@ -1,5 +1,15 @@
+//src/features/dog/DogCanvas.jsx
 /** @format */
 import { useEffect, useMemo, useRef, useState } from "react";
+
+let pixiImportPromise = null;
+
+function loadPixiModule() {
+  if (!pixiImportPromise) {
+    pixiImportPromise = import("@pixi/core");
+  }
+  return pixiImportPromise;
+}
 
 /**
  * DogCanvas
@@ -34,19 +44,45 @@ export default function DogCanvas({
   useEffect(() => {
     let cancelled = false;
     const hostEl = hostRef.current;
+    let resizeHandler = null;
+
+    const cleanup = () => {
+      if (resizeHandler) {
+        window.removeEventListener("resize", resizeHandler);
+        resizeHandler = null;
+      }
+      try {
+        if (appRef.current) {
+          appRef.current.destroy({
+            removeView: true,
+            children: true,
+            texture: true,
+            baseTexture: true,
+          });
+          appRef.current = null;
+        }
+      } catch {
+        // ignore
+      }
+      if (hostEl) hostEl.innerHTML = "";
+    };
 
     async function boot() {
       try {
         if (!hostRef.current) return;
 
         hostRef.current.innerHTML = "";
-        setMode("loading");
-        setErrorText("");
+        if (!cancelled) {
+          setMode("loading");
+          setErrorText("");
+        }
 
-        const pixiMod = await import("pixi.js").catch(() => null);
+        const pixiMod = await loadPixiModule().catch(() => null);
         if (!pixiMod) {
-          setMode("fallback");
-          setErrorText("pixi.js not installed");
+          if (!cancelled) {
+            setMode("fallback");
+            setErrorText("pixi.js not installed");
+          }
           return;
         }
 
@@ -63,14 +99,19 @@ export default function DogCanvas({
         });
 
         if (cancelled) {
-          app.destroy(true);
+          app.destroy({
+            removeView: true,
+            children: true,
+            texture: true,
+            baseTexture: true,
+          });
           return;
         }
 
         appRef.current = app;
         host.appendChild(app.canvas);
 
-        const onResize = () => {
+        resizeHandler = () => {
           if (!appRef.current || !hostRef.current) return;
           const w = hostRef.current.clientWidth || 600;
           const h = hostRef.current.clientHeight || resolvedHeight;
@@ -82,20 +123,30 @@ export default function DogCanvas({
           }
         };
 
-        window.addEventListener("resize", onResize);
+        window.addEventListener("resize", resizeHandler);
 
         let dogDisplay = null;
 
         if (sheetUrl) {
           try {
-            await PIXI.Assets.load(sheetUrl);
-            const sheet = PIXI.Assets.get(sheetUrl);
+            const loaded = await PIXI.Assets.load(sheetUrl);
+            const sheet = loaded?.spritesheet || loaded;
 
             const animations =
               sheet?.animations || sheet?.spritesheet?.animations || null;
 
             if (animations && animations[animation]?.length) {
-              dogDisplay = new PIXI.AnimatedSprite(animations[animation]);
+              // PixiJS v8: AnimatedSprite expects array of Texture or {texture, time}
+              let frames = animations[animation];
+              // If frames are not Texture or {texture, time}, try to convert
+              frames = frames.map((frame) => {
+                if (frame instanceof PIXI.Texture) return frame;
+                if (frame?.texture instanceof PIXI.Texture) return frame;
+                if (typeof frame === "string" && sheet.textures?.[frame])
+                  return sheet.textures[frame];
+                return frame;
+              });
+              dogDisplay = new PIXI.AnimatedSprite(frames);
               dogDisplay.animationSpeed = 0.12;
               dogDisplay.play();
             } else if (sheet?.textures) {
@@ -150,20 +201,20 @@ export default function DogCanvas({
         app.stage.addChild(dogDisplay);
 
         app.ticker.add(() => {
-          if (!spriteRef.current) return;
-          spriteRef.current.y =
-            h * 0.78 + Math.sin(app.ticker.lastTime / 420) * 1.6;
+          const sprite = spriteRef.current;
+          const renderer = appRef.current?.renderer;
+          if (!sprite || !renderer) return;
+          const hNow = renderer.height || resolvedHeight;
+          sprite.y = hNow * 0.78 + Math.sin(app.ticker.lastTime / 420) * 1.6;
         });
 
-        onResize();
-        setMode("pixi");
-
-        return () => {
-          window.removeEventListener("resize", onResize);
-        };
+        resizeHandler();
+        if (!cancelled) setMode("pixi");
       } catch (err) {
-        setMode("fallback");
-        setErrorText(err?.message || "DogCanvas error");
+        if (!cancelled) {
+          setMode("fallback");
+          setErrorText(err?.message || "DogCanvas error");
+        }
       }
     }
 
@@ -171,15 +222,7 @@ export default function DogCanvas({
 
     return () => {
       cancelled = true;
-      try {
-        if (appRef.current) {
-          appRef.current.destroy(true);
-          appRef.current = null;
-        }
-      } catch {
-        // ignore
-      }
-      if (hostEl) hostEl.innerHTML = "";
+      cleanup();
     };
   }, [sheetUrl, imageUrl, animation, resolvedHeight]);
 

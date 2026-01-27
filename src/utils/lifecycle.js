@@ -7,7 +7,7 @@ import { withBaseUrl } from "@/utils/assetUrl.js";
 // How many in-game "dog days" pass per real day.
 // Tuning: higher => faster aging. Keep this high enough for visible progress,
 // but not so high that stages churn too quickly.
-export const GAME_DAYS_PER_REAL_DAY = 4;
+export const GAME_DAYS_PER_REAL_DAY = 24;
 
 // Lifecycle / age stages (in-game days)
 export const LIFE_STAGES = {

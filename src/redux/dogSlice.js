@@ -10,6 +10,12 @@ import { createSlice } from "@reduxjs/toolkit";
 import { calculateDogAge } from "@/utils/lifecycle.js";
 import { CLEANLINESS_TIER_EFFECTS, LIFE_STAGES } from "@/constants/game.js";
 import {
+  OBEDIENCE_COMMANDS,
+  commandRequirementsMet,
+  getObedienceCommand,
+} from "@/constants/obedienceCommands.js";
+import { computeTrainingSuccessChance } from "@/utils/trainingMath.js";
+import {
   computeSkillTreeModifiers,
   getSkillTreeBranchIdForPerk,
   getSkillTreePerk,
@@ -33,7 +39,7 @@ const DECAY_PER_HOUR = {
   energy: 5,
   cleanliness: 3,
 };
-const DECAY_SPEED = 0.65;
+const DECAY_SPEED = 0.4;
 
 // Sleep + needs tuning (kept small and deterministic).
 const SLEEP_RECOVERY_PER_HOUR = 18;
@@ -430,6 +436,13 @@ function createInitialTrainingState() {
       streak: 0,
       misses: 0,
       lastPenaltyDate: null,
+    },
+    obedience: {
+      unlockedIds: [],
+      unlockableAtById: {},
+      unlockedAtById: {},
+      lastUnlockedId: null,
+      lastUnlockedAt: null,
     },
   };
 }
@@ -1274,6 +1287,7 @@ function finalizeDerivedState(state, now = nowMs()) {
   normalizeStatsState(state);
   syncLifecycleState(state, now);
   const tier = syncCleanlinessTier(state, now);
+  evaluateObedienceUnlocks(state, now);
   state.moodlets = computeMoodlets(state);
   state.emotionCue = deriveEmotionCue(state);
   return tier;
@@ -1385,7 +1399,111 @@ function ensureTrainingState(state) {
   if (!state.training.adult) {
     state.training.adult = { ...defaults.adult };
   }
+  if (!state.training.obedience) {
+    state.training.obedience = { ...defaults.obedience };
+  }
   return state.training;
+}
+
+function ensureObedienceUnlockState(state) {
+  const training = ensureTrainingState(state);
+  if (!training.obedience || typeof training.obedience !== "object") {
+    training.obedience = {
+      unlockedIds: [],
+      unlockableAtById: {},
+      unlockedAtById: {},
+      lastUnlockedId: null,
+      lastUnlockedAt: null,
+    };
+  }
+
+  const o = training.obedience;
+  o.unlockedIds = Array.isArray(o.unlockedIds)
+    ? o.unlockedIds.map((id) => String(id))
+    : [];
+  o.unlockableAtById =
+    o.unlockableAtById && typeof o.unlockableAtById === "object"
+      ? o.unlockableAtById
+      : {};
+  o.unlockedAtById =
+    o.unlockedAtById && typeof o.unlockedAtById === "object"
+      ? o.unlockedAtById
+      : {};
+  o.lastUnlockedId = o.lastUnlockedId ? String(o.lastUnlockedId) : null;
+  if (typeof o.lastUnlockedAt !== "number") {
+    o.lastUnlockedAt = null;
+  }
+
+  return o;
+}
+
+function evaluateObedienceUnlocks(state, now = nowMs()) {
+  const training = ensureTrainingState(state);
+  const unlocks = ensureObedienceUnlockState(state);
+  const pottyComplete = Boolean(training?.potty?.completedAt);
+  if (!pottyComplete) return;
+
+  const level = Math.max(1, Number(state.level || 1));
+  const bond = clamp(Number(state.bond?.value || 0), 0, 100);
+  const streak = Math.max(0, Number(state.streak?.currentStreakDays || 0));
+
+  const context = { level, bond, streak, pottyComplete };
+
+  OBEDIENCE_COMMANDS.forEach((command) => {
+    if (!command?.id) return;
+    const id = String(command.id);
+    if (unlocks.unlockedIds.includes(id)) return;
+
+    const eligible = commandRequirementsMet(context, command);
+    if (!eligible) {
+      if (unlocks.unlockableAtById[id]) {
+        delete unlocks.unlockableAtById[id];
+      }
+      return;
+    }
+
+    const delayMinutes = Number(command.unlockDelayMinutes || 0);
+    const delayMs = Math.max(0, Math.round(delayMinutes * 60 * 1000));
+    const startedAt = Number(unlocks.unlockableAtById[id] || 0);
+
+    if (delayMs <= 0) {
+      unlocks.unlockedIds.push(id);
+      unlocks.unlockedAtById[id] = now;
+      unlocks.lastUnlockedId = id;
+      unlocks.lastUnlockedAt = now;
+      if (unlocks.unlockableAtById[id]) delete unlocks.unlockableAtById[id];
+
+      pushJournalEntry(state, {
+        type: "TRAINING",
+        moodTag: "PROUD",
+        summary: `Unlocked ${command.label}.`,
+        body: `New command ready: "${command.label}". Time to practice!`,
+        timestamp: now,
+      });
+      return;
+    }
+
+    if (!startedAt) {
+      unlocks.unlockableAtById[id] = now;
+      return;
+    }
+
+    if (now - startedAt >= delayMs) {
+      unlocks.unlockedIds.push(id);
+      unlocks.unlockedAtById[id] = now;
+      unlocks.lastUnlockedId = id;
+      unlocks.lastUnlockedAt = now;
+      if (unlocks.unlockableAtById[id]) delete unlocks.unlockableAtById[id];
+
+      pushJournalEntry(state, {
+        type: "TRAINING",
+        moodTag: "PROUD",
+        summary: `Unlocked ${command.label}.`,
+        body: `New command ready: "${command.label}". Time to practice!`,
+        timestamp: now,
+      });
+    }
+  });
 }
 
 function recordPuppyPottySuccess(state, now = nowMs()) {
@@ -1852,7 +1970,7 @@ const dogSlice = createSlice({
       applyDecay(state, now);
       wakeForInteraction(state);
 
-      const amount = payload?.amount ?? 20;
+      const amount = payload?.amount ?? 100;
       const careerMultiplier =
         state.career.perks?.happinessGainMultiplier || 1.0;
 
@@ -1893,7 +2011,7 @@ const dogSlice = createSlice({
       applyDecay(state, now);
       wakeForInteraction(state);
 
-      const amount = payload?.amount ?? 25;
+      const amount = payload?.amount ?? 100;
       state.stats.thirst = clamp(state.stats.thirst - amount, 0, 100);
       state.stats.happiness = clamp(state.stats.happiness + 2, 0, 100);
 
@@ -2263,23 +2381,39 @@ const dogSlice = createSlice({
         state.lastAction = "trainBlocked";
         return;
       }
-      const {
-        commandId,
-        success = true,
-        xp = 6,
-        now: payloadNow,
-      } = payload || {};
+      const commandId = payload?.commandId
+        ? String(payload.commandId).trim()
+        : "";
+      if (!commandId) return;
 
-      if (!commandId || success === false) return;
-
-      const now = payloadNow ?? nowMs();
+      const now = payload?.now ?? nowMs();
+      const input = payload?.input || "button";
+      const xp = Number(payload?.xp ?? 6);
       applyDecay(state, now);
       wakeForInteraction(state);
+      evaluateObedienceUnlocks(state, now);
+
+      const unlocks = ensureObedienceUnlockState(state);
+      const command = getObedienceCommand(commandId);
+      const isUnlocked = unlocks.unlockedIds.includes(commandId);
+
+      if (!command || !isUnlocked) {
+        state.memory.lastTrainedAt = now;
+        state.memory.lastTrainedCommandId = commandId;
+        state.memory.lastSeenAt = now;
+        state.lastAction = "trainLocked";
+        finalizeDerivedState(state, now);
+        return;
+      }
 
       const perks = getPersonalityPerks(state);
       const skillMods = getSkillTreeModifiersFromDogState(state);
       const isSpicy = hasTemperamentTag(state, "SPICY");
       const energy = Number(state.stats?.energy || 0);
+      const hunger = Number(state.stats?.hunger || 0);
+      const thirst = Number(state.stats?.thirst || 0);
+      const happiness = Number(state.stats?.happiness || 0);
+      const bondValue = Number(state.bond?.value || 0);
       const foodMotivated = getTemperamentTraitIntensity(
         state,
         "foodMotivated"
@@ -2288,26 +2422,36 @@ const dogSlice = createSlice({
         state.memory?.lastFedAt &&
         now - state.memory.lastFedAt < 2 * 60 * 60 * 1000;
 
-      if (isSpicy) {
-        let chance = 0.86;
-        if (energy >= 70) chance += 0.08;
-        if (energy < 40) chance -= 0.1;
-        if (foodMotivated >= 55 && fedRecently) chance += 0.08;
+      const explicitSuccess =
+        typeof payload?.success === "boolean" ? payload.success : null;
+      const successChance = computeTrainingSuccessChance({
+        input,
+        bond: bondValue,
+        energy,
+        hunger,
+        thirst,
+        happiness,
+        isSpicy,
+        foodMotivated,
+        fedRecently,
+      });
 
-        const roll = Math.random();
-        const successChance = Math.max(0.45, Math.min(0.98, chance));
-        if (roll > successChance) {
-          state.stats.energy = clamp(state.stats.energy - 4, 0, 100);
-          state.stats.happiness = clamp(state.stats.happiness - 2, 0, 100);
-          state.memory.lastTrainedAt = now;
-          state.memory.lastTrainedCommandId = commandId;
-          state.memory.lastSeenAt = now;
-          state.lastAction = "trainFailed";
-          maybeSampleMood(state, now, "TRAINING_FAIL");
-          updateTemperamentReveal(state, now);
-          finalizeDerivedState(state, now);
-          return;
-        }
+      const isSuccess =
+        explicitSuccess !== null
+          ? explicitSuccess
+          : Math.random() <= successChance;
+
+      if (!isSuccess) {
+        state.stats.energy = clamp(state.stats.energy - 4, 0, 100);
+        state.stats.happiness = clamp(state.stats.happiness - 2, 0, 100);
+        state.memory.lastTrainedAt = now;
+        state.memory.lastTrainedCommandId = commandId;
+        state.memory.lastSeenAt = now;
+        state.lastAction = "trainFailed";
+        maybeSampleMood(state, now, "TRAINING_FAIL");
+        updateTemperamentReveal(state, now);
+        finalizeDerivedState(state, now);
+        return;
       }
 
       const trainingMultiplier =
@@ -2348,17 +2492,19 @@ const dogSlice = createSlice({
       completeAdultTrainingSession(state, now);
       maybeSampleMood(state, now, "TRAINING");
 
+      const commandLabel = command?.label || commandId;
       pushJournalEntry(state, {
         type: "TRAINING",
         moodTag: "HAPPY",
-        summary: `Practiced ${commandId}.`,
-        body: `We worked on "${commandId}" today. I think I'm getting the hang of it!`,
+        summary: `Practiced ${commandLabel}.`,
+        body: `We worked on "${commandLabel}" today. I think I'm getting the hang of it!`,
         timestamp: now,
       });
 
       const date = getIsoDate(now);
       updateStreak(state.streak, date);
       updateTemperamentReveal(state, now);
+      evaluateObedienceUnlocks(state, now);
       finalizeDerivedState(state, now);
     },
 

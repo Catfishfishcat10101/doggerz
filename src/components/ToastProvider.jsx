@@ -1,33 +1,22 @@
-/* eslint-disable react-refresh/only-export-components */
-
 // src/components/ToastProvider.jsx
-// Lightweight, app-wide toast system (consistent UX across screens).
-// - Supports type: info | success | warn | error | reward
-// - Supports optional action button
-// - Supports dedupe/cooldown via toast.once(key, ...)
-// - Optional haptics (respects settings)
 
 import * as React from "react";
 import { useSelector } from "react-redux";
 import { selectSettings } from "@/redux/settingsSlice.js";
-
-const ToastContext = React.createContext(null);
+import { ToastContext } from "@/components/toastContext.js";
 
 function clamp(n, lo, hi) {
   const x = Number(n);
   if (!Number.isFinite(x)) return lo;
   return Math.max(lo, Math.min(hi, x));
 }
-
 function canVibrate() {
   return (
     typeof navigator !== "undefined" && typeof navigator.vibrate === "function"
   );
 }
-
 function useUserGestureGate() {
   const [ready, setReady] = React.useState(false);
-
   React.useEffect(() => {
     if (ready) return;
     const unlock = () => setReady(true);
@@ -46,10 +35,8 @@ function useUserGestureGate() {
       window.removeEventListener("touchstart", unlock);
     };
   }, [ready]);
-
   return ready;
 }
-
 function vibrate(pattern) {
   try {
     if (!canVibrate()) return;
@@ -58,7 +45,6 @@ function vibrate(pattern) {
     // ignore
   }
 }
-
 function typeStyles(type) {
   switch (type) {
     case "success":
@@ -109,7 +95,6 @@ export function ToastProvider({ children }) {
   const settings = useSelector(selectSettings);
   const hapticsEnabled = Boolean(settings?.hapticsEnabled);
   const hasUserGesture = useUserGestureGate();
-
   const [toasts, setToasts] = React.useState([]);
   const lastByKeyRef = React.useRef(Object.create(null));
 
@@ -121,10 +106,8 @@ export function ToastProvider({ children }) {
     (opts) => {
       const message = String(opts?.message || "").trim();
       if (!message) return null;
-
       const type = String(opts?.type || "info").toLowerCase();
       const durationMs = clamp(opts?.durationMs ?? 1800, 900, 8000);
-
       const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
       const toast = {
         id,
@@ -153,8 +136,8 @@ export function ToastProvider({ children }) {
         (toast.haptic === true ||
           toast.type === "reward" ||
           toast.type === "success");
+
       if (shouldHaptic) {
-        // Tiny "pop"; keep it short and subtle.
         if (hasUserGesture) vibrate(15);
       }
 
@@ -199,7 +182,6 @@ export function ToastProvider({ children }) {
     <ToastContext.Provider value={api}>
       {children}
 
-      {/* Toast stack (fixed, non-blocking) */}
       <div className="pointer-events-none fixed right-3 bottom-3 z-[90] flex w-[min(420px,calc(100%-1.5rem))] flex-col gap-2">
         {toasts.map((t) => {
           const s = typeStyles(t.type);
@@ -254,12 +236,4 @@ export function ToastProvider({ children }) {
       </div>
     </ToastContext.Provider>
   );
-}
-
-export function useToast() {
-  const ctx = React.useContext(ToastContext);
-  if (!ctx) {
-    throw new Error("useToast must be used within <ToastProvider>");
-  }
-  return ctx;
 }
