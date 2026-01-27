@@ -1,11 +1,4 @@
-/* eslint-disable react-refresh/only-export-components */
-
 // src/components/ToastProvider.jsx
-// Lightweight, app-wide toast system (consistent UX across screens).
-// - Supports type: info | success | warn | error | reward
-// - Supports optional action button
-// - Supports dedupe/cooldown via toast.once(key, ...)
-// - Optional haptics (respects settings)
 
 import * as React from "react";
 import { useSelector } from "react-redux";
@@ -18,16 +11,13 @@ function clamp(n, lo, hi) {
   if (!Number.isFinite(x)) return lo;
   return Math.max(lo, Math.min(hi, x));
 }
-
 function canVibrate() {
   return (
     typeof navigator !== "undefined" && typeof navigator.vibrate === "function"
   );
 }
-
 function useUserGestureGate() {
   const [ready, setReady] = React.useState(false);
-
   React.useEffect(() => {
     if (ready) return;
     const unlock = () => setReady(true);
@@ -46,10 +36,8 @@ function useUserGestureGate() {
       window.removeEventListener("touchstart", unlock);
     };
   }, [ready]);
-
   return ready;
 }
-
 function vibrate(pattern) {
   try {
     if (!canVibrate()) return;
@@ -58,7 +46,6 @@ function vibrate(pattern) {
     // ignore
   }
 }
-
 function typeStyles(type) {
   switch (type) {
     case "success":
@@ -104,27 +91,21 @@ function typeStyles(type) {
       };
   }
 }
-
 export function ToastProvider({ children }) {
   const settings = useSelector(selectSettings);
   const hapticsEnabled = Boolean(settings?.hapticsEnabled);
   const hasUserGesture = useUserGestureGate();
-
   const [toasts, setToasts] = React.useState([]);
   const lastByKeyRef = React.useRef(Object.create(null));
-
   const remove = React.useCallback((id) => {
     setToasts((curr) => curr.filter((t) => t.id !== id));
   }, []);
-
   const show = React.useCallback(
     (opts) => {
       const message = String(opts?.message || "").trim();
       if (!message) return null;
-
       const type = String(opts?.type || "info").toLowerCase();
       const durationMs = clamp(opts?.durationMs ?? 1800, 900, 8000);
-
       const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
       const toast = {
         id,
@@ -145,9 +126,7 @@ export function ToastProvider({ children }) {
         dismissLabel: String(opts?.dismissLabel || "Dismiss"),
         haptic: opts?.haptic,
       };
-
       setToasts((curr) => [toast, ...curr].slice(0, 4));
-
       const shouldHaptic =
         hapticsEnabled &&
         (toast.haptic === true ||
@@ -157,13 +136,11 @@ export function ToastProvider({ children }) {
         // Tiny "pop"; keep it short and subtle.
         if (hasUserGesture) vibrate(15);
       }
-
       window.setTimeout(() => remove(id), durationMs);
       return id;
     },
     [hapticsEnabled, hasUserGesture, remove]
   );
-
   const once = React.useCallback(
     (key, opts, cooldownMs = 180_000) => {
       const k = String(key || "").trim();
