@@ -23,6 +23,18 @@ export default function GameTopBar({
     "inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/25 px-3 py-1 text-[11px] font-semibold text-zinc-100";
 
   const normalizedBadges = normalizeBadges(badges);
+  const streakValue = Math.max(0, Math.round(Number(streakDays) || 0));
+  const streakLabel = streakValue === 1 ? "1 day" : `${streakValue} days`;
+  const ageLabel = (() => {
+    if (typeof lifeStageDay === "string") {
+      const str = lifeStageDay.trim();
+      return str || "0 days";
+    }
+    const n = Number(lifeStageDay);
+    if (!Number.isFinite(n)) return "0 days";
+    const rounded = Math.max(0, Math.round(n));
+    return rounded === 1 ? "1 day" : `${rounded} days`;
+  })();
 
   return (
     <header className="sticky top-0 z-30 border-b border-white/10 bg-black/45 px-4 py-3 text-white backdrop-blur-md">
@@ -31,7 +43,7 @@ export default function GameTopBar({
           <div className="truncate text-2xl sm:text-3xl font-extrabold text-emerald-200 leading-tight">
             {dogName}
             <span className="ml-2 text-xs font-semibold text-zinc-300/90">
-              Lv {level} · {lifeStageLabel} (Age {lifeStageDay})
+              Lv {level} · {lifeStageLabel} (Age {ageLabel})
             </span>
           </div>
 
@@ -59,9 +71,7 @@ export default function GameTopBar({
             {Number(streakDays) > 0 ? (
               <span className={chip}>
                 <span className="text-emerald-200">Streak</span>
-                <span className="text-zinc-100">
-                  {Math.round(Number(streakDays) || 0)}d
-                </span>
+                <span className="text-zinc-100">{streakLabel}</span>
               </span>
             ) : null}
             <span className={chip}>

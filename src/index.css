@@ -383,6 +383,56 @@ html[data-transparency="reduced"] .backdrop-blur-xl {
   }
 }
 
+@keyframes dzStageFloat {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+
+  50% {
+    transform: translateY(-6px) scale(1.01);
+  }
+
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+.dz-stage-floating {
+  position: relative;
+  animation: dzStageFloat 8s ease-in-out infinite;
+}
+
+@keyframes dzStageShadowPulse {
+  0%,
+  100% {
+    transform: scaleX(1);
+    opacity: 0.62;
+  }
+
+  50% {
+    transform: scaleX(0.92);
+    opacity: 0.48;
+  }
+}
+
+.dz-stage-shadow {
+  width: 360px;
+  max-width: 70vw;
+  height: 78px;
+  border-radius: 9999px;
+  opacity: 0.6;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(0, 0, 0, 0.65) 0%,
+    rgba(0, 0, 0, 0.26) 38%,
+    rgba(0, 0, 0, 0.08) 64%,
+    rgba(0, 0, 0, 0) 76%
+  );
+  filter: blur(1px);
+  transform-origin: center;
+  animation: dzStageShadowPulse 8s ease-in-out infinite;
+}
+
 /* Micro-actions (JS toggled classes) */
 .dog-blink {
   animation: dogBlink 120ms ease-in-out 1;
