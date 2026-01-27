@@ -18,7 +18,7 @@ import {
   selectWeatherCondition,
 } from "@/redux/weatherSlice.js";
 import { loadDogFromCloud, saveDogToCloud } from "@/redux/dogThunks.js";
-import { selectUserZip } from "@/redux/userSlice.js";
+import { selectUserZip, setUser } from "@/redux/userSlice.js";
 
 const TICK_INTERVAL_MS = 60_000; // 60 seconds
 const CLOUD_SAVE_DEBOUNCE = 3_000; // 3 seconds
@@ -261,7 +261,7 @@ export default function DogAIEngine() {
 
   const flushLocalSave = () => {
     const ds = dogRef.current;
-    if (!ds || !ds.adoptedAt) return;
+    if (!ds) return;
     try {
       const persisted = {
         ...ds,
@@ -300,7 +300,7 @@ export default function DogAIEngine() {
       window.removeEventListener("pagehide", onPageHide);
       window.removeEventListener("beforeunload", onBeforeUnload);
     };
-  }, []);
+  }, [dispatch]);
 
   // Track auth changes reactively (auth.currentUser is not a reactive value by itself).
   useEffect(() => {
@@ -309,6 +309,20 @@ export default function DogAIEngine() {
       const nextId = user?.uid || null;
       userIdRef.current = nextId;
       setUserId(nextId);
+      if (user) {
+        const createdAt = user?.metadata?.creationTime
+          ? Date.parse(user.metadata.creationTime)
+          : null;
+        dispatch(
+          setUser({
+            id: user.uid,
+            displayName: user.displayName || "Trainer",
+            email: user.email || null,
+            avatarUrl: user.photoURL || null,
+            createdAt: Number.isFinite(createdAt) ? createdAt : null,
+          })
+        );
+      }
     });
     return () => {
       try {
@@ -416,7 +430,7 @@ export default function DogAIEngine() {
 
   // 2. Debounced save to localStorage (reduces churn as state grows: journal, mood history, etc.)
   useEffect(() => {
-    if (!dogState || !dogState.adoptedAt) return; // no adopted dog yet
+    if (!dogState) return;
 
     if (localSaveTimeoutRef.current) {
       clearTimeout(localSaveTimeoutRef.current);

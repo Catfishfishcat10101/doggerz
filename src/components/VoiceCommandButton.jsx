@@ -1,9 +1,13 @@
 // src/features/game/VoiceCommandButton.jsx
 // @ts-nocheck  // Remove this if you want TS to type-check this file
 
-import { useEffect, useRef, useState } from "react";
-import { useDispatch } from "react-redux";
-import { trainObedience } from "@/redux/dogSlice.js";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { trainObedience, selectDog } from "@/redux/dogSlice.js";
+import {
+  computeTrainingSuccessChance,
+  formatChancePercent,
+} from "@/utils/trainingMath.js";
 
 const hasSpeech =
   typeof window !== "undefined" &&
@@ -40,6 +44,7 @@ function findCommandFromTranscript(text) {
 
 export default function VoiceCommandButton() {
   const dispatch = useDispatch();
+  const dog = useSelector(selectDog);
   const recognitionRef = useRef(null);
   const timeoutRef = useRef(null);
 
@@ -47,6 +52,34 @@ export default function VoiceCommandButton() {
   const [lastTranscript, setLastTranscript] = useState("");
   const [lastCommand, setLastCommand] = useState(null);
   const [error, setError] = useState(null);
+
+  const voiceReliability = useMemo(() => {
+    const temperament = dog?.temperament || {};
+    const isSpicy =
+      String(temperament.primary || "").toUpperCase() === "SPICY" ||
+      String(temperament.secondary || "").toUpperCase() === "SPICY";
+    const traits = Array.isArray(temperament.traits) ? temperament.traits : [];
+    const foodMotivated =
+      traits.find((t) => t?.id === "foodMotivated")?.intensity || 0;
+    const lastFedAt = dog?.memory?.lastFedAt;
+    const fedRecently =
+      typeof lastFedAt === "number" &&
+      Date.now() - lastFedAt < 2 * 60 * 60 * 1000;
+
+    const chance = computeTrainingSuccessChance({
+      input: "voice",
+      bond: dog?.bond?.value,
+      energy: dog?.stats?.energy,
+      hunger: dog?.stats?.hunger,
+      thirst: dog?.stats?.thirst,
+      happiness: dog?.stats?.happiness,
+      isSpicy,
+      foodMotivated,
+      fedRecently,
+    });
+
+    return formatChancePercent(chance);
+  }, [dog]);
 
   const startListening = () => {
     if (!hasSpeech || !recognitionRef.current) return;
@@ -148,7 +181,8 @@ export default function VoiceCommandButton() {
         dispatch(
           trainObedience({
             commandId,
-            success: true,
+            input: "voice",
+            now: Date.now(),
           })
         );
         setError(null);
@@ -248,6 +282,10 @@ export default function VoiceCommandButton() {
       )}
 
       {error && <p className="text-xs text-red-300">{error}</p>}
+
+      <p className="text-[11px] text-zinc-400">
+        Voice reliability: ~{voiceReliability}%
+      </p>
 
       {!error && !lastTranscript && (
         <p className="text-[11px] text-zinc-300/70">

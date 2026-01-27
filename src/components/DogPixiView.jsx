@@ -1,11 +1,18 @@
 // src/components/DogPixiView.jsx
 // @ts-nocheck
 
-import { useEffect, useMemo, useState } from "react";
+import {
+  Component,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Stage, Container, AnimatedSprite } from "@pixi/react";
-import { Assets, Rectangle, Texture, SCALE_MODES } from "pixi.js";
+import { Assets, Rectangle, Texture } from "pixi.js";
 import { getDogPixiSheetUrl } from "@/utils/dogSpritePaths.js";
-import jrManifest from "@/features/game/sprites/jrManifest.json";
+import jrManifest from "@/features/game/jrManifest.json";
 
 const FRAME_W = Number(jrManifest?.frame?.width || 128);
 const FRAME_H = Number(jrManifest?.frame?.height || 128);
@@ -20,6 +27,8 @@ const ALIASES =
   jrManifest?.aliases && typeof jrManifest.aliases === "object"
     ? jrManifest.aliases
     : {};
+
+const FALLBACK_ANIM = "idle";
 
 if (Array.isArray(jrManifest?.rows)) {
   jrManifest.rows.forEach((row, index) => {
@@ -42,17 +51,26 @@ function normalizeKey(value) {
     .replace(/-+/g, "_");
 }
 
+function hasAnimKey(key) {
+  return (
+    !!key && Object.prototype.hasOwnProperty.call(ROW_BY_ANIM, String(key))
+  );
+}
+
 function resolveAnim(requested) {
   const key = normalizeKey(requested);
-  if (Object.prototype.hasOwnProperty.call(ROW_BY_ANIM, key)) return key;
+  if (hasAnimKey(key)) return key;
+
   const alias = normalizeKey(ALIASES[key]);
-  if (alias && Object.prototype.hasOwnProperty.call(ROW_BY_ANIM, alias)) {
-    return alias;
-  }
-  if (Object.prototype.hasOwnProperty.call(ROW_BY_ANIM, DEFAULT_ANIM)) {
-    return DEFAULT_ANIM;
-  }
-  return key || DEFAULT_ANIM;
+  if (hasAnimKey(alias)) return alias;
+
+  // Explicit fallback per requirements.
+  if (hasAnimKey(FALLBACK_ANIM)) return FALLBACK_ANIM;
+
+  // Keep existing manifest default behavior as a last resort.
+  if (hasAnimKey(DEFAULT_ANIM)) return DEFAULT_ANIM;
+
+  return key || FALLBACK_ANIM;
 }
 
 function sheetPath(stage, condition) {
@@ -60,12 +78,10 @@ function sheetPath(stage, condition) {
 }
 
 function applyNearestScaleMode(maybeTexture) {
-  const nearest = SCALE_MODES?.NEAREST ?? 0;
+  const nearest = "nearest";
   const candidates = [
     maybeTexture,
-    maybeTexture?.baseTexture,
-    maybeTexture?.source,
-    maybeTexture?.baseTexture?.source,
+    maybeTexture?.sourceDeprecated ?? maybeTexture?.source,
   ].filter(Boolean);
 
   for (const c of candidates) {
@@ -96,9 +112,42 @@ function sliceRowTextures(baseTexture, rowIndex, frameCount) {
       FRAME_W,
       FRAME_H
     );
-    textures.push(new Texture(baseTexture, rect));
+    // PixiJS v8: Texture now expects sourceDeprecated/source
+    textures.push(
+      new Texture(
+        baseTexture?.sourceDeprecated ?? baseTexture?.source ?? baseTexture,
+        rect
+      )
+    );
   }
   return textures;
+}
+
+class DogPixiErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(err) {
+    // Catch runtime errors in Stage/@pixi/react reconciliation.
+    this.props.onError?.(err);
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.resetKey !== this.props.resetKey && this.state.hasError) {
+      this.setState({ hasError: false });
+    }
+  }
+
+  render() {
+    if (this.state.hasError) return null;
+    return this.props.children;
+  }
 }
 
 export default function DogPixiView({
@@ -113,13 +162,30 @@ export default function DogPixiView({
 }) {
   const [baseTexture, setBaseTexture] = useState(null);
   const emitStatus = onStatusChange || onStatus;
+  const lastStatusRef = useRef(null);
+  const hasErroredRef = useRef(false);
+  const spriteRef = useRef(null);
+  const resolvedAnimKey = useMemo(() => resolveAnim(anim), [anim]);
+
+  const sendStatus = useCallback(
+    (next) => {
+      if (!emitStatus) return;
+      if (lastStatusRef.current === next) return;
+      lastStatusRef.current = next;
+      if (next === "error") hasErroredRef.current = true;
+      emitStatus(next);
+    },
+    [emitStatus]
+  );
 
   useEffect(() => {
     let alive = true;
 
     // Reset so callers don't briefly see the previous sheet while we load.
     setBaseTexture(null);
-    emitStatus?.("loading");
+    lastStatusRef.current = null;
+    hasErroredRef.current = false;
+    sendStatus("loading");
 
     async function load() {
       const path = sheetPath(stage, condition);
@@ -132,7 +198,7 @@ export default function DogPixiView({
         applyNearestScaleMode(bt);
         if (alive) {
           setBaseTexture(bt);
-          emitStatus?.("ready");
+          // "ready" is emitted after the sprite actually mounts.
         }
       } catch (err) {
         // Missing sprite sheets should not crash the whole game.
@@ -146,7 +212,7 @@ export default function DogPixiView({
             applyNearestScaleMode(bt);
             if (alive) {
               setBaseTexture(bt);
-              emitStatus?.("ready");
+              // "ready" is emitted after the sprite actually mounts.
             }
             return;
           } catch (fallbackErr) {
@@ -162,7 +228,7 @@ export default function DogPixiView({
         console.warn("[Doggerz] Failed to load sprite sheet:", path, err);
         if (alive) {
           setBaseTexture(null);
-          emitStatus?.("error");
+          sendStatus("error");
         }
       }
     }
@@ -171,49 +237,107 @@ export default function DogPixiView({
     return () => {
       alive = false;
     };
-  }, [condition, emitStatus, stage]);
+  }, [condition, sendStatus, stage]);
 
-  const textures = useMemo(() => {
-    if (!baseTexture) return [];
-    const resolved = resolveAnim(anim);
-    const row = ROW_BY_ANIM[resolved] ?? 0;
-    const count = FRAMES_BY_ANIM[resolved] ?? (COLUMNS || 1);
-    return sliceRowTextures(baseTexture, row, count);
-  }, [baseTexture, anim]);
+  const textureCompute = useMemo(() => {
+    if (!baseTexture) {
+      return { textures: [], missingAnim: false, computeError: null };
+    }
+
+    const row = ROW_BY_ANIM[resolvedAnimKey];
+    if (typeof row !== "number") {
+      // Missing requested + fallback anim. Don't throw; let callers fall back.
+      return { textures: [], missingAnim: true, computeError: null };
+    }
+
+    const count = FRAMES_BY_ANIM[resolvedAnimKey] ?? (COLUMNS || 1);
+    const safeCount = Number.isFinite(count) && count > 0 ? count : 0;
+    if (!safeCount) {
+      return { textures: [], missingAnim: true, computeError: null };
+    }
+
+    try {
+      const textures = sliceRowTextures(baseTexture, row, safeCount);
+      return {
+        textures,
+        missingAnim: textures.length === 0,
+        computeError: null,
+      };
+    } catch (err) {
+      return { textures: [], missingAnim: true, computeError: err };
+    }
+  }, [baseTexture, resolvedAnimKey]);
+
+  const textures = textureCompute.textures;
 
   const animationSpeed = useMemo(() => {
-    const resolved = resolveAnim(anim);
-    const fps = FPS_BY_ANIM[resolved] ?? DEFAULT_FPS;
+    const fps = FPS_BY_ANIM[resolvedAnimKey] ?? DEFAULT_FPS;
     const speed = Number(fps) > 0 ? Number(fps) / 60 : 0.12;
     return Math.max(0.02, speed);
-  }, [anim]);
+  }, [resolvedAnimKey]);
 
   const canAnimate = textures.length > 0;
 
+  useEffect(() => {
+    if (!baseTexture) return;
+    if (textureCompute.computeError || textureCompute.missingAnim) {
+      sendStatus("error");
+    }
+  }, [
+    baseTexture,
+    sendStatus,
+    textureCompute.computeError,
+    textureCompute.missingAnim,
+  ]);
+
+  useEffect(() => {
+    // Emit "ready" only after the AnimatedSprite actually mounts.
+    if (!canAnimate) return;
+    if (!baseTexture) return;
+    if (textureCompute.computeError || textureCompute.missingAnim) return;
+    if (hasErroredRef.current) return;
+    sendStatus("ready");
+  }, [
+    baseTexture,
+    canAnimate,
+    sendStatus,
+    textureCompute.computeError,
+    textureCompute.missingAnim,
+  ]);
+
+  const resetKey = `${stage}-${condition}-${resolvedAnimKey}`;
+
   return (
-    <Stage
-      width={width}
-      height={height}
-      options={{
-        backgroundAlpha: 0,
-        antialias: false,
-        autoDensity: true,
-        roundPixels: true,
-        resolution: window.devicePixelRatio || 1,
-      }}
+    <DogPixiErrorBoundary
+      resetKey={resetKey}
+      onError={() => sendStatus("error")}
     >
-      <Container x={width / 2} y={height / 2}>
-        {canAnimate ? (
-          <AnimatedSprite
-            textures={textures}
-            isPlaying
-            initialFrame={0}
-            animationSpeed={animationSpeed}
-            anchor={0.5}
-            scale={scale}
-          />
-        ) : null}
-      </Container>
-    </Stage>
+      <Stage
+        width={width}
+        height={height}
+        options={{
+          backgroundAlpha: 0,
+          antialias: false,
+          autoDensity: true,
+          roundPixels: true,
+          resolution:
+            typeof window === "undefined" ? 1 : window.devicePixelRatio || 1,
+        }}
+      >
+        <Container x={width / 2} y={height / 2}>
+          {canAnimate ? (
+            <AnimatedSprite
+              ref={spriteRef}
+              textures={textures}
+              isPlaying
+              initialFrame={0}
+              animationSpeed={animationSpeed}
+              anchor={0.5}
+              scale={scale}
+            />
+          ) : null}
+        </Container>
+      </Stage>
+    </DogPixiErrorBoundary>
   );
 }

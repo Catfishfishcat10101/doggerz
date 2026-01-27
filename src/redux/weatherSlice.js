@@ -70,6 +70,39 @@ function normalizeConditionFromOpenWeather(data) {
   return "unknown";
 }
 
+function normalizeConditionFromMeteoCode(code) {
+  const c = Number(code);
+  if (!Number.isFinite(c)) return "unknown";
+  if (c === 0) return "sun";
+  if ([1, 2, 3, 45, 48].includes(c)) return "cloud";
+  if ([71, 73, 75, 77, 85, 86].includes(c)) return "snow";
+  if (
+    [51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82, 95, 96, 99].includes(c)
+  ) {
+    return "rain";
+  }
+  return "unknown";
+}
+
+async function fetchLatLonForZip(zip, signal) {
+  const url = `https://api.zippopotam.us/us/${encodeURIComponent(zip)}`;
+  const resp = await fetch(url, { signal });
+  if (!resp.ok) throw new Error(`ZIP lookup failed ${resp.status}`);
+  const data = await resp.json();
+  const place = Array.isArray(data?.places) ? data.places[0] : null;
+  const lat = Number(place?.latitude);
+  const lon = Number(place?.longitude);
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+    throw new Error("ZIP lookup missing coordinates");
+  }
+  return {
+    lat,
+    lon,
+    name:
+      typeof place?.["place name"] === "string" ? place["place name"] : null,
+  };
+}
+
 export const fetchWeatherForZip = createAsyncThunk(
   "weather/fetchForZip",
   /**
@@ -82,15 +115,44 @@ export const fetchWeatherForZip = createAsyncThunk(
       import.meta.env.VITE_WEATHER_DEFAULT_ZIP ||
       "10001"; // NYC fallback
 
-    // No API key -> explicitly mark weather as unknown (so UI doesn't lie).
+    // No OpenWeather key -> use Open-Meteo (no key required).
     if (!isUsableOpenWeatherKey(apiKey)) {
-      return {
-        condition: "unknown",
-        zip: effectiveZip,
-        fetchedAt: Date.now(),
-        source: "none",
-        details: null,
-      };
+      try {
+        const { lat, lon, name } = await fetchLatLonForZip(
+          effectiveZip,
+          thunkApi.signal
+        );
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${encodeURIComponent(
+          lat
+        )}&longitude=${encodeURIComponent(
+          lon
+        )}&current=weather_code&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=auto`;
+
+        const resp = await fetch(url, { signal: thunkApi.signal });
+        if (!resp.ok) throw new Error(`Open-Meteo fetch failed ${resp.status}`);
+        const data = await resp.json();
+        const code = data?.current?.weather_code;
+        const condition = normalizeConditionFromMeteoCode(code);
+        return {
+          condition,
+          zip: effectiveZip,
+          fetchedAt: Date.now(),
+          source: "openmeteo",
+          details: {
+            name,
+            weatherCode: Number.isFinite(Number(code)) ? Number(code) : null,
+          },
+        };
+      } catch (err) {
+        return {
+          condition: "unknown",
+          zip: effectiveZip,
+          fetchedAt: Date.now(),
+          source: "openmeteo",
+          details: null,
+          error: err?.message || "Open-Meteo failed",
+        };
+      }
     }
 
     // ZIP-only request to OpenWeather (matches the day/night hook behavior).

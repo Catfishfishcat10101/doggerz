@@ -1,40 +1,65 @@
+//vite.config.js
 /** @format */
-
-// vite.config.js (CommonJS)
-// Note: some Vite plugins (e.g. @vitejs/plugin-react) are ESM-only.
-// Requiring them from CJS can trigger Node's experimental "require(ESM)" warning.
-// To keep a single config file *and* avoid the warning, we use dynamic import
-// and export an async config factory.
 
 const path = require("node:path");
 const pkg = require("./package.json");
 
-function Visualizer() {
+async function loadVisualizer() {
   if (process.env.ANALYZE !== "1") return null;
 
-  // Lazy-load so normal builds don't pay the require cost (and to avoid dependency issues if removed).
-  const vizImport = /** @type {any} */ (require("rollup-plugin-visualizer"));
-  const visualizer = /** @type {any} */ (
-    vizImport?.visualizer || vizImport?.default || vizImport
-  );
-  if (typeof visualizer !== "function") return null;
+  const candidates = ["rollup-plugin-visualizer", "@rollup/plugin-visualizer"];
+  for (const pkgName of candidates) {
+    try {
+      const mod = await import(pkgName);
+      const visualizer = /** @type {any} */ (
+        mod?.visualizer || mod?.default || mod
+      );
+      if (typeof visualizer === "function") {
+        return visualizer({
+          filename: "dist/stats.html",
+          template: "treemap",
+          gzipSize: true,
+          brotliSize: true,
+          open: false,
+        });
+      }
+    } catch {
+      // try next candidate
+    }
+  }
 
-  return visualizer({
-    filename: "dist/stats.html",
-    template: "treemap",
-    gzipSize: true,
-    brotliSize: true,
-    open: false,
-  });
+  console.warn(
+    "[vite] Visualizer plugin not installed; skipping bundle report."
+  );
+  return null;
 }
 
-/** @returns {Promise<import('vite').UserConfig>} */
+/**
+ * @returns {Promise<import('vite').UserConfig>}
+ * @typedef {import('vite').UserConfig} ViteUserConfig
+ */
 module.exports = async () => {
-  const reactModule = await import("@vitejs/plugin-react");
-  const react = /** @type {any} */ (reactModule.default || reactModule);
+  let react;
+  try {
+    const reactModule = await import("@vitejs/plugin-react");
+    react = /** @type {any} */ (reactModule.default || reactModule);
+  } catch {
+    throw new Error(
+      "Cannot find module '@vitejs/plugin-react'. Please install it with 'npm install @vitejs/plugin-react' or 'yarn add @vitejs/plugin-react'."
+    );
+  }
+
+  const visualizer = await loadVisualizer();
+
+  const inNodeModules = (id) =>
+    typeof id === "string" && id.includes("node_modules");
+  const hasPkg = (id, pkg) =>
+    id.includes(`/node_modules/${pkg}/`) ||
+    id.includes(`\\node_modules\\${pkg}\\`);
+  const hasAnyPkg = (id, pkgs) => pkgs.some((p) => hasPkg(id, p));
 
   return {
-    plugins: [react(), Visualizer()].filter(Boolean),
+    plugins: [react(), visualizer].filter(Boolean),
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "src"),
@@ -47,16 +72,30 @@ module.exports = async () => {
       rollupOptions: {
         output: {
           manualChunks(id) {
-            if (!id || !id.includes("node_modules")) return;
+            if (!inNodeModules(id)) return;
 
-            // Keep heavyweight libraries in stable, cacheable chunks.
-            if (id.includes("react-dom") || id.includes("/react/"))
+            // Avoid circular chunk graphs by keeping React's internal deps together.
+            if (
+              hasAnyPkg(id, [
+                "react",
+                "react-dom",
+                "scheduler",
+                "use-sync-external-store",
+                "react-is",
+              ])
+            ) {
               return "vendor-react";
-            if (id.includes("react-router") || id.includes("react-router-dom"))
+            }
+
+            // Keep common heavy libs in stable chunks.
+            if (hasAnyPkg(id, ["react-router", "react-router-dom"])) {
               return "vendor-router";
-            if (id.includes("@reduxjs/toolkit") || id.includes("react-redux"))
+            }
+            if (hasAnyPkg(id, ["@reduxjs/toolkit", "react-redux", "redux"])) {
               return "vendor-redux";
-            if (id.includes("/firebase/")) return "vendor-firebase";
+            }
+            if (hasAnyPkg(id, ["firebase"])) return "vendor-firebase";
+            if (hasAnyPkg(id, ["pixi.js", "@pixi/react"])) return "vendor-pixi";
 
             return "vendor";
           },
