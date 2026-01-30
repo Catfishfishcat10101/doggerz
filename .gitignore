@@ -70,3 +70,9 @@ android/*.keystore
 
 # Capacitor starter template (not used)
 my-app/
+
+# Never commit installers / binaries / backup files
+*.exe
+*.msi
+*.bak
+
