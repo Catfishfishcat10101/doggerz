@@ -322,6 +322,7 @@ export default function MainGame(props = {}) {
             xpLabel={`${Number(dog?.xp || 0)} XP`}
             coins={Number(dog?.coins || 0)}
             lifeStageLabel={dog?.lifeStage?.label || "Puppy"}
+            // @ts-ignore
             lifeStageDay={ageLabel}
             moodLabel={moodLabel}
             streakDays={streakDays}

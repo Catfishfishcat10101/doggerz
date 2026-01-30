@@ -6,7 +6,7 @@ let pixiImportPromise = null;
 
 function loadPixiModule() {
   if (!pixiImportPromise) {
-    pixiImportPromise = import("@pixi/core");
+    pixiImportPromise = import("./pixi/core");
   }
   return pixiImportPromise;
 }
