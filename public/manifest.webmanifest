@@ -8,41 +8,31 @@
   "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
-  "display_override": ["standalone", "window-controls-overlay"],
+  "prefer_related_applications": false,
+  "related_applications": [],
   "orientation": "portrait",
   "background_color": "#020617",
   "theme_color": "#10b981",
   "categories": ["games", "entertainment"],
-  "icons": [
+  "edge_side_panel": {
+    "preferred_width": 420
+  },
+  "launch_handler": {
+    "client_mode": "focus-existing"
+  },
+  "handle_links": "auto",
+  "screenshots": [
     {
-      "src": "/icons/doggerz-180.png",
-      "sizes": "180x180",
+      "src": "/screenshots/yard-1080x1920.png",
+      "sizes": "1080x1920",
       "type": "image/png",
-      "purpose": "any"
+      "label": "Backyard play scene"
     },
     {
-      "src": "/icons/doggerz-192.png",
-      "sizes": "192x192",
+      "src": "/screenshots/training-1080x1920.png",
+      "sizes": "1080x1920",
       "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icons/doggerz-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/doggerz-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icons/doggerz-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "label": "Training dashboard"
     }
   ],
   "shortcuts": [
@@ -81,6 +71,38 @@
           "type": "image/png"
         }
       ]
+    }
+  ],
+  "icons": [
+    {
+      "src": "/icons/doggerz-180.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/doggerz-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/doggerz-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/doggerz-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/doggerz-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }

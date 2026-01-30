@@ -8,7 +8,11 @@ import { useDispatch, useSelector } from "react-redux";
 import PageShell from "@/components/PageShell.jsx";
 import { PATHS } from "@/routes.js";
 
-import { TRAINING_TREE, skillPrereqsMet } from "@/constants/trainingTree.js";
+import {
+  TRAINING_TREE,
+  getSkillNode,
+  skillPrereqsMet,
+} from "@/constants/trainingTree.js";
 import {
   selectTrainingTree,
   selectSkillPoints,
@@ -16,13 +20,27 @@ import {
   practiceSkill,
   setEquippedPose,
 } from "@/redux/trainingTreeSlice.js";
+import { selectDog } from "@/redux/dogSlice.js";
+import {
+  selectSettings,
+  setTrainingCompactCards,
+  setTrainingShowDetails,
+  setTrainingShowLocked,
+  setTrainingSortKey,
+} from "@/redux/settingsSlice.js";
+import { getSkillMaintenanceStatus } from "@/utils/trainingMaintenance.js";
 
 export default function TrainingTree() {
   const dispatch = useDispatch();
   const tree = useSelector(selectTrainingTree);
   const points = useSelector(selectSkillPoints);
+  const dog = useSelector(selectDog);
+  const settings = useSelector(selectSettings);
 
   const [branchKey, setBranchKey] = React.useState("obedience");
+  const [search, setSearch] = React.useState("");
+  const [difficultyFilter, setDifficultyFilter] = React.useState("all");
+  const [tagFilter, setTagFilter] = React.useState("all");
 
   const unlockedSet = React.useMemo(() => {
     const s = new Set();
@@ -32,6 +50,77 @@ export default function TrainingTree() {
   }, [tree.skills]);
 
   const branch = TRAINING_TREE[branchKey];
+  const showLocked = settings?.trainingShowLocked !== false;
+  const compactCards = Boolean(settings?.trainingCompactCards);
+  const showDetails = settings?.trainingShowDetails !== false;
+  const sortKey = settings?.trainingSortKey || "status";
+
+  const tags = React.useMemo(() => {
+    const set = new Set();
+    branch.nodes.forEach((node) => {
+      (node.tags || []).forEach((tag) => set.add(tag));
+    });
+    return ["all", ...Array.from(set)];
+  }, [branch]);
+
+  const filteredNodes = React.useMemo(() => {
+    const query = String(search || "").toLowerCase().trim();
+    const diff = String(difficultyFilter || "all").toLowerCase();
+    const tag = String(tagFilter || "all").toLowerCase();
+
+    const withStatus = branch.nodes.map((node) => {
+      const entry = tree.skills?.[node.id] || null;
+      const unlocked = !!entry?.unlocked;
+      const canUnlock = skillPrereqsMet(node.id, unlockedSet);
+      const status = unlocked ? "unlocked" : canUnlock ? "available" : "locked";
+      return { node, entry, unlocked, canUnlock, status };
+    });
+
+    let list = withStatus.filter(({ node, status }) => {
+      if (!showLocked && status === "locked") return false;
+      if (query) {
+        const text = `${node.label} ${node.pose} ${(node.tags || []).join(" ")}`.toLowerCase();
+        if (!text.includes(query)) return false;
+      }
+      if (diff !== "all" && String(node.difficulty || "").toLowerCase() !== diff)
+        return false;
+      if (tag !== "all") {
+        const tags = (node.tags || []).map((t) => String(t).toLowerCase());
+        if (!tags.includes(tag)) return false;
+      }
+      return true;
+    });
+
+    if (sortKey === "alpha") {
+      list = list.slice().sort((a, b) => a.node.label.localeCompare(b.node.label));
+    } else {
+      const weight = { unlocked: 0, available: 1, locked: 2 };
+      list = list
+        .slice()
+        .sort((a, b) => weight[a.status] - weight[b.status]);
+    }
+
+    return list;
+  }, [
+    branch,
+    difficultyFilter,
+    search,
+    showLocked,
+    sortKey,
+    tagFilter,
+    tree.skills,
+    unlockedSet,
+  ]);
+
+  const bondValue = Number(dog?.bond?.value || 0);
+  const energyValue = Number(dog?.stats?.energy || 0);
+  const trainingStreak = Math.max(
+    0,
+    Number(dog?.streak?.currentStreakDays || 0)
+  );
+  const isSpicy =
+    String(dog?.temperament?.primary || "").toUpperCase() === "SPICY" ||
+    String(dog?.temperament?.secondary || "").toUpperCase() === "SPICY";
 
   return (
     <PageShell className="relative">
@@ -89,26 +178,141 @@ export default function TrainingTree() {
 
         <div className="mt-2 text-xs text-white/60">{branch.description}</div>
 
-        <div className="mt-6 grid gap-3 md:grid-cols-2">
-          {branch.nodes.map((node) => {
-            const entry = tree.skills?.[node.id] || null;
-            const unlocked = !!entry?.unlocked;
+        <div className="mt-4 grid gap-3 lg:grid-cols-[1.2fr,1fr]">
+          <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
+            <div className="text-[11px] uppercase tracking-[0.3em] text-white/50">
+              Filters
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {["all", "easy", "medium", "hard"].map((d) => (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => setDifficultyFilter(d)}
+                  className={[
+                    "rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.2em]",
+                    difficultyFilter === d
+                      ? "border-emerald-300 bg-emerald-400 text-black"
+                      : "border-white/10 bg-black/30 text-white/70 hover:bg-black/50",
+                  ].join(" ")}
+                >
+                  {d}
+                </button>
+              ))}
+            </div>
 
-            const canUnlock = skillPrereqsMet(node.id, unlockedSet);
+            <div className="mt-3 flex flex-wrap gap-2">
+              {tags.map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setTagFilter(t)}
+                  className={[
+                    "rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.2em]",
+                    tagFilter === t
+                      ? "border-sky-300 bg-sky-400 text-black"
+                      : "border-white/10 bg-black/30 text-white/70 hover:bg-black/50",
+                  ].join(" ")}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
+            <div className="text-[11px] uppercase tracking-[0.3em] text-white/50">
+              View
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => dispatch(setTrainingCompactCards(!compactCards))}
+                className={[
+                  "rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.2em]",
+                  compactCards
+                    ? "border-emerald-300 bg-emerald-400 text-black"
+                    : "border-white/10 bg-black/30 text-white/70 hover:bg-black/50",
+                ].join(" ")}
+              >
+                Compact
+              </button>
+              <button
+                type="button"
+                onClick={() => dispatch(setTrainingShowLocked(!showLocked))}
+                className={[
+                  "rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.2em]",
+                  showLocked
+                    ? "border-emerald-300 bg-emerald-400 text-black"
+                    : "border-white/10 bg-black/30 text-white/70 hover:bg-black/50",
+                ].join(" ")}
+              >
+                {showLocked ? "Show locked" : "Hide locked"}
+              </button>
+              <button
+                type="button"
+                onClick={() => dispatch(setTrainingShowDetails(!showDetails))}
+                className={[
+                  "rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.2em]",
+                  showDetails
+                    ? "border-emerald-300 bg-emerald-400 text-black"
+                    : "border-white/10 bg-black/30 text-white/70 hover:bg-black/50",
+                ].join(" ")}
+              >
+                {showDetails ? "Details on" : "Details off"}
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  dispatch(
+                    setTrainingSortKey(sortKey === "alpha" ? "status" : "alpha")
+                  )
+                }
+                className="rounded-full border border-white/10 bg-black/30 px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-white/70 hover:bg-black/50"
+              >
+                Sort: {sortKey === "alpha" ? "A–Z" : "Status"}
+              </button>
+            </div>
+
+            <div className="mt-4">
+              <label className="text-[11px] uppercase tracking-[0.3em] text-white/50">
+                Search
+              </label>
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Find a skill..."
+                className="mt-2 w-full rounded-full border border-white/10 bg-black/35 px-4 py-2 text-xs text-white/80 placeholder:text-white/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div
+          className={[
+            "mt-6 grid gap-3",
+            compactCards ? "md:grid-cols-3" : "md:grid-cols-2",
+          ].join(" ")}
+        >
+          {filteredNodes.map(({ node, entry, unlocked, canUnlock, status }) => {
             const hasPoints = points >= node.cost;
-
             const isBlocked = !unlocked && !canUnlock;
             const level = Math.max(0, Math.min(100, Number(entry?.level || 0)));
+            const maintenance = getSkillMaintenanceStatus(level);
+            const prereqLabels = (node.prereq || [])
+              .map((id) => getSkillNode(id)?.label || id)
+              .filter(Boolean);
 
             return (
               <div
                 key={node.id}
                 className={[
-                  "rounded-2xl border p-4",
+                  "rounded-2xl border p-4 transition",
                   unlocked
                     ? "border-emerald-400/25 bg-black/30"
                     : "border-white/10 bg-black/20",
                   isBlocked ? "opacity-70" : "",
+                  compactCards ? "p-3" : "",
                 ].join(" ")}
               >
                 <div className="flex items-start justify-between gap-3">
@@ -120,18 +324,49 @@ export default function TrainingTree() {
                       Pose:{" "}
                       <span className="text-emerald-200">{node.pose}</span>
                     </div>
-                    <div className="mt-1 text-xs text-white/50">
-                      Rust:{" "}
-                      <span className="text-white/70">
-                        {node.rustPerDay}/day
-                      </span>
-                    </div>
+                    {showDetails ? (
+                      <>
+                        <div className="mt-1 text-xs text-white/50">
+                          Difficulty:{" "}
+                          <span className="text-white/70">
+                            {node.difficulty || "easy"}
+                          </span>
+                        </div>
+                        <div className="mt-1 text-xs text-white/50">
+                          Rust:{" "}
+                          <span className="text-white/70">
+                            {node.rustPerDay}/day
+                          </span>
+                        </div>
+                        {prereqLabels.length ? (
+                          <div className="mt-1 text-[11px] text-white/45">
+                            Requires: {prereqLabels.join(", ")}
+                          </div>
+                        ) : null}
+                      </>
+                    ) : null}
                   </div>
 
                   <div className="text-xs font-bold text-white/70">
                     Cost <span className="text-emerald-200">{node.cost}</span>
                   </div>
                 </div>
+
+                {showDetails ? (
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {(node.tags || []).map((tag) => (
+                      <span
+                        key={tag}
+                        className="rounded-full border border-white/10 bg-black/30 px-2 py-0.5 text-[10px] uppercase tracking-[0.2em] text-white/60"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                    <span className="rounded-full border border-emerald-400/25 bg-emerald-500/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.2em] text-emerald-200">
+                      {maintenance}
+                    </span>
+                  </div>
+                ) : null}
 
                 <div className="mt-3">
                   <div className="h-2 w-full rounded-full bg-white/10">
@@ -159,7 +394,7 @@ export default function TrainingTree() {
                           : "bg-white/5 text-white/40 cursor-not-allowed",
                       ].join(" ")}
                     >
-                      Unlock
+                      {status === "available" ? "Unlock" : "Locked"}
                     </button>
                   ) : (
                     <>
@@ -167,7 +402,17 @@ export default function TrainingTree() {
                         type="button"
                         onClick={() =>
                           dispatch(
-                            practiceSkill({ skillId: node.id, amount: 14 })
+                            practiceSkill({
+                              skillId: node.id,
+                              amount: 14,
+                              context: {
+                                bond: bondValue,
+                                energy: energyValue,
+                                isSpicy,
+                                trainingStreak,
+                                difficulty: node.difficulty,
+                              },
+                            })
                           )
                         }
                         className="rounded-xl bg-black/40 px-3 py-2 text-xs font-bold text-emerald-200 ring-1 ring-emerald-400/20 hover:bg-black/55"

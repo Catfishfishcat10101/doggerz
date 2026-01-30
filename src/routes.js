@@ -41,43 +41,98 @@ export const PATHS = Object.freeze({
 export const routes = Object.freeze([
   { path: PATHS.HOME, name: "Home", meta: { title: "Doggerz" } },
   { path: PATHS.GAME, name: "Game", meta: { title: "Your Yard" } },
-  { path: PATHS.SKILL_TREE, name: "Skill Tree", meta: { title: "Skill Tree" } },
+  {
+    path: PATHS.SKILL_TREE,
+    name: "Skill Tree",
+    meta: { title: "Skill Tree", description: "Train lifelong perks." },
+  },
   { path: PATHS.ADOPT, name: "Adopt", meta: { title: "Adopt a Pup" } },
   { path: PATHS.LOGIN, name: "Login", meta: { title: "Login" } },
   { path: PATHS.SIGNUP, name: "Signup", meta: { title: "Sign up" } },
 
-  { path: PATHS.ABOUT, name: "About", meta: { title: "About Doggerz" } },
-  { path: PATHS.FAQ, name: "FAQs", meta: { title: "FAQs" } },
-  { path: PATHS.HELP, name: "Help", meta: { title: "Help" } },
+  {
+    path: PATHS.ABOUT,
+    name: "About",
+    meta: { title: "About Doggerz", description: "How Doggerz works." },
+  },
+  {
+    path: PATHS.FAQ,
+    name: "FAQs",
+    meta: { title: "FAQs", description: "Quick answers to common questions." },
+  },
+  {
+    path: PATHS.HELP,
+    name: "Help",
+    meta: { title: "Help", description: "Support and troubleshooting." },
+  },
 
   // Scenes
   {
     path: PATHS.RAINBOW_BRIDGE,
     name: "Rainbow Bridge",
-    meta: { title: "Rainbow Bridge" },
+    meta: {
+      title: "Rainbow Bridge",
+      description: "A calm place for remembrance.",
+    },
   },
-  { path: PATHS.CONTACT, name: "Contact", meta: { title: "Contact" } },
-  { path: PATHS.DEVELOPERS, name: "Developers", meta: { title: "Developers" } },
+  {
+    path: PATHS.CONTACT,
+    name: "Contact",
+    meta: { title: "Contact", description: "Reach the Doggerz team." },
+  },
+  {
+    path: PATHS.DEVELOPERS,
+    name: "Developers",
+    meta: { title: "Developers", description: "Docs and integration notes." },
+  },
 
-  { path: PATHS.SETTINGS, name: "Settings", meta: { title: "Settings" } },
-  { path: PATHS.STORE, name: "Store", meta: { title: "Store" } },
-  { path: PATHS.BADGES, name: "Badges", meta: { title: "Badges" } },
-  { path: PATHS.MEMORIES, name: "Memory Reel", meta: { title: "Memory Reel" } },
+  {
+    path: PATHS.SETTINGS,
+    name: "Settings",
+    meta: { title: "Settings", description: "Personalize your pup." },
+  },
+  {
+    path: PATHS.STORE,
+    name: "Store",
+    meta: { title: "Store", description: "Cosmetics and streak rewards." },
+  },
+  {
+    path: PATHS.BADGES,
+    name: "Badges",
+    meta: { title: "Badges", description: "Your achievements." },
+  },
+  {
+    path: PATHS.MEMORIES,
+    name: "Memory Reel",
+    meta: { title: "Memory Reel", description: "Moments and milestones." },
+  },
   {
     path: PATHS.DREAMS,
     name: "Dream Journal",
-    meta: { title: "Dream Journal" },
+    meta: { title: "Dream Journal", description: "What your pup dreams." },
   },
-  { path: PATHS.POTTY, name: "Potty", meta: { title: "Potty" } },
+  {
+    path: PATHS.POTTY,
+    name: "Potty",
+    meta: { title: "Potty", description: "Train habits and log progress." },
+  },
   {
     path: PATHS.TEMPERAMENT_REVEAL,
     name: "Temperament Reveal",
-    meta: { title: "Temperament" },
+    meta: { title: "Temperament", description: "Discover your pup's nature." },
   },
 
   // Policy/legal
-  { path: PATHS.LEGAL, name: "Legal", meta: { title: "Legal" } },
-  { path: PATHS.PRIVACY, name: "Privacy", meta: { title: "Privacy Policy" } },
+  {
+    path: PATHS.LEGAL,
+    name: "Legal",
+    meta: { title: "Legal", description: "Terms and policies." },
+  },
+  {
+    path: PATHS.PRIVACY,
+    name: "Privacy",
+    meta: { title: "Privacy Policy", description: "How data is handled." },
+  },
 ]);
 
 /**

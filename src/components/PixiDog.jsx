@@ -1,7 +1,15 @@
 // src/components/PixiDog.jsx
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import * as PIXI from "./pixi.js";
 import { withBaseUrl } from "@/utils/assetUrl.js";
+import {
+  selectSettings,
+  setPixiDogMotion,
+  setPixiDogQuality,
+  setPixiDogShowHearts,
+  setPixiDogShowShadow,
+} from "@/redux/settingsSlice.js";
 
 export default function PixiDog({
   width = 190,
@@ -12,14 +20,46 @@ export default function PixiDog({
   onPet,
 }) {
   const containerRef = useRef(null);
+  const menuRef = useRef(null);
+  const dispatch = useDispatch();
+  const settings = useSelector(selectSettings);
+  const [showOptions, setShowOptions] = useState(false);
 
   useEffect(() => {
+    const reduceMotionSetting = settings?.reduceMotion || "system";
+    const prefersReducedMotion = (() => {
+      try {
+        return window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+      } catch {
+        return false;
+      }
+    })();
+    const reduceMotion =
+      reduceMotionSetting === "on" ||
+      (reduceMotionSetting !== "off" && prefersReducedMotion);
+
+    const perfMode = settings?.perfMode || "auto";
+    const batterySaver = Boolean(settings?.batterySaver);
+    const qualitySetting = settings?.pixiDogQuality || "auto";
+    const quality =
+      qualitySetting === "auto"
+        ? perfMode === "on" || batterySaver || reduceMotion
+          ? "low"
+          : "high"
+        : qualitySetting;
+
+    const motionEnabled = settings?.pixiDogMotion !== false && !reduceMotion;
+    const heartsEnabled = settings?.pixiDogShowHearts !== false && !reduceMotion;
+    const shadowEnabled = settings?.pixiDogShowShadow !== false;
+    const resolutionCap = quality === "low" ? 1 : 2;
+    const tickScale = quality === "low" ? 0.75 : 1;
+
     const app = new PIXI.Application({
       width,
       height,
       backgroundAlpha: 0,
       antialias: true,
-      resolution: window.devicePixelRatio || 1,
+      resolution: Math.min(window.devicePixelRatio || 1, resolutionCap),
       autoDensity: true,
     });
 
@@ -104,7 +144,7 @@ export default function PixiDog({
     shadow.endFill();
     shadow.x = width / 2;
     shadow.y = height * 0.9;
-    root.addChild(shadow);
+    if (shadowEnabled) root.addChild(shadow);
 
     // Sprite assets were removed; use the app icon as a stable fallback.
     const texture = PIXI.Texture.from(withBaseUrl("/icons/doggerz-192.png"));
@@ -127,6 +167,7 @@ export default function PixiDog({
 
     const hearts = [];
     const spawnHeart = (x, y) => {
+      if (!heartsEnabled) return;
       const g = new PIXI.Graphics();
       g.beginFill(0xff4d6d, 0.95);
       g.drawCircle(-6, 0, 6);
@@ -173,8 +214,8 @@ export default function PixiDog({
     const rightBound = width * 0.67;
 
     let t = 0;
-    app.ticker.add(() => {
-      t += 0.02;
+    app.ticker.add((delta) => {
+      t += 0.02 * (motionEnabled ? 1 : 0) * tickScale;
 
       const mp = moodParams(mood);
 
@@ -185,7 +226,7 @@ export default function PixiDog({
       const baseScale = 0.55;
       const sign = dir >= 0 ? 1 : -1;
 
-      const breath = Math.sin(t * 1.6 * mp.breathSpeed);
+      const breath = motionEnabled ? Math.sin(t * 1.6 * mp.breathSpeed) : 0;
       const breathY = breath * 1.5 * mp.breathAmp;
       const tilt = Math.sin(t * 0.9 * mp.breathSpeed) * 0.015 * mp.tiltAmp;
 
@@ -196,7 +237,7 @@ export default function PixiDog({
 
       let walkBob = 0;
       let walkSway = 0;
-      if (mode === "walk") {
+      if (mode === "walk" && motionEnabled) {
         const step = Math.sin(t * 6.0);
         walkBob = Math.abs(step) * 2.4;
         walkSway = Math.sin(t * 3.0) * 1.4;
@@ -223,19 +264,24 @@ export default function PixiDog({
       dog.scale.x =
         sign * ((baseScale + breath * 0.0015 * mp.breathAmp) * petSquash);
 
-      shadow.x = dog.x;
-      shadow.y = height * 0.9;
+      if (shadowEnabled) {
+        shadow.x = dog.x;
+        shadow.y = height * 0.9;
+      }
 
       const shadowPulse = 1 + breath * 0.03 * mp.breathAmp;
       const walkShadow =
         mode === "walk" ? 1 - Math.abs(Math.sin(t * 6.0)) * 0.08 : 1;
       const petShadow = 1 - petEase * 0.08;
 
-      shadow.scale.x = shadowPulse * walkShadow * petShadow;
-      shadow.scale.y = 1 * walkShadow * (1 - petEase * 0.05);
-      shadow.alpha =
-        0.3 + breath * 0.02 - (mode === "walk" ? 0.02 : 0) - petEase * 0.03;
+      if (shadowEnabled) {
+        shadow.scale.x = shadowPulse * walkShadow * petShadow;
+        shadow.scale.y = 1 * walkShadow * (1 - petEase * 0.05);
+        shadow.alpha =
+          0.3 + breath * 0.02 - (mode === "walk" ? 0.02 : 0) - petEase * 0.03;
+      }
 
+      if (!heartsEnabled) return;
       for (let i = hearts.length - 1; i >= 0; i--) {
         const p = hearts[i];
         p.age += 1;
@@ -257,7 +303,97 @@ export default function PixiDog({
       dog.removeAllListeners();
       app.destroy(true, { children: true });
     };
-  }, [width, height, mood, mode, direction, onPet]);
+  }, [
+    width,
+    height,
+    mood,
+    mode,
+    direction,
+    onPet,
+    settings?.reduceMotion,
+    settings?.perfMode,
+    settings?.batterySaver,
+    settings?.pixiDogQuality,
+    settings?.pixiDogMotion,
+    settings?.pixiDogShowHearts,
+    settings?.pixiDogShowShadow,
+  ]);
 
-  return <div ref={containerRef} style={{ width, height }} />;
+  useEffect(() => {
+    if (!showOptions) return;
+    const onPointerDown = (event) => {
+      const el = menuRef.current;
+      if (!el || el.contains(event.target)) return;
+      setShowOptions(false);
+    };
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") setShowOptions(false);
+    };
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [showOptions]);
+
+  return (
+    <div className="group relative" style={{ width, height }}>
+      <div ref={containerRef} style={{ width, height }} />
+      <div className="absolute right-2 top-2" ref={menuRef}>
+        <button
+          type="button"
+          onClick={() => setShowOptions((v) => !v)}
+          className="rounded-full border border-white/10 bg-black/50 px-3 py-1 text-[10px] uppercase tracking-[0.22em] text-white/70 opacity-0 transition group-hover:opacity-100"
+        >
+          View
+        </button>
+        {showOptions ? (
+          <div className="absolute right-0 mt-2 w-56 space-y-2 rounded-2xl border border-white/10 bg-black/90 p-3 text-[11px] text-zinc-200 shadow-[0_16px_45px_rgba(0,0,0,0.45)]">
+            <ToggleRow
+              label="Animate"
+              checked={settings?.pixiDogMotion !== false}
+              onChange={(v) => dispatch(setPixiDogMotion(v))}
+            />
+            <ToggleRow
+              label="Hearts"
+              checked={settings?.pixiDogShowHearts !== false}
+              onChange={(v) => dispatch(setPixiDogShowHearts(v))}
+            />
+            <ToggleRow
+              label="Shadow"
+              checked={settings?.pixiDogShowShadow !== false}
+              onChange={(v) => dispatch(setPixiDogShowShadow(v))}
+            />
+            <div className="flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2">
+              <span>Quality</span>
+              <select
+                value={settings?.pixiDogQuality || "auto"}
+                onChange={(e) => dispatch(setPixiDogQuality(e.target.value))}
+                className="rounded-lg border border-white/10 bg-black/40 px-2 py-1 text-[11px] text-zinc-200"
+              >
+                <option value="auto">Auto</option>
+                <option value="low">Low</option>
+                <option value="high">High</option>
+              </select>
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function ToggleRow({ label, checked, onChange }) {
+  return (
+    <label className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2">
+      <span>{label}</span>
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(Boolean(e.target.checked))}
+        className="h-4 w-4 accent-emerald-400"
+      />
+    </label>
+  );
 }

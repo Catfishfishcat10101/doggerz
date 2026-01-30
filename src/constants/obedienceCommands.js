@@ -4,6 +4,20 @@
 
 export const DEFAULT_UNLOCK_DELAY_MINUTES = 30;
 
+export const OBEDIENCE_COMMAND_CATEGORIES = Object.freeze({
+  FOUNDATION: "foundation",
+  IMPULSE: "impulse",
+  TRICK: "trick",
+  ADVANCED: "advanced",
+});
+
+export const OBEDIENCE_DIFFICULTY = Object.freeze({
+  EASY: "easy",
+  MEDIUM: "medium",
+  HARD: "hard",
+  EXPERT: "expert",
+});
+
 export const OBEDIENCE_COMMANDS = Object.freeze([
   {
     id: "sit",
@@ -13,6 +27,10 @@ export const OBEDIENCE_COMMANDS = Object.freeze([
     minStreak: 0,
     unlockDelayMinutes: 0,
     tip: "Foundation cue for calm focus.",
+    category: OBEDIENCE_COMMAND_CATEGORIES.FOUNDATION,
+    difficulty: OBEDIENCE_DIFFICULTY.EASY,
+    tags: ["calm", "focus"],
+    xpHint: 6,
   },
   {
     id: "stay",
@@ -22,6 +40,10 @@ export const OBEDIENCE_COMMANDS = Object.freeze([
     minStreak: 0,
     unlockDelayMinutes: 0,
     tip: "Patience and impulse control.",
+    category: OBEDIENCE_COMMAND_CATEGORIES.IMPULSE,
+    difficulty: OBEDIENCE_DIFFICULTY.EASY,
+    tags: ["patience", "control"],
+    xpHint: 6,
   },
   {
     id: "down",
@@ -31,6 +53,10 @@ export const OBEDIENCE_COMMANDS = Object.freeze([
     minStreak: 0,
     unlockDelayMinutes: 0,
     tip: "Settle on cue.",
+    category: OBEDIENCE_COMMAND_CATEGORIES.FOUNDATION,
+    difficulty: OBEDIENCE_DIFFICULTY.EASY,
+    tags: ["calm", "settle"],
+    xpHint: 6,
   },
   {
     id: "come",
@@ -40,6 +66,10 @@ export const OBEDIENCE_COMMANDS = Object.freeze([
     minStreak: 1,
     unlockDelayMinutes: 0,
     tip: "Recall builds trust.",
+    category: OBEDIENCE_COMMAND_CATEGORIES.FOUNDATION,
+    difficulty: OBEDIENCE_DIFFICULTY.MEDIUM,
+    tags: ["recall", "trust"],
+    xpHint: 7,
   },
   {
     id: "heel",
@@ -49,6 +79,10 @@ export const OBEDIENCE_COMMANDS = Object.freeze([
     minStreak: 1,
     unlockDelayMinutes: 0,
     tip: "Stay close while walking.",
+    category: OBEDIENCE_COMMAND_CATEGORIES.IMPULSE,
+    difficulty: OBEDIENCE_DIFFICULTY.MEDIUM,
+    tags: ["walk", "control"],
+    xpHint: 7,
   },
   {
     id: "rollOver",
@@ -58,6 +92,10 @@ export const OBEDIENCE_COMMANDS = Object.freeze([
     minStreak: 2,
     unlockDelayMinutes: 0,
     tip: "Confidence + body control.",
+    category: OBEDIENCE_COMMAND_CATEGORIES.TRICK,
+    difficulty: OBEDIENCE_DIFFICULTY.MEDIUM,
+    tags: ["confidence", "fun"],
+    xpHint: 8,
   },
   {
     id: "shake",
@@ -67,6 +105,10 @@ export const OBEDIENCE_COMMANDS = Object.freeze([
     minStreak: 2,
     unlockDelayMinutes: 0,
     tip: "Polite greetings.",
+    category: OBEDIENCE_COMMAND_CATEGORIES.TRICK,
+    difficulty: OBEDIENCE_DIFFICULTY.MEDIUM,
+    tags: ["greeting", "gentle"],
+    xpHint: 8,
   },
   {
     id: "speak",
@@ -76,6 +118,10 @@ export const OBEDIENCE_COMMANDS = Object.freeze([
     minStreak: 2,
     unlockDelayMinutes: 0,
     tip: "Vocal cue for voice training.",
+    category: OBEDIENCE_COMMAND_CATEGORIES.TRICK,
+    difficulty: OBEDIENCE_DIFFICULTY.MEDIUM,
+    tags: ["voice", "expression"],
+    xpHint: 8,
   },
   {
     id: "spin",
@@ -85,6 +131,10 @@ export const OBEDIENCE_COMMANDS = Object.freeze([
     minStreak: 3,
     unlockDelayMinutes: 0,
     tip: "Quick, playful rotation.",
+    category: OBEDIENCE_COMMAND_CATEGORIES.TRICK,
+    difficulty: OBEDIENCE_DIFFICULTY.MEDIUM,
+    tags: ["play", "coordination"],
+    xpHint: 9,
   },
   {
     id: "jump",
@@ -94,6 +144,10 @@ export const OBEDIENCE_COMMANDS = Object.freeze([
     minStreak: 3,
     unlockDelayMinutes: 0,
     tip: "Energy burst (needs rest).",
+    category: OBEDIENCE_COMMAND_CATEGORIES.ADVANCED,
+    difficulty: OBEDIENCE_DIFFICULTY.HARD,
+    tags: ["energy", "athletic"],
+    xpHint: 10,
   },
   {
     id: "highFive",
@@ -103,6 +157,10 @@ export const OBEDIENCE_COMMANDS = Object.freeze([
     minStreak: 3,
     unlockDelayMinutes: 0,
     tip: "Trust and timing.",
+    category: OBEDIENCE_COMMAND_CATEGORIES.TRICK,
+    difficulty: OBEDIENCE_DIFFICULTY.HARD,
+    tags: ["trust", "timing"],
+    xpHint: 10,
   },
   {
     id: "wave",
@@ -112,6 +170,10 @@ export const OBEDIENCE_COMMANDS = Object.freeze([
     minStreak: 4,
     unlockDelayMinutes: 0,
     tip: "Show off to visitors.",
+    category: OBEDIENCE_COMMAND_CATEGORIES.TRICK,
+    difficulty: OBEDIENCE_DIFFICULTY.HARD,
+    tags: ["show", "cute"],
+    xpHint: 11,
   },
   {
     id: "bow",
@@ -121,6 +183,10 @@ export const OBEDIENCE_COMMANDS = Object.freeze([
     minStreak: 4,
     unlockDelayMinutes: 0,
     tip: "Elegant greeting pose.",
+    category: OBEDIENCE_COMMAND_CATEGORIES.TRICK,
+    difficulty: OBEDIENCE_DIFFICULTY.HARD,
+    tags: ["grace", "show"],
+    xpHint: 11,
   },
   {
     id: "playDead",
@@ -130,6 +196,10 @@ export const OBEDIENCE_COMMANDS = Object.freeze([
     minStreak: 5,
     unlockDelayMinutes: 0,
     tip: "Big trust milestone.",
+    category: OBEDIENCE_COMMAND_CATEGORIES.ADVANCED,
+    difficulty: OBEDIENCE_DIFFICULTY.EXPERT,
+    tags: ["trust", "focus"],
+    xpHint: 12,
   },
   {
     id: "fetch",
@@ -139,6 +209,10 @@ export const OBEDIENCE_COMMANDS = Object.freeze([
     minStreak: 5,
     unlockDelayMinutes: 0,
     tip: "Classic retrieve routine.",
+    category: OBEDIENCE_COMMAND_CATEGORIES.ADVANCED,
+    difficulty: OBEDIENCE_DIFFICULTY.EXPERT,
+    tags: ["retrieve", "energy"],
+    xpHint: 12,
   },
   {
     id: "dance",
@@ -148,6 +222,10 @@ export const OBEDIENCE_COMMANDS = Object.freeze([
     minStreak: 6,
     unlockDelayMinutes: 0,
     tip: "Advanced coordination.",
+    category: OBEDIENCE_COMMAND_CATEGORIES.ADVANCED,
+    difficulty: OBEDIENCE_DIFFICULTY.EXPERT,
+    tags: ["rhythm", "show"],
+    xpHint: 13,
   },
 ]);
 
@@ -170,4 +248,18 @@ export function commandRequirementsMet(
     Number(bond || 0) >= Number(command.minBond || 0) &&
     Number(streak || 0) >= Number(command.minStreak || 0)
   );
+}
+
+export function getCommandRequirements(command) {
+  if (!command) return null;
+  return {
+    level: Number(command.minLevel || 0),
+    bond: Number(command.minBond || 0),
+    streak: Number(command.minStreak || 0),
+  };
+}
+
+export function getCommandTags(command) {
+  if (!command) return [];
+  return Array.isArray(command.tags) ? command.tags.filter(Boolean) : [];
 }

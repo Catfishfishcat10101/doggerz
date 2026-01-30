@@ -19,6 +19,11 @@ export function humanizeBadgeId(id) {
   if (!raw) return "";
 
   if (raw === "temperament_unlocked") return "Personality Unlocked";
+  if (raw === "pup_bonded") return "First Bond";
+  if (raw === "pup_veteran") return "Trusted Companion";
+  if (raw === "streak_7") return "Weekly Streak";
+  if (raw === "streak_30") return "Monthly Streak";
+  if (raw === "streak_100") return "Legendary Streak";
 
   if (raw.startsWith("trick_")) {
     const name = raw.slice("trick_".length);
@@ -42,6 +47,12 @@ export function badgeStyleClass(id) {
   const raw = String(id || "");
   if (raw === "temperament_unlocked") {
     return "border-emerald-400/25 bg-emerald-500/15 text-emerald-100";
+  }
+  if (raw.startsWith("streak_")) {
+    return "border-amber-400/25 bg-amber-500/15 text-amber-100";
+  }
+  if (raw.startsWith("pup_")) {
+    return "border-sky-400/25 bg-sky-500/15 text-sky-100";
   }
   if (raw.startsWith("trick_")) {
     return "border-violet-400/25 bg-violet-500/15 text-violet-100";
@@ -99,9 +110,29 @@ export function collectEarnedBadgeIds(dog) {
     ? ["temperament_unlocked"]
     : [];
 
+  const streakDays = Math.max(
+    0,
+    Number(dog?.streak?.currentStreakDays || 0)
+  );
+  const streakBadges = [];
+  if (streakDays >= 7) streakBadges.push("streak_7");
+  if (streakDays >= 30) streakBadges.push("streak_30");
+  if (streakDays >= 100) streakBadges.push("streak_100");
+
+  const ageDays = Number(dog?.lifeStage?.days || 0);
+  const pupBadges = [];
+  if (ageDays >= 10) pupBadges.push("pup_bonded");
+  if (ageDays >= 120) pupBadges.push("pup_veteran");
+
   const out = [];
   const seen = new Set();
-  for (const id of [...cosmeticIds, ...trickIds, ...temperamentBadge]) {
+  for (const id of [
+    ...cosmeticIds,
+    ...trickIds,
+    ...temperamentBadge,
+    ...streakBadges,
+    ...pupBadges,
+  ]) {
     const key = String(id || "").trim();
     if (!key || seen.has(key)) continue;
     seen.add(key);

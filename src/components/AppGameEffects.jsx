@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useSelector } from "react-redux";
 import { selectDogPolls, selectDogSkillTree } from "@/redux/dogSlice.js";
+import { selectSettings } from "@/redux/settingsSlice.js";
 
 /**
  * Writes tiny app-wide data-attributes used for dynamic CSS.
@@ -13,6 +14,7 @@ import { selectDogPolls, selectDogSkillTree } from "@/redux/dogSlice.js";
 export default function AppGameEffects() {
   const skillTree = useSelector(selectDogSkillTree);
   const polls = useSelector(selectDogPolls);
+  const settings = useSelector(selectSettings);
 
   const lastUnlockedAt =
     typeof skillTree?.lastUnlockedAt === "number"
@@ -20,21 +22,47 @@ export default function AppGameEffects() {
       : 0;
   const lastBranchId = skillTree?.lastBranchId || "";
   const storyActive = Boolean(polls?.active);
+  const storyExpiresAt =
+    typeof polls?.active?.expiresAt === "number"
+      ? polls.active.expiresAt
+      : null;
+
+  const showSkillPulse = settings?.gameFxSkillPulse !== false;
+  const showStoryGlow = settings?.gameFxStoryGlow !== false;
+  const showBranchAccent = settings?.gameFxBranchAccent !== false;
 
   React.useEffect(() => {
     const root = document.documentElement;
 
     // Branch accent (used by global CSS variables; safe to omit when unset).
-    if (lastBranchId) root.dataset.skillBranch = String(lastBranchId);
-    else delete root.dataset.skillBranch;
+    if (showBranchAccent && lastBranchId) {
+      root.dataset.skillBranch = String(lastBranchId);
+    } else {
+      delete root.dataset.skillBranch;
+    }
 
     // Micro-story / poll moment active.
-    if (storyActive) root.dataset.storyActive = "1";
+    if (showStoryGlow && storyActive) root.dataset.storyActive = "1";
     else delete root.dataset.storyActive;
-  }, [lastBranchId, storyActive]);
+
+    if (showStoryGlow && storyActive && storyExpiresAt) {
+      const remaining = Math.max(0, storyExpiresAt - Date.now());
+      const urgency =
+        remaining <= 10_000 ? "high" : remaining <= 30_000 ? "medium" : "low";
+      root.dataset.storyUrgency = urgency;
+    } else {
+      delete root.dataset.storyUrgency;
+    }
+  }, [
+    lastBranchId,
+    storyActive,
+    storyExpiresAt,
+    showBranchAccent,
+    showStoryGlow,
+  ]);
 
   React.useEffect(() => {
-    if (!lastUnlockedAt) return;
+    if (!showSkillPulse || !lastUnlockedAt) return;
 
     const root = document.documentElement;
     root.dataset.skillPulse = "1";
@@ -49,7 +77,13 @@ export default function AppGameEffects() {
     }, 650);
 
     return () => window.clearTimeout(t);
-  }, [lastUnlockedAt]);
+  }, [lastUnlockedAt, showSkillPulse]);
+
+  React.useEffect(() => {
+    if (showSkillPulse) return;
+    const root = document.documentElement;
+    delete root.dataset.skillPulse;
+  }, [showSkillPulse]);
 
   return null;
 }

@@ -14,7 +14,7 @@
   --stage-w: 350px;
   --stage-h: 350px;
   --sprite-size: 128px;
-  --sprite-scale: 2; /* 128px ΓåÆ 256px render */
+  --sprite-scale: 2; /* 128px -> 256px render */
   /* logical CSS render size (used for stylesheet sizing) */
   --sprite-render-w: calc(var(--sprite-size) * var(--sprite-scale));
   --sprite-render-h: calc(var(--sprite-size) * var(--sprite-scale));
@@ -30,6 +30,8 @@
   --radius-xl: 1.5rem;
   --shadow-soft: 0 10px 25px rgba(0, 0, 0, 0.35);
   --shadow-subtle: 0 4px 12px rgba(0, 0, 0, 0.35);
+  --shadow-glow: 0 25px 80px rgba(16, 185, 129, 0.2);
+  --shadow-card: 0 18px 45px rgba(0, 0, 0, 0.45);
 
   /* Z-index layers */
   --z-hud: 40;
@@ -41,10 +43,12 @@
   --dur-fast: 120ms;
   --dur-normal: 200ms;
   --dur-slow: 320ms;
+  --dur-xslow: 520ms;
 
   /* Easing */
   --ease-soft: cubic-bezier(0.22, 0.61, 0.36, 1);
   --ease-pop: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-smooth: cubic-bezier(0.33, 1, 0.68, 1);
 
   /* Color tokens (dark theme default) */
   --bg: #020617; /* app background (slate-950-ish) */
@@ -55,6 +59,7 @@
 
   --border-subtle: rgba(148, 163, 184, 0.35);
   --border-strong: rgba(148, 163, 184, 0.65);
+  --border-glow: rgba(16, 185, 129, 0.25);
 
   --text-main: #e5e7eb;
   --text-soft: #9ca3af;
@@ -64,6 +69,12 @@
   --accent: #f97316; /* orange-500 */
   --accent-soft: rgba(249, 115, 22, 0.16);
   --accent-strong: #ea580c; /* orange-600 */
+  --accent-alt: #10b981; /* emerald-500 */
+  --accent-alt-soft: rgba(16, 185, 129, 0.16);
+  --accent-alt-strong: #059669; /* emerald-600 */
+  --weather-accent: #34d399;
+  --ring: rgba(16, 185, 129, 0.45);
+  --ring-soft: rgba(16, 185, 129, 0.2);
 
   --danger: #ef4444;
   --success: #22c55e;
@@ -83,10 +94,17 @@
     rgba(15, 23, 42, 0.9),
     rgba(15, 23, 42, 0.96)
   );
+  --grad-accent: linear-gradient(
+    120deg,
+    rgba(16, 185, 129, 0.25),
+    rgba(56, 189, 248, 0.2),
+    rgba(249, 115, 22, 0.22)
+  );
 
   /* Glass */
   --glass-bg: rgba(15, 23, 42, 0.85);
   --glass-border: rgba(148, 163, 184, 0.35);
+  --glass-strong: rgba(2, 6, 23, 0.85);
 
   /* Scrollbars */
   --scroll-track: #020617;
@@ -112,12 +130,19 @@
   --accent: #ea580c;
   --accent-soft: rgba(234, 88, 12, 0.12);
   --accent-strong: #9a3412;
+  --accent-alt: #0f766e;
+  --accent-alt-soft: rgba(13, 148, 136, 0.15);
+  --accent-alt-strong: #115e59;
+  --weather-accent: #0f766e;
+  --ring: rgba(13, 148, 136, 0.35);
+  --ring-soft: rgba(13, 148, 136, 0.18);
 
   --scroll-track: #e5e7eb;
   --scroll-thumb: #9ca3af;
 
   --glass-bg: rgba(255, 255, 255, 0.85);
   --glass-border: rgba(148, 163, 184, 0.45);
+  --glass-strong: rgba(255, 255, 255, 0.92);
 }
 
 /* -------------------------------------------------------
@@ -199,7 +224,7 @@
   border-radius: var(--radius-xl);
   background: var(--grad-panel);
   border: 1px solid var(--border-subtle);
-  box-shadow: var(--shadow-soft);
+  box-shadow: var(--shadow-card);
   padding: 0.75rem;
   display: flex;
   flex-direction: column;
@@ -215,7 +240,7 @@
     rgba(15, 23, 42, 0.96)
   );
   border: 1px solid var(--border-subtle);
-  box-shadow: var(--shadow-soft);
+  box-shadow: var(--shadow-card);
   padding: 0.75rem;
   display: flex;
   flex-direction: column;
@@ -307,6 +332,36 @@
   padding: 0.75rem 0.9rem;
 }
 
+.dz-card--glow {
+  border-color: var(--border-glow);
+  box-shadow: var(--shadow-glow);
+}
+
+.dz-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  border: 1px solid var(--border-subtle);
+  background: rgba(15, 23, 42, 0.85);
+  color: var(--text-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+}
+
+.dz-divider {
+  height: 1px;
+  width: 100%;
+  background: linear-gradient(
+    90deg,
+    rgba(148, 163, 184, 0.05),
+    rgba(148, 163, 184, 0.35),
+    rgba(148, 163, 184, 0.05)
+  );
+}
+
 /* Card header row */
 .dz-card__header {
   display: flex;
@@ -371,6 +426,16 @@
   background: rgba(15, 23, 42, 0.95);
 }
 
+.dz-btn--accent {
+  background: radial-gradient(circle at top, var(--accent-alt), var(--accent-alt-strong));
+  box-shadow: 0 10px 25px rgba(16, 185, 129, 0.35);
+  color: #052e2a;
+}
+
+.dz-btn--accent:hover {
+  box-shadow: 0 16px 35px rgba(16, 185, 129, 0.45);
+}
+
 /* Smaller pill button for HUD */
 .dz-btn--pill {
   padding-inline: 0.7rem;
@@ -418,6 +483,30 @@
   color: #fee2e2;
 }
 
+.dz-metric {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.35rem 0.4rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(2, 6, 23, 0.45);
+}
+
+.dz-metric__bar {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.2);
+  overflow: hidden;
+}
+
+.dz-metric__fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent-alt), var(--weather-accent));
+}
+
 /* -------------------------------------------------------
    Toasts & overlays
 ------------------------------------------------------- */
@@ -441,6 +530,36 @@
   border: 1px solid var(--border-subtle);
   box-shadow: var(--shadow-soft);
   font-size: 0.8rem;
+}
+
+.dz-fade-in {
+  animation: dzFadeIn var(--dur-slow) var(--ease-smooth) both;
+}
+
+.dz-pop {
+  animation: dzPop var(--dur-normal) var(--ease-pop) both;
+}
+
+@keyframes dzFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes dzPop {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* -------------------------------------------------------

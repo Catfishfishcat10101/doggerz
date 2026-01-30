@@ -15,6 +15,11 @@ const DEFAULT_USER_STATE = {
 
   // Dog visuals
   dogRenderMode: "sprite", // 'sprite' | 'realistic'
+  dogName: null,
+  preferredScene: "auto",
+  reduceVfx: false,
+  uiDensity: "standard", // standard | compact | spacious
+  locale: null,
 
   coins: 0,
   streak: {
@@ -127,6 +132,17 @@ const initialState = {
   dogRenderMode: DOG_RENDER_MODES.includes(_loaded?.dogRenderMode)
     ? _loaded.dogRenderMode
     : DEFAULT_USER_STATE.dogRenderMode,
+  uiDensity:
+    _loaded?.uiDensity === "compact" ||
+    _loaded?.uiDensity === "spacious" ||
+    _loaded?.uiDensity === "standard"
+      ? _loaded.uiDensity
+      : DEFAULT_USER_STATE.uiDensity,
+  preferredScene:
+    typeof _loaded?.preferredScene === "string"
+      ? _loaded.preferredScene
+      : DEFAULT_USER_STATE.preferredScene,
+  reduceVfx: Boolean(_loaded?.reduceVfx),
 };
 const userSlice = createSlice({
   name: "user",
@@ -218,6 +234,31 @@ const userSlice = createSlice({
       state.dogRenderMode = raw;
       saveUserToStorage(state);
     },
+    setDogName(state, action) {
+      const raw = String(action.payload || "").trim();
+      state.dogName = raw || null;
+      saveUserToStorage(state);
+    },
+    setPreferredScene(state, action) {
+      const raw = String(action.payload || "").trim().toLowerCase();
+      state.preferredScene = raw || "auto";
+      saveUserToStorage(state);
+    },
+    setReduceVfx(state, action) {
+      state.reduceVfx = Boolean(action.payload);
+      saveUserToStorage(state);
+    },
+    setUiDensity(state, action) {
+      const raw = String(action.payload || "").trim().toLowerCase();
+      if (!["standard", "compact", "spacious"].includes(raw)) return;
+      state.uiDensity = raw;
+      saveUserToStorage(state);
+    },
+    setLocale(state, action) {
+      const raw = String(action.payload || "").trim();
+      state.locale = raw || null;
+      saveUserToStorage(state);
+    },
   },
 });
 
@@ -229,6 +270,11 @@ export const {
   updateStreak,
   setZip,
   setDogRenderMode,
+  setDogName,
+  setPreferredScene,
+  setReduceVfx,
+  setUiDensity,
+  setLocale,
 } = userSlice.actions;
 
 export const selectUser = (state) => state.user;
@@ -241,6 +287,13 @@ export const selectIsLoggedIn = (state) =>
 
 export const selectDogRenderMode = (state) =>
   state.user?.dogRenderMode || DEFAULT_USER_STATE.dogRenderMode;
+export const selectUserDogName = (state) => state.user?.dogName || null;
+export const selectPreferredScene = (state) =>
+  state.user?.preferredScene || "auto";
+export const selectReduceVfx = (state) => Boolean(state.user?.reduceVfx);
+export const selectUiDensity = (state) =>
+  state.user?.uiDensity || DEFAULT_USER_STATE.uiDensity;
+export const selectUserLocale = (state) => state.user?.locale || null;
 
 export const selectUserCoins = (state) => state.user?.coins ?? 0;
 export const selectUserStreak = (state) =>

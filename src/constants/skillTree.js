@@ -12,6 +12,8 @@ export const SKILL_TREE_BRANCHES = Object.freeze([
     id: "companion",
     name: "Companion",
     tagline: "Warm bonds and social sparkle.",
+    summary:
+      "Build deep bonds, soften decay, and unlock cozy memory perks.",
     theme: {
       accent: "#e11d48", // rose-600
       tint: "rgba(244, 63, 94, 0.18)",
@@ -22,6 +24,8 @@ export const SKILL_TREE_BRANCHES = Object.freeze([
         name: "Foodie",
         effect: "Hunger decays 20% slower.",
         type: "Passive",
+        rarity: "Common",
+        tier: 1,
         requires: null,
         modifiers: { hungerDecayMultiplier: 0.8 },
       },
@@ -30,6 +34,8 @@ export const SKILL_TREE_BRANCHES = Object.freeze([
         name: "Social Butterfly",
         effect: "Happiness decays 30% slower.",
         type: "Passive",
+        rarity: "Uncommon",
+        tier: 2,
         requires: "foodie",
         modifiers: { happinessDecayMultiplier: 0.7 },
       },
@@ -38,6 +44,8 @@ export const SKILL_TREE_BRANCHES = Object.freeze([
         name: "Cuddle Time",
         effect: "Bonding gains +10% after petting.",
         type: "Passive",
+        rarity: "Rare",
+        tier: 3,
         requires: "social-butterfly",
         // Wired later (petting system).
         modifiers: {},
@@ -47,6 +55,8 @@ export const SKILL_TREE_BRANCHES = Object.freeze([
         name: "Scrapbook Charm",
         effect: "Journals save an extra daily memory.",
         type: "Unlock",
+        rarity: "Epic",
+        tier: 4,
         requires: "cuddle-time",
         unlocks: "Storybook photo frames",
         modifiers: {},
@@ -57,6 +67,7 @@ export const SKILL_TREE_BRANCHES = Object.freeze([
     id: "guardian",
     name: "Guardian",
     tagline: "Steady, watchful, and cozy.",
+    summary: "Protect routines, stabilize energy, and unlock night comforts.",
     theme: {
       accent: "#b45309", // amber-700
       tint: "rgba(245, 158, 11, 0.16)",
@@ -67,6 +78,8 @@ export const SKILL_TREE_BRANCHES = Object.freeze([
         name: "Night Owl",
         effect: "Play at night without waking the pup.",
         type: "Unlock",
+        rarity: "Common",
+        tier: 1,
         requires: null,
         unlocks: "Nighttime yard session",
         modifiers: {},
@@ -76,6 +89,8 @@ export const SKILL_TREE_BRANCHES = Object.freeze([
         name: "Calm Watch",
         effect: "Energy decays 15% slower while idle.",
         type: "Passive",
+        rarity: "Uncommon",
+        tier: 2,
         requires: "night-owl",
         modifiers: { idleEnergyDecayMultiplier: 0.85 },
       },
@@ -84,6 +99,8 @@ export const SKILL_TREE_BRANCHES = Object.freeze([
         name: "Safe Haven",
         effect: "Cleanliness decays 15% slower.",
         type: "Passive",
+        rarity: "Rare",
+        tier: 3,
         requires: "calm-watch",
         modifiers: { cleanlinessDecayMultiplier: 0.85 },
       },
@@ -92,6 +109,8 @@ export const SKILL_TREE_BRANCHES = Object.freeze([
         name: "Cozy Fort",
         effect: "Unlock a guardian blanket cosmetic.",
         type: "Unlock",
+        rarity: "Epic",
+        tier: 4,
         requires: "safe-haven",
         unlocks: "Blanket cosmetic",
         modifiers: {},
@@ -102,6 +121,7 @@ export const SKILL_TREE_BRANCHES = Object.freeze([
     id: "athlete",
     name: "Athlete",
     tagline: "Speed, focus, and playful grit.",
+    summary: "Boost training velocity, recovery, and active perks.",
     theme: {
       accent: "#047857", // emerald-700
       tint: "rgba(16, 185, 129, 0.16)",
@@ -112,6 +132,8 @@ export const SKILL_TREE_BRANCHES = Object.freeze([
         name: "Quick Learner",
         effect: "Training progresses 50% faster.",
         type: "Passive",
+        rarity: "Common",
+        tier: 1,
         requires: null,
         modifiers: { trainingSkillXpMultiplier: 1.5 },
       },
@@ -120,6 +142,8 @@ export const SKILL_TREE_BRANCHES = Object.freeze([
         name: "Trail Runner",
         effect: "Energy recovery is 20% faster.",
         type: "Passive",
+        rarity: "Uncommon",
+        tier: 2,
         requires: "quick-learner",
         modifiers: { restEnergyGainMultiplier: 1.2 },
       },
@@ -128,6 +152,8 @@ export const SKILL_TREE_BRANCHES = Object.freeze([
         name: "Fetch Focus",
         effect: "Mini-game scores gain a small bonus.",
         type: "Passive",
+        rarity: "Rare",
+        tier: 3,
         requires: "trail-runner",
         modifiers: {},
       },
@@ -136,6 +162,8 @@ export const SKILL_TREE_BRANCHES = Object.freeze([
         name: "Agility Path",
         effect: "Unlock a new agility course activity.",
         type: "Unlock",
+        rarity: "Epic",
+        tier: 4,
         requires: "fetch-focus",
         unlocks: "Agility course",
         modifiers: {},
@@ -148,7 +176,7 @@ const PERK_INDEX = (() => {
   const map = new Map();
   for (const b of SKILL_TREE_BRANCHES) {
     for (const p of b.perks) {
-      map.set(p.id, { ...p, branchId: b.id });
+      map.set(p.id, { ...p, branchId: b.id, branchName: b.name });
     }
   }
   return map;
@@ -196,4 +224,26 @@ export function computeSkillTreeModifiers(unlockedIds) {
 export function getSkillTreeThemeForBranch(branchId) {
   const b = SKILL_TREE_BRANCHES.find((x) => x.id === branchId);
   return b?.theme || null;
+}
+
+export function getSkillTreeBranch(branchId) {
+  return SKILL_TREE_BRANCHES.find((x) => x.id === branchId) || null;
+}
+
+export function getSkillTreeBranches() {
+  return SKILL_TREE_BRANCHES.slice();
+}
+
+export function getSkillTreePerksByBranch(branchId) {
+  const branch = getSkillTreeBranch(branchId);
+  return branch?.perks ? branch.perks.slice() : [];
+}
+
+export function getSkillTreePerkRarity(perkId) {
+  return getSkillTreePerk(perkId)?.rarity || "Common";
+}
+
+export function getSkillTreePerkTier(perkId) {
+  const tier = getSkillTreePerk(perkId)?.tier;
+  return Number.isFinite(Number(tier)) ? Number(tier) : null;
 }

@@ -22,16 +22,26 @@ export const IS_DEV_BUILD = APP_VERSION === "dev";
  * @param {string} version - e.g. "1.2.3" or "1.2.3-beta.1"
  * @returns {{ major: number, minor: number, patch: number, prerelease: string }}
  */
+export function normalizeVersionInput(version) {
+  const raw = String(version || "").trim();
+  if (!raw) return "";
+  return raw.startsWith("v") ? raw.slice(1) : raw;
+}
+
 export function parseVersion(version) {
-  const match = String(version).match(/^(\d+)\.(\d+)\.(\d+)(?:-(.+))?$/);
+  const normalized = normalizeVersionInput(version);
+  const match = String(normalized).match(
+    /^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?(?:\+([0-9A-Za-z.-]+))?$/
+  );
   if (!match) {
-    return { major: 0, minor: 0, patch: 0, prerelease: version };
+    return { major: 0, minor: 0, patch: 0, prerelease: normalized };
   }
   return {
     major: parseInt(match[1], 10),
     minor: parseInt(match[2], 10),
     patch: parseInt(match[3], 10),
     prerelease: match[4] || "",
+    build: match[5] || "",
   };
 }
 
@@ -57,4 +67,25 @@ export function compareVersions(a, b) {
   }
 
   return 0;
+}
+
+export function formatAppVersion(version = APP_VERSION) {
+  const v = normalizeVersionInput(version);
+  if (!v || v === "dev") return "dev";
+  return v.startsWith("v") ? v : `v${v}`;
+}
+
+export function isVersionAtLeast(version, minimum) {
+  if (!version || !minimum) return false;
+  return compareVersions(version, minimum) >= 0;
+}
+
+export function getAppVersionMeta() {
+  const parsed = parseVersion(APP_VERSION);
+  return {
+    raw: APP_VERSION,
+    display: formatAppVersion(APP_VERSION),
+    isDev: IS_DEV_BUILD,
+    ...parsed,
+  };
 }

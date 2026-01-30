@@ -2,6 +2,7 @@
 
 // src/utils/resolveDogPoseFromTraining.js
 import { getSkillNode } from "@/constants/trainingTree.js";
+import { resolvePoseKey } from "@/utils/mapPoseToDogAction.js";
 
 /**
  * Priority:
@@ -12,16 +13,24 @@ import { getSkillNode } from "@/constants/trainingTree.js";
  */
 export function resolveDogPoseFromTraining(
   trainingTreeState,
-  now = Date.now()
+  now = Date.now(),
+  options = {}
 ) {
   if (!trainingTreeState) return "idle";
+  const {
+    fallbackPose = "idle",
+    preferEquipped = true,
+    normalizePose = true,
+  } = options;
 
   const preview = trainingTreeState.previewPose;
   const until = Number(trainingTreeState.previewUntil || 0);
-  if (preview && until > now) return String(preview);
+  if (preview && until > now)
+    return normalizePose ? resolvePoseKey(preview) : String(preview);
 
   const equipped = trainingTreeState.equippedPose;
-  if (equipped) return String(equipped);
+  if (equipped && preferEquipped)
+    return normalizePose ? resolvePoseKey(equipped) : String(equipped);
 
   const skills = trainingTreeState.skills || {};
   let best = null;
@@ -35,5 +44,6 @@ export function resolveDogPoseFromTraining(
     if (!best || level > best.level) best = { pose: node.pose, level };
   }
 
-  return best?.pose || "idle";
+  const pose = best?.pose || fallbackPose;
+  return normalizePose ? resolvePoseKey(pose) : String(pose);
 }

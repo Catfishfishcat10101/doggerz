@@ -9,7 +9,7 @@
    - Cache-first for static assets
 -------------------------------------------------------- */
 
-const CACHE_VERSION = "doggerz-v16"; // bump this when you change cached assets or SW behaviour
+const CACHE_VERSION = "doggerz-v18"; // bump this when you change cached assets or SW behaviour
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Support deployments under a sub-path (e.g. GitHub Pages):
@@ -57,6 +57,10 @@ const CORE_ASSETS = [
   "/audio/bark.wav",
   "/audio/whine.wav",
   "/audio/scratch.wav",
+
+  // PWA screenshots (optional)
+  "/screenshots/yard-1080x1920.png",
+  "/screenshots/training-1080x1920.png",
 ];
 
 /* -------------------------------------------------------
@@ -115,6 +119,10 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(request.url);
   const isSameOrigin = url.origin === self.location.origin;
+  const isDev =
+    url.hostname === "localhost" ||
+    url.hostname === "127.0.0.1" ||
+    url.hostname.endsWith(".local");
 
   // Navigation requests (HTML pages)
   const isNavigation =
@@ -138,19 +146,25 @@ self.addEventListener("fetch", (event) => {
       scopedPath.match(/\.(png|jpe?g|webp|gif|svg|ico)$/i) ||
       scopedPath.match(/\.(mp3|wav|ogg|m4a)$/i) ||
       scopedPath.match(/\.(css|js|woff2?|ttf|otf)$/i) ||
+      scopedPath.startsWith("/assets/") ||
       scopedPath.startsWith("/sprites/") ||
       scopedPath.startsWith("/backgrounds/") ||
       scopedPath.startsWith("/audio/") ||
       scopedPath.startsWith("/models/") ||
       scopedPath.startsWith("/icons/");
 
-    if (isStaticAsset) {
+    if (isStaticAsset && !isDev) {
       event.respondWith(cacheFirst(request));
       return;
     }
   }
 
-  // Fallback: straight network, with cache fallback
+  // Fallback: stale-while-revalidate for same-origin assets, otherwise network
+  if (isSameOrigin && !isDev) {
+    event.respondWith(staleWhileRevalidate(request));
+    return;
+  }
+
   event.respondWith(fetch(request).catch(() => caches.match(request)));
 });
 
@@ -227,4 +241,19 @@ async function cacheFirst(request) {
 
     throw err;
   }
+}
+
+async function staleWhileRevalidate(request) {
+  const cache = await caches.open(RUNTIME_CACHE);
+  const cached = await cache.match(request);
+  const fetchPromise = fetch(request)
+    .then((response) => {
+      if (response && response.ok) {
+        cache.put(request, response.clone());
+      }
+      return response;
+    })
+    .catch(() => null);
+
+  return cached || fetchPromise || cache.match(request);
 }

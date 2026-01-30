@@ -118,6 +118,24 @@ html[data-skill-pulse="1"] .dz-perk-card[data-state="unlocked"] {
   animation: dzSkillPulse 650ms ease-out 1;
 }
 
+@keyframes dzStoryPulse {
+  0% {
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.08),
+      0 0 40px var(--dz-accent-soft);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.12),
+      0 0 80px var(--dz-accent-strong);
+  }
+  100% {
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.08),
+      0 0 40px var(--dz-accent-soft);
+  }
+}
+
 @layer components {
   .dz-header {
     @apply sticky top-0 z-50 w-full border-b border-white/10 bg-black/55 backdrop-blur-md;
@@ -153,6 +171,15 @@ html[data-story-active="1"] .dz-moment-card {
     0 0 0 1px rgba(255, 255, 255, 0.08),
     0 0 60px var(--dz-accent-soft),
     0 0 120px rgba(0, 0, 0, 0.22);
+}
+
+html[data-story-urgency="medium"] .dz-moment-card,
+html[data-story-urgency="high"] .dz-moment-card {
+  animation: dzStoryPulse 1.6s ease-in-out infinite;
+}
+
+html[data-story-urgency="high"] .dz-moment-card {
+  border-color: rgba(255, 255, 255, 0.32) !important;
 }
 /* -------------------------------------------------------
    Global layout & typography

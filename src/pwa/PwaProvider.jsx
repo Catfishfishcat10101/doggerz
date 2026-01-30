@@ -9,8 +9,13 @@ import { withBaseUrl } from "@/utils/assetUrl.js";
 const PwaContext = React.createContext({
   offline: false,
   updateAvailable: false,
+  updateAvailableAt: null,
   canInstall: false,
+  swStatus: "unsupported",
+  lastUpdateCheckAt: null,
+  updateError: null,
   applyUpdate: async () => {},
+  checkForUpdate: async () => false,
   promptInstall: async () => ({ outcome: "dismissed" }),
 });
 
@@ -26,7 +31,11 @@ export function usePwa() {
 export default function PwaProvider({ children }) {
   const [offline, setOffline] = React.useState(getOffline());
   const [updateAvailable, setUpdateAvailable] = React.useState(false);
+  const [updateAvailableAt, setUpdateAvailableAt] = React.useState(null);
   const [canInstall, setCanInstall] = React.useState(false);
+  const [swStatus, setSwStatus] = React.useState("unsupported");
+  const [lastUpdateCheckAt, setLastUpdateCheckAt] = React.useState(null);
+  const [updateError, setUpdateError] = React.useState(null);
   const registrationRef = React.useRef(null);
   const deferredPromptRef = React.useRef(null);
 
@@ -102,6 +111,7 @@ export default function PwaProvider({ children }) {
     if (!("serviceWorker" in navigator)) return;
 
     let cancelled = false;
+    setSwStatus("registering");
 
     const onControllerChange = () => {
       // New SW took control – safest is a hard reload so we don't run mixed bundles.
@@ -119,10 +129,12 @@ export default function PwaProvider({ children }) {
           withBaseUrl("/sw.js")
         );
         registrationRef.current = reg;
+        if (!cancelled) setSwStatus("registered");
 
         // If there's already a waiting worker, we can prompt immediately.
         if (reg.waiting && !cancelled) {
           setUpdateAvailable(true);
+          setUpdateAvailableAt(Date.now());
         }
 
         reg.addEventListener("updatefound", () => {
@@ -135,7 +147,10 @@ export default function PwaProvider({ children }) {
               installing.state === "installed" &&
               navigator.serviceWorker.controller
             ) {
-              if (!cancelled) setUpdateAvailable(true);
+              if (!cancelled) {
+                setUpdateAvailable(true);
+                setUpdateAvailableAt(Date.now());
+              }
             }
           });
         });
@@ -145,6 +160,7 @@ export default function PwaProvider({ children }) {
           if (document.hidden) return;
           try {
             reg.update();
+            setLastUpdateCheckAt(Date.now());
           } catch {
             // ignore
           }
@@ -155,6 +171,7 @@ export default function PwaProvider({ children }) {
           window.removeEventListener("visibilitychange", onVisible);
         };
       } catch {
+        if (!cancelled) setSwStatus("error");
         // ignore (offline first load etc)
       }
     };
@@ -207,6 +224,24 @@ export default function PwaProvider({ children }) {
     }
   }, []);
 
+  const checkForUpdate = React.useCallback(
+    async ({ force = false } = {}) => {
+      const reg = registrationRef.current;
+      if (!reg) return false;
+      if (!force && offline) return false;
+      setUpdateError(null);
+      try {
+        await reg.update();
+        setLastUpdateCheckAt(Date.now());
+        return true;
+      } catch (err) {
+        setUpdateError(err?.message || "Update check failed");
+        return false;
+      }
+    },
+    [offline]
+  );
+
   const promptInstall = React.useCallback(async () => {
     const prompt = deferredPromptRef.current;
     if (!prompt) return { outcome: "unavailable" };
@@ -225,11 +260,27 @@ export default function PwaProvider({ children }) {
     () => ({
       offline,
       updateAvailable,
+      updateAvailableAt,
       canInstall,
+      swStatus,
+      lastUpdateCheckAt,
+      updateError,
       applyUpdate,
+      checkForUpdate,
       promptInstall,
     }),
-    [offline, updateAvailable, canInstall, applyUpdate, promptInstall]
+    [
+      offline,
+      updateAvailable,
+      updateAvailableAt,
+      canInstall,
+      swStatus,
+      lastUpdateCheckAt,
+      updateError,
+      applyUpdate,
+      checkForUpdate,
+      promptInstall,
+    ]
   );
 
   return <PwaContext.Provider value={value}>{children}</PwaContext.Provider>;

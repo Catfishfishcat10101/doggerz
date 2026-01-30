@@ -8,6 +8,23 @@ export const WORKFLOW_STORAGE_KEY = "doggerz:workflows";
 
 const nowMs = () => Date.now();
 
+function normalizeWorkflowState(raw) {
+  if (!raw || typeof raw !== "object") return null;
+  const status = String(raw.status || "idle").toLowerCase();
+  const allowed = ["idle", "active", "completed", "cancelled"];
+  return {
+    id: String(raw.id || ""),
+    status: allowed.includes(status) ? status : "idle",
+    stepIndex: Math.max(0, Number(raw.stepIndex) || 0),
+    data: raw.data && typeof raw.data === "object" ? { ...raw.data } : {},
+    startedAt: Number(raw.startedAt || 0) || null,
+    updatedAt: Number(raw.updatedAt || 0) || null,
+    completedAt: Number(raw.completedAt || 0) || null,
+    cancelledAt: Number(raw.cancelledAt || 0) || null,
+    version: Number(raw.version || 1) || 1,
+  };
+}
+
 const initialState = {
   // Map of workflowId -> workflow state
   byId: {},
@@ -46,13 +63,13 @@ const workflowSlice = createSlice({
 
       // Merge in a conservative way so a bad payload can't brick the app
       for (const [id, wf] of Object.entries(byId)) {
-        if (!wf || typeof wf !== "object") continue;
         const safeId = String(id);
+        const normalized = normalizeWorkflowState({ ...wf, id: safeId });
+        if (!normalized) continue;
         state.byId[safeId] = {
           ...ensureWorkflow(state, safeId),
-          ...wf,
+          ...normalized,
           id: safeId,
-          data: { ...(wf.data || {}) },
         };
       }
     },

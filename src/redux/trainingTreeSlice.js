@@ -48,6 +48,18 @@ function unlockedSet(state) {
   return s;
 }
 
+function ensureMeta(state) {
+  if (!state.meta || typeof state.meta !== "object") {
+    state.meta = {
+      unlockedCount: 0,
+      lastUnlockedAt: 0,
+      lastPracticedAt: 0,
+      lastRustAt: 0,
+    };
+  }
+  return state.meta;
+}
+
 export const trainingTreeSlice = createSlice({
   name: "trainingTree",
   initialState,
@@ -100,10 +112,19 @@ export const trainingTreeSlice = createSlice({
       // visible feedback
       state.previewPose = node.pose || state.previewPose;
       state.previewUntil = Date.now() + 2000;
+
+      const meta = ensureMeta(state);
+      meta.unlockedCount = (meta.unlockedCount || 0) + 1;
+      meta.lastUnlockedAt = Date.now();
     },
 
     practiceSkill(state, action) {
-      const { skillId, amount = 14 } = action.payload || {};
+      const payload = action.payload || {};
+      const { skillId, amount = 14 } = payload;
+      const context =
+        payload?.context && typeof payload.context === "object"
+          ? payload.context
+          : payload;
       const id = String(skillId || "");
       const node = getSkillNode(id);
       if (!node) return;
@@ -114,7 +135,14 @@ export const trainingTreeSlice = createSlice({
       const now = Date.now();
       const amt = clamp(Number(amount), 1, 50);
 
-      entry.level = applyPracticeToLevel(entry.level, amt);
+      entry.level = applyPracticeToLevel(entry.level, amt, {
+        bond: context?.bond,
+        focus: context?.focus,
+        energy: context?.energy,
+        isSpicy: context?.isSpicy,
+        trainingStreak: context?.trainingStreak,
+        difficulty: context?.difficulty,
+      });
       entry.lastPracticedAt = now;
       entry.lastMaintainedAt = now;
 
@@ -128,10 +156,18 @@ export const trainingTreeSlice = createSlice({
       // visible feedback
       state.previewPose = node.pose || state.previewPose;
       state.previewUntil = now + 2000;
+
+      const meta = ensureMeta(state);
+      meta.lastPracticedAt = now;
     },
 
     applySkillRust(state, action) {
-      const now = action.payload?.now ? Number(action.payload.now) : Date.now();
+      const payload = action.payload || {};
+      const now = payload?.now ? Number(payload.now) : Date.now();
+      const context =
+        payload?.context && typeof payload.context === "object"
+          ? payload.context
+          : payload;
 
       for (const node of allSkillNodes()) {
         const entry = ensureSkill(state, node.id);
@@ -142,6 +178,10 @@ export const trainingTreeSlice = createSlice({
           currentLevel: entry.level,
           lastMaintainedAt: entry.lastMaintainedAt,
           now,
+          trainingStreak: context?.trainingStreak,
+          bond: context?.bond,
+          focus: context?.focus,
+          difficulty: context?.difficulty,
         });
 
         if (rust <= 0) continue;
@@ -161,6 +201,25 @@ export const trainingTreeSlice = createSlice({
       }
 
       state.lastGlobalMaintenanceAt = now;
+
+      const meta = ensureMeta(state);
+      meta.lastRustAt = now;
+    },
+
+    clearTrainingHistory(state, action) {
+      const { skillId } = action.payload || {};
+      if (skillId) {
+        const entry = ensureSkill(state, String(skillId));
+        entry.history = [];
+        return;
+      }
+      for (const key of Object.keys(state.skills)) {
+        if (state.skills[key]) state.skills[key].history = [];
+      }
+    },
+
+    resetTrainingTree() {
+      return initialState;
     },
   },
 });
@@ -172,6 +231,8 @@ export const {
   unlockSkill,
   practiceSkill,
   applySkillRust,
+  clearTrainingHistory,
+  resetTrainingTree,
 } = trainingTreeSlice.actions;
 
 export default trainingTreeSlice.reducer;
@@ -180,3 +241,12 @@ export default trainingTreeSlice.reducer;
 export const selectTrainingTree = (s) => s.trainingTree;
 export const selectSkillPoints = (s) => s.trainingTree.skillPoints;
 export const selectEquippedPose = (s) => s.trainingTree.equippedPose;
+export const selectTrainingMeta = (s) => s.trainingTree.meta || null;
+export const selectUnlockedTrainingIds = (s) =>
+  Object.entries(s.trainingTree.skills || {})
+    .filter(([, v]) => v?.unlocked)
+    .map(([id]) => id);
+export const selectTrainingHistory = (s, skillId) => {
+  if (!skillId) return [];
+  return s.trainingTree.skills?.[skillId]?.history || [];
+};

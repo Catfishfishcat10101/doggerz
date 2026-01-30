@@ -18,6 +18,9 @@ export const TRAINING_TREE = /** @type {const} */ ({
         label: "Sit",
         pose: "sit",
         cost: 1,
+        tier: 1,
+        difficulty: "easy",
+        tags: ["foundation", "calm"],
         prereq: [],
         rustPerDay: 4,
       },
@@ -26,6 +29,9 @@ export const TRAINING_TREE = /** @type {const} */ ({
         label: "Stay",
         pose: "stay",
         cost: 1,
+        tier: 1,
+        difficulty: "easy",
+        tags: ["control", "focus"],
         prereq: ["obedience_sit"],
         rustPerDay: 5,
       },
@@ -34,6 +40,9 @@ export const TRAINING_TREE = /** @type {const} */ ({
         label: "Heel",
         pose: "heel",
         cost: 2,
+        tier: 2,
+        difficulty: "medium",
+        tags: ["walk", "focus"],
         prereq: ["obedience_stay"],
         rustPerDay: 6,
       },
@@ -42,6 +51,9 @@ export const TRAINING_TREE = /** @type {const} */ ({
         label: "Recall",
         pose: "alert",
         cost: 2,
+        tier: 2,
+        difficulty: "medium",
+        tags: ["trust", "safety"],
         prereq: ["obedience_stay"],
         rustPerDay: 6,
       },
@@ -57,6 +69,9 @@ export const TRAINING_TREE = /** @type {const} */ ({
         label: "Paw",
         pose: "paw",
         cost: 1,
+        tier: 1,
+        difficulty: "easy",
+        tags: ["greeting", "cute"],
         prereq: [],
         rustPerDay: 6,
       },
@@ -65,6 +80,9 @@ export const TRAINING_TREE = /** @type {const} */ ({
         label: "Roll",
         pose: "roll",
         cost: 2,
+        tier: 2,
+        difficulty: "medium",
+        tags: ["coordination", "fun"],
         prereq: ["trick_paw"],
         rustPerDay: 7,
       },
@@ -73,6 +91,9 @@ export const TRAINING_TREE = /** @type {const} */ ({
         label: "Bow",
         pose: "bow",
         cost: 2,
+        tier: 2,
+        difficulty: "medium",
+        tags: ["show", "poise"],
         prereq: ["trick_paw"],
         rustPerDay: 7,
       },
@@ -81,6 +102,9 @@ export const TRAINING_TREE = /** @type {const} */ ({
         label: "Sit Pretty",
         pose: "sit_pretty",
         cost: 3,
+        tier: 3,
+        difficulty: "hard",
+        tags: ["balance", "style"],
         prereq: ["trick_bow"],
         rustPerDay: 8,
       },
@@ -96,6 +120,9 @@ export const TRAINING_TREE = /** @type {const} */ ({
         label: "Calm",
         pose: "calm_idle",
         cost: 1,
+        tier: 1,
+        difficulty: "easy",
+        tags: ["settle", "routine"],
         prereq: [],
         rustPerDay: 4,
       },
@@ -104,6 +131,9 @@ export const TRAINING_TREE = /** @type {const} */ ({
         label: "Gentle",
         pose: "gentle_idle",
         cost: 2,
+        tier: 2,
+        difficulty: "medium",
+        tags: ["soft", "patience"],
         prereq: ["behavior_calm"],
         rustPerDay: 5,
       },
@@ -112,6 +142,9 @@ export const TRAINING_TREE = /** @type {const} */ ({
         label: "Confident",
         pose: "confident_idle",
         cost: 2,
+        tier: 2,
+        difficulty: "medium",
+        tags: ["bold", "resilient"],
         prereq: ["behavior_calm"],
         rustPerDay: 5,
       },
@@ -120,6 +153,9 @@ export const TRAINING_TREE = /** @type {const} */ ({
         label: "Quiet",
         pose: "quiet_idle",
         cost: 2,
+        tier: 3,
+        difficulty: "hard",
+        tags: ["focus", "calm"],
         prereq: ["behavior_gentle"],
         rustPerDay: 6,
       },
@@ -131,6 +167,17 @@ export function allSkillNodes() {
   return Object.values(TRAINING_TREE).flatMap((b) => b.nodes);
 }
 
+export function getTrainingBranch(branchId) {
+  return TRAINING_TREE[branchId] || null;
+}
+
+export function getTrainingBranches() {
+  return Object.entries(TRAINING_TREE).map(([id, branch]) => ({
+    id,
+    ...branch,
+  }));
+}
+
 export function getSkillNode(skillId) {
   return allSkillNodes().find((n) => n.id === skillId) || null;
 }
@@ -139,4 +186,14 @@ export function skillPrereqsMet(skillId, unlockedSet) {
   const node = getSkillNode(skillId);
   if (!node) return false;
   return node.prereq.every((p) => unlockedSet.has(p));
+}
+
+export function getSkillNodeTags(skillId) {
+  const node = getSkillNode(skillId);
+  return node?.tags ? node.tags.slice() : [];
+}
+
+export function getSkillNodeDifficulty(skillId) {
+  const node = getSkillNode(skillId);
+  return node?.difficulty || "easy";
 }

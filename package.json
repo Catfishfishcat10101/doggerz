@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.0.0"
   },
   "scripts": {
     "prepare": "husky",
@@ -22,6 +22,7 @@
     "backgrounds:wide": "node scripts/generate-wide-backyard.js",
     "sprites:generate": "node scripts/generate-sprites.js",
     "sprites:pack-atlas": "node scripts/pack-atlas-to-sprites.js",
+    "sprites:build": "npm run sprites:generate && npm run sprites:pack-atlas",
     "sprites:frames:validate": "node scripts/validate-sprite-frames.js",
     "sprites:jrt:base": "node scripts/generate-jack-russell-base-sprites.js",
     "sprites:jr": "node scripts/generate-jr-pixi-sheets.js",
@@ -36,9 +37,11 @@
   },
   "dependencies": {
     "@capacitor-community/admob": "^8.0.0",
-    "@capacitor/android": "^8.0.1",
-    "@capacitor/core": "^8.0.1",
+    "@capacitor-community/speech-recognition": "^7.0.1",
+    "@capacitor/android": "^8.0.2",
+    "@capacitor/core": "^8.0.2",
     "@capacitor/ios": "^8.0.1",
+    "@pixi/react": "^7.1.2",
     "@reduxjs/toolkit": "^2.10.1",
     "@revenuecat/purchases-capacitor": "^12.0.5",
     "@vercel/analytics": "^1.6.1",
@@ -47,6 +50,9 @@
     "flutter": "^0.0.5",
     "lottie-react": "^2.4.1",
     "native": "^0.3.3",
+    "nodejs": "^0.0.0",
+    "pixi.js": "^7.4.3",
+    "prop-types": "^15.8.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-hot-toast": "^2.6.0",
@@ -54,7 +60,7 @@
     "react-router-dom": "^6.30.2"
   },
   "devDependencies": {
-    "@capacitor/cli": "^8.0.1",
+    "@capacitor/cli": "^8.0.2",
     "@eslint/js": "^9.18.0",
     "@react-native-community/cli": "latest",
     "@tailwindcss/forms": "^0.5.10",

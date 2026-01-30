@@ -6,26 +6,41 @@ import { configureStore } from "@reduxjs/toolkit";
 
 import dogReducer, { DOG_STORAGE_KEY } from "@/redux/dogSlice.js";
 import userReducer from "@/redux/userSlice.js";
-import settingsReducer from "@/redux/settingsSlice.js";
+import settingsReducer, {
+  SETTINGS_STORAGE_KEY,
+  hydrateSettings,
+} from "@/redux/settingsSlice.js";
 import weatherReducer from "@/redux/weatherSlice.js";
 import workflowsReducer from "@/redux/workflowSlice.js";
 import trainingTreeReducer from "@/redux/trainingTreeSlice.js";
 
-function getPreloadedDogState() {
+function safeLoadJson(key) {
   try {
     if (typeof localStorage === "undefined") return undefined;
-    const raw = localStorage.getItem(DOG_STORAGE_KEY);
+    const raw = localStorage.getItem(key);
     if (!raw) return undefined;
     const parsed = JSON.parse(raw);
-    if (!parsed || typeof parsed !== "object") return undefined;
-    // Reuse dogSlice's hydrate reducer to merge defaults + derive fields.
-    return dogReducer(undefined, { type: "dog/hydrateDog", payload: parsed });
+    return parsed && typeof parsed === "object" ? parsed : undefined;
   } catch {
     return undefined;
   }
 }
 
+function getPreloadedDogState() {
+  const parsed = safeLoadJson(DOG_STORAGE_KEY);
+  if (!parsed) return undefined;
+  // Reuse dogSlice's hydrate reducer to merge defaults + derive fields.
+  return dogReducer(undefined, { type: "dog/hydrateDog", payload: parsed });
+}
+
+function getPreloadedSettingsState() {
+  const parsed = safeLoadJson(SETTINGS_STORAGE_KEY);
+  if (!parsed) return undefined;
+  return settingsReducer(undefined, hydrateSettings(parsed));
+}
+
 const preloadedDog = getPreloadedDogState();
+const preloadedSettings = getPreloadedSettingsState();
 
 /**
  * Configure Redux store
@@ -42,7 +57,13 @@ export const store = configureStore({
     workflows: workflowsReducer,
     trainingTree: trainingTreeReducer,
   },
-  preloadedState: preloadedDog ? { dog: preloadedDog } : undefined,
+  preloadedState:
+    preloadedDog || preloadedSettings
+      ? {
+          ...(preloadedDog ? { dog: preloadedDog } : {}),
+          ...(preloadedSettings ? { settings: preloadedSettings } : {}),
+        }
+      : undefined,
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: false,

@@ -12,7 +12,7 @@
  *  - "dusk"
  *  - "evening"
  */
-export function getTimeOfDay(dateLike) {
+export function getTimeOfDay(dateLike, opts = {}) {
   try {
     const d =
       dateLike instanceof Date
@@ -22,6 +22,13 @@ export function getTimeOfDay(dateLike) {
           : new Date();
 
     const hour = d.getHours(); // 0–23
+    const precision = String(opts.precision || "vibe").toLowerCase();
+    if (precision === "broad") {
+      if (hour < 6) return "night";
+      if (hour < 12) return "morning";
+      if (hour < 18) return "afternoon";
+      return "evening";
+    }
 
     // 00:00–04:59 → deep night
     if (hour < 5) return "night";
@@ -58,7 +65,7 @@ export function getTimeOfDay(dateLike) {
  * You can replace this later with a real moon-phase API
  * and keep the interface the same.
  */
-export function shouldHowlAtMoon(timeOfDay) {
+export function shouldHowlAtMoon(timeOfDay, opts = {}) {
   const tod = timeOfDay || getTimeOfDay();
 
   // Base probabilities
@@ -94,15 +101,16 @@ export function shouldHowlAtMoon(timeOfDay) {
   // Clamp between 0 and 0.4 so it never goes insane
   baseChance = Math.max(0, Math.min(baseChance, 0.4));
 
-  return Math.random() < baseChance;
+  const rng = typeof opts.rng === "function" ? opts.rng : Math.random;
+  return rng() < baseChance;
 }
 
 /**
  * Optional helper if later you want ambient weather state.
  * For now it's just a placeholder for future expansion.
  */
-export function getAmbientWeatherHint() {
-  const tod = getTimeOfDay();
+export function getAmbientWeatherHint(timeOfDay) {
+  const tod = timeOfDay || getTimeOfDay();
 
   switch (tod) {
     case "dawn":
@@ -127,4 +135,45 @@ export function getAmbientWeatherHint() {
  */
 export async function getWeather() {
   return "clear";
+}
+
+export function normalizeWeatherCondition(condition) {
+  const key = String(condition || "")
+    .trim()
+    .toLowerCase();
+  if (!key) return "clear";
+  if (key === "sunny" || key === "sun") return "clear";
+  if (key === "overcast" || key === "cloud") return "cloudy";
+  if (key === "storm" || key === "thunder") return "rain";
+  if (key === "snowy") return "snow";
+  return key;
+}
+
+export function getWeatherLabel(condition) {
+  const key = normalizeWeatherCondition(condition);
+  if (key === "rain") return "Rain";
+  if (key === "snow") return "Snow";
+  if (key === "cloudy") return "Cloudy";
+  if (key === "wind") return "Windy";
+  if (key === "mist" || key === "fog") return "Fog";
+  return "Clear";
+}
+
+export function getWeatherAccent(condition) {
+  const key = normalizeWeatherCondition(condition);
+  switch (key) {
+    case "rain":
+      return "#60a5fa";
+    case "snow":
+      return "#f8fafc";
+    case "cloudy":
+      return "#94a3b8";
+    case "wind":
+      return "#a7f3d0";
+    case "fog":
+    case "mist":
+      return "#cbd5f5";
+    default:
+      return "#facc15";
+  }
 }

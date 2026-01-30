@@ -349,7 +349,7 @@ export default function MainGame(props = {}) {
           </section>
 
           <section className="lg:col-span-5">
-            <NeedsHUD needs={safeNeeds} />
+            <NeedsHUD needs={safeNeeds} scene={scene} />
           </section>
 
           {/* Row 2 (zigzag): small left, big right */}

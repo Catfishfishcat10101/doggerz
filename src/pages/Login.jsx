@@ -1,5 +1,5 @@
 // src/pages/Login.jsx
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { Navigate, useNavigate, Link, useLocation } from "react-router-dom";
 import {
@@ -12,6 +12,39 @@ import { selectIsLoggedIn } from "@/redux/userSlice.js";
 
 import PageShell from "@/components/PageShell.jsx";
 
+const STORAGE_REMEMBER = "doggerz:loginRememberEmail";
+const STORAGE_EMAIL = "doggerz:loginEmail";
+
+function canUseStorage() {
+  return typeof window !== "undefined" && !!window.localStorage;
+}
+
+function loadRememberedEmail() {
+  if (!canUseStorage()) return { remember: false, email: "" };
+  try {
+    const remember = window.localStorage.getItem(STORAGE_REMEMBER) === "1";
+    const email = remember ? window.localStorage.getItem(STORAGE_EMAIL) || "" : "";
+    return { remember, email };
+  } catch {
+    return { remember: false, email: "" };
+  }
+}
+
+function persistRememberedEmail({ remember, email }) {
+  if (!canUseStorage()) return;
+  try {
+    if (remember) {
+      window.localStorage.setItem(STORAGE_REMEMBER, "1");
+      window.localStorage.setItem(STORAGE_EMAIL, String(email || ""));
+    } else {
+      window.localStorage.removeItem(STORAGE_REMEMBER);
+      window.localStorage.removeItem(STORAGE_EMAIL);
+    }
+  } catch {
+    // ignore
+  }
+}
+
 export default function LoginPage() {
   const isLoggedIn = useSelector(selectIsLoggedIn);
   const navigate = useNavigate();
@@ -20,12 +53,19 @@ export default function LoginPage() {
   // So we can send them back where they came from later if needed
   const from = location.state?.from || "/game";
 
-  const [email, setEmail] = useState("");
+  const remembered = useMemo(() => loadRememberedEmail(), []);
+  const [email, setEmail] = useState(remembered.email || "");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [resetSending, setResetSending] = useState(false);
   const [error, setError] = useState(null);
   const [notice, setNotice] = useState(null);
+  const [rememberEmail, setRememberEmail] = useState(remembered.remember);
+  const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    persistRememberedEmail({ remember: rememberEmail, email });
+  }, [rememberEmail, email]);
 
   if (isLoggedIn) {
     // Already logged in? Don’t even show the screen.
@@ -52,6 +92,7 @@ export default function LoginPage() {
     try {
       setSubmitting(true);
       await signInWithEmailAndPassword(auth, email.trim(), password);
+      persistRememberedEmail({ remember: rememberEmail, email });
       navigate(from, { replace: true });
     } catch (err) {
       console.error("[Login] signIn error:", err);
@@ -123,15 +164,30 @@ export default function LoginPage() {
   };
 
   return (
-    <PageShell>
-      <div className="flex flex-col items-center w-full h-full pt-6 pb-10">
-        {/* Card */}
-        <div className="w-full max-w-md bg-white/80 border border-zinc-200 dark:bg-zinc-900/80 dark:border-zinc-800 rounded-2xl p-6 shadow-xl">
-          <h2 className="text-xl font-semibold mb-2">Log in</h2>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-4">
-            Log in to keep your pup synced, protect your progress, and
-            eventually unlock cross-device play.
-          </p>
+    <PageShell
+      title="Log in"
+      subtitle="Sign in to keep your pup synced and unlock cloud features. Offline play still works."
+      headerAlign="center"
+    >
+      <div className="flex flex-col items-center w-full h-full pt-2 pb-10">
+        <div className="w-full max-w-md rounded-3xl border border-white/10 bg-white/80 p-6 shadow-[0_30px_80px_rgba(0,0,0,0.45)] backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/70">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
+                Welcome back
+              </h2>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                Continue your pup’s story.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate("/game", { replace: true })}
+              className="rounded-full border border-white/10 bg-black/20 px-3 py-1 text-[11px] font-semibold text-zinc-100 hover:bg-black/30 transition"
+            >
+              Play offline
+            </button>
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {!firebaseReady && (
@@ -164,6 +220,9 @@ export default function LoginPage() {
               <input
                 id="login-email"
                 type="email"
+                inputMode="email"
+                autoCapitalize="none"
+                autoCorrect="off"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-3 py-2 rounded-lg bg-white border border-zinc-300 text-zinc-900 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm dark:bg-zinc-950 dark:border-zinc-700 dark:text-white dark:placeholder:text-zinc-500"
@@ -179,21 +238,38 @@ export default function LoginPage() {
               >
                 Password
               </label>
-              <input
-                id="login-password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-white border border-zinc-300 text-zinc-900 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm dark:bg-zinc-950 dark:border-zinc-700 dark:text-white dark:placeholder:text-zinc-500"
-                autoComplete="current-password"
-                placeholder="••••••••"
-              />
-              <div className="mt-2 flex items-center justify-end">
+              <div className="relative">
+                <input
+                  id="login-password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg bg-white border border-zinc-300 text-zinc-900 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm dark:bg-zinc-950 dark:border-zinc-700 dark:text-white dark:placeholder:text-zinc-500"
+                  autoComplete="current-password"
+                  placeholder="••••••••"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full border border-white/10 bg-black/20 px-2 py-1 text-[10px] font-semibold text-zinc-100 hover:bg-black/30 transition"
+                >
+                  {showPassword ? "Hide" : "Show"}
+                </button>
+              </div>
+              <div className="mt-2 flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400">
+                <label className="inline-flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={rememberEmail}
+                    onChange={(e) => setRememberEmail(e.target.checked)}
+                  />
+                  Remember email
+                </label>
                 <button
                   type="button"
                   onClick={handleForgotPassword}
                   disabled={resetSending || !firebaseReady}
-                  className="text-xs font-medium text-emerald-400 hover:text-emerald-300 disabled:opacity-60"
+                  className="font-medium text-emerald-400 hover:text-emerald-300 disabled:opacity-60"
                 >
                   {resetSending ? "Sending reset link…" : "Forgot password?"}
                 </button>
@@ -201,10 +277,16 @@ export default function LoginPage() {
             </div>
 
             {notice && (
-              <p className="text-xs text-emerald-300 mt-1">{notice}</p>
+              <p className="text-xs text-emerald-300 mt-1" aria-live="polite">
+                {notice}
+              </p>
             )}
 
-            {error && <p className="text-xs text-red-400 mt-1">{error}</p>}
+            {error && (
+              <p className="text-xs text-red-400 mt-1" aria-live="assertive">
+                {error}
+              </p>
+            )}
 
             <button
               type="submit"

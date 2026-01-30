@@ -2,12 +2,19 @@
 // @ts-nocheck
 
 import * as React from "react";
+import { useDispatch, useSelector } from "react-redux";
 
 import { withBaseUrl } from "@/utils/assetUrl.js";
 import {
   getDogPixiSheetUrl,
   normalizeDogCondition,
 } from "@/utils/dogSpritePaths.js";
+import {
+  selectSettings,
+  setSpriteSheetMotion,
+  setSpriteSheetSize,
+  setSpriteSheetUsePixelated,
+} from "@/redux/settingsSlice.js";
 import jrManifest from "@/features/game/jrManifest.json";
 
 const FRAME_W = Number(jrManifest?.frame?.width || 128);
@@ -113,6 +120,30 @@ export default function SpriteSheetDog({
   className = "",
   onDebug,
 }) {
+  const dispatch = useDispatch();
+  const settings = useSelector(selectSettings);
+  const [showOptions, setShowOptions] = React.useState(false);
+  const menuRef = React.useRef(null);
+
+  const reduceMotionSetting = settings?.reduceMotion || "system";
+  const prefersReducedMotion = React.useMemo(() => {
+    try {
+      return window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+    } catch {
+      return false;
+    }
+  }, []);
+  const systemReduceMotion =
+    reduceMotionSetting === "on" ||
+    (reduceMotionSetting !== "off" && prefersReducedMotion);
+
+  const motionEnabled =
+    settings?.spriteSheetMotion !== false && !systemReduceMotion;
+  const pixelated = Boolean(settings?.spriteSheetUsePixelated);
+  const sizeSetting = settings?.spriteSheetSize || "normal";
+  const sizeMultiplier =
+    sizeSetting === "small" ? 0.85 : sizeSetting === "large" ? 1.15 : 1;
+
   const stageKey = normalizeStage(stage);
   const conditionKey = normalizeDogCondition(condition);
   const sheetSrc = getDogPixiSheetUrl(stageKey, conditionKey);
@@ -193,7 +224,8 @@ export default function SpriteSheetDog({
   }, [resolvedAnim, frames.length]);
 
   React.useEffect(() => {
-    if (reduceMotion || frames.length <= 1 || !sheetLoaded) {
+    const motion = motionEnabled && !reduceMotion;
+    if (!motion || frames.length <= 1 || !sheetLoaded) {
       setFrameIndex(0);
       return undefined;
     }
@@ -201,12 +233,12 @@ export default function SpriteSheetDog({
       setFrameIndex((f) => (f + 1) % frames.length);
     }, avgDuration);
     return () => window.clearInterval(id);
-  }, [avgDuration, frames.length, reduceMotion, sheetLoaded]);
+  }, [avgDuration, frames.length, motionEnabled, reduceMotion, sheetLoaded]);
 
   const frame = frames[Math.min(frameIndex, Math.max(0, frames.length - 1))];
 
   const frameW = Number(frame?.w || 0);
-  const safeSize = Number(size) || 320;
+  const safeSize = (Number(size) || 320) * sizeMultiplier;
   const scale = frameW > 0 ? Math.max(0.01, safeSize / frameW) : 1;
 
   const sheetW = Number(sheetSize?.width || 0);
@@ -259,26 +291,38 @@ export default function SpriteSheetDog({
         Math.min(fallbackIndex, effectiveFallbackSrc.length - 1)
       ];
     return src ? (
-      <img
-        src={src}
-        alt=""
-        draggable={false}
-        className={className}
-        onError={() => {
-          setFallbackIndex((i) => i + 1);
-        }}
-        style={{
-          width: safeSize,
-          height: safeSize,
-          maxWidth: "none",
-          maxHeight: "none",
-          display: "block",
-          objectFit: "contain",
-          objectPosition: "50% 60%",
-          transform: `scaleX(${facing})`,
-          transformOrigin: "50% 100%",
-        }}
-      />
+      <div className="group relative" style={{ width: safeSize, height: safeSize }}>
+        <img
+          src={src}
+          alt=""
+          draggable={false}
+          className={className}
+          onError={() => {
+            setFallbackIndex((i) => i + 1);
+          }}
+          style={{
+            width: safeSize,
+            height: safeSize,
+            maxWidth: "none",
+            maxHeight: "none",
+            display: "block",
+            objectFit: "contain",
+            objectPosition: "50% 60%",
+            transform: `scaleX(${facing})`,
+            transformOrigin: "50% 100%",
+            imageRendering: pixelated ? "pixelated" : "auto",
+          }}
+        />
+        <SpriteOptions
+          show={showOptions}
+          setShow={setShowOptions}
+          menuRef={menuRef}
+          pixelated={pixelated}
+          motionEnabled={motionEnabled}
+          sizeSetting={sizeSetting}
+          dispatch={dispatch}
+        />
+      </div>
     ) : null;
   }
 
@@ -286,20 +330,112 @@ export default function SpriteSheetDog({
   const backgroundPosition = `${-frame.x * scale}px ${-frame.y * scale}px`;
 
   return (
-    <div
-      className={className}
-      style={{
-        width: safeSize,
-        height: safeSize,
-        backgroundImage: `url("${sheetSrc}")`,
-        backgroundRepeat: "no-repeat",
-        backgroundSize,
-        backgroundPosition,
-        imageRendering: "auto",
-        transform: `scaleX(${facing})`,
-        transformOrigin: "50% 100%",
-        willChange: reduceMotion ? "auto" : "background-position",
-      }}
-    />
+    <div className="group relative" style={{ width: safeSize, height: safeSize }}>
+      <div
+        className={className}
+        style={{
+          width: safeSize,
+          height: safeSize,
+          backgroundImage: `url("${sheetSrc}")`,
+          backgroundRepeat: "no-repeat",
+          backgroundSize,
+          backgroundPosition,
+          imageRendering: pixelated ? "pixelated" : "auto",
+          transform: `scaleX(${facing})`,
+          transformOrigin: "50% 100%",
+          willChange:
+            reduceMotion || !motionEnabled ? "auto" : "background-position",
+        }}
+      />
+      <SpriteOptions
+        show={showOptions}
+        setShow={setShowOptions}
+        menuRef={menuRef}
+        pixelated={pixelated}
+        motionEnabled={motionEnabled}
+        sizeSetting={sizeSetting}
+        dispatch={dispatch}
+      />
+    </div>
+  );
+}
+
+function SpriteOptions({
+  show,
+  setShow,
+  menuRef,
+  pixelated,
+  motionEnabled,
+  sizeSetting,
+  dispatch,
+}) {
+  React.useEffect(() => {
+    if (!show) return;
+    const onPointerDown = (event) => {
+      const el = menuRef?.current;
+      if (!el || el.contains(event.target)) return;
+      setShow(false);
+    };
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") setShow(false);
+    };
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [menuRef, setShow, show]);
+
+  return (
+    <div className="absolute right-2 top-2" ref={menuRef}>
+      <button
+        type="button"
+        onClick={() => setShow((v) => !v)}
+        className="rounded-full border border-white/10 bg-black/50 px-3 py-1 text-[10px] uppercase tracking-[0.22em] text-white/70 opacity-0 transition group-hover:opacity-100"
+      >
+        View
+      </button>
+      {show ? (
+        <div className="absolute right-0 mt-2 w-56 space-y-2 rounded-2xl border border-white/10 bg-black/90 p-3 text-[11px] text-zinc-200 shadow-[0_16px_45px_rgba(0,0,0,0.45)]">
+          <ToggleRow
+            label="Animate"
+            checked={motionEnabled}
+            onChange={(v) => dispatch(setSpriteSheetMotion(v))}
+          />
+          <ToggleRow
+            label="Pixelated"
+            checked={pixelated}
+            onChange={(v) => dispatch(setSpriteSheetUsePixelated(v))}
+          />
+          <div className="flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2">
+            <span>Size</span>
+            <select
+              value={sizeSetting}
+              onChange={(e) => dispatch(setSpriteSheetSize(e.target.value))}
+              className="rounded-lg border border-white/10 bg-black/40 px-2 py-1 text-[11px] text-zinc-200"
+            >
+              <option value="small">Small</option>
+              <option value="normal">Normal</option>
+              <option value="large">Large</option>
+            </select>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function ToggleRow({ label, checked, onChange }) {
+  return (
+    <label className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2">
+      <span>{label}</span>
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(Boolean(e.target.checked))}
+        className="h-4 w-4 accent-emerald-400"
+      />
+    </label>
   );
 }

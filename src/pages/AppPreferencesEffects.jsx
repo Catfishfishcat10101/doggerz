@@ -46,6 +46,10 @@ export default function AppPreferencesEffects() {
 
   React.useEffect(() => {
     const root = document.documentElement;
+    const applyFlag = (key, enabled) => {
+      if (enabled) root.dataset[key] = "1";
+      else delete root.dataset[key];
+    };
 
     const apply = () => {
       const themeMode = settings?.theme || "system";
@@ -66,6 +70,8 @@ export default function AppPreferencesEffects() {
       else delete root.dataset.transparency;
 
       root.dataset.focusRings = settings?.focusRings || "auto";
+      root.dataset.perfMode = settings?.perfMode || "auto";
+      root.dataset.trainingInputMode = settings?.trainingInputMode || "both";
 
       const hitTargetsMode = settings?.hitTargets || "auto";
       const effectiveHitTargets =
@@ -73,6 +79,16 @@ export default function AppPreferencesEffects() {
           ? "large"
           : hitTargetsMode;
       root.dataset.hitTargets = effectiveHitTargets;
+
+      applyFlag("batterySaver", Boolean(settings?.batterySaver));
+      applyFlag("showHints", settings?.showHints !== false);
+      applyFlag("showCritters", settings?.showCritters !== false);
+      applyFlag("showWeatherFx", settings?.showWeatherFx !== false);
+      applyFlag("showBackgroundPhotos", settings?.showBackgroundPhotos !== false);
+      applyFlag("showSceneVignette", settings?.showSceneVignette !== false);
+      applyFlag("showSceneGrain", settings?.showSceneGrain !== false);
+      applyFlag("hapticsEnabled", settings?.hapticsEnabled !== false);
+      applyFlag("dailyRemindersEnabled", settings?.dailyRemindersEnabled !== false);
 
       const fontScale = Number(settings?.fontScale ?? 1);
       if (Number.isFinite(fontScale) && fontScale !== 1) {
@@ -116,6 +132,17 @@ export default function AppPreferencesEffects() {
     settings?.focusRings,
     settings?.hitTargets,
     settings?.fontScale,
+    settings?.perfMode,
+    settings?.batterySaver,
+    settings?.showHints,
+    settings?.showCritters,
+    settings?.showWeatherFx,
+    settings?.showBackgroundPhotos,
+    settings?.showSceneVignette,
+    settings?.showSceneGrain,
+    settings?.hapticsEnabled,
+    settings?.dailyRemindersEnabled,
+    settings?.trainingInputMode,
   ]);
 
   return null;

@@ -14,11 +14,12 @@
     "paths": {
       "@/*": ["src/*"]
     },
-
+    "typeRoots": ["./types", "./node_modules/@types"],
     "types": ["vite/client", "node"]
   },
   "include": [
     "src",
+    "types",
     "capacitor.config.json*",
     "vite.config.*",
     "eslint.config.cjs",

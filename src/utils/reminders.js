@@ -71,3 +71,25 @@ export function dispatchReminderEvent(reminder) {
     // ignore
   }
 }
+
+export function buildReminder({ key, label, message, tone = "gentle" } = {}) {
+  const safeKey = String(key || "").trim();
+  return {
+    key: safeKey || "reminder",
+    label: label || safeKey || "Reminder",
+    message: message || "",
+    tone,
+  };
+}
+
+export function shouldFireReminder(key, cooldownMs, now = Date.now()) {
+  const state = loadReminderState();
+  return shouldFire(state, key, cooldownMs, now);
+}
+
+export function fireReminder(reminder, { now = Date.now() } = {}) {
+  const state = loadReminderState();
+  const next = markReminderFired(state, reminder, now);
+  dispatchReminderEvent(next?.lastReminder || reminder);
+  return next;
+}

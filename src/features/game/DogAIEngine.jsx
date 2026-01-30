@@ -235,13 +235,13 @@ export default function DogAIEngine() {
 
   useEffect(() => {
     const tickWeather = () => {
-      if (document?.hidden) return;
+      if (typeof document !== "undefined" && document?.hidden) return;
       dispatch(fetchWeatherForZip({ zip: zipRef.current }));
     };
 
     const id = setInterval(tickWeather, WEATHER_POLL_INTERVAL_MS);
     const onVisibility = () => {
-      if (!document.hidden) tickWeather();
+      if (typeof document !== "undefined" && !document.hidden) tickWeather();
     };
     window.addEventListener("visibilitychange", onVisibility);
 
@@ -250,6 +250,14 @@ export default function DogAIEngine() {
       window.removeEventListener("visibilitychange", onVisibility);
     };
   }, [dispatch, dogState?.adoptedAt]);
+
+  useEffect(() => {
+    if (userId) return;
+    if (cloudSaveTimeoutRef.current) {
+      clearTimeout(cloudSaveTimeoutRef.current);
+      cloudSaveTimeoutRef.current = null;
+    }
+  }, [userId]);
 
   useEffect(() => {
     dogRef.current = dogState;
@@ -471,6 +479,7 @@ export default function DogAIEngine() {
 
     // Schedule new debounced save
     cloudSaveTimeoutRef.current = setTimeout(() => {
+      if (!auth?.currentUser || !userIdRef.current) return;
       dispatch(saveDogToCloud());
     }, CLOUD_SAVE_DEBOUNCE);
 
@@ -485,7 +494,7 @@ export default function DogAIEngine() {
   // 4. Game loop tick (every 60 seconds → decay + polls). Keep the interval stable.
   useEffect(() => {
     const tickOnce = () => {
-      if (document?.hidden) return; // save battery on mobile when backgrounded
+      if (typeof document !== "undefined" && document?.hidden) return;
       if (!adoptedRef.current) return;
       const now = Date.now();
       const w = weatherRef.current;

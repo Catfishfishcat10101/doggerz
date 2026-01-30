@@ -39,10 +39,29 @@ const TRAITS = [
 
 export default function PersonalityPanel() {
   const personality = useSelector(selectDogPersonality);
+  const [expanded, setExpanded] = React.useState(false);
 
   const traits = personality?.traits || {};
 
   const hint = String(personality?.animationHint || "").trim();
+  const dominant = React.useMemo(() => {
+    let bestKey = null;
+    let bestValue = 0;
+    TRAITS.forEach((t) => {
+      const v = Number(traits?.[t.key] || 0);
+      const abs = Math.abs(v);
+      if (abs > bestValue) {
+        bestKey = t.key;
+        bestValue = abs;
+      }
+    });
+    const meta = TRAITS.find((t) => t.key === bestKey);
+    return {
+      key: bestKey,
+      label: meta?.title || "Balanced",
+      strength: bestValue,
+    };
+  }, [traits]);
 
   return (
     <section className="rounded-3xl border border-white/15 bg-black/35 backdrop-blur-md p-4 shadow-[0_0_60px_rgba(0,0,0,0.18)]">
@@ -66,13 +85,32 @@ export default function PersonalityPanel() {
         </div>
       </div>
 
+      <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-zinc-400">
+        <span className="rounded-full border border-white/10 bg-black/30 px-3 py-1 text-zinc-200">
+          Dominant:{" "}
+          <span className="font-semibold text-emerald-200">
+            {dominant.label}
+          </span>
+        </span>
+        <span className="rounded-full border border-white/10 bg-black/30 px-3 py-1">
+          Intensity {Math.round(dominant.strength)}%
+        </span>
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="ml-auto rounded-full border border-white/10 bg-black/30 px-3 py-1 text-zinc-200 hover:bg-black/45"
+        >
+          {expanded ? "Show less" : "Show all"}
+        </button>
+      </div>
+
       <p className="mt-2 text-xs text-zinc-400">
         Traits drift gradually based on what you do (play, rest, training—and
         even long breaks). In the future, these can drive unique animations.
       </p>
 
       <div className="mt-4 grid gap-3 lg:grid-cols-2">
-        {TRAITS.map((t) => (
+        {(expanded ? TRAITS : TRAITS.slice(0, 2)).map((t) => (
           <PersonalityTraitCard
             key={t.key}
             traitKey={t.key}

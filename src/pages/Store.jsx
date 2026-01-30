@@ -1,6 +1,6 @@
 // src/pages/Store.jsx
 // Store: buy + preview cosmetics (collars/tags/backdrops).
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useToast } from "@/components/toastContext.js";
@@ -16,6 +16,13 @@ import {
   selectNextStreakReward,
 } from "@/redux/dogSlice.js";
 import { selectUserCoins } from "@/redux/userSlice.js";
+import {
+  selectSettings,
+  setStoreHoverPreview,
+  setStoreShowEquippedFirst,
+  setStoreCompactCards,
+  setStoreSortKey,
+} from "@/redux/settingsSlice.js";
 
 const EMPTY_EQUIPPED = Object.freeze({
   collar: null,
@@ -134,6 +141,23 @@ function SlotPill({ slot }) {
   );
 }
 
+function ToggleChip({ active, onClick, children }) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onClick}
+      className={`inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-semibold transition ${
+        active
+          ? "border-emerald-400/40 bg-emerald-500/15 text-emerald-100"
+          : "border-white/15 bg-black/25 text-zinc-200 hover:bg-black/35"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
 export default function Store() {
   const dispatch = useDispatch();
   const toast = useToast();
@@ -142,6 +166,7 @@ export default function Store() {
   const userCoins = useSelector(selectUserCoins);
   const catalog = useSelector(selectCosmeticCatalog);
   const nextRewardInfo = useSelector(selectNextStreakReward);
+  const settings = useSelector(selectSettings);
 
   const coins = Number.isFinite(Number(dog?.coins))
     ? Math.max(0, Math.round(Number(dog.coins)))
@@ -163,14 +188,28 @@ export default function Store() {
   const [query, setQuery] = useState("");
   const [ownedFilter, setOwnedFilter] = useState("all"); // all | owned | unowned
   const [affordFilter, setAffordFilter] = useState("all"); // all | affordable
-  const [sortKey, setSortKey] = useState("recommended"); // recommended | price | threshold
+  const sortKey = settings?.storeSortKey || "recommended";
 
   // Preview / try-on state
   const [preview, setPreview] = useState(null); // { slot, id }
   const [focusedId, setFocusedId] = useState(null);
+  const [previewLocked, setPreviewLocked] = useState(false);
+  const previewOnHover = settings?.storeHoverPreview !== false;
+  const showEquippedFirst = settings?.storeShowEquippedFirst !== false;
+  const compactCards = settings?.storeCompactCards === true;
 
   // Dev-only: helps diagnose "dog not rendering" by exposing sprite loading state.
   const [spriteDebug, setSpriteDebug] = useState(null);
+
+  useEffect(() => {
+    if (!preview?.id && previewLocked) {
+      setPreviewLocked(false);
+      return;
+    }
+    if (!previewOnHover && !previewLocked && preview?.id) {
+      setPreview(null);
+    }
+  }, [previewOnHover, previewLocked, preview?.id]);
 
   const stageId = String(dog?.lifeStage?.stage || "PUPPY").toUpperCase();
   const fallbackSprite = useMemo(
@@ -190,6 +229,15 @@ export default function Store() {
 
   const selectedBackdrop = previewEquipped?.backdrop || equipped?.backdrop;
 
+  const totalCatalogCount = Array.isArray(catalog) ? catalog.length : 0;
+  const trimmedQuery = String(query || "").trim();
+  const hasActiveFilters =
+    trimmedQuery.length > 0 ||
+    slotFilter !== "all" ||
+    ownedFilter !== "all" ||
+    affordFilter !== "all" ||
+    sortKey !== "recommended";
+
   const backdropStyle = useMemo(() => {
     if (selectedBackdrop === "backdrop_sunset") {
       return {
@@ -205,9 +253,13 @@ export default function Store() {
 
   const catalogItems = useMemo(() => {
     const items = Array.isArray(catalog) ? catalog : [];
-    const q = String(query || "")
-      .trim()
-      .toLowerCase();
+    const q = trimmedQuery.toLowerCase();
+    const isEquippedItem = (it) => {
+      const slot = String(it?.slot || "").toLowerCase();
+      const id = String(it?.id || "").trim();
+      if (!slot || !id) return false;
+      return equipped?.[slot] === id;
+    };
 
     const filtered = items
       .filter((it) => it && typeof it === "object")
@@ -241,35 +293,54 @@ export default function Store() {
       });
 
     const sorted = [...filtered];
-    if (sortKey === "price") {
-      sorted.sort((a, b) => priceForCatalogItem(a) - priceForCatalogItem(b));
-    } else if (sortKey === "threshold") {
-      sorted.sort(
-        (a, b) => (Number(a.threshold) || 0) - (Number(b.threshold) || 0)
-      );
-    } else {
-      // recommended: slot grouping + threshold
-      const slotRank = (s) =>
-        s === "collar" ? 0 : s === "tag" ? 1 : s === "backdrop" ? 2 : 9;
-      sorted.sort((a, b) => {
-        const sa = String(a.slot || "").toLowerCase();
-        const sb = String(b.slot || "").toLowerCase();
-        const ra = slotRank(sa);
-        const rb = slotRank(sb);
-        if (ra !== rb) return ra - rb;
+    const slotRank = (s) =>
+      s === "collar" ? 0 : s === "tag" ? 1 : s === "backdrop" ? 2 : 9;
+
+    const baseComparator = (a, b) => {
+      if (sortKey === "price") {
+        return priceForCatalogItem(a) - priceForCatalogItem(b);
+      }
+      if (sortKey === "threshold") {
         return (Number(a.threshold) || 0) - (Number(b.threshold) || 0);
-      });
-    }
+      }
+      if (sortKey === "alpha") {
+        const la = String(a.label || a.id || "");
+        const lb = String(b.label || b.id || "");
+        return la.localeCompare(lb, undefined, {
+          sensitivity: "base",
+          numeric: true,
+        });
+      }
+
+      // recommended: slot grouping + threshold
+      const sa = String(a.slot || "").toLowerCase();
+      const sb = String(b.slot || "").toLowerCase();
+      const ra = slotRank(sa);
+      const rb = slotRank(sb);
+      if (ra !== rb) return ra - rb;
+      return (Number(a.threshold) || 0) - (Number(b.threshold) || 0);
+    };
+
+    sorted.sort((a, b) => {
+      if (showEquippedFirst) {
+        const ea = isEquippedItem(a) ? 0 : 1;
+        const eb = isEquippedItem(b) ? 0 : 1;
+        if (ea !== eb) return ea - eb;
+      }
+      return baseComparator(a, b);
+    });
 
     return sorted;
   }, [
     affordFilter,
     catalog,
     coins,
+    equipped,
     ownedFilter,
-    query,
+    showEquippedFirst,
     slotFilter,
     sortKey,
+    trimmedQuery,
     unlocked,
   ]);
 
@@ -304,6 +375,8 @@ export default function Store() {
 
     return unownedAffordable[0] || null;
   }, [catalog, coins, unlocked]);
+
+  const canHoverPreview = previewOnHover && !previewLocked;
 
   return (
     <div className="min-h-dvh bg-zinc-950 text-zinc-100">
@@ -383,8 +456,8 @@ export default function Store() {
                 Hover to preview
               </div>
               <div className="mt-2 text-sm text-zinc-300">
-                Hover items to preview instantly. Click an item for details. Buy
-                + auto-equip (you can change it anytime).
+                Hover items to preview instantly, then pin a look to compare.
+                Click an item for details. Buy + auto-equip anytime.
               </div>
             </div>
             <div className="rounded-3xl border border-white/10 bg-black/20 p-4">
@@ -418,13 +491,27 @@ export default function Store() {
                       </div>
                     </div>
                     {preview?.id ? (
-                      <button
-                        type="button"
-                        className="rounded-2xl px-3 py-2 text-xs font-semibold border border-white/15 bg-black/25 text-zinc-100 hover:bg-black/35 transition"
-                        onClick={() => setPreview(null)}
-                      >
-                        Clear try-on
-                      </button>
+                      <div className="flex items-center gap-2">
+                        {!previewLocked ? (
+                          <button
+                            type="button"
+                            className="rounded-2xl px-3 py-2 text-xs font-semibold border border-white/15 bg-black/25 text-zinc-100 hover:bg-black/35 transition"
+                            onClick={() => setPreviewLocked(true)}
+                          >
+                            Pin preview
+                          </button>
+                        ) : null}
+                        <button
+                          type="button"
+                          className="rounded-2xl px-3 py-2 text-xs font-semibold border border-white/15 bg-black/25 text-zinc-100 hover:bg-black/35 transition"
+                          onClick={() => {
+                            setPreview(null);
+                            setPreviewLocked(false);
+                          }}
+                        >
+                          {previewLocked ? "Clear try-on" : "Clear preview"}
+                        </button>
+                      </div>
                     ) : null}
                   </div>
 
@@ -525,6 +612,11 @@ export default function Store() {
                     rewards. Try-on previews don’t change your save until you
                     equip.
                   </div>
+                  <div className="mt-2 text-xs text-zinc-400">
+                    {previewLocked
+                      ? "Preview pinned. Keep browsing to compare."
+                      : "Tip: pin a preview to keep it while you browse."}
+                  </div>
 
                   {focusedItem
                     ? (() => {
@@ -612,7 +704,10 @@ export default function Store() {
                               <button
                                 type="button"
                                 className="rounded-2xl px-4 py-3 text-xs font-bold border border-white/15 bg-black/25 text-zinc-100 hover:bg-black/35 transition"
-                                onClick={() => setPreview({ slot, id })}
+                                onClick={() => {
+                                  setPreview({ slot, id });
+                                  setPreviewLocked(true);
+                                }}
                               >
                                 Try on
                               </button>
@@ -788,6 +883,7 @@ export default function Store() {
                           if (!id) return;
                           setFocusedId(id);
                           setPreview({ slot, id });
+                          setPreviewLocked(true);
                         }}
                       >
                         Preview
@@ -851,25 +947,90 @@ export default function Store() {
                   <select
                     className="rounded-2xl border border-white/15 bg-black/25 px-3 py-2 text-xs font-semibold text-zinc-100"
                     value={sortKey}
-                    onChange={(e) => setSortKey(e.target.value)}
+                    onChange={(e) => dispatch(setStoreSortKey(e.target.value))}
                   >
                     <option value="recommended">Sort: Recommended</option>
                     <option value="threshold">Sort: Streak day</option>
                     <option value="price">Sort: Price</option>
+                    <option value="alpha">Sort: A-Z</option>
                   </select>
                 </div>
               </div>
 
               <div className="mt-4">
-                <input
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search collars, tags, backdrops…"
-                  className="w-full rounded-2xl border border-white/15 bg-black/25 px-4 py-3 text-sm text-zinc-100 placeholder:text-zinc-500 outline-none focus:border-emerald-500/40"
-                />
+                <div className="relative">
+                  <input
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Search collars, tags, backdrops…"
+                    className="w-full rounded-2xl border border-white/15 bg-black/25 px-4 py-3 pr-12 text-sm text-zinc-100 placeholder:text-zinc-500 outline-none focus:border-emerald-500/40"
+                  />
+                  {trimmedQuery ? (
+                    <button
+                      type="button"
+                      onClick={() => setQuery("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full border border-white/15 bg-black/25 px-2.5 py-1 text-[11px] text-zinc-200 hover:bg-black/40"
+                    >
+                      Clear
+                    </button>
+                  ) : null}
+                </div>
+                <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px]">
+                  <ToggleChip
+                    active={previewOnHover}
+                    onClick={() =>
+                      dispatch(setStoreHoverPreview(!previewOnHover))
+                    }
+                  >
+                    Hover preview
+                  </ToggleChip>
+                  <ToggleChip
+                    active={showEquippedFirst}
+                    onClick={() =>
+                      dispatch(setStoreShowEquippedFirst(!showEquippedFirst))
+                    }
+                  >
+                    Equipped first
+                  </ToggleChip>
+                  <ToggleChip
+                    active={compactCards}
+                    onClick={() =>
+                      dispatch(setStoreCompactCards(!compactCards))
+                    }
+                  >
+                    Compact cards
+                  </ToggleChip>
+                  {previewLocked ? (
+                    <span className="inline-flex items-center rounded-full border border-emerald-400/30 bg-emerald-500/10 px-3 py-1 text-[11px] font-semibold text-emerald-100">
+                      Preview pinned
+                    </span>
+                  ) : null}
+                  {hasActiveFilters ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSlotFilter("all");
+                        setOwnedFilter("all");
+                        setAffordFilter("all");
+                        dispatch(setStoreSortKey("recommended"));
+                        setQuery("");
+                      }}
+                      className="rounded-full border border-white/15 bg-black/25 px-3 py-1 text-[11px] font-semibold text-zinc-200 hover:bg-black/40"
+                    >
+                      Clear filters
+                    </button>
+                  ) : null}
+                  <span className="ml-auto text-zinc-400">
+                    Showing {catalogItems.length}/{totalCatalogCount}
+                  </span>
+                </div>
               </div>
 
-              <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div
+                className={`mt-5 grid grid-cols-1 sm:grid-cols-2 ${
+                  compactCards ? "gap-3" : "gap-4"
+                }`}
+              >
                 {catalogItems.map((item) => {
                   const id = String(item?.id || "").trim();
                   if (!id) return null;
@@ -889,18 +1050,25 @@ export default function Store() {
                   const rarity = rarityForThreshold(threshold);
                   const streakProgress =
                     threshold > 0 ? clamp(streakDays / threshold, 0, 1) : 0;
+                  const buttonSize = compactCards ? "px-3 py-2" : "px-4 py-3";
+                  const titleSize = compactCards ? "text-sm" : "text-base";
+                  const descSize = compactCards ? "text-[11px]" : "text-xs";
 
                   return (
                     <div
                       key={id}
-                      className="rounded-3xl border border-white/10 bg-black/30 p-5 hover:bg-black/35 transition"
+                      className={`rounded-3xl border border-white/10 bg-black/30 transition hover:bg-black/35 ${
+                        compactCards ? "p-4" : "p-5"
+                      }`}
                       onMouseEnter={() => {
+                        if (!canHoverPreview) return;
                         setPreview({ slot, id });
                         setFocusedId(id);
                       }}
-                      onMouseLeave={() =>
-                        setPreview((p) => (p?.id === id ? null : p))
-                      }
+                      onMouseLeave={() => {
+                        if (!canHoverPreview) return;
+                        setPreview((p) => (p?.id === id ? null : p));
+                      }}
                       onClick={() => setFocusedId(id)}
                     >
                       <div className="flex items-start justify-between gap-3">
@@ -913,10 +1081,12 @@ export default function Store() {
                               {rarity.label}
                             </span>
                           </div>
-                          <div className="mt-2 truncate text-base font-extrabold text-zinc-100">
+                          <div
+                            className={`mt-2 truncate font-extrabold text-zinc-100 ${titleSize}`}
+                          >
                             {label}
                           </div>
-                          <div className="mt-1 text-xs text-zinc-400">
+                          <div className={`mt-1 text-zinc-400 ${descSize}`}>
                             {cosmeticDescription(item)}
                           </div>
                         </div>
@@ -946,8 +1116,11 @@ export default function Store() {
                       <div className="mt-4 grid grid-cols-2 gap-2">
                         <button
                           type="button"
-                          className="rounded-2xl px-4 py-3 text-xs font-bold border border-white/15 bg-black/25 text-zinc-100 hover:bg-black/35 transition"
-                          onClick={() => setPreview({ slot, id })}
+                          className={`rounded-2xl text-xs font-bold border border-white/15 bg-black/25 text-zinc-100 hover:bg-black/35 transition ${buttonSize}`}
+                          onClick={() => {
+                            setPreview({ slot, id });
+                            setPreviewLocked(true);
+                          }}
                         >
                           Try on
                         </button>
@@ -955,7 +1128,7 @@ export default function Store() {
                         {owned ? (
                           <button
                             type="button"
-                            className={`rounded-2xl px-4 py-3 text-xs font-bold transition ${
+                            className={`rounded-2xl text-xs font-bold transition ${buttonSize} ${
                               isEquipped
                                 ? "border border-emerald-500/25 bg-emerald-500/10 text-emerald-100"
                                 : "border border-white/15 bg-black/25 text-zinc-100 hover:bg-black/35"
@@ -998,7 +1171,7 @@ export default function Store() {
 
                               toast.success(`Purchased ${label}.`, 1600);
                             }}
-                            className={`rounded-2xl px-4 py-3 text-xs font-bold transition active:scale-[0.99] ${
+                            className={`rounded-2xl text-xs font-bold transition active:scale-[0.99] ${buttonSize} ${
                               afford
                                 ? "bg-emerald-500/20 text-emerald-100 border border-emerald-500/25 hover:bg-emerald-500/25"
                                 : "bg-white/5 text-zinc-500 cursor-not-allowed"
@@ -1022,8 +1195,28 @@ export default function Store() {
               </div>
 
               {catalogItems.length === 0 ? (
-                <div className="mt-6 text-sm text-zinc-400">
-                  No matches. Try clearing filters.
+                <div className="mt-6 rounded-3xl border border-white/10 bg-black/25 p-6 text-sm text-zinc-300">
+                  <div className="text-base font-semibold text-zinc-100">
+                    No matches found
+                  </div>
+                  <div className="mt-2 text-sm text-zinc-400">
+                    Try broadening your filters or clearing search.
+                  </div>
+                  {hasActiveFilters ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSlotFilter("all");
+                        setOwnedFilter("all");
+                        setAffordFilter("all");
+                        dispatch(setStoreSortKey("recommended"));
+                        setQuery("");
+                      }}
+                      className="mt-4 rounded-2xl border border-white/15 bg-black/25 px-4 py-2 text-xs font-semibold text-zinc-200 hover:bg-black/35"
+                    >
+                      Clear filters
+                    </button>
+                  ) : null}
                 </div>
               ) : null}
 

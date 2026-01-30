@@ -170,6 +170,14 @@ export default function AdoptPage() {
       onPrimary={onPrimary}
       secondaryLabel={stepIndex === 0 ? "Maybe later" : null}
       onSecondary={stepIndex === 0 ? onCancel : null}
+      headerSlot={
+        stepIndex === 2 ? (
+          <div className="rounded-full border border-white/10 bg-black/30 px-4 py-1 text-[10px] uppercase tracking-[0.3em] text-white/70">
+            Final check
+          </div>
+        ) : null
+      }
+      footerNote="Your pup lives locally and can sync to the cloud if you log in."
     >
       {stepIndex === 0 ? (
         <div className="space-y-3">
@@ -177,7 +185,7 @@ export default function AdoptPage() {
             This is your forever dog in Doggerz. You’ll feed, play, train, and
             keep them alive through your questionable life choices.
           </p>
-          <div className="text-xs text-zinc-500">
+          <div className="rounded-2xl border border-white/10 bg-black/30 p-3 text-xs text-zinc-400">
             You can close the app and come back — this wizard will resume.
           </div>
         </div>
@@ -197,18 +205,18 @@ export default function AdoptPage() {
               type="text"
               value={name}
               onChange={(e) => onNameChange(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-zinc-950 border border-zinc-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+              className="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
               placeholder="Enter your pup's name"
               maxLength={24}
               autoComplete="on"
             />
+            <div className="mt-2 flex items-center justify-between text-[11px] text-zinc-500">
+              <span>{name.length}/24</span>
+              <span>Pro tip: keep it short.</span>
+            </div>
             {error ? (
               <p className="text-xs text-red-400 mt-2">{error}</p>
-            ) : (
-              <p className="mt-2 text-xs text-zinc-500">
-                Pro tip: Keep it short. You’ll see it a lot.
-              </p>
-            )}
+            ) : null}
           </div>
         </div>
       ) : null}
@@ -216,10 +224,13 @@ export default function AdoptPage() {
       {stepIndex === 2 ? (
         <div className="space-y-3">
           <div className="text-sm text-zinc-300">Meet your new pup:</div>
-          <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+          <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
             <div className="text-xs text-zinc-400">Name</div>
             <div className="text-lg font-extrabold text-emerald-200">
               {trimmedName || "(unnamed)"}
+            </div>
+            <div className="mt-2 text-[11px] text-zinc-500">
+              You can rename your pup later in Settings.
             </div>
           </div>
           {error ? <p className="text-xs text-red-400">{error}</p> : null}

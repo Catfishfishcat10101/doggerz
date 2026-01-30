@@ -1,8 +1,10 @@
 // src/pages/Faq.jsx
 import React from "react";
 import { Link } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 
 import PageShell from "@/components/PageShell.jsx";
+import { selectSettings, setFaqCompactView } from "@/redux/settingsSlice.js";
 
 function nodeToText(node) {
   if (node == null || node === false) return "";
@@ -380,12 +382,34 @@ const FAQ_SECTIONS = [
   },
 ];
 
-function FaqItem({ q, a, defaultOpen = false }) {
+function FaqItem({
+  q,
+  a,
+  defaultOpen = false,
+  forceOpenKey = 0,
+  forceCloseKey = 0,
+  compact = false,
+}) {
   const [open, setOpen] = React.useState(Boolean(defaultOpen));
+
+  React.useEffect(() => {
+    if (!defaultOpen) return;
+    setOpen(true);
+  }, [defaultOpen]);
+
+  React.useEffect(() => {
+    if (forceOpenKey > 0) setOpen(true);
+  }, [forceOpenKey]);
+
+  React.useEffect(() => {
+    if (forceCloseKey > 0) setOpen(false);
+  }, [forceCloseKey]);
 
   return (
     <details
-      className="group rounded-xl border border-zinc-800 bg-zinc-950/50 p-4"
+      className={`group rounded-xl border border-zinc-800 bg-zinc-950/50 ${
+        compact ? "p-3" : "p-4"
+      }`}
       open={open}
       onToggle={(e) => setOpen(Boolean(e.currentTarget.open))}
     >
@@ -406,7 +430,12 @@ function FaqItem({ q, a, defaultOpen = false }) {
 }
 
 export default function FaqPage() {
+  const dispatch = useDispatch();
+  const settings = useSelector(selectSettings);
   const [query, setQuery] = React.useState("");
+  const [forceOpenKey, setForceOpenKey] = React.useState(0);
+  const [forceCloseKey, setForceCloseKey] = React.useState(0);
+  const compactView = settings?.faqCompactView === true;
   const qn = normalize(query);
 
   const filteredSections = React.useMemo(() => {
@@ -429,6 +458,15 @@ export default function FaqPage() {
     if (!qn) return null;
     return filteredSections.reduce((acc, s) => acc + s.items.length, 0);
   }, [filteredSections, qn]);
+
+  const quickTopics = [
+    "offline",
+    "login",
+    "potty",
+    "streak",
+    "cleanliness",
+    "install",
+  ];
 
   return (
     <PageShell mainClassName="px-6 py-10" containerClassName="w-full max-w-4xl">
@@ -499,6 +537,45 @@ export default function FaqPage() {
                 </a>
               )}
             </div>
+
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-zinc-400">
+              <span className="text-zinc-500">Quick topics:</span>
+              {quickTopics.map((topic) => (
+                <button
+                  key={topic}
+                  type="button"
+                  onClick={() => setQuery(topic)}
+                  className="rounded-full border border-zinc-800 bg-black/40 px-3 py-1 text-zinc-200 hover:border-emerald-500/70 hover:text-emerald-200"
+                >
+                  {topic}
+                </button>
+              ))}
+              <span className="ml-auto flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setForceOpenKey((k) => k + 1)}
+                  className="rounded-full border border-zinc-800 bg-zinc-950/60 px-3 py-1 text-zinc-200 hover:border-emerald-500/70 hover:text-emerald-200"
+                >
+                  Expand all
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setForceCloseKey((k) => k + 1)}
+                  className="rounded-full border border-zinc-800 bg-zinc-950/60 px-3 py-1 text-zinc-200 hover:border-emerald-500/70 hover:text-emerald-200"
+                >
+                  Collapse all
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    dispatch(setFaqCompactView(!compactView))
+                  }
+                  className="rounded-full border border-zinc-800 bg-zinc-950/60 px-3 py-1 text-zinc-200 hover:border-emerald-500/70 hover:text-emerald-200"
+                >
+                  {compactView ? "Roomy" : "Compact"}
+                </button>
+              </span>
+            </div>
           </div>
 
           <div className="flex flex-wrap gap-2 pt-1">
@@ -552,13 +629,16 @@ export default function FaqPage() {
                   </a>
                 </div>
 
-                <div className="grid gap-3">
+                <div className={`grid ${compactView ? "gap-2" : "gap-3"}`}>
                   {section.items.map((item) => (
                     <FaqItem
                       key={`${item.q}-${qn || "all"}`}
                       q={item.q}
                       a={item.a}
                       defaultOpen={Boolean(qn)}
+                      forceOpenKey={forceOpenKey}
+                      forceCloseKey={forceCloseKey}
+                      compact={compactView}
                     />
                   ))}
                 </div>

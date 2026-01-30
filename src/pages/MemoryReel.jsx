@@ -36,11 +36,15 @@ export default function MemoryReel() {
 
   const [query, setQuery] = useState("");
   const [type, setType] = useState("All");
+  const [compact, setCompact] = useState(false);
+  const [showBody, setShowBody] = useState(true);
+  const [sortNewest, setSortNewest] = useState(true);
+  const [showMoodTags, setShowMoodTags] = useState(true);
 
   const entries = useMemo(() => {
     const raw = Array.isArray(journal?.entries) ? journal.entries : [];
     const q = query.trim().toLowerCase();
-    return raw.filter((e) => {
+    const filtered = raw.filter((e) => {
       if (type !== "All" && String(e?.type || "").toUpperCase() !== type) {
         return false;
       }
@@ -49,7 +53,13 @@ export default function MemoryReel() {
       const body = String(e?.body || "").toLowerCase();
       return summary.includes(q) || body.includes(q);
     });
-  }, [journal?.entries, query, type]);
+    const sorted = filtered.slice().sort((a, b) => {
+      const ta = Number(a?.timestamp || 0);
+      const tb = Number(b?.timestamp || 0);
+      return sortNewest ? tb - ta : ta - tb;
+    });
+    return sorted;
+  }, [journal?.entries, query, type, sortNewest]);
 
   return (
     <PageShell mainClassName="px-4 py-10" containerClassName="w-full max-w-5xl">
@@ -95,12 +105,43 @@ export default function MemoryReel() {
                 </select>
               </div>
 
-              <div className="text-xs text-zinc-400">
-                Showing{" "}
-                <span className="font-semibold text-zinc-100">
-                  {entries.length}
-                </span>{" "}
-                memory{entries.length === 1 ? "" : "ies"}
+              <div className="flex flex-wrap items-center gap-2 text-[11px] text-zinc-400">
+                <button
+                  type="button"
+                  onClick={() => setCompact((v) => !v)}
+                  className="rounded-full border border-white/10 bg-black/40 px-3 py-1 text-[10px] uppercase tracking-[0.25em] text-white/70 hover:bg-black/55"
+                >
+                  {compact ? "Expanded" : "Compact"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowBody((v) => !v)}
+                  className="rounded-full border border-white/10 bg-black/40 px-3 py-1 text-[10px] uppercase tracking-[0.25em] text-white/70 hover:bg-black/55"
+                >
+                  {showBody ? "Hide details" : "Show details"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowMoodTags((v) => !v)}
+                  className="rounded-full border border-white/10 bg-black/40 px-3 py-1 text-[10px] uppercase tracking-[0.25em] text-white/70 hover:bg-black/55"
+                >
+                  {showMoodTags ? "Mood tags on" : "Mood tags off"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSortNewest((v) => !v)}
+                  className="rounded-full border border-white/10 bg-black/40 px-3 py-1 text-[10px] uppercase tracking-[0.25em] text-white/70 hover:bg-black/55"
+                >
+                  {sortNewest ? "Newest first" : "Oldest first"}
+                </button>
+
+                <span className="ml-1">
+                  Showing{" "}
+                  <span className="font-semibold text-zinc-100">
+                    {entries.length}
+                  </span>{" "}
+                  memory{entries.length === 1 ? "" : "ies"}
+                </span>
               </div>
             </div>
 
@@ -122,14 +163,16 @@ export default function MemoryReel() {
                 entries.map((entry) => (
                   <article
                     key={entry.id}
-                    className="rounded-3xl border border-white/10 bg-black/30 px-5 py-4"
+                    className={`rounded-3xl border border-white/10 bg-black/30 px-5 ${
+                      compact ? "py-3" : "py-4"
+                    }`}
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-zinc-400">
                       <div className="flex items-center gap-2">
                         <span className="uppercase tracking-[0.2em] text-zinc-500">
                           {entry.type || "MEMORY"}
                         </span>
-                        {entry.moodTag ? (
+                        {entry.moodTag && showMoodTags ? (
                           <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-zinc-300">
                             {entry.moodTag}
                           </span>
@@ -140,7 +183,7 @@ export default function MemoryReel() {
                     <h2 className="mt-2 text-sm font-semibold text-emerald-100">
                       {entry.summary || "A small moment"}
                     </h2>
-                    {entry.body ? (
+                    {entry.body && showBody ? (
                       <p className="mt-2 whitespace-pre-line text-sm text-zinc-300">
                         {entry.body}
                       </p>

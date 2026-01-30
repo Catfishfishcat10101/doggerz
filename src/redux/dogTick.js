@@ -147,6 +147,13 @@ export const DECAY_TUNING = {
   },
 };
 
+// UI hints for dashboards (non-authoritative; safe to tweak independently).
+export const DOG_TICK_UI = Object.freeze({
+  wellbeing: { good: 70, ok: 40, low: 20 },
+  careDebt: { low: 20, medium: 50, high: 80 },
+  needPressure: { low: 0.2, medium: 0.5, high: 0.8 },
+});
+
 // Convert hoursTo40 into a baseline points-per-minute loss.
 // 100 -> 40 is 60 points over hoursTo40 hours.
 function baseLossPerMinuteFromHoursTo40(hoursTo40) {
@@ -200,6 +207,53 @@ export function applyDogTick(dog, nowMs) {
   }
 
   dog.lastTickAt = nowMs;
+}
+
+// ---------- Non-mutating helpers (UI / telemetry) ----------
+export function computeNeedPressure(stats) {
+  const s = stats || {};
+  return avg(
+    urgency(Number(s.hunger || 0)),
+    urgency(Number(s.energy || 0)),
+    urgency(Number(s.happiness || 0)),
+    urgency(Number(s.cleanliness || 0)),
+    urgency(Number(s.bladder || 0))
+  );
+}
+
+export function getDogTickSummary(dog) {
+  if (!dog) {
+    return {
+      needPressure: 0,
+      wellbeing: 0,
+      careDebt: 0,
+      sleepMode: "awake",
+      moodHint: "ok",
+    };
+  }
+
+  const s = dog.stats || {};
+  const needPressure = computeNeedPressure(s);
+  const wellbeing = clamp(Number(dog.wellbeing || 0), 0, 100);
+  const careDebt = clamp(Number(dog.careDebt || 0), 0, 100);
+  const sleepMode = dog.sleep?.mode || "awake";
+
+  let moodHint = "ok";
+  if (wellbeing <= DECAY_TUNING.wellbeing.fragileThreshold) {
+    moodHint = "fragile";
+  } else if (needPressure >= DOG_TICK_UI.needPressure.high) {
+    moodHint = "stressed";
+  } else if (needPressure <= DOG_TICK_UI.needPressure.low) {
+    moodHint = "content";
+  }
+
+  return {
+    needPressure,
+    wellbeing,
+    careDebt,
+    sleepMode,
+    moodHint,
+  };
 }
 
 // ---------- Simulation core ----------

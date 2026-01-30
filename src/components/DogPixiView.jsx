@@ -9,12 +9,25 @@ import {
   useRef,
   useState,
 } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { Stage, Container, AnimatedSprite } from "@pixi/react";
-import { Assets, Rectangle, Texture, TextureStyle } from "pixi.js";
+import { Assets, Rectangle, Texture } from "pixi.js";
 import { getDogPixiSheetUrl } from "@/utils/dogSpritePaths.js";
+import {
+  selectSettings,
+  setDogPixiMotion,
+  setDogPixiQuality,
+  setDogPixiScale,
+} from "@/redux/settingsSlice.js";
 import jrManifest from "@/features/game/jrManifest.json";
 
-TextureStyle.defaultOptions.scaleMode = "nearest";
+try {
+  if (Texture?.defaultOptions && "scaleMode" in Texture.defaultOptions) {
+    Texture.defaultOptions.scaleMode = "nearest";
+  }
+} catch {
+  // ignore (older Pixi versions may not expose defaultOptions)
+}
 
 const FRAME_W = Number(jrManifest?.frame?.width || 128);
 const FRAME_H = Number(jrManifest?.frame?.height || 128);
@@ -167,14 +180,67 @@ export default function DogPixiView({
   onStatus,
   onStatusChange,
 }) {
+  const dispatch = useDispatch();
+  const settings = useSelector(selectSettings);
   const [sheetSource, setSheetSource] = useState(null);
+  const [showOptions, setShowOptions] = useState(false);
 
   const emitStatus = onStatusChange || onStatus;
   const lastStatusRef = useRef(null);
   const hasErroredRef = useRef(false);
   const spriteRef = useRef(null);
+  const menuRef = useRef(null);
 
   const resolvedAnimKey = useMemo(() => resolveAnim(anim), [anim]);
+
+  const reduceMotionSetting = settings?.reduceMotion || "system";
+  const prefersReducedMotion = useMemo(() => {
+    try {
+      return window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+    } catch {
+      return false;
+    }
+  }, []);
+  const reduceMotion =
+    reduceMotionSetting === "on" ||
+    (reduceMotionSetting !== "off" && prefersReducedMotion);
+
+  const perfMode = settings?.perfMode || "auto";
+  const batterySaver = Boolean(settings?.batterySaver);
+
+  const motionEnabled = settings?.dogPixiMotion !== false && !reduceMotion;
+  const qualitySetting = settings?.dogPixiQuality || "auto";
+  const quality =
+    qualitySetting === "auto"
+      ? perfMode === "on" || batterySaver || reduceMotion
+        ? "low"
+        : "high"
+      : qualitySetting;
+  const resolutionCap = quality === "low" ? 1 : 2;
+  const fpsMultiplier = quality === "low" ? 0.75 : 1;
+
+  const scaleSetting = settings?.dogPixiScale || "normal";
+  const scaleMultiplier =
+    scaleSetting === "small" ? 0.85 : scaleSetting === "large" ? 1.15 : 1;
+  const effectiveScale = scale * scaleMultiplier;
+
+  useEffect(() => {
+    if (!showOptions) return;
+    const onPointerDown = (event) => {
+      const el = menuRef.current;
+      if (!el || el.contains(event.target)) return;
+      setShowOptions(false);
+    };
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") setShowOptions(false);
+    };
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [showOptions]);
 
   const sendStatus = useCallback(
     (next) => {
@@ -283,8 +349,8 @@ export default function DogPixiView({
   const animationSpeed = useMemo(() => {
     const fps = FPS_BY_ANIM[resolvedAnimKey] ?? DEFAULT_FPS;
     const speed = Number(fps) > 0 ? Number(fps) / 60 : 0.12;
-    return Math.max(0.02, speed);
-  }, [resolvedAnimKey]);
+    return Math.max(0.02, speed * fpsMultiplier);
+  }, [fpsMultiplier, resolvedAnimKey]);
 
   const canAnimate = textures.length > 0;
   const resetKey = `${stage}-${condition}-${resolvedAnimKey}`;
@@ -320,33 +386,99 @@ export default function DogPixiView({
       resetKey={resetKey}
       onError={() => sendStatus("error")}
     >
-      <Stage
-        width={width}
-        height={height}
-        options={{
-          backgroundAlpha: 0,
-          antialias: false,
-          autoDensity: true,
-          roundPixels: true,
-          resolution:
-            typeof window === "undefined" ? 1 : window.devicePixelRatio || 1,
-        }}
-      >
-        <Container x={width / 2} y={height / 2}>
-          {canAnimate ? (
-            <AnimatedSprite
-              key={resetKey}
-              ref={spriteRef}
-              textures={textures}
-              isPlaying
-              initialFrame={0}
-              animationSpeed={animationSpeed}
-              anchor={0.5}
-              scale={scale}
-            />
+      <div className="group relative" style={{ width, height }}>
+        <Stage
+          width={width}
+          height={height}
+          options={{
+            backgroundAlpha: 0,
+            antialias: false,
+            autoDensity: true,
+            roundPixels: true,
+            resolution:
+              typeof window === "undefined"
+                ? 1
+                : Math.min(window.devicePixelRatio || 1, resolutionCap),
+          }}
+        >
+          <Container x={width / 2} y={height / 2}>
+            {canAnimate ? (
+              <AnimatedSprite
+                key={resetKey}
+                ref={spriteRef}
+                textures={textures}
+                isPlaying={motionEnabled}
+                initialFrame={0}
+                animationSpeed={animationSpeed}
+                anchor={0.5}
+                scale={effectiveScale}
+              />
+            ) : null}
+          </Container>
+        </Stage>
+
+        <div className="absolute right-2 top-2" ref={menuRef}>
+          <button
+            type="button"
+            onClick={() => setShowOptions((v) => !v)}
+            className="rounded-full border border-white/10 bg-black/50 px-3 py-1 text-[10px] uppercase tracking-[0.22em] text-white/70 opacity-0 transition group-hover:opacity-100"
+          >
+            View
+          </button>
+          {showOptions ? (
+            <div className="absolute right-0 mt-2 w-56 space-y-2 rounded-2xl border border-white/10 bg-black/90 p-3 text-[11px] text-zinc-200 shadow-[0_16px_45px_rgba(0,0,0,0.45)]">
+              <ToggleRow
+                label="Animate"
+                checked={motionEnabled}
+                onChange={(v) => dispatch(setDogPixiMotion(v))}
+              />
+              <div className="flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2">
+                <span>Quality</span>
+                <select
+                  value={qualitySetting}
+                  onChange={(e) => dispatch(setDogPixiQuality(e.target.value))}
+                  className="rounded-lg border border-white/10 bg-black/40 px-2 py-1 text-[11px] text-zinc-200"
+                >
+                  <option value="auto">Auto</option>
+                  <option value="low">Low</option>
+                  <option value="high">High</option>
+                </select>
+              </div>
+              <div className="flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2">
+                <span>Size</span>
+                <select
+                  value={scaleSetting}
+                  onChange={(e) => dispatch(setDogPixiScale(e.target.value))}
+                  className="rounded-lg border border-white/10 bg-black/40 px-2 py-1 text-[11px] text-zinc-200"
+                >
+                  <option value="small">Small</option>
+                  <option value="normal">Normal</option>
+                  <option value="large">Large</option>
+                </select>
+              </div>
+              {(perfMode === "on" || batterySaver || reduceMotion) && (
+                <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[10px] text-zinc-400">
+                  Performance mode active: auto quality reduced.
+                </div>
+              )}
+            </div>
           ) : null}
-        </Container>
-      </Stage>
+        </div>
+      </div>
     </DogPixiErrorBoundary>
+  );
+}
+
+function ToggleRow({ label, checked, onChange }) {
+  return (
+    <label className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2">
+      <span>{label}</span>
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(Boolean(e.target.checked))}
+        className="h-4 w-4 accent-emerald-400"
+      />
+    </label>
   );
 }

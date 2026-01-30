@@ -1,6 +1,7 @@
 /** @format */
 // src/pages/Game.jsx
 
+import { useMemo } from "react";
 import { useSelector } from "react-redux";
 
 import MainGame from "@/features/game/MainGame.jsx";
@@ -9,6 +10,11 @@ import { selectUserZip } from "@/redux/userSlice.js";
 import { selectSettings } from "@/redux/settingsSlice.js";
 import { useDayNightBackground } from "@/features/game/useDayNightBackground.jsx";
 import WeatherFXCanvas from "@/components/WeatherFXCanvas.jsx";
+import {
+  getWeatherAccent,
+  getWeatherLabel,
+  normalizeWeatherCondition,
+} from "@/utils/weather.js";
 
 function titleCase(s) {
   const str = String(s || "").trim();
@@ -16,13 +22,21 @@ function titleCase(s) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-function normalizeWeatherLabel(condition) {
-  const c = String(condition || "").toLowerCase();
-  if (c === "rain") return "Rain";
-  if (c === "snow") return "Snow";
-  if (c === "cloud") return "Cloudy";
-  if (c === "sun") return "Clear";
-  return "Clear";
+function shouldReduceEffects(perfMode) {
+  const mode = String(perfMode || "auto").toLowerCase();
+  if (mode === "on") return true;
+  if (mode === "off") return false;
+  if (typeof window === "undefined") return false;
+  try {
+    if (navigator?.connection?.saveData) return true;
+    const mem = Number(navigator?.deviceMemory || 0);
+    if (mem && mem <= 4) return true;
+    const cores = Number(navigator?.hardwareConcurrency || 0);
+    if (cores && cores <= 4) return true;
+  } catch {
+    // ignore
+  }
+  return false;
 }
 
 export default function GamePage() {
@@ -30,7 +44,13 @@ export default function GamePage() {
   const weather = useSelector(selectWeatherCondition);
   const settings = useSelector(selectSettings);
 
-  const { style, isNight, timeOfDayBucket } = useDayNightBackground({ zip });
+  const perfReduced = shouldReduceEffects(settings?.perfMode);
+  const showBackgroundPhotos =
+    settings?.showBackgroundPhotos !== false && !perfReduced;
+  const { style, isNight, timeOfDayBucket } = useDayNightBackground({
+    zip,
+    enableImages: showBackgroundPhotos,
+  });
 
   const reduceMotion =
     settings?.reduceMotion === "on" ||
@@ -40,21 +60,51 @@ export default function GamePage() {
       window.matchMedia("(prefers-reduced-motion: reduce)").matches);
 
   const reduceTransparency = settings?.reduceTransparency === true;
+  const showWeatherFx = settings?.showWeatherFx !== false && !perfReduced;
+  const showVignette =
+    settings?.showSceneVignette !== false && !perfReduced;
+  const showGrain =
+    settings?.showSceneGrain !== false &&
+    !reduceTransparency &&
+    !perfReduced;
 
-  const scene = {
-    label: "Backyard",
-    timeOfDay: isNight ? "Night" : titleCase(timeOfDayBucket || "Day"),
-    weather: normalizeWeatherLabel(weather),
-  };
+  const weatherKey = useMemo(
+    () => normalizeWeatherCondition(weather),
+    [weather]
+  );
+  const weatherLabel = useMemo(() => getWeatherLabel(weatherKey), [weatherKey]);
+  const weatherAccent = useMemo(
+    () => getWeatherAccent(weatherKey),
+    [weatherKey]
+  );
+
+  const scene = useMemo(
+    () => ({
+      label: "Backyard",
+      timeOfDay: isNight ? "Night" : titleCase(timeOfDayBucket || "Day"),
+      weather: weatherLabel,
+      weatherKey,
+      weatherAccent,
+    }),
+    [isNight, timeOfDayBucket, weatherLabel, weatherKey, weatherAccent]
+  );
 
   return (
-    <div className="relative min-h-dvh overflow-hidden" style={style}>
+    <div
+      className="relative min-h-dvh overflow-hidden"
+      style={{ ...style, "--weather-accent": weatherAccent }}
+      data-weather={weatherKey}
+    >
       {/* Extra vignette + grain to sell depth behind the UI */}
-      <div className="pointer-events-none absolute inset-0 bg-black/40" />
-      <div className="pointer-events-none absolute inset-0 opacity-[0.05] mix-blend-overlay bg-[radial-gradient(circle_at_20%_15%,rgba(255,255,255,0.6),transparent_55%)]" />
+      {showVignette ? (
+        <div className="pointer-events-none absolute inset-0 bg-black/40" />
+      ) : null}
+      {showGrain ? (
+        <div className="pointer-events-none absolute inset-0 opacity-[0.05] mix-blend-overlay bg-[radial-gradient(circle_at_20%_15%,rgba(255,255,255,0.6),transparent_55%)]" />
+      ) : null}
 
       <WeatherFXCanvas
-        mode={weather}
+        mode={showWeatherFx ? weatherKey : "none"}
         reduceMotion={reduceMotion}
         reduceTransparency={reduceTransparency}
         className="z-0"

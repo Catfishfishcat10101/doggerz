@@ -27,6 +27,7 @@ function isUsableOpenWeatherKey(key) {
  * @typedef {Object} DayNightOptions
  * @property {string} [zip]
  * @property {number} [pollIntervalMs]
+ * @property {boolean} [enableImages]
  * // Geolocation removed; ZIP-only behavior
  */
 
@@ -34,7 +35,7 @@ function isUsableOpenWeatherKey(key) {
  * @param {DayNightOptions} [options]
  */
 export function useDayNightBackground(options = {}) {
-  const { zip, pollIntervalMs = 5 * 60 * 1000 } = options;
+  const { zip, pollIntervalMs = 5 * 60 * 1000, enableImages = true } = options;
 
   const [isNight, setIsNight] = useState(() =>
     deriveIsNightFromHour(new Date().getHours())
@@ -161,6 +162,14 @@ export function useDayNightBackground(options = {}) {
   // Detect available background assets once at mount
   useEffect(() => {
     let mounted = true;
+    if (!enableImages) {
+      setAvailable({ day: null, night: null });
+      setImageMode("none");
+      return () => {
+        mounted = false;
+      };
+    }
+
     const checkImage = (url) =>
       new Promise((resolve) => {
         try {
@@ -209,7 +218,7 @@ export function useDayNightBackground(options = {}) {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [enableImages]);
 
   let gradient;
   if (isNight) {

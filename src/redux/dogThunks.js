@@ -4,7 +4,7 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db, firebaseReady, assertFirebaseReady } from "@/firebase.js";
 import { hydrateDog, DOG_SAVE_SCHEMA_VERSION } from "./dogSlice.js";
 
-const CLOUD_DOG_VERSION = 1;
+const CLOUD_DOG_VERSION = 2;
 
 function parseSavedAtToMs(value) {
   if (!value) return 0;
@@ -72,6 +72,52 @@ const parseCloudDog = (raw) => {
   };
 };
 
+function getLocalDogTimestamp(localDog) {
+  return Math.max(
+    parseSavedAtToMs(localDog?.meta?.savedAt),
+    parseSavedAtToMs(localDog?.meta?.lastTickAt),
+    parseSavedAtToMs(localDog?.lastUpdatedAt),
+    parseSavedAtToMs(localDog?.adoptedAt)
+  );
+}
+
+function getCloudDogTimestamp(cloudDog) {
+  return Math.max(
+    parseSavedAtToMs(cloudDog?.meta?.savedAt),
+    parseSavedAtToMs(cloudDog?.lastCloudSyncAt),
+    parseSavedAtToMs(cloudDog?.lastUpdatedAt),
+    parseSavedAtToMs(cloudDog?.adoptedAt)
+  );
+}
+
+function mergeCloudOverLocal(localDog, cloudDog) {
+  if (!localDog) return cloudDog || null;
+  if (!cloudDog) return localDog;
+
+  return {
+    ...localDog,
+    ...cloudDog,
+    stats: { ...(localDog.stats || {}), ...(cloudDog.stats || {}) },
+    memory: { ...(localDog.memory || {}), ...(cloudDog.memory || {}) },
+    temperament: {
+      ...(localDog.temperament || {}),
+      ...(cloudDog.temperament || {}),
+    },
+    personality: {
+      ...(localDog.personality || {}),
+      ...(cloudDog.personality || {}),
+    },
+    training: { ...(localDog.training || {}), ...(cloudDog.training || {}) },
+    dreams: { ...(localDog.dreams || {}), ...(cloudDog.dreams || {}) },
+    journal: { ...(localDog.journal || {}), ...(cloudDog.journal || {}) },
+    streak: { ...(localDog.streak || {}), ...(cloudDog.streak || {}) },
+    bond: { ...(localDog.bond || {}), ...(cloudDog.bond || {}) },
+    cosmetics: { ...(localDog.cosmetics || {}), ...(cloudDog.cosmetics || {}) },
+    skillTree: { ...(localDog.skillTree || {}), ...(cloudDog.skillTree || {}) },
+    meta: { ...(localDog.meta || {}), ...(cloudDog.meta || {}) },
+  };
+}
+
 export const loadDogFromCloud = createAsyncThunk(
   "dog/loadDogFromCloud",
   async (_, { dispatch, getState, rejectWithValue }) => {
@@ -110,25 +156,23 @@ export const loadDogFromCloud = createAsyncThunk(
         // Policy: local is the source of truth for moment-to-moment play.
         // Cloud is a backup/sync target. We only apply cloud over local if
         // cloud appears newer.
-        const localTs = Math.max(
-          parseSavedAtToMs(localDog?.meta?.savedAt),
-          parseSavedAtToMs(localDog?.meta?.lastTickAt),
-          parseSavedAtToMs(localDog?.adoptedAt)
-        );
-        const cloudTs = Math.max(
-          parseSavedAtToMs(cloudData?.meta?.savedAt),
-          parseSavedAtToMs(cloudData?.lastCloudSyncAt),
-          parseSavedAtToMs(cloudData?.adoptedAt)
-        );
+        const localTs = getLocalDogTimestamp(localDog);
+        const cloudTs = getCloudDogTimestamp(cloudData);
 
         const shouldHydrateFromCloud =
           cloudHasDog && (!localHasDog || cloudTs > localTs + 1000);
+        const shouldMerge =
+          cloudHasDog && localHasDog && Math.abs(cloudTs - localTs) <= 1000;
 
         if (shouldHydrateFromCloud) {
           dispatch(hydrateDog(cloudData));
           console.log(
             "[Doggerz] Dog loaded from cloud and hydrated successfully"
           );
+        } else if (shouldMerge) {
+          const merged = mergeCloudOverLocal(localDog, cloudData);
+          dispatch(hydrateDog(merged));
+          console.log("[Doggerz] Cloud save merged with local");
         } else {
           console.log("[Doggerz] Cloud save ignored (local appears newer)");
         }
@@ -138,6 +182,7 @@ export const loadDogFromCloud = createAsyncThunk(
           hydrated: shouldHydrateFromCloud,
           localTs,
           cloudTs,
+          merged: shouldMerge,
         };
       }
 

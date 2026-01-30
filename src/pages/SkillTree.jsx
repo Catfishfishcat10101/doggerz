@@ -12,6 +12,12 @@ import {
   selectDogSkillTreeUnlockedIds,
   unlockSkillTreePerk,
 } from "@/redux/dogSlice.js";
+import {
+  selectSettings,
+  setSkillTreeBranch,
+  setSkillTreeShowUnlockedOnly,
+  setSkillTreeCompactCards,
+} from "@/redux/settingsSlice.js";
 import { SKILL_TREE_BRANCHES } from "@/constants/skillTree.js";
 
 const BRANCH_STYLES = {
@@ -42,6 +48,11 @@ export default function SkillTree() {
   const pointsAvailable = points?.pointsAvailable ?? 0;
   const pointsEarned = points?.pointsEarned ?? Math.max(0, level - 1);
   const pointsSpent = points?.pointsSpent ?? unlockedIds.length;
+  const settings = useSelector(selectSettings);
+  const activeBranchId = settings?.skillTreeBranch || "all";
+  const showUnlockedOnly = settings?.skillTreeShowUnlockedOnly === true;
+  const compactCards = settings?.skillTreeCompactCards === true;
+  const hasUnlocked = unlockedIds.length > 0;
 
   const unlockPerk = (perkId) => {
     dispatch(unlockSkillTreePerk({ perkId }));
@@ -63,6 +74,11 @@ export default function SkillTree() {
       })),
     []
   );
+
+  const filteredBranches = React.useMemo(() => {
+    if (activeBranchId === "all") return branches;
+    return branches.filter((b) => b.id === activeBranchId);
+  }, [activeBranchId, branches]);
 
   return (
     <PageShell
@@ -136,11 +152,64 @@ export default function SkillTree() {
                 journey.
               </p>
             </div>
+            <div className="flex flex-wrap items-center gap-2 text-[11px]">
+              <button
+                type="button"
+                onClick={() => dispatch(setSkillTreeBranch("all"))}
+                className={`rounded-full border px-3 py-1 font-semibold transition ${
+                  activeBranchId === "all"
+                    ? "border-amber-300/80 bg-amber-100/70 text-amber-700"
+                    : "border-slate-200/80 bg-white/70 text-slate-600 hover:bg-white"
+                }`}
+              >
+                All branches
+              </button>
+              {branches.map((b) => (
+                <button
+                  key={b.id}
+                  type="button"
+                  onClick={() => dispatch(setSkillTreeBranch(b.id))}
+                  className={`rounded-full border px-3 py-1 font-semibold transition ${
+                    activeBranchId === b.id
+                      ? b.badge
+                      : "border-slate-200/80 bg-white/70 text-slate-600 hover:bg-white"
+                  }`}
+                >
+                  {b.name}
+                </button>
+              ))}
+              <span className="ml-auto flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  disabled={!hasUnlocked}
+                  onClick={() => {
+                    if (!hasUnlocked) return;
+                    dispatch(setSkillTreeShowUnlockedOnly(!showUnlockedOnly));
+                  }}
+                  className={`rounded-full border px-3 py-1 text-slate-600 ${
+                    hasUnlocked
+                      ? "border-slate-200/80 bg-white/70 hover:bg-white"
+                      : "border-slate-200/60 bg-white/50 text-slate-400 cursor-not-allowed"
+                  }`}
+                >
+                  {showUnlockedOnly ? "All perks" : "Unlocked only"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    dispatch(setSkillTreeCompactCards(!compactCards))
+                  }
+                  className="rounded-full border border-slate-200/80 bg-white/70 px-3 py-1 text-slate-600 hover:bg-white"
+                >
+                  {compactCards ? "Roomy cards" : "Compact cards"}
+                </button>
+              </span>
+            </div>
           </div>
         </div>
 
         <div className="mt-8 grid gap-6 lg:grid-cols-3">
-          {branches.map((branch) => (
+          {filteredBranches.map((branch) => (
             <section
               key={branch.id}
               className={`relative overflow-hidden rounded-3xl border ${branch.border} bg-white/70 p-6 shadow-[0_20px_70px_rgba(60,35,10,0.1)]`}
@@ -169,6 +238,8 @@ export default function SkillTree() {
                     const isBlocked = requiredId && !unlocked.has(requiredId);
                     const canUnlock =
                       pointsAvailable > 0 && !isUnlocked && !isBlocked;
+
+                    if (showUnlockedOnly && !isUnlocked) return null;
 
                     const perkState = isUnlocked
                       ? "unlocked"
@@ -199,11 +270,13 @@ export default function SkillTree() {
                         <div
                           data-branch={branch.id}
                           data-state={perkState}
-                          className={`dz-perk-card rounded-2xl border p-4 transition ${
+                          className={`dz-perk-card rounded-2xl border transition ${
                             isUnlocked
                               ? "border-emerald-300/70 bg-emerald-50/70"
                               : "border-slate-200/80 bg-white/80"
-                          } ${isBlocked ? "opacity-70" : ""}`}
+                          } ${isBlocked ? "opacity-70" : ""} ${
+                            compactCards ? "p-3" : "p-4"
+                          }`}
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div>

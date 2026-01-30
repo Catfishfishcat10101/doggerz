@@ -8,6 +8,7 @@ import { withBaseUrl } from "@/utils/assetUrl.js";
 // Tuning: higher => faster aging. Keep this high enough for visible progress,
 // but not so high that stages churn too quickly.
 export const GAME_DAYS_PER_REAL_DAY = 24;
+export const MS_PER_GAME_DAY = (24 * 60 * 60 * 1000) / GAME_DAYS_PER_REAL_DAY;
 
 // Lifecycle / age stages (in-game days)
 export const LIFE_STAGES = {
@@ -46,13 +47,16 @@ export function getLifeStageForAge(ageInGameDays) {
 export function calculateDogAge(adoptedAtMs, now = Date.now()) {
   if (!adoptedAtMs || !Number.isFinite(adoptedAtMs)) return null;
 
-  const msPerGameDay = (24 * 60 * 60 * 1000) / GAME_DAYS_PER_REAL_DAY;
   const ageInGameDays = Math.max(
     0,
-    Math.floor((now - adoptedAtMs) / msPerGameDay)
+    Math.floor((now - adoptedAtMs) / MS_PER_GAME_DAY)
   );
 
   const stageInfo = getLifeStageForAge(ageInGameDays);
+  const nextStage = getNextLifeStage(stageInfo.id);
+  const daysUntilNextStage = nextStage
+    ? Math.max(0, nextStage.min - ageInGameDays)
+    : null;
 
   return {
     // numeric
@@ -67,6 +71,8 @@ export function calculateDogAge(adoptedAtMs, now = Date.now()) {
 
     // richer info
     stageInfo,
+    daysUntilNextStage,
+    nextStage,
   };
 }
 
@@ -78,6 +84,29 @@ export function getLifeStageLabel(stageId) {
     .toUpperCase()
     .trim();
   return LIFE_STAGES[key]?.label ?? "Puppy";
+}
+
+export function getNextLifeStage(stageId) {
+  const key = String(stageId || "PUPPY").toUpperCase().trim();
+  if (key === "PUPPY") return { id: "ADULT", ...LIFE_STAGES.ADULT };
+  if (key === "ADULT") return { id: "SENIOR", ...LIFE_STAGES.SENIOR };
+  return null;
+}
+
+export function getDogAgeProgress(adoptedAtMs, now = Date.now()) {
+  const age = calculateDogAge(adoptedAtMs, now);
+  if (!age) return null;
+
+  const { stageInfo } = age;
+  const total = Math.max(1, stageInfo.max - stageInfo.min);
+  const elapsed = Math.max(0, age.ageInGameDays - stageInfo.min);
+  const pct = Math.max(0, Math.min(1, elapsed / total));
+
+  return {
+    ...age,
+    stageProgress: pct,
+    stageProgressPct: Math.round(pct * 100),
+  };
 }
 
 /**
@@ -104,4 +133,14 @@ export function getSpriteForStageAndTier(_stageOrObj, _cleanlinessTier) {
       ? _stageOrObj
       : _stageOrObj?.stage || _stageOrObj?.stageId || _stageOrObj?.id;
   return getSpriteForLifeStage(stage || "PUPPY");
+}
+
+export function getAgeBucketLabel(days) {
+  if (!Number.isFinite(days)) return "Unknown";
+  if (days < 30) return "New pup";
+  if (days < 120) return "Growing";
+  if (days < 360) return "Young";
+  if (days < 1200) return "Adult";
+  if (days < 2500) return "Mature";
+  return "Golden";
 }

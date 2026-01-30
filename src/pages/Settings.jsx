@@ -35,6 +35,10 @@ import {
   setShowGameMicroHud,
   setShowCritters,
   setRoamIntensity,
+  setShowWeatherFx,
+  setShowBackgroundPhotos,
+  setShowSceneVignette,
+  setShowSceneGrain,
   setSfxVolume,
   setShowHints,
   setDailyRemindersEnabled,
@@ -649,6 +653,44 @@ export default function Settings() {
               description="Show helper tips in places that support it."
               checked={settings?.showHints}
               onChange={(v) => dispatch(setShowHints(v))}
+            />
+          </Card>
+
+          <Card
+            title="Scene & effects"
+            subtitle="Control backgrounds, overlays, and weather particles"
+            bodyClassName="grid gap-4 sm:grid-cols-2"
+          >
+            <Switch
+              id="showWeatherFx"
+              label="Weather effects"
+              description="Rain/snow particles in the yard."
+              checked={settings?.showWeatherFx !== false}
+              onChange={(v) => dispatch(setShowWeatherFx(v))}
+            />
+
+            <Switch
+              id="showBackgroundPhotos"
+              label="Photo backgrounds"
+              description="Use the backyard photos behind the gradient."
+              checked={settings?.showBackgroundPhotos !== false}
+              onChange={(v) => dispatch(setShowBackgroundPhotos(v))}
+            />
+
+            <Switch
+              id="showSceneVignette"
+              label="Vignette overlay"
+              description="Adds a soft edge darkening for depth."
+              checked={settings?.showSceneVignette !== false}
+              onChange={(v) => dispatch(setShowSceneVignette(v))}
+            />
+
+            <Switch
+              id="showSceneGrain"
+              label="Film grain"
+              description="Adds subtle texture over the yard."
+              checked={settings?.showSceneGrain !== false}
+              onChange={(v) => dispatch(setShowSceneGrain(v))}
             />
           </Card>
 

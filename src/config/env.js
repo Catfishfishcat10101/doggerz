@@ -10,6 +10,17 @@ const REQUIRED_VITE_FIREBASE_VARS = [
   "VITE_FIREBASE_APP_ID",
 ];
 
+// Optional env vars (UI + services) we may reference across the app.
+const OPTIONAL_VITE_VARS = [
+  "VITE_SUPPRESS_ENV_MISSING_WARNINGS",
+  "VITE_FIREBASE_MEASUREMENT_ID",
+  "VITE_WEATHER_API_KEY",
+  "VITE_ADMOB_APP_ID",
+  "VITE_ADMOB_BANNER_ID",
+  "VITE_ADMOB_INTERSTITIAL_ID",
+  "VITE_ADMOB_REWARDED_ID",
+];
+
 let VITE_ENV = {};
 
 // Prefer import.meta.env (Vite runtime) but gracefully fall back to process.env (Node scripts)
@@ -54,6 +65,15 @@ const warnIfMissing = (name) => {
   return value ?? undefined;
 };
 
+const warnIfMissingOptional = (name) => {
+  const value = getEnv(name);
+  if (!value && warnMissingEnv && !seenMissingKeys.has(name)) {
+    seenMissingKeys.add(name);
+    console.warn(`[env] Optional env var "${name}" is not set.`);
+  }
+  return value ?? undefined;
+};
+
 // Build FIREBASE config from VITE_* vars (do NOT hardcode secrets here)
 export const FIREBASE = {
   apiKey: warnIfMissing("VITE_FIREBASE_API_KEY"),
@@ -62,7 +82,19 @@ export const FIREBASE = {
   storageBucket: warnIfMissing("VITE_FIREBASE_STORAGE_BUCKET"),
   messagingSenderId: warnIfMissing("VITE_FIREBASE_MESSAGING_SENDER_ID"),
   appId: warnIfMissing("VITE_FIREBASE_APP_ID"),
-  measurementId: getEnv("VITE_FIREBASE_MEASUREMENT_ID") || undefined,
+  measurementId:
+    warnIfMissingOptional("VITE_FIREBASE_MEASUREMENT_ID") || undefined,
+};
+
+export const WEATHER = {
+  apiKey: warnIfMissingOptional("VITE_WEATHER_API_KEY"),
+};
+
+export const ADMOB = {
+  appId: warnIfMissingOptional("VITE_ADMOB_APP_ID"),
+  bannerId: warnIfMissingOptional("VITE_ADMOB_BANNER_ID"),
+  interstitialId: warnIfMissingOptional("VITE_ADMOB_INTERSTITIAL_ID"),
+  rewardedId: warnIfMissingOptional("VITE_ADMOB_REWARDED_ID"),
 };
 
 // List missing VITE_* keys (actionable names)
@@ -70,8 +102,13 @@ export const missingFirebaseKeys = REQUIRED_VITE_FIREBASE_VARS.filter(
   (k) => !getEnv(k)
 );
 
+export const missingOptionalKeys = OPTIONAL_VITE_VARS.filter((k) => !getEnv(k));
+
 // True when all required VITE_* firebase vars are present
 export const isFirebaseConfigured = missingFirebaseKeys.length === 0;
+
+export const isWeatherConfigured = Boolean(WEATHER.apiKey);
+export const isAdmobConfigured = Boolean(ADMOB.appId);
 
 // precommit-hook-test
 

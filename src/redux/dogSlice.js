@@ -8,7 +8,14 @@ export const selectDogEmotionCue = (state) => state.dog.emotionCue;
 
 import { createSlice } from "@reduxjs/toolkit";
 import { calculateDogAge } from "@/utils/lifecycle.js";
-import { CLEANLINESS_TIER_EFFECTS, LIFE_STAGES } from "@/constants/game.js";
+import {
+  CLEANLINESS_TIER_EFFECTS,
+  LIFE_STAGES,
+  getCleanlinessLabel,
+  getCleanlinessSeverity,
+  getCleanlinessUi,
+  getLifeStageLabel,
+} from "@/constants/game.js";
 import {
   OBEDIENCE_COMMANDS,
   commandRequirementsMet,
@@ -31,6 +38,9 @@ export const DOG_SAVE_SCHEMA_VERSION = 1;
 
 const clamp = (n, lo = 0, hi = 100) =>
   Math.max(lo, Math.min(hi, Number.isFinite(n) ? n : 0));
+
+const clamp01 = (n) =>
+  Math.max(0, Math.min(1, Number.isFinite(n) ? n : 0));
 
 const DECAY_PER_HOUR = {
   hunger: 8,
@@ -2772,6 +2782,53 @@ export const selectDogMemorial = (state) => state.dog.memorial;
 export const selectDogVacation = (state) => state.dog.vacation;
 
 export const selectCosmeticCatalog = () => DEFAULT_COSMETIC_CATALOG;
+
+export const selectDogMoodLabel = (state) => {
+  const dog = state.dog;
+  if (typeof dog?.mood === "string" && dog.mood.trim()) return dog.mood;
+  if (typeof dog?.emotionCue === "string" && dog.emotionCue.trim())
+    return dog.emotionCue;
+  return "Content";
+};
+
+export const selectDogAgeInfo = (state) => {
+  const adoptedAt = parseAdoptedAt(state.dog?.adoptedAt);
+  const age = calculateDogAge(adoptedAt || 0);
+  return (
+    age || {
+      days: state.dog?.lifeStage?.days || 0,
+      stage: state.dog?.lifeStage?.stage || LIFE_STAGES.PUPPY,
+      label:
+        state.dog?.lifeStage?.label ||
+        getLifeStageLabel(state.dog?.lifeStage?.stage),
+    }
+  );
+};
+
+export const selectDogCleanlinessMeta = (state) => {
+  const tier = state.dog?.cleanlinessTier || "FRESH";
+  return {
+    tier,
+    label: getCleanlinessLabel(tier),
+    severity: getCleanlinessSeverity(tier),
+    ui: getCleanlinessUi(tier),
+    penalties:
+      CLEANLINESS_TIER_EFFECTS[String(tier).toUpperCase()]?.penalties || null,
+  };
+};
+
+export const selectDogNeedsNormalized = (state) => {
+  const stats = state.dog?.stats || {};
+  return {
+    food: clamp01(1 - Number(stats.hunger || 0) / 100),
+    water: clamp01(1 - Number(stats.thirst || 0) / 100),
+    energy: clamp01(Number(stats.energy || 0) / 100),
+    happiness: clamp01(Number(stats.happiness || 0) / 100),
+    potty: clamp01(1 - Number(state.dog?.pottyLevel || 0) / 100),
+    cleanliness: clamp01(Number(stats.cleanliness || 0) / 100),
+    bond: clamp01(Number(state.dog?.bond?.value || 0) / 100),
+  };
+};
 
 export const selectNextStreakReward = (state) => {
   const dog = state.dog;
