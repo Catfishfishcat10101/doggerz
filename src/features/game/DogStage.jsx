@@ -1,52 +1,22 @@
 /** @format */
 // src/features/game/DogStage.jsx
 
-import { Component, useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import DogPixiView from "@/components/DogPixiView.jsx";
-import DogCanvas from "@/features/dog/DogCanvas.jsx";
-import {
-  getDogPixiSheetUrl,
-  getDogStaticSpriteUrl,
-} from "@/utils/dogSpritePaths.js";
+import { withBaseUrl } from "@/utils/assetUrl.js";
 import { selectSettings } from "@/redux/settingsSlice.js";
 
 const STAGE_HEIGHT = 360;
-
-class PixiErrorBoundary extends Component {
-  constructor(props) {
-    super(props);
-    this.state = { hasError: false };
-  }
-
-  static getDerivedStateFromError() {
-    return { hasError: true };
-  }
-
-  componentDidCatch(err) {
-    this.props.onError?.(err);
-  }
-
-  componentDidUpdate(prevProps) {
-    if (prevProps.resetKey !== this.props.resetKey && this.state.hasError) {
-      // Reset error boundary when the stage/condition/anim changes.
-      this.setState({ hasError: false });
-    }
-  }
-
-  render() {
-    if (this.state.hasError) return this.props.fallback || null;
-    return this.props.children;
-  }
-}
+const SHEET_COLUMNS = 7;
+const SHEET_ROWS = 7;
+const SHEET_FRAME_WIDTH = 124;
+const SHEET_FRAME_HEIGHT = 144;
+const SHEET_FRAME_COUNT = SHEET_COLUMNS * SHEET_ROWS;
+const SHEET_FPS = 8;
 
 export default function DogStage({ dog, scene }) {
   const settings = useSelector(selectSettings);
   const frameLabel = dog?.lifeStage?.label || "Puppy";
-  const stage = dog?.lifeStage?.stage || dog?.stage || "PUPPY";
-  const condition = dog?.cleanlinessTier || "clean";
-  const anim = dog?.isAsleep ? "sleep" : dog?.lastAction || "idle";
-  const [pixiFailed, setPixiFailed] = useState(false);
 
   const reduceMotion =
     settings?.reduceMotion === "on" ||
@@ -54,28 +24,79 @@ export default function DogStage({ dog, scene }) {
       typeof window !== "undefined" &&
       window.matchMedia &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches);
-  const useStaticAnim = reduceMotion ? "idle" : anim;
 
-  const pixiSheetUrl = useMemo(
-    () => getDogPixiSheetUrl(stage, condition),
-    [condition, stage]
+  const spriteSheetUrl = useMemo(
+    () => withBaseUrl("/sprites/doggerz-sit.png"),
+    []
   );
-  const pixiFallbackUrl = useMemo(() => getDogStaticSpriteUrl(stage), [stage]);
-
-  const resetKey = `${stage}-${condition}-${useStaticAnim}`;
+  const canvasRef = useRef(null);
+  const imageRef = useRef(null);
+  const [imageReady, setImageReady] = useState(false);
+  const [frameIndex, setFrameIndex] = useState(0);
 
   useEffect(() => {
-    setPixiFailed(false);
-  }, [resetKey]);
-
-  const handlePixiStatus = useCallback((status) => {
-    if (!status) return;
-    if (status === "error") {
-      setPixiFailed(true);
+    if (reduceMotion) {
+      setFrameIndex(0);
+      return undefined;
     }
-  }, []);
 
-  const showPixi = false;
+    const intervalMs = Math.max(40, Math.round(1000 / SHEET_FPS));
+    const id = window.setInterval(() => {
+      setFrameIndex((prev) => (prev + 1) % SHEET_FRAME_COUNT);
+    }, intervalMs);
+
+    return () => window.clearInterval(id);
+  }, [reduceMotion]);
+
+  const frameX = (frameIndex % SHEET_COLUMNS) * SHEET_FRAME_WIDTH;
+  const frameY = Math.floor(frameIndex / SHEET_COLUMNS) * SHEET_FRAME_HEIGHT;
+  const spriteScale = 2.4;
+  const spriteWidth = SHEET_FRAME_WIDTH * spriteScale;
+  const spriteHeight = SHEET_FRAME_HEIGHT * spriteScale;
+
+  useEffect(() => {
+    let cancelled = false;
+    const img = new Image();
+    img.onload = () => {
+      if (cancelled) return;
+      imageRef.current = img;
+      setImageReady(true);
+    };
+    img.onerror = () => {
+      if (cancelled) return;
+      imageRef.current = null;
+      setImageReady(false);
+    };
+    img.src = spriteSheetUrl;
+    return () => {
+      cancelled = true;
+    };
+  }, [spriteSheetUrl]);
+
+  useEffect(() => {
+    if (!imageReady) return;
+    const canvas = canvasRef.current;
+    const img = imageRef.current;
+    if (!canvas || !img) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    canvas.width = spriteWidth;
+    canvas.height = spriteHeight;
+    ctx.clearRect(0, 0, spriteWidth, spriteHeight);
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(
+      img,
+      frameX,
+      frameY,
+      SHEET_FRAME_WIDTH,
+      SHEET_FRAME_HEIGHT,
+      0,
+      0,
+      spriteWidth,
+      spriteHeight
+    );
+  }, [frameX, frameY, imageReady, spriteHeight, spriteWidth]);
 
   return (
     <section className="relative overflow-hidden rounded-[32px] border border-white/10 bg-gradient-to-b from-[#05070d] via-[#07090f] to-black/70 shadow-[0_35px_120px_rgba(0,0,0,0.55)]">
@@ -94,31 +115,17 @@ export default function DogStage({ dog, scene }) {
                 aria-hidden
                 className="dz-stage-shadow pointer-events-none absolute left-1/2 top-[78%] -translate-x-1/2 z-0"
               />
-              <div className="relative z-10">
-                {showPixi ? (
-                  <PixiErrorBoundary
-                    resetKey={resetKey}
-                    onError={() => setPixiFailed(true)}
-                    fallback={null}
-                  >
-                    <DogPixiView
-                      stage={stage}
-                      condition={condition}
-                      anim={useStaticAnim}
-                      width={900}
-                      height={STAGE_HEIGHT}
-                      scale={2.4}
-                      onStatusChange={handlePixiStatus}
-                    />
-                  </PixiErrorBoundary>
-                ) : (
-                  <DogCanvas
-                    imageUrl={pixiFallbackUrl}
-                    animation={useStaticAnim}
-                    height={STAGE_HEIGHT}
-                    className="w-full max-w-[900px]"
-                  />
-                )}
+              <div className="relative z-10 flex justify-center">
+                <canvas
+                  ref={canvasRef}
+                  aria-hidden
+                  className="select-none"
+                  style={{
+                    width: spriteWidth,
+                    height: spriteHeight,
+                    transformOrigin: "50% 100%",
+                  }}
+                />
               </div>
             </div>
           </div>

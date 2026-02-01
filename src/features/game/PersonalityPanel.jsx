@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 
 import { selectDogPersonality } from "@/redux/dogSlice.js";
@@ -36,15 +37,16 @@ const TRAITS = [
     rightLabel: "Affectionate",
   },
 ];
+const EMPTY_TRAITS = Object.freeze({});
 
 export default function PersonalityPanel() {
   const personality = useSelector(selectDogPersonality);
-  const [expanded, setExpanded] = React.useState(false);
+  const [expanded, setExpanded] = useState(false);
 
-  const traits = personality?.traits || {};
+  const traits = personality?.traits || EMPTY_TRAITS;
 
   const hint = String(personality?.animationHint || "").trim();
-  const dominant = React.useMemo(() => {
+  const dominant = useMemo(() => {
     let bestKey = null;
     let bestValue = 0;
     TRAITS.forEach((t) => {

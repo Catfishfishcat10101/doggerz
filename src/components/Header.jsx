@@ -51,7 +51,7 @@ export default function Header() {
           </NavLink>
 
           <nav className="dz-nav" aria-label="Primary navigation">
-            <NavLink to="/adopt" className="dz-nav-item primary">
+            <NavLink to="/adopt" className="dz-nav-item">
               Adopt
             </NavLink>
             <NavLink to="/login" className="dz-nav-item">
