@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
   resetDogState,
-  DOG_STORAGE_KEY,
+  getDogStorageKey,
   selectDogVacation,
   setVacationMode,
 } from "../redux/dogSlice.js";
@@ -339,6 +339,7 @@ export default function Settings() {
   }
 
   function exportLocalData() {
+    const dogKey = getDogStorageKey(auth?.currentUser?.uid || null);
     const payload = {
       format: "doggerz-export",
       version: 1,
@@ -346,7 +347,7 @@ export default function Settings() {
       data: {
         dog: (() => {
           try {
-            return JSON.parse(localStorage.getItem(DOG_STORAGE_KEY) || "null");
+            return JSON.parse(localStorage.getItem(dogKey) || "null");
           } catch {
             return null;
           }
@@ -410,8 +411,9 @@ export default function Settings() {
     }
 
     try {
+      const dogKey = getDogStorageKey(auth?.currentUser?.uid || null);
       if (data.dog) {
-        localStorage.setItem(DOG_STORAGE_KEY, JSON.stringify(data.dog));
+        localStorage.setItem(dogKey, JSON.stringify(data.dog));
       }
       if (data.user) {
         localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(data.user));
@@ -461,7 +463,8 @@ export default function Settings() {
     }
 
     try {
-      localStorage.removeItem(DOG_STORAGE_KEY);
+      const dogKey = getDogStorageKey(auth?.currentUser?.uid || null);
+      localStorage.removeItem(dogKey);
     } catch {
       // ignore
     }

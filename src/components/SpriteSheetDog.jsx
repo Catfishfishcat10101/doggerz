@@ -151,7 +151,7 @@ export default function SpriteSheetDog({
   const effectiveFallbackSrc = React.useMemo(() => {
     const candidates = [];
     if (fallbackSrc) candidates.push(String(fallbackSrc));
-    candidates.push(withBaseUrl("/sprites/doggerz-sit.png"));
+    candidates.push(withBaseUrl("/sprites/doggerz-main.png"));
     candidates.push(withBaseUrl(`/sprites/jack_russell_${stageKey}.webp`));
     candidates.push(withBaseUrl("/sprites/jack_russell_puppy.webp"));
     return candidates.filter(Boolean);

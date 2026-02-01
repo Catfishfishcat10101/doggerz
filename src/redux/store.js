@@ -4,7 +4,10 @@
 
 import { configureStore } from "@reduxjs/toolkit";
 
-import dogReducer, { DOG_STORAGE_KEY } from "@/redux/dogSlice.js";
+import dogReducer, {
+  DOG_STORAGE_KEY,
+  getDogStorageKey,
+} from "@/redux/dogSlice.js";
 import userReducer from "@/redux/userSlice.js";
 import settingsReducer, {
   SETTINGS_STORAGE_KEY,
@@ -27,7 +30,8 @@ function safeLoadJson(key) {
 }
 
 function getPreloadedDogState() {
-  const parsed = safeLoadJson(DOG_STORAGE_KEY);
+  const guestKey = getDogStorageKey(null);
+  const parsed = safeLoadJson(guestKey) || safeLoadJson(DOG_STORAGE_KEY);
   if (!parsed) return undefined;
   // Reuse dogSlice's hydrate reducer to merge defaults + derive fields.
   return dogReducer(undefined, { type: "dog/hydrateDog", payload: parsed });

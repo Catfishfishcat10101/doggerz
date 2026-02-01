@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import PageShell from "@/components/PageShell.jsx";
 import { SUPPORT_CONTACT_URL } from "@/config/links.js";
 import { useToast } from "@/components/toastContext.js";
+import { DOG_STORAGE_KEY } from "@/redux/dogSlice.js";
 
 const SURFACE =
   "rounded-3xl border border-emerald-500/15 bg-black/35 backdrop-blur-md shadow-[0_0_60px_rgba(16,185,129,0.10)]";
@@ -12,7 +13,6 @@ const CARD = "rounded-2xl border border-white/10 bg-black/25";
 const LINK =
   "text-emerald-300 hover:text-emerald-200 underline underline-offset-4";
 
-const DOG_STORAGE_KEY = "doggerz:dogState";
 const USER_STORAGE_KEY = "doggerz:userState";
 const WORKFLOW_STORAGE_KEY = "doggerz:workflows";
 
@@ -94,8 +94,10 @@ export default function HelpPage() {
     const storage = {};
     if (hasWindow) {
       try {
-        storage.hasDogState = Boolean(
-          window.localStorage.getItem(DOG_STORAGE_KEY)
+        const keys = Object.keys(window.localStorage);
+        storage.hasDogState = keys.some(
+          (key) =>
+            key === DOG_STORAGE_KEY || key.startsWith(`${DOG_STORAGE_KEY}:`)
         );
       } catch {
         storage.hasDogState = null;
@@ -205,7 +207,14 @@ export default function HelpPage() {
 
       // Remove known Doggerz keys (avoid nuking unrelated sites' storage)
       try {
-        window.localStorage.removeItem(DOG_STORAGE_KEY);
+        Object.keys(window.localStorage).forEach((key) => {
+          if (
+            key === DOG_STORAGE_KEY ||
+            key.startsWith(`${DOG_STORAGE_KEY}:`)
+          ) {
+            window.localStorage.removeItem(key);
+          }
+        });
         window.localStorage.removeItem(USER_STORAGE_KEY);
         window.localStorage.removeItem(WORKFLOW_STORAGE_KEY);
         window.localStorage.removeItem("theme");

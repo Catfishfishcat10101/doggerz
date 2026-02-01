@@ -75,7 +75,7 @@ export default function DogStage({ dog, scene }) {
     }
   }, []);
 
-  const showPixi = !pixiFailed;
+  const showPixi = false;
 
   return (
     <section className="relative overflow-hidden rounded-[32px] border border-white/10 bg-gradient-to-b from-[#05070d] via-[#07090f] to-black/70 shadow-[0_35px_120px_rgba(0,0,0,0.55)]">
@@ -113,7 +113,6 @@ export default function DogStage({ dog, scene }) {
                   </PixiErrorBoundary>
                 ) : (
                   <DogCanvas
-                    sheetUrl={pixiSheetUrl}
                     imageUrl={pixiFallbackUrl}
                     animation={useStaticAnim}
                     height={STAGE_HEIGHT}

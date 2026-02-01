@@ -115,7 +115,7 @@ export function getDogAgeProgress(adoptedAtMs, now = Date.now()) {
  * Map a life stage to the static Jack Russell sprite.
  */
 export function getSpriteForLifeStage(_stageId) {
-  return withBaseUrl("/sprites/doggerz-sit.png");
+  return withBaseUrl("/sprites/doggerz-main.png");
 }
 
 /**
