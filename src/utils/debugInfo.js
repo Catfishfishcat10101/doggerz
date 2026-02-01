@@ -29,7 +29,10 @@ function getPwaInfo() {
 
 function getNetworkInfo() {
   if (typeof navigator === "undefined") return null;
-  const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  const connection =
+    navigator.connection ||
+    navigator.mozConnection ||
+    navigator.webkitConnection;
   if (!connection) return null;
   return {
     effectiveType: connection.effectiveType || null,
@@ -37,7 +40,9 @@ function getNetworkInfo() {
     downlink: Number.isFinite(Number(connection.downlink))
       ? Number(connection.downlink)
       : null,
-    rtt: Number.isFinite(Number(connection.rtt)) ? Number(connection.rtt) : null,
+    rtt: Number.isFinite(Number(connection.rtt))
+      ? Number(connection.rtt)
+      : null,
   };
 }
 

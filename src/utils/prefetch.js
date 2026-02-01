@@ -16,7 +16,10 @@ function canPrefetch() {
   return !effectiveType.includes("2g");
 }
 
-export function prefetchOnIdle(task, { timeout = IDLE_TIMEOUT_MS, force = false } = {}) {
+export function prefetchOnIdle(
+  task,
+  { timeout = IDLE_TIMEOUT_MS, force = false } = {}
+) {
   if (typeof task !== "function") return Promise.resolve(null);
   if (!force && !canPrefetch()) return Promise.resolve(null);
 

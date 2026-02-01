@@ -62,7 +62,9 @@ export default function BadgesPage() {
   }, [normalizedWithGroup]);
 
   const filteredBadges = React.useMemo(() => {
-    const q = String(query || "").trim().toLowerCase();
+    const q = String(query || "")
+      .trim()
+      .toLowerCase();
     return normalizedWithGroup.filter((b) => {
       if (groupFilter !== "all" && b.group !== groupFilter) return false;
       if (!q) return true;

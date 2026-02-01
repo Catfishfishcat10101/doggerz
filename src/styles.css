@@ -427,7 +427,11 @@
 }
 
 .dz-btn--accent {
-  background: radial-gradient(circle at top, var(--accent-alt), var(--accent-alt-strong));
+  background: radial-gradient(
+    circle at top,
+    var(--accent-alt),
+    var(--accent-alt-strong)
+  );
   box-shadow: 0 10px 25px rgba(16, 185, 129, 0.35);
   color: #052e2a;
 }

@@ -84,11 +84,17 @@ export default function AppPreferencesEffects() {
       applyFlag("showHints", settings?.showHints !== false);
       applyFlag("showCritters", settings?.showCritters !== false);
       applyFlag("showWeatherFx", settings?.showWeatherFx !== false);
-      applyFlag("showBackgroundPhotos", settings?.showBackgroundPhotos !== false);
+      applyFlag(
+        "showBackgroundPhotos",
+        settings?.showBackgroundPhotos !== false
+      );
       applyFlag("showSceneVignette", settings?.showSceneVignette !== false);
       applyFlag("showSceneGrain", settings?.showSceneGrain !== false);
       applyFlag("hapticsEnabled", settings?.hapticsEnabled !== false);
-      applyFlag("dailyRemindersEnabled", settings?.dailyRemindersEnabled !== false);
+      applyFlag(
+        "dailyRemindersEnabled",
+        settings?.dailyRemindersEnabled !== false
+      );
 
       const fontScale = Number(settings?.fontScale ?? 1);
       if (Number.isFinite(fontScale) && fontScale !== 1) {

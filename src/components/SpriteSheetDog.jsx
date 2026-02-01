@@ -151,6 +151,7 @@ export default function SpriteSheetDog({
   const effectiveFallbackSrc = React.useMemo(() => {
     const candidates = [];
     if (fallbackSrc) candidates.push(String(fallbackSrc));
+    candidates.push(withBaseUrl("/sprites/doggerz-sit.png"));
     candidates.push(withBaseUrl(`/sprites/jack_russell_${stageKey}.webp`));
     candidates.push(withBaseUrl("/sprites/jack_russell_puppy.webp"));
     return candidates.filter(Boolean);
@@ -291,7 +292,10 @@ export default function SpriteSheetDog({
         Math.min(fallbackIndex, effectiveFallbackSrc.length - 1)
       ];
     return src ? (
-      <div className="group relative" style={{ width: safeSize, height: safeSize }}>
+      <div
+        className="group relative"
+        style={{ width: safeSize, height: safeSize }}
+      >
         <img
           src={src}
           alt=""
@@ -330,7 +334,10 @@ export default function SpriteSheetDog({
   const backgroundPosition = `${-frame.x * scale}px ${-frame.y * scale}px`;
 
   return (
-    <div className="group relative" style={{ width: safeSize, height: safeSize }}>
+    <div
+      className="group relative"
+      style={{ width: safeSize, height: safeSize }}
+    >
       <div
         className={className}
         style={{

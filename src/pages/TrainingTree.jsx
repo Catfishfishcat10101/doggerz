@@ -64,7 +64,9 @@ export default function TrainingTree() {
   }, [branch]);
 
   const filteredNodes = React.useMemo(() => {
-    const query = String(search || "").toLowerCase().trim();
+    const query = String(search || "")
+      .toLowerCase()
+      .trim();
     const diff = String(difficultyFilter || "all").toLowerCase();
     const tag = String(tagFilter || "all").toLowerCase();
 
@@ -79,10 +81,14 @@ export default function TrainingTree() {
     let list = withStatus.filter(({ node, status }) => {
       if (!showLocked && status === "locked") return false;
       if (query) {
-        const text = `${node.label} ${node.pose} ${(node.tags || []).join(" ")}`.toLowerCase();
+        const text =
+          `${node.label} ${node.pose} ${(node.tags || []).join(" ")}`.toLowerCase();
         if (!text.includes(query)) return false;
       }
-      if (diff !== "all" && String(node.difficulty || "").toLowerCase() !== diff)
+      if (
+        diff !== "all" &&
+        String(node.difficulty || "").toLowerCase() !== diff
+      )
         return false;
       if (tag !== "all") {
         const tags = (node.tags || []).map((t) => String(t).toLowerCase());
@@ -92,12 +98,12 @@ export default function TrainingTree() {
     });
 
     if (sortKey === "alpha") {
-      list = list.slice().sort((a, b) => a.node.label.localeCompare(b.node.label));
-    } else {
-      const weight = { unlocked: 0, available: 1, locked: 2 };
       list = list
         .slice()
-        .sort((a, b) => weight[a.status] - weight[b.status]);
+        .sort((a, b) => a.node.label.localeCompare(b.node.label));
+    } else {
+      const weight = { unlocked: 0, available: 1, locked: 2 };
+      list = list.slice().sort((a, b) => weight[a.status] - weight[b.status]);
     }
 
     return list;

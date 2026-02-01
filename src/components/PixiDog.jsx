@@ -49,7 +49,8 @@ export default function PixiDog({
         : qualitySetting;
 
     const motionEnabled = settings?.pixiDogMotion !== false && !reduceMotion;
-    const heartsEnabled = settings?.pixiDogShowHearts !== false && !reduceMotion;
+    const heartsEnabled =
+      settings?.pixiDogShowHearts !== false && !reduceMotion;
     const shadowEnabled = settings?.pixiDogShowShadow !== false;
     const resolutionCap = quality === "low" ? 1 : 2;
     const tickScale = quality === "low" ? 0.75 : 1;
@@ -214,7 +215,7 @@ export default function PixiDog({
     const rightBound = width * 0.67;
 
     let t = 0;
-    app.ticker.add((delta) => {
+    app.ticker.add((_delta) => {
       t += 0.02 * (motionEnabled ? 1 : 0) * tickScale;
 
       const mp = moodParams(mood);

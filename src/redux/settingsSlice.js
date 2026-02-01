@@ -180,8 +180,7 @@ function normalizeLoadedSettings(raw) {
   next.gameFxBranchAccent = next.gameFxBranchAccent !== false;
 
   // Cosmetics overlay UI
-  next.cosmeticsOverlayShowLabels =
-    next.cosmeticsOverlayShowLabels !== false;
+  next.cosmeticsOverlayShowLabels = next.cosmeticsOverlayShowLabels !== false;
   next.cosmeticsOverlayShowPreviewTags =
     next.cosmeticsOverlayShowPreviewTags !== false;
   const cosmeticsOverlayPosition = String(
@@ -516,7 +515,8 @@ const settingsSlice = createSlice({
     },
     setStoreSortKey(state, action) {
       const mode = String(action.payload || "").toLowerCase();
-      if (!["recommended", "price", "threshold", "alpha"].includes(mode)) return;
+      if (!["recommended", "price", "threshold", "alpha"].includes(mode))
+        return;
       state.storeSortKey = mode;
       saveToStorage(state);
     },
@@ -900,7 +900,8 @@ const settingsSlice = createSlice({
       state.traitImpactCompact = Boolean(next.traitImpactCompact);
       state.traitImpactShowMeter = next.traitImpactShowMeter !== false;
       state.traitImpactShowTips = next.traitImpactShowTips !== false;
-      state.traitImpactShowHighlights = next.traitImpactShowHighlights !== false;
+      state.traitImpactShowHighlights =
+        next.traitImpactShowHighlights !== false;
       state.dogCanvasMotion = next.dogCanvasMotion !== false;
       state.dogCanvasShadow = next.dogCanvasShadow !== false;
       state.dogCanvasScale = next.dogCanvasScale || "normal";
@@ -921,7 +922,8 @@ const settingsSlice = createSlice({
         next.cosmeticsOverlayShowLabels !== false;
       state.cosmeticsOverlayShowPreviewTags =
         next.cosmeticsOverlayShowPreviewTags !== false;
-      state.cosmeticsOverlayPosition = next.cosmeticsOverlayPosition || "top-left";
+      state.cosmeticsOverlayPosition =
+        next.cosmeticsOverlayPosition || "top-left";
       state.trainingShowLocked = next.trainingShowLocked !== false;
       state.trainingCompactCards = Boolean(next.trainingCompactCards);
       state.trainingShowDetails = next.trainingShowDetails !== false;

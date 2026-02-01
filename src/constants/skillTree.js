@@ -12,8 +12,7 @@ export const SKILL_TREE_BRANCHES = Object.freeze([
     id: "companion",
     name: "Companion",
     tagline: "Warm bonds and social sparkle.",
-    summary:
-      "Build deep bonds, soften decay, and unlock cozy memory perks.",
+    summary: "Build deep bonds, soften decay, and unlock cozy memory perks.",
     theme: {
       accent: "#e11d48", // rose-600
       tint: "rgba(244, 63, 94, 0.18)",

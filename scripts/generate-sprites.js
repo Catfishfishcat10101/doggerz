@@ -91,7 +91,10 @@ function parseFrameCounts(raw) {
     parsed = JSON.parse(text);
   } else {
     parsed = {};
-    const parts = text.split(",").map((p) => p.trim()).filter(Boolean);
+    const parts = text
+      .split(",")
+      .map((p) => p.trim())
+      .filter(Boolean);
     for (const part of parts) {
       const [name, count] = part.split(":").map((p) => p.trim());
       if (!name || !count) {
@@ -184,16 +187,8 @@ function pad(n) {
 }
 
 async function makeSheet(stage, config) {
-  const {
-    outDir,
-    frameCounts,
-    condition,
-    body,
-    mood,
-    tileW,
-    tileH,
-    cols,
-  } = config;
+  const { outDir, frameCounts, condition, body, mood, tileW, tileH, cols } =
+    config;
   const totalFrames = Object.values(frameCounts).reduce((a, b) => a + b, 0);
   if (!totalFrames) {
     throw new Error("frames must define at least one frame");

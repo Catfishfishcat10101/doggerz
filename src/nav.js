@@ -17,7 +17,9 @@ export const NAV_FOOTER = [
 
 export function getNavByLabel(label) {
   const key = String(label || "").toLowerCase();
-  return NAV.find((item) => String(item.label || "").toLowerCase() === key) || null;
+  return (
+    NAV.find((item) => String(item.label || "").toLowerCase() === key) || null
+  );
 }
 
 // Back-compat: some components import the nav array as a default export.

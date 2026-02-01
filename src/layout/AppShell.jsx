@@ -7,7 +7,9 @@ import { AppShellContext } from "./AppShellContext.js";
 
 export default function AppShell() {
   return (
-    <AppShellContext.Provider value={{ withinAppShell: true, mainId: "app-main" }}>
+    <AppShellContext.Provider
+      value={{ withinAppShell: true, mainId: "app-main" }}
+    >
       <div className="min-h-dvh flex flex-col bg-zinc-950 text-zinc-100">
         <a
           href="#app-main"

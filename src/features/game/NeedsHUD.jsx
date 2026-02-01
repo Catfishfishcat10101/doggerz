@@ -62,7 +62,8 @@ export default function NeedsHUD({ needs = {}, scene = null }) {
             <div className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[10px] text-white/70">
               Focus:{" "}
               <span className="font-semibold text-emerald-200">
-                {METRICS.find((m) => m.key === lowest.key)?.label || "Check all"}
+                {METRICS.find((m) => m.key === lowest.key)?.label ||
+                  "Check all"}
               </span>
             </div>
             {weatherLabel ? (
@@ -113,7 +114,9 @@ function VitalRow({ label, value = 0, tone = "emerald", isLow = false }) {
   return (
     <div
       className={`flex items-center gap-3 ${
-        isLow ? "rounded-2xl border border-amber-400/20 bg-amber-500/5 px-2 py-1" : ""
+        isLow
+          ? "rounded-2xl border border-amber-400/20 bg-amber-500/5 px-2 py-1"
+          : ""
       }`}
     >
       <div className="w-20 text-xs font-semibold text-white/70">{label}</div>
@@ -125,7 +128,9 @@ function VitalRow({ label, value = 0, tone = "emerald", isLow = false }) {
           />
         </div>
       </div>
-      <div className={`w-10 text-right text-[11px] font-semibold ${toneClass.text}`}>
+      <div
+        className={`w-10 text-right text-[11px] font-semibold ${toneClass.text}`}
+      >
         {pct}%
       </div>
     </div>

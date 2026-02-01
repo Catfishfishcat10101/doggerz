@@ -18,9 +18,9 @@ const DEFAULT_SPRITE_DIR = "/sprites";
 const DEFAULT_ATLAS_DIR = "/assets/atlas";
 
 export const DOG_STATIC_SPRITE_FILES_BY_STAGE_ID = Object.freeze({
-  PUPPY: "jack_russell_puppy.webp",
-  ADULT: "jack_russell_adult.webp",
-  SENIOR: "jack_russell_senior.webp",
+  PUPPY: "doggerz-sit.png",
+  ADULT: "doggerz-sit.png",
+  SENIOR: "doggerz-sit.png",
 });
 
 export const DOG_STAGE_LABEL_BY_STAGE_ID = Object.freeze({

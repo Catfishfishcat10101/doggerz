@@ -240,7 +240,9 @@ const userSlice = createSlice({
       saveUserToStorage(state);
     },
     setPreferredScene(state, action) {
-      const raw = String(action.payload || "").trim().toLowerCase();
+      const raw = String(action.payload || "")
+        .trim()
+        .toLowerCase();
       state.preferredScene = raw || "auto";
       saveUserToStorage(state);
     },
@@ -249,7 +251,9 @@ const userSlice = createSlice({
       saveUserToStorage(state);
     },
     setUiDensity(state, action) {
-      const raw = String(action.payload || "").trim().toLowerCase();
+      const raw = String(action.payload || "")
+        .trim()
+        .toLowerCase();
       if (!["standard", "compact", "spacious"].includes(raw)) return;
       state.uiDensity = raw;
       saveUserToStorage(state);

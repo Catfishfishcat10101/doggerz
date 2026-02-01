@@ -39,8 +39,7 @@ export const DOG_SAVE_SCHEMA_VERSION = 1;
 const clamp = (n, lo = 0, hi = 100) =>
   Math.max(lo, Math.min(hi, Number.isFinite(n) ? n : 0));
 
-const clamp01 = (n) =>
-  Math.max(0, Math.min(1, Number.isFinite(n) ? n : 0));
+const clamp01 = (n) => Math.max(0, Math.min(1, Number.isFinite(n) ? n : 0));
 
 const DECAY_PER_HOUR = {
   hunger: 8,

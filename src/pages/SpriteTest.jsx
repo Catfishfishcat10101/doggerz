@@ -30,10 +30,7 @@ export default function SpriteTest() {
     () => withBaseUrl("/icons/doggerz-192.png"),
     []
   );
-  const atlasUrls = React.useMemo(
-    () => getDogAtlasUrls(stage),
-    [stage]
-  );
+  const atlasUrls = React.useMemo(() => getDogAtlasUrls(stage), [stage]);
   const pixiUrl = React.useMemo(
     () => getDogPixiSheetUrl(stage, condition),
     [stage, condition]
@@ -144,10 +141,18 @@ export default function SpriteTest() {
             Fallback: <code>{fallbackSrc}</code>
           </div>
           <div className="mt-2 text-[11px] text-white/60 space-y-1">
-            <div>Atlas JSON: <code>{atlasUrls.jsonUrl}</code></div>
-            <div>Atlas PNG: <code>{atlasUrls.imageUrl}</code></div>
-            <div>Pixi Sheet: <code>{pixiUrl}</code></div>
-            <div>Static: <code>{staticUrl}</code></div>
+            <div>
+              Atlas JSON: <code>{atlasUrls.jsonUrl}</code>
+            </div>
+            <div>
+              Atlas PNG: <code>{atlasUrls.imageUrl}</code>
+            </div>
+            <div>
+              Pixi Sheet: <code>{pixiUrl}</code>
+            </div>
+            <div>
+              Static: <code>{staticUrl}</code>
+            </div>
           </div>
         </div>
 

@@ -108,9 +108,7 @@ export default function Landing() {
                         <div className="text-sm font-semibold text-zinc-100">
                           {item.title}
                         </div>
-                        <div className="text-xs text-zinc-400">
-                          {item.desc}
-                        </div>
+                        <div className="text-xs text-zinc-400">{item.desc}</div>
                       </div>
                     </div>
                   </div>
@@ -123,10 +121,7 @@ export default function Landing() {
           </div>
         </section>
 
-        <section
-          id="how"
-          className="grid gap-4 md:grid-cols-3"
-        >
+        <section id="how" className="grid gap-4 md:grid-cols-3">
           {[
             {
               title: "Adopt & name",

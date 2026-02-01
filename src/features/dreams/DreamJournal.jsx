@@ -24,7 +24,9 @@ function formatEntryDate(ts) {
 }
 
 function normalizeKind(value) {
-  const raw = String(value || "").trim().toLowerCase();
+  const raw = String(value || "")
+    .trim()
+    .toLowerCase();
   if (!raw) return "dream";
   return raw;
 }
@@ -219,9 +221,7 @@ export default function DreamJournal({ dreams }) {
           </button>
           <button
             type="button"
-            onClick={() =>
-              dispatch(setDreamJournalCompactCards(!compactCards))
-            }
+            onClick={() => dispatch(setDreamJournalCompactCards(!compactCards))}
             className="rounded-full border border-white/10 bg-black/30 px-3 py-1 text-[11px] text-zinc-200 hover:bg-black/45"
           >
             {compactCards ? "Roomy cards" : "Compact cards"}

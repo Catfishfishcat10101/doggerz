@@ -1,7 +1,8 @@
 const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
 const toNumber = (value, fallback = 0) => {
   if (value == null) return fallback;
-  if (typeof value === "number") return Number.isFinite(value) ? value : fallback;
+  if (typeof value === "number")
+    return Number.isFinite(value) ? value : fallback;
   if (typeof value === "string") {
     const n = Number(value);
     return Number.isFinite(n) ? n : fallback;
@@ -66,8 +67,14 @@ export function statTrend(stat) {
   if (h.length < 2) return "flat";
   const last = h[h.length - 1];
   const prev = h[h.length - 2];
-  const lastValue = toNumber(last?.value ?? last?.v ?? last?.val ?? last?.sample ?? last?.amount, 0);
-  const prevValue = toNumber(prev?.value ?? prev?.v ?? prev?.val ?? prev?.sample ?? prev?.amount, 0);
+  const lastValue = toNumber(
+    last?.value ?? last?.v ?? last?.val ?? last?.sample ?? last?.amount,
+    0
+  );
+  const prevValue = toNumber(
+    prev?.value ?? prev?.v ?? prev?.val ?? prev?.sample ?? prev?.amount,
+    0
+  );
   if (lastValue > prevValue) return "up";
   if (lastValue < prevValue) return "down";
   return "flat";

@@ -110,10 +110,7 @@ export function collectEarnedBadgeIds(dog) {
     ? ["temperament_unlocked"]
     : [];
 
-  const streakDays = Math.max(
-    0,
-    Number(dog?.streak?.currentStreakDays || 0)
-  );
+  const streakDays = Math.max(0, Number(dog?.streak?.currentStreakDays || 0));
   const streakBadges = [];
   if (streakDays >= 7) streakBadges.push("streak_7");
   if (streakDays >= 30) streakBadges.push("streak_30");

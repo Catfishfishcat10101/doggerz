@@ -1,4 +1,5 @@
 // src/pages/RainbowBridge.jsx
+import * as React from "react";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -167,8 +168,8 @@ export default function RainbowBridge() {
               Ready to close this chapter?
             </h2>
             <p className="mt-3 text-sm text-zinc-300">
-              You can revisit this space anytime. Completing the memorial
-              simply marks the journey with gratitude and closure.
+              You can revisit this space anytime. Completing the memorial simply
+              marks the journey with gratitude and closure.
             </p>
             <div className="mt-6 flex flex-wrap gap-2">
               <button

@@ -209,11 +209,7 @@ export default function TraitImpactIndicator({ traitKey, value }) {
   const magnitude = clamp01(Math.abs(numericValue) / 100);
   const strength = strengthLabel(Math.abs(numericValue));
   const side =
-    strength === "Balanced"
-      ? "balanced"
-      : numericValue >= 0
-        ? "right"
-        : "left";
+    strength === "Balanced" ? "balanced" : numericValue >= 0 ? "right" : "left";
   const sides = getTraitSides(String(traitKey || ""));
   const directionLabel = side === "right" ? sides.right : sides.left;
   const summary =

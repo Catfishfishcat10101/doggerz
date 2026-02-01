@@ -123,7 +123,9 @@ export default function MechanicsPanel({
           </button>
           <button
             type="button"
-            onClick={() => dispatch(setMechanicsShowUnlockLine(!showUnlockLine))}
+            onClick={() =>
+              dispatch(setMechanicsShowUnlockLine(!showUnlockLine))
+            }
             className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-white/70 hover:bg-white/10"
           >
             {showUnlockLine ? "Hide unlocks" : "Show unlocks"}

@@ -288,9 +288,7 @@ export default function Potty() {
               <input
                 type="checkbox"
                 checked={autoReturn}
-                onChange={(e) =>
-                  dispatch(setPottyAutoReturn(e.target.checked))
-                }
+                onChange={(e) => dispatch(setPottyAutoReturn(e.target.checked))}
               />
               Auto-return to yard after success
             </label>
@@ -365,21 +363,20 @@ export default function Potty() {
             <ul className="list-disc list-inside text-xs text-zinc-700 dark:text-zinc-300 space-y-1">
               <li>
                 Take your pup out{" "}
-                <span className="font-semibold">right after</span> feeding,
-                play sessions, and naps.
+                <span className="font-semibold">right after</span> feeding, play
+                sessions, and naps.
               </li>
               <li>
-                Use the <span className="font-semibold">Potty Walk</span>{" "}
-                button on the main game screen when you successfully go
-                outside.
+                Use the <span className="font-semibold">Potty Walk</span> button
+                on the main game screen when you successfully go outside.
               </li>
               <li>
                 Try to keep a consistent schedule. Irregular times make
                 potty-training slower and more confusing.
               </li>
               <li>
-                Don&apos;t punish accidents; clean them up and give more
-                chances to succeed outside.
+                Don&apos;t punish accidents; clean them up and give more chances
+                to succeed outside.
               </li>
             </ul>
           ) : (

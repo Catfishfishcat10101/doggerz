@@ -23,7 +23,9 @@ function loadRememberedEmail() {
   if (!canUseStorage()) return { remember: false, email: "" };
   try {
     const remember = window.localStorage.getItem(STORAGE_REMEMBER) === "1";
-    const email = remember ? window.localStorage.getItem(STORAGE_EMAIL) || "" : "";
+    const email = remember
+      ? window.localStorage.getItem(STORAGE_EMAIL) || ""
+      : "";
     return { remember, email };
   } catch {
     return { remember: false, email: "" };

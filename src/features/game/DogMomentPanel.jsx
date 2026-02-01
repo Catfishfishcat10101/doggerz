@@ -45,9 +45,10 @@ export default function DogMomentPanel() {
 
   const expiresAt = Number(active.expiresAt || 0);
   const msLeft = expiresAt ? Math.max(0, expiresAt - now) : null;
-  const totalMs = expiresAt && active?.createdAt
-    ? Math.max(1, expiresAt - Number(active.createdAt))
-    : null;
+  const totalMs =
+    expiresAt && active?.createdAt
+      ? Math.max(1, expiresAt - Number(active.createdAt))
+      : null;
   const progressPct =
     totalMs && msLeft != null
       ? Math.max(0, Math.min(100, Math.round((msLeft / totalMs) * 100)))
@@ -75,9 +76,7 @@ export default function DogMomentPanel() {
               }`}
             >
               Choose before{" "}
-              <span className="font-semibold">
-                {formatSecondsLeft(msLeft)}
-              </span>
+              <span className="font-semibold">{formatSecondsLeft(msLeft)}</span>
               .
             </div>
           ) : (

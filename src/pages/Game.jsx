@@ -61,12 +61,9 @@ export default function GamePage() {
 
   const reduceTransparency = settings?.reduceTransparency === true;
   const showWeatherFx = settings?.showWeatherFx !== false && !perfReduced;
-  const showVignette =
-    settings?.showSceneVignette !== false && !perfReduced;
+  const showVignette = settings?.showSceneVignette !== false && !perfReduced;
   const showGrain =
-    settings?.showSceneGrain !== false &&
-    !reduceTransparency &&
-    !perfReduced;
+    settings?.showSceneGrain !== false && !reduceTransparency && !perfReduced;
 
   const weatherKey = useMemo(
     () => normalizeWeatherCondition(weather),

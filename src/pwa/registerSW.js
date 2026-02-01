@@ -26,9 +26,12 @@ export function registerSW(options = {}) {
 
     const doRegister = async () => {
       try {
-        const reg = await navigator.serviceWorker.register(withBaseUrl(swPath), {
-          scope: scope ? withBaseUrl(scope) : undefined,
-        });
+        const reg = await navigator.serviceWorker.register(
+          withBaseUrl(swPath),
+          {
+            scope: scope ? withBaseUrl(scope) : undefined,
+          }
+        );
 
         if (typeof onSuccess === "function") onSuccess(reg);
 

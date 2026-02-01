@@ -29,7 +29,7 @@ export function computeTrainingSuccessChance({
   lastTrainingSuccess = true,
   environment = "yard",
   difficulty = "normal",
-  rng = Math.random,
+  rng: _rng = Math.random,
 } = {}) {
   const voice = String(input || "").toLowerCase() === "voice";
   const env = String(environment || "yard").toLowerCase();
@@ -108,10 +108,7 @@ export function computeTrainingDifficulty({
   return "normal";
 }
 
-export function computeTrainingOutcome({
-  chance = 0,
-  rng = Math.random,
-} = {}) {
+export function computeTrainingOutcome({ chance = 0, rng = Math.random } = {}) {
   const roll = typeof rng === "function" ? rng() : Math.random();
   return roll <= clamp01(chance);
 }

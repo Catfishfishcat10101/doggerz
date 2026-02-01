@@ -567,9 +567,7 @@ export default function FaqPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() =>
-                    dispatch(setFaqCompactView(!compactView))
-                  }
+                  onClick={() => dispatch(setFaqCompactView(!compactView))}
                   className="rounded-full border border-zinc-800 bg-zinc-950/60 px-3 py-1 text-zinc-200 hover:border-emerald-500/70 hover:text-emerald-200"
                 >
                   {compactView ? "Roomy" : "Compact"}

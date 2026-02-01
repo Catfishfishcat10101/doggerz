@@ -32,8 +32,8 @@ export function computeRustDelta({
   const factor = currentLevel >= 80 ? 1.15 : currentLevel >= 50 ? 1.0 : 0.85;
 
   const streakReducer = 1 - Math.min(0.25, clamp(trainingStreak, 0, 10) * 0.02);
-  const bondReducer = 1 - Math.min(0.2, clamp(bond, 0, 100) / 100 * 0.2);
-  const focusReducer = 1 - Math.min(0.12, clamp(focus, 0, 100) / 100 * 0.12);
+  const bondReducer = 1 - Math.min(0.2, (clamp(bond, 0, 100) / 100) * 0.2);
+  const focusReducer = 1 - Math.min(0.12, (clamp(focus, 0, 100) / 100) * 0.12);
   const diff = String(difficulty || "normal").toLowerCase();
   const diffFactor =
     diff === "easy"
@@ -66,8 +66,8 @@ export function applyPracticeToLevel(level, practiceAmount, opts = {}) {
   // Practice is more effective at low levels; slower at high levels.
   const baseFactor = level >= 80 ? 0.5 : level >= 50 ? 0.75 : 1.0;
 
-  const bondBoost = Math.min(0.15, clamp(bond, 0, 100) / 100 * 0.15);
-  const focusBoost = Math.min(0.1, clamp(focus, 0, 100) / 100 * 0.1);
+  const bondBoost = Math.min(0.15, (clamp(bond, 0, 100) / 100) * 0.15);
+  const focusBoost = Math.min(0.1, (clamp(focus, 0, 100) / 100) * 0.1);
   const energyBoost = energy >= 70 ? 0.05 : energy <= 25 ? -0.08 : 0;
   const streakBoost = Math.min(0.08, clamp(trainingStreak, 0, 8) * 0.01);
   const spicyPenalty = isSpicy ? -0.06 : 0;

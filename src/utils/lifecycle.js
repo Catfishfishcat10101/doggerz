@@ -87,7 +87,9 @@ export function getLifeStageLabel(stageId) {
 }
 
 export function getNextLifeStage(stageId) {
-  const key = String(stageId || "PUPPY").toUpperCase().trim();
+  const key = String(stageId || "PUPPY")
+    .toUpperCase()
+    .trim();
   if (key === "PUPPY") return { id: "ADULT", ...LIFE_STAGES.ADULT };
   if (key === "ADULT") return { id: "SENIOR", ...LIFE_STAGES.SENIOR };
   return null;
@@ -113,14 +115,7 @@ export function getDogAgeProgress(adoptedAtMs, now = Date.now()) {
  * Map a life stage to the static Jack Russell sprite.
  */
 export function getSpriteForLifeStage(_stageId) {
-  const stage = String(_stageId || "PUPPY").toUpperCase();
-  if (stage.startsWith("ADULT")) {
-    return withBaseUrl("/sprites/jack_russell_adult.webp");
-  }
-  if (stage.startsWith("SENIOR")) {
-    return withBaseUrl("/sprites/jack_russell_senior.webp");
-  }
-  return withBaseUrl("/sprites/jack_russell_puppy.webp");
+  return withBaseUrl("/sprites/doggerz-sit.png");
 }
 
 /**
