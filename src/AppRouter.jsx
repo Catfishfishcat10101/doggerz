@@ -44,7 +44,14 @@ const stripLeadingSlash = (path) => String(path || "").replace(/^\//, "");
 
 function makeCrashFallback(title, subtitle) {
   return function RouteCrashFallback({ error }) {
-    return <CrashFallback title={title} subtitle={subtitle} error={error} />;
+    return (
+      <CrashFallback
+        title={title}
+        subtitle={subtitle}
+        error={error}
+        reset={undefined}
+      />
+    );
   };
 }
 
@@ -269,6 +276,7 @@ const router = createBrowserRouter(
   ],
   {
     future: {
+      // @ts-ignore
       v7_startTransition: true,
     },
   }

@@ -164,6 +164,7 @@ export const TRAINING_TREE = /** @type {const} */ ({
 });
 
 export function allSkillNodes() {
+  // @ts-ignore
   return Object.values(TRAINING_TREE).flatMap((b) => b.nodes);
 }
 

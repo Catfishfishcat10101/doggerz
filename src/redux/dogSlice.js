@@ -51,16 +51,17 @@ const DECAY_PER_HOUR = {
   hunger: 8,
   thirst: 7,
   happiness: 6,
-  energy: 5,
+  energy: 8,
   cleanliness: 3,
 };
 const DECAY_SPEED = 0.4;
 
 // Sleep + needs tuning (kept small and deterministic).
-const SLEEP_RECOVERY_PER_HOUR = 18;
+const SLEEP_RECOVERY_PER_HOUR = 45;
 const SLEEP_NEEDS_MULTIPLIER = 0.85;
-const AUTO_SLEEP_THRESHOLD = 12;
-const AUTO_WAKE_THRESHOLD = 70;
+// Auto-sleep earlier so the dog rests without manual input.
+const AUTO_SLEEP_THRESHOLD = 40;
+const AUTO_WAKE_THRESHOLD = 80;
 
 // Potty system: fill over time + accidents when ignored.
 const POTTY_FILL_PER_HOUR = 10;
@@ -967,7 +968,7 @@ function applyDecay(state, now = nowMs()) {
       (state.memory.neglectStrikes || 0) + 1,
       999
     );
-    applyBondLoss(state, 2, now);
+    // Bond no longer decays from passive neglect; only explicit actions raise it.
 
     // Neglect nudges personality toward cautious/independent/reserved.
     applyPersonalityShift(state, {
@@ -1580,7 +1581,7 @@ function applyAccidentInternal(state, now = nowMs()) {
   potty.totalAccidents += 1;
   potty.lastAccidentAt = now;
 
-  // Accidents leave a mess and hurt morale/bond a bit.
+  // Accidents leave a mess and hurt morale a bit.
   state.poopCount = Math.max(0, Number(state.poopCount || 0)) + 1;
   state.stats.cleanliness = clamp(
     Number(state.stats?.cleanliness || 0) - 12,
@@ -1592,7 +1593,6 @@ function applyAccidentInternal(state, now = nowMs()) {
     0,
     100
   );
-  applyBondLoss(state, 1, now);
 
   // Accidents usually wake the dog up.
   state.isAsleep = false;

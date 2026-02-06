@@ -195,10 +195,12 @@ export function useDayNightBackground(options = {}) {
       const day = await firstAvailableUrl([
         withBaseUrl("/backgrounds/backyard-day-wide.webp"),
         withBaseUrl("/backgrounds/backyard-day.webp"),
+        withBaseUrl("/backgrounds/yard_day.png"),
       ]);
       const night = await firstAvailableUrl([
         withBaseUrl("/backgrounds/backyard-night-wide.webp"),
         withBaseUrl("/backgrounds/backyard-night.webp"),
+        withBaseUrl("/backgrounds/yard_night.png"),
       ]);
 
       if (!mounted) return;

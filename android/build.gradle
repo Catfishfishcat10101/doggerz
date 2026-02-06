@@ -29,10 +29,28 @@ allprojects {
 // source/target compatibility across all Android subprojects.
 subprojects { subproj ->
     subproj.afterEvaluate {
-        if (subproj.hasProperty('android') && subproj.android?.hasProperty('compileOptions')) {
-            subproj.android.compileOptions {
-                sourceCompatibility JavaVersion.VERSION_17
-                targetCompatibility JavaVersion.VERSION_17
+        if (subproj.hasProperty('android')) {
+            def compileSdkVal = rootProject.ext.compileSdkVersion
+            if (subproj.android?.hasProperty('compileSdk') && !subproj.android.compileSdk) {
+                subproj.android.compileSdk = compileSdkVal
+            } else if (subproj.android?.hasProperty('compileSdkVersion') && !subproj.android.compileSdkVersion) {
+                subproj.android.compileSdkVersion compileSdkVal
+            }
+
+            if (subproj.android?.hasProperty('compileOptions')) {
+                subproj.android.compileOptions {
+                    sourceCompatibility JavaVersion.VERSION_17
+                    targetCompatibility JavaVersion.VERSION_17
+                }
+            }
+        }
+
+        def kotlinExt = subproj.extensions.findByName('kotlin')
+        if (kotlinExt != null) {
+            try {
+                kotlinExt.jvmToolchain(17)
+            } catch (Throwable ignored) {
+                // ignore if toolchain API is unavailable
             }
         }
     }
@@ -41,17 +59,29 @@ subprojects { subproj ->
     // Some plugin modules may default Kotlin's jvmTarget to 21, which breaks builds
     // when Gradle/JDK is pinned to 17.
     subproj.plugins.withId('org.jetbrains.kotlin.android') {
-        subproj.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
-            kotlinOptions {
-                jvmTarget = '17'
+        try {
+            subproj.tasks.matching { task ->
+                task.name.toLowerCase().contains('kotlin')
+            }.configureEach { task ->
+                if (task.hasProperty('kotlinOptions')) {
+                    task.kotlinOptions.jvmTarget = '17'
+                }
             }
+        } catch (Throwable ignored) {
+            // Kotlin plugin not on classpath for this module.
         }
     }
     subproj.plugins.withId('kotlin-android') {
-        subproj.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
-            kotlinOptions {
-                jvmTarget = '17'
+        try {
+            subproj.tasks.matching { task ->
+                task.name.toLowerCase().contains('kotlin')
+            }.configureEach { task ->
+                if (task.hasProperty('kotlinOptions')) {
+                    task.kotlinOptions.jvmTarget = '17'
+                }
             }
+        } catch (Throwable ignored) {
+            // Kotlin plugin not on classpath for this module.
         }
     }
 }

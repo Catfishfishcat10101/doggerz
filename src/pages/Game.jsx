@@ -15,6 +15,7 @@ import {
   getWeatherLabel,
   normalizeWeatherCondition,
 } from "@/utils/weather.js";
+import { withBaseUrl } from "@/utils/assetUrl.js";
 
 function titleCase(s) {
   const str = String(s || "").trim();
@@ -45,12 +46,18 @@ export default function GamePage() {
   const settings = useSelector(selectSettings);
 
   const perfReduced = shouldReduceEffects(settings?.perfMode);
-  const showBackgroundPhotos =
-    settings?.showBackgroundPhotos !== false && !perfReduced;
+  const showBackgroundPhotos = true;
   const { style, isNight, timeOfDayBucket } = useDayNightBackground({
     zip,
     enableImages: showBackgroundPhotos,
   });
+  const yardFallback = withBaseUrl("/backgrounds/yard_day.png");
+  const mergedStyle = {
+    backgroundImage: `url('${yardFallback}')`,
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    backgroundRepeat: "no-repeat",
+  };
 
   const reduceMotion =
     settings?.reduceMotion === "on" ||
@@ -61,9 +68,8 @@ export default function GamePage() {
 
   const reduceTransparency = settings?.reduceTransparency === true;
   const showWeatherFx = settings?.showWeatherFx !== false && !perfReduced;
-  const showVignette = settings?.showSceneVignette !== false && !perfReduced;
-  const showGrain =
-    settings?.showSceneGrain !== false && !reduceTransparency && !perfReduced;
+  const showVignette = false;
+  const showGrain = false;
 
   const weatherKey = useMemo(
     () => normalizeWeatherCondition(weather),
@@ -89,7 +95,7 @@ export default function GamePage() {
   return (
     <div
       className="relative min-h-dvh overflow-hidden"
-      style={{ ...style, "--weather-accent": weatherAccent }}
+      style={{ ...mergedStyle, "--weather-accent": weatherAccent }}
       data-weather={weatherKey}
     >
       {/* Extra vignette + grain to sell depth behind the UI */}
