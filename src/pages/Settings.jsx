@@ -56,6 +56,7 @@ import { APP_VERSION } from "../utils/appVersion.js";
 import { useToast } from "@/components/toastContext.js";
 import {
   canUseNotifications,
+  getNotificationPermission,
   requestNotificationsPermission,
   showDoggerzNotification,
 } from "../utils/notifications.js";
@@ -240,18 +241,13 @@ export default function Settings() {
   const [cloudActionStatus, setCloudActionStatus] = useState("");
   const [localActionStatus, setLocalActionStatus] = useState("");
   const [notificationPermission, setNotificationPermission] = useState(() => {
-    if (!canUseNotifications()) return "unsupported";
-    return Notification.permission;
+    return getNotificationPermission();
   });
   const [lastReminder, setLastReminder] = useState(() => getLastReminder());
 
   useEffect(() => {
     const update = () => {
-      if (!canUseNotifications()) {
-        setNotificationPermission("unsupported");
-      } else {
-        setNotificationPermission(Notification.permission);
-      }
+      setNotificationPermission(getNotificationPermission());
     };
     update();
     document.addEventListener("visibilitychange", update);

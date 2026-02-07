@@ -23,6 +23,11 @@ import {
 } from "@/redux/weatherSlice.js";
 import { loadDogFromCloud, saveDogToCloud } from "@/redux/dogThunks.js";
 import { selectUserZip, setUser } from "@/redux/userSlice.js";
+import {
+  getStoredValue,
+  removeStoredValue,
+  setStoredValue,
+} from "@/utils/nativeStorage.js";
 
 const TICK_INTERVAL_MS = 60_000; // 60 seconds
 const CLOUD_SAVE_DEBOUNCE = 3_000; // 3 seconds
@@ -344,7 +349,7 @@ export default function DogAIEngine() {
         },
       };
       const key = storageKeyRef.current || getDogStorageKey(userIdRef.current);
-      localStorage.setItem(key, JSON.stringify(persisted));
+      setStoredValue(key, JSON.stringify(persisted));
     } catch (err) {
       console.error("[Doggerz] Failed to flush local save", err);
     }
@@ -408,108 +413,123 @@ export default function DogAIEngine() {
 
   // Swap local dog storage when switching auth contexts (guest <-> logged-in).
   useEffect(() => {
-    const nextKey = getDogStorageKey(userId);
-    if (storageKeyRef.current === nextKey) return;
+    let cancelled = false;
 
-    flushLocalSave();
-    storageKeyRef.current = nextKey;
+    const run = async () => {
+      const nextKey = getDogStorageKey(userId);
+      if (storageKeyRef.current === nextKey) return;
 
-    let parsed = null;
-    try {
-      let localData = localStorage.getItem(nextKey);
-      if (!localData && nextKey === getDogStorageKey(null)) {
-        const legacy = localStorage.getItem(DOG_STORAGE_KEY);
-        if (legacy) {
-          localData = legacy;
-          try {
-            localStorage.setItem(nextKey, legacy);
-            localStorage.removeItem(DOG_STORAGE_KEY);
-          } catch {
-            // ignore migration errors
+      flushLocalSave();
+      storageKeyRef.current = nextKey;
+
+      let parsed = null;
+      try {
+        let localData = await getStoredValue(nextKey);
+        if (!localData && nextKey === getDogStorageKey(null)) {
+          const legacy = await getStoredValue(DOG_STORAGE_KEY);
+          if (legacy) {
+            localData = legacy;
+            await setStoredValue(nextKey, legacy);
+            await removeStoredValue(DOG_STORAGE_KEY);
           }
         }
+        if (localData) parsed = reviveDogDates(JSON.parse(localData));
+      } catch (err) {
+        console.warn("[Doggerz] Failed to load dog from new storage key", err);
       }
-      if (localData) parsed = reviveDogDates(JSON.parse(localData));
-    } catch (err) {
-      console.warn("[Doggerz] Failed to load dog from new storage key", err);
-    }
 
-    dispatch(resetDogState());
-    if (parsed) {
-      dispatch(hydrateDog(parsed));
-    }
+      if (cancelled) return;
+      dispatch(resetDogState());
+      if (parsed) {
+        dispatch(hydrateDog(parsed));
+      }
+    };
+
+    run();
+
+    return () => {
+      cancelled = true;
+    };
   }, [dispatch, flushLocalSave, userId]);
 
-  // 1. Hydrate on first mount (localStorage → Redux, then optional cloud)
+  // 1. Hydrate on first mount (Preferences/localStorage → Redux, then optional cloud)
   useEffect(() => {
     if (hasHydratedRef.current) return;
     hasHydratedRef.current = true;
 
-    // LocalStorage hydrate (skip if store already preloaded it)
-    if (!dogState?.adoptedAt) {
-      try {
-        const activeKey =
-          storageKeyRef.current || getDogStorageKey(userIdRef.current);
-        let localData = localStorage.getItem(activeKey);
+    let cancelled = false;
 
-        if (!localData && activeKey === getDogStorageKey(null)) {
-          const legacy = localStorage.getItem(DOG_STORAGE_KEY);
-          if (legacy) {
-            localData = legacy;
-            try {
-              localStorage.setItem(activeKey, legacy);
-              localStorage.removeItem(DOG_STORAGE_KEY);
-            } catch {
-              // ignore migration errors
+    const run = async () => {
+      // Preferences/localStorage hydrate (skip if store already preloaded it)
+      if (!dogState?.adoptedAt) {
+        try {
+          const activeKey =
+            storageKeyRef.current || getDogStorageKey(userIdRef.current);
+          let localData = await getStoredValue(activeKey);
+
+          if (!localData && activeKey === getDogStorageKey(null)) {
+            const legacy = await getStoredValue(DOG_STORAGE_KEY);
+            if (legacy) {
+              localData = legacy;
+              await setStoredValue(activeKey, legacy);
+              await removeStoredValue(DOG_STORAGE_KEY);
             }
           }
-        }
 
-        if (localData) {
-          const parsed = JSON.parse(localData);
-          dispatch(hydrateDog(reviveDogDates(parsed)));
-          console.log("[Doggerz] Hydrated dog from localStorage");
-        }
-      } catch (err) {
-        console.error("[Doggerz] Failed to parse localStorage dog data", err);
+          if (!cancelled && localData) {
+            const parsed = JSON.parse(localData);
+            dispatch(hydrateDog(reviveDogDates(parsed)));
+            console.log("[Doggerz] Hydrated dog from storage");
+          }
+        } catch (err) {
+          console.error("[Doggerz] Failed to parse dog data", err);
 
-        // Don't silently wipe user data. Record a recoverable error so the UI can
-        // offer reset/restore options.
-        try {
-          localStorage.setItem(
-            HYDRATE_ERROR_KEY,
-            JSON.stringify({
-              type: "DOG_SAVE_PARSE_FAILED",
-              at: new Date().toISOString(),
-            })
-          );
-        } catch {
-          // ignore
+          // Don't silently wipe user data. Record a recoverable error so the UI can
+          // offer reset/restore options.
+          try {
+            await setStoredValue(
+              HYDRATE_ERROR_KEY,
+              JSON.stringify({
+                type: "DOG_SAVE_PARSE_FAILED",
+                at: new Date().toISOString(),
+              })
+            );
+          } catch {
+            // ignore
+          }
         }
       }
-    }
 
-    // Cloud hydrate if logged in at mount time
-    if (auth?.currentUser) {
-      const thunkPromise = dispatch(loadDogFromCloud());
+      if (cancelled) return;
 
-      // RTK's unwrap if available; fall back to raw promise
-      if (thunkPromise && typeof thunkPromise.unwrap === "function") {
-        thunkPromise.unwrap().catch((err) => {
-          console.error("[Doggerz] Failed to load dog from cloud", err);
-        });
-      } else if (thunkPromise?.catch) {
-        thunkPromise.catch((err) => {
-          console.error("[Doggerz] Failed to load dog from cloud", err);
-        });
+      // Cloud hydrate if logged in at mount time
+      if (auth?.currentUser) {
+        const thunkPromise = dispatch(loadDogFromCloud());
+
+        // RTK's unwrap if available; fall back to raw promise
+        if (thunkPromise && typeof thunkPromise.unwrap === "function") {
+          thunkPromise.unwrap().catch((err) => {
+            console.error("[Doggerz] Failed to load dog from cloud", err);
+          });
+        } else if (thunkPromise?.catch) {
+          thunkPromise.catch((err) => {
+            console.error("[Doggerz] Failed to load dog from cloud", err);
+          });
+        }
       }
-    }
 
-    // Register session start (catch-up decay, penalties, streak, etc.)
-    const now = Date.now();
-    dispatch(
-      registerSessionStart({ now, timeBucket: getLocalTimeBucket(now) })
-    );
+      // Register session start (catch-up decay, penalties, streak, etc.)
+      const now = Date.now();
+      dispatch(
+        registerSessionStart({ now, timeBucket: getLocalTimeBucket(now) })
+      );
+    };
+
+    run();
+
+    return () => {
+      cancelled = true;
+    };
   }, [dispatch, dogState?.adoptedAt]);
 
   // 1b. If user logs in *after* mount, pull from cloud once
@@ -551,7 +571,7 @@ export default function DogAIEngine() {
     }
   }, [dispatch, userId]);
 
-  // 2. Debounced save to localStorage (reduces churn as state grows: journal, mood history, etc.)
+  // 2. Debounced save to storage (Preferences + localStorage fallback).
   useEffect(() => {
     if (!dogState) return;
 
@@ -571,9 +591,9 @@ export default function DogAIEngine() {
         };
         const key =
           storageKeyRef.current || getDogStorageKey(userIdRef.current);
-        localStorage.setItem(key, JSON.stringify(persisted));
+        setStoredValue(key, JSON.stringify(persisted));
       } catch (err) {
-        console.error("[Doggerz] Failed to save to localStorage", err);
+        console.error("[Doggerz] Failed to save dog state", err);
       }
     }, 400);
     return () => {

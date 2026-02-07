@@ -6,7 +6,11 @@ import { useSelector } from "react-redux";
 
 import { selectDog } from "@/redux/dogSlice.js";
 import { selectSettings } from "@/redux/settingsSlice.js";
-import { showDoggerzNotification } from "@/utils/notifications.js";
+import {
+  cancelLifeLoopNotifications,
+  scheduleLifeLoopNotifications,
+  showDoggerzNotification,
+} from "@/utils/notifications.js";
 import {
   buildReminder,
   fireReminder,
@@ -62,9 +66,7 @@ export default function CheckInReminders() {
   React.useEffect(() => {
     if (!settings?.dailyRemindersEnabled) return undefined;
     if (!lastSeenAt) return undefined;
-    if (typeof window !== "undefined" && !window.isSecureContext) {
-      return undefined;
-    }
+    let cancelled = false;
 
     const root = document.documentElement;
     const tier = getCheckInTier(lastSeenAt).tier;
@@ -108,16 +110,34 @@ export default function CheckInReminders() {
       }
     };
 
-    clearTimers();
-    REMINDERS.forEach(schedule);
+    const run = async () => {
+      const scheduled = await scheduleLifeLoopNotifications({
+        lastSeenAt,
+        reminders: REMINDERS,
+      });
+      if (cancelled || scheduled) return;
 
-    return () => clearTimers();
+      if (typeof window !== "undefined" && !window.isSecureContext) {
+        return;
+      }
+
+      clearTimers();
+      REMINDERS.forEach(schedule);
+    };
+
+    run();
+
+    return () => {
+      cancelled = true;
+      clearTimers();
+    };
   }, [clearTimers, lastSeenAt, settings?.dailyRemindersEnabled]);
 
   React.useEffect(() => {
     if (settings?.dailyRemindersEnabled) return;
     const root = document.documentElement;
     delete root.dataset.checkinTier;
+    cancelLifeLoopNotifications();
     clearTimers();
   }, [clearTimers, settings?.dailyRemindersEnabled]);
 
