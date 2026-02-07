@@ -722,7 +722,7 @@ export default function Settings() {
             <Switch
               id="vacationMode"
               label="Vacation mode"
-              description="Slows decay and aging while you're away (turn it on before you leave)."
+              description="Pauses decay and aging while you're away (turn it on before you leave)."
               checked={vacation?.enabled}
               onChange={(v) => dispatch(setVacationMode(v))}
             />

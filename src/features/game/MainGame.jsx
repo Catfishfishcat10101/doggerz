@@ -1,22 +1,16 @@
 // src/features/game/MainGame.jsx
 
 import { useEffect, useMemo, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 
 import DogStage from "./DogStage.jsx";
 import NeedsHUD from "./NeedsHUD.jsx";
 import TrainingPanel from "./TrainingPanel.jsx";
 import MechanicsPanel from "./MechanicsPanel.jsx";
 import GameTopBar from "./GameTopBar.jsx";
+import DogActions from "./DogActions.jsx";
 
 import {
-  feed,
-  giveWater,
-  petDog,
-  play,
-  rest,
-  bathe,
-  goPotty,
   selectDog,
   selectDogTraining,
   LEVEL_XP_STEP,
@@ -31,16 +25,6 @@ import {
 } from "@/utils/trainingMath.js";
 import { selectSettings } from "@/redux/settingsSlice.js";
 import { collectEarnedBadgeIds } from "@/utils/badges.js";
-
-const ACTIONS = [
-  { id: "feed", label: "Scoop food", hint: "Refills hunger" },
-  { id: "water", label: "Fresh water", hint: "Cools thirst" },
-  { id: "pet", label: "Loving pets", hint: "Boosts bond" },
-  { id: "play", label: "Playtime", hint: "Spikes happiness" },
-  { id: "sleep", label: "Let rest", hint: "Restores energy" },
-  { id: "clean", label: "Quick bath", hint: "Washes grime" },
-  { id: "potty", label: "Potty run", hint: "Resets potty bar" },
-];
 
 function clamp01(n) {
   const x = Number(n);
@@ -82,7 +66,6 @@ function formatAgeLabel(ageInGameDays) {
 }
 
 export default function MainGame(props = {}) {
-  const dispatch = useDispatch();
   const storeDog = useSelector(selectDog);
   const storeTraining = useSelector(selectDogTraining);
   const settings = useSelector(selectSettings);
@@ -268,39 +251,6 @@ export default function MainGame(props = {}) {
   const selectedCommand =
     commands.find((c) => c.id === selectedCommandId) || commands[0] || null;
 
-  const handleAction = (actionId) => {
-    if (typeof props.onAction === "function") {
-      props.onAction(actionId);
-      return;
-    }
-    const now = Date.now();
-    switch (actionId) {
-      case "feed":
-        dispatch(feed({ now }));
-        break;
-      case "water":
-        dispatch(giveWater({ now }));
-        break;
-      case "pet":
-        dispatch(petDog({ now }));
-        break;
-      case "play":
-        dispatch(play({ now }));
-        break;
-      case "sleep":
-        dispatch(rest({ now }));
-        break;
-      case "clean":
-        dispatch(bathe({ now }));
-        break;
-      case "potty":
-        dispatch(goPotty({ now }));
-        break;
-      default:
-        break;
-    }
-  };
-
   const tabIsTraining = tab === "training";
   const tabIsGame = tab === "game";
   const trainingInputMode = String(settings?.trainingInputMode || "both");
@@ -399,7 +349,7 @@ export default function MainGame(props = {}) {
                 />
               </>
             ) : (
-              <ActionCluster actions={ACTIONS} onAction={handleAction} />
+              <DogActions />
             )}
           </section>
         </main>
@@ -422,51 +372,6 @@ function TabButton({ label, active, onClick }) {
     >
       {label}
     </button>
-  );
-}
-
-function ActionCluster({ actions, onAction }) {
-  return (
-    <section className="relative overflow-hidden rounded-3xl border border-white/15 bg-gradient-to-b from-black/75 to-black/50 p-5 shadow-[0_40px_80px_rgba(0,0,0,0.45)]">
-      <div className="flex items-center justify-between mb-3">
-        <div>
-          <p className="text-[11px] uppercase tracking-[0.4em] text-white/40">
-            Live
-          </p>
-          <h3 className="text-lg font-semibold text-white">Yard actions</h3>
-        </div>
-        <span className="rounded-full border border-white/20 px-3 py-1 text-[10px] uppercase tracking-[0.3em] text-white/40">
-          tap to act
-        </span>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-6">
-        {actions.map((action, idx) => (
-          <button
-            key={action.id}
-            type="button"
-            onClick={() => onAction(action.id)}
-            className={[
-              "group flex flex-col rounded-2xl border border-white/10 bg-white/5 px-3 py-4 text-left transition hover:border-emerald-400/40 hover:bg-emerald-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60",
-              // Zigzag on >= sm: one card per row, alternating side.
-              idx % 2 === 0
-                ? "sm:col-span-3 sm:col-start-1"
-                : "sm:col-span-3 sm:col-start-4",
-            ].join(" ")}
-          >
-            <span className="text-sm font-semibold text-white">
-              {action.label}
-            </span>
-            <span className="mt-1 text-[11px] text-white/60">
-              {action.hint}
-            </span>
-            <span className="pointer-events-none mt-3 inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/15 text-[11px] text-white/50 transition group-hover:border-emerald-400/60 group-hover:text-emerald-200">
-              GO
-            </span>
-          </button>
-        ))}
-      </div>
-    </section>
   );
 }
 

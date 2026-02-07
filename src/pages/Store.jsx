@@ -475,6 +475,104 @@ export default function Store() {
           </div>
         </section>
 
+        <section className="mb-8 grid gap-4 lg:grid-cols-3">
+          <div className="rounded-3xl border border-white/10 bg-black/25 p-6">
+            <div className="text-xs uppercase tracking-[0.22em] text-zinc-400">
+              Subscription
+            </div>
+            <div className="mt-1 text-xl font-extrabold text-emerald-200">
+              PAWPASS
+            </div>
+            <p className="mt-2 text-sm text-zinc-300 leading-relaxed">
+              Optional membership with monthly perks and surprise drops. Designed
+              for players who want extra goodies without grinding.
+            </p>
+            <div className="mt-4 inline-flex items-center rounded-full border border-emerald-400/30 bg-emerald-500/10 px-3 py-1 text-[11px] font-semibold text-emerald-100">
+              Coming soon
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-white/10 bg-black/25 p-6 lg:col-span-2">
+            <div className="text-xs uppercase tracking-[0.22em] text-zinc-400">
+              Surprise boxes
+            </div>
+            <div className="mt-1 text-xl font-extrabold text-zinc-100">
+              Open for rewards
+            </div>
+            <p className="mt-2 text-sm text-zinc-300 leading-relaxed">
+              Four ways to earn drops. Some are free from gameplay, some are
+              seasonal, and some are premium.
+            </p>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                <div className="text-xs uppercase tracking-[0.22em] text-zinc-400">
+                  Common
+                </div>
+                <div className="mt-1 text-sm font-extrabold text-emerald-100">
+                  Coins box
+                </div>
+                <div className="mt-1 text-xs text-zinc-300">
+                  Steady coin drops for regular play.
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                <div className="text-xs uppercase tracking-[0.22em] text-zinc-400">
+                  Rare
+                </div>
+                <div className="mt-1 text-sm font-extrabold text-sky-100">
+                  Premium box
+                </div>
+                <div className="mt-1 text-xs text-zinc-300">
+                  Higher-tier cosmetics and special items.
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                <div className="text-xs uppercase tracking-[0.22em] text-zinc-400">
+                  Event
+                </div>
+                <div className="mt-1 text-sm font-extrabold text-amber-100">
+                  Seasonal box
+                </div>
+                <div className="mt-1 text-xs text-zinc-300">
+                  Limited-time rewards tied to holidays and themes.
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                <div className="text-xs uppercase tracking-[0.22em] text-zinc-400">
+                  Achievement
+                </div>
+                <div className="mt-1 text-sm font-extrabold text-violet-100">
+                  Free gameplay box
+                </div>
+                <div className="mt-1 text-xs text-zinc-300">
+                  Earned by milestones and badges. No paywall.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-white/10 bg-black/25 p-6">
+            <div className="text-xs uppercase tracking-[0.22em] text-zinc-400">
+              Members
+            </div>
+            <div className="mt-1 text-xl font-extrabold text-zinc-100">
+              Kennel Club
+            </div>
+            <p className="mt-2 text-sm text-zinc-300 leading-relaxed">
+              Exclusive activities and content for club members: curated events,
+              premium training lanes, and special hangouts you can’t access
+              anywhere else.
+            </p>
+            <div className="mt-4 inline-flex items-center rounded-full border border-white/15 bg-black/30 px-3 py-1 text-[11px] font-semibold text-zinc-200">
+              Members-only
+            </div>
+          </div>
+        </section>
+
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
           {/* LEFT: Preview + wallet */}
           <aside className="lg:col-span-5">

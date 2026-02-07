@@ -1,0 +1,14 @@
+Action (Folder Name),"Prompt (16 Frames, 128px, Trim OFF)",Logic Category
+idle,"Realistic Jack Russell puppy standing, subtle breathing, blinking, side view, photorealistic.",Base State
+walk,"Jack Russell puppy walking right, 4-beat gait, realistic muscle movement, side view.",Base State
+wag,"Jack Russell puppy standing, excited fast tail wag, happy expression, high energy.",Mood: Happy
+sit,"Jack Russell puppy transition stand to sit, side view, natural weight shift, paws anchored.",Trick: Level 1
+laydown,"Jack Russell puppy transition sit to laying down flat, chin on paws, realistic skeletal physics.",Trick: Level 2
+shake,"Jack Russell puppy sitting, lifting one front paw for handshake, side view, static hind legs.",Trick: Level 3
+rollover,"Jack Russell puppy laying on side, rolling 360 onto back and back to side, realistic paws.",Trick: Level 4
+playdead,"Jack Russell puppy standing, suddenly flopping to side and staying completely limp, dramatic.",Trick: Level 5
+beg,"Jack Russell puppy sitting, lifting front paws into air, balanced on hind legs, stable pose.",Trick: Level 6
+bark,"Jack Russell puppy standing, head tilting back, jaw opening, chest puffing for a bark.",Reaction
+sleep,"Jack Russell puppy curled in ball, eyes closed, slow deep breathing rhythm, side view.",Decay: Tired
+scratch,"Jack Russell puppy sitting, using hind leg to scratch behind ear, head tilting, side view.",Idle Flavor
+eat,"Jack Russell puppy standing, head down, realistic chewing and licking movement, side view.",Interaction

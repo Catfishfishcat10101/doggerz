@@ -9,6 +9,7 @@ import store from "./redux/store.js";
 import "./index.css";
 import AppPreferencesEffects from "./pages/AppPreferencesEffects.jsx";
 import AppGameEffects from "./components/AppGameEffects.jsx";
+import CheckInReminders from "./components/CheckInReminders.jsx";
 import { ToastProvider } from "./components/ToastProvider.jsx";
 import PwaProvider from "./pwa/PwaProvider.jsx";
 import PwaStatusBanners from "./components/PwaStatusBanners.jsx";
@@ -94,6 +95,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
             <PupProvider>
               <AppPreferencesEffects />
               <AppGameEffects />
+              <CheckInReminders />
               <PwaStatusBanners />
 
               <AppRouter />

@@ -30,6 +30,10 @@ const ALIASES =
   jrManifest?.aliases && typeof jrManifest.aliases === "object"
     ? jrManifest.aliases
     : {};
+const CUSTOM_MANIFEST =
+  jrManifest?.custom && typeof jrManifest.custom === "object"
+    ? jrManifest.custom
+    : {};
 
 if (Array.isArray(jrManifest?.rows)) {
   jrManifest.rows.forEach((row, index) => {
@@ -45,6 +49,91 @@ if (Array.isArray(jrManifest?.rows)) {
 }
 
 const imageCache = new Map();
+const WALK_LEFT_FRAMES = Object.freeze([
+  withBaseUrl("/sprites/walk-left.png"),
+  withBaseUrl("/sprites/walk-left-2.png"),
+]);
+const WALK_FRAMES = Object.freeze(
+  Array.from({ length: 25 }, (_, index) =>
+    withBaseUrl(
+      `/assets/imports/jr/walk_128/frame_${String(index).padStart(3, "0")}.png`
+    )
+  )
+);
+const CUSTOM_ANIM_FRAME_COUNT = 16;
+const CUSTOM_ANIM_FOLDER_ALIASES = Object.freeze({
+  excited: "wag",
+  flip: "front_flip",
+  lay_down: "laydown",
+  nap: "sleep",
+  down: "laydown",
+  roll_over: "rollover",
+  play_dead: "playdead",
+  playdead: "playdead",
+  high_five: "highfive",
+  highfive: "highfive",
+});
+const CUSTOM_ANIM_KEYS = new Set([
+  "idle",
+  "sleep",
+  "wag",
+  "bark",
+  "scratch",
+  "trick",
+  "eat",
+  "beg",
+  "sit",
+  "stay",
+  "laydown",
+  "come",
+  "heel",
+  "rollover",
+  "shake",
+  "speak",
+  "spin",
+  "jump",
+  "highfive",
+  "wave",
+  "bow",
+  "playdead",
+  "fetch",
+  "dance",
+  "walk_right",
+  "walk_left",
+  "turn_walk_right",
+  "front_flip",
+  "stray_idle",
+  "stray_walk",
+  "stray_scratch",
+  "tired_idle",
+  "tired_walk",
+  "tired_sleep",
+  "tired_scratch",
+]);
+
+function resolveCustomFolder(key) {
+  const mapped = CUSTOM_ANIM_FOLDER_ALIASES[key];
+  const folder = mapped || key;
+  return CUSTOM_ANIM_KEYS.has(folder) ? folder : null;
+}
+
+function getCustomConfig(key) {
+  const entry = CUSTOM_MANIFEST?.[key];
+  const frames = Number(entry?.frames || CUSTOM_ANIM_FRAME_COUNT);
+  const fps = Number(entry?.fps || DEFAULT_FPS);
+  return {
+    frames: frames > 0 ? frames : CUSTOM_ANIM_FRAME_COUNT,
+    fps: fps > 0 ? fps : DEFAULT_FPS,
+  };
+}
+
+function buildCustomFrames(folder, count = CUSTOM_ANIM_FRAME_COUNT) {
+  return Array.from({ length: count }, (_, index) =>
+    withBaseUrl(
+      `/assets/imports/jr/${folder}/frame_${String(index).padStart(3, "0")}.png`
+    )
+  );
+}
 
 function normalizeKey(value) {
   return String(value || "")
@@ -124,6 +213,11 @@ export default function SpriteSheetDog({
   const settings = useSelector(selectSettings);
   const [showOptions, setShowOptions] = React.useState(false);
   const menuRef = React.useRef(null);
+  const requestedKey = React.useMemo(() => normalizeKey(anim), [anim]);
+  const [customFrameIndex, setCustomFrameIndex] = React.useState(0);
+  const [customReady, setCustomReady] = React.useState(false);
+  const [customErrorKey, setCustomErrorKey] = React.useState(null);
+  const warnedKeysRef = React.useRef(new Set());
 
   const reduceMotionSetting = settings?.reduceMotion || "system";
   const prefersReducedMotion = React.useMemo(() => {
@@ -147,6 +241,54 @@ export default function SpriteSheetDog({
   const stageKey = normalizeStage(stage);
   const conditionKey = normalizeDogCondition(condition);
   const sheetSrc = getDogPixiSheetUrl(stageKey, conditionKey);
+
+  const resolvedAnim = React.useMemo(() => resolveAnim(anim), [anim]);
+
+  const customAnim = React.useMemo(() => {
+    const walkLeftConfig = getCustomConfig("walk_left");
+    if (requestedKey === "walk_left") {
+      if (customErrorKey === "walk_left") {
+        return {
+          key: "walk_left_fallback",
+          frames: WALK_LEFT_FRAMES,
+          fps: walkLeftConfig.fps,
+        };
+      }
+      const frameCount = walkLeftConfig.frames;
+      return {
+        key: "walk_left",
+        frames: buildCustomFrames("walk_left", frameCount),
+        fps: walkLeftConfig.fps,
+      };
+    }
+
+    const customFolder = resolveCustomFolder(requestedKey);
+    if (customFolder) {
+      const customConfig = getCustomConfig(customFolder);
+      return {
+        key: customFolder,
+        frames: buildCustomFrames(customFolder, customConfig.frames),
+        fps: customConfig.fps,
+      };
+    }
+    if (resolvedAnim === "walk") {
+      const walkConfig = getCustomConfig("walk");
+      const walkFps = CUSTOM_MANIFEST?.walk?.fps
+        ? walkConfig.fps
+        : 10;
+      return { key: "walk", frames: WALK_FRAMES, fps: walkFps };
+    }
+    return null;
+  }, [customErrorKey, requestedKey, resolvedAnim]);
+
+  const customKey = customAnim?.key || null;
+  const customFrames = customAnim?.frames || null;
+  const customFps = customAnim?.fps || DEFAULT_FPS;
+  const useCustomAnim =
+    Boolean(customFrames?.length) &&
+    customReady &&
+    customKey &&
+    customKey !== customErrorKey;
 
   const effectiveFallbackSrc = React.useMemo(() => {
     const candidates = [];
@@ -185,7 +327,68 @@ export default function SpriteSheetDog({
     };
   }, [sheetSrc]);
 
-  const resolvedAnim = React.useMemo(() => resolveAnim(anim), [anim]);
+  React.useEffect(() => {
+    setCustomErrorKey(null);
+  }, [requestedKey]);
+
+  React.useEffect(() => {
+    if (!customErrorKey) return;
+    const warned = warnedKeysRef.current;
+    if (warned.has(customErrorKey)) return;
+    warned.add(customErrorKey);
+
+    const isWalk = customErrorKey === "walk";
+    const isWalkLeft = customErrorKey === "walk_left";
+    const customConfig = getCustomConfig(customErrorKey);
+    const frameCount = isWalk ? 25 : customConfig.frames;
+    const folder = isWalk
+      ? "/assets/imports/jr/walk_128/"
+      : `/assets/imports/jr/${customErrorKey}/`;
+    const fallbackHint = isWalkLeft
+      ? " Falling back to /sprites/walk-left.png."
+      : " Falling back to sprite sheet.";
+    const promptHint = " See ludo-prompts.csv for the prompt list.";
+
+    // eslint-disable-next-line no-console
+    console.warn(
+      `[SpriteSheetDog] Missing custom frames for "${customErrorKey}". ` +
+        `Expected ${frameCount} frames under ${folder}.${fallbackHint}` +
+        promptHint
+    );
+  }, [customErrorKey]);
+
+  React.useEffect(() => {
+    let alive = true;
+    if (!customKey || !customFrames?.length) {
+      setCustomReady(false);
+      return () => {
+        alive = false;
+      };
+    }
+    if (customErrorKey === customKey) {
+      setCustomReady(false);
+      return () => {
+        alive = false;
+      };
+    }
+
+    setCustomReady(false);
+
+    Promise.all(customFrames.map(loadImage))
+      .then(() => {
+        if (!alive) return;
+        setCustomReady(true);
+      })
+      .catch(() => {
+        if (!alive) return;
+        setCustomReady(false);
+        setCustomErrorKey(customKey);
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, [customErrorKey, customFrames, customKey]);
 
   const frames = React.useMemo(() => {
     const rowIndex =
@@ -219,10 +422,44 @@ export default function SpriteSheetDog({
   }, [frames]);
 
   const fps = Math.round(1000 / Math.max(1, avgDuration));
+  const activeFrameIndex = useCustomAnim ? customFrameIndex : frameIndex;
+  const activeFrames = useCustomAnim
+    ? customFrames?.length || 0
+    : frames.length;
+  const activeFps = useCustomAnim ? customFps : fps;
+  const activeAnim = useCustomAnim ? customKey || resolvedAnim : resolvedAnim;
 
   React.useEffect(() => {
     setFrameIndex(0);
   }, [resolvedAnim, frames.length]);
+
+  React.useEffect(() => {
+    setCustomFrameIndex(0);
+  }, [customKey, useCustomAnim]);
+
+  React.useEffect(() => {
+    if (!useCustomAnim) {
+      setCustomFrameIndex(0);
+      return undefined;
+    }
+    const motion = motionEnabled && !reduceMotion;
+    if (!motion || !customFrames?.length || customFrames.length <= 1) {
+      setCustomFrameIndex(0);
+      return undefined;
+    }
+    const duration = Math.max(50, Math.round(1000 / customFps));
+    const id = window.setInterval(() => {
+      setCustomFrameIndex((f) => (f + 1) % customFrames.length);
+    }, duration);
+    return () => window.clearInterval(id);
+  }, [
+    customFrames,
+    customFps,
+    customReady,
+    motionEnabled,
+    reduceMotion,
+    useCustomAnim,
+  ]);
 
   React.useEffect(() => {
     const motion = motionEnabled && !reduceMotion;
@@ -261,30 +498,89 @@ export default function SpriteSheetDog({
       stage: stageKey,
       condition: conditionKey,
       requestedAnim: anim,
+      requestedKey,
       resolvedAnim,
+      activeAnim,
+      customKey,
+      customFrames: useCustomAnim ? customFrames : null,
+      customReady,
+      customErrorKey,
       sheetSrc,
       sheetLoaded,
       sheetFailed,
       frames: frames.length,
       fps,
       frameIndex,
+      activeFrames,
+      activeFps,
+      activeFrameIndex,
       effectiveFallbackSrc: effectiveFallbackSrc[fallbackIndex] || null,
     });
   }, [
+    activeAnim,
+    activeFrameIndex,
+    activeFps,
+    activeFrames,
     anim,
     conditionKey,
+    customReady,
     effectiveFallbackSrc,
     fallbackIndex,
     fps,
     frameIndex,
     frames.length,
     onDebug,
+    customErrorKey,
+    customKey,
+    requestedKey,
     resolvedAnim,
     sheetFailed,
     sheetLoaded,
     sheetSrc,
     stageKey,
+    useCustomAnim,
   ]);
+
+  if (useCustomAnim && customReady) {
+    const src =
+      customFrames?.[
+        Math.min(customFrameIndex, Math.max(0, customFrames.length - 1))
+      ];
+    return src ? (
+      <div
+        className="group relative"
+        style={{ width: safeSize, height: safeSize }}
+      >
+        <img
+          src={src}
+          alt=""
+          draggable={false}
+          className={className}
+          style={{
+            width: safeSize,
+            height: safeSize,
+            maxWidth: "none",
+            maxHeight: "none",
+            display: "block",
+            objectFit: "contain",
+            objectPosition: "50% 60%",
+            transform: `scaleX(${facing})`,
+            transformOrigin: "50% 100%",
+            imageRendering: pixelated ? "pixelated" : "auto",
+          }}
+        />
+        <SpriteOptions
+          show={showOptions}
+          setShow={setShowOptions}
+          menuRef={menuRef}
+          pixelated={pixelated}
+          motionEnabled={motionEnabled}
+          sizeSetting={sizeSetting}
+          dispatch={dispatch}
+        />
+      </div>
+    ) : null;
+  }
 
   if (!canRenderSprite) {
     const src =

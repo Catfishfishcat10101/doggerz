@@ -47,6 +47,18 @@ const clamp = (n, lo = 0, hi = 100) =>
 
 const clamp01 = (n) => Math.max(0, Math.min(1, Number.isFinite(n) ? n : 0));
 
+const normalizeActionKey = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_")
+    .replace(/-+/g, "_");
+
+const resolveActionOverride = (payload, fallback) => {
+  const override = normalizeActionKey(payload?.action);
+  return override || fallback;
+};
+
 const DECAY_PER_HOUR = {
   hunger: 8,
   thirst: 7,
@@ -71,11 +83,12 @@ const MOOD_SAMPLE_MINUTES = 60;
 export const LEVEL_XP_STEP = 100;
 const SKILL_LEVEL_STEP = 50;
 
-// Vacation mode: reduces decay + slows aging while you’re away.
+// Vacation mode: pauses decay + aging while you are away.
 // multiplier: 0..1 (0 = frozen, 1 = normal)
+const LEGACY_VACATION_MULTIPLIER = 0.35;
 const DEFAULT_VACATION_STATE = Object.freeze({
   enabled: false,
-  multiplier: 0.35,
+  multiplier: 0,
   startedAt: null,
   skippedMs: 0,
 });
@@ -1318,9 +1331,13 @@ function ensureVacationState(state) {
   state.vacation.enabled = Boolean(state.vacation.enabled);
 
   const mult = Number(state.vacation.multiplier);
-  state.vacation.multiplier = Number.isFinite(mult)
+  const normalized = Number.isFinite(mult)
     ? clamp(mult, 0, 1)
     : DEFAULT_VACATION_STATE.multiplier;
+  state.vacation.multiplier =
+    normalized === LEGACY_VACATION_MULTIPLIER
+      ? DEFAULT_VACATION_STATE.multiplier
+      : normalized;
 
   if (typeof state.vacation.startedAt !== "number") {
     state.vacation.startedAt = null;
@@ -1337,6 +1354,10 @@ function ensureVacationState(state) {
 function getVacationAdjustedNow(state, now = nowMs()) {
   const v = ensureVacationState(state);
   const baseSkipped = Number(v.skippedMs) || 0;
+
+  if (v.enabled && typeof v.startedAt !== "number") {
+    v.startedAt = now;
+  }
 
   if (!v.enabled || typeof v.startedAt !== "number") {
     return Math.max(0, now - baseSkipped);
@@ -1370,6 +1391,7 @@ function getPersonalityPerks(state) {
 }
 
 function applyCleanlinessPenalties(state, tierOverride) {
+  if (ensureVacationState(state).enabled) return;
   const tier = tierOverride || state.cleanlinessTier || "FRESH";
   const effects = CLEANLINESS_TIER_EFFECTS[tier];
   if (!effects) return;
@@ -2000,7 +2022,7 @@ const dogSlice = createSlice({
 
       state.memory.lastFedAt = now;
       state.memory.lastSeenAt = now;
-      state.lastAction = "feed";
+      state.lastAction = resolveActionOverride(payload, "feed");
 
       const sweetBondMultiplier = hasTemperamentTag(state, "SWEET") ? 1.25 : 1;
       applyBondGain(state, 0.7 * sweetBondMultiplier, now);
@@ -2032,7 +2054,7 @@ const dogSlice = createSlice({
 
       state.memory.lastDrankAt = now;
       state.memory.lastSeenAt = now;
-      state.lastAction = "water";
+      state.lastAction = resolveActionOverride(payload, "water");
 
       const sweetBondMultiplier = hasTemperamentTag(state, "SWEET") ? 1.25 : 1;
       applyBondGain(state, 0.6 * sweetBondMultiplier, now);
@@ -2076,7 +2098,7 @@ const dogSlice = createSlice({
 
       state.memory.lastPlayedAt = now;
       state.memory.lastSeenAt = now;
-      state.lastAction = "play";
+      state.lastAction = resolveActionOverride(payload, "play");
 
       const sweetBondMultiplier = hasTemperamentTag(state, "SWEET") ? 1.35 : 1;
       applyBondGain(state, 2 * sweetBondMultiplier, now);
@@ -2114,7 +2136,7 @@ const dogSlice = createSlice({
 
       state.stats.happiness = clamp(state.stats.happiness + 2, 0, 100);
       state.memory.lastSeenAt = now;
-      state.lastAction = "pet";
+      state.lastAction = resolveActionOverride(payload, "pet");
 
       applyPersonalityShift(state, {
         now,
@@ -2139,7 +2161,7 @@ const dogSlice = createSlice({
       // Avoid "energy spam" if the user taps Rest repeatedly while already asleep.
       if (state.isAsleep) {
         state.memory.lastSeenAt = now;
-        state.lastAction = "rest";
+        state.lastAction = resolveActionOverride(payload, "rest");
         finalizeDerivedState(state, now);
         return;
       }
@@ -2154,7 +2176,7 @@ const dogSlice = createSlice({
       state.stats.happiness = clamp(state.stats.happiness + 3, 0, 100);
 
       state.memory.lastSeenAt = now;
-      state.lastAction = "rest";
+      state.lastAction = resolveActionOverride(payload, "rest");
 
       const sweetBondMultiplier = hasTemperamentTag(state, "SWEET") ? 1.2 : 1;
       applyBondGain(state, 0.5 * sweetBondMultiplier, now);
@@ -2194,6 +2216,63 @@ const dogSlice = createSlice({
 
       state.memory.lastSeenAt = now;
       maybeSampleMood(state, now, "WAKE");
+      finalizeDerivedState(state, now);
+    },
+
+    triggerManualAction(state, { payload }) {
+      const now = payload?.now ?? nowMs();
+      const action = String(payload?.action || "").trim();
+      if (!action) return;
+
+      applyDecay(state, now);
+      wakeForInteraction(state);
+
+      const stats = payload?.stats || {};
+      if (stats && typeof stats === "object") {
+        if (typeof stats.energy === "number") {
+          state.stats.energy = clamp(state.stats.energy + stats.energy, 0, 100);
+        }
+        if (typeof stats.hunger === "number") {
+          state.stats.hunger = clamp(state.stats.hunger + stats.hunger, 0, 100);
+        }
+        if (typeof stats.thirst === "number") {
+          state.stats.thirst = clamp(state.stats.thirst + stats.thirst, 0, 100);
+        }
+        if (typeof stats.happiness === "number") {
+          state.stats.happiness = clamp(
+            state.stats.happiness + stats.happiness,
+            0,
+            100
+          );
+        }
+        if (typeof stats.cleanliness === "number") {
+          state.stats.cleanliness = clamp(
+            state.stats.cleanliness + stats.cleanliness,
+            0,
+            100
+          );
+        }
+      }
+
+      const bondDelta = Number(payload?.bondDelta ?? 0);
+      if (bondDelta) {
+        applyBondGain(state, bondDelta, now);
+      }
+
+      const commandId = payload?.commandId
+        ? String(payload.commandId).trim()
+        : "";
+      if (commandId) {
+        state.memory.lastTrainedCommandId = commandId;
+        state.memory.lastTrainedAt = now;
+      }
+
+      if (action !== "sleep" && action !== "rest") {
+        state.isAsleep = false;
+      }
+
+      state.memory.lastSeenAt = now;
+      state.lastAction = action;
       finalizeDerivedState(state, now);
     },
 
@@ -2718,7 +2797,7 @@ const dogSlice = createSlice({
           type: "INFO",
           moodTag: "CALM",
           summary: "Vacation mode enabled",
-          body: "Your pup is being cared for while you’re away. Decay and aging slow down.",
+          body: "Your pup is being cared for while you're away. Decay and aging are paused.",
           timestamp: now,
         });
       } else {
@@ -2870,6 +2949,7 @@ export const {
   petDog,
   rest,
   wakeUp,
+  triggerManualAction,
   dismissActiveDream,
   bathe,
   increasePottyLevel,

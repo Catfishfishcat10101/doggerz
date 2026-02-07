@@ -1,0 +1,13 @@
+Action,Folder_Path,Ludo_Prompt_Core,Realism_Logic,Status
+idle,jr/idle/,"Jack Russell puppy standing, subtle breathing, blinking, side view, 128x128, photorealistic.",Anchor paws; no sliding.,PENDING
+walk,jr/walk/,"Jack Russell puppy walking right, 4-beat gait, realistic muscle movement, side view.",Loop frame 15 to 0.,DONE
+sit,jr/sit/,"Jack Russell puppy transition stand to sit, side view, natural weight shift, paws anchored.",Slide back legs in.,PENDING
+laydown,jr/laydown/,"Jack Russell puppy transition sit to laying down flat, chin on paws, 16 frames.",Chest lands first.,PENDING
+shake,jr/shake/,"Jack Russell puppy sitting, lifting one front paw for handshake, side view.",Keep 3 legs static.,PENDING
+rollover,jr/rollover/,"Jack Russell puppy laying on side, rolling 360 onto back and back to side, realistic physics.",Keep center-aligned.,PENDING
+playdead,jr/playdead/,"Jack Russell puppy standing, suddenly flopping to side and staying completely limp.",Freeze on frame 6-16.,PENDING
+stray_idle,jr/stray_idle/,"Scruffy Jack Russell puppy standing, drooping head, matted fur, tired breathing.",Add shivering.,PENDING
+stray_walk,jr/stray_walk/,"Scruffy Jack Russell puppy walking slowly, head low, tail tucked, matted fur.",Lethargic speed.,PENDING
+stray_scratch,jr/stray_scratch/,"Scruffy Jack Russell puppy sitting, frantic scratching at matted fur, itchy movements.",High frequency.,PENDING
+bark,jr/bark/,"Jack Russell puppy standing, head tilting back, jaw opening, chest puffing for a bark.",1-frame jaw snap.,PENDING
+sleep,jr/sleep/,"Jack Russell puppy curled in ball, eyes closed, slow deep breathing rhythm.",Slow Z-axis bob.,PENDING

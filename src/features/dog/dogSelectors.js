@@ -31,12 +31,77 @@ const TRICK_ACTIONS = new Set([
   "dance",
 ]);
 
+const EXPLICIT_ANIMS = new Set([
+  "idle",
+  "walk",
+  "wag",
+  "sleep",
+  "bark",
+  "scratch",
+  "trick",
+  "eat",
+  "sit",
+  "stay",
+  "laydown",
+  "lay_down",
+  "roll",
+  "rollover",
+  "roll_over",
+  "playdead",
+  "play_dead",
+  "shake",
+  "beg",
+  "bow",
+  "paw",
+  "jump",
+  "spin",
+  "wave",
+  "highfive",
+  "high_five",
+  "crawl",
+  "fetch",
+  "dance",
+  "walk_left",
+  "walk_right",
+  "turn_walk_right",
+  "front_flip",
+]);
+
+const EXPLICIT_ACTION_ALIASES = {
+  feed: "eat",
+  water: "wag",
+  drink: "wag",
+  pet: "wag",
+  play: "walk",
+  rest: "sleep",
+  nap: "sleep",
+};
+
 function normalizeAction(action) {
   return String(action || "")
     .trim()
     .toLowerCase()
     .replace(/\s+/g, "_")
     .replace(/-+/g, "_");
+}
+
+function resolveExplicitAnim(lastAction, lastTrainedCommandId) {
+  const normalized = normalizeAction(lastAction);
+  if (!normalized) return null;
+
+  if (
+    normalized === "train" &&
+    lastTrainedCommandId &&
+    EXPLICIT_ANIMS.has(lastTrainedCommandId)
+  ) {
+    return lastTrainedCommandId;
+  }
+
+  const alias = EXPLICIT_ACTION_ALIASES[normalized];
+  if (alias && EXPLICIT_ANIMS.has(alias)) return alias;
+
+  if (EXPLICIT_ANIMS.has(normalized)) return normalized;
+  return null;
 }
 
 /**
@@ -99,6 +164,10 @@ export function selectDogRenderParams(stateOrDog) {
   const lastTrainedCommandId = normalizeAction(
     dog?.memory?.lastTrainedCommandId
   );
+  const explicitAnim = resolveExplicitAnim(last, lastTrainedCommandId);
+  if (explicitAnim) {
+    return { stage, condition, anim: explicitAnim };
+  }
   const happiness = Number(dog?.stats?.happiness ?? 0);
   const isSleeping =
     !!dog.isAsleep ||

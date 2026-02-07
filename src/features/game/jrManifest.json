@@ -15,13 +15,27 @@
     { "anim": "bark", "frames": 12, "fps": 10 },
     { "anim": "scratch", "frames": 12, "fps": 8 }
   ],
+  "custom": {
+    "idle": { "frames": 16, "fps": 6 },
+    "walk_right": { "frames": 16, "fps": 12 },
+    "walk_left": { "frames": 16, "fps": 10 },
+    "jump": { "frames": 16, "fps": 14 },
+    "front_flip": { "frames": 16, "fps": 18 },
+    "sleep": { "frames": 16, "fps": 4 },
+    "wag": { "frames": 16, "fps": 16 },
+    "turn_walk_right": { "frames": 16, "fps": 12 }
+  },
   "aliases": {
     "run": "walk",
     "fetch": "walk",
     "play": "walk",
+    "walk_left": "walk",
+    "walk_right": "walk",
     "zoomies": "walk",
     "rest": "sleep",
     "nap": "sleep",
+    "excited": "wag",
+    "flip": "front_flip",
     "sit": "trick",
     "stay": "trick",
     "roll": "trick",

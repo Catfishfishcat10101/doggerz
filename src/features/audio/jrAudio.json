@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "basePath": "/audio/sfx/",
+  "sounds": {
+    "bark": {
+      "file": "jrt_bark_sharp.mp3",
+      "triggerFrame": 4,
+      "cooldownMs": 900
+    },
+    "walk_right": {
+      "file": "paws_grass_fast.mp3",
+      "loop": true,
+      "volume": 0.6
+    },
+    "walk_left": {
+      "file": "paws_grass_fast.mp3",
+      "loop": true,
+      "volume": 0.6
+    },
+    "front_flip": {
+      "file": "whoosh_spin.mp3",
+      "triggerFrame": 2,
+      "cooldownMs": 1200
+    },
+    "jump": {
+      "file": "small_grunt.mp3",
+      "triggerFrame": 2,
+      "cooldownMs": 800
+    },
+    "sleep": {
+      "file": "soft_snore.mp3",
+      "intervalMs": 4000,
+      "volume": 0.25
+    },
+    "eat": {
+      "file": "kibble_crunch.mp3",
+      "triggerFrame": 6,
+      "cooldownMs": 700
+    },
+    "whimper": {
+      "file": "sad_whimper.mp3",
+      "triggerFrame": 4,
+      "cooldownMs": 1500
+    }
+  },
+  "aliases": {
+    "walk": "walk_right",
+    "excited": "bark",
+    "wag": "bark",
+    "flip": "front_flip",
+    "nap": "sleep"
+  }
+}
