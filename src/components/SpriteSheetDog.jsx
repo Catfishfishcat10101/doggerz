@@ -718,7 +718,6 @@ export default function SpriteSheetDog({
       if (!rect) return null;
 
       const frameW = Number(rect.w || rect.width || FRAME_W);
-      const frameH = Number(rect.h || rect.height || FRAME_H);
       const scale = frameW > 0 ? safeSize / frameW : 1;
       const atlasW =
         Number(atlasSize?.w || atlasImageSize?.width || 0) ||

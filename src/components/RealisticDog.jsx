@@ -318,7 +318,7 @@ export default function RealisticDog({
     return () => {
       cancelled = true;
     };
-  }, [sheet.src, sheet.fallbackSrc]);
+  }, [sheet.src, sheet.fallbackSrc, sheet.sheetH, sheet.sheetW]);
 
   React.useEffect(() => {
     if (typeof onDebug !== "function") return;

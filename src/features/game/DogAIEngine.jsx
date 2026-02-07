@@ -438,7 +438,7 @@ export default function DogAIEngine() {
     if (parsed) {
       dispatch(hydrateDog(parsed));
     }
-  }, [dispatch, userId]);
+  }, [dispatch, flushLocalSave, userId]);
 
   // 1. Hydrate on first mount (localStorage → Redux, then optional cloud)
   useEffect(() => {

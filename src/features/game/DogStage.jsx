@@ -634,7 +634,7 @@ export default function DogStage({ dog, scene, targetX = null }) {
     if (userMoveActive) return;
     const clamped = Math.max(-maxOffset, Math.min(maxOffset, targetX));
     targetRef.current = clamped;
-  }, [maxOffset, targetX]);
+  }, [maxOffset, targetX, userMoveActive]);
 
   useEffect(() => {
     const explicitDirectional =
