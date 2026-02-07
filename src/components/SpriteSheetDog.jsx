@@ -347,7 +347,6 @@ export default function SpriteSheetDog({
       : " Falling back to sprite sheet.";
     const promptHint = " See ludo-prompts.csv for the prompt list.";
 
-     
     console.warn(
       `[SpriteSheetDog] Missing custom frames for "${customErrorKey}". ` +
         `Expected ${frameCount} frames under ${folder}.${fallbackHint}` +
