@@ -13,6 +13,7 @@ import { useDogActionSfx } from "@/features/audio/useDogActionSfx.js";
 
 const TURN_DURATION_MS = 320;
 const STOP_EPSILON = 6;
+const PASSPORT_STORAGE_KEY = "doggerz:passportOpen";
 
 export default function DogStage({ dog, scene, targetX = null }) {
   const settings = useSelector(selectSettings);
@@ -49,7 +50,16 @@ export default function DogStage({ dog, scene, targetX = null }) {
   const [facing, setFacing] = useState(1);
   const [turnFacing, setTurnFacing] = useState(1);
   const [animDebug, setAnimDebug] = useState(null);
-  const [passportOpen, setPassportOpen] = useState(false);
+  const [passportOpen, setPassportOpen] = useState(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      const raw = window.localStorage.getItem(PASSPORT_STORAGE_KEY);
+      if (raw == null) return false;
+      return raw === "true";
+    } catch {
+      return false;
+    }
+  });
   const posRef = useRef(0);
   const targetRef = useRef(0);
   const facingRef = useRef(1);
@@ -131,6 +141,18 @@ export default function DogStage({ dog, scene, targetX = null }) {
   useEffect(() => {
     setTurnFacing(facing);
   }, [facing]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(
+        PASSPORT_STORAGE_KEY,
+        passportOpen ? "true" : "false"
+      );
+    } catch {
+      // ignore storage errors
+    }
+  }, [passportOpen]);
 
   useEffect(() => {
     if (!reduceMotion) return;
