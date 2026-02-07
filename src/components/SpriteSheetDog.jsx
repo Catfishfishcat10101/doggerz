@@ -273,9 +273,7 @@ export default function SpriteSheetDog({
     }
     if (resolvedAnim === "walk") {
       const walkConfig = getCustomConfig("walk");
-      const walkFps = CUSTOM_MANIFEST?.walk?.fps
-        ? walkConfig.fps
-        : 10;
+      const walkFps = CUSTOM_MANIFEST?.walk?.fps ? walkConfig.fps : 10;
       return { key: "walk", frames: WALK_FRAMES, fps: walkFps };
     }
     return null;
@@ -349,7 +347,7 @@ export default function SpriteSheetDog({
       : " Falling back to sprite sheet.";
     const promptHint = " See ludo-prompts.csv for the prompt list.";
 
-    // eslint-disable-next-line no-console
+     
     console.warn(
       `[SpriteSheetDog] Missing custom frames for "${customErrorKey}". ` +
         `Expected ${frameCount} frames under ${folder}.${fallbackHint}` +

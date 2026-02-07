@@ -168,7 +168,8 @@ export default function DogStage({ dog, scene, targetX = null }) {
   }, [maxOffset, targetX]);
 
   useEffect(() => {
-    const movementEnabled = baseAnim === "walk" && !reduceMotion && !explicitAnim;
+    const movementEnabled =
+      baseAnim === "walk" && !reduceMotion && !explicitAnim;
     if (!movementEnabled) return undefined;
 
     let rafId = 0;
@@ -229,7 +230,14 @@ export default function DogStage({ dog, scene, targetX = null }) {
 
     rafId = window.requestAnimationFrame(tick);
     return () => window.cancelAnimationFrame(rafId);
-  }, [baseAnim, dog?.stats?.energy, explicitAnim, maxOffset, reduceMotion, targetX]);
+  }, [
+    baseAnim,
+    dog?.stats?.energy,
+    explicitAnim,
+    maxOffset,
+    reduceMotion,
+    targetX,
+  ]);
 
   return (
     <section className="relative overflow-hidden rounded-[32px] border border-white/10 bg-gradient-to-b from-[#05070d] via-[#07090f] to-black/70 shadow-[0_35px_120px_rgba(0,0,0,0.55)]">
@@ -254,15 +262,15 @@ export default function DogStage({ dog, scene, targetX = null }) {
                 />
                 <div className="relative z-10 flex justify-center">
                   <SpriteSheetDog
-                  stage={renderParams.stage}
-                  condition={renderParams.condition}
-                  anim={conditionAnim}
-                  facing={displayFacing}
-                  size={size}
-                  reduceMotion={reduceMotion}
-                  className="block"
-                  onDebug={setAnimDebug}
-                />
+                    stage={renderParams.stage}
+                    condition={renderParams.condition}
+                    anim={conditionAnim}
+                    facing={displayFacing}
+                    size={size}
+                    reduceMotion={reduceMotion}
+                    className="block"
+                    onDebug={setAnimDebug}
+                  />
                 </div>
               </div>
             </div>

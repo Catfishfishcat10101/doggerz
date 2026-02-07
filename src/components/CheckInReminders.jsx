@@ -79,7 +79,9 @@ export default function CheckInReminders() {
       const fire = async () => {
         if (!settings?.dailyRemindersEnabled) return;
         if (typeof window !== "undefined" && !window.isSecureContext) return;
-        if (!shouldFireReminder(reminder.key, reminder.cooldownMs, Date.now())) {
+        if (
+          !shouldFireReminder(reminder.key, reminder.cooldownMs, Date.now())
+        ) {
           return;
         }
         const ok = await showDoggerzNotification({

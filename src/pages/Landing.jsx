@@ -32,7 +32,9 @@ export default function Landing() {
 
         <section className="grid gap-6 lg:grid-cols-3">
           <div className="rounded-3xl border border-white/10 bg-black/35 p-6 shadow-[0_0_60px_rgba(14,165,233,0.08)]">
-            <h2 className="text-lg font-bold text-emerald-200">Behavior brief</h2>
+            <h2 className="text-lg font-bold text-emerald-200">
+              Behavior brief
+            </h2>
             <p className="mt-3 text-sm text-zinc-200/90 leading-relaxed">
               The dog appears to do random things, but it’s intentional. We
               learn player patterns and schedule bursts of chaos when they’re
@@ -41,7 +43,9 @@ export default function Landing() {
           </div>
 
           <div className="rounded-3xl border border-white/10 bg-black/35 p-6">
-            <h2 className="text-lg font-bold text-emerald-200">Core features</h2>
+            <h2 className="text-lg font-bold text-emerald-200">
+              Core features
+            </h2>
             <ul className="mt-3 space-y-2 text-sm text-zinc-200/90 list-disc pl-5">
               <li>Pattern learning across time of day and session length.</li>
               <li>Controlled randomness with weighted behavior clips.</li>

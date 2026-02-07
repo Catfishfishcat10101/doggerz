@@ -32,7 +32,8 @@ function resolveLoopKey(rawAnim) {
   const key = stripConditionPrefix(normalizeKey(rawAnim));
   if (jrAudio?.sounds?.[key]?.loop) return key;
   if (key === "walk" && jrAudio?.sounds?.walk_right?.loop) return "walk_right";
-  if (key === "walk_left" && jrAudio?.sounds?.walk_left?.loop) return "walk_left";
+  if (key === "walk_left" && jrAudio?.sounds?.walk_left?.loop)
+    return "walk_left";
   if (key === "walk_right" && jrAudio?.sounds?.walk_right?.loop)
     return "walk_right";
   return null;
@@ -55,9 +56,15 @@ function useUserGestureGate() {
   React.useEffect(() => {
     if (ready) return;
     const unlock = () => setReady(true);
-    window.addEventListener("pointerdown", unlock, { once: true, passive: true });
+    window.addEventListener("pointerdown", unlock, {
+      once: true,
+      passive: true,
+    });
     window.addEventListener("keydown", unlock, { once: true });
-    window.addEventListener("touchstart", unlock, { once: true, passive: true });
+    window.addEventListener("touchstart", unlock, {
+      once: true,
+      passive: true,
+    });
     return () => {
       window.removeEventListener("pointerdown", unlock);
       window.removeEventListener("keydown", unlock);
@@ -68,13 +75,7 @@ function useUserGestureGate() {
   return ready;
 }
 
-export function useDogActionSfx({
-  anim,
-  frameIndex,
-  energy,
-  tier,
-  audio,
-}) {
+export function useDogActionSfx({ anim, frameIndex, energy, tier, audio }) {
   const audioEnabled = Boolean(audio?.enabled);
   const masterVolume = clamp01(audio?.masterVolume ?? 0.8);
   const sfxVolume = clamp01(audio?.sfxVolume ?? 0.7);
@@ -92,22 +93,19 @@ export function useDogActionSfx({
   const tierMultiplier = tier === "stray" ? 0.55 : tier === "tired" ? 0.75 : 1;
   const lowEnergy = Number(energy ?? 0) < 30 || tier === "stray";
 
-  const getAudio = React.useCallback(
-    (key, { loop = false } = {}) => {
-      if (!key) return null;
-      const existing = audioCacheRef.current[key];
-      if (existing) return existing;
-      const src = `${String(jrAudio?.basePath || "/audio/sfx/")}${
-        jrAudio?.sounds?.[key]?.file || ""
-      }`;
-      if (!src || src.endsWith("/") || src.endsWith("/")) return null;
-      const el = createAudio(withBaseUrl(src), { loop });
-      if (!el) return null;
-      audioCacheRef.current[key] = el;
-      return el;
-    },
-    []
-  );
+  const getAudio = React.useCallback((key, { loop = false } = {}) => {
+    if (!key) return null;
+    const existing = audioCacheRef.current[key];
+    if (existing) return existing;
+    const src = `${String(jrAudio?.basePath || "/audio/sfx/")}${
+      jrAudio?.sounds?.[key]?.file || ""
+    }`;
+    if (!src || src.endsWith("/") || src.endsWith("/")) return null;
+    const el = createAudio(withBaseUrl(src), { loop });
+    if (!el) return null;
+    audioCacheRef.current[key] = el;
+    return el;
+  }, []);
 
   const stopAudio = React.useCallback((key) => {
     const el = audioCacheRef.current[key];
@@ -200,7 +198,15 @@ export function useDogActionSfx({
         loopKeyRef.current = null;
       }
     };
-  }, [anim, audioEnabled, baseVolume, gestureReady, getAudio, stopAudio, tierMultiplier]);
+  }, [
+    anim,
+    audioEnabled,
+    baseVolume,
+    gestureReady,
+    getAudio,
+    stopAudio,
+    tierMultiplier,
+  ]);
 
   React.useEffect(() => {
     if (sleepTimerRef.current) {
@@ -261,5 +267,14 @@ export function useDogActionSfx({
       volume,
       cooldownMs: Number(meta.cooldownMs || 400),
     });
-  }, [anim, audioEnabled, baseVolume, frameIndex, gestureReady, lowEnergy, playOnce, tierMultiplier]);
+  }, [
+    anim,
+    audioEnabled,
+    baseVolume,
+    frameIndex,
+    gestureReady,
+    lowEnergy,
+    playOnce,
+    tierMultiplier,
+  ]);
 }

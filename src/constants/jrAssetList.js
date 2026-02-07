@@ -432,4 +432,3 @@ export const JACK_RUSSELL_ANIMATION_NAMES = [
   "stay",
   "walk",
 ];
-

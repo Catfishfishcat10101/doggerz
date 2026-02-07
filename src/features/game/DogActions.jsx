@@ -258,7 +258,9 @@ export default function DogActions({ className = "" }) {
       lastActionAtRef.current[action.id] = now;
 
       if (resolvedAction.reducer) {
-        dispatch(resolvedAction.reducer({ now, action: resolvedAction.action }));
+        dispatch(
+          resolvedAction.reducer({ now, action: resolvedAction.action })
+        );
         if (followUpAnim && resolvedAction.action !== "sleep") {
           scheduleReturn("wag");
         }

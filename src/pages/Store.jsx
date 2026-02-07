@@ -484,8 +484,8 @@ export default function Store() {
               PAWPASS
             </div>
             <p className="mt-2 text-sm text-zinc-300 leading-relaxed">
-              Optional membership with monthly perks and surprise drops. Designed
-              for players who want extra goodies without grinding.
+              Optional membership with monthly perks and surprise drops.
+              Designed for players who want extra goodies without grinding.
             </p>
             <div className="mt-4 inline-flex items-center rounded-full border border-emerald-400/30 bg-emerald-500/10 px-3 py-1 text-[11px] font-semibold text-emerald-100">
               Coming soon

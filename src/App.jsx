@@ -11,34 +11,33 @@ import { withBaseUrl } from "@/utils/assetUrl.js";
 
 export default function App() {
   const spriteSheetUrls = useMemo(
-    () =>
-      [
-        ...DOG_STAGE_SHORT.flatMap((stage) =>
-          DOG_CONDITION_IDS.map((condition) =>
-            getDogPixiSheetUrl(stage, condition)
-          )
-        ),
-        ...Array.from({ length: 16 }, (_, index) =>
-          withBaseUrl(
-            `/assets/imports/jr/idle/frame_${String(index).padStart(3, "0")}.png`
-          )
-        ),
-        ...Array.from({ length: 16 }, (_, index) =>
-          withBaseUrl(
-            `/assets/imports/jr/walk_right/frame_${String(index).padStart(
-              3,
-              "0"
-            )}.png`
-          )
-        ),
-        withBaseUrl("/sprites/walk-left.png"),
-        withBaseUrl("/sprites/walk-left-2.png"),
-        ...Array.from({ length: 25 }, (_, index) =>
-          withBaseUrl(
-            `/assets/imports/jr/walk_128/frame_${String(index).padStart(3, "0")}.png`
-          )
-        ),
-      ],
+    () => [
+      ...DOG_STAGE_SHORT.flatMap((stage) =>
+        DOG_CONDITION_IDS.map((condition) =>
+          getDogPixiSheetUrl(stage, condition)
+        )
+      ),
+      ...Array.from({ length: 16 }, (_, index) =>
+        withBaseUrl(
+          `/assets/imports/jr/idle/frame_${String(index).padStart(3, "0")}.png`
+        )
+      ),
+      ...Array.from({ length: 16 }, (_, index) =>
+        withBaseUrl(
+          `/assets/imports/jr/walk_right/frame_${String(index).padStart(
+            3,
+            "0"
+          )}.png`
+        )
+      ),
+      withBaseUrl("/sprites/walk-left.png"),
+      withBaseUrl("/sprites/walk-left-2.png"),
+      ...Array.from({ length: 25 }, (_, index) =>
+        withBaseUrl(
+          `/assets/imports/jr/walk_128/frame_${String(index).padStart(3, "0")}.png`
+        )
+      ),
+    ],
     []
   );
 
