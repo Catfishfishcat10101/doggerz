@@ -249,7 +249,7 @@ export default function DogStage({ dog, scene, targetX = null }) {
       ) : null}
       <PuppyPassport
         dog={dog}
-        className="absolute right-4 top-4 z-20 hidden lg:block"
+        className="absolute right-3 top-3 z-20 w-56 rotate-0 sm:right-4 sm:top-4 sm:w-60 lg:w-64 lg:rotate-1"
       />
 
       <div className="relative z-10 flex min-h-[320px] items-center justify-center px-3 py-6 sm:min-h-[360px] lg:min-h-[420px]">
