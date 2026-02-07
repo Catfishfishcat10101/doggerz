@@ -13,7 +13,19 @@ import { useDogActionSfx } from "@/features/audio/useDogActionSfx.js";
 
 const TURN_DURATION_MS = 320;
 const STOP_EPSILON = 6;
-const PASSPORT_STORAGE_KEY = "doggerz:passportOpen";
+const PASSPORT_STORAGE_KEY_BASE = "doggerz:passportOpen";
+
+const getIsDesktop = () => {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.matchMedia("(min-width: 1024px)").matches;
+  } catch {
+    return false;
+  }
+};
+
+const getPassportStorageKey = (isDesktop) =>
+  `${PASSPORT_STORAGE_KEY_BASE}:${isDesktop ? "desktop" : "mobile"}`;
 
 export default function DogStage({ dog, scene, targetX = null }) {
   const settings = useSelector(selectSettings);
@@ -50,10 +62,13 @@ export default function DogStage({ dog, scene, targetX = null }) {
   const [facing, setFacing] = useState(1);
   const [turnFacing, setTurnFacing] = useState(1);
   const [animDebug, setAnimDebug] = useState(null);
+  const [isDesktop, setIsDesktop] = useState(getIsDesktop);
   const [passportOpen, setPassportOpen] = useState(() => {
     if (typeof window === "undefined") return false;
     try {
-      const raw = window.localStorage.getItem(PASSPORT_STORAGE_KEY);
+      const raw = window.localStorage.getItem(
+        getPassportStorageKey(getIsDesktop())
+      );
       if (raw == null) return false;
       return raw === "true";
     } catch {
@@ -144,15 +159,40 @@ export default function DogStage({ dog, scene, targetX = null }) {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    const media = window.matchMedia("(min-width: 1024px)");
+    const handleChange = (event) => setIsDesktop(event.matches);
+
+    try {
+      media.addEventListener("change", handleChange);
+      return () => media.removeEventListener("change", handleChange);
+    } catch {
+      media.addListener(handleChange);
+      return () => media.removeListener(handleChange);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(getPassportStorageKey(isDesktop));
+      if (raw == null) return;
+      setPassportOpen(raw === "true");
+    } catch {
+      // ignore storage errors
+    }
+  }, [isDesktop]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
     try {
       window.localStorage.setItem(
-        PASSPORT_STORAGE_KEY,
+        getPassportStorageKey(isDesktop),
         passportOpen ? "true" : "false"
       );
     } catch {
       // ignore storage errors
     }
-  }, [passportOpen]);
+  }, [isDesktop, passportOpen]);
 
   useEffect(() => {
     if (!reduceMotion) return;
