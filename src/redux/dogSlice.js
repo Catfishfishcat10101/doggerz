@@ -1074,7 +1074,7 @@ function applyBondGain(state, amount = 1, now = nowMs()) {
   state.bond.updatedAt = now;
 }
 
-function applyBondLoss(state, amount = 1, now = nowMs()) {
+function _applyBondLoss(state, amount = 1, now = nowMs()) {
   const loss = Math.abs(Number(amount) || 0);
   if (loss <= 0) return;
   if (!state.bond || typeof state.bond !== "object") {

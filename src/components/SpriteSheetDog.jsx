@@ -536,6 +536,7 @@ export default function SpriteSheetDog({
     sheetSrc,
     stageKey,
     useCustomAnim,
+    customFrames,
   ]);
 
   if (useCustomAnim && customReady) {

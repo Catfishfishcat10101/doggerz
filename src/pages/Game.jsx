@@ -47,7 +47,7 @@ export default function GamePage() {
 
   const perfReduced = shouldReduceEffects(settings?.perfMode);
   const showBackgroundPhotos = true;
-  const { style, isNight, timeOfDayBucket } = useDayNightBackground({
+  const { isNight, timeOfDayBucket } = useDayNightBackground({
     zip,
     enableImages: showBackgroundPhotos,
   });

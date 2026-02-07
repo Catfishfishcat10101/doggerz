@@ -232,7 +232,15 @@ export function useDogActionSfx({ anim, frameIndex, energy, tier, audio }) {
         sleepTimerRef.current = null;
       }
     };
-  }, [anim, audioEnabled, baseVolume, gestureReady, playOnce, sleepVolume]);
+  }, [
+    anim,
+    audioEnabled,
+    baseVolume,
+    gestureReady,
+    playOnce,
+    sleepEnabled,
+    sleepVolume,
+  ]);
 
   React.useEffect(() => {
     if (!audioEnabled || !gestureReady) return;
