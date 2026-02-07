@@ -5,6 +5,8 @@ import * as React from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import { useToast } from "@/components/toastContext.js";
+import { withBaseUrl } from "@/utils/assetUrl.js";
+import jrManifest from "@/features/game/jrManifest.json";
 import {
   feed,
   giveWater,
@@ -14,6 +16,32 @@ import {
   selectDog,
   triggerManualAction,
 } from "@/redux/dogSlice.js";
+
+const normalizeKey = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_")
+    .replace(/-+/g, "_");
+
+const SPRITESHEET_ROWS = new Set(
+  Array.isArray(jrManifest?.rows)
+    ? jrManifest.rows.map((row) => normalizeKey(row?.anim))
+    : []
+);
+const SPRITESHEET_ALIASES =
+  jrManifest?.aliases && typeof jrManifest.aliases === "object"
+    ? jrManifest.aliases
+    : {};
+const CUSTOM_ATLAS_URL = withBaseUrl("/assets/sprites/jr_custom.json");
+
+function resolveSpritesheetAnim(key) {
+  const normalized = normalizeKey(key);
+  if (SPRITESHEET_ROWS.has(normalized)) return normalized;
+  const alias = normalizeKey(SPRITESHEET_ALIASES[normalized]);
+  if (alias && SPRITESHEET_ROWS.has(alias)) return alias;
+  return null;
+}
 
 const CARE_ACTIONS = [
   {
@@ -172,6 +200,7 @@ export default function DogActions({ className = "" }) {
   const bond = Number(dog?.bond?.value ?? 0);
   const lastActionAtRef = React.useRef(Object.create(null));
   const resetTimerRef = React.useRef(null);
+  const [customAnimSet, setCustomAnimSet] = React.useState(null);
   const actionIndex = React.useMemo(() => {
     const all = [...CARE_ACTIONS, ...TRICK_ACTIONS];
     return all.reduce((acc, item) => {
@@ -185,6 +214,24 @@ export default function DogActions({ className = "" }) {
       if (resetTimerRef.current) {
         window.clearTimeout(resetTimerRef.current);
       }
+    };
+  }, []);
+
+  React.useEffect(() => {
+    let alive = true;
+    fetch(CUSTOM_ATLAS_URL)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!alive) return;
+        const keys = data?.animations ? Object.keys(data.animations) : [];
+        setCustomAnimSet(new Set(keys));
+      })
+      .catch(() => {
+        if (!alive) return;
+        setCustomAnimSet(new Set());
+      });
+    return () => {
+      alive = false;
     };
   }, []);
 
@@ -206,6 +253,16 @@ export default function DogActions({ className = "" }) {
     if (!action.cooldownMs) return false;
     return Date.now() - last < action.cooldownMs;
   }, []);
+
+  const isAnimAvailable = React.useCallback(
+    (animKey) => {
+      if (!animKey) return true;
+      if (resolveSpritesheetAnim(animKey)) return true;
+      if (customAnimSet == null) return true;
+      return customAnimSet.has(normalizeKey(animKey));
+    },
+    [customAnimSet]
+  );
 
   const handleAction = React.useCallback(
     (action) => {
@@ -267,6 +324,17 @@ export default function DogActions({ className = "" }) {
         return;
       }
 
+      if (resolvedAction.anim && !isAnimAvailable(resolvedAction.anim)) {
+        console.warn(
+          `[DogActions] Missing frames for "${resolvedAction.anim}", defaulting to wag.`
+        );
+        dispatch(triggerManualAction({ now, action: "wag" }));
+        if (followUpAnim) {
+          scheduleReturn("wag");
+        }
+        return;
+      }
+
       const stats = {};
       if (typeof resolvedAction.energyCost === "number") {
         stats.energy = -Math.abs(resolvedAction.energyCost);
@@ -280,12 +348,19 @@ export default function DogActions({ className = "" }) {
           bondDelta: Number(resolvedAction.bondDelta || 0) + bonusBond,
         })
       );
-
       if (followUpAnim) {
         scheduleReturn(followUpAnim);
       }
     },
-    [actionIndex, bond, dispatch, energy, scheduleReturn, toast]
+    [
+      actionIndex,
+      bond,
+      dispatch,
+      energy,
+      isAnimAvailable,
+      scheduleReturn,
+      toast,
+    ]
   );
 
   return (
@@ -295,6 +370,7 @@ export default function DogActions({ className = "" }) {
         subtitle="Keep them happy"
         actions={CARE_ACTIONS}
         energy={energy}
+        isAnimAvailable={isAnimAvailable}
         isCoolingDown={isCoolingDown}
         onAction={handleAction}
       />
@@ -304,6 +380,7 @@ export default function DogActions({ className = "" }) {
         actions={TRICK_ACTIONS}
         energy={energy}
         bond={bond}
+        isAnimAvailable={isAnimAvailable}
         isCoolingDown={isCoolingDown}
         onAction={handleAction}
       />
@@ -317,6 +394,7 @@ function ActionPanel({
   actions,
   energy,
   bond,
+  isAnimAvailable,
   isCoolingDown,
   onAction,
 }) {
@@ -338,8 +416,11 @@ function ActionPanel({
         {actions.map((action, idx) => {
           const lowEnergy =
             typeof action.energyMin === "number" && energy < action.energyMin;
+          const available = action.anim
+            ? isAnimAvailable?.(action.anim) !== false
+            : true;
           const cooling = isCoolingDown(action);
-          const disabled = lowEnergy || cooling;
+          const disabled = lowEnergy || cooling || !available;
           return (
             <button
               key={action.id}

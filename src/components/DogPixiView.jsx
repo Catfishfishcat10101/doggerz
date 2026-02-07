@@ -401,7 +401,7 @@ export default function DogPixiView({
                 : Math.min(window.devicePixelRatio || 1, resolutionCap),
           }}
         >
-          <Container x={width / 2} y={height / 2}>
+          <Container x={width / 2} y={height * 0.82}>
             {canAnimate ? (
               <AnimatedSprite
                 key={resetKey}
@@ -410,7 +410,7 @@ export default function DogPixiView({
                 isPlaying={motionEnabled}
                 initialFrame={0}
                 animationSpeed={animationSpeed}
-                anchor={0.5}
+                anchor={[0.5, 1]}
                 scale={effectiveScale}
               />
             ) : null}

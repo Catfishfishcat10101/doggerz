@@ -43,8 +43,8 @@ export async function showDoggerzNotification({
       tag: tag ? String(tag) : undefined,
       renotify: Boolean(renotify),
       requireInteraction: Boolean(requireInteraction),
-      icon: icon || "/icons/doggerz-192.png",
-      badge: badge || "/icons/doggerz-192.png",
+      icon: icon || "/assets/icons/doggerz-192.png",
+      badge: badge || "/assets/icons/doggerz-192.png",
       data,
     };
 

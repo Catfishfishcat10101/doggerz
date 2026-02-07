@@ -107,7 +107,9 @@ export default function PixiDog({
     root.addChild(shadow);
 
     // Sprite assets were removed; use the app icon as a stable fallback.
-    const texture = PIXI.Texture.from(withBaseUrl("/icons/doggerz-192.png"));
+    const texture = PIXI.Texture.from(
+      withBaseUrl("/assets/icons/doggerz-192.png")
+    );
     const dog = new PIXI.Sprite(texture);
     dog.anchor.set(0.5, 1.0);
     dog.x = width / 2;

@@ -40,17 +40,17 @@ const CORE_ASSETS = [
   "/favicon.ico",
   "/offline.html",
 
-  // Icons (must exist under /public/icons)
-  "/icons/doggerz-180.png",
-  "/icons/doggerz-192.png",
-  "/icons/doggerz-512.png",
+  // Icons (pngs live under /public/assets/icons)
+  "/assets/icons/doggerz-180.png",
+  "/assets/icons/doggerz-192.png",
+  "/assets/icons/doggerz-512.png",
   "/icons/doggerz-logo.svg",
 
   // Backgrounds
-  "/backgrounds/backyard-day.webp",
-  "/backgrounds/backyard-night.webp",
-  "/backgrounds/backyard-day-wide.webp",
-  "/backgrounds/backyard-night-wide.webp",
+  "/backgrounds/backyard-day.svg",
+  "/backgrounds/backyard-night.svg",
+  "/backgrounds/backyard-day-wide.svg",
+  "/backgrounds/backyard-night-wide.svg",
 
   // Audio
   "/audio/bark.m4a",
@@ -147,10 +147,11 @@ self.addEventListener("fetch", (event) => {
       scopedPath.match(/\.(mp3|wav|ogg|m4a)$/i) ||
       scopedPath.match(/\.(css|js|woff2?|ttf|otf)$/i) ||
       scopedPath.startsWith("/assets/") ||
-      scopedPath.startsWith("/sprites/") ||
+      scopedPath.startsWith("/assets/sprites/") ||
       scopedPath.startsWith("/backgrounds/") ||
       scopedPath.startsWith("/audio/") ||
       scopedPath.startsWith("/models/") ||
+      scopedPath.startsWith("/assets/icons/") ||
       scopedPath.startsWith("/icons/");
 
     if (isStaticAsset && !isDev) {
@@ -229,7 +230,9 @@ async function cacheFirst(request) {
     try {
       const dest = request.destination;
       if (dest === "image") {
-        const fallback = await caches.match(withBase("/icons/doggerz-192.png"));
+        const fallback = await caches.match(
+          withBase("/assets/icons/doggerz-192.png")
+        );
         if (fallback) return fallback;
       }
       if (dest === "audio") {

@@ -6,7 +6,7 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 }
 
-def resolvedVersionCode = (System.getenv('DOGGERZ_VERSION_CODE') ?: (project.findProperty('DOGGERZ_VERSION_CODE') ?: '100')) as int
+def resolvedVersionCode = (System.getenv('DOGGERZ_VERSION_CODE') ?: (project.findProperty('DOGGERZ_VERSION_CODE') ?: '1')) as int
 def resolvedVersionName = (System.getenv('DOGGERZ_VERSION_NAME') ?: (project.findProperty('DOGGERZ_VERSION_NAME') ?: '1.0.0')) as String
 
 android {
@@ -44,7 +44,8 @@ android {
     }
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
+            shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             if (keystorePropertiesFile.exists()) {
                 signingConfig signingConfigs.release

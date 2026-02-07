@@ -14,14 +14,10 @@ export const DOG_CONDITION_IDS = Object.freeze([
   "mange",
 ]);
 
-const DEFAULT_SPRITE_DIR = "/sprites";
+const DEFAULT_SPRITE_DIR = "/assets/sprites";
 const DEFAULT_ATLAS_DIR = "/assets/atlas";
 
-export const DOG_STATIC_SPRITE_FILES_BY_STAGE_ID = Object.freeze({
-  PUPPY: "doggerz-main.png",
-  ADULT: "doggerz-main.png",
-  SENIOR: "doggerz-main.png",
-});
+const DEFAULT_STATIC_SPRITE = "/assets/imports/jr/idle/frame_000.png";
 
 export const DOG_STAGE_LABEL_BY_STAGE_ID = Object.freeze({
   PUPPY: "Puppy",
@@ -84,15 +80,11 @@ export function getDogStageLabel(stageLike) {
  * Static fallback sprite used while strips load (or if strips fail).
  */
 export function getDogStaticSpriteUrl(_stageLike) {
-  const stageId = normalizeDogStageId(_stageLike);
-  const file =
-    DOG_STATIC_SPRITE_FILES_BY_STAGE_ID[stageId] ||
-    DOG_STATIC_SPRITE_FILES_BY_STAGE_ID.PUPPY;
-  return withBaseUrl(`${DEFAULT_SPRITE_DIR}/${file}`);
+  return withBaseUrl(DEFAULT_STATIC_SPRITE);
 }
 
 /**
- * Pixi sheet path: /sprites/jr/<stage>_<condition>.png
+ * Pixi sheet path: /assets/sprites/jr/<stage>_<condition>.png
  */
 export function getDogPixiSheetUrl(_stageLike, _conditionLike) {
   const stage = normalizeDogStageShort(_stageLike);

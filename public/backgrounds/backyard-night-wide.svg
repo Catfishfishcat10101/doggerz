@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="skyNightWide" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#0b1d3a"/>
+      <stop offset="55%" stop-color="#081227"/>
+      <stop offset="100%" stop-color="#05070f"/>
+    </linearGradient>
+    <linearGradient id="grassNightWide" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#274e3b"/>
+      <stop offset="70%" stop-color="#1d3b2c"/>
+      <stop offset="100%" stop-color="#162c22"/>
+    </linearGradient>
+    <linearGradient id="hillFarNightWide" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0%" stop-color="#254a3b"/>
+      <stop offset="100%" stop-color="#1f3f34"/>
+    </linearGradient>
+    <linearGradient id="hillNearNightWide" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0%" stop-color="#1c362b"/>
+      <stop offset="100%" stop-color="#162c22"/>
+    </linearGradient>
+    <linearGradient id="fenceNightWide" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#8b6b4a"/>
+      <stop offset="100%" stop-color="#6d5136"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1920" height="1080" fill="url(#skyNightWide)"/>
+
+  <g fill="#f5f1d2">
+    <circle cx="1550" cy="170" r="70"/>
+    <circle cx="1580" cy="150" r="30" fill="#0b1d3a"/>
+  </g>
+
+  <g fill="#d7e3ff" opacity="0.85">
+    <circle cx="240" cy="140" r="3"/>
+    <circle cx="320" cy="210" r="2"/>
+    <circle cx="420" cy="110" r="2"/>
+    <circle cx="520" cy="180" r="3"/>
+    <circle cx="660" cy="130" r="2"/>
+    <circle cx="780" cy="220" r="2"/>
+    <circle cx="980" cy="160" r="3"/>
+    <circle cx="1180" cy="120" r="2"/>
+    <circle cx="1320" cy="210" r="2"/>
+    <circle cx="1460" cy="90" r="3"/>
+  </g>
+
+  <path d="M0 610 C 220 560 420 680 720 620 C 980 570 1200 650 1500 610 C 1700 580 1820 600 1920 560 L 1920 1080 L 0 1080 Z" fill="url(#hillFarNightWide)"/>
+  <path d="M0 680 C 240 640 420 720 720 690 C 980 650 1210 740 1500 700 C 1700 670 1820 690 1920 650 L 1920 1080 L 0 1080 Z" fill="url(#hillNearNightWide)"/>
+
+  <g>
+    <rect x="0" y="700" width="1920" height="110" fill="url(#fenceNightWide)"/>
+    <rect x="0" y="690" width="1920" height="20" fill="#9a7b57"/>
+    <g fill="#7c5d3f">
+      <rect x="90" y="670" width="30" height="150" rx="6"/>
+      <rect x="250" y="670" width="30" height="150" rx="6"/>
+      <rect x="410" y="670" width="30" height="150" rx="6"/>
+      <rect x="570" y="670" width="30" height="150" rx="6"/>
+      <rect x="730" y="670" width="30" height="150" rx="6"/>
+      <rect x="890" y="670" width="30" height="150" rx="6"/>
+      <rect x="1050" y="670" width="30" height="150" rx="6"/>
+      <rect x="1210" y="670" width="30" height="150" rx="6"/>
+      <rect x="1370" y="670" width="30" height="150" rx="6"/>
+      <rect x="1530" y="670" width="30" height="150" rx="6"/>
+      <rect x="1690" y="670" width="30" height="150" rx="6"/>
+      <rect x="1850" y="670" width="30" height="150" rx="6"/>
+    </g>
+  </g>
+
+  <rect x="0" y="760" width="1920" height="320" fill="url(#grassNightWide)"/>
+
+  <path d="M720 1080 C 840 900 1080 900 1200 1080 Z" fill="#8b6c4c" opacity="0.35"/>
+  <path d="M750 1080 C 860 930 1060 930 1170 1080 Z" fill="#a27f5c" opacity="0.4"/>
+
+  <g fill="#203a2c">
+    <rect x="120" y="520" width="60" height="190" rx="16"/>
+    <circle cx="150" cy="470" r="110" fill="#2b4b39"/>
+    <circle cx="60" cy="500" r="70" fill="#2b4b39"/>
+    <circle cx="240" cy="500" r="70" fill="#2b4b39"/>
+  </g>
+
+  <g fill="#203a2c">
+    <rect x="1640" y="540" width="60" height="170" rx="16"/>
+    <circle cx="1670" cy="500" r="90" fill="#2b4b39"/>
+    <circle cx="1590" cy="520" r="70" fill="#2b4b39"/>
+    <circle cx="1750" cy="520" r="70" fill="#2b4b39"/>
+  </g>
+
+  <g opacity="0.25">
+    <rect x="0" y="0" width="1920" height="1080" fill="#0b1020"/>
+  </g>
+</svg>

@@ -7,7 +7,35 @@
 const ABSOLUTE_URL_RE = /^[a-zA-Z][a-zA-Z\d+.-]*:/; // http:, https:, data:, blob:, etc.
 const PROTOCOL_RELATIVE_RE = /^\/\//;
 
+function getAssetBaseOverride() {
+  try {
+    const envBase =
+      typeof import.meta !== "undefined" && import.meta?.env?.VITE_ASSET_BASE
+        ? String(import.meta.env.VITE_ASSET_BASE || "").trim()
+        : "";
+    if (envBase) return envBase;
+  } catch {
+    // ignore
+  }
+
+  try {
+    const winBase =
+      typeof window !== "undefined" && window?.DOGGERZ_ASSET_BASE
+        ? String(window.DOGGERZ_ASSET_BASE || "").trim()
+        : "";
+    if (winBase) return winBase;
+  } catch {
+    // ignore
+  }
+
+  return "";
+}
+
 export function getBaseUrl() {
+  const override = getAssetBaseOverride();
+  if (override) {
+    return override.endsWith("/") ? override.slice(0, -1) : override;
+  }
   try {
     const raw =
       typeof import.meta !== "undefined" && import.meta?.env?.BASE_URL
@@ -29,8 +57,8 @@ export function isAbsoluteUrl(path) {
  * Prefix a public-path with Vite's BASE_URL.
  *
  * Examples:
- * - BASE_URL = '/'         => withBaseUrl('/icons/doggerz-192.png') -> '/icons/doggerz-192.png'
- * - BASE_URL = '/doggerz/' => withBaseUrl('/icons/doggerz-192.png') -> '(BASE_URL)icons/doggerz-192.png'
+ * - BASE_URL = '/'         => withBaseUrl('/assets/icons/doggerz-192.png') -> '/assets/icons/doggerz-192.png'
+ * - BASE_URL = '/doggerz/' => withBaseUrl('/assets/icons/doggerz-192.png') -> '(BASE_URL)assets/icons/doggerz-192.png'
  */
 export function withBaseUrl(path) {
   const p = String(path || "").trim();

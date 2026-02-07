@@ -9,7 +9,12 @@ import {
   selectDogVacation,
   setVacationMode,
 } from "../redux/dogSlice.js";
-import { selectUserZip, setZip } from "../redux/userSlice.js";
+import {
+  selectDogRenderMode,
+  selectUserZip,
+  setDogRenderMode,
+  setZip,
+} from "../redux/userSlice.js";
 import { auth, db, firebaseReady } from "../firebase.js";
 import { deleteUser, onAuthStateChanged, signOut } from "firebase/auth";
 import { deleteDoc, doc } from "firebase/firestore";
@@ -218,6 +223,7 @@ export default function Settings() {
   const settings = useSelector(selectSettings);
   const vacation = /** @type {any} */ (useSelector(selectDogVacation));
   const currentZip = useSelector(selectUserZip);
+  const dogRenderMode = useSelector(selectDogRenderMode);
   const toast = useToast();
 
   const [zipInput, setZipInput] = useState(currentZip || "");
@@ -698,6 +704,18 @@ export default function Settings() {
           </Card>
 
           <Card title="Game" subtitle="Controls and visuals">
+            <SelectRow
+              id="dogRenderMode"
+              label="Dog render style"
+              description="Switch between pixel sprites and realistic assets."
+              value={dogRenderMode || "sprite"}
+              onChange={(v) => dispatch(setDogRenderMode(v))}
+              options={[
+                { value: "sprite", label: "Sprite (pixel)" },
+                { value: "realistic", label: "Realistic" },
+              ]}
+            />
+
             <SelectRow
               id="trainingInputMode"
               label="Training input"

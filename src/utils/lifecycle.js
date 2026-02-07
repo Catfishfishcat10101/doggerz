@@ -12,8 +12,8 @@ export const MS_PER_GAME_DAY = (24 * 60 * 60 * 1000) / GAME_DAYS_PER_REAL_DAY;
 
 // Lifecycle / age stages (in-game days)
 export const LIFE_STAGES = {
-  PUPPY: { min: 0, max: 180, label: "Puppy" },
-  ADULT: { min: 181, max: 2555, label: "Adult" },
+  PUPPY: { min: 0, max: 29, label: "Puppy" },
+  ADULT: { min: 30, max: 2555, label: "Adult" },
   SENIOR: { min: 2556, max: 5475, label: "Senior" },
 };
 
@@ -115,7 +115,7 @@ export function getDogAgeProgress(adoptedAtMs, now = Date.now()) {
  * Map a life stage to the static Jack Russell sprite.
  */
 export function getSpriteForLifeStage(_stageId) {
-  return withBaseUrl("/sprites/doggerz-main.png");
+  return withBaseUrl("/assets/imports/jr/idle/frame_000.png");
 }
 
 /**

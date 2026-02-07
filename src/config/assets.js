@@ -7,23 +7,23 @@ export const ASSET_BASE = "/assets";
 /** Backgrounds */
 export const BACKGROUNDS = {
   yard: {
-    day: "/backgrounds/backyard-day.webp",
-    night: "/backgrounds/backyard-night.webp",
-    dayWide: "/backgrounds/backyard-day-wide.webp",
-    nightWide: "/backgrounds/backyard-night-wide.webp",
+    day: "/backgrounds/backyard-day.svg",
+    night: "/backgrounds/backyard-night.svg",
+    dayWide: "/backgrounds/backyard-day-wide.svg",
+    nightWide: "/backgrounds/backyard-night-wide.svg",
   },
 };
 
 /** Dogs (static renders for now; will extend to actions/sheets later) */
 export const DOGS = {
   puppy: {
-    clean: `/sprites/doggerz-main.png`,
+    clean: `/assets/imports/jr/idle/frame_000.png`,
   },
   adult: {
-    clean: `/sprites/doggerz-main.png`,
+    clean: `/assets/imports/jr/idle/frame_000.png`,
   },
   senior: {
-    clean: `/sprites/doggerz-main.png`,
+    clean: `/assets/imports/jr/idle/frame_000.png`,
   },
 };
 

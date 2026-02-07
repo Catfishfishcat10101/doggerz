@@ -30,8 +30,8 @@ export default function App() {
           )}.png`
         )
       ),
-      withBaseUrl("/sprites/walk-left.png"),
-      withBaseUrl("/sprites/walk-left-2.png"),
+      withBaseUrl("/assets/sprites/walk-left.png"),
+      withBaseUrl("/assets/sprites/walk-left-2.png"),
       ...Array.from({ length: 25 }, (_, index) =>
         withBaseUrl(
           `/assets/imports/jr/walk_128/frame_${String(index).padStart(3, "0")}.png`

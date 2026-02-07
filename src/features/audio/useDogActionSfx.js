@@ -2,11 +2,15 @@
 // src/features/audio/useDogActionSfx.js
 
 import * as React from "react";
+import { Haptics, ImpactStyle } from "@capacitor/haptics";
 
 import jrAudio from "@/features/audio/jrAudio.json";
 import { withBaseUrl } from "@/utils/assetUrl.js";
 
 const clamp01 = (v) => Math.max(0, Math.min(1, Number(v) || 0));
+const HAPTIC_LIGHT_MS = 12;
+const HAPTIC_HEAVY_MS = 26;
+const WALK_HAPTIC_INTERVAL_MS = 520;
 
 function normalizeKey(value) {
   return String(value || "")
@@ -75,7 +79,15 @@ function useUserGestureGate() {
   return ready;
 }
 
-export function useDogActionSfx({ anim, frameIndex, energy, tier, audio }) {
+export function useDogActionSfx({
+  anim,
+  frameIndex,
+  frameCount,
+  energy,
+  tier,
+  audio,
+  hapticsEnabled = true,
+}) {
   const audioEnabled = Boolean(audio?.enabled);
   const masterVolume = clamp01(audio?.masterVolume ?? 0.8);
   const sfxVolume = clamp01(audio?.sfxVolume ?? 0.7);
@@ -83,12 +95,15 @@ export function useDogActionSfx({ anim, frameIndex, energy, tier, audio }) {
   const sleepEnabled = audio?.sleepEnabled !== false;
   const baseVolume = clamp01(masterVolume * sfxVolume);
   const gestureReady = useUserGestureGate();
+  const hapticsReady = Boolean(hapticsEnabled) && gestureReady;
 
   const audioCacheRef = React.useRef(Object.create(null));
   const loopKeyRef = React.useRef(null);
   const sleepTimerRef = React.useRef(null);
   const lastFrameRef = React.useRef(null);
   const lastPlayAtRef = React.useRef(Object.create(null));
+  const hapticTimerRef = React.useRef(null);
+  const lastHapticAtRef = React.useRef(Object.create(null));
 
   const tierMultiplier = tier === "stray" ? 0.55 : tier === "tired" ? 0.75 : 1;
   const lowEnergy = Number(energy ?? 0) < 30 || tier === "stray";
@@ -141,6 +156,40 @@ export function useDogActionSfx({ anim, frameIndex, energy, tier, audio }) {
       }
     },
     [audioEnabled, gestureReady, getAudio]
+  );
+
+  const playHaptic = React.useCallback(
+    async (
+      key,
+      {
+        style = ImpactStyle.Light,
+        fallbackMs = HAPTIC_LIGHT_MS,
+        cooldownMs = 300,
+      } = {}
+    ) => {
+      if (!hapticsReady) return;
+      const now = Date.now();
+      const last = Number(lastHapticAtRef.current[key] || 0);
+      if (now - last < Math.max(0, cooldownMs)) return;
+      lastHapticAtRef.current[key] = now;
+
+      try {
+        if (Haptics?.impact) {
+          await Haptics.impact({ style });
+          return;
+        }
+      } catch {
+        // fall through to web vibrate
+      }
+      try {
+        if (typeof navigator !== "undefined" && navigator?.vibrate) {
+          navigator.vibrate(Math.max(4, fallbackMs));
+        }
+      } catch {
+        // ignore haptics errors
+      }
+    },
+    [hapticsReady]
   );
 
   React.useEffect(() => {
@@ -209,6 +258,32 @@ export function useDogActionSfx({ anim, frameIndex, energy, tier, audio }) {
   ]);
 
   React.useEffect(() => {
+    if (hapticTimerRef.current) {
+      window.clearInterval(hapticTimerRef.current);
+      hapticTimerRef.current = null;
+    }
+
+    if (!hapticsReady) return;
+    const loopKey = resolveLoopKey(anim);
+    if (!loopKey || !loopKey.startsWith("walk")) return;
+
+    hapticTimerRef.current = window.setInterval(() => {
+      playHaptic("walk_step", {
+        style: ImpactStyle.Light,
+        fallbackMs: HAPTIC_LIGHT_MS,
+        cooldownMs: 220,
+      });
+    }, WALK_HAPTIC_INTERVAL_MS);
+
+    return () => {
+      if (hapticTimerRef.current) {
+        window.clearInterval(hapticTimerRef.current);
+        hapticTimerRef.current = null;
+      }
+    };
+  }, [anim, hapticsReady, playHaptic]);
+
+  React.useEffect(() => {
     if (sleepTimerRef.current) {
       window.clearInterval(sleepTimerRef.current);
       sleepTimerRef.current = null;
@@ -243,7 +318,8 @@ export function useDogActionSfx({ anim, frameIndex, energy, tier, audio }) {
   ]);
 
   React.useEffect(() => {
-    if (!audioEnabled || !gestureReady) return;
+    const allowFrameFx = (audioEnabled && gestureReady) || hapticsReady;
+    if (!allowFrameFx) return;
     if (frameIndex == null) return;
 
     if (lastFrameRef.current === frameIndex) return;
@@ -262,26 +338,64 @@ export function useDogActionSfx({ anim, frameIndex, energy, tier, audio }) {
       }
     }
 
-    if (meta.loop || meta.intervalMs) return;
     const triggerFrame = Number(meta.triggerFrame);
-    if (!Number.isFinite(triggerFrame)) return;
-    if (frameIndex !== triggerFrame) return;
 
     const volume = clamp01(
       baseVolume * (Number(meta.volume ?? 1) || 1) * tierMultiplier
     );
 
-    playOnce(soundKey, {
-      volume,
-      cooldownMs: Number(meta.cooldownMs || 400),
-    });
+    if (
+      audioEnabled &&
+      gestureReady &&
+      !meta.loop &&
+      !meta.intervalMs &&
+      Number.isFinite(triggerFrame) &&
+      frameIndex === triggerFrame
+    ) {
+      playOnce(soundKey, {
+        volume,
+        cooldownMs: Number(meta.cooldownMs || 400),
+      });
+    }
+
+    if (hapticsReady) {
+      const normalizedAnim = stripConditionPrefix(normalizeKey(anim));
+      if (
+        (soundKey === "bark" || soundKey === "whimper") &&
+        Number.isFinite(triggerFrame) &&
+        frameIndex === triggerFrame
+      ) {
+        playHaptic("bark", {
+          style: ImpactStyle.Light,
+          fallbackMs: HAPTIC_LIGHT_MS,
+          cooldownMs: 500,
+        });
+      }
+      if (normalizedAnim === "front_flip") {
+        const totalFrames = Number(frameCount);
+        const landingFrame =
+          Number.isFinite(totalFrames) && totalFrames > 1
+            ? totalFrames - 1
+            : triggerFrame;
+        if (frameIndex === landingFrame) {
+          playHaptic("front_flip_land", {
+            style: ImpactStyle.Heavy,
+            fallbackMs: HAPTIC_HEAVY_MS,
+            cooldownMs: 900,
+          });
+        }
+      }
+    }
   }, [
     anim,
     audioEnabled,
     baseVolume,
+    frameCount,
     frameIndex,
     gestureReady,
+    hapticsReady,
     lowEnergy,
+    playHaptic,
     playOnce,
     tierMultiplier,
   ]);

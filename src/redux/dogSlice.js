@@ -2,6 +2,8 @@
 export const selectDogMoodlets = (state) => state.dog.moodlets;
 // Selector for emotion cue (needed by NeedsHUD)
 export const selectDogEmotionCue = (state) => state.dog.emotionCue;
+export const selectDogGrowthMilestone = (state) =>
+  state.dog?.milestones?.pending || null;
 /** @format */
 
 // src/redux/dogSlice.js
@@ -441,6 +443,12 @@ const initialSkillTree = {
   lastBranchId: null,
 };
 
+const initialMilestones = {
+  pending: null,
+  lastCelebratedStage: null,
+  lastCelebratedAt: null,
+};
+
 const DEFAULT_COSMETIC_CATALOG = Object.freeze([
   { id: "collar_leaf", slot: "collar", threshold: 3, label: "Leaf Collar" },
   { id: "collar_neon", slot: "collar", threshold: 7, label: "Neon Collar" },
@@ -531,6 +539,9 @@ const initialState = {
   // Skill tree progression (training as a long-term path)
   skillTree: initialSkillTree,
 
+  // Growth milestones (life stage celebrations)
+  milestones: initialMilestones,
+
   polls: {
     active: null,
     lastPromptId: null,
@@ -606,6 +617,25 @@ function ensureSkillTreeState(state) {
     : null;
 
   return state.skillTree;
+}
+
+function ensureMilestonesState(state) {
+  if (!state.milestones || typeof state.milestones !== "object") {
+    state.milestones = { ...initialMilestones };
+    return state.milestones;
+  }
+
+  if (!("pending" in state.milestones)) {
+    state.milestones.pending = null;
+  }
+  if (typeof state.milestones.lastCelebratedStage !== "string") {
+    state.milestones.lastCelebratedStage = null;
+  }
+  if (typeof state.milestones.lastCelebratedAt !== "number") {
+    state.milestones.lastCelebratedAt = null;
+  }
+
+  return state.milestones;
 }
 
 function getSkillTreePointsFromDogState(dogState) {
@@ -1277,14 +1307,40 @@ function resolveCleanlinessTierFromValue(value = 0) {
 }
 
 function syncLifecycleState(state, now = nowMs()) {
+  const previousStage = state.lifeStage?.stage || null;
   const adoptedAt = state.adoptedAt || state.temperament?.adoptedAt || now;
   const ageNow = getVacationAdjustedNow(state, now);
   const age = calculateDogAge(adoptedAt, ageNow);
+  const nextStage = age.stage || DEFAULT_LIFE_STAGE.stage;
   state.lifeStage = {
-    stage: age.stage || DEFAULT_LIFE_STAGE.stage,
+    stage: nextStage,
     label: age.label || DEFAULT_LIFE_STAGE.label,
     days: age.days,
   };
+
+  const milestones = ensureMilestonesState(state);
+  if (
+    previousStage &&
+    nextStage &&
+    previousStage !== nextStage &&
+    !milestones.pending &&
+    milestones.lastCelebratedStage !== nextStage
+  ) {
+    milestones.pending = {
+      fromStage: previousStage,
+      toStage: nextStage,
+      triggeredAt: now,
+      ageDays: Number.isFinite(age.days) ? age.days : null,
+    };
+
+    pushJournalEntry(state, {
+      type: "GROWTH",
+      moodTag: "PROUD",
+      summary: `Grew into a ${getLifeStageLabel(nextStage)}.`,
+      body: "Look at me now—taller, faster, and ready for new adventures together.",
+      timestamp: now,
+    });
+  }
   return state.lifeStage;
 }
 
@@ -1939,6 +1995,11 @@ const dogSlice = createSlice({
         ...(payload.skillTree || state.skillTree || {}),
       };
 
+      merged.milestones = {
+        ...initialMilestones,
+        ...(payload.milestones || state.milestones || {}),
+      };
+
       merged.lastAction =
         payload.lastAction ?? state.lastAction ?? initialState.lastAction;
 
@@ -1948,6 +2009,7 @@ const dogSlice = createSlice({
       ensureDreamState(merged);
       ensureVacationState(merged);
       ensureSkillTreeState(merged);
+      ensureMilestonesState(merged);
 
       merged.cleanlinessTier =
         payload.cleanlinessTier || state.cleanlinessTier || "FRESH";
@@ -1975,6 +2037,14 @@ const dogSlice = createSlice({
       if (perks && typeof perks === "object") {
         state.career.perks = { ...state.career.perks, ...perks };
       }
+    },
+
+    acknowledgeGrowthMilestone(state) {
+      const milestones = ensureMilestonesState(state);
+      if (!milestones.pending) return;
+      milestones.lastCelebratedStage = milestones.pending.toStage || null;
+      milestones.lastCelebratedAt = nowMs();
+      milestones.pending = null;
     },
 
     ackTemperamentReveal(state, { payload }) {
@@ -2940,6 +3010,7 @@ export const {
   setDogName,
   setAdoptedAt,
   setCareerLifestyle,
+  acknowledgeGrowthMilestone,
   ackTemperamentReveal,
   markTemperamentRevealed,
   updateFavoriteToy,

@@ -259,7 +259,15 @@ export default function MainGame(props = {}) {
 
   return (
     <div className="min-h-dvh w-full text-white">
-      <div className="mx-auto max-w-7xl px-4 pt-4 pb-10">
+      <div
+        className="mx-auto max-w-7xl px-4"
+        style={{
+          paddingTop: "calc(env(safe-area-inset-top) + 1rem)",
+          paddingBottom: "calc(env(safe-area-inset-bottom) + 2.5rem)",
+          paddingLeft: "calc(env(safe-area-inset-left) + 1rem)",
+          paddingRight: "calc(env(safe-area-inset-right) + 1rem)",
+        }}
+      >
         <div className="mb-3">
           <GameTopBar
             dogName={dog?.name || "Pup"}

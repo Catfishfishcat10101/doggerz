@@ -173,7 +173,7 @@ export default function DogCanvas({
 
           if (spriteRef.current) {
             spriteRef.current.x = w / 2;
-            spriteRef.current.y = h * 0.78;
+            spriteRef.current.y = h * 0.82;
           }
         };
 
@@ -230,16 +230,16 @@ export default function DogCanvas({
         }
 
         if (dogDisplay.anchor) {
-          dogDisplay.anchor.set(0.5, 0.5);
+          dogDisplay.anchor.set(0.5, 1);
         } else {
-          if (dogDisplay.pivot) dogDisplay.pivot.set(90, 60);
+          if (dogDisplay.pivot) dogDisplay.pivot.set(90, 120);
         }
 
         const w = host.clientWidth || 600;
         const h = host.clientHeight || resolvedHeight;
 
         dogDisplay.x = w / 2;
-        dogDisplay.y = h * 0.78;
+        dogDisplay.y = h * 0.82;
 
         dogDisplay.scale?.set?.(scale);
 
@@ -263,7 +263,7 @@ export default function DogCanvas({
           const bob = enableMotion
             ? Math.sin(app.ticker.lastTime / 420) * 1.6
             : 0;
-          sprite.y = hNow * 0.78 + bob;
+          sprite.y = hNow * 0.82 + bob;
         });
 
         resizeHandler();

@@ -50,8 +50,8 @@ if (Array.isArray(jrManifest?.rows)) {
 
 const imageCache = new Map();
 const WALK_LEFT_FRAMES = Object.freeze([
-  withBaseUrl("/sprites/walk-left.png"),
-  withBaseUrl("/sprites/walk-left-2.png"),
+  withBaseUrl("/assets/sprites/walk-left.png"),
+  withBaseUrl("/assets/sprites/walk-left-2.png"),
 ]);
 const WALK_FRAMES = Object.freeze(
   Array.from({ length: 25 }, (_, index) =>
@@ -73,6 +73,7 @@ const CUSTOM_ANIM_FOLDER_ALIASES = Object.freeze({
   high_five: "highfive",
   highfive: "highfive",
 });
+const CUSTOM_ATLAS_JSON = withBaseUrl("/assets/sprites/jr_custom.json");
 const CUSTOM_ANIM_KEYS = new Set([
   "idle",
   "sleep",
@@ -110,6 +111,64 @@ const CUSTOM_ANIM_KEYS = new Set([
   "tired_sleep",
   "tired_scratch",
 ]);
+
+const atlasCache = {
+  status: "idle",
+  data: null,
+  error: null,
+  promise: null,
+};
+
+function fetchCustomAtlas() {
+  if (atlasCache.status === "loaded") return Promise.resolve(atlasCache.data);
+  if (atlasCache.promise) return atlasCache.promise;
+
+  atlasCache.status = "loading";
+  atlasCache.promise = fetch(CUSTOM_ATLAS_JSON)
+    .then((res) => {
+      if (!res.ok) throw new Error(`Atlas fetch failed (${res.status})`);
+      return res.json();
+    })
+    .then((data) => {
+      atlasCache.status = "loaded";
+      atlasCache.data = data;
+      atlasCache.error = null;
+      return data;
+    })
+    .catch((err) => {
+      atlasCache.status = "error";
+      atlasCache.error = err;
+      return null;
+    });
+
+  return atlasCache.promise;
+}
+
+function resolveAtlasImage(metaImage) {
+  if (!metaImage) return withBaseUrl("/assets/sprites/jr_custom.png");
+  const image = String(metaImage || "").trim();
+  if (!image) return withBaseUrl("/assets/sprites/jr_custom.png");
+  if (image.startsWith("/")) return withBaseUrl(image);
+  return withBaseUrl(`/assets/sprites/${image}`);
+}
+
+function mapAtlasFrames(frames) {
+  if (!frames) return null;
+  if (Array.isArray(frames)) {
+    const map = Object.create(null);
+    frames.forEach((frame) => {
+      const key = frame?.filename || frame?.name;
+      if (key) map[key] = frame;
+    });
+    return map;
+  }
+  return frames;
+}
+
+function getAtlasFrameEntry(frameMap, key) {
+  if (!frameMap || !key) return null;
+  return frameMap[key] || frameMap[`${key}.png`] || null;
+}
 
 function resolveCustomFolder(key) {
   const mapped = CUSTOM_ANIM_FOLDER_ALIASES[key];
@@ -218,6 +277,11 @@ export default function SpriteSheetDog({
   const [customReady, setCustomReady] = React.useState(false);
   const [customErrorKey, setCustomErrorKey] = React.useState(null);
   const warnedKeysRef = React.useRef(new Set());
+  const [customAtlas, setCustomAtlas] = React.useState(atlasCache.data);
+  const [atlasDisabled, setAtlasDisabled] = React.useState(
+    atlasCache.status === "error"
+  );
+  const [atlasImageSize, setAtlasImageSize] = React.useState(null);
 
   const reduceMotionSetting = settings?.reduceMotion || "system";
   const prefersReducedMotion = React.useMemo(() => {
@@ -238,13 +302,51 @@ export default function SpriteSheetDog({
   const sizeMultiplier =
     sizeSetting === "small" ? 0.85 : sizeSetting === "large" ? 1.15 : 1;
 
+  React.useEffect(() => {
+    let alive = true;
+    if (atlasDisabled || customAtlas) return undefined;
+
+    fetchCustomAtlas().then((data) => {
+      if (!alive) return;
+      if (!data) {
+        setAtlasDisabled(true);
+        return;
+      }
+      setCustomAtlas(data);
+    });
+
+    return () => {
+      alive = false;
+    };
+  }, [atlasDisabled, customAtlas]);
+
   const stageKey = normalizeStage(stage);
   const conditionKey = normalizeDogCondition(condition);
   const sheetSrc = getDogPixiSheetUrl(stageKey, conditionKey);
 
   const resolvedAnim = React.useMemo(() => resolveAnim(anim), [anim]);
 
+  const atlasFrames = React.useMemo(
+    () => mapAtlasFrames(customAtlas?.frames),
+    [customAtlas]
+  );
+  const atlasAnimations = customAtlas?.animations || null;
+  const atlasImageUrl = React.useMemo(
+    () => resolveAtlasImage(customAtlas?.meta?.image),
+    [customAtlas]
+  );
+  const atlasSize = customAtlas?.meta?.size || null;
+
   const customAnim = React.useMemo(() => {
+    const atlasEnabled = Boolean(customAtlas && !atlasDisabled);
+    const getAtlasFrames = (key, count) => {
+      if (!atlasEnabled || !atlasAnimations) return null;
+      const list = atlasAnimations[key];
+      if (!Array.isArray(list) || !list.length) return null;
+      if (Number.isFinite(count) && count > 0) return list.slice(0, count);
+      return list;
+    };
+
     const walkLeftConfig = getCustomConfig("walk_left");
     if (requestedKey === "walk_left") {
       if (customErrorKey === "walk_left") {
@@ -252,6 +354,18 @@ export default function SpriteSheetDog({
           key: "walk_left_fallback",
           frames: WALK_LEFT_FRAMES,
           fps: walkLeftConfig.fps,
+        };
+      }
+      const atlasFramesList = getAtlasFrames(
+        "walk_left",
+        walkLeftConfig.frames
+      );
+      if (atlasFramesList) {
+        return {
+          key: "walk_left",
+          frames: atlasFramesList,
+          fps: walkLeftConfig.fps,
+          atlas: true,
         };
       }
       const frameCount = walkLeftConfig.frames;
@@ -265,6 +379,15 @@ export default function SpriteSheetDog({
     const customFolder = resolveCustomFolder(requestedKey);
     if (customFolder) {
       const customConfig = getCustomConfig(customFolder);
+      const atlasFramesList = getAtlasFrames(customFolder, customConfig.frames);
+      if (atlasFramesList) {
+        return {
+          key: customFolder,
+          frames: atlasFramesList,
+          fps: customConfig.fps,
+          atlas: true,
+        };
+      }
       return {
         key: customFolder,
         frames: buildCustomFrames(customFolder, customConfig.frames),
@@ -274,14 +397,32 @@ export default function SpriteSheetDog({
     if (resolvedAnim === "walk") {
       const walkConfig = getCustomConfig("walk");
       const walkFps = CUSTOM_MANIFEST?.walk?.fps ? walkConfig.fps : 10;
+      const atlasFramesList = getAtlasFrames("walk", walkConfig.frames || 25);
+      if (atlasFramesList) {
+        return {
+          key: "walk",
+          frames: atlasFramesList,
+          fps: walkFps,
+          atlas: true,
+        };
+      }
       return { key: "walk", frames: WALK_FRAMES, fps: walkFps };
     }
     return null;
-  }, [customErrorKey, requestedKey, resolvedAnim]);
+  }, [
+    atlasAnimations,
+    atlasDisabled,
+    customAtlas,
+    customErrorKey,
+    requestedKey,
+    resolvedAnim,
+  ]);
 
   const customKey = customAnim?.key || null;
   const customFrames = customAnim?.frames || null;
   const customFps = customAnim?.fps || DEFAULT_FPS;
+  const useCustomAtlas =
+    Boolean(customAnim?.atlas) && !atlasDisabled && !!atlasImageUrl;
   const useCustomAnim =
     Boolean(customFrames?.length) &&
     customReady &&
@@ -291,9 +432,11 @@ export default function SpriteSheetDog({
   const effectiveFallbackSrc = React.useMemo(() => {
     const candidates = [];
     if (fallbackSrc) candidates.push(String(fallbackSrc));
-    candidates.push(withBaseUrl("/sprites/doggerz-main.png"));
-    candidates.push(withBaseUrl(`/sprites/jack_russell_${stageKey}.webp`));
-    candidates.push(withBaseUrl("/sprites/jack_russell_puppy.webp"));
+    candidates.push(withBaseUrl("/assets/imports/jr/idle/frame_000.png"));
+    candidates.push(
+      withBaseUrl(`/assets/sprites/jack_russell_${stageKey}.webp`)
+    );
+    candidates.push(withBaseUrl("/assets/sprites/jack_russell_puppy.webp"));
     return candidates.filter(Boolean);
   }, [fallbackSrc, stageKey]);
 
@@ -343,7 +486,7 @@ export default function SpriteSheetDog({
       ? "/assets/imports/jr/walk_128/"
       : `/assets/imports/jr/${customErrorKey}/`;
     const fallbackHint = isWalkLeft
-      ? " Falling back to /sprites/walk-left.png."
+      ? " Falling back to /assets/sprites/walk-left.png."
       : " Falling back to sprite sheet.";
     const promptHint = " See ludo-prompts.csv for the prompt list.";
 
@@ -371,6 +514,26 @@ export default function SpriteSheetDog({
 
     setCustomReady(false);
 
+    if (useCustomAtlas) {
+      loadImage(atlasImageUrl)
+        .then((entry) => {
+          if (!alive) return;
+          setAtlasImageSize({
+            width: entry?.width || 0,
+            height: entry?.height || 0,
+          });
+          setCustomReady(true);
+        })
+        .catch(() => {
+          if (!alive) return;
+          setAtlasDisabled(true);
+          setCustomReady(false);
+        });
+      return () => {
+        alive = false;
+      };
+    }
+
     Promise.all(customFrames.map(loadImage))
       .then(() => {
         if (!alive) return;
@@ -385,7 +548,7 @@ export default function SpriteSheetDog({
     return () => {
       alive = false;
     };
-  }, [customErrorKey, customFrames, customKey]);
+  }, [atlasImageUrl, customErrorKey, customFrames, customKey, useCustomAtlas]);
 
   const frames = React.useMemo(() => {
     const rowIndex =
@@ -500,6 +663,7 @@ export default function SpriteSheetDog({
       activeAnim,
       customKey,
       customFrames: useCustomAnim ? customFrames : null,
+      customAtlas: useCustomAtlas ? atlasImageUrl : null,
       customReady,
       customErrorKey,
       sheetSrc,
@@ -519,6 +683,7 @@ export default function SpriteSheetDog({
     activeFps,
     activeFrames,
     anim,
+    atlasImageUrl,
     conditionKey,
     customReady,
     effectiveFallbackSrc,
@@ -535,15 +700,72 @@ export default function SpriteSheetDog({
     sheetLoaded,
     sheetSrc,
     stageKey,
+    useCustomAtlas,
     useCustomAnim,
     customFrames,
   ]);
 
   if (useCustomAnim && customReady) {
-    const src =
-      customFrames?.[
-        Math.min(customFrameIndex, Math.max(0, customFrames.length - 1))
-      ];
+    const frameIndex = Math.min(
+      customFrameIndex,
+      Math.max(0, customFrames.length - 1)
+    );
+
+    if (useCustomAtlas && atlasFrames && atlasImageUrl) {
+      const frameKey = customFrames?.[frameIndex];
+      const entry = getAtlasFrameEntry(atlasFrames, frameKey);
+      const rect = entry?.frame || entry?.rect || null;
+      if (!rect) return null;
+
+      const frameW = Number(rect.w || rect.width || FRAME_W);
+      const frameH = Number(rect.h || rect.height || FRAME_H);
+      const scale = frameW > 0 ? safeSize / frameW : 1;
+      const atlasW =
+        Number(atlasSize?.w || atlasImageSize?.width || 0) ||
+        Number(atlasSize?.width || 0);
+      const atlasH =
+        Number(atlasSize?.h || atlasImageSize?.height || 0) ||
+        Number(atlasSize?.height || 0);
+
+      const bgW = atlasW ? Math.round(atlasW * scale) : undefined;
+      const bgH = atlasH ? Math.round(atlasH * scale) : undefined;
+      const bgX = Math.round(Number(rect.x || 0) * scale);
+      const bgY = Math.round(Number(rect.y || 0) * scale);
+
+      return (
+        <div
+          className="group relative"
+          style={{ width: safeSize, height: safeSize }}
+        >
+          <div
+            className={className}
+            style={{
+              width: safeSize,
+              height: safeSize,
+              display: "block",
+              backgroundImage: `url("${atlasImageUrl}")`,
+              backgroundRepeat: "no-repeat",
+              backgroundSize: bgW && bgH ? `${bgW}px ${bgH}px` : "cover",
+              backgroundPosition: `-${bgX}px -${bgY}px`,
+              transform: `scaleX(${facing})`,
+              transformOrigin: "50% 100%",
+              imageRendering: pixelated ? "pixelated" : "auto",
+            }}
+          />
+          <SpriteOptions
+            show={showOptions}
+            setShow={setShowOptions}
+            menuRef={menuRef}
+            pixelated={pixelated}
+            motionEnabled={motionEnabled}
+            sizeSetting={sizeSetting}
+            dispatch={dispatch}
+          />
+        </div>
+      );
+    }
+
+    const src = customFrames?.[frameIndex];
     return src ? (
       <div
         className="group relative"

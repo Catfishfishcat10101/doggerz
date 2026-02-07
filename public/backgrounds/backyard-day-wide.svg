@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="skyDayWide" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#6fd6ff"/>
+      <stop offset="55%" stop-color="#bfe9ff"/>
+      <stop offset="100%" stop-color="#f6f2e8"/>
+    </linearGradient>
+    <linearGradient id="grassWide" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#3f9b4f"/>
+      <stop offset="70%" stop-color="#26753a"/>
+      <stop offset="100%" stop-color="#1e5f2f"/>
+    </linearGradient>
+    <linearGradient id="hillFarWide" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0%" stop-color="#5fb27c"/>
+      <stop offset="100%" stop-color="#4f9c6b"/>
+    </linearGradient>
+    <linearGradient id="hillNearWide" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0%" stop-color="#4a8d63"/>
+      <stop offset="100%" stop-color="#3a7a52"/>
+    </linearGradient>
+    <linearGradient id="fenceWoodWide" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#e8caa0"/>
+      <stop offset="100%" stop-color="#c99b6b"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1920" height="1080" fill="url(#skyDayWide)"/>
+
+  <circle cx="1540" cy="170" r="90" fill="#ffd977"/>
+  <circle cx="1540" cy="170" r="120" fill="#ffe7a8" opacity="0.45"/>
+
+  <g opacity="0.85" fill="#ffffff">
+    <ellipse cx="320" cy="210" rx="120" ry="40"/>
+    <ellipse cx="410" cy="200" rx="90" ry="34"/>
+    <ellipse cx="520" cy="230" rx="140" ry="46"/>
+    <ellipse cx="610" cy="220" rx="100" ry="38"/>
+  </g>
+
+  <g opacity="0.75" fill="#f1f7ff">
+    <ellipse cx="1080" cy="160" rx="110" ry="36"/>
+    <ellipse cx="1180" cy="150" rx="90" ry="30"/>
+    <ellipse cx="1280" cy="170" rx="130" ry="44"/>
+  </g>
+
+  <path d="M0 610 C 220 560 420 680 720 620 C 980 570 1200 650 1500 610 C 1700 580 1820 600 1920 560 L 1920 1080 L 0 1080 Z" fill="url(#hillFarWide)"/>
+  <path d="M0 680 C 240 640 420 720 720 690 C 980 650 1210 740 1500 700 C 1700 670 1820 690 1920 650 L 1920 1080 L 0 1080 Z" fill="url(#hillNearWide)"/>
+
+  <g>
+    <rect x="0" y="700" width="1920" height="110" fill="url(#fenceWoodWide)"/>
+    <rect x="0" y="690" width="1920" height="20" fill="#f4d8b3"/>
+    <g fill="#deb789">
+      <rect x="90" y="670" width="30" height="150" rx="6"/>
+      <rect x="250" y="670" width="30" height="150" rx="6"/>
+      <rect x="410" y="670" width="30" height="150" rx="6"/>
+      <rect x="570" y="670" width="30" height="150" rx="6"/>
+      <rect x="730" y="670" width="30" height="150" rx="6"/>
+      <rect x="890" y="670" width="30" height="150" rx="6"/>
+      <rect x="1050" y="670" width="30" height="150" rx="6"/>
+      <rect x="1210" y="670" width="30" height="150" rx="6"/>
+      <rect x="1370" y="670" width="30" height="150" rx="6"/>
+      <rect x="1530" y="670" width="30" height="150" rx="6"/>
+      <rect x="1690" y="670" width="30" height="150" rx="6"/>
+      <rect x="1850" y="670" width="30" height="150" rx="6"/>
+    </g>
+  </g>
+
+  <rect x="0" y="760" width="1920" height="320" fill="url(#grassWide)"/>
+
+  <path d="M720 1080 C 840 900 1080 900 1200 1080 Z" fill="#caa477" opacity="0.55"/>
+  <path d="M750 1080 C 860 930 1060 930 1170 1080 Z" fill="#e0bd8f" opacity="0.6"/>
+
+  <g fill="#2f6f42">
+    <rect x="120" y="520" width="60" height="190" rx="16"/>
+    <circle cx="150" cy="470" r="110" fill="#3a7f52"/>
+    <circle cx="60" cy="500" r="70" fill="#3a7f52"/>
+    <circle cx="240" cy="500" r="70" fill="#3a7f52"/>
+  </g>
+
+  <g fill="#2f6f42">
+    <rect x="1640" y="540" width="60" height="170" rx="16"/>
+    <circle cx="1670" cy="500" r="90" fill="#3a7f52"/>
+    <circle cx="1590" cy="520" r="70" fill="#3a7f52"/>
+    <circle cx="1750" cy="520" r="70" fill="#3a7f52"/>
+  </g>
+
+  <g fill="#f9f2c7" opacity="0.75">
+    <circle cx="310" cy="930" r="6"/>
+    <circle cx="360" cy="980" r="5"/>
+    <circle cx="420" cy="900" r="6"/>
+    <circle cx="1480" cy="940" r="6"/>
+    <circle cx="1540" cy="1000" r="5"/>
+    <circle cx="1600" cy="920" r="6"/>
+  </g>
+</svg>

@@ -42,7 +42,7 @@
       "url": "/game",
       "icons": [
         {
-          "src": "/icons/doggerz-192.png",
+          "src": "/assets/icons/doggerz-192.png",
           "sizes": "192x192",
           "type": "image/png"
         }
@@ -54,7 +54,7 @@
       "url": "/adopt",
       "icons": [
         {
-          "src": "/icons/doggerz-192.png",
+          "src": "/assets/icons/doggerz-192.png",
           "sizes": "192x192",
           "type": "image/png"
         }
@@ -66,7 +66,7 @@
       "url": "/settings",
       "icons": [
         {
-          "src": "/icons/doggerz-192.png",
+          "src": "/assets/icons/doggerz-192.png",
           "sizes": "192x192",
           "type": "image/png"
         }
@@ -75,34 +75,35 @@
   ],
   "icons": [
     {
-      "src": "/icons/doggerz-180.png",
+      "src": "/assets/icons/doggerz-180.png",
       "sizes": "180x180",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/doggerz-192.png",
+      "src": "/assets/icons/doggerz-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/doggerz-192.png",
+      "src": "/assets/icons/doggerz-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icons/doggerz-512.png",
+      "src": "/assets/icons/doggerz-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/doggerz-512.png",
+      "src": "/assets/icons/doggerz-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     }
   ]
 }
+

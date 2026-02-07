@@ -1,10 +1,11 @@
 // src/features/game/DogAIEngine.jsx
 // @ts-nocheck
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/firebase.js";
+import { App } from "@capacitor/app";
 import {
   hydrateDog,
   resetDogState,
@@ -12,6 +13,7 @@ import {
   registerSessionStart,
   tickDogPolls,
   selectDog,
+  selectDogGrowthMilestone,
   DOG_STORAGE_KEY,
   getDogStorageKey,
 } from "@/redux/dogSlice.js";
@@ -31,6 +33,15 @@ const HYDRATE_ERROR_KEY = "doggerz:hydrateError";
 // Local persistence schema marker (kept here so we don't require dogSlice exports).
 const DOG_SAVE_SCHEMA_VERSION = 1;
 
+let pixiTickerPromise = null;
+async function getPixiTicker() {
+  if (pixiTickerPromise) return pixiTickerPromise;
+  pixiTickerPromise = import("pixi.js")
+    .then((mod) => mod?.Ticker?.shared || null)
+    .catch(() => null);
+  return pixiTickerPromise;
+}
+
 function getLocalTimeBucket(ms = Date.now()) {
   try {
     const h = new Date(ms).getHours();
@@ -48,10 +59,12 @@ export default function DogAIEngine() {
   const dogState = useSelector(selectDog);
   const weather = useSelector(selectWeatherCondition);
   const zip = useSelector(selectUserZip);
+  const growthMilestone = useSelector(selectDogGrowthMilestone);
 
   const hasHydratedRef = useRef(false);
   const cloudSaveTimeoutRef = useRef(null);
   const localSaveTimeoutRef = useRef(null);
+  const growthPauseRef = useRef(Boolean(growthMilestone));
 
   // Helper: revive common date-like fields saved as ISO strings back to numbers
   const reviveDogDates = (raw) => {
@@ -227,6 +240,10 @@ export default function DogAIEngine() {
   }, [weather]);
 
   useEffect(() => {
+    growthPauseRef.current = Boolean(growthMilestone);
+  }, [growthMilestone]);
+
+  useEffect(() => {
     zipRef.current = zip;
   }, [zip]);
 
@@ -263,6 +280,50 @@ export default function DogAIEngine() {
   }, [userId]);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!App?.addListener) return;
+    let handle = null;
+    let cancelled = false;
+
+    const attach = async () => {
+      try {
+        const sub = await App.addListener(
+          "appStateChange",
+          async ({ isActive }) => {
+            if (cancelled) return;
+            try {
+              const ticker = await getPixiTicker();
+              if (ticker) {
+                if (isActive) ticker.start();
+                else ticker.stop();
+              }
+            } catch {
+              // ignore ticker errors
+            }
+
+            if (!isActive) {
+              flushLocalSave();
+            }
+          }
+        );
+        handle = sub;
+      } catch {
+        // ignore Capacitor App listener errors
+      }
+    };
+
+    attach();
+    return () => {
+      cancelled = true;
+      try {
+        handle?.remove?.();
+      } catch {
+        // ignore
+      }
+    };
+  }, [flushLocalSave]);
+
+  useEffect(() => {
     dogRef.current = dogState;
   }, [dogState]);
 
@@ -270,7 +331,7 @@ export default function DogAIEngine() {
     adoptedRef.current = Boolean(dogState?.adoptedAt);
   }, [dogState?.adoptedAt]);
 
-  const flushLocalSave = () => {
+  const flushLocalSave = useCallback(() => {
     const ds = dogRef.current;
     if (!ds) return;
     try {
@@ -287,7 +348,7 @@ export default function DogAIEngine() {
     } catch (err) {
       console.error("[Doggerz] Failed to flush local save", err);
     }
-  };
+  }, []);
 
   // 2b. Flush local save when leaving/backgrounding (makes refresh/close feel safe)
   useEffect(() => {
@@ -312,7 +373,7 @@ export default function DogAIEngine() {
       window.removeEventListener("pagehide", onPageHide);
       window.removeEventListener("beforeunload", onBeforeUnload);
     };
-  }, [dispatch]);
+  }, [flushLocalSave]);
 
   // Track auth changes reactively (auth.currentUser is not a reactive value by itself).
   useEffect(() => {
@@ -551,6 +612,7 @@ export default function DogAIEngine() {
   useEffect(() => {
     const tickOnce = () => {
       if (typeof document !== "undefined" && document?.hidden) return;
+      if (growthPauseRef.current) return;
       if (!adoptedRef.current) return;
       const now = Date.now();
       const w = weatherRef.current;

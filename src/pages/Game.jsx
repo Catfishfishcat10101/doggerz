@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import { useSelector } from "react-redux";
 
 import MainGame from "@/features/game/MainGame.jsx";
+import GrowthCelebration from "@/features/game/GrowthCelebration.jsx";
 import { selectWeatherCondition } from "@/redux/weatherSlice.js";
 import { selectUserZip } from "@/redux/userSlice.js";
 import { selectSettings } from "@/redux/settingsSlice.js";
@@ -15,7 +16,6 @@ import {
   getWeatherLabel,
   normalizeWeatherCondition,
 } from "@/utils/weather.js";
-import { withBaseUrl } from "@/utils/assetUrl.js";
 
 function titleCase(s) {
   const str = String(s || "").trim();
@@ -47,17 +47,14 @@ export default function GamePage() {
 
   const perfReduced = shouldReduceEffects(settings?.perfMode);
   const showBackgroundPhotos = true;
-  const { isNight, timeOfDayBucket } = useDayNightBackground({
+  const {
+    isNight,
+    timeOfDayBucket,
+    style: dayNightStyle,
+  } = useDayNightBackground({
     zip,
     enableImages: showBackgroundPhotos,
   });
-  const yardFallback = withBaseUrl("/backgrounds/yard_day.png");
-  const mergedStyle = {
-    backgroundImage: `url('${yardFallback}')`,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-    backgroundRepeat: "no-repeat",
-  };
 
   const reduceMotion =
     settings?.reduceMotion === "on" ||
@@ -95,7 +92,7 @@ export default function GamePage() {
   return (
     <div
       className="relative min-h-dvh overflow-hidden"
-      style={{ ...mergedStyle, "--weather-accent": weatherAccent }}
+      style={{ ...dayNightStyle, "--weather-accent": weatherAccent }}
       data-weather={weatherKey}
     >
       {/* Extra vignette + grain to sell depth behind the UI */}
@@ -116,6 +113,7 @@ export default function GamePage() {
       <div className="relative z-10">
         <MainGame scene={scene} />
       </div>
+      <GrowthCelebration />
     </div>
   );
 }
