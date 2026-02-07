@@ -49,6 +49,7 @@ export default function DogStage({ dog, scene, targetX = null }) {
   const [facing, setFacing] = useState(1);
   const [turnFacing, setTurnFacing] = useState(1);
   const [animDebug, setAnimDebug] = useState(null);
+  const [passportOpen, setPassportOpen] = useState(false);
   const posRef = useRef(0);
   const targetRef = useRef(0);
   const facingRef = useRef(1);
@@ -247,10 +248,29 @@ export default function DogStage({ dog, scene, targetX = null }) {
       {reduceMotion ? (
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
       ) : null}
-      <PuppyPassport
-        dog={dog}
-        className="absolute right-3 top-3 z-20 w-56 rotate-0 sm:right-4 sm:top-4 sm:w-60 lg:w-64 lg:rotate-1"
-      />
+      <div className="absolute right-3 top-3 z-20 sm:right-4 sm:top-4">
+        <button
+          type="button"
+          onClick={() => setPassportOpen((v) => !v)}
+          className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.35em] text-white/70 backdrop-blur"
+        >
+          Passport
+          <span className="text-[9px]">{passportOpen ? "−" : "+"}</span>
+        </button>
+        <div
+          className={[
+            "origin-top-right transition",
+            passportOpen
+              ? "opacity-100"
+              : "pointer-events-none opacity-0 scale-95",
+          ].join(" ")}
+        >
+          <PuppyPassport
+            dog={dog}
+            className="w-56 rotate-0 sm:w-60 lg:w-64 lg:rotate-1"
+          />
+        </div>
+      </div>
 
       <div className="relative z-10 flex min-h-[320px] items-center justify-center px-3 py-6 sm:min-h-[360px] lg:min-h-[420px]">
         <div className="relative w-full" ref={stageRef}>
