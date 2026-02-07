@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 
 import SpriteSheetDog from "@/components/SpriteSheetDog.jsx";
+import PuppyPassport from "@/components/PuppyPassport.jsx";
 import { selectDogRenderParams } from "@/features/dog/dogSelectors.js";
 import { selectSettings } from "@/redux/settingsSlice.js";
 import { getCheckInTier, resolveConditionPrefix } from "@/utils/checkIn.js";
@@ -246,6 +247,10 @@ export default function DogStage({ dog, scene, targetX = null }) {
       {reduceMotion ? (
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
       ) : null}
+      <PuppyPassport
+        dog={dog}
+        className="absolute right-4 top-4 z-20 hidden lg:block"
+      />
 
       <div className="relative z-10 flex min-h-[320px] items-center justify-center px-3 py-6 sm:min-h-[360px] lg:min-h-[420px]">
         <div className="relative w-full" ref={stageRef}>
