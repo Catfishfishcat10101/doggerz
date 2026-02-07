@@ -54,11 +54,8 @@ export default function PuppyPassport({ dog: propDog, birthDate, className }) {
 
   const rank = React.useMemo(() => getTrainingRank(bondValue), [bondValue]);
   const status = Number(stats.energy ?? 0) > 20 ? "Active" : "Napping";
-  const dobValue = React.useMemo(
-    () => resolveBirthDate(dog, birthDate),
-    [birthDate, dog]
-  );
-  const dobLabel = React.useMemo(() => formatDate(dobValue), [dobValue]);
+  const dobValue = resolveBirthDate(dog, birthDate);
+  const dobLabel = formatDate(dobValue);
 
   return (
     <div
