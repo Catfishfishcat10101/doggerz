@@ -5,7 +5,7 @@ import { useMemo } from "react";
 import { useSelector } from "react-redux";
 
 import MainGame from "@/features/game/MainGame.jsx";
-import GrowthCelebration from "@/features/game/GrowthCelebration.jsx";
+import GrowthCelebration from "@/components/GrowthCelebration.jsx";
 import { selectWeatherCondition } from "@/redux/weatherSlice.js";
 import { selectUserZip } from "@/redux/userSlice.js";
 import { selectSettings } from "@/redux/settingsSlice.js";

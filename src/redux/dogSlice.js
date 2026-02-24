@@ -17,7 +17,7 @@ import {
   getCleanlinessSeverity,
   getCleanlinessUi,
   getLifeStageLabel,
-} from "@/constants/game.js";
+} from "@/features/game/game.js";
 import {
   OBEDIENCE_COMMANDS,
   commandRequirementsMet,
@@ -30,6 +30,12 @@ import {
   getSkillTreePerk,
   getSkillTreeRequiredPerkId,
 } from "@/constants/skillTree.js";
+import {
+  advanceDogFsm,
+  applyFsmAction,
+  ensureDogFsmState,
+  DOG_FSM_DEFAULT,
+} from "@/utils/dogFsm.js";
 
 export const DOG_STORAGE_KEY = "doggerz:dogState";
 export const DOG_GUEST_STORAGE_KEY = `${DOG_STORAGE_KEY}:guest`;
@@ -519,6 +525,7 @@ const initialState = {
 
   // Used by UI renderers/selectors to derive simple animation hints
   lastAction: null,
+  fsm: { ...DOG_FSM_DEFAULT },
 
   temperament: initialTemperament,
   personality: initialPersonality,
@@ -1373,6 +1380,7 @@ function finalizeDerivedState(state, now = nowMs()) {
   syncLifecycleState(state, now);
   const tier = syncCleanlinessTier(state, now);
   evaluateObedienceUnlocks(state, now);
+  advanceDogFsm(state, now, { allowAutonomy: false });
   state.moodlets = computeMoodlets(state);
   state.emotionCue = deriveEmotionCue(state);
   return tier;
@@ -1919,6 +1927,12 @@ const dogSlice = createSlice({
         ...(payload.memory || state.memory || {}),
       };
 
+      merged.fsm = {
+        ...DOG_FSM_DEFAULT,
+        ...(state.fsm || {}),
+        ...(payload.fsm || {}),
+      };
+
       merged.career = {
         ...initialCareer,
         ...(payload.career || state.career || {}),
@@ -2008,6 +2022,7 @@ const dogSlice = createSlice({
       ensurePersonalityState(merged);
       ensureDreamState(merged);
       ensureVacationState(merged);
+      ensureDogFsmState(merged);
       ensureSkillTreeState(merged);
       ensureMilestonesState(merged);
 
@@ -2093,6 +2108,7 @@ const dogSlice = createSlice({
       state.memory.lastFedAt = now;
       state.memory.lastSeenAt = now;
       state.lastAction = resolveActionOverride(payload, "feed");
+      applyFsmAction(state, "feed", now);
 
       const sweetBondMultiplier = hasTemperamentTag(state, "SWEET") ? 1.25 : 1;
       applyBondGain(state, 0.7 * sweetBondMultiplier, now);
@@ -2125,6 +2141,7 @@ const dogSlice = createSlice({
       state.memory.lastDrankAt = now;
       state.memory.lastSeenAt = now;
       state.lastAction = resolveActionOverride(payload, "water");
+      applyFsmAction(state, "water", now);
 
       const sweetBondMultiplier = hasTemperamentTag(state, "SWEET") ? 1.25 : 1;
       applyBondGain(state, 0.6 * sweetBondMultiplier, now);
@@ -2169,6 +2186,7 @@ const dogSlice = createSlice({
       state.memory.lastPlayedAt = now;
       state.memory.lastSeenAt = now;
       state.lastAction = resolveActionOverride(payload, "play");
+      applyFsmAction(state, "play", now);
 
       const sweetBondMultiplier = hasTemperamentTag(state, "SWEET") ? 1.35 : 1;
       applyBondGain(state, 2 * sweetBondMultiplier, now);
@@ -2207,6 +2225,7 @@ const dogSlice = createSlice({
       state.stats.happiness = clamp(state.stats.happiness + 2, 0, 100);
       state.memory.lastSeenAt = now;
       state.lastAction = resolveActionOverride(payload, "pet");
+      applyFsmAction(state, "pet", now);
 
       applyPersonalityShift(state, {
         now,
@@ -2232,6 +2251,7 @@ const dogSlice = createSlice({
       if (state.isAsleep) {
         state.memory.lastSeenAt = now;
         state.lastAction = resolveActionOverride(payload, "rest");
+        applyFsmAction(state, "rest", now);
         finalizeDerivedState(state, now);
         return;
       }
@@ -2247,6 +2267,7 @@ const dogSlice = createSlice({
 
       state.memory.lastSeenAt = now;
       state.lastAction = resolveActionOverride(payload, "rest");
+      applyFsmAction(state, "rest", now);
 
       const sweetBondMultiplier = hasTemperamentTag(state, "SWEET") ? 1.2 : 1;
       applyBondGain(state, 0.5 * sweetBondMultiplier, now);
@@ -2343,6 +2364,7 @@ const dogSlice = createSlice({
 
       state.memory.lastSeenAt = now;
       state.lastAction = action;
+      applyFsmAction(state, action, now);
       finalizeDerivedState(state, now);
     },
 
@@ -2369,6 +2391,7 @@ const dogSlice = createSlice({
       state.memory.lastBathedAt = now;
       state.memory.lastSeenAt = now;
       state.lastAction = "bathe";
+      applyFsmAction(state, "bathe", now);
 
       const sweetBondMultiplier = hasTemperamentTag(state, "SWEET") ? 1.15 : 1;
       applyBondGain(state, 0.35 * sweetBondMultiplier, now);
@@ -2399,6 +2422,7 @@ const dogSlice = createSlice({
       state.stats.happiness = clamp(state.stats.happiness + 3, 0, 100);
       state.memory.lastSeenAt = now;
       state.lastAction = "potty";
+      applyFsmAction(state, "potty", now);
 
       const sweetBondMultiplier = hasTemperamentTag(state, "SWEET") ? 1.25 : 1;
       applyBondGain(state, 0.8 * sweetBondMultiplier, now);
@@ -2440,6 +2464,7 @@ const dogSlice = createSlice({
       }
       state.memory.lastSeenAt = now;
       state.lastAction = "scoop";
+      applyFsmAction(state, "scoop", now);
 
       finalizeDerivedState(state, now);
     },
@@ -2461,6 +2486,7 @@ const dogSlice = createSlice({
     tickDog(state, { payload }) {
       const now = payload?.now ?? nowMs();
       applyDecay(state, now);
+      advanceDogFsm(state, now, { allowAutonomy: true });
       const tier = finalizeDerivedState(state, now);
       applyCleanlinessPenalties(state, tier);
 
@@ -2633,6 +2659,7 @@ const dogSlice = createSlice({
       state.memory.lastTrainedCommandId = commandId;
       state.memory.lastSeenAt = now;
       state.lastAction = "train";
+      applyFsmAction(state, "train", now);
 
       const sweetBondMultiplier = hasTemperamentTag(state, "SWEET") ? 1.2 : 1;
       applyBondGain(state, 1.0 * sweetBondMultiplier, now);

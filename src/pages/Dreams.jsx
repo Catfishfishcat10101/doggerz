@@ -7,7 +7,7 @@ import { selectDog, selectDogDreams } from "@/redux/dogSlice.js";
 
 import PageShell from "@/components/PageShell.jsx";
 
-import DreamJournal from "@/features/dreams/DreamJournal.jsx";
+import DreamJournal from "@/features/game/DreamJournal.jsx";
 
 export default function Dreams() {
   const dog = useSelector(selectDog);
