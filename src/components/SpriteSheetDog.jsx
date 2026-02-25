@@ -10,8 +10,6 @@ import {
   normalizeDogStageShort,
 } from "@/utils/dogSpritePaths.js";
 
-const FRAME_W = Number(jrManifest?.frame?.width || 128);
-const FRAME_H = Number(jrManifest?.frame?.height || 128);
 const DEFAULT_COLUMNS = Math.max(1, Number(jrManifest?.columns || 8));
 const DEFAULT_ANIM = String(jrManifest?.defaultAnim || "idle").toLowerCase();
 const DEFAULT_FPS = Math.max(1, Number(jrManifest?.defaultFps || 8));

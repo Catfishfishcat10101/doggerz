@@ -1,7 +1,7 @@
 /** @format */
 // src/features/audio/useDynamicMusic.js
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useSelector } from "react-redux";
 import { selectDog } from "@/redux/dogSlice.js";
 import { selectSettings } from "@/redux/settingsSlice.js";
@@ -45,7 +45,7 @@ function useUserGestureGate() {
     };
   }, []);
 
-  return () => readyRef.current;
+  return useCallback(() => readyRef.current, []);
 }
 
 export default function useDynamicMusic() {
@@ -56,9 +56,8 @@ export default function useDynamicMusic() {
   const audioRef = useRef(null);
   const currentTrackRef = useRef(null);
   const fadeTimerRef = useRef(null);
-  const canPlayRef = useUserGestureGate();
-
-  const getTargetTrack = () => {
+  const canPlay = useUserGestureGate();
+  const targetKey = useMemo(() => {
     if (!dog) return null;
     const stats = dog.stats || {};
     if ((stats.happiness <= 30 || stats.energy <= 30) && dog.adoptedAt) {
@@ -69,7 +68,11 @@ export default function useDynamicMusic() {
     }
     const hour = new Date().getHours();
     return hour >= 21 || hour < 6 ? "night" : "day";
-  };
+  }, [dog, weather]);
+  const targetSrc = useMemo(
+    () => (targetKey ? MUSIC_PATHS[targetKey] : null),
+    [targetKey]
+  );
 
   useEffect(() => {
     if (typeof Audio === "undefined") return;
@@ -90,9 +93,6 @@ export default function useDynamicMusic() {
     const masterVolume = clamp01(settings?.audio?.masterVolume ?? 0.8);
     const musicVolume = clamp01(settings?.audio?.musicVolume ?? 0.5);
     const targetVolume = clamp01(masterVolume * musicVolume);
-
-    const targetKey = getTargetTrack();
-    const targetSrc = targetKey ? MUSIC_PATHS[targetKey] : null;
 
     if (!audioEnabled || !musicEnabled) {
       audio.pause();
@@ -121,7 +121,7 @@ export default function useDynamicMusic() {
         audio.loop = true;
         audio.volume = 0;
 
-        if (canPlayRef()) {
+        if (canPlay()) {
           audio.play().catch(() => {});
         }
 
@@ -138,19 +138,18 @@ export default function useDynamicMusic() {
       }, FADE_INTERVAL_MS);
     } else {
       audio.volume = targetVolume;
-      if (canPlayRef() && audio.paused) {
+      if (canPlay() && audio.paused) {
         audio.play().catch(() => {});
       }
     }
   }, [
-    dog?.stats?.happiness,
-    dog?.stats?.energy,
-    dog?.adoptedAt,
+    canPlay,
     settings?.audio?.enabled,
     settings?.audio?.musicEnabled,
     settings?.audio?.masterVolume,
     settings?.audio?.musicVolume,
-    weather,
+    targetKey,
+    targetSrc,
   ]);
 
   useEffect(() => {
