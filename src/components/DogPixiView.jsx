@@ -340,7 +340,11 @@ export default function DogPixiView({
           setSheetBaseTexture(baseTexture);
         }
       } catch (err) {
-        console.warn("[Doggerz] Failed to load sprite sheet:", primary, err);
+        console.error(
+          "[Doggerz] CRITICAL: Dog asset failed to load at:",
+          primary,
+          err
+        );
         if (alive) {
           setSheetBaseTexture(null);
           sendStatus("error");
