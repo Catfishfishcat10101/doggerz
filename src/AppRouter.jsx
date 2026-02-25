@@ -276,12 +276,13 @@ const router = createBrowserRouter(
   ],
   {
     future: {
-      // @ts-ignore
-      v7_startTransition: true,
+      v7_normalizeFormMethod: true,
     },
   }
 );
 
 export default function AppRouter() {
-  return <RouterProvider router={router} />;
+  return (
+    <RouterProvider router={router} future={{ v7_startTransition: true }} />
+  );
 }

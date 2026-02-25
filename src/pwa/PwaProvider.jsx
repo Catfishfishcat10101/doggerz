@@ -193,7 +193,14 @@ export default function PwaProvider({ children }) {
 
   // Capture install prompt so we can trigger it from UI.
   React.useEffect(() => {
+    const captureInstallPrompt = import.meta.env.PROD;
+
     const onBeforeInstallPrompt = (event) => {
+      if (!captureInstallPrompt) {
+        deferredPromptRef.current = null;
+        setCanInstall(false);
+        return;
+      }
       event.preventDefault();
       deferredPromptRef.current = event;
       setCanInstall(true);
