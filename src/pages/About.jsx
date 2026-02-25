@@ -160,7 +160,7 @@ export default function AboutPage() {
               <div className="mt-4 flex items-center gap-4">
                 <div className="h-20 w-20 rounded-2xl border border-white/10 bg-black/40 p-2">
                   <img
-                    src="/assets/frames/jr/jr_adult_clean_normal_neutral_idle_00.png"
+                    src="/assets/sprites/jr/adult_clean.png"
                     alt="Jack Russell"
                     className="h-full w-full rounded-xl object-contain"
                     loading="lazy"

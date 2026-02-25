@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { useToast } from "@/components/toastContext.js";
+import { useToast } from "@/state/toastContext.js";
 import BackPill from "@/components/BackPill.jsx";
 import SpriteSheetDog from "@/components/SpriteSheetDog.jsx";
 import DogCosmeticsOverlay from "@/components/DogCosmeticsOverlay.jsx";

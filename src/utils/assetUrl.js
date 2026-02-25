@@ -57,8 +57,8 @@ export function isAbsoluteUrl(path) {
  * Prefix a public-path with Vite's BASE_URL.
  *
  * Examples:
- * - BASE_URL = '/'         => withBaseUrl('/assets/icons/doggerz-192.png') -> '/assets/icons/doggerz-192.png'
- * - BASE_URL = '/doggerz/' => withBaseUrl('/assets/icons/doggerz-192.png') -> '(BASE_URL)assets/icons/doggerz-192.png'
+ * - BASE_URL = '/'         => withBaseUrl('/assets/icons/icon-192.png') -> '/assets/icons/icon-192.png'
+ * - BASE_URL = '/doggerz/' => withBaseUrl('/assets/icons/icon-192.png') -> '(BASE_URL)assets/icons/icon-192.png'
  */
 export function withBaseUrl(path) {
   const p = String(path || "").trim();

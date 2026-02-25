@@ -4,7 +4,7 @@ import { useCallback, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import PageShell from "@/components/PageShell.jsx";
 import { SUPPORT_CONTACT_URL } from "@/config/links.js";
-import { useToast } from "@/components/toastContext.js";
+import { useToast } from "@/state/toastContext.js";
 import { DOG_STORAGE_KEY } from "@/redux/dogSlice.js";
 
 const SURFACE =

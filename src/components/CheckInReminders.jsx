@@ -27,7 +27,7 @@ const REMINDERS = [
     message: "It has been 4 hours. A quick snack keeps them happy.",
     thresholdMs: CHECK_IN_THRESHOLDS.hungryMs,
     cooldownMs: 3 * 60 * 60 * 1000,
-    icon: "/assets/icons/doggerz-192.png",
+    icon: "/assets/icons/icon-192.png",
   },
   {
     key: "checkin-dirty",
@@ -36,7 +36,7 @@ const REMINDERS = [
     message: "It has been 12 hours. They are getting scruffy.",
     thresholdMs: CHECK_IN_THRESHOLDS.dirtyMs,
     cooldownMs: 6 * 60 * 60 * 1000,
-    icon: "/assets/icons/doggerz-192.png",
+    icon: "/assets/icons/icon-192.png",
   },
   {
     key: "checkin-stray",
@@ -46,7 +46,7 @@ const REMINDERS = [
       "It has been 24 hours. Your pup is looking a bit stray. Come check in.",
     thresholdMs: CHECK_IN_THRESHOLDS.strayMs,
     cooldownMs: 12 * 60 * 60 * 1000,
-    icon: "/assets/imports/jr/stray_idle/frame_000.png",
+    icon: "/assets/sprites/jr/pup_clean.png",
   },
 ];
 

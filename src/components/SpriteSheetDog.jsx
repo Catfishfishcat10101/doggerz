@@ -90,7 +90,7 @@ export default function SpriteSheetDog({
   facing = 1,
   size = 320,
   reduceMotion = false,
-  fallbackSrc = "/icons/doggerz-192.png",
+  fallbackSrc = "/assets/sprites/jr/pup_clean.png",
   className = "",
   onDebug,
 }) {

@@ -1,0 +1,181 @@
+/* src/features/game/Yard.css */
+
+.yard-container {
+  width: 100vw;
+  height: 100dvh;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background: #040a12;
+}
+
+.yard-tap-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 22;
+  pointer-events: auto;
+  touch-action: manipulation;
+}
+
+.yard-walk-zone {
+  position: absolute;
+  inset: 0;
+  z-index: 24;
+  pointer-events: none;
+}
+
+.dog-wrapper {
+  position: absolute;
+  transform-origin: bottom center;
+  will-change: left, top, transform;
+  pointer-events: none;
+}
+
+.dog-render-surface {
+  position: relative;
+  width: clamp(320px, 42vw, 500px);
+  height: clamp(250px, 34vw, 380px);
+  border-radius: 26px;
+  border: 1px solid rgba(110, 231, 183, 0.12);
+  background:
+    radial-gradient(
+      130% 95% at 50% 88%,
+      rgba(16, 185, 129, 0.1),
+      rgba(0, 0, 0, 0)
+    ),
+    rgba(0, 0, 0, 0.2);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+}
+
+.dog-grime-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+  background:
+    radial-gradient(
+      circle at 46% 58%,
+      rgba(80, 52, 22, 0.35) 0 12%,
+      transparent 14%
+    ),
+    radial-gradient(
+      circle at 58% 66%,
+      rgba(99, 64, 28, 0.3) 0 10%,
+      transparent 12%
+    ),
+    radial-gradient(
+      circle at 39% 72%,
+      rgba(48, 28, 12, 0.26) 0 14%,
+      transparent 16%
+    );
+}
+
+.yard-hud {
+  position: absolute;
+  left: max(12px, env(safe-area-inset-left));
+  top: max(12px, env(safe-area-inset-top));
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.yard-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.yard-chip {
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: rgba(2, 6, 23, 0.72);
+  color: #d1fae5;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 6px 10px;
+  backdrop-filter: blur(3px);
+}
+
+.yard-name {
+  font-size: clamp(22px, 3.6vw, 38px);
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  color: #6ee7b7;
+  text-shadow: 0 0 16px rgba(16, 185, 129, 0.35);
+}
+
+.yard-sub {
+  color: rgba(226, 232, 240, 0.82);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.yard-bottom-ui {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: max(10px, env(safe-area-inset-bottom));
+  z-index: 45;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 12px;
+  pointer-events: none;
+}
+
+.yard-action-dock {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.yard-action-btn {
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.34);
+  background: rgba(2, 6, 23, 0.78);
+  color: #e2e8f0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 10px 8px;
+  transition:
+    border-color 140ms ease,
+    background-color 140ms ease,
+    transform 140ms ease;
+}
+
+.yard-action-btn:hover {
+  transform: translateY(-1px);
+  border-color: rgba(110, 231, 183, 0.72);
+  background: rgba(16, 185, 129, 0.22);
+  color: #ecfeff;
+}
+
+@media (max-width: 900px) {
+  .yard-action-dock {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .yard-chip {
+    font-size: 10px;
+    padding: 5px 8px;
+  }
+
+  .yard-name {
+    font-size: 24px;
+  }
+
+  .yard-action-btn {
+    font-size: 11px;
+    padding: 9px 7px;
+  }
+}

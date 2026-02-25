@@ -27,7 +27,7 @@ export default function SpriteTest() {
   const [debug, setDebug] = React.useState(null);
 
   const fallbackSrc = React.useMemo(
-    () => withBaseUrl("/assets/icons/doggerz-192.png"),
+    () => withBaseUrl("/assets/sprites/jr/pup_clean.png"),
     []
   );
   const atlasUrls = React.useMemo(() => getDogAtlasUrls(stage), [stage]);

@@ -10,7 +10,7 @@ import {
 } from "@/redux/dogSlice.js";
 import { selectSettings } from "@/redux/settingsSlice.js";
 import { getLifeStageLabel } from "@/features/game/game.js";
-import { useYardSfx } from "@/components/useYardSfx.js";
+import { useYardSfx } from "@/hooks/useYardSfx.js";
 
 function formatAgeLabel(ageDays) {
   const days = Number(ageDays);

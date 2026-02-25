@@ -9,7 +9,7 @@
    - Cache-first for static assets
 -------------------------------------------------------- */
 
-const CACHE_VERSION = "doggerz-v19"; // bump this when you change cached assets or SW behaviour
+const CACHE_VERSION = "doggerz-v20"; // bump this when you change cached assets or SW behaviour
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Support deployments under a sub-path (e.g. GitHub Pages):
@@ -40,26 +40,11 @@ const CORE_ASSETS = [
   "/offline.html",
 
   // Icons
-  "/assets/icons/doggerz-32.png",
-  "/assets/icons/doggerz-180.png",
-  "/assets/icons/doggerz-192.png",
-  "/assets/icons/doggerz-512.png",
-
-  // Backgrounds
-  "/backgrounds/backyard-day.svg",
-  "/backgrounds/backyard-night.svg",
-  "/backgrounds/backyard-day-wide.svg",
-  "/backgrounds/backyard-night-wide.svg",
+  "/assets/icons/icon-192.png",
+  "/assets/icons/icon-512.png",
 
   // Audio
   "/audio/bark.m4a",
-  "/audio/bark.wav",
-  "/audio/whine.wav",
-  "/audio/scratch.wav",
-
-  // PWA screenshots (optional)
-  "/screenshots/yard-1080x1920.png",
-  "/screenshots/training-1080x1920.png",
 ];
 
 /* -------------------------------------------------------
@@ -230,7 +215,7 @@ async function cacheFirst(request) {
       const dest = request.destination;
       if (dest === "image") {
         const fallback = await caches.match(
-          withBase("/assets/icons/doggerz-192.png")
+          withBase("/assets/icons/icon-192.png")
         );
         if (fallback) return fallback;
       }

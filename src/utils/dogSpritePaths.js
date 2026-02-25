@@ -16,8 +16,7 @@ export const DOG_CONDITION_IDS = Object.freeze([
 
 const DEFAULT_SPRITE_DIR = "/assets/sprites";
 const DEFAULT_ATLAS_DIR = "/assets/atlas";
-
-const DEFAULT_STATIC_SPRITE = "/assets/imports/jr/idle/frame_000.png";
+const DOG_SPRITE_REV = "2026-02-25a";
 
 export const DOG_STAGE_LABEL_BY_STAGE_ID = Object.freeze({
   PUPPY: "Puppy",
@@ -80,7 +79,10 @@ export function getDogStageLabel(stageLike) {
  * Static fallback sprite used while strips load (or if strips fail).
  */
 export function getDogStaticSpriteUrl(_stageLike) {
-  return withBaseUrl(DEFAULT_STATIC_SPRITE);
+  const stage = normalizeDogStageShort(_stageLike);
+  return withBaseUrl(
+    `${DEFAULT_SPRITE_DIR}/jr/${stage}_clean.png?v=${DOG_SPRITE_REV}`
+  );
 }
 
 /**
@@ -89,7 +91,9 @@ export function getDogStaticSpriteUrl(_stageLike) {
 export function getDogPixiSheetUrl(_stageLike, _conditionLike) {
   const stage = normalizeDogStageShort(_stageLike);
   const condition = normalizeDogConditionId(_conditionLike);
-  return withBaseUrl(`${DEFAULT_SPRITE_DIR}/jr/${stage}_${condition}.png`);
+  return withBaseUrl(
+    `${DEFAULT_SPRITE_DIR}/jr/${stage}_${condition}.png?v=${DOG_SPRITE_REV}`
+  );
 }
 
 /**

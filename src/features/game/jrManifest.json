@@ -17,6 +17,10 @@
     "dig": "scratch",
     "digging": "scratch",
     "run": "walk",
-    "nap": "sleep"
+    "nap": "sleep",
+    "trick": "sit",
+    "jump": "wag",
+    "front_flip": "wag",
+    "play_dead": "sleep"
   }
 }

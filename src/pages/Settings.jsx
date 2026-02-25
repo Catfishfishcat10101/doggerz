@@ -54,7 +54,7 @@ import {
 } from "../redux/settingsSlice.js";
 import PageShell from "../components/PageShell.jsx";
 import { APP_VERSION } from "../utils/appVersion.js";
-import { useToast } from "@/components/toastContext.js";
+import { useToast } from "@/state/toastContext.js";
 import {
   canUseNotifications,
   getNotificationPermission,

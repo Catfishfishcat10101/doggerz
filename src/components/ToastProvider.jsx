@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useSelector } from "react-redux";
 import { selectSettings } from "@/redux/settingsSlice.js";
-import { ToastContext } from "@/components/toastContext.js";
+import { ToastContext } from "@/state/toastContext.js";
 
 function clamp(n, lo, hi) {
   const x = Number(n);

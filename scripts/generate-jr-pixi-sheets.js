@@ -1,12 +1,12 @@
 // scripts/generate-jr-pixi-sheets.js
-// Builds Pixi-ready JR sprite strips from frame folders into public/assets/sprites/jr.
+// Builds Pixi-ready JR sprite strips from source frame folders into public/assets/sprites/jr.
 
 const fs = require("node:fs");
 const path = require("node:path");
 const sharp = require("sharp");
 
 const ROOT = process.cwd();
-const FRAMES_DIR = path.join(ROOT, "public", "assets", "frames", "jr");
+const FRAMES_DIR = path.join(ROOT, "assets-src", "frames", "jr");
 const OUT_DIR = path.join(ROOT, "public", "assets", "sprites", "jr");
 const MANIFEST_PATH = path.join(
   ROOT,
@@ -110,7 +110,9 @@ async function buildStageSheet(stage, cfg) {
 
 async function main() {
   if (!fs.existsSync(FRAMES_DIR)) {
-    throw new Error(`Frames directory not found: ${FRAMES_DIR}`);
+    throw new Error(
+      `Frames directory not found: ${FRAMES_DIR}. Put source frame_XX png files there before running sprites:jr.`
+    );
   }
 
   ensureDir(OUT_DIR);
