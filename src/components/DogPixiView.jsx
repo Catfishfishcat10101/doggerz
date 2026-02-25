@@ -11,7 +11,7 @@ import {
 } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Stage, Container, AnimatedSprite } from "@pixi/react";
-import { Assets, Rectangle, Texture } from "pixi.js";
+import { Assets, MIPMAP_MODES, Rectangle, SCALE_MODES, Texture } from "pixi.js";
 import { getDogPixiSheetUrl } from "@/utils/dogSpritePaths.js";
 import {
   selectSettings,
@@ -91,45 +91,90 @@ function sheetPath(stage, condition) {
   return getDogPixiSheetUrl(stage, condition);
 }
 
-function getTextureSource(asset) {
-  // Assets.load(image) usually returns a Texture in Pixi v8
-  return (
-    asset?.source ||
-    asset?.sourceDeprecated ||
-    asset?.baseTexture?.source ||
-    asset?.baseTexture?.sourceDeprecated ||
-    null
-  );
+function looksLikeBaseTexture(value) {
+  if (!value || typeof value !== "object") return false;
+  if (typeof value.setStyle === "function") return true;
+  if (value?.constructor?.name === "BaseTexture") return true;
+  if (value?.resource && typeof value.resource === "object") return true;
+  return false;
 }
 
-function setNearestOnSource(source) {
+function getBaseTexture(asset, url) {
+  if (asset instanceof Texture && asset.baseTexture) {
+    return asset.baseTexture;
+  }
+
+  if (asset?.baseTexture && looksLikeBaseTexture(asset.baseTexture)) {
+    return asset.baseTexture;
+  }
+
+  if (looksLikeBaseTexture(asset)) {
+    return asset;
+  }
+
   try {
-    if (source && "scaleMode" in source) source.scaleMode = "nearest";
+    const fromCache = Texture.from(url);
+    if (fromCache?.baseTexture && looksLikeBaseTexture(fromCache.baseTexture)) {
+      return fromCache.baseTexture;
+    }
   } catch {
     // ignore
   }
+
+  return null;
+}
+
+function setNearestOnBaseTexture(baseTexture) {
+  if (!baseTexture) return;
+
   try {
-    if (source && "mipmap" in source) source.mipmap = "off";
+    if ("scaleMode" in baseTexture) {
+      baseTexture.scaleMode = SCALE_MODES?.NEAREST ?? baseTexture.scaleMode;
+    }
+  } catch {
+    // ignore
+  }
+
+  try {
+    if ("mipmap" in baseTexture) {
+      baseTexture.mipmap = MIPMAP_MODES?.OFF ?? baseTexture.mipmap;
+    }
+  } catch {
+    // ignore
+  }
+
+  try {
+    if (typeof baseTexture.update === "function") {
+      baseTexture.update();
+    }
   } catch {
     // ignore
   }
 }
 
-function makeFrameTexture(source, frame) {
-  // Pixi v8 prefers options-object construction.
+function makeFrameTexture(baseTexture, frame) {
+  if (!baseTexture) return null;
+
   try {
+    return new Texture(baseTexture, frame);
+  } catch {
+    // ignore
+  }
+
+  try {
+    const source =
+      baseTexture?.source ||
+      baseTexture?.resource?.source ||
+      baseTexture?.sourceDeprecated ||
+      null;
+    if (!source) return null;
     return new Texture({ source, frame });
   } catch {
-    // Fallback for environments still accepting the old signature.
-    try {
-      return new Texture(source, frame);
-    } catch {
-      return null;
-    }
+    return null;
   }
 }
 
-function sliceRowTextures(source, rowIndex, frameCount) {
+function sliceRowTextures(baseTexture, rowIndex, frameCount) {
   const textures = [];
   for (let col = 0; col < frameCount; col++) {
     const frame = new Rectangle(
@@ -138,7 +183,7 @@ function sliceRowTextures(source, rowIndex, frameCount) {
       FRAME_W,
       FRAME_H
     );
-    const t = makeFrameTexture(source, frame);
+    const t = makeFrameTexture(baseTexture, frame);
     if (t) textures.push(t);
   }
   return textures;
@@ -182,7 +227,7 @@ export default function DogPixiView({
 }) {
   const dispatch = useDispatch();
   const settings = useSelector(selectSettings);
-  const [sheetSource, setSheetSource] = useState(null);
+  const [sheetBaseTexture, setSheetBaseTexture] = useState(null);
   const [showOptions, setShowOptions] = useState(false);
 
   const emitStatus = onStatusChange || onStatus;
@@ -224,6 +269,22 @@ export default function DogPixiView({
     scaleSetting === "small" ? 0.85 : scaleSetting === "large" ? 1.15 : 1;
   const effectiveScale = scale * scaleMultiplier;
 
+  const stageResolution = useMemo(() => {
+    if (typeof window === "undefined") return 1;
+    return Math.min(window.devicePixelRatio || 1, resolutionCap);
+  }, [resolutionCap]);
+
+  const stageOptions = useMemo(
+    () => ({
+      backgroundAlpha: 0,
+      antialias: false,
+      autoDensity: true,
+      roundPixels: true,
+      resolution: stageResolution,
+    }),
+    [stageResolution]
+  );
+
   useEffect(() => {
     if (!showOptions) return;
     const onPointerDown = (event) => {
@@ -256,49 +317,32 @@ export default function DogPixiView({
   useEffect(() => {
     let alive = true;
 
-    setSheetSource(null);
+    setSheetBaseTexture(null);
     lastStatusRef.current = null;
     hasErroredRef.current = false;
     sendStatus("loading");
 
     async function load() {
-      const path = sheetPath(stage, condition);
+      const primary = sheetPath(stage, condition);
 
       try {
-        const asset = await Assets.load(path);
-        const source = getTextureSource(asset);
-        if (!source) throw new Error("No texture source from Assets.load()");
-        setNearestOnSource(source);
+        const asset = await Assets.load(primary);
+        const baseTexture = getBaseTexture(asset, primary);
+        if (!baseTexture) {
+          throw new Error("No base texture resolved from loaded asset");
+        }
+        setNearestOnBaseTexture(baseTexture);
+        if (!baseTexture.valid) {
+          throw new Error("Resolved base texture is invalid");
+        }
 
         if (alive) {
-          setSheetSource(source);
+          setSheetBaseTexture(baseTexture);
         }
       } catch (err) {
-        const fallback = sheetPath(stage, "clean");
-        if (fallback !== path) {
-          try {
-            const asset = await Assets.load(fallback);
-            const source = getTextureSource(asset);
-            if (!source) throw new Error("No texture source from fallback");
-            setNearestOnSource(source);
-
-            if (alive) {
-              setSheetSource(source);
-            }
-            return;
-          } catch (fallbackErr) {
-            console.warn(
-              "[Doggerz] Failed to load sprite sheet + fallback:",
-              path,
-              fallback,
-              fallbackErr
-            );
-          }
-        }
-
-        console.warn("[Doggerz] Failed to load sprite sheet:", path, err);
+        console.warn("[Doggerz] Failed to load sprite sheet:", primary, err);
         if (alive) {
-          setSheetSource(null);
+          setSheetBaseTexture(null);
           sendStatus("error");
         }
       }
@@ -311,7 +355,7 @@ export default function DogPixiView({
   }, [condition, sendStatus, stage]);
 
   const textureCompute = useMemo(() => {
-    if (!sheetSource) {
+    if (!sheetBaseTexture) {
       return { textures: [], missingAnim: false, computeError: null };
     }
 
@@ -327,11 +371,12 @@ export default function DogPixiView({
     }
 
     try {
-      const textures = sliceRowTextures(sheetSource, row, safeCount).filter(
-        (t) => t && typeof t === "object"
-      );
+      const textures = sliceRowTextures(
+        sheetBaseTexture,
+        row,
+        safeCount
+      ).filter((t) => t && typeof t === "object");
 
-      // Safety: AnimatedSprite MUST receive actual Texture instances.
       const safe = textures.filter((t) => t instanceof Texture);
 
       return {
@@ -342,7 +387,7 @@ export default function DogPixiView({
     } catch (err) {
       return { textures: [], missingAnim: true, computeError: err };
     }
-  }, [sheetSource, resolvedAnimKey]);
+  }, [sheetBaseTexture, resolvedAnimKey]);
 
   const textures = textureCompute.textures;
 
@@ -356,12 +401,12 @@ export default function DogPixiView({
   const resetKey = `${stage}-${condition}-${resolvedAnimKey}`;
 
   useEffect(() => {
-    if (!sheetSource) return;
+    if (!sheetBaseTexture) return;
     if (textureCompute.computeError || textureCompute.missingAnim) {
       sendStatus("error");
     }
   }, [
-    sheetSource,
+    sheetBaseTexture,
     sendStatus,
     textureCompute.computeError,
     textureCompute.missingAnim,
@@ -369,12 +414,12 @@ export default function DogPixiView({
 
   useEffect(() => {
     if (!canAnimate) return;
-    if (!sheetSource) return;
+    if (!sheetBaseTexture) return;
     if (textureCompute.computeError || textureCompute.missingAnim) return;
     if (hasErroredRef.current) return;
     sendStatus("ready");
   }, [
-    sheetSource,
+    sheetBaseTexture,
     canAnimate,
     sendStatus,
     textureCompute.computeError,
@@ -388,18 +433,10 @@ export default function DogPixiView({
     >
       <div className="group relative" style={{ width, height }}>
         <Stage
+          key={`stage-${stageResolution}`}
           width={width}
           height={height}
-          options={{
-            backgroundAlpha: 0,
-            antialias: false,
-            autoDensity: true,
-            roundPixels: true,
-            resolution:
-              typeof window === "undefined"
-                ? 1
-                : Math.min(window.devicePixelRatio || 1, resolutionCap),
-          }}
+          options={stageOptions}
         >
           <Container x={width / 2} y={height * 0.82}>
             {canAnimate ? (

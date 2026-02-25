@@ -24,7 +24,9 @@ function exists(relativePath) {
 }
 
 function main() {
-  const missing = REQUIRED_PATHS.filter((relativePath) => !exists(relativePath));
+  const missing = REQUIRED_PATHS.filter(
+    (relativePath) => !exists(relativePath)
+  );
 
   if (missing.length > 0) {
     console.error("[preflight] FAIL");

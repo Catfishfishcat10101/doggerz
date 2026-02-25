@@ -83,9 +83,8 @@ async function main() {
 
   if (manifest) {
     const icons = Array.isArray(manifest.icons) ? manifest.icons : [];
-    const shortcutIcons = (Array.isArray(manifest.shortcuts)
-      ? manifest.shortcuts
-      : []
+    const shortcutIcons = (
+      Array.isArray(manifest.shortcuts) ? manifest.shortcuts : []
     ).flatMap((s) => (Array.isArray(s?.icons) ? s.icons : []));
 
     const allIconEntries = [...icons, ...shortcutIcons];
@@ -121,7 +120,9 @@ async function main() {
   const shortcutCount = Array.isArray(manifest?.shortcuts)
     ? manifest.shortcuts.length
     : 0;
-  console.log(` - manifest icons checked: ${iconCount} + shortcut icons from ${shortcutCount} shortcuts`);
+  console.log(
+    ` - manifest icons checked: ${iconCount} + shortcut icons from ${shortcutCount} shortcuts`
+  );
 }
 
 main().catch((err) => {
