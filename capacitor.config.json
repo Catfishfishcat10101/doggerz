@@ -1,5 +1,10 @@
 {
   "appId": "com.doggerz.app",
   "appName": "Doggerz",
-  "webDir": "dist"
+  "webDir": "dist",
+  "plugins": {
+    "AdMob": {
+      "androidAppId": "ca-app-pub-################~##########"
+    }
+  }
 }

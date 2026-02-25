@@ -2,6 +2,8 @@
 
 // src/features/dog/dogSelectors.js
 
+import { createSelector } from "@reduxjs/toolkit";
+
 import {
   getDogPixiSheetUrl,
   getDogStageLabel,
@@ -225,7 +227,7 @@ export function selectDogRenderParams(stateOrDog) {
  *     pixiSheetFallbackUrl: string,
  *   }
  */
-export function selectDogRenderModel(stateOrDog) {
+function buildDogRenderModel(stateOrDog) {
   const dog = _resolveDog(stateOrDog) || {};
   const { stage, condition, anim } = selectDogRenderParams(dog);
 
@@ -245,6 +247,14 @@ export function selectDogRenderModel(stateOrDog) {
     pixiSheetUrl,
     pixiSheetFallbackUrl,
   };
+}
+
+export const selectDogRenderModel = createSelector([selectDog], (dog) =>
+  buildDogRenderModel(dog)
+);
+
+export function selectDogRenderModelFromDog(dogLike) {
+  return buildDogRenderModel(dogLike);
 }
 
 /**
