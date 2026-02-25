@@ -29,7 +29,7 @@
       content="Adopt a virtual pup and make choices that shape its behavior."
     />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="/icons/doggerz-512.png" />
+    <meta property="og:image" content="/assets/icons/doggerz-512.png" />
     <meta property="og:image:alt" content="Doggerz app icon" />
     <meta property="og:locale" content="en_US" />
 
@@ -39,28 +39,33 @@
       name="twitter:description"
       content="Adopt a virtual pup and shape its behavior over time."
     />
-    <meta name="twitter:image" content="/icons/doggerz-512.png" />
+    <meta name="twitter:image" content="/assets/icons/doggerz-512.png" />
 
     <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="icon" href="/favicon.ico" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="/assets/icons/doggerz-32.png"
+    />
     <link
       rel="apple-touch-icon"
       sizes="180x180"
-      href="/icons/doggerz-180.png"
+      href="/assets/icons/doggerz-180.png"
     />
     <link
       rel="icon"
       type="image/png"
       sizes="192x192"
-      href="/icons/doggerz-192.png"
+      href="/assets/icons/doggerz-192.png"
     />
     <link
       rel="icon"
       type="image/png"
       sizes="512x512"
-      href="/icons/doggerz-512.png"
+      href="/assets/icons/doggerz-512.png"
     />
-    <link rel="preload" as="image" href="/icons/doggerz-logo.svg" />
+    <link rel="preload" as="image" href="/assets/icons/doggerz-192.png" />
 
     <title>Doggerz</title>
 
@@ -138,8 +143,9 @@
         border-radius: 14px;
         border: 1px solid rgba(16, 185, 129, 0.35);
         background: rgba(16, 185, 129, 0.1);
-        padding: 8px;
+        padding: 6px;
         box-sizing: border-box;
+        object-fit: cover;
       }
 
       .dg-boot__title {
@@ -239,7 +245,7 @@
           <div class="dg-boot__row">
             <img
               class="dg-boot__logo"
-              src="/icons/doggerz-logo.svg"
+              src="/assets/icons/doggerz-192.png"
               alt=""
               decoding="async"
             />

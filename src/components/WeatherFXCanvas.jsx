@@ -9,6 +9,15 @@ function clamp(n, lo, hi) {
   return Math.max(lo, Math.min(hi, x));
 }
 
+function normalizeIntensity(value) {
+  const raw = String(value || "").toLowerCase();
+  if (raw === "light" || raw === "drizzle") return 0.7;
+  if (raw === "heavy" || raw === "storm" || raw === "thunder") return 1.4;
+  if (raw === "medium" || raw === "normal") return 1.0;
+  if (Number.isFinite(Number(value))) return clamp(Number(value), 0.4, 2.0);
+  return 1.0;
+}
+
 function makeRng(seed) {
   let s = seed >>> 0;
   return () => {
@@ -22,6 +31,7 @@ function makeRng(seed) {
 
 export default function WeatherFXCanvas({
   mode, // "sun" | "rain" | "snow" | "none"
+  intensity = "medium",
   reduceMotion = false,
   reduceTransparency = false,
   className = "",
@@ -37,6 +47,8 @@ export default function WeatherFXCanvas({
       : String(mode || "none").toLowerCase() === "snow"
         ? "snow"
         : "none";
+
+  const intensityFactor = normalizeIntensity(intensity);
 
   React.useEffect(() => {
     const canvas = canvasRef.current;
@@ -102,16 +114,16 @@ export default function WeatherFXCanvas({
         if (effectiveMode === "rain") {
           const x = rng() * w;
           const y = rng() * h;
-          const speed = 650 + rng() * 650;
-          const len = 12 + rng() * 18;
-          const wind = -80 + rng() * 160;
+          const speed = (650 + rng() * 650) * (0.7 + intensityFactor * 0.45);
+          const len = (12 + rng() * 18) * (0.7 + intensityFactor * 0.35);
+          const wind = (-80 + rng() * 160) * (0.6 + intensityFactor * 0.4);
           particlesRef.current.push({ type: "rain", x, y, speed, len, wind });
         } else if (effectiveMode === "snow") {
           const x = rng() * w;
           const y = rng() * h;
-          const speed = 55 + rng() * 120;
-          const r = 0.8 + rng() * 1.9;
-          const drift = -30 + rng() * 60;
+          const speed = (55 + rng() * 120) * (0.7 + intensityFactor * 0.4);
+          const r = (0.8 + rng() * 1.9) * (0.75 + intensityFactor * 0.2);
+          const drift = (-30 + rng() * 60) * (0.8 + intensityFactor * 0.25);
           const wobble = 0.6 + rng() * 1.6;
           particlesRef.current.push({
             type: "snow",
@@ -132,7 +144,7 @@ export default function WeatherFXCanvas({
       const h = window.innerHeight || 1;
       const area = (w * h) / (1280 * 720);
       const base = effectiveMode === "rain" ? 110 : 80;
-      const scaled = base * clamp(area, 0.6, 1.8);
+      const scaled = base * clamp(area, 0.6, 1.8) * intensityFactor;
       return Math.round(reduceTransparency ? scaled * 0.55 : scaled);
     };
 
@@ -145,7 +157,13 @@ export default function WeatherFXCanvas({
       // maintain particle count
       const desired = targetCount();
       const current = particlesRef.current.length;
-      if (current < desired) spawn(Math.min(desired - current, 12));
+      if (current < desired) {
+        const burst = Math.min(
+          desired - current,
+          12 + Math.round(intensityFactor * 6)
+        );
+        spawn(burst);
+      }
 
       ctx.clearRect(0, 0, w, h);
 
@@ -201,7 +219,7 @@ export default function WeatherFXCanvas({
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
     };
-  }, [effectiveMode, reduceMotion, reduceTransparency]);
+  }, [effectiveMode, reduceMotion, reduceTransparency, intensityFactor]);
 
   // Keep canvas on top of background but behind UI.
   return (

@@ -14,6 +14,7 @@ import { ToastProvider } from "./components/ToastProvider.jsx";
 import PwaProvider from "./pwa/PwaProvider.jsx";
 import PwaStatusBanners from "./components/PwaStatusBanners.jsx";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
+import DogAIEngine from "./features/game/DogAIEngine.jsx";
 
 import { initRuntimeLogging } from "./utils/runtimeLogging.js";
 import { PupProvider } from "./state/PupContext.jsx";
@@ -97,6 +98,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
               <AppGameEffects />
               <CheckInReminders />
               <PwaStatusBanners />
+              <DogAIEngine />
 
               <AppRouter />
             </PupProvider>

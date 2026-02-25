@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "basePath": "/audio/",
+  "sounds": {
+    "front_flip": {
+      "file": "bark.m4a",
+      "cooldownMs": 1200
+    }
+  },
+  "aliases": {
+    "flip": "front_flip"
+  }
+}

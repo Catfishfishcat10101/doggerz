@@ -70,6 +70,39 @@ function normalizeConditionFromOpenWeather(data) {
   return "unknown";
 }
 
+function normalizeIntensityFromOpenWeather(data) {
+  const items = Array.isArray(data?.weather) ? data.weather : [];
+  const mains = items
+    .map((w) => String(w?.main || "").toLowerCase())
+    .filter(Boolean);
+  const descriptions = items
+    .map((w) => String(w?.description || "").toLowerCase())
+    .filter(Boolean);
+
+  if (mains.some((m) => m === "thunderstorm")) return "heavy";
+  if (mains.some((m) => m === "drizzle")) return "light";
+  if (mains.some((m) => m === "rain")) {
+    if (
+      descriptions.some((d) => d.includes("heavy") || d.includes("torrential"))
+    ) {
+      return "heavy";
+    }
+    if (
+      descriptions.some((d) => d.includes("light") || d.includes("drizzle"))
+    ) {
+      return "light";
+    }
+    return "medium";
+  }
+  if (mains.some((m) => m === "snow")) {
+    if (descriptions.some((d) => d.includes("heavy"))) return "heavy";
+    if (descriptions.some((d) => d.includes("light"))) return "light";
+    return "medium";
+  }
+
+  return "medium";
+}
+
 function normalizeConditionFromMeteoCode(code) {
   const c = Number(code);
   if (!Number.isFinite(c)) return "unknown";
@@ -82,6 +115,21 @@ function normalizeConditionFromMeteoCode(code) {
     return "rain";
   }
   return "unknown";
+}
+
+function normalizeIntensityFromMeteoCode(code) {
+  const c = Number(code);
+  if (!Number.isFinite(c)) return "medium";
+  // drizzle/light rain
+  if ([51, 53, 55, 56, 57].includes(c)) return "light";
+  // rain
+  if ([61, 63, 65, 66, 67].includes(c)) return c >= 65 ? "heavy" : "medium";
+  // showers / thunder
+  if ([80, 81, 82, 95, 96, 99].includes(c))
+    return c === 80 ? "medium" : "heavy";
+  // snow
+  if ([71, 73, 75, 77, 85, 86].includes(c)) return c >= 75 ? "heavy" : "medium";
+  return "medium";
 }
 
 async function fetchLatLonForZip(zip, signal) {
@@ -133,8 +181,10 @@ export const fetchWeatherForZip = createAsyncThunk(
         const data = await resp.json();
         const code = data?.current?.weather_code;
         const condition = normalizeConditionFromMeteoCode(code);
+        const intensity = normalizeIntensityFromMeteoCode(code);
         return {
           condition,
+          intensity,
           zip: effectiveZip,
           fetchedAt: Date.now(),
           source: "openmeteo",
@@ -146,6 +196,7 @@ export const fetchWeatherForZip = createAsyncThunk(
       } catch (err) {
         return {
           condition: "unknown",
+          intensity: "medium",
           zip: effectiveZip,
           fetchedAt: Date.now(),
           source: "openmeteo",
@@ -167,6 +218,7 @@ export const fetchWeatherForZip = createAsyncThunk(
     const data = await resp.json();
 
     const condition = normalizeConditionFromOpenWeather(data);
+    const intensity = normalizeIntensityFromOpenWeather(data);
     const cloudsPct = Number.isFinite(Number(data?.clouds?.all))
       ? Number(data.clouds.all)
       : null;
@@ -174,6 +226,7 @@ export const fetchWeatherForZip = createAsyncThunk(
     const first = Array.isArray(data?.weather) ? data.weather[0] : null;
     return {
       condition,
+      intensity,
       zip: effectiveZip,
       fetchedAt: Date.now(),
       source: "openweather",
@@ -189,6 +242,7 @@ export const fetchWeatherForZip = createAsyncThunk(
 
 const initialState = {
   condition: "unknown",
+  intensity: "medium",
   status: "idle", // idle | loading | ok | error | disabled
   lastChangedAt: Date.now(),
   lastFetchedAt: null,
@@ -211,6 +265,9 @@ const weatherSlice = createSlice({
         state.condition = next;
         state.lastChangedAt = Date.now();
       }
+      if (payload?.intensity) {
+        state.intensity = String(payload.intensity);
+      }
     },
     cycleWeather(state) {
       const idx = order.indexOf(state.condition);
@@ -232,6 +289,7 @@ const weatherSlice = createSlice({
           action.payload?.source || "none"
         ).toLowerCase();
         const fetchedAt = Number(action.payload?.fetchedAt) || Date.now();
+        const nextIntensity = String(action.payload?.intensity || "medium");
 
         state.lastFetchedAt = fetchedAt;
         state.zip = action.payload?.zip || state.zip;
@@ -239,6 +297,7 @@ const weatherSlice = createSlice({
         state.details = action.payload?.details || null;
         state.error = null;
         state.status = nextSource === "none" ? "disabled" : "ok";
+        state.intensity = nextIntensity;
 
         if (state.condition !== nextCondition) {
           state.condition = nextCondition;
@@ -254,4 +313,5 @@ const weatherSlice = createSlice({
 
 export const { setWeather, cycleWeather } = weatherSlice.actions;
 export const selectWeatherCondition = (s) => s.weather.condition;
+export const selectWeatherIntensity = (s) => s.weather.intensity;
 export default weatherSlice.reducer;

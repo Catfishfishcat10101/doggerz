@@ -116,6 +116,8 @@ export const DECAY_TUNING = {
         happiness: 18,
         cleanliness: 40,
         bladder: 4.5,
+        affection: 8,
+        mentalStimulation: 12,
       },
       energyRecoverPerMinuteWhileNapping: 0.55,
       globalDecayMultiplier: 1.1,
@@ -128,6 +130,8 @@ export const DECAY_TUNING = {
         happiness: 30,
         cleanliness: 55,
         bladder: 7.5,
+        affection: 14,
+        mentalStimulation: 18,
       },
       energyRecoverPerMinuteWhileNapping: 0.4,
       globalDecayMultiplier: 1.0,
@@ -140,6 +144,8 @@ export const DECAY_TUNING = {
         happiness: 32,
         cleanliness: 50,
         bladder: 9.0,
+        affection: 16,
+        mentalStimulation: 20,
       },
       energyRecoverPerMinuteWhileNapping: 0.35,
       globalDecayMultiplier: 0.95,
@@ -172,6 +178,8 @@ export function applyDogTick(dog, nowMs) {
   dog.stats.happiness ??= 90;
   dog.stats.cleanliness ??= 90;
   dog.stats.bladder ??= 90;
+  dog.stats.affection ??= 90;
+  dog.stats.mentalStimulation ??= 90;
 
   dog.wellbeing ??= 60;
   dog.careDebt ??= 0;
@@ -217,7 +225,9 @@ export function computeNeedPressure(stats) {
     urgency(Number(s.energy || 0)),
     urgency(Number(s.happiness || 0)),
     urgency(Number(s.cleanliness || 0)),
-    urgency(Number(s.bladder || 0))
+    urgency(Number(s.bladder || 0)),
+    urgency(Number(s.affection || 0)),
+    urgency(Number(s.mentalStimulation || 0))
   );
 }
 
@@ -272,6 +282,10 @@ function simulateMinutes(dog, minutesTotal, startNowMs, opts) {
     happiness: baseLossPerMinuteFromHoursTo40(stage.hoursTo40.happiness),
     cleanliness: baseLossPerMinuteFromHoursTo40(stage.hoursTo40.cleanliness),
     bladder: baseLossPerMinuteFromHoursTo40(stage.hoursTo40.bladder),
+    affection: baseLossPerMinuteFromHoursTo40(stage.hoursTo40.affection),
+    mentalStimulation: baseLossPerMinuteFromHoursTo40(
+      stage.hoursTo40.mentalStimulation
+    ),
   };
 
   // Simulate in steps so naps/accidents can trigger predictably
@@ -290,7 +304,9 @@ function simulateMinutes(dog, minutesTotal, startNowMs, opts) {
       urgency(s.energy),
       urgency(s.happiness),
       urgency(s.cleanliness),
-      urgency(s.bladder)
+      urgency(s.bladder),
+      urgency(s.affection),
+      urgency(s.mentalStimulation)
     );
 
     // Wellbeing protection multiplier
@@ -348,6 +364,23 @@ function simulateMinutes(dog, minutesTotal, startNowMs, opts) {
       zoneFactorFn: zoneFactor,
       multiplier: protect * stageMult * simMult * napMult.cleanliness,
     });
+
+    s.affection = applyDecay(s.affection, baseLoss.affection, stepMin, {
+      floor,
+      zoneFactorFn: zoneFactor,
+      multiplier: protect * stageMult * simMult,
+    });
+
+    s.mentalStimulation = applyDecay(
+      s.mentalStimulation,
+      baseLoss.mentalStimulation,
+      stepMin,
+      {
+        floor,
+        zoneFactorFn: zoneFactor,
+        multiplier: protect * stageMult * simMult,
+      }
+    );
 
     s.bladder = applyDecay(s.bladder, baseLoss.bladder, stepMin, {
       floor,

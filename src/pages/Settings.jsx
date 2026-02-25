@@ -29,6 +29,7 @@ import {
   setHighContrast,
   setHitTargets,
   setMasterVolume,
+  setMusicEnabled,
   setMusicVolume,
   setBatterySaver,
   setPerfMode,
@@ -855,6 +856,14 @@ export default function Settings() {
               description="Master audio toggle."
               checked={settings?.audio?.enabled}
               onChange={(v) => dispatch(setAudioEnabled(v))}
+            />
+
+            <Switch
+              id="musicEnabled"
+              label="Music"
+              description="Toggle background music without muting SFX."
+              checked={settings?.audio?.musicEnabled !== false}
+              onChange={(v) => dispatch(setMusicEnabled(v))}
             />
 
             <Switch

@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "frame": { "width": 128, "height": 128 },
+  "columns": 8,
+  "defaultAnim": "idle",
+  "defaultFps": 8,
+  "rows": [
+    { "anim": "idle", "frames": 6, "fps": 8 },
+    { "anim": "walk", "frames": 8, "fps": 10 },
+    { "anim": "bark", "frames": 4, "fps": 8 },
+    { "anim": "scratch", "frames": 6, "fps": 8 },
+    { "anim": "sleep", "frames": 6, "fps": 6 },
+    { "anim": "sit", "frames": 4, "fps": 6 },
+    { "anim": "wag", "frames": 6, "fps": 10 }
+  ],
+  "aliases": {
+    "dig": "scratch",
+    "digging": "scratch",
+    "run": "walk",
+    "nap": "sleep"
+  }
+}

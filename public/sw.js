@@ -9,7 +9,7 @@
    - Cache-first for static assets
 -------------------------------------------------------- */
 
-const CACHE_VERSION = "doggerz-v18"; // bump this when you change cached assets or SW behaviour
+const CACHE_VERSION = "doggerz-v19"; // bump this when you change cached assets or SW behaviour
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Support deployments under a sub-path (e.g. GitHub Pages):
@@ -37,14 +37,13 @@ const CORE_ASSETS = [
   "/",
   "/index.html",
   "/manifest.webmanifest",
-  "/favicon.ico",
   "/offline.html",
 
-  // Icons (pngs live under /public/assets/icons)
+  // Icons
+  "/assets/icons/doggerz-32.png",
   "/assets/icons/doggerz-180.png",
   "/assets/icons/doggerz-192.png",
   "/assets/icons/doggerz-512.png",
-  "/icons/doggerz-logo.svg",
 
   // Backgrounds
   "/backgrounds/backyard-day.svg",

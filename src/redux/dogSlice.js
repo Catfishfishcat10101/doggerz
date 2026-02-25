@@ -73,6 +73,8 @@ const DECAY_PER_HOUR = {
   happiness: 6,
   energy: 8,
   cleanliness: 3,
+  affection: 5,
+  mentalStimulation: 4,
 };
 const DECAY_SPEED = 0.4;
 
@@ -207,6 +209,12 @@ function computeMoodlets(state) {
       "Messed up fur"
     );
   }
+  if (stats.affection <= 30) {
+    add("lonely", stats.affection <= 15 ? 3 : 2, "Needs cuddles");
+  }
+  if (stats.mentalStimulation <= 30) {
+    add("bored", stats.mentalStimulation <= 15 ? 3 : 2, "Needs a job to do");
+  }
   if (happiness >= 75) {
     add("happy", happiness >= 90 ? 2 : 1, "Good vibes");
   }
@@ -299,12 +307,14 @@ const DEFAULT_STATS = Object.freeze({
   happiness: 60,
   energy: 60,
   cleanliness: 60,
+  affection: 60,
+  mentalStimulation: 60,
 });
 
 // Simple dog poll config; you can tune this later
 const DOG_POLL_CONFIG = {
-  intervalMs: 10 * 60 * 1000, // spawn roughly every 10 minutes of active play
-  timeoutMs: 60 * 1000, // 60s to answer
+  intervalMs: 8 * 60 * 1000,
+  timeoutMs: 60 * 1000,
   prompts: [
     {
       id: "water",
@@ -314,12 +324,37 @@ const DOG_POLL_CONFIG = {
     {
       id: "toy",
       prompt: "Can we play with my favorite toy for a bit?",
-      effects: { happiness: 8, energy: -6 },
+      effects: { happiness: 8, energy: -6, mentalStimulation: 15 },
     },
     {
       id: "rest",
       prompt: "I’m kinda wiped… can we chill for a bit?",
-      effects: { energy: 10, happiness: 2 },
+      effects: { energy: 10, happiness: 2, affection: 5 },
+    },
+    {
+      id: "cuddle",
+      prompt: "Can I sit on your lap while you do that?",
+      effects: { affection: 25, energy: 2 },
+    },
+    {
+      id: "squirrel",
+      prompt: "I saw a squirrel! Can I go patrol the yard?",
+      effects: {
+        energy: -15,
+        mentalStimulation: 20,
+        cleanliness: -10,
+        happiness: 10,
+      },
+    },
+    {
+      id: "bored",
+      prompt: "I learned a new trick in my head. Want to see?",
+      effects: { mentalStimulation: 30, energy: -5 },
+    },
+    {
+      id: "mud",
+      prompt: "I found a REALLY good smell in the dirt. Can I roll in it?",
+      effects: { happiness: 15, cleanliness: -40, affection: -5 },
     },
   ],
 };
@@ -536,6 +571,10 @@ const initialState = {
   dreams: initialDreams,
   journal: initialJournal,
   streak: initialStreak,
+  lastRewardClaimedAt: null,
+  consecutiveDays: 0,
+  claimedPreReg: false,
+  claimedPreRegAt: null,
   training: createInitialTrainingState(),
 
   // Relationship / collectibles (used by Store + Rainbow Bridge pages)
@@ -776,7 +815,15 @@ function maybeGenerateDream(state, now = nowMs()) {
 }
 
 const isValidStat = (key) =>
-  ["hunger", "thirst", "happiness", "energy", "cleanliness"].includes(key);
+  [
+    "hunger",
+    "thirst",
+    "happiness",
+    "energy",
+    "cleanliness",
+    "affection",
+    "mentalStimulation",
+  ].includes(key);
 
 const clampSigned = (n, limit = 100) =>
   Math.max(-limit, Math.min(limit, Number.isFinite(n) ? n : 0));
@@ -2014,6 +2061,28 @@ const dogSlice = createSlice({
         ...(payload.milestones || state.milestones || {}),
       };
 
+      const lastReward = Number(
+        payload?.lastRewardClaimedAt ?? state.lastRewardClaimedAt
+      );
+      merged.lastRewardClaimedAt = Number.isFinite(lastReward)
+        ? lastReward
+        : null;
+      const streakDays = Number(
+        payload?.consecutiveDays ?? state.consecutiveDays ?? 0
+      );
+      merged.consecutiveDays = Number.isFinite(streakDays)
+        ? Math.max(0, Math.floor(streakDays))
+        : 0;
+      merged.claimedPreReg = Boolean(
+        payload?.claimedPreReg ?? state.claimedPreReg
+      );
+      const preRegClaimedAt = Number(
+        payload?.claimedPreRegAt ?? state.claimedPreRegAt
+      );
+      merged.claimedPreRegAt = Number.isFinite(preRegClaimedAt)
+        ? preRegClaimedAt
+        : null;
+
       merged.lastAction =
         payload.lastAction ?? state.lastAction ?? initialState.lastAction;
 
@@ -2562,6 +2631,51 @@ const dogSlice = createSlice({
       resolveActivePoll(state, { accepted, reason, now });
     },
 
+    /* ------------- daily rewards ------------- */
+
+    claimDailyReward(state, { payload }) {
+      const now = typeof payload?.now === "number" ? payload.now : nowMs();
+      const day = Number(payload?.day ?? state.consecutiveDays ?? 0);
+      state.lastRewardClaimedAt = now;
+      state.consecutiveDays = Number.isFinite(day)
+        ? Math.max(0, Math.floor(day))
+        : 0;
+
+      const reward = payload?.reward || null;
+      if (reward?.type === "ENERGY") {
+        state.stats.energy = clamp(
+          Number(state.stats.energy || 0) + Number(reward.value || 0),
+          0,
+          100
+        );
+      }
+      if (reward?.type === "COINS") {
+        state.coins = Math.max(
+          0,
+          Math.round(Number(state.coins || 0) + Number(reward.value || 0))
+        );
+      }
+    },
+
+    grantPreRegGift(state, { payload }) {
+      if (state.claimedPreReg) return;
+
+      const now = typeof payload?.now === "number" ? payload.now : nowMs();
+      const coins = Math.max(0, Math.round(Number(payload?.coins ?? 500)));
+
+      state.coins = Math.max(0, Math.round(Number(state.coins || 0) + coins));
+      state.claimedPreReg = true;
+      state.claimedPreRegAt = now;
+
+      pushJournalEntry(state, {
+        type: "STORE",
+        moodTag: "PROUD",
+        summary: "Claimed pre-registration reward.",
+        body: `Founder bonus unlocked: ${coins} coins.`,
+        timestamp: now,
+      });
+    },
+
     /* ------------- skills ------------- */
 
     trainObedience(state, { payload }) {
@@ -3060,6 +3174,8 @@ export const {
   registerSessionStart,
   tickDogPolls,
   respondToDogPoll,
+  claimDailyReward,
+  grantPreRegGift,
   trainObedience,
   unlockSkillTreePerk,
   respecSkillTree,

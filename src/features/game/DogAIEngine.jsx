@@ -7,6 +7,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/firebase.js";
 import { App } from "@capacitor/app";
 import {
+  grantPreRegGift,
   hydrateDog,
   resetDogState,
   tickDog,
@@ -28,6 +29,15 @@ import {
   removeStoredValue,
   setStoredValue,
 } from "@/utils/nativeStorage.js";
+import { selectSettings } from "@/redux/settingsSlice.js";
+import { selectDogRenderModel } from "@/features/game/dogSelectors.js";
+import { useDogActionSfx } from "@/features/audio/useDogActionSfx.js";
+import useDynamicMusic from "@/features/audio/useDynamicMusic.js";
+import { ensureDogMain } from "@/firebase/ensureDog.js";
+import {
+  hasPreRegistrationRewardPurchase,
+  PRE_REG_GIFT_COINS,
+} from "@/features/billing/preRegistrationReward.js";
 
 const TICK_INTERVAL_MS = 60_000; // 60 seconds
 const CLOUD_SAVE_DEBOUNCE = 3_000; // 3 seconds
@@ -65,11 +75,21 @@ export default function DogAIEngine() {
   const weather = useSelector(selectWeatherCondition);
   const zip = useSelector(selectUserZip);
   const growthMilestone = useSelector(selectDogGrowthMilestone);
+  const settings = useSelector(selectSettings);
+  const renderModel = useSelector(selectDogRenderModel);
 
   const hasHydratedRef = useRef(false);
   const cloudSaveTimeoutRef = useRef(null);
   const localSaveTimeoutRef = useRef(null);
   const growthPauseRef = useRef(Boolean(growthMilestone));
+
+  useDogActionSfx({
+    anim: renderModel?.anim,
+    energy: dogState?.stats?.energy,
+    audio: settings?.audio,
+    hapticsEnabled: settings?.hapticsEnabled !== false,
+  });
+  useDynamicMusic();
 
   // Helper: revive common date-like fields saved as ISO strings back to numbers
   const reviveDogDates = (raw) => {
@@ -240,6 +260,25 @@ export default function DogAIEngine() {
   const [userId, setUserId] = useState(null);
   const tickIntervalRef = useRef(null);
 
+  const flushLocalSave = useCallback(() => {
+    const ds = dogRef.current;
+    if (!ds) return;
+    try {
+      const persisted = {
+        ...ds,
+        meta: {
+          ...(ds.meta || {}),
+          schemaVersion: DOG_SAVE_SCHEMA_VERSION,
+          savedAt: new Date().toISOString(),
+        },
+      };
+      const key = storageKeyRef.current || getDogStorageKey(userIdRef.current);
+      setStoredValue(key, JSON.stringify(persisted));
+    } catch (err) {
+      console.error("[Doggerz] Failed to flush local save", err);
+    }
+  }, []);
+
   useEffect(() => {
     weatherRef.current = weather;
   }, [weather]);
@@ -336,25 +375,6 @@ export default function DogAIEngine() {
     adoptedRef.current = Boolean(dogState?.adoptedAt);
   }, [dogState?.adoptedAt]);
 
-  const flushLocalSave = useCallback(() => {
-    const ds = dogRef.current;
-    if (!ds) return;
-    try {
-      const persisted = {
-        ...ds,
-        meta: {
-          ...(ds.meta || {}),
-          schemaVersion: DOG_SAVE_SCHEMA_VERSION,
-          savedAt: new Date().toISOString(),
-        },
-      };
-      const key = storageKeyRef.current || getDogStorageKey(userIdRef.current);
-      setStoredValue(key, JSON.stringify(persisted));
-    } catch (err) {
-      console.error("[Doggerz] Failed to flush local save", err);
-    }
-  }, []);
-
   // 2b. Flush local save when leaving/backgrounding (makes refresh/close feel safe)
   useEffect(() => {
     const onVisibility = () => {
@@ -383,11 +403,18 @@ export default function DogAIEngine() {
   // Track auth changes reactively (auth.currentUser is not a reactive value by itself).
   useEffect(() => {
     if (!auth) return;
-    const unsub = onAuthStateChanged(auth, (user) => {
+    const unsub = onAuthStateChanged(auth, async (user) => {
       const nextId = user?.uid || null;
       userIdRef.current = nextId;
       setUserId(nextId);
       if (user) {
+        try {
+          await ensureDogMain(user.uid);
+          console.log("[Doggerz] Cloud document ensured for UID:", user.uid);
+        } catch (err) {
+          console.error("[Doggerz] Failed to ensure cloud document:", err);
+        }
+
         const createdAt = user?.metadata?.creationTime
           ? Date.parse(user.metadata.creationTime)
           : null;
@@ -570,6 +597,49 @@ export default function DogAIEngine() {
         });
     }
   }, [dispatch, userId]);
+
+  // Daily reward availability check (runs after hydration and whenever claim changes).
+  useEffect(() => {
+    if (!dogState?.adoptedAt) return;
+
+    const lastClaim = Number(dogState?.lastRewardClaimedAt || 0);
+    const today = new Date().setHours(0, 0, 0, 0);
+    const lastClaimDate = lastClaim
+      ? new Date(lastClaim).setHours(0, 0, 0, 0)
+      : 0;
+
+    if (today > lastClaimDate) {
+      console.log("[Doggerz] Daily Reward is available!");
+      // TODO: dispatch(openModal("DAILY_REWARD"));
+    }
+  }, [dogState?.adoptedAt, dogState?.lastRewardClaimedAt]);
+
+  // Pre-registration reward entitlement check (native only, one-time grant).
+  useEffect(() => {
+    if (!dogState?.adoptedAt) return;
+    if (dogState?.claimedPreReg) return;
+
+    let cancelled = false;
+    const run = async () => {
+      const hasEntitlement = await hasPreRegistrationRewardPurchase();
+      if (!hasEntitlement || cancelled) return;
+      dispatch(
+        grantPreRegGift({
+          coins: PRE_REG_GIFT_COINS,
+          now: Date.now(),
+        })
+      );
+      console.log("[Doggerz] Pre-registration reward granted.");
+    };
+
+    run().catch((err) => {
+      console.warn("[Doggerz] Pre-registration reward check failed", err);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [dispatch, dogState?.adoptedAt, dogState?.claimedPreReg]);
 
   // 2. Debounced save to storage (Preferences + localStorage fallback).
   useEffect(() => {

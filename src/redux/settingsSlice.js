@@ -213,6 +213,7 @@ function normalizeLoadedSettings(raw) {
   // Ensure nested audio exists
   next.audio = {
     enabled: true,
+    musicEnabled: true,
     masterVolume: 0.8,
     musicVolume: 0.5,
     sfxVolume: 0.7,
@@ -221,6 +222,7 @@ function normalizeLoadedSettings(raw) {
     ...(next.audio || {}),
   };
   next.audio.enabled = Boolean(next.audio.enabled);
+  next.audio.musicEnabled = Boolean(next.audio.musicEnabled);
   next.audio.masterVolume = clamp(Number(next.audio.masterVolume ?? 0.8), 0, 1);
   next.audio.musicVolume = clamp(Number(next.audio.musicVolume ?? 0.5), 0, 1);
   next.audio.sfxVolume = clamp(Number(next.audio.sfxVolume ?? 0.7), 0, 1);
@@ -372,6 +374,7 @@ const initialState = normalizeLoadedSettings(loadFromStorage()) || {
   // Audio (not all screens use this yet, but we persist it for future wiring)
   audio: {
     enabled: true,
+    musicEnabled: true,
     masterVolume: 0.8,
     musicVolume: 0.5,
     sfxVolume: 0.7,
@@ -797,6 +800,16 @@ const settingsSlice = createSlice({
       saveToStorage(state);
     },
 
+    setMusicEnabled(state, action) {
+      state.audio.musicEnabled = Boolean(action.payload);
+      saveToStorage(state);
+    },
+
+    toggleMusic(state) {
+      state.audio.musicEnabled = !state.audio.musicEnabled;
+      saveToStorage(state);
+    },
+
     setMasterVolume(state, action) {
       const raw = Number(action.payload);
       if (!Number.isFinite(raw)) return;
@@ -934,6 +947,7 @@ const settingsSlice = createSlice({
       );
       state.voiceCommandsEnabled = Boolean(next.voiceCommandsEnabled);
       state.audio.enabled = Boolean(next.audio?.enabled);
+      state.audio.musicEnabled = Boolean(next.audio?.musicEnabled);
       state.audio.masterVolume = clamp(
         Number(next.audio?.masterVolume ?? 0.8),
         0,
@@ -1041,6 +1055,7 @@ const settingsSlice = createSlice({
         trainingInputMode: "both",
         audio: {
           enabled: true,
+          musicEnabled: true,
           masterVolume: 0.8,
           musicVolume: 0.5,
           sfxVolume: 0.7,
@@ -1150,6 +1165,8 @@ export const {
   setTrainingShowDetails,
   setTrainingSortKey,
   setAudioEnabled,
+  setMusicEnabled,
+  toggleMusic,
   setMasterVolume,
   setMusicVolume,
   setSfxVolume,
