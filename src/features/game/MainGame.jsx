@@ -1,6 +1,5 @@
 // src/features/game/MainGame.jsx
 
-import * as React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import DogPixiView from "@/components/DogPixiView.jsx";
 import EnvironmentScene from "@/features/game/EnvironmentScene.jsx";

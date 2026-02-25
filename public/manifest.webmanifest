@@ -13,10 +13,7 @@
   "orientation": "portrait",
   "background_color": "#020617",
   "theme_color": "#10b981",
-  "categories": [
-    "games",
-    "entertainment"
-  ],
+  "categories": ["games", "entertainment"],
   "edge_side_panel": {
     "preferred_width": 420
   },

@@ -1,7 +1,5 @@
 // src/features/game/EnvironmentScene.jsx
 
-import * as React from "react";
-
 function useSceneGradient(season, timeOfDay) {
   const s = String(season || "auto").toLowerCase();
   const t = String(timeOfDay || "day").toLowerCase();
