@@ -13,7 +13,10 @@
   "orientation": "portrait",
   "background_color": "#020617",
   "theme_color": "#10b981",
-  "categories": ["games", "entertainment"],
+  "categories": [
+    "games",
+    "entertainment"
+  ],
   "edge_side_panel": {
     "preferred_width": 420
   },
@@ -42,9 +45,9 @@
       "url": "/game",
       "icons": [
         {
-          "src": "/assets/icons/icon-192.webp",
+          "src": "/assets/icons/icon-192.png",
           "sizes": "192x192",
-          "type": "image/webp",
+          "type": "image/png",
           "purpose": "any"
         }
       ]
@@ -55,9 +58,9 @@
       "url": "/adopt",
       "icons": [
         {
-          "src": "/assets/icons/icon-192.webp",
+          "src": "/assets/icons/icon-192.png",
           "sizes": "192x192",
-          "type": "image/webp",
+          "type": "image/png",
           "purpose": "any"
         }
       ]
@@ -68,9 +71,9 @@
       "url": "/settings",
       "icons": [
         {
-          "src": "/assets/icons/icon-192.webp",
+          "src": "/assets/icons/icon-192.png",
           "sizes": "192x192",
-          "type": "image/webp",
+          "type": "image/png",
           "purpose": "any"
         }
       ]
@@ -78,44 +81,13 @@
   ],
   "icons": [
     {
-      "src": "/assets/icons/icon-48.webp",
-      "type": "image/webp",
-      "sizes": "48x48",
-      "purpose": "any maskable"
+      "src": "/assets/icons/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
     },
     {
-      "src": "/assets/icons/icon-72.webp",
-      "type": "image/webp",
-      "sizes": "72x72",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/assets/icons/icon-96.webp",
-      "type": "image/webp",
-      "sizes": "96x96",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/assets/icons/icon-128.webp",
-      "type": "image/webp",
-      "sizes": "128x128",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/assets/icons/icon-192.webp",
-      "type": "image/webp",
-      "sizes": "192x192",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/assets/icons/icon-256.webp",
-      "type": "image/webp",
-      "sizes": "256x256",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/assets/icons/icon-512.webp",
-      "type": "image/webp",
+      "src": "/assets/icons/icon-512.png",
+      "type": "image/png",
       "sizes": "512x512",
       "purpose": "any maskable"
     }

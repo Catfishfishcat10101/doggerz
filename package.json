@@ -28,13 +28,14 @@
     "sprites:jrt:base": "node scripts/generate-jack-russell-base-sprites.js",
     "sprites:jr": "node scripts/generate-jr-pixi-sheets.js",
     "sprites:check": "node scripts/validate-sprites.js",
-    "preflight": "node scripts/preflight.js",
+    "preflight": "node scripts/preflight.js && npm run assets:verify",
     "preflight:strict": "node scripts/preflight.js --strict && npm run sprites:check",
     "ci:verify": "npm run lint && npm run build && npm run preflight",
     "preview": "vite preview",
     "preview:host": "vite preview --host 127.0.0.1 --port 4173",
     "lint-staged:fixup": "node scripts/add-lintstaged.js",
-    "check": "npm run format:check && npm run lint && npm run build"
+    "check": "npm run format:check && npm run lint && npm run build",
+    "assets:verify": "node scripts/verify-web-assets.js"
   },
   "dependencies": {
     "@capacitor-community/admob": "^8.0.0",

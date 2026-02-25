@@ -10,7 +10,9 @@ import {
   getDogStaticSpriteUrl,
 } from "@/utils/dogSpritePaths.js";
 
-export const selectDog = (state) => state?.dog || {}; // change if your store path differs
+const EMPTY_DOG = Object.freeze({});
+
+export const selectDog = (state) => state?.dog || EMPTY_DOG;
 
 const TRICK_ACTIONS = new Set([
   "sit",
@@ -106,14 +108,9 @@ function resolveExplicitAnim(lastAction, lastTrainedCommandId) {
   return null;
 }
 
-/**
- * Accept either a Redux `state` or a `dog` object and return the dog object.
- * This makes the selectors tolerant to callers that pass the dog slice directly.
- */
-function _resolveDog(stateOrDog) {
-  if (!stateOrDog) return {};
+function resolveDog(stateOrDog) {
+  if (!stateOrDog) return EMPTY_DOG;
 
-  // Heuristics: if object has `lifeStage` or `cleanlinessTier` assume it's a dog
   if (
     typeof stateOrDog === "object" &&
     (stateOrDog.lifeStage || stateOrDog.cleanlinessTier || stateOrDog.stage)
@@ -121,22 +118,12 @@ function _resolveDog(stateOrDog) {
     return stateOrDog;
   }
 
-  // Otherwise assume it's the Redux state
-  return selectDog(stateOrDog) || {};
+  return selectDog(stateOrDog) || EMPTY_DOG;
 }
 
-/**
- * Derive lightweight render params for sprite components.
- * Returns an object: `{ stage, condition, anim }` where:
- * - `stage` is one of `pup|adult|senior` (lowercase)
- * - `condition` is `clean|dirty|fleas|mange` (maps from cleanlinessTier or cleanliness)
- * - `anim` is a simple animation hint:
- *   `sleep|bark|scratch|trick|wag|walk|idle`
- */
 export function selectDogRenderParams(stateOrDog) {
-  const dog = _resolveDog(stateOrDog) || {};
+  const dog = resolveDog(stateOrDog);
 
-  // life stage may be at dog.lifeStage.stage, dog.stage, or legacy `stage` strings
   const rawStage =
     dog.lifeStage?.stage || dog.stage || dog.life_stage || "PUPPY";
   const lowerStage = String(rawStage || "").toLowerCase();
@@ -148,7 +135,6 @@ export function selectDogRenderParams(stateOrDog) {
         ? "adult"
         : "senior";
 
-  // Allow multiple possible cleanliness fields and be resilient to casing
   const tierRaw =
     dog.cleanlinessTier || dog.cleanliness_tier || dog.cleanliness || "FRESH";
   const tier = String(tierRaw).toUpperCase();
@@ -161,7 +147,6 @@ export function selectDogRenderParams(stateOrDog) {
           ? "mange"
           : "clean";
 
-  // Animation hint: prefer explicit flags, then lastAction heuristics
   const last = normalizeAction(dog.lastAction || dog.last_action);
   const lastTrainedCommandId = normalizeAction(
     dog?.memory?.lastTrainedCommandId
@@ -170,6 +155,7 @@ export function selectDogRenderParams(stateOrDog) {
   if (explicitAnim) {
     return { stage, condition, anim: explicitAnim };
   }
+
   const happiness = Number(dog?.stats?.happiness ?? 0);
   const isSleeping =
     !!dog.isAsleep ||
@@ -213,25 +199,10 @@ export function selectDogRenderParams(stateOrDog) {
   return { stage, condition, anim };
 }
 
-/**
- * Canonical render model for dog visuals.
- *
- * Returns:
- *   {
- *     stage: "pup"|"adult"|"senior",
- *     stageLabel: string,
- *     condition: "clean"|"dirty"|"fleas"|"mange",
- *     anim: "sleep"|"bark"|"scratch"|"trick"|"wag"|"walk"|"idle",
- *     staticSpriteUrl: string,
- *     pixiSheetUrl: string,
- *     pixiSheetFallbackUrl: string,
- *   }
- */
 function buildDogRenderModel(stateOrDog) {
-  const dog = _resolveDog(stateOrDog) || {};
+  const dog = resolveDog(stateOrDog);
   const { stage, condition, anim } = selectDogRenderParams(dog);
 
-  // Prefer existing label if provided by the state, otherwise derive from stage.
   const stageLabel = dog.lifeStage?.label || getDogStageLabel(stage);
 
   const staticSpriteUrl = getDogStaticSpriteUrl(stage);
@@ -257,14 +228,8 @@ export function selectDogRenderModelFromDog(dogLike) {
   return buildDogRenderModel(dogLike);
 }
 
-/**
- * Provide a lightweight filename hint for sprite selection.
- * Returns a best-effort filename like `jack_russell_pup_clean.png`.
- * Note: callers may prefer to use a centralized asset helper instead of this
- * hint when switching to an atlas or different naming scheme.
- */
 export function selectDogSpriteHint(stateOrDog) {
-  const dog = _resolveDog(stateOrDog) || {};
+  const dog = resolveDog(stateOrDog);
   const { stage, condition } = selectDogRenderParams(dog);
 
   const breedRaw = dog.breed || dog.species || dog.type || "jack_russell";
