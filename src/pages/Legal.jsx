@@ -1,5 +1,5 @@
 // src/pages/Legal.jsx
-import PageShell from "@/components/PageShell.jsx";
+import PageShell from "@/components/layout/PageShell.jsx";
 import { SUPPORT_EMAIL_ACCOUNT_DELETION_URL } from "@/config/links.js";
 
 export default function LegalPage() {
@@ -10,11 +10,11 @@ export default function LegalPage() {
           <h1 className="text-3xl font-black tracking-tight mb-2">
             Legal &amp; Terms
           </h1>
-          <p className="text-xs text-zinc-500">Last updated: 2026-01-02</p>
+          <p className="text-xs text-zinc-800">Last updated: 2026-01-02</p>
         </header>
 
         <section className="space-y-2">
-          <h2 className="font-semibold text-zinc-100 text-base">
+          <h2 className="font-semibold text-zinc-200 text-base">
             1. Terms of Service
           </h2>
           <p>

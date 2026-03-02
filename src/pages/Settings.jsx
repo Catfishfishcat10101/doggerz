@@ -52,8 +52,8 @@ import {
   setHapticsEnabled,
   SETTINGS_STORAGE_KEY,
 } from "../redux/settingsSlice.js";
-import PageShell from "../components/PageShell.jsx";
-import { APP_VERSION } from "../utils/appVersion.js";
+import PageShell from "../components/layout/PageShell.jsx";
+import { APP_VERSION } from "../utils/gameUtils.js";
 import { useToast } from "@/state/toastContext.js";
 import {
   canUseNotifications,
@@ -82,16 +82,11 @@ function Switch({ id, checked, onChange, label, description }) {
   return (
     <div className="flex items-start justify-between gap-4">
       <div className="min-w-0">
-        <label
-          htmlFor={id}
-          className="text-sm font-semibold text-zinc-900 dark:text-zinc-100"
-        >
+        <label htmlFor={id} className="text-sm font-semibold text-doggerz-bone">
           {label}
         </label>
         {description ? (
-          <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
-            {description}
-          </p>
+          <p className="mt-1 text-xs text-doggerz-paw/70">{description}</p>
         ) : null}
       </div>
 
@@ -105,7 +100,7 @@ function Switch({ id, checked, onChange, label, description }) {
         />
         <label
           htmlFor={id}
-          className="relative inline-flex h-6 w-11 cursor-pointer items-center rounded-full border border-zinc-300 bg-zinc-200 transition peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-emerald-500/80 peer-focus-visible:outline-offset-2 peer-checked:bg-emerald-500/80 dark:border-zinc-700 dark:bg-zinc-900/70"
+          className="relative inline-flex h-6 w-11 cursor-pointer items-center rounded-full border border-doggerz-mange/55 bg-doggerz-paw/20 transition peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-doggerz-leaf/80 peer-focus-visible:outline-offset-2 peer-checked:bg-doggerz-leaf/80 dark:border-doggerz-mange/55 dark:bg-black/50"
         >
           <span className="sr-only">{label}</span>
           <span className="inline-block h-5 w-5 translate-x-0.5 rounded-full bg-white shadow transition peer-checked:translate-x-5" />
@@ -119,23 +114,18 @@ function SelectRow({ id, label, description = "", value, onChange, options }) {
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
       <div className="min-w-0">
-        <label
-          htmlFor={id}
-          className="text-sm font-semibold text-zinc-900 dark:text-zinc-100"
-        >
+        <label htmlFor={id} className="text-sm font-semibold text-doggerz-bone">
           {label}
         </label>
         {description ? (
-          <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
-            {description}
-          </p>
+          <p className="mt-1 text-xs text-doggerz-paw/70">{description}</p>
         ) : null}
       </div>
       <select
         id={id}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full sm:w-56 rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-emerald-500/70 focus:outline-none dark:border-zinc-800 dark:bg-black/30 dark:text-zinc-100"
+        className="w-full sm:w-56 rounded-xl border border-doggerz-mange/55 bg-black/30 px-3 py-2 text-sm text-doggerz-bone focus:border-doggerz-leaf/70 focus:outline-none"
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>
@@ -164,18 +154,16 @@ function SliderRow({
         <div className="min-w-0">
           <label
             htmlFor={id}
-            className="text-sm font-semibold text-zinc-900 dark:text-zinc-100"
+            className="text-sm font-semibold text-doggerz-bone"
           >
             {label}
           </label>
           {description ? (
-            <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
-              {description}
-            </p>
+            <p className="mt-1 text-xs text-doggerz-paw/70">{description}</p>
           ) : null}
         </div>
         {rightLabel ? (
-          <div className="shrink-0 text-xs text-zinc-600 dark:text-zinc-400">
+          <div className="shrink-0 text-xs text-doggerz-paw/70">
             {rightLabel}
           </div>
         ) : null}
@@ -203,16 +191,12 @@ function Card({
 }) {
   return (
     <section
-      className={`rounded-2xl border border-zinc-200 bg-white/80 p-5 shadow-lg shadow-black/10 dark:border-zinc-800 dark:bg-zinc-950/60 dark:shadow-black/20 ${className}`}
+      className={`rounded-2xl border border-doggerz-mange/45 bg-black/45 p-5 shadow-lg shadow-black/25 ${className}`}
     >
       <div className="mb-4">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-          {title}
-        </h2>
+        <h2 className="text-lg font-semibold text-doggerz-bone">{title}</h2>
         {subtitle ? (
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-            {subtitle}
-          </p>
+          <p className="mt-1 text-sm text-doggerz-paw/70">{subtitle}</p>
         ) : null}
       </div>
       <div className={`space-y-4 ${bodyClassName}`}>{children}</div>
@@ -480,10 +464,10 @@ export default function Settings() {
     <PageShell>
       <div className="mx-auto max-w-5xl space-y-8">
         <header className="space-y-2">
-          <h1 className="text-4xl font-black tracking-tight text-zinc-900 dark:text-zinc-100">
+          <h1 className="text-4xl font-black tracking-tight text-doggerz-bone">
             Settings
           </h1>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400 max-w-2xl">
+          <p className="text-sm text-doggerz-paw/70 max-w-2xl">
             Customize your Doggerz experience on this device. Most settings save
             automatically.
           </p>
@@ -495,13 +479,13 @@ export default function Settings() {
             subtitle="Optional cloud features (Firebase). Offline play works without an account."
           >
             {!firebaseReady ? (
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">
+              <p className="text-sm text-doggerz-paw/70">
                 Cloud features are currently disabled because Firebase isn’t
                 configured.
               </p>
             ) : cloudUser ? (
               <div className="space-y-3">
-                <div className="text-sm text-zinc-700 dark:text-zinc-300">
+                <div className="text-sm text-doggerz-paw">
                   Signed in as{" "}
                   <span className="font-semibold">
                     {cloudUser.email || cloudUser.uid}
@@ -513,7 +497,7 @@ export default function Settings() {
                     type="button"
                     disabled={cloudBusy}
                     onClick={handleSignOut}
-                    className="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-900 hover:border-emerald-500/60 hover:text-emerald-700 disabled:opacity-60 dark:border-zinc-800 dark:bg-black/30 dark:text-zinc-100 dark:hover:text-emerald-200"
+                    className="inline-flex items-center justify-center rounded-xl border border-doggerz-mange/55 bg-black/30 px-4 py-2 text-sm font-semibold text-doggerz-bone hover:border-doggerz-leaf/70 hover:text-doggerz-leaf disabled:opacity-60"
                   >
                     Sign out
                   </button>
@@ -529,16 +513,16 @@ export default function Settings() {
                 </div>
 
                 {cloudActionStatus ? (
-                  <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                  <p className="text-xs text-doggerz-paw/70">
                     {cloudActionStatus}
                   </p>
                 ) : null}
               </div>
             ) : (
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">
+              <p className="text-sm text-doggerz-paw/70">
                 You’re not signed in. Visit{" "}
                 <Link
-                  className="text-emerald-700 hover:text-emerald-600 dark:text-emerald-300 dark:hover:text-emerald-200"
+                  className="text-doggerz-leaf hover:text-doggerz-neonSoft"
                   to="/login"
                 >
                   Login
@@ -776,13 +760,13 @@ export default function Settings() {
             />
 
             <div className="flex flex-col gap-3 rounded-xl border border-white/10 bg-black/10 px-4 py-3 dark:bg-black/20">
-              <div className="text-xs text-zinc-600 dark:text-zinc-400">
-                <div className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+              <div className="text-xs text-doggerz-paw/70">
+                <div className="text-sm font-semibold text-doggerz-bone">
                   Status
                 </div>
                 <div className="mt-1">
                   Permission:{" "}
-                  <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                  <span className="font-semibold text-doggerz-bone">
                     {notificationPermission === "unsupported"
                       ? "Not supported"
                       : notificationPermission}
@@ -790,7 +774,7 @@ export default function Settings() {
                 </div>
                 <div className="mt-1">
                   Last reminder:{" "}
-                  <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                  <span className="font-semibold text-doggerz-bone">
                     {lastReminder?.at
                       ? `${lastReminder.label || lastReminder.key} - ${formatTimestamp(
                           lastReminder.at
@@ -817,7 +801,7 @@ export default function Settings() {
                       toast.info("Notifications not enabled.");
                     }
                   }}
-                  className="inline-flex items-center justify-center rounded-full border border-emerald-400/35 bg-emerald-500/10 px-4 py-2 text-xs font-semibold text-emerald-100 hover:bg-emerald-500/15 transition"
+                  className="inline-flex items-center justify-center rounded-full border border-doggerz-leaf/45 bg-doggerz-neon/15 px-4 py-2 text-xs font-semibold text-doggerz-bone hover:bg-doggerz-neon/25 transition"
                 >
                   Enable notifications
                 </button>
@@ -841,7 +825,7 @@ export default function Settings() {
                     if (ok) toast.success("Test notification sent.");
                     else toast.warn("Unable to show notification.");
                   }}
-                  className="inline-flex items-center justify-center rounded-full border border-white/15 bg-black/25 px-4 py-2 text-xs font-semibold text-zinc-100 hover:bg-black/35 transition"
+                  className="inline-flex items-center justify-center rounded-full border border-doggerz-mange/45 bg-black/25 px-4 py-2 text-xs font-semibold text-doggerz-bone hover:bg-black/35 transition"
                 >
                   Send test ping
                 </button>
@@ -934,7 +918,7 @@ export default function Settings() {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div className="w-full sm:w-auto">
                 <label
-                  className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1"
+                  className="block text-xs text-doggerz-paw/70 mb-1"
                   htmlFor="zip"
                 >
                   ZIP (US)
@@ -944,7 +928,7 @@ export default function Settings() {
                   inputMode="numeric"
                   pattern="[0-9]{5}"
                   maxLength={5}
-                  className="w-full sm:w-56 rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-500 outline-none focus:border-emerald-500/70 dark:border-zinc-800 dark:bg-black/30 dark:text-zinc-100"
+                  className="w-full sm:w-56 rounded-xl border border-doggerz-mange/55 bg-black/30 px-3 py-2 text-sm text-doggerz-bone placeholder:text-doggerz-paw/45 outline-none focus:border-doggerz-leaf/70"
                   placeholder="e.g. 10001"
                   value={zipInput}
                   onChange={(e) => {
@@ -962,7 +946,7 @@ export default function Settings() {
               <div className="flex gap-2">
                 <button
                   type="button"
-                  className="inline-flex items-center justify-center rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-black hover:bg-emerald-400 disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="inline-flex items-center justify-center rounded-xl bg-doggerz-leaf px-4 py-2 text-sm font-semibold text-black hover:bg-doggerz-neonSoft disabled:opacity-60 disabled:cursor-not-allowed"
                   onClick={() => dispatch(setZip(zipInput))}
                   disabled={!zipIsValid}
                 >
@@ -970,7 +954,7 @@ export default function Settings() {
                 </button>
                 <button
                   type="button"
-                  className="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-black/30 dark:text-zinc-100 dark:hover:bg-black/40"
+                  className="inline-flex items-center justify-center rounded-xl border border-doggerz-mange/55 bg-black/30 px-4 py-2 text-sm font-semibold text-doggerz-bone hover:bg-black/40"
                   onClick={() => {
                     setZipInput("");
                     dispatch(setZip(""));
@@ -981,12 +965,9 @@ export default function Settings() {
               </div>
             </div>
 
-            <div className="text-xs text-zinc-400 leading-snug space-y-1">
+            <div className="text-xs text-doggerz-paw/65 leading-snug space-y-1">
               <p>
-                Status:{" "}
-                <span className="text-zinc-800 dark:text-zinc-200">
-                  Using ZIP
-                </span>{" "}
+                Status: <span className="text-doggerz-bone">Using ZIP</span>{" "}
                 {currentZip ? `(ZIP ${currentZip})` : "(none)"}
               </p>
             </div>
@@ -1012,7 +993,7 @@ export default function Settings() {
             <div className="flex flex-wrap gap-3">
               <button
                 type="button"
-                className="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-900 hover:border-emerald-500/60 hover:text-emerald-700 dark:border-zinc-800 dark:bg-black/30 dark:text-zinc-100 dark:hover:text-emerald-200"
+                className="inline-flex items-center justify-center rounded-xl border border-doggerz-mange/55 bg-black/30 px-4 py-2 text-sm font-semibold text-doggerz-bone hover:border-doggerz-leaf/70 hover:text-doggerz-leaf"
                 onClick={exportLocalData}
               >
                 Export backup
@@ -1020,7 +1001,7 @@ export default function Settings() {
 
               <button
                 type="button"
-                className="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-900 hover:border-emerald-500/60 hover:text-emerald-700 dark:border-zinc-800 dark:bg-black/30 dark:text-zinc-100 dark:hover:text-emerald-200"
+                className="inline-flex items-center justify-center rounded-xl border border-doggerz-mange/55 bg-black/30 px-4 py-2 text-sm font-semibold text-doggerz-bone hover:border-doggerz-leaf/70 hover:text-doggerz-leaf"
                 onClick={() => fileInputRef.current?.click()}
               >
                 Import backup
@@ -1041,12 +1022,12 @@ export default function Settings() {
             </div>
 
             {localActionStatus ? (
-              <div className="mt-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-700 dark:text-emerald-200">
+              <div className="mt-3 rounded-xl border border-doggerz-leaf/45 bg-doggerz-neon/15 px-3 py-2 text-xs text-doggerz-bone">
                 {localActionStatus}
               </div>
             ) : null}
 
-            <p className="text-xs text-zinc-600 dark:text-zinc-400">
+            <p className="text-xs text-doggerz-paw/70">
               Exports include local dog save, local user state, and settings for
               this browser.
             </p>
@@ -1067,7 +1048,7 @@ export default function Settings() {
 
               <button
                 type="button"
-                className="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-900 hover:border-emerald-500/60 hover:text-emerald-700 dark:border-zinc-800 dark:bg-black/30 dark:text-zinc-100 dark:hover:text-emerald-200"
+                className="inline-flex items-center justify-center rounded-xl border border-doggerz-mange/55 bg-black/30 px-4 py-2 text-sm font-semibold text-doggerz-bone hover:border-doggerz-leaf/70 hover:text-doggerz-leaf"
                 onClick={() => dispatch(resetSettings())}
               >
                 Reset settings
@@ -1089,7 +1070,7 @@ export default function Settings() {
             className="self-start p-4"
             bodyClassName="space-y-2"
           >
-            <div className="text-sm text-zinc-700 dark:text-zinc-300">
+            <div className="text-sm text-doggerz-paw">
               Version: <span className="font-semibold">{APP_VERSION}</span>
             </div>
           </Card>

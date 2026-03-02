@@ -10,7 +10,7 @@ import {
 import { auth, firebaseReady } from "@/firebase.js";
 import { selectIsLoggedIn } from "@/redux/userSlice.js";
 
-import PageShell from "@/components/PageShell.jsx";
+import PageShell from "@/components/layout/PageShell.jsx";
 
 const STORAGE_REMEMBER = "doggerz:loginRememberEmail";
 const STORAGE_EMAIL = "doggerz:loginEmail";

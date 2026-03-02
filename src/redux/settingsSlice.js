@@ -3,29 +3,54 @@
 // src/redux/settingsSlice.js
 
 import { createSlice } from "@reduxjs/toolkit";
+import { setStoredValue } from "@/utils/nativeStorage.js";
 
 const SETTINGS_STORAGE_KEY = "doggerz:settingsState";
 
-const loadFromStorage = () => {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = window.localStorage.getItem(SETTINGS_STORAGE_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw);
-  } catch (e) {
-    console.warn("[settingsSlice] Failed to parse settings from storage:", e);
-    return null;
-  }
-};
+let _saveTimeout = null;
+let _lastSerialized = null;
 
 const saveToStorage = (state) => {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(state));
+    _lastSerialized = JSON.stringify(state);
+    if (_saveTimeout) clearTimeout(_saveTimeout);
+    _saveTimeout = setTimeout(() => {
+      const payload = _lastSerialized;
+      _saveTimeout = null;
+      _lastSerialized = null;
+      if (!payload) return;
+      setStoredValue(SETTINGS_STORAGE_KEY, payload).catch((e) => {
+        console.warn("[settingsSlice] Failed to save settings to storage:", e);
+      });
+    }, 180);
   } catch (e) {
-    console.warn("[settingsSlice] Failed to save settings to storage:", e);
+    console.warn("[settingsSlice] Failed to schedule settings save:", e);
   }
 };
+
+export function flushSettingsStorage() {
+  if (typeof window === "undefined") return;
+  try {
+    if (_saveTimeout) {
+      clearTimeout(_saveTimeout);
+      _saveTimeout = null;
+    }
+    if (_lastSerialized) {
+      const payload = _lastSerialized;
+      _lastSerialized = null;
+      setStoredValue(SETTINGS_STORAGE_KEY, payload).catch((e) => {
+        console.warn("[settingsSlice] Failed to flush settings storage:", e);
+      });
+    }
+  } catch (e) {
+    console.warn("[settingsSlice] Failed to flush settings storage:", e);
+  }
+}
+
+if (typeof window !== "undefined" && window.addEventListener) {
+  window.addEventListener("beforeunload", flushSettingsStorage);
+}
 
 const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
 
@@ -236,7 +261,7 @@ function normalizeLoadedSettings(raw) {
   return next;
 }
 
-const initialState = normalizeLoadedSettings(loadFromStorage()) || {
+const DEFAULT_SETTINGS_STATE = {
   // Theme: system | dark | light
   theme: "system",
 
@@ -384,6 +409,11 @@ const initialState = normalizeLoadedSettings(loadFromStorage()) || {
 
   // Safety
   confirmDangerousActions: true,
+};
+
+const initialState = {
+  ...DEFAULT_SETTINGS_STATE,
+  audio: { ...DEFAULT_SETTINGS_STATE.audio },
 };
 
 const settingsSlice = createSlice({
@@ -972,110 +1002,13 @@ const settingsSlice = createSlice({
 
     resetSettings() {
       const fresh = {
-        theme: "system",
-        reduceMotion: "system",
-        highContrast: false,
-        reduceTransparency: false,
-        focusRings: "auto",
-        hitTargets: "auto",
-        fontScale: 1,
-        showHints: true,
-        dailyRemindersEnabled: true,
-        showGameMicroHud: true,
-        showCritters: true,
-        roamIntensity: 1,
-        showWeatherFx: true,
-        showBackgroundPhotos: true,
-        showSceneVignette: true,
-        showSceneGrain: true,
-        storeHoverPreview: true,
-        storeShowEquippedFirst: true,
-        storeCompactCards: false,
-        storeSortKey: "recommended",
-        pottyAutoReturn: false,
-        pottyConfirmAccidents: true,
-        pottyShowXpTools: false,
-        pottyTipsExpanded: true,
-        dreamJournalKind: "all",
-        dreamJournalSort: "newest",
-        dreamJournalShowMotifs: true,
-        dreamJournalShowSummary: true,
-        dreamJournalShowTimestamp: true,
-        dreamJournalCompactCards: false,
-        dreamSequenceShowMotifs: true,
-        dreamSequenceShowTip: true,
-        dreamSequenceAutoDismiss: false,
-        dreamSequenceBackdropFx: true,
-        faqCompactView: false,
-        badgesGroupFilter: "all",
-        badgesCompactChips: false,
-        badgesShowIds: false,
-        skillTreeBranch: "all",
-        skillTreeShowUnlockedOnly: false,
-        skillTreeCompactCards: false,
-        topBarCompact: false,
-        topBarShowXp: true,
-        topBarShowStats: true,
-        topBarShowBadges: true,
-        topBarShowQuickLinks: true,
-        mechanicsCompact: false,
-        mechanicsShowTips: true,
-        mechanicsShowStats: true,
-        mechanicsShowUnlockLine: true,
-        traitImpactCompact: false,
-        traitImpactShowMeter: true,
-        traitImpactShowTips: true,
-        traitImpactShowHighlights: true,
-        dogCanvasMotion: true,
-        dogCanvasShadow: true,
-        dogCanvasScale: "normal",
-        dogPixiMotion: true,
-        dogPixiScale: "normal",
-        dogPixiQuality: "auto",
-        spriteSheetMotion: true,
-        spriteSheetUsePixelated: false,
-        spriteSheetSize: "normal",
-        pixiDogMotion: true,
-        pixiDogShowHearts: true,
-        pixiDogShowShadow: true,
-        pixiDogQuality: "auto",
-        gameFxSkillPulse: true,
-        gameFxStoryGlow: true,
-        gameFxBranchAccent: true,
-        cosmeticsOverlayShowLabels: true,
-        cosmeticsOverlayShowPreviewTags: true,
-        cosmeticsOverlayPosition: "top-left",
-        trainingShowLocked: true,
-        trainingCompactCards: false,
-        trainingShowDetails: true,
-        trainingSortKey: "status",
-        batterySaver: false,
-        perfMode: "auto",
-        voiceCommandsEnabled: true,
-        trainingInputMode: "both",
-        audio: {
-          enabled: true,
-          musicEnabled: true,
-          masterVolume: 0.8,
-          musicVolume: 0.5,
-          sfxVolume: 0.7,
-          sleepEnabled: true,
-          sleepVolume: 0.25,
-        },
-        confirmDangerousActions: true,
+        ...DEFAULT_SETTINGS_STATE,
+        voiceCommandsEnabled: false,
+        audio: { ...DEFAULT_SETTINGS_STATE.audio },
       };
-
-      if (typeof window !== "undefined") {
-        try {
-          window.localStorage.setItem(
-            SETTINGS_STORAGE_KEY,
-            JSON.stringify(fresh)
-          );
-        } catch {
-          // ignore
-        }
-      }
-
+      setStoredValue(SETTINGS_STORAGE_KEY, JSON.stringify(fresh)).catch(() => {
+        // ignore
+      });
       return fresh;
     },
   },

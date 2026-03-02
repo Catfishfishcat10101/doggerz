@@ -4,8 +4,8 @@ import * as React from "react";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 
-import PageShell from "@/components/PageShell.jsx";
-import EmptySlate from "@/components/EmptySlate.jsx";
+import PageShell from "@/components/layout/PageShell.jsx";
+import EmptySlate from "@/components/ui/EmptySlate.jsx";
 import { selectDog } from "@/redux/dogSlice.js";
 import {
   selectSettings,

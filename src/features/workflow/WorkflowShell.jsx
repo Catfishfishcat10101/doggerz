@@ -1,8 +1,6 @@
-/** @format */
-
 // src/features/workflow/WorkflowShell.jsx
 
-import PageShell from "@/components/PageShell.jsx";
+import PageShell from "@/components/layout/PageShell.jsx";
 
 function StepPill({ label, active, done }) {
   const cls = active

@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
-import PageShell from "@/components/PageShell.jsx";
+import PageShell from "@/components/layout/PageShell.jsx";
 import { PATHS } from "@/routes.js";
 import {
   respecSkillTree,

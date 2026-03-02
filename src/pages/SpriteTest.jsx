@@ -3,8 +3,8 @@
 
 import * as React from "react";
 
-import SpriteSheetDog from "@/components/SpriteSheetDog.jsx";
-import { withBaseUrl } from "@/utils/assetUrl.js";
+import SpriteSheetDog from "@/components/dog/SpriteSheetDog.jsx";
+import { withBaseUrl } from "@/utils/gameUtils.js";
 import {
   DOG_STAGE_IDS,
   DOG_CONDITION_IDS,

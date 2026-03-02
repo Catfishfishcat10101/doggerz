@@ -8,12 +8,11 @@ import AppRouter from "./AppRouter.jsx";
 import store from "./redux/store.js";
 import "./index.css";
 import AppPreferencesEffects from "./pages/AppPreferencesEffects.jsx";
-import AppGameEffects from "./components/AppGameEffects.jsx";
-import CheckInReminders from "./components/CheckInReminders.jsx";
-import { ToastProvider } from "./components/ToastProvider.jsx";
-import PwaProvider from "./pwa/PwaProvider.jsx";
-import PwaStatusBanners from "./components/PwaStatusBanners.jsx";
-import ErrorBoundary from "./components/ErrorBoundary.jsx";
+import AppGameEffects from "./components/system/AppGameEffects.jsx";
+import AppStorageHydrator from "./components/system/AppStorageHydrator.jsx";
+import CheckInReminders from "./components/environment/CheckInReminders.jsx";
+import { ToastProvider } from "./components/system/ToastProvider.jsx";
+import ErrorBoundary from "./components/system/ErrorBoundary.jsx";
 import DogAIEngine from "./features/game/DogAIEngine.jsx";
 
 import { initRuntimeLogging } from "./utils/runtimeLogging.js";
@@ -85,26 +84,29 @@ function AppCrashFallback({ error }) {
 }
 
 // Runtime logging policy + last-resort capture (DEV verbose, PROD quiet).
-initRuntimeLogging({ mode: import.meta.env.PROD ? "prod" : "dev" });
+if (
+  import.meta.env.DEV ||
+  String(import.meta.env.VITE_ENABLE_RUNTIME_LOGGING || "false") === "true"
+) {
+  initRuntimeLogging({ mode: import.meta.env.PROD ? "prod" : "dev" });
+}
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <Provider store={store}>
-      <PwaProvider>
-        <ToastProvider>
-          <ErrorBoundary fallback={AppCrashFallback}>
-            <PupProvider>
-              <AppPreferencesEffects />
-              <AppGameEffects />
-              <CheckInReminders />
-              <PwaStatusBanners />
-              <DogAIEngine />
+      <ToastProvider>
+        <ErrorBoundary fallback={AppCrashFallback}>
+          <PupProvider>
+            <AppStorageHydrator />
+            <AppPreferencesEffects />
+            <AppGameEffects />
+            <CheckInReminders />
+            <DogAIEngine />
 
-              <AppRouter />
-            </PupProvider>
-          </ErrorBoundary>
-        </ToastProvider>
-      </PwaProvider>
+            <AppRouter />
+          </PupProvider>
+        </ErrorBoundary>
+      </ToastProvider>
     </Provider>
   </React.StrictMode>
 );

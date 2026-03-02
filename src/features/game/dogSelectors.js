@@ -1,18 +1,20 @@
-/** @format */
-
-// src/features/dog/dogSelectors.js
+// src/features/game/dogSelectors.js
 
 import { createSelector } from "@reduxjs/toolkit";
-
 import {
   getDogPixiSheetUrl,
   getDogStageLabel,
   getDogStaticSpriteUrl,
 } from "@/utils/dogSpritePaths.js";
+import { derivePersonalityAnimationHint } from "@/logic/dogEngine.js";
 
 const EMPTY_DOG = Object.freeze({});
 
 export const selectDog = (state) => state?.dog || EMPTY_DOG;
+
+export const selectDogAnimation = createSelector([selectDog], (dog) =>
+  derivePersonalityAnimationHint(dog?.personality?.traits || {})
+);
 
 const TRICK_ACTIONS = new Set([
   "sit",
@@ -77,9 +79,17 @@ const EXPLICIT_ACTION_ALIASES = {
   drink: "wag",
   pet: "wag",
   play: "walk",
-  rest: "sleep",
-  nap: "sleep",
+  rest: "idle",
+  nap: "idle",
 };
+
+function sanitizeAnimForCurrentSpriteSet(anim) {
+  const key = normalizeAction(anim);
+  // Current supplied strip maps "sleep" to the unwanted plate frame.
+  // Keep the dog on idle until a dedicated sleep row is available.
+  if (key === "sleep") return "idle";
+  return key || null;
+}
 
 function normalizeAction(action) {
   return String(action || "")
@@ -135,6 +145,13 @@ export function selectDogRenderParams(stateOrDog) {
         ? "adult"
         : "senior";
 
+  const last = normalizeAction(dog.lastAction || dog.last_action);
+  const isSleeping =
+    !!dog.isAsleep ||
+    !!dog.is_sleeping ||
+    last === "sleep" ||
+    last === "sleep_auto";
+
   const tierRaw =
     dog.cleanlinessTier || dog.cleanliness_tier || dog.cleanliness || "FRESH";
   const tier = String(tierRaw).toUpperCase();
@@ -147,21 +164,20 @@ export function selectDogRenderParams(stateOrDog) {
           ? "mange"
           : "clean";
 
-  const last = normalizeAction(dog.lastAction || dog.last_action);
   const lastTrainedCommandId = normalizeAction(
     dog?.memory?.lastTrainedCommandId
   );
   const explicitAnim = resolveExplicitAnim(last, lastTrainedCommandId);
   if (explicitAnim) {
-    return { stage, condition, anim: explicitAnim };
+    return {
+      stage,
+      condition,
+      anim: sanitizeAnimForCurrentSpriteSet(explicitAnim) || "idle",
+      isSleeping,
+    };
   }
 
   const happiness = Number(dog?.stats?.happiness ?? 0);
-  const isSleeping =
-    !!dog.isAsleep ||
-    !!dog.is_sleeping ||
-    last.includes("sleep") ||
-    last.includes("rest");
   const isBarking =
     last.includes("bark") ||
     last.includes("howl") ||
@@ -183,7 +199,7 @@ export function selectDogRenderParams(stateOrDog) {
     (!isWalking && !isTrick && !isScratch && happiness >= 80);
 
   const anim = isSleeping
-    ? "sleep"
+    ? "idle"
     : isBarking
       ? "bark"
       : isScratch
@@ -196,12 +212,12 @@ export function selectDogRenderParams(stateOrDog) {
               ? "walk"
               : "idle";
 
-  return { stage, condition, anim };
+  return { stage, condition, anim, isSleeping };
 }
 
 function buildDogRenderModel(stateOrDog) {
   const dog = resolveDog(stateOrDog);
-  const { stage, condition, anim } = selectDogRenderParams(dog);
+  const { stage, condition, anim, isSleeping } = selectDogRenderParams(dog);
 
   const stageLabel = dog.lifeStage?.label || getDogStageLabel(stage);
 
@@ -214,6 +230,7 @@ function buildDogRenderModel(stateOrDog) {
     stageLabel,
     condition,
     anim,
+    isSleeping,
     staticSpriteUrl,
     pixiSheetUrl,
     pixiSheetFallbackUrl,

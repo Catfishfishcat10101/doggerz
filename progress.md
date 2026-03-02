@@ -115,3 +115,39 @@ Original prompt: yes. and remove all teh placeholders too. we are way past that!
 - Added smooth frame-driven locomotion toward target with arrival epsilon and movement speed cap.
 - Kept 2.5D depth mapping + age/breath scaling composition intact.
 - Validation passed: lint, build, preflight.
+
+## 2026-03-02 - Dead-code + native-storage sweep
+
+- Audited candidate deletions (`prefetch.js`, `weather.js`, `runtimeLogging.js`, `debugInfo.js`, `deepMerge.js`).
+- `prefetch.js` and `debugInfo.js` were already removed.
+- Kept `weather.js` and `deepMerge.js` because both are still imported by active runtime/redux paths.
+- Migrated `userSlice` persistence to `nativeStorage` (`setStoredValue`/`removeStoredValue`) with debounced writes.
+- Migrated `settingsSlice` persistence to `nativeStorage` with debounced writes and removed direct `localStorage` use.
+- Added `src/components/system/AppStorageHydrator.jsx` for async startup hydration of user/settings from native storage.
+- Updated `main.jsx` to mount `AppStorageHydrator` and disable runtime logging in production by default.
+- Updated `store.js` middleware flags to use `import.meta.env.PROD` and keep serializable checks off for simulation-heavy updates.
+
+### Validation
+
+- `npx eslint src/redux/userSlice.js src/redux/settingsSlice.js src/components/system/AppStorageHydrator.jsx src/main.jsx src/redux/store.js` (pass)
+- `npm run build` (fails due pre-existing missing module: `./pwa/PwaProvider.jsx` imported by `src/main.jsx`)
+
+## 2026-03-02 - Build unblock follow-up
+
+- Removed `PwaProvider` import/wrapper from `src/main.jsx` (Android-first app path).
+- Restored missing `src/redux/workflowSlice.js` with the action/selector surface used by `Adopt.jsx`.
+- Inlined nav config in `src/components/layout/Header.jsx` to remove stale import from deleted `src/nav.js`.
+- Validation:
+  - `npx eslint src/redux/workflowSlice.js src/redux/store.js src/pages/Adopt.jsx src/components/layout/Header.jsx` (pass)
+  - `npm run build` (pass)
+
+## 2026-03-02 - PWA artifact cleanup
+
+- Removed remaining service-worker/PWA logic from `src/pages/Help.jsx`.
+  - deleted service-worker/cache action handlers and PWA diagnostics fields.
+  - removed "Install & offline (PWA)" FAQ section and related PWA copy.
+- Simplified web notification fallback in `src/utils/notifications.js` to skip service-worker registration checks.
+- Removed web-app capability/Apple PWA meta tags from `index.html`.
+- Validation:
+  - `npx eslint src/pages/Help.jsx src/utils/notifications.js src/main.jsx` (pass)
+  - `npm run build` (pass)

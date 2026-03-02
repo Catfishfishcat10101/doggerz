@@ -1,15 +1,12 @@
-// Selector for moodlets (needed by NeedsHUD)
+// src/redux/dogSlice.js
 export const selectDogMoodlets = (state) => state.dog.moodlets;
-// Selector for emotion cue (needed by NeedsHUD)
 export const selectDogEmotionCue = (state) => state.dog.emotionCue;
 export const selectDogGrowthMilestone = (state) =>
   state.dog?.milestones?.pending || null;
-/** @format */
-
-// src/redux/dogSlice.js
 
 import { createSlice } from "@reduxjs/toolkit";
 import { calculateDogAge } from "@/utils/lifecycle.js";
+import { deepMergeDefined } from "@/utils/deepMerge.js";
 import {
   CLEANLINESS_TIER_EFFECTS,
   LIFE_STAGES,
@@ -36,6 +33,12 @@ import {
   ensureDogFsmState,
   DOG_FSM_DEFAULT,
 } from "@/utils/dogFsm.js";
+import {
+  applyPersonalityDrift,
+  buildDreamFromState,
+  calculateFeedStats,
+  calculatePlayStats,
+} from "@/logic/dogEngine.js";
 
 export const DOG_STORAGE_KEY = "doggerz:dogState";
 export const DOG_GUEST_STORAGE_KEY = `${DOG_STORAGE_KEY}:guest`;
@@ -44,17 +47,12 @@ export function getDogStorageKey(userId) {
   const raw = String(userId || "").trim();
   return raw ? `${DOG_STORAGE_KEY}:${raw}` : DOG_GUEST_STORAGE_KEY;
 }
-
-// Local persistence schema marker (kept here so cloud/local persistence can version safely).
 export const DOG_SAVE_SCHEMA_VERSION = 1;
-
-/* ------------------- small helpers / constants ------------------- */
 
 const clamp = (n, lo = 0, hi = 100) =>
   Math.max(lo, Math.min(hi, Number.isFinite(n) ? n : 0));
 
 const clamp01 = (n) => Math.max(0, Math.min(1, Number.isFinite(n) ? n : 0));
-
 const normalizeActionKey = (value) =>
   String(value || "")
     .trim()
@@ -66,7 +64,6 @@ const resolveActionOverride = (payload, fallback) => {
   const override = normalizeActionKey(payload?.action);
   return override || fallback;
 };
-
 const DECAY_PER_HOUR = {
   hunger: 8,
   thirst: 7,
@@ -79,23 +76,15 @@ const DECAY_PER_HOUR = {
 };
 const DECAY_SPEED = 0.4;
 
-// Sleep + needs tuning (kept small and deterministic).
 const SLEEP_RECOVERY_PER_HOUR = 45;
 const SLEEP_NEEDS_MULTIPLIER = 0.85;
-// Auto-sleep earlier so the dog rests without manual input.
 const AUTO_SLEEP_THRESHOLD = 40;
 const AUTO_WAKE_THRESHOLD = 80;
-
-// Potty system: fill over time + accidents when ignored.
 const POTTY_FILL_PER_HOUR = 10;
 const MAX_ACCIDENTS_PER_DECAY = 3;
-
 const MOOD_SAMPLE_MINUTES = 60;
 export const LEVEL_XP_STEP = 100;
 const SKILL_LEVEL_STEP = 50;
-
-// Vacation mode: pauses decay + aging while you are away.
-// multiplier: 0..1 (0 = frozen, 1 = normal)
 const LEGACY_VACATION_MULTIPLIER = 0.35;
 const DEFAULT_VACATION_STATE = Object.freeze({
   enabled: false,
@@ -105,7 +94,6 @@ const DEFAULT_VACATION_STATE = Object.freeze({
 });
 
 const nowMs = () => Date.now();
-
 function parseAdoptedAt(raw) {
   if (raw === undefined || raw === null) return null;
   if (typeof raw === "number" && Number.isFinite(raw)) return raw;
@@ -124,19 +112,15 @@ function normalizeStatsState(state) {
     state.stats = { ...DEFAULT_STATS };
     return state.stats;
   }
-
   state.stats = {
     ...DEFAULT_STATS,
     ...state.stats,
   };
-
   Object.keys(DEFAULT_STATS).forEach((key) => {
     state.stats[key] = clamp(state.stats[key], 0, 100);
   });
-
   return state.stats;
 }
-
 function getTemperamentTags(state) {
   const t = state?.temperament || {};
   const primary = String(t.primary || "")
@@ -150,7 +134,6 @@ function getTemperamentTags(state) {
   if (secondary) tags.add(secondary);
   return tags;
 }
-
 function hasTemperamentTag(state, tag) {
   const target = String(tag || "")
     .trim()
@@ -158,7 +141,6 @@ function hasTemperamentTag(state, tag) {
   if (!target) return false;
   return getTemperamentTags(state).has(target);
 }
-
 function getTemperamentTraitIntensity(state, traitId) {
   const key = String(traitId || "").trim();
   if (!key) return 0;
@@ -168,7 +150,6 @@ function getTemperamentTraitIntensity(state, traitId) {
   const found = list.find((t) => t && String(t.id || "") === key);
   return clamp(Number(found?.intensity || 0), 0, 100);
 }
-
 function computeMoodlets(state) {
   const stats = state.stats || {};
   const hunger = Number(stats.hunger || 0);
@@ -260,24 +241,18 @@ function deriveEmotionCue(state) {
   if (happiness >= 85) return "happy";
   return null;
 }
-
 const getDaysBetween = (fromMs, toMs) => {
   if (!fromMs) return Infinity;
   return (toMs - fromMs) / (1000 * 60 * 60 * 24);
 };
-
 const POTTY_TRAINING_GOAL = 8;
 const REAL_DAY_MS = 24 * 60 * 60 * 1000;
 const POTTY_TRAINED_POTTY_GAIN_MULTIPLIER = 0.65;
-
-// Cleanliness value → tier
 const CLEANLINESS_THRESHOLDS = {
   FRESH: 70,
   DIRTY: 40,
   FLEAS: 20,
 };
-
-// Stage-based stat multipliers
 const LIFECYCLE_STAGE_MODIFIERS = {
   [LIFE_STAGES.PUPPY]: {
     hunger: 1.15,
@@ -321,8 +296,6 @@ const DEFAULT_STATS = Object.freeze({
   affection: 60,
   mentalStimulation: 60,
 });
-
-// Simple dog poll config; you can tune this later
 const DOG_POLL_CONFIG = {
   intervalMs: 8 * 60 * 1000,
   timeoutMs: 60 * 1000,
@@ -369,9 +342,6 @@ const DOG_POLL_CONFIG = {
     },
   ],
 };
-
-/* ------------------- initial sub-structures ------------------- */
-
 const initialTemperament = {
   primary: "SPICY",
   secondary: "SWEET",
@@ -385,24 +355,17 @@ const initialTemperament = {
   adoptedAt: null,
   lastEvaluatedAt: null,
 };
-
-// Personality is a separate, player-shaped system (five axes) and can evolve frequently.
-// Trait values are in range [-100, 100]. Positive leans toward the right-hand label.
 const initialPersonality = {
   traits: {
-    adventurous: 0, // Adventurous (+) ↔ Cautious (-)
-    social: 0, // Social (+) ↔ Independent (-)
-    energetic: 0, // Energetic (+) ↔ Calm (-)
-    playful: 0, // Playful (+) ↔ Serious (-)
-    affectionate: 0, // Affectionate (+) ↔ Reserved (-)
+    adventurous: 0,
+    social: 0,
+    energetic: 0,
+    playful: 0,
+    affectionate: 0,
   },
-  // Most recent first
   history: [],
   lastUpdatedAt: null,
-  // Hint for future animation hooks (kept simple + optional)
-  animationHint: null,
 };
-
 const initialMemory = {
   favoriteToyId: null,
   lastFedAt: null,
@@ -410,7 +373,6 @@ const initialMemory = {
   lastPlayedAt: null,
   lastBathedAt: null,
   lastTrainedAt: null,
-  // Used by YardDogActor to map training into a specific anim.
   lastTrainedCommandId: null,
   lastSeenAt: null,
   neglectStrikes: 0,
@@ -717,100 +679,6 @@ function pushDream(state, dream) {
   if (dreams.journal.length > 100) dreams.journal.length = 100;
 }
 
-function buildDreamFromState(state, now = nowMs()) {
-  const happiness = Number(state.stats?.happiness || 0);
-  const hunger = Number(state.stats?.hunger || 0);
-  const energy = Number(state.stats?.energy || 0);
-  const cleanliness = Number(state.stats?.cleanliness || 0);
-  const neglect = Number(state.memory?.neglectStrikes || 0);
-
-  const isNeglected = neglect > 0 && happiness < 45;
-  const isLucid = !isNeglected && happiness > 82 && hunger < 60;
-
-  const kind = isNeglected ? "NIGHTMARE" : isLucid ? "LUCID" : "DREAM";
-
-  const lastAction = String(state.lastAction || "").toLowerCase();
-
-  const withinMs = (t, ms) => typeof t === "number" && now - t <= ms;
-  const playedRecently = withinMs(
-    state.memory?.lastPlayedAt,
-    4 * 60 * 60 * 1000
-  );
-  const fedRecently = withinMs(state.memory?.lastFedAt, 4 * 60 * 60 * 1000);
-  const trainedRecently = withinMs(
-    state.memory?.lastTrainedAt,
-    24 * 60 * 60 * 1000
-  );
-  const bathedRecently = withinMs(
-    state.memory?.lastBathedAt,
-    24 * 60 * 60 * 1000
-  );
-
-  let title = "A soft dream";
-  let summary = "Floating through a pastel backyard full of squeaky secrets.";
-  let motifs = ["clouds", "fireflies", "soft grass"];
-
-  if (kind === "NIGHTMARE") {
-    title = "A worried dream";
-    summary =
-      "The yard feels too big and too quiet. Footsteps echo, and you keep looking for your hooman.";
-    motifs = ["empty yard", "distant thunder", "lost leash"];
-  } else if (kind === "LUCID") {
-    title = "A lucid dream";
-    summary =
-      "Everything glows. You can jump higher than fences and land on moonbeams like trampoline cushions.";
-    motifs = ["moonbeams", "sparkles", "floating tennis balls"];
-  }
-
-  // Activity reflections
-  if (playedRecently || lastAction === "play") {
-    title = kind === "NIGHTMARE" ? "Chasing shadows" : "Chasing squirrels";
-    summary =
-      kind === "NIGHTMARE"
-        ? "You sprint, but the squeak keeps slipping away—like it’s hiding behind the wind."
-        : "You chase a legendary squirrel wearing a tiny crown. It squeaks like a tennis ball.";
-    motifs = ["squirrels", "tennis balls", "zoomies"];
-  } else if (fedRecently || lastAction === "feed") {
-    title = kind === "NIGHTMARE" ? "Empty bowl" : "Treat buffet";
-    summary =
-      kind === "NIGHTMARE"
-        ? "The bowl is there… but it’s just out of reach, like a polite ghost."
-        : "Biscuits drift like snowflakes. Every chomp makes a happy little *ding*.";
-    motifs = ["biscuits", "bowls", "crunchy stars"];
-  } else if (trainedRecently || lastAction === "train") {
-    title = kind === "NIGHTMARE" ? "Commands in a maze" : "Graduation day";
-    summary =
-      kind === "NIGHTMARE"
-        ? "You try to “sit”… but the floor keeps turning into wiggly grass waves."
-        : "You perform perfect “sit” and “stay” while confetti rains down like kibble.";
-    motifs = ["whistles", "ribbons", "confetti"];
-  } else if (bathedRecently || lastAction === "bathe") {
-    title = kind === "NIGHTMARE" ? "Bubbles everywhere" : "Bubble galaxy";
-    summary =
-      kind === "NIGHTMARE"
-        ? "The bubbles rise and rise—pop, pop—until you can’t find your paws."
-        : "Bubbles orbit you like tiny planets, and the shampoo smells like comet tails.";
-    motifs = ["bubbles", "stardust shampoo", "soft towels"];
-  }
-
-  // Small stat seasoning
-  if (energy < 25 && kind === "DREAM") {
-    motifs = Array.from(new Set([...motifs, "warm blankets"]));
-  }
-  if (cleanliness < 25 && kind !== "NIGHTMARE") {
-    motifs = Array.from(new Set([...motifs, "mud puddles"]));
-  }
-
-  return {
-    id: `${now}-dream-${Math.floor(Math.random() * 1e6)}`,
-    timestamp: now,
-    kind,
-    title,
-    summary,
-    motifs,
-  };
-}
-
 function maybeGenerateDream(state, now = nowMs()) {
   const dreams = ensureDreamState(state);
   if (dreams.active) return;
@@ -837,28 +705,8 @@ const isValidStat = (key) =>
     "mentalStimulation",
   ].includes(key);
 
-const clampSigned = (n, limit = 100) =>
-  Math.max(-limit, Math.min(limit, Number.isFinite(n) ? n : 0));
-
 const pos01 = (v) => Math.max(0, Math.min(1, v / 100));
 const neg01 = (v) => Math.max(0, Math.min(1, -v / 100));
-
-function derivePersonalityAnimationHint(traits) {
-  const t = traits || {};
-  const energetic = Number(t.energetic || 0);
-  const playful = Number(t.playful || 0);
-  const adventurous = Number(t.adventurous || 0);
-  const affectionate = Number(t.affectionate || 0);
-  const social = Number(t.social || 0);
-
-  // Keep hints small and stable; UI/actors may ignore them.
-  if (energetic > 60 && playful > 40) return "zoomies";
-  if (affectionate > 65) return "cuddle";
-  if (adventurous > 60) return "explore";
-  if (social > 60) return "greet";
-  if (energetic < -60) return "chill";
-  return null;
-}
 
 function ensurePersonalityState(state) {
   if (!state.personality || typeof state.personality !== "object") {
@@ -881,8 +729,8 @@ function ensurePersonalityState(state) {
   if (typeof state.personality.lastUpdatedAt !== "number") {
     state.personality.lastUpdatedAt = null;
   }
-  if (!("animationHint" in state.personality)) {
-    state.personality.animationHint = null;
+  if ("animationHint" in state.personality) {
+    delete state.personality.animationHint;
   }
   return state.personality;
 }
@@ -898,48 +746,25 @@ function pushPersonalityHistory(state, entry) {
 function applyPersonalityShift(state, opts) {
   const { now, source, deltas, note } = opts || {};
   const personality = ensurePersonalityState(state);
-  const t = personality.traits;
-  const d = deltas || {};
-
-  const keys = Object.keys(initialPersonality.traits);
-  let changed = false;
-  const appliedDeltas = {};
-
-  // Gentle smoothing so traits feel like they “drift” instead of snapping.
-  // New value = old + (delta * smoothing)
-  const smoothing = 0.65;
-
-  keys.forEach((k) => {
-    const raw = Number(d[k] || 0);
-    if (!raw) return;
-    const prev = Number(t[k] || 0);
-    const next = clampSigned(prev + raw * smoothing, 100);
-    if (next !== prev) {
-      t[k] = next;
-      appliedDeltas[k] = Math.round((next - prev) * 10) / 10;
-      changed = true;
-    }
+  const drift = applyPersonalityDrift({
+    traits: personality.traits,
+    deltas: deltas || {},
+    traitKeys: Object.keys(initialPersonality.traits),
   });
 
-  if (!changed) return;
+  if (!drift.changed) return;
 
   const ts = typeof now === "number" ? now : nowMs();
+  personality.traits = drift.nextTraits;
   personality.lastUpdatedAt = ts;
-  personality.animationHint = derivePersonalityAnimationHint(t);
 
   pushPersonalityHistory(state, {
     id: `${ts}-${personality.history.length + 1}`,
     timestamp: ts,
     source: source || "SYSTEM",
     note: note || null,
-    deltas: appliedDeltas,
-    snapshot: {
-      adventurous: Math.round(Number(t.adventurous || 0)),
-      social: Math.round(Number(t.social || 0)),
-      energetic: Math.round(Number(t.energetic || 0)),
-      playful: Math.round(Number(t.playful || 0)),
-      affectionate: Math.round(Number(t.affectionate || 0)),
-    },
+    deltas: drift.appliedDeltas,
+    snapshot: { ...drift.nextTraits },
   });
 }
 
@@ -1926,177 +1751,30 @@ const dogSlice = createSlice({
         parseAdoptedAt(state.adoptedAt) ||
         nowMs();
 
-      const merged = {
-        ...state,
-        ...payload,
-        stats: {
-          ...initialState.stats,
-          ...state.stats,
-          ...(payload.stats || {}),
-        },
-        adoptedAt,
-      };
+      const merged = deepMergeDefined(initialState, state, payload);
+      merged.adoptedAt = adoptedAt;
+      merged.lastAction =
+        payload.lastAction ?? state.lastAction ?? initialState.lastAction;
+      merged.cleanlinessTier = merged.cleanlinessTier || "FRESH";
 
-      merged.vacation = {
-        ...DEFAULT_VACATION_STATE,
-        ...(state.vacation || {}),
-        ...(payload.vacation || {}),
-      };
+      if (!merged.temperament || typeof merged.temperament !== "object") {
+        merged.temperament = { ...initialTemperament };
+      }
+      merged.temperament.adoptedAt = adoptedAt;
 
-      merged.lifeStage = payload.lifeStage ||
-        state.lifeStage || { ...DEFAULT_LIFE_STAGE };
-
-      merged.training = {
-        ...createInitialTrainingState(),
-        ...(payload.training || state.training || {}),
-      };
-
-      merged.temperament = {
-        ...initialTemperament,
-        ...(payload.temperament || state.temperament || {}),
-        adoptedAt,
-      };
-
-      merged.personality = {
-        ...initialPersonality,
-        ...(payload.personality || state.personality || {}),
-        traits: {
-          ...initialPersonality.traits,
-          ...(payload.personality?.traits || state.personality?.traits || {}),
-        },
-        history: Array.isArray(payload.personality?.history)
-          ? payload.personality.history
-          : Array.isArray(state.personality?.history)
-            ? state.personality.history
-            : initialPersonality.history,
-        lastUpdatedAt:
-          typeof payload.personality?.lastUpdatedAt === "number"
-            ? payload.personality.lastUpdatedAt
-            : typeof state.personality?.lastUpdatedAt === "number"
-              ? state.personality.lastUpdatedAt
-              : null,
-        animationHint:
-          payload.personality?.animationHint ??
-          state.personality?.animationHint ??
-          null,
-      };
-
-      merged.memory = {
-        ...initialMemory,
-        ...(payload.memory || state.memory || {}),
-      };
-
-      merged.fsm = {
-        ...DOG_FSM_DEFAULT,
-        ...(state.fsm || {}),
-        ...(payload.fsm || {}),
-      };
-
-      merged.career = {
-        ...initialCareer,
-        ...(payload.career || state.career || {}),
-      };
-
-      merged.skills = {
-        obedience: {
-          ...initialSkills.obedience,
-          ...(payload.skills?.obedience || state.skills?.obedience || {}),
-        },
-      };
-
-      merged.mood = {
-        ...initialMood,
-        ...(payload.mood || state.mood || {}),
-      };
-
-      merged.dreams = {
-        ...initialDreams,
-        ...(payload.dreams || state.dreams || {}),
-        journal: Array.isArray(payload.dreams?.journal)
-          ? payload.dreams.journal
-          : Array.isArray(state.dreams?.journal)
-            ? state.dreams.journal
-            : initialDreams.journal,
-        active:
-          payload.dreams?.active ??
-          state.dreams?.active ??
-          initialDreams.active,
-        lastGeneratedAt:
-          typeof payload.dreams?.lastGeneratedAt === "number"
-            ? payload.dreams.lastGeneratedAt
-            : typeof state.dreams?.lastGeneratedAt === "number"
-              ? state.dreams.lastGeneratedAt
-              : null,
-      };
-
-      merged.journal = {
-        ...initialJournal,
-        ...(payload.journal || state.journal || {}),
-      };
-
-      merged.streak = {
-        ...initialStreak,
-        ...(payload.streak || state.streak || {}),
-      };
-
-      merged.bond = {
-        ...initialBond,
-        ...(payload.bond || state.bond || {}),
-      };
-
-      merged.memorial = {
-        ...initialMemorial,
-        ...(payload.memorial || state.memorial || {}),
-      };
-
-      merged.cosmetics = {
-        ...initialCosmetics,
-        ...(payload.cosmetics || state.cosmetics || {}),
-        unlockedIds: Array.isArray(payload.cosmetics?.unlockedIds)
-          ? payload.cosmetics.unlockedIds
-          : Array.isArray(state.cosmetics?.unlockedIds)
-            ? state.cosmetics.unlockedIds
-            : initialCosmetics.unlockedIds,
-        equipped: {
-          ...initialCosmetics.equipped,
-          ...(payload.cosmetics?.equipped || state.cosmetics?.equipped || {}),
-        },
-      };
-
-      merged.skillTree = {
-        ...initialSkillTree,
-        ...(payload.skillTree || state.skillTree || {}),
-      };
-
-      merged.milestones = {
-        ...initialMilestones,
-        ...(payload.milestones || state.milestones || {}),
-      };
-
-      const lastReward = Number(
-        payload?.lastRewardClaimedAt ?? state.lastRewardClaimedAt
-      );
+      const lastReward = Number(merged.lastRewardClaimedAt);
       merged.lastRewardClaimedAt = Number.isFinite(lastReward)
         ? lastReward
         : null;
-      const streakDays = Number(
-        payload?.consecutiveDays ?? state.consecutiveDays ?? 0
-      );
+      const streakDays = Number(merged.consecutiveDays ?? 0);
       merged.consecutiveDays = Number.isFinite(streakDays)
         ? Math.max(0, Math.floor(streakDays))
         : 0;
-      merged.claimedPreReg = Boolean(
-        payload?.claimedPreReg ?? state.claimedPreReg
-      );
-      const preRegClaimedAt = Number(
-        payload?.claimedPreRegAt ?? state.claimedPreRegAt
-      );
+      merged.claimedPreReg = Boolean(merged.claimedPreReg);
+      const preRegClaimedAt = Number(merged.claimedPreRegAt);
       merged.claimedPreRegAt = Number.isFinite(preRegClaimedAt)
         ? preRegClaimedAt
         : null;
-
-      merged.lastAction =
-        payload.lastAction ?? state.lastAction ?? initialState.lastAction;
 
       ensureTrainingState(merged);
       ensurePollState(merged);
@@ -2106,9 +1784,6 @@ const dogSlice = createSlice({
       ensureDogFsmState(merged);
       ensureSkillTreeState(merged);
       ensureMilestonesState(merged);
-
-      merged.cleanlinessTier =
-        payload.cleanlinessTier || state.cleanlinessTier || "FRESH";
 
       finalizeDerivedState(merged, nowMs());
       return merged;
@@ -2173,18 +1848,17 @@ const dogSlice = createSlice({
       applyDecay(state, now);
       wakeForInteraction(state);
 
-      const amount = payload?.amount ?? 100;
       const careerMultiplier =
         state.career.perks?.happinessGainMultiplier || 1.0;
-
       const perks = getPersonalityPerks(state);
-
-      state.stats.hunger = clamp(state.stats.hunger - amount, 0, 100);
-      state.stats.happiness = clamp(
-        state.stats.happiness + 5 * careerMultiplier * perks.feedHappinessBonus,
-        0,
-        100
-      );
+      const nextStats = calculateFeedStats({
+        stats: state.stats,
+        amount: payload?.amount ?? 100,
+        careerHappinessMultiplier: careerMultiplier,
+        feedHappinessBonus: perks.feedHappinessBonus,
+      });
+      state.stats.hunger = nextStats.hunger;
+      state.stats.happiness = nextStats.happiness;
 
       state.memory.lastFedAt = now;
       state.memory.lastSeenAt = now;
@@ -2245,24 +1919,19 @@ const dogSlice = createSlice({
       const careerMultiplier =
         state.career.perks?.happinessGainMultiplier || 1.0;
 
-      const baseHappiness = payload?.happinessGain ?? 15;
       const perks = getPersonalityPerks(state);
       const toyObsessed = getTemperamentTraitIntensity(state, "toyObsessed");
-      const toyBonus = 1 + (toyObsessed / 100) * 0.25;
-      const gain =
-        baseHappiness *
-        zoomiesMultiplier *
-        careerMultiplier *
-        perks.playHappinessBonus *
-        toyBonus;
-
-      state.stats.happiness = clamp(state.stats.happiness + gain, 0, 100);
-
-      const energyCost = Math.max(
-        6,
-        Math.round(10 * Math.max(0.65, perks.playEnergyCostMultiplier))
-      );
-      state.stats.energy = clamp(state.stats.energy - energyCost, 0, 100);
+      const nextStats = calculatePlayStats({
+        stats: state.stats,
+        baseHappiness: payload?.happinessGain ?? 15,
+        zoomiesMultiplier,
+        careerHappinessMultiplier: careerMultiplier,
+        playHappinessBonus: perks.playHappinessBonus,
+        toyObsessedIntensity: toyObsessed,
+        playEnergyCostMultiplier: perks.playEnergyCostMultiplier,
+      });
+      state.stats.happiness = nextStats.happiness;
+      state.stats.energy = nextStats.energy;
 
       state.memory.lastPlayedAt = now;
       state.memory.lastSeenAt = now;
@@ -2271,7 +1940,7 @@ const dogSlice = createSlice({
 
       const sweetBondMultiplier = hasTemperamentTag(state, "SWEET") ? 1.35 : 1;
       applyBondGain(state, 2 * sweetBondMultiplier, now);
-      state.stats.thirst = clamp(state.stats.thirst + 6, 0, 100);
+      state.stats.thirst = nextStats.thirst;
       gainPottyNeed(state, 12);
 
       applyPersonalityShift(state, {

@@ -93,16 +93,7 @@ export async function showDoggerzNotification({
       data,
     };
 
-    // Prefer SW notifications if available (better behavior in PWAs).
-    if ("serviceWorker" in navigator) {
-      const reg = await navigator.serviceWorker.getRegistration();
-      if (reg && typeof reg.showNotification === "function") {
-        await reg.showNotification(String(title || "Doggerz"), options);
-        return true;
-      }
-    }
-
-    // Fallback: in-page notification (works while tab/app is active).
+    // Browser fallback (works while tab/app is active).
     new Notification(String(title || "Doggerz"), options);
     return true;
   } catch {

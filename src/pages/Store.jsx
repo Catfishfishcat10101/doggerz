@@ -4,9 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useToast } from "@/state/toastContext.js";
-import BackPill from "@/components/BackPill.jsx";
-import SpriteSheetDog from "@/components/SpriteSheetDog.jsx";
-import DogCosmeticsOverlay from "@/components/DogCosmeticsOverlay.jsx";
+import BackPill from "@/components/layout/BackPill.jsx";
+import SpriteSheetDog from "@/components/dog/SpriteSheetDog.jsx";
+import DogCosmeticsOverlay from "@/components/dog/DogCosmeticsOverlay.jsx";
 import { getSpriteForStageAndTier } from "@/utils/lifecycle.js";
 import {
   purchaseCosmetic,

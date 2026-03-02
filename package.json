@@ -28,6 +28,7 @@
     "sprites:jrt:base": "node scripts/generate-jack-russell-base-sprites.js",
     "sprites:jr": "node scripts/generate-jr-pixi-sheets.js",
     "sprites:check": "node scripts/validate-sprites.js",
+    "postinstall": "patch-package",
     "preflight": "node scripts/preflight.js && npm run assets:verify",
     "preflight:strict": "node scripts/preflight.js --strict && npm run sprites:check",
     "ci:verify": "npm run lint && npm run build && npm run preflight",
@@ -54,6 +55,7 @@
     "docker": "^0.2.14",
     "firebase": "^11.10.0",
     "flutter": "^0.0.5",
+    "framer-motion": "^12.34.3",
     "lottie-react": "^2.4.1",
     "native": "^0.2.0",
     "nodejs": "^0.0.0",
@@ -84,6 +86,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
     "madge": "^8.0.0",
+    "patch-package": "^8.0.1",
     "postcss": "^8.4.47",
     "prettier": "^3.8.1",
     "rollup": "^4.56.0",
@@ -101,6 +104,7 @@
     ]
   },
   "overrides": {
+    "@firebase/webchannel-wrapper": "1.0.4",
     "@capacitor/cli": {
       "tar": "^7.5.6"
     }

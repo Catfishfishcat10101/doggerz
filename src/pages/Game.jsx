@@ -1,13 +1,11 @@
-/** @format */
-// src/pages/Game.jsx
-
+//src/pages/Game.jsx
 import { useMemo } from "react";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import MainGame from "@/features/game/MainGame.jsx";
-import GrowthCelebration from "@/components/GrowthCelebration.jsx";
-import DailyRewardModal from "@/components/DailyRewardModal.jsx";
+import GrowthCelebration from "@/components/dog/GrowthCelebration.jsx";
+import DailyRewardModal from "@/components/modals/DailyRewardModal.jsx";
 import { claimDailyReward, selectDog } from "@/redux/dogSlice.js";
 import { getDailyRewardState } from "@/features/game/dailyRewards.js";
 import {
@@ -17,7 +15,7 @@ import {
 import { selectUserZip } from "@/redux/userSlice.js";
 import { selectSettings } from "@/redux/settingsSlice.js";
 import { useDayNightBackground } from "@/features/game/useDayNightBackground.jsx";
-import WeatherFXCanvas from "@/components/WeatherFXCanvas.jsx";
+import WeatherFXCanvas from "@/components/environment/WeatherFXCanvas.jsx";
 import {
   getWeatherAccent,
   getWeatherLabel,

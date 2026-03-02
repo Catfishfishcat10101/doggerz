@@ -8,8 +8,8 @@ import { createBrowserRouter, RouterProvider, Link } from "react-router-dom";
 
 import { PATHS } from "./routes.js";
 
-import ErrorBoundary from "./components/ErrorBoundary.jsx";
-import CrashFallback from "./components/CrashFallback.jsx";
+import ErrorBoundary from "./components/system/ErrorBoundary.jsx";
+import CrashFallback from "./components/system/CrashFallback.jsx";
 import AppShell from "./layout/AppShell.jsx";
 
 // Keep Landing fast; lazy-load everything else.

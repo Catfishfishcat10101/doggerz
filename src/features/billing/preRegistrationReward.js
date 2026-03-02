@@ -1,10 +1,14 @@
 /** @format */
+// src/features/billing/preRegistrationReward.js
 
 import { Capacitor } from "@capacitor/core";
 import { Purchases } from "@revenuecat/purchases-capacitor";
-
-export const PRE_REG_PRODUCT_ID = "pre_reg_bonus_kit";
-export const PRE_REG_GIFT_COINS = 500;
+import {
+  PRE_REG_GIFT_COINS,
+  PRE_REG_PRODUCT_ID,
+} from "@/features/billing/billingConfig.js";
+import { reportError } from "@/lib/errorReporter.js";
+export { PRE_REG_PRODUCT_ID, PRE_REG_GIFT_COINS };
 
 function extractProductId(purchase) {
   if (!purchase || typeof purchase !== "object") return "";
@@ -17,7 +21,7 @@ function extractProductId(purchase) {
 }
 
 async function hasPurchaseFromBillingPlugin(productId) {
-  const billing = Capacitor?.Plugins?.Billing;
+  const billing = Capacitor?.Billing;
   if (!billing || typeof billing.getAvailablePurchases !== "function") {
     return false;
   }
@@ -57,17 +61,29 @@ export async function hasPreRegistrationRewardPurchase(
   productId = PRE_REG_PRODUCT_ID
 ) {
   if (!Capacitor?.isNativePlatform?.()) return false;
+  const normalizedProductId = String(productId || "").trim();
+  if (!normalizedProductId) return false;
 
   try {
-    if (await hasPurchaseFromBillingPlugin(productId)) return true;
-  } catch {
-    // ignore and fall back
+    if (await hasPurchaseFromBillingPlugin(normalizedProductId)) return true;
+  } catch (err) {
+    reportError({
+      source: "billing.preRegistrationReward",
+      provider: "capacitor-billing",
+      message: "Pre-registration billing check failed",
+      error: String(err?.message || err || "unknown"),
+    });
   }
 
   try {
-    if (await hasPurchaseFromRevenueCat(productId)) return true;
-  } catch {
-    // ignore and fall back
+    if (await hasPurchaseFromRevenueCat(normalizedProductId)) return true;
+  } catch (err) {
+    reportError({
+      source: "billing.preRegistrationReward",
+      provider: "revenuecat",
+      message: "Pre-registration RevenueCat check failed",
+      error: String(err?.message || err || "unknown"),
+    });
   }
 
   return false;

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { getTimeOfDay } from "@/utils/weather.js";
-import { withBaseUrl } from "@/utils/assetUrl.js";
+import { withBaseUrl } from "@/utils/gameUtils.js";
 
 const DAY_START_HOUR = 6;
 const NIGHT_START_HOUR = 19; // 7 PM → night visuals

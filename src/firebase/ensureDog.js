@@ -1,42 +1,30 @@
-// src/firebase/ensureDog.js
 import { serverTimestamp, setDoc, getDoc } from "firebase/firestore";
-import { assertFirebaseReady } from "../firebase.js";
+import { db } from "./firebase"; // Use our new central config
 import { dogMainDoc } from "./paths.js";
 
-/**
- * Create a minimal, safe default payload for a new dog document.
- * Values are clamped to expected ranges to avoid accidentally large uploads.
- */
 function _defaultDogPayload() {
   return {
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
     stage: "PUPPY",
-    name: "",
+    name: "New Doggo",
     stats: {
       hunger: 100,
       happiness: 80,
       energy: 80,
       cleanliness: 80,
     },
+    condition: "clean", // Added to match your asset folders!
     training: {
       pottyPercent: 0,
     },
+    inventory: [],
+    coins: 500, // Including that pre-reg bonus we saw in .env!
   };
 }
 
-/**
- * Ensure the main dog document exists for a given user.
- * - Validates inputs, returns an object describing whether a new doc was created
- *   and the document reference. When an existing document is found, its data
- *   is returned as `data`.
- */
 export async function ensureDogMain(uid) {
-  assertFirebaseReady("Dog save data");
-
-  if (!uid || typeof uid !== "string") {
-    throw new Error("ensureDogMain requires a valid user id (uid)");
-  }
+  if (!uid) throw new Error("User ID is required");
 
   const ref = dogMainDoc(uid);
 
@@ -47,29 +35,18 @@ export async function ensureDogMain(uid) {
       return { created: false, ref, data: snap.data() };
     }
 
-    // Use a minimal, sanitized payload to avoid accidental large writes
     const payload = _defaultDogPayload();
 
+    // We use setDoc without the immediate re-read to keep it fast
     await setDoc(ref, payload, { merge: true });
 
-    // Fetch the document back so callers receive the server-resolved fields
-    try {
-      const createdSnap = await getDoc(ref);
-      return {
-        created: true,
-        ref,
-        data: createdSnap.exists() ? createdSnap.data() : undefined,
-      };
-    } catch (readErr) {
-      // Do not fail the creation if the immediate read-back fails; return ref.
-      console.warn(
-        "[Doggerz] created dog doc but failed to read it back",
-        readErr
-      );
-      return { created: true, ref };
-    }
+    return {
+      created: true,
+      ref,
+      data: { ...payload, createdAt: new Date() }, // Local estimate of the timestamp
+    };
   } catch (err) {
-    console.error("[Doggerz] ensureDogMain failed", err);
+    console.error("[Doggerz] Database check failed:", err);
     throw err;
   }
 }

@@ -5,7 +5,7 @@ import { useSelector } from "react-redux";
 import { PATHS } from "@/routes.js";
 import { selectDog, selectDogDreams } from "@/redux/dogSlice.js";
 
-import PageShell from "@/components/PageShell.jsx";
+import PageShell from "@/components/layout/PageShell.jsx";
 
 import DreamJournal from "@/features/game/DreamJournal.jsx";
 

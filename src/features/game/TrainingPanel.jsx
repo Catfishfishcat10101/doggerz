@@ -13,7 +13,7 @@ import {
   setTrainingShowLocked,
   setTrainingSortKey,
 } from "@/redux/settingsSlice.js";
-import VoiceCommandButton from "@/components/VoiceCommandButton.jsx";
+import VoiceCommandButton from "@/components/ui/VoiceCommandButton.jsx";
 import { PATHS } from "@/routes.js";
 
 function formatTime(ms) {

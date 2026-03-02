@@ -1,6 +1,10 @@
 // src/constants/obedienceCommands.js
 
-export const OBEDIENCE_COMMANDS = Object.freeze([
+function freezeCommand(command) {
+  return Object.freeze({ ...command });
+}
+
+const COMMANDS = [
   { id: "sit", label: "Sit", minLevel: 1, minBond: 0, unlockDelayMinutes: 0 },
   {
     id: "stay",
@@ -107,11 +111,52 @@ export const OBEDIENCE_COMMANDS = Object.freeze([
     minBond: 36,
     unlockDelayMinutes: 60,
   },
-]);
+];
+
+export const OBEDIENCE_COMMANDS = Object.freeze(COMMANDS.map(freezeCommand));
+
+function normalizeCommandToken(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "")
+    .replace(/[_-]+/g, "");
+}
+
+const COMMAND_ID_ALIASES = Object.freeze({
+  rollover: "rollOver",
+  highfive: "highFive",
+  playdead: "playDead",
+});
+
+const OBEDIENCE_COMMAND_BY_ID = (() => {
+  const map = new Map();
+  for (const cmd of OBEDIENCE_COMMANDS) {
+    map.set(cmd.id, cmd);
+    map.set(normalizeCommandToken(cmd.id), cmd);
+  }
+  for (const [alias, canonical] of Object.entries(COMMAND_ID_ALIASES)) {
+    const hit = map.get(canonical);
+    if (hit) map.set(alias, hit);
+  }
+  return map;
+})();
+
+export function normalizeObedienceCommandId(commandId) {
+  const token = normalizeCommandToken(commandId);
+  if (!token) return "";
+  const hit = OBEDIENCE_COMMAND_BY_ID.get(token);
+  return hit?.id || "";
+}
 
 export function getObedienceCommand(commandId) {
-  const id = String(commandId || "").trim();
-  return OBEDIENCE_COMMANDS.find((c) => c.id === id) || null;
+  const token = normalizeCommandToken(commandId);
+  if (!token) return null;
+  return OBEDIENCE_COMMAND_BY_ID.get(token) || null;
+}
+
+export function hasObedienceCommand(commandId) {
+  return Boolean(getObedienceCommand(commandId));
 }
 
 export function commandRequirementsMet(context, command) {
@@ -125,12 +170,5 @@ export function commandRequirementsMet(context, command) {
   if (Number(command.minLevel || 1) > level) return false;
   if (Number(command.minBond || 0) > bond) return false;
   if (Number(command.minStreak || 0) > streak) return false;
-
   return true;
 }
-
-export default {
-  OBEDIENCE_COMMANDS,
-  getObedienceCommand,
-  commandRequirementsMet,
-};

@@ -3,7 +3,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 
-import PageShell from "@/components/PageShell.jsx";
+import PageShell from "@/components/layout/PageShell.jsx";
 import { selectSettings, setFaqCompactView } from "@/redux/settingsSlice.js";
 
 function nodeToText(node) {

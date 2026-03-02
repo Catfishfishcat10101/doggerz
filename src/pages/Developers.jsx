@@ -2,7 +2,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { SOCIAL_LINKS } from "@/config/links.js";
-import PageShell from "@/components/PageShell.jsx";
+import PageShell from "@/components/layout/PageShell.jsx";
 
 function asGithubRepoBase(url) {
   if (!url) return null;

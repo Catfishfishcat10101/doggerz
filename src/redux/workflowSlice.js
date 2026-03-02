@@ -1,54 +1,29 @@
-/** @format */
-
 // src/redux/workflowSlice.js
 
 import { createSlice } from "@reduxjs/toolkit";
 
-export const WORKFLOW_STORAGE_KEY = "doggerz:workflows";
-
-const nowMs = () => Date.now();
-
-function normalizeWorkflowState(raw) {
-  if (!raw || typeof raw !== "object") return null;
-  const status = String(raw.status || "idle").toLowerCase();
-  const allowed = ["idle", "active", "completed", "cancelled"];
-  return {
-    id: String(raw.id || ""),
-    status: allowed.includes(status) ? status : "idle",
-    stepIndex: Math.max(0, Number(raw.stepIndex) || 0),
-    data: raw.data && typeof raw.data === "object" ? { ...raw.data } : {},
-    startedAt: Number(raw.startedAt || 0) || null,
-    updatedAt: Number(raw.updatedAt || 0) || null,
-    completedAt: Number(raw.completedAt || 0) || null,
-    cancelledAt: Number(raw.cancelledAt || 0) || null,
-    version: Number(raw.version || 1) || 1,
-  };
-}
-
 const initialState = {
-  // Map of workflowId -> workflow state
   byId: {},
 };
 
-function ensureWorkflow(state, workflowId) {
-  const id = String(workflowId || "").trim();
-  if (!id) return null;
+function clampStep(value, min = 0, max = Number.POSITIVE_INFINITY) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return min;
+  return Math.max(min, Math.min(max, Math.floor(n)));
+}
 
+function ensureWorkflow(state, id) {
+  if (!id) return null;
   if (!state.byId[id]) {
     state.byId[id] = {
       id,
-      status: "idle", // idle | active | completed | cancelled
+      status: "idle",
       stepIndex: 0,
-      // arbitrary payload the wizard collects
       data: {},
       startedAt: null,
       updatedAt: null,
-      completedAt: null,
-      cancelledAt: null,
-      version: 1,
     };
   }
-
   return state.byId[id];
 }
 
@@ -56,127 +31,95 @@ const workflowSlice = createSlice({
   name: "workflows",
   initialState,
   reducers: {
-    hydrateWorkflows(state, { payload }) {
-      if (!payload || typeof payload !== "object") return;
-      const byId = payload.byId;
-      if (!byId || typeof byId !== "object") return;
-
-      // Merge in a conservative way so a bad payload can't brick the app
-      for (const [id, wf] of Object.entries(byId)) {
-        const safeId = String(id);
-        const normalized = normalizeWorkflowState({ ...wf, id: safeId });
-        if (!normalized) continue;
-        state.byId[safeId] = {
-          ...ensureWorkflow(state, safeId),
-          ...normalized,
-          id: safeId,
-        };
-      }
-    },
-
-    startWorkflow(state, { payload }) {
-      const { id, initialData, stepIndex = 0 } = payload || {};
+    startWorkflow(state, action) {
+      const id = String(action.payload?.id || "").trim();
+      if (!id) return;
+      const now = Date.now();
+      const existing = state.byId[id];
       const wf = ensureWorkflow(state, id);
       if (!wf) return;
 
       wf.status = "active";
-      wf.stepIndex = Math.max(0, Number(stepIndex) || 0);
-      wf.data = { ...(wf.data || {}), ...(initialData || {}) };
-      const now = nowMs();
-      wf.startedAt = wf.startedAt || now;
+      wf.stepIndex = clampStep(action.payload?.stepIndex, 0);
+      wf.data = {
+        ...(existing?.data || {}),
+        ...((action.payload?.initialData || {}) &&
+        typeof action.payload?.initialData === "object"
+          ? action.payload.initialData
+          : {}),
+      };
+      wf.startedAt = existing?.startedAt ?? now;
       wf.updatedAt = now;
-      wf.completedAt = null;
-      wf.cancelledAt = null;
     },
-
-    setWorkflowData(state, { payload }) {
-      const { id, patch } = payload || {};
+    setWorkflowData(state, action) {
+      const id = String(action.payload?.id || "").trim();
+      if (!id) return;
+      const patch = action.payload?.patch;
+      if (!patch || typeof patch !== "object") return;
       const wf = ensureWorkflow(state, id);
       if (!wf) return;
-
-      wf.data = { ...(wf.data || {}), ...(patch || {}) };
-      wf.updatedAt = nowMs();
+      wf.data = { ...(wf.data || {}), ...patch };
+      wf.updatedAt = Date.now();
     },
-
-    goToStep(state, { payload }) {
-      const { id, stepIndex } = payload || {};
+    nextStep(state, action) {
+      const id = String(action.payload?.id || "").trim();
+      if (!id) return;
       const wf = ensureWorkflow(state, id);
       if (!wf) return;
-
-      wf.stepIndex = Math.max(0, Number(stepIndex) || 0);
-      wf.updatedAt = nowMs();
-      if (wf.status !== "active") wf.status = "active";
+      const maxSteps = clampStep(action.payload?.maxSteps, 1);
+      const lastIndex = Math.max(0, maxSteps - 1);
+      wf.stepIndex = clampStep((wf.stepIndex || 0) + 1, 0, lastIndex);
+      wf.status = "active";
+      wf.updatedAt = Date.now();
     },
-
-    nextStep(state, { payload }) {
-      const { id, maxSteps } = payload || {};
+    prevStep(state, action) {
+      const id = String(action.payload?.id || "").trim();
+      if (!id) return;
       const wf = ensureWorkflow(state, id);
       if (!wf) return;
-
-      const next = wf.stepIndex + 1;
-      const capped = Number.isFinite(maxSteps)
-        ? Math.min(next, maxSteps - 1)
-        : next;
-      wf.stepIndex = Math.max(0, capped);
-      wf.updatedAt = nowMs();
-      if (wf.status !== "active") wf.status = "active";
+      wf.stepIndex = clampStep((wf.stepIndex || 0) - 1, 0);
+      wf.updatedAt = Date.now();
     },
-
-    prevStep(state, { payload }) {
-      const { id } = payload || {};
+    goToStep(state, action) {
+      const id = String(action.payload?.id || "").trim();
+      if (!id) return;
       const wf = ensureWorkflow(state, id);
       if (!wf) return;
-
-      wf.stepIndex = Math.max(0, wf.stepIndex - 1);
-      wf.updatedAt = nowMs();
-      if (wf.status !== "active") wf.status = "active";
+      wf.stepIndex = clampStep(action.payload?.stepIndex, 0);
+      wf.updatedAt = Date.now();
     },
-
-    completeWorkflow(state, { payload }) {
-      const { id } = payload || {};
+    cancelWorkflow(state, action) {
+      const id = String(action.payload?.id || "").trim();
+      if (!id) return;
       const wf = ensureWorkflow(state, id);
       if (!wf) return;
-
-      wf.status = "completed";
-      wf.completedAt = nowMs();
-      wf.updatedAt = nowMs();
-    },
-
-    cancelWorkflow(state, { payload }) {
-      const { id } = payload || {};
-      const wf = ensureWorkflow(state, id);
-      if (!wf) return;
-
       wf.status = "cancelled";
-      wf.cancelledAt = nowMs();
-      wf.updatedAt = nowMs();
+      wf.updatedAt = Date.now();
     },
-
-    resetWorkflow(state, { payload }) {
-      const { id } = payload || {};
-      const safeId = String(id || "").trim();
-      if (!safeId) return;
-      delete state.byId[safeId];
+    resetWorkflow(state, action) {
+      const id = String(action.payload?.id || "").trim();
+      if (!id) return;
+      delete state.byId[id];
+    },
+    resetAllWorkflows(state) {
+      state.byId = {};
     },
   },
 });
 
-/* selectors */
-
-export const selectWorkflows = (state) => state.workflows;
-export const selectWorkflowById = (id) => (state) =>
-  state.workflows?.byId?.[id];
-
 export const {
-  hydrateWorkflows,
   startWorkflow,
   setWorkflowData,
-  goToStep,
   nextStep,
   prevStep,
-  completeWorkflow,
+  goToStep,
   cancelWorkflow,
   resetWorkflow,
+  resetAllWorkflows,
 } = workflowSlice.actions;
+
+export const selectWorkflows = (state) => state.workflows?.byId || {};
+export const selectWorkflowById = (id) => (state) =>
+  state.workflows?.byId?.[id] || null;
 
 export default workflowSlice.reducer;

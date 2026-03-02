@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import PageShell from "@/components/PageShell.jsx";
+import PageShell from "@/components/layout/PageShell.jsx";
 import { SUPPORT_CONTACT_URL } from "@/config/links.js";
 import { useToast } from "@/state/toastContext.js";
 import { DOG_STORAGE_KEY } from "@/redux/dogSlice.js";
@@ -86,10 +86,6 @@ export default function HelpPage() {
     const hasWindow = typeof window !== "undefined";
     const hasNavigator = typeof navigator !== "undefined";
 
-    const pwaStandalone = hasWindow
-      ? Boolean(window.matchMedia?.("(display-mode: standalone)")?.matches)
-      : false;
-
     /** @type {Record<string, any>} */
     const storage = {};
     if (hasWindow) {
@@ -124,16 +120,6 @@ export default function HelpPage() {
       url: hasWindow ? window.location.href : null,
       userAgent: hasNavigator ? navigator.userAgent : null,
       language: hasNavigator ? navigator.language : null,
-      pwa: {
-        standalone: pwaStandalone,
-        serviceWorkerSupported: hasNavigator
-          ? "serviceWorker" in navigator
-          : false,
-        hasServiceWorkerController: hasNavigator
-          ? Boolean(navigator.serviceWorker?.controller)
-          : false,
-        cacheStorageSupported: hasWindow ? "caches" in window : false,
-      },
       storage,
     };
   }, []);
@@ -144,59 +130,6 @@ export default function HelpPage() {
     setNotice(n);
     window.setTimeout(() => setNotice(null), 4500);
   }, []);
-
-  const handleClearCache = useCallback(async () => {
-    try {
-      if (typeof window === "undefined") return;
-
-      // Clear Cache Storage (PWA/static assets)
-      if ("caches" in window) {
-        const keys = await window.caches.keys();
-        await Promise.all(keys.map((k) => window.caches.delete(k)));
-      }
-
-      // Ask SW to update (if present). Not all browsers support this cleanly.
-      if ("serviceWorker" in navigator) {
-        const regs = await navigator.serviceWorker.getRegistrations();
-        await Promise.all(regs.map((r) => r.update().catch(() => null)));
-      }
-
-      setNoticeAuto({ kind: "success", text: "Cache cleared. Reloading…" });
-      window.setTimeout(() => window.location.reload(), 450);
-    } catch (e) {
-      console.warn("[Help] clearCache failed", e);
-      setNoticeAuto({
-        kind: "error",
-        text: "Couldn’t clear cache. Try a hard refresh or reinstall the app.",
-      });
-    }
-  }, [setNoticeAuto]);
-
-  const handleUnregisterSW = useCallback(async () => {
-    try {
-      if (typeof window === "undefined") return;
-      if (!("serviceWorker" in navigator)) {
-        setNoticeAuto({
-          kind: "info",
-          text: "Service workers aren’t supported here.",
-        });
-        return;
-      }
-      const regs = await navigator.serviceWorker.getRegistrations();
-      await Promise.all(regs.map((r) => r.unregister()));
-      setNoticeAuto({
-        kind: "success",
-        text: "Service worker unregistered. Reloading…",
-      });
-      window.setTimeout(() => window.location.reload(), 450);
-    } catch (e) {
-      console.warn("[Help] unregisterSW failed", e);
-      setNoticeAuto({
-        kind: "error",
-        text: "Couldn’t unregister the service worker.",
-      });
-    }
-  }, [setNoticeAuto]);
 
   const handleResetLocalData = useCallback(async () => {
     try {
@@ -222,12 +155,6 @@ export default function HelpPage() {
         // ignore storage permissions
       }
 
-      // Also clear caches if available (optional but helpful)
-      if ("caches" in window) {
-        const keys = await window.caches.keys();
-        await Promise.all(keys.map((k) => window.caches.delete(k)));
-      }
-
       setNoticeAuto({ kind: "success", text: "Local data reset. Reloading…" });
       window.setTimeout(() => window.location.reload(), 450);
     } catch (e) {
@@ -244,22 +171,21 @@ export default function HelpPage() {
         items: [
           {
             q: "Something looks stuck / old UI won’t update",
-            tags: "cache • pwa",
+            tags: "refresh",
             a: (
               <>
                 <p>
-                  If you installed Doggerz as an app (PWA), caching can make you
-                  see an older build.
+                  If something looks stale or stuck, refresh the app state and
+                  make sure you are on the latest build.
                 </p>
                 <ul className="list-disc list-inside space-y-1">
                   <li>Hard refresh the page.</li>
-                  <li>Close the installed app completely and reopen it.</li>
+                  <li>Close and reopen the app.</li>
                   <li>
                     If you’re developing: stop and restart the dev server.
                   </li>
                   <li>
-                    If it persists: use the actions below (clear cache or
-                    unregister the service worker).
+                    If it persists: copy diagnostics and report the issue.
                   </li>
                 </ul>
               </>
@@ -286,11 +212,11 @@ export default function HelpPage() {
           },
           {
             q: "I see a blank/black screen",
-            tags: "render • cache",
+            tags: "render",
             a: (
               <>
                 <p>
-                  Reload first. If it persists, clear cached assets and reload.
+                  Reload first. If it persists, reset local data and reopen.
                 </p>
                 <p className="text-xs text-zinc-400">
                   If you’re reporting a bug: include a screenshot and copy the
@@ -320,37 +246,6 @@ export default function HelpPage() {
                     to care, potty train, and progress.
                   </li>
                 </ol>
-              </>
-            ),
-          },
-        ],
-      },
-      {
-        id: "pwa",
-        title: "Install & offline (PWA)",
-        items: [
-          {
-            q: "How do I install Doggerz as an app?",
-            tags: "install • pwa",
-            a: (
-              <>
-                <p>
-                  On desktop, look for an “Install” button in the address bar.
-                  On mobile, use the browser menu → “Add to Home Screen”.
-                </p>
-                <p className="text-xs text-zinc-400"></p>
-              </>
-            ),
-          },
-          {
-            q: "Offline: what works and what won’t?",
-            tags: "offline",
-            a: (
-              <>
-                <p>
-                  Core gameplay should run once cached. Anything requiring the
-                  network (sign-in/sync) may be unavailable.
-                </p>
               </>
             ),
           },
@@ -452,8 +347,8 @@ export default function HelpPage() {
                   from <code>.env.example</code>).
                 </p>
                 <p className="text-xs text-zinc-400">
-                  If your UI looks stale in production, it’s usually
-                  service-worker caching.
+                  For Android builds, sync web assets with{" "}
+                  <code>npx cap copy android</code> after web build updates.
                 </p>
               </>
             ),
@@ -589,7 +484,7 @@ export default function HelpPage() {
                   <input
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Try: cache, firebase, potty, mobile…"
+                    placeholder="Try: firebase, potty, mobile…"
                     className="mt-1 w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
                   />
                 </div>
@@ -612,33 +507,7 @@ export default function HelpPage() {
                 </div>
               ) : null}
 
-              <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-3">
-                <button
-                  type="button"
-                  onClick={handleClearCache}
-                  className="rounded-2xl border border-white/10 bg-black/25 p-4 text-left hover:bg-black/35 transition"
-                >
-                  <div className="text-sm font-extrabold text-emerald-200">
-                    Clear cache + reload
-                  </div>
-                  <div className="mt-1 text-xs text-zinc-400">
-                    Fixes stale assets after updates.
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleUnregisterSW}
-                  className="rounded-2xl border border-white/10 bg-black/25 p-4 text-left hover:bg-black/35 transition"
-                >
-                  <div className="text-sm font-extrabold text-emerald-200">
-                    Unregister service worker
-                  </div>
-                  <div className="mt-1 text-xs text-zinc-400">
-                    Nuclear option for stubborn PWA caching.
-                  </div>
-                </button>
-
+              <div className="mt-6 grid grid-cols-1 lg:grid-cols-1 gap-3">
                 <button
                   type="button"
                   onClick={handleResetLocalData}
@@ -673,8 +542,8 @@ export default function HelpPage() {
                   title="Diagnostics (copy/paste for bug reports)"
                 >
                   <p className="text-sm text-zinc-300">
-                    This is safe to share. It helps debug caching, platform
-                    issues, and environment problems.
+                    This is safe to share. It helps debug platform issues and
+                    environment problems.
                   </p>
                   <div className="mt-3 flex flex-wrap gap-3">
                     <button
@@ -719,12 +588,6 @@ export default function HelpPage() {
                     — we can split this into Help + Dev Docs.)
                   </p>
                 </Section>
-              </div>
-
-              <div className="mt-6 text-xs text-zinc-500">
-                Tip: For the best mobile experience, consider installing Doggerz
-                as an app (PWA) via your browser’s “Install” / “Add to Home
-                Screen” option.
               </div>
             </div>
           </div>

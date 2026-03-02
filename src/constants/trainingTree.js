@@ -1,9 +1,25 @@
 /** @format */
-
 // src/constants/trainingTree.js
 
+function freezeNode(node) {
+  return Object.freeze({
+    ...node,
+    prereq: Object.freeze(
+      Array.isArray(node?.prereq) ? node.prereq.map(String) : []
+    ),
+    tags: Object.freeze(Array.isArray(node?.tags) ? node.tags.map(String) : []),
+  });
+}
+
+function freezeBranch(branch) {
+  return Object.freeze({
+    ...branch,
+    nodes: Object.freeze((branch?.nodes || []).map(freezeNode)),
+  });
+}
+
 const BRANCHES = Object.freeze({
-  obedience: {
+  obedience: freezeBranch({
     label: "Obedience",
     description:
       "Core commands that improve reliability and day-to-day control.",
@@ -49,8 +65,8 @@ const BRANCHES = Object.freeze({
         prereq: ["stay"],
       },
     ],
-  },
-  tricks: {
+  }),
+  tricks: freezeBranch({
     label: "Tricks",
     description: "Flashier poses and show skills that improve engagement.",
     nodes: [
@@ -95,8 +111,8 @@ const BRANCHES = Object.freeze({
         prereq: ["roll_over"],
       },
     ],
-  },
-  confidence: {
+  }),
+  confidence: freezeBranch({
     label: "Confidence",
     description: "Stability and confidence poses that support consistency.",
     nodes: [
@@ -141,28 +157,39 @@ const BRANCHES = Object.freeze({
         prereq: ["confident_idle"],
       },
     ],
-  },
+  }),
 });
 
 export const TRAINING_TREE = BRANCHES;
+
+const BRANCH_INDEX = Object.freeze(
+  Object.entries(BRANCHES).reduce((acc, [id, branch]) => {
+    acc[id] = Object.freeze({ id, ...branch });
+    return acc;
+  }, {})
+);
 
 const NODE_INDEX = (() => {
   const m = new Map();
   for (const branch of Object.values(BRANCHES)) {
     for (const node of branch.nodes || []) {
       if (!node?.id) continue;
-      m.set(String(node.id), {
-        ...node,
-        prereq: Array.isArray(node.prereq) ? node.prereq.map(String) : [],
-        tags: Array.isArray(node.tags) ? node.tags.map(String) : [],
-      });
+      m.set(String(node.id), node);
     }
   }
   return m;
 })();
 
+const ALL_NODES = Object.freeze(Array.from(NODE_INDEX.values()));
+
 export function allSkillNodes() {
-  return Array.from(NODE_INDEX.values());
+  return ALL_NODES;
+}
+
+export function getTrainingBranch(branchId) {
+  const key = String(branchId || "").trim();
+  if (!key) return null;
+  return BRANCH_INDEX[key] || null;
 }
 
 export function getSkillNode(skillId) {
@@ -174,13 +201,12 @@ export function getSkillNode(skillId) {
 export function skillPrereqsMet(skillId, unlockedIds) {
   const node = getSkillNode(skillId);
   if (!node) return false;
-  const prereq = Array.isArray(node.prereq) ? node.prereq : [];
-  if (!prereq.length) return true;
+  if (!node.prereq.length) return true;
 
   const unlockedSet =
     unlockedIds instanceof Set
       ? unlockedIds
       : new Set(Array.isArray(unlockedIds) ? unlockedIds.map(String) : []);
 
-  return prereq.every((id) => unlockedSet.has(String(id)));
+  return node.prereq.every((id) => unlockedSet.has(String(id)));
 }

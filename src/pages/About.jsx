@@ -1,6 +1,6 @@
 // src/pages/About.jsx
 
-import PageShell from "@/components/PageShell.jsx";
+import PageShell from "@/components/layout/PageShell.jsx";
 
 const CORE_LOOP = [
   "Play together to keep energy and happiness up.",

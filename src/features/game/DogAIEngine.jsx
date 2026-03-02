@@ -5,7 +5,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/firebase.js";
-import { App } from "@capacitor/app";
 import {
   grantPreRegGift,
   hydrateDog,
@@ -23,7 +22,7 @@ import {
   selectWeatherCondition,
 } from "@/redux/weatherSlice.js";
 import { loadDogFromCloud, saveDogToCloud } from "@/redux/dogThunks.js";
-import { selectUserZip, setUser } from "@/redux/userSlice.js";
+import { clearUser, selectUserZip, setUser } from "@/redux/userSlice.js";
 import {
   getStoredValue,
   removeStoredValue,
@@ -49,12 +48,22 @@ const HYDRATE_ERROR_KEY = "doggerz:hydrateError";
 const DOG_SAVE_SCHEMA_VERSION = 1;
 
 let pixiTickerPromise = null;
+let capacitorAppPromise = null;
 async function getPixiTicker() {
   if (pixiTickerPromise) return pixiTickerPromise;
   pixiTickerPromise = import("pixi.js")
     .then((mod) => mod?.Ticker?.shared || null)
     .catch(() => null);
   return pixiTickerPromise;
+}
+
+async function getCapacitorApp() {
+  if (capacitorAppPromise) return capacitorAppPromise;
+  const moduleName = "@capacitor/app";
+  capacitorAppPromise = import(/* @vite-ignore */ moduleName)
+    .then((mod) => mod?.App || null)
+    .catch(() => null);
+  return capacitorAppPromise;
 }
 
 function getLocalTimeBucket(ms = Date.now()) {
@@ -325,13 +334,14 @@ export default function DogAIEngine() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (!App?.addListener) return;
     let handle = null;
     let cancelled = false;
 
     const attach = async () => {
+      const CapacitorApp = await getCapacitorApp();
+      if (!CapacitorApp?.addListener) return;
       try {
-        const sub = await App.addListener(
+        const sub = await CapacitorApp.addListener(
           "appStateChange",
           async ({ isActive }) => {
             if (cancelled) return;
@@ -427,6 +437,9 @@ export default function DogAIEngine() {
             createdAt: Number.isFinite(createdAt) ? createdAt : null,
           })
         );
+      } else {
+        lastHydratedUserIdRef.current = null;
+        dispatch(clearUser());
       }
     });
     return () => {

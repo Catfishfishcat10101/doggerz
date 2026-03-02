@@ -1,17 +1,12 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
-
 buildscript {
-
     repositories {
         google()
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.13.0'
+        classpath 'com.android.tools.build:gradle:9.0.1'
         classpath 'com.google.gms:google-services:4.4.4'
-
-        // NOTE: Do not place your application dependencies here; they belong
-        // in the individual module build.gradle files
     }
 }
 
@@ -24,65 +19,51 @@ allprojects {
     }
 }
 
-// Capacitor may default some modules (including those sourced from node_modules)
-// to Java 21 language level. This repo pins Gradle to JDK 17, so we enforce Java 17
-// source/target compatibility across all Android subprojects.
 subprojects { subproj ->
+    // Fix for Capacitor Plugins (like AdMob) using deprecated proguard-android.txt
     subproj.afterEvaluate {
         if (subproj.hasProperty('android')) {
-            def compileSdkVal = rootProject.ext.compileSdkVersion
-            if (subproj.android?.hasProperty('compileSdk') && !subproj.android.compileSdk) {
-                subproj.android.compileSdk = compileSdkVal
-            } else if (subproj.android?.hasProperty('compileSdkVersion') && !subproj.android.compileSdkVersion) {
-                subproj.android.compileSdkVersion compileSdkVal
-            }
+            subproj.android {
+                // Ensure sub-projects use modern optimization file required by AGP 9.x
+                if (subproj.android.buildTypes.hasProperty('release')) {
+                    subproj.android.buildTypes.release.proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
+                }
 
-            if (subproj.android?.hasProperty('compileOptions')) {
-                subproj.android.compileOptions {
-                    sourceCompatibility JavaVersion.VERSION_17
-                    targetCompatibility JavaVersion.VERSION_17
+                // Force Java 17 compatibility across all plugins
+                def compileSdkVal = rootProject.ext.compileSdkVersion
+                if (subproj.android?.hasProperty('compileSdk') && !subproj.android.compileSdk) {
+                    subproj.android.compileSdk = compileSdkVal
+                } else if (subproj.android?.hasProperty('compileSdkVersion') && !subproj.android.compileSdkVersion) {
+                    subproj.android.compileSdkVersion = compileSdkVal
+                }
+
+                if (subproj.android?.hasProperty('compileOptions')) {
+                    subproj.android.compileOptions {
+                        sourceCompatibility = JavaVersion.VERSION_17
+                        targetCompatibility = JavaVersion.VERSION_17
+                    }
                 }
             }
         }
 
+        // Ensure Kotlin toolchain matches Java 17
         def kotlinExt = subproj.extensions.findByName('kotlin')
         if (kotlinExt != null) {
             try {
                 kotlinExt.jvmToolchain(17)
-            } catch (Throwable ignored) {
-                // ignore if toolchain API is unavailable
-            }
+            } catch (Throwable ignored) {}
         }
     }
 
-    // Kotlin compilation should match the Java toolchain target.
-    // Some plugin modules may default Kotlin's jvmTarget to 21, which breaks builds
-    // when Gradle/JDK is pinned to 17.
+    // Force Kotlin compilation to match JVM 17
     subproj.plugins.withId('org.jetbrains.kotlin.android') {
         try {
-            subproj.tasks.matching { task ->
-                task.name.toLowerCase().contains('kotlin')
-            }.configureEach { task ->
-                if (task.hasProperty('kotlinOptions')) {
-                    task.kotlinOptions.jvmTarget = '17'
+            subproj.tasks.matching { it.name.toLowerCase().contains('kotlin') }.configureEach {
+                if (it.hasProperty('kotlinOptions')) {
+                    it.kotlinOptions.jvmTarget = '17'
                 }
             }
-        } catch (Throwable ignored) {
-            // Kotlin plugin not on classpath for this module.
-        }
-    }
-    subproj.plugins.withId('kotlin-android') {
-        try {
-            subproj.tasks.matching { task ->
-                task.name.toLowerCase().contains('kotlin')
-            }.configureEach { task ->
-                if (task.hasProperty('kotlinOptions')) {
-                    task.kotlinOptions.jvmTarget = '17'
-                }
-            }
-        } catch (Throwable ignored) {
-            // Kotlin plugin not on classpath for this module.
-        }
+        } catch (Throwable ignored) {}
     }
 }
 

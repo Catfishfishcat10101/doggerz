@@ -2,7 +2,7 @@
 
 // src/utils/lifecycle.js
 
-import { withBaseUrl } from "@/utils/assetUrl.js";
+import { withBaseUrl } from "@/utils/gameUtils.js";
 
 // How many in-game "dog days" pass per real day.
 // Tuning: higher => faster aging. Keep this high enough for visible progress,
