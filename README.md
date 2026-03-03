@@ -4,50 +4,38 @@
 
 [![React 18](https://img.shields.io/badge/React-18-61dafb)](https://react.dev/)
 [![Redux Toolkit](https://img.shields.io/badge/Redux%20Toolkit-RTK-764abc)](https://redux-toolkit.js.org/)
-[![Expo](https://img.shields.io/badge/Expo-SDK_52-000020)](https://expo.dev/)
-[![React Native](https://img.shields.io/badge/React_Native-0.76-61dafb)](https://reactnative.dev/)
+[![Capacitor](https://img.shields.io/badge/Capacitor-8-119EFF)](https://capacitorjs.com/)
 [![Firebase](https://img.shields.io/badge/Firebase-Optional-ffca28)](https://firebase.google.com/)
 
 ---
 
 ## Current Direction
 
-Doggerz is now migrating to a **React Native + Expo** architecture.
+Doggerz is built as a **Vite web app wrapped by Capacitor** for Android (and iOS later).
+The Expo runtime has been removed.
 
-- `npm run dev` starts Expo (native-first workflow).
-- `npm run native:android` / `npm run native:ios` run device builds.
-- `npm run dev:web` still runs the legacy Vite web app during migration.
-
-Phase 1 is live in this repository:
-
-- Native Expo entrypoint and app config are in place.
-- Core gameplay state uses the existing `dogSlice` reducer/actions.
-- Native persistence is wired through AsyncStorage.
-- The legacy web/Capacitor code remains intact so migration can continue incrementally.
-
----
-
-## Run Native (Expo)ettings screens
+## Run Web (Vite)
 
 ```powershell
 npm install
 npm run dev
 ```
 
-Then press:
-
-- `a` for Android emulator/device
-- `i` for iOS simulator/device
-- `w` for Expo web preview
-
----
-
-## Legacy Web Build (Transitional)
+## Android (Capacitor) Build
 
 ```powershell
-npm run dev:web
+npm install
 npm run build
+npm run android:sync
+npm run android:open
 ```
+
+Then use Android Studio to run on a device/emulator.
+
+### WebView Performance Notes
+
+- Hardware acceleration is enabled in `android/app/src/main/AndroidManifest.xml`.
+- `MainActivity` sets WebView renderer priority and hardware layer type.
 
 ## Automated Tests
 
@@ -63,8 +51,7 @@ npm run test:watch
 
 ---
 
-## Migration Notes
+## Notes
 
-- Most gameplay logic under `src/redux`, `src/logic`, and `src/constants` is intended to be reused in native.
-- Existing PixiJS/Tailwind/router UI remains in the web app until screens are fully ported.
-- Ownership and module boundaries are documented in `docs/architecture-ownership.md`.
+- Core gameplay logic lives under `src/redux` and `src/logic`.
+- UI is the Vite web app (`src/pages`, `src/components`).

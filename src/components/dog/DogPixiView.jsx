@@ -26,11 +26,28 @@ const DogPixiView = () => {
   useEffect(() => {
     if (!containerRef.current) return;
 
-    const resolution = Math.min(window.devicePixelRatio || 1, 2);
+    const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
+    const isAndroid = /Android/i.test(ua);
+    const deviceMemory =
+      typeof navigator !== "undefined" && navigator.deviceMemory
+        ? navigator.deviceMemory
+        : 4;
+
+    let resolution = Math.min(window.devicePixelRatio || 1, 2);
+    let antialias = true;
+
+    if (isAndroid && deviceMemory <= 4) {
+      resolution = Math.min(resolution, 1.5);
+    }
+    if (isAndroid && deviceMemory <= 2) {
+      resolution = Math.min(resolution, 1.25);
+      antialias = false;
+    }
+
     const app = new PIXI.Application({
       resizeTo: containerRef.current,
       backgroundAlpha: 0,
-      antialias: true,
+      antialias,
       autoDensity: true,
       resolution,
       powerPreference: "high-performance",

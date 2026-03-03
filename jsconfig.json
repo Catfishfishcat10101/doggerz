@@ -11,16 +11,12 @@
     "allowSyntheticDefaultImports": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "@native/*": ["native/*"]
+      "@/*": ["src/*"]
     },
     "types": ["vite/client", "node"]
   },
   "include": [
     "src/**/*",
-    "native/**/*",
-    "App.js",
-    "index.js",
     "types/**/*",
     "capacitor.config.json*",
     "vite.config.*",

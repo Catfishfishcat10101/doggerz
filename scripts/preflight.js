@@ -5,7 +5,7 @@ const path = require("node:path");
 const { builtinModules } = require("node:module");
 
 const ROOT = process.cwd();
-const SRC_DIRS = ["src", "native"];
+const SRC_DIRS = ["src"];
 const SOURCE_EXTS = new Set([".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs"]);
 
 function walk(dir, out = []) {
@@ -39,7 +39,7 @@ function collectBareImports(sourceText) {
     while ((m = rx.exec(sourceText))) {
       const spec = String(m[1] || "").trim();
       if (!spec || spec.startsWith(".") || spec.startsWith("/")) continue;
-      if (spec.startsWith("@/") || spec.startsWith("@native/")) continue;
+      if (spec.startsWith("@/")) continue;
       results.add(spec);
     }
   }

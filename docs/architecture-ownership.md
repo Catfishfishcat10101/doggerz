@@ -12,7 +12,6 @@
 - `src/redux`, `src/logic`, `src/constants`: game state + domain logic.
 - `src/features/game`, `src/components`: presentation and interaction surfaces.
 - `src/firebase`, `src/lib/firebase*`: cloud and remote persistence boundaries.
-- `native/`: React Native/Expo shell and adapters.
 - `scripts/`: quality gates and preflight health checks.
 
 ## Dependency Rules
@@ -20,7 +19,6 @@
 - UI modules may depend on selectors/actions from `src/redux`; reducers must not import UI modules.
 - `src/logic` must stay framework-agnostic and must not import React, router, or DOM APIs.
 - Cloud code (`src/firebase`, `src/lib/firebase*`) must not directly import page components.
-- Native runtime code (`native/`) should reuse domain/state modules from `src/` and keep platform APIs behind adapters.
 
 ## Change Ownership Expectations
 

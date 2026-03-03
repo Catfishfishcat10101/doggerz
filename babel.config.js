@@ -2,7 +2,7 @@ module.exports = function (api) {
   const isTest = api.env("test");
   api.cache(() => isTest);
   const config = {
-    presets: ["babel-preset-expo"],
+    presets: ["@babel/preset-env", "@babel/preset-react"],
     plugins: [],
   };
 
@@ -13,7 +13,6 @@ module.exports = function (api) {
         root: ["."],
         alias: {
           "@": "./src",
-          "@native": "./native",
         },
       },
     ]);
