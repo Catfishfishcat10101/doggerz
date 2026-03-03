@@ -1,10 +1,39 @@
 import java.io.FileInputStream
+import java.io.ByteArrayOutputStream
 import java.util.Properties
 
 apply plugin: 'com.android.application'
 
-def versionCodeRaw = System.getenv('DOGGERZ_VERSION_CODE') ?: project.findProperty('DOGGERZ_VERSION_CODE') ?: '1'
-def versionNameRaw = System.getenv('DOGGERZ_VERSION_NAME') ?: project.findProperty('DOGGERZ_VERSION_NAME') ?: '1.0.0'
+def getGitCommitCount() {
+    try {
+        def stdout = new ByteArrayOutputStream()
+        exec {
+            commandLine 'git', 'rev-list', '--count', 'HEAD'
+            standardOutput = stdout
+            errorOutput = new ByteArrayOutputStream()
+            ignoreExitValue = true
+        }
+        def s = stdout.toString().trim()
+        return (s ==~ /\d+/) ? s.toInteger() : 0
+    } catch (Exception ignored) {
+        return 0
+    }
+}
+
+// Base offset so your codes start high enough for Play.
+// Set this to 100 so commitCount+100 => 101, 102, 103...
+def baseVersionCode = (project.findProperty('DOGGERZ_VERSION_CODE_BASE') ?: '100').toInteger()
+def autoVersionCode = (baseVersionCode + getGitCommitCount()).toString()
+
+def versionCodeRaw =
+        System.getenv('DOGGERZ_VERSION_CODE')
+                ?: project.findProperty('DOGGERZ_VERSION_CODE')
+                ?: autoVersionCode
+
+def versionNameRaw =
+        System.getenv('DOGGERZ_VERSION_NAME')
+                ?: project.findProperty('DOGGERZ_VERSION_NAME')
+                ?: '1.0.0'
 
 def keystoreProperties = new Properties()
 def keystorePropertiesFile = rootProject.file('keystore.properties')

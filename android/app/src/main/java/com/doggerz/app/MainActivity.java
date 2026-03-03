@@ -4,21 +4,29 @@ import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.webkit.WebView;
+import com.getcapacitor.Bridge;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        WebView webView = this.getBridge().getWebView();
-        if (webView != null) {
-            webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                webView.setRendererPriorityPolicy(
-                    WebView.RENDERER_PRIORITY_BOUND,
-                    true
-                );
+        try {
+            Bridge bridge = this.getBridge();
+            if (bridge == null) return;
+
+            WebView webView = bridge.getWebView();
+            if (webView != null) {
+                webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    webView.setRendererPriorityPolicy(
+                        WebView.RENDERER_PRIORITY_BOUND,
+                        true
+                    );
+                }
             }
+        } catch (Exception ignored) {
+            // Never crash app startup for optional WebView tuning.
         }
     }
 

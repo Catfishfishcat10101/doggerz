@@ -8,6 +8,9 @@
   --app-border: rgba(255, 255, 255, 0.08);
   --app-card: rgba(2, 6, 23, 0.72);
   --weather-accent: #34d399;
+  --neon-line: rgba(52, 211, 153, 0.28);
+  --neon-glow: rgba(52, 211, 153, 0.18);
+  --sky-glow: rgba(56, 189, 248, 0.14);
 }
 
 /* Let the main app stretch full height */
@@ -37,6 +40,9 @@ body {
   background: var(--grad-shell, #020617);
   background-color: var(--app-bg);
   color: var(--app-text);
+  background-image:
+    radial-gradient(circle at 12% 8%, var(--neon-glow), transparent 38%),
+    radial-gradient(circle at 86% 92%, var(--sky-glow), transparent 38%);
 }
 
 /* Utility class if you ever want a subtle app-wide background overlay */
@@ -52,6 +58,57 @@ body {
     var(--doggerz-bg, var(--app-bg));
   display: flex;
   flex-direction: column;
+}
+
+.neon-surface {
+  border: 1px solid var(--neon-line);
+  border-radius: 1.5rem;
+  background:
+    linear-gradient(160deg, rgba(2, 6, 23, 0.84), rgba(2, 6, 23, 0.58)),
+    radial-gradient(
+      circle at 12% -18%,
+      rgba(52, 211, 153, 0.2),
+      transparent 45%
+    );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 14px 40px rgba(2, 6, 23, 0.52),
+    0 0 30px rgba(16, 185, 129, 0.08);
+}
+
+.neon-pill {
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  border-radius: 999px;
+  background: rgba(2, 6, 23, 0.54);
+}
+
+.neon-surface h1,
+.neon-surface h2 {
+  letter-spacing: 0.01em;
+  line-height: 1.15;
+  color: #f8fafc;
+}
+
+.neon-surface h3,
+.neon-surface h4 {
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+  color: #e2e8f0;
+}
+
+.neon-surface p,
+.neon-surface li {
+  color: rgba(226, 232, 240, 0.92);
+  line-height: 1.65;
+}
+
+.neon-surface a {
+  color: #6ee7b7;
+  text-underline-offset: 0.2em;
+}
+
+.neon-surface a:hover {
+  color: #a7f3d0;
 }
 
 ::selection {

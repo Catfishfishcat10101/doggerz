@@ -82,4 +82,9 @@ export const {
 } = weatherSlice.actions;
 export const selectWeatherCondition = (s) => s.weather.condition;
 export const selectWeatherIntensity = (s) => s.weather.intensity;
+export const selectWeatherStatus = (s) => s.weather.status;
+export const selectWeatherDetails = (s) => s.weather.details;
+export const selectWeatherError = (s) => s.weather.error;
+export const selectWeatherZip = (s) => s.weather.zip;
+export const selectWeatherLastFetchedAt = (s) => s.weather.lastFetchedAt;
 export default weatherSlice.reducer;

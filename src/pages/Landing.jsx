@@ -10,7 +10,7 @@ import { withBaseUrl } from "@/utils/assetUtils.js";
 
 export default function Landing() {
   return (
-    <PageShell>
+    <PageShell useSurface={false}>
       <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-md flex-col overflow-hidden border-x border-white/10 bg-black shadow-2xl">
         <div className="pointer-events-none absolute -left-20 -top-20 h-72 w-72 rounded-full bg-doggerz-leaf/25 blur-[100px]" />
         <div className="pointer-events-none absolute -bottom-20 -right-20 h-72 w-72 rounded-full bg-doggerz-sky/20 blur-[100px]" />

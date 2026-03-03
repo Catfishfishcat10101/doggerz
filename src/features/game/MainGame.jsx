@@ -1,10 +1,18 @@
 // src/features/game/MainGame.jsx
 
-import { Suspense, lazy, useCallback, useRef, useState } from "react";
+import {
+  Suspense,
+  lazy,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { useDispatch, useSelector } from "react-redux";
 import DogToy from "@/components/ui/DogToy.jsx";
 import EnvironmentScene from "@/features/game/EnvironmentScene.jsx";
 import { selectSettings } from "@/redux/settingsSlice.js";
+import { setZip, selectUserZip } from "@/redux/userSlice.js";
 import {
   bathe,
   dropFoodBowl,
@@ -17,6 +25,16 @@ import {
   tryConsumeFoodBowl,
 } from "@/redux/dogSlice.js";
 import { selectDogRenderModel } from "@/features/game/dogSelectors.js";
+import {
+  selectWeatherDetails,
+  selectWeatherError,
+  selectWeatherLastFetchedAt,
+  selectWeatherStatus,
+  setWeatherError,
+  setWeatherLoading,
+  setWeatherSnapshot,
+} from "@/redux/weatherSlice.js";
+import { fetchWeatherSnapshot } from "@/features/weather/weatherApi.js";
 
 const DogPixiView = lazy(() => import("@/components/dog/DogPixiView.jsx"));
 
@@ -70,16 +88,33 @@ function toNightBucket(timeOfDay) {
   return key === "night" || key === "evening" ? "night" : "day";
 }
 
+function formatLiveClock(ts) {
+  return new Intl.DateTimeFormat(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+  }).format(new Date(ts));
+}
+
 export default function MainGame({ scene }) {
   const dispatch = useDispatch();
   const dog = useSelector(selectDog);
   const settings = useSelector(selectSettings);
   const renderModel = useSelector(selectDogRenderModel);
+  const userZip = useSelector(selectUserZip);
+  const weatherStatus = useSelector(selectWeatherStatus);
+  const weatherDetails = useSelector(selectWeatherDetails);
+  const weatherError = useSelector(selectWeatherError);
+  const weatherLastFetchedAt = useSelector(selectWeatherLastFetchedAt);
   const lastToySqueakAtRef = useRef(0);
   const dogViewportRef = useRef(null);
   const [attentionTarget, setAttentionTarget] = useState(null);
   const [interactionOpen, setInteractionOpen] = useState(false);
   const [placingBowl, setPlacingBowl] = useState(false);
+  const [liveNow, setLiveNow] = useState(Date.now());
+  const [zipDraft, setZipDraft] = useState(userZip || "");
+  const [zipTouched, setZipTouched] = useState(false);
+  const [weatherBusy, setWeatherBusy] = useState(false);
 
   const seasonMode = settings?.seasonMode || "auto";
   const reduceMotion = settings?.reduceMotion === "on";
@@ -88,6 +123,8 @@ export default function MainGame({ scene }) {
   const activeAnim = renderModel?.anim || "idle";
   const holes = Array.isArray(dog?.yard?.holes) ? dog.yard.holes : [];
   const foodBowl = dog?.yard?.foodBowl || null;
+  const zipIsValid = /^\d{5}$/.test(String(zipDraft || "").trim());
+  const effectiveZip = userZip || zipDraft || "10001";
 
   const handleToySqueak = useCallback(
     (point) => {
@@ -141,6 +178,35 @@ export default function MainGame({ scene }) {
     [dispatch, placingBowl]
   );
 
+  useEffect(() => {
+    const timer = window.setInterval(() => setLiveNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    if (zipTouched) return;
+    setZipDraft(userZip || "");
+  }, [userZip, zipTouched]);
+
+  const refreshWeatherNow = useCallback(
+    async (zipValue) => {
+      const nextZip = String(zipValue || "").trim();
+      if (!/^\d{5}$/.test(nextZip)) return;
+
+      setWeatherBusy(true);
+      dispatch(setWeatherLoading({ zip: nextZip }));
+      try {
+        const snapshot = await fetchWeatherSnapshot({ zip: nextZip });
+        dispatch(setWeatherSnapshot(snapshot));
+      } catch (err) {
+        dispatch(setWeatherError(err?.message || "Weather refresh failed"));
+      } finally {
+        setWeatherBusy(false);
+      }
+    },
+    [dispatch]
+  );
+
   return (
     <div className="relative min-h-dvh">
       <EnvironmentScene
@@ -165,6 +231,70 @@ export default function MainGame({ scene }) {
               {scene?.weather || "Clear"}
             </span>
           </div>
+
+          <div className="mt-3 grid gap-2 rounded-2xl border border-doggerz-leaf/30 bg-black/40 p-3 sm:grid-cols-[1fr_auto] sm:items-center">
+            <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-doggerz-paw">
+              <span className="rounded-full border border-doggerz-leaf/40 bg-doggerz-neon/15 px-2.5 py-1">
+                Local Time: {formatLiveClock(liveNow)}
+              </span>
+              <span className="rounded-full border border-doggerz-leaf/40 bg-doggerz-neon/15 px-2.5 py-1">
+                ZIP: {effectiveZip}
+              </span>
+              {weatherDetails?.name ? (
+                <span className="rounded-full border border-doggerz-leaf/40 bg-doggerz-neon/15 px-2.5 py-1 normal-case tracking-normal">
+                  {weatherDetails.name}
+                </span>
+              ) : null}
+              {weatherLastFetchedAt ? (
+                <span className="rounded-full border border-doggerz-leaf/25 bg-black/30 px-2.5 py-1 normal-case tracking-normal text-doggerz-paw/70">
+                  Updated{" "}
+                  {new Intl.DateTimeFormat(undefined, {
+                    hour: "numeric",
+                    minute: "2-digit",
+                  }).format(new Date(weatherLastFetchedAt))}
+                </span>
+              ) : null}
+            </div>
+            <form
+              className="flex items-center gap-2"
+              onSubmit={(event) => {
+                event.preventDefault();
+                const nextZip = String(zipDraft || "").trim();
+                if (!/^\d{5}$/.test(nextZip)) return;
+                dispatch(setZip(nextZip));
+                setZipTouched(false);
+                refreshWeatherNow(nextZip);
+              }}
+            >
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={5}
+                value={zipDraft}
+                onChange={(event) => {
+                  const onlyDigits = event.target.value.replace(/\D/g, "");
+                  setZipDraft(onlyDigits.slice(0, 5));
+                  setZipTouched(true);
+                }}
+                placeholder="ZIP"
+                className="w-24 rounded-xl border border-doggerz-leaf/35 bg-black/55 px-3 py-2 text-sm font-semibold text-doggerz-bone outline-none transition focus:border-doggerz-neon"
+                aria-label="Zip code"
+              />
+              <button
+                type="submit"
+                disabled={!zipIsValid || weatherBusy}
+                className="rounded-xl border border-doggerz-leaf/40 bg-doggerz-neon/20 px-3 py-2 text-xs font-bold uppercase tracking-[0.14em] text-doggerz-bone transition hover:bg-doggerz-neon/30 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {weatherBusy ? "Updating" : "Update"}
+              </button>
+            </form>
+          </div>
+
+          {weatherStatus === "error" && weatherError ? (
+            <div className="mt-2 rounded-xl border border-rose-400/30 bg-rose-950/35 px-3 py-2 text-xs text-rose-100">
+              Weather update failed: {weatherError}
+            </div>
+          ) : null}
 
           <div className="mt-3 text-2xl font-black tracking-tight text-doggerz-bone sm:text-3xl">
             {dog?.name || "Your pup"}
