@@ -80,5 +80,16 @@ New-Item -ItemType Directory -Force -Path "releases" | Out-Null
 $outName = "Doggerz-$newVersionName-$versionCode.aab"
 Copy-Item $aab ("releases\" + $outName) -Force
 
-Write-Host "`nDONE ✅" -ForegroundColor Green
-Write-Host "Release file: releases\$outName"
+# Save / copy output already done above...
+
+# Commit version bump
+git add version.json
+git commit -m "chore(release): $newVersionName ($versionCode)"
+git push
+
+# Tag and push tag
+$tag = "v$newVersionName"
+git tag -a $tag -m "Doggerz $newVersionName ($versionCode)"
+git push origin $tag
+
+Write-Host "`nDONE ✅ Tagged release: $tag" -ForegroundColor Green
