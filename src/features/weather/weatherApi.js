@@ -111,7 +111,8 @@ function normalizeIntensityFromMeteoCode(code) {
   if (!Number.isFinite(c)) return "medium";
   if ([51, 53, 55, 56, 57].includes(c)) return "light";
   if ([61, 63, 65, 66, 67].includes(c)) return c >= 65 ? "heavy" : "medium";
-  if ([80, 81, 82, 95, 96, 99].includes(c)) return c === 80 ? "medium" : "heavy";
+  if ([80, 81, 82, 95, 96, 99].includes(c))
+    return c === 80 ? "medium" : "heavy";
   if ([71, 73, 75, 77, 85, 86].includes(c)) return c >= 75 ? "heavy" : "medium";
   return "medium";
 }
@@ -138,7 +139,9 @@ async function fetchLatLonForZip(zip, signal) {
 export async function fetchWeatherSnapshot({ zip, signal }) {
   const apiKey = import.meta.env.VITE_OPENWEATHER_API_KEY;
   const effectiveZip =
-    String(zip || "").trim() || import.meta.env.VITE_WEATHER_DEFAULT_ZIP || "10001";
+    String(zip || "").trim() ||
+    import.meta.env.VITE_WEATHER_DEFAULT_ZIP ||
+    "10001";
 
   if (!isUsableOpenWeatherKey(apiKey)) {
     try {
@@ -210,4 +213,3 @@ export async function fetchWeatherSnapshot({ zip, signal }) {
     },
   };
 }
-

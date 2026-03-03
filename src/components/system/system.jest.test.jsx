@@ -48,7 +48,10 @@ describe("system components", () => {
     );
 
     act(() => {
-      boundaryRef.current.setState({ hasError: true, error: new Error("boom") });
+      boundaryRef.current.setState({
+        hasError: true,
+        error: new Error("boom"),
+      });
     });
 
     await waitFor(() => {
@@ -97,7 +100,9 @@ describe("system components", () => {
 
   test("AppStorageHydrator dispatches hydrated user/settings", async () => {
     mockGetStoredValue
-      .mockResolvedValueOnce(JSON.stringify({ displayName: "Alpha", zip: "60601" }))
+      .mockResolvedValueOnce(
+        JSON.stringify({ displayName: "Alpha", zip: "60601" })
+      )
       .mockResolvedValueOnce(JSON.stringify({ theme: "dark" }));
 
     const { store } = renderWithProviders(<AppStorageHydrator />);

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getTimeOfDay } from "@/utils/weather.js";
-import { withBaseUrl } from "@/utils/gameUtils.js";
+import { withBaseUrl } from "@/utils/assetUtils.js";
 
 const DAY_START_HOUR = 6;
 const NIGHT_START_HOUR = 19; // 7 PM → night visuals
@@ -38,7 +38,8 @@ function isUsableOpenWeatherKey(key) {
 export function useDayNightBackground(options = {}) {
   const { zip, pollIntervalMs = 5 * 60 * 1000, enableImages = true } = options;
   const apiKey = import.meta.env.VITE_OPENWEATHER_API_KEY;
-  const effectiveZip = zip || import.meta.env.VITE_WEATHER_DEFAULT_ZIP || "10001";
+  const effectiveZip =
+    zip || import.meta.env.VITE_WEATHER_DEFAULT_ZIP || "10001";
   const weatherApiEnabled = isUsableOpenWeatherKey(apiKey);
 
   const [localTickAt, setLocalTickAt] = useState(Date.now());

@@ -93,9 +93,13 @@ describe("layout components", () => {
   });
 
   test("GameTopBar mobile menu expands to show links", () => {
-    renderWithProviders(<GameTopBar links={[{ to: "/about", label: "About" }]} />);
+    renderWithProviders(
+      <GameTopBar links={[{ to: "/about", label: "About" }]} />
+    );
     fireEvent.click(screen.getByRole("button", { name: "Toggle menu" }));
-    expect(screen.getAllByRole("link", { name: "About" }).length).toBeGreaterThan(0);
+    expect(
+      screen.getAllByRole("link", { name: "About" }).length
+    ).toBeGreaterThan(0);
   });
 
   test("PageShell renders fallback marker when outside app shell", () => {

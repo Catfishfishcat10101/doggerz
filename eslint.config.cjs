@@ -85,6 +85,27 @@ module.exports = [
     },
   },
   {
+    files: [
+      "**/*.test.{js,jsx}",
+      "**/*.spec.{js,jsx}",
+      "**/*.jest.test.{js,jsx}",
+      "jest.setup.js",
+      "vitest.setup.js",
+    ],
+    languageOptions: {
+      globals: {
+        ...globals.jest,
+        ...globals.vitest,
+      },
+    },
+    rules: {
+      "no-unused-vars": [
+        "warn",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^(React|_)$" },
+      ],
+    },
+  },
+  {
     // Temporary migration carve-outs. Keep this list shrinking.
     files: [
       "src/components/dog/DogPixiView.jsx",

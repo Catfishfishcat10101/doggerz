@@ -6,9 +6,6 @@ export default function Footer() {
   const socials = [
     { key: "twitter", label: "X" },
     { key: "instagram", label: "Instagram" },
-    { key: "tiktok", label: "TikTok" },
-    { key: "youtube", label: "YouTube" },
-    { key: "discord", label: "Discord" },
     { key: "facebook", label: "Facebook" },
   ];
 
@@ -40,9 +37,6 @@ export default function Footer() {
             </Link>
             <Link to="/developers" className="hover:text-emerald-200">
               Developers
-            </Link>
-            <Link to="/help" className="hover:text-emerald-200">
-              Help
             </Link>
             <Link to="/settings" className="hover:text-emerald-200">
               Settings

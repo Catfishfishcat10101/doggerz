@@ -177,7 +177,6 @@ Original prompt: yes. and remove all teh placeholders too. we are way past that!
 
 - Playwright client run failed: http://localhost:5175/game refused connection (dev server not running).
 
-
 ## 2026-03-02 - Custom anim mapping passthrough
 
 - Updated DogPixiView to request anim-specific sheets using the requested animation key (not just manifest-resolved), so custom anim names can load when mapped.
@@ -187,4 +186,3 @@ Original prompt: yes. and remove all teh placeholders too. we are way past that!
 
 - Playwright client run: timed out clicking Play button (element located but click never completed).
 - Playwright client run: http://localhost:5175/game refused connection (dev server not running).
-

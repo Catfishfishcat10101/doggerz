@@ -41,7 +41,9 @@ const weatherSlice = createSlice({
       }
     },
     setWeatherSnapshot(state, { payload }) {
-      const nextCondition = String(payload?.condition || "unknown").toLowerCase();
+      const nextCondition = String(
+        payload?.condition || "unknown"
+      ).toLowerCase();
       const nextSource = String(payload?.source || "none").toLowerCase();
       const fetchedAt = Number(payload?.fetchedAt) || Date.now();
       const nextIntensity = String(payload?.intensity || "medium");
@@ -81,4 +83,3 @@ export const {
 export const selectWeatherCondition = (s) => s.weather.condition;
 export const selectWeatherIntensity = (s) => s.weather.intensity;
 export default weatherSlice.reducer;
-

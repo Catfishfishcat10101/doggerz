@@ -116,7 +116,7 @@ import {
 } from "../redux/settingsSlice.js";
 import PageShell from "../components/layout/PageShell.jsx";
 import { PageHeader } from "@/components/layout/PageSections.jsx";
-import { APP_VERSION } from "../utils/gameUtils.js";
+import { APP_VERSION } from "../utils/assetUtils.js";
 import { useToast } from "@/state/toastContext.js";
 import {
   getStoredValue,

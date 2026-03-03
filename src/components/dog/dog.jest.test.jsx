@@ -91,7 +91,9 @@ describe("dog components", () => {
 
   test("PuppyPassport shows derived rank", () => {
     renderWithProviders(
-      <PuppyPassport dog={{ name: "Milo", bond: { value: 95 }, stats: { energy: 80 } }} />
+      <PuppyPassport
+        dog={{ name: "Milo", bond: { value: 95 }, stats: { energy: 80 } }}
+      />
     );
     expect(screen.getByText("Milo")).toBeInTheDocument();
     expect(screen.getByText("Grand Master")).toBeInTheDocument();
@@ -100,11 +102,17 @@ describe("dog components", () => {
   test("DogCosmeticsOverlay shows equipped labels and toggles labels", () => {
     renderWithProviders(
       <DogCosmeticsOverlay
-        equipped={{ collar: "collar_leaf", tag: "tag_star", backdrop: "backdrop_sunset" }}
+        equipped={{
+          collar: "collar_leaf",
+          tag: "tag_star",
+          backdrop: "backdrop_sunset",
+        }}
       />
     );
     expect(screen.getByText(/Collar:/)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Labels on", hidden: true }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Labels on", hidden: true })
+    );
     expect(
       screen.getByRole("button", { name: "Labels off", hidden: true })
     ).toBeInTheDocument();

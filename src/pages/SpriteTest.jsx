@@ -5,7 +5,7 @@ import * as React from "react";
 
 import SpriteSheetDog from "@/components/dog/SpriteSheetDog.jsx";
 import { PageFooter, PageHeader } from "@/components/layout/PageSections.jsx";
-import { withBaseUrl } from "@/utils/gameUtils.js";
+import { withBaseUrl } from "@/utils/assetUtils.js";
 import {
   DOG_STAGE_IDS,
   DOG_CONDITION_IDS,
@@ -40,7 +40,10 @@ export default function SpriteTest() {
 
   return (
     <div className="min-h-screen bg-black text-white p-6">
-      <PageHeader className="flex flex-wrap items-end justify-between gap-4" unstyled>
+      <PageHeader
+        className="flex flex-wrap items-end justify-between gap-4"
+        unstyled
+      >
         <div>
           <h1 className="text-2xl font-semibold">Sprite Test</h1>
           <p className="text-white/70 mt-2 max-w-xl">
@@ -176,7 +179,10 @@ export default function SpriteTest() {
         </div>
       </div>
 
-      <PageFooter className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4" unstyled>
+      <PageFooter
+        className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4"
+        unstyled
+      >
         <div className="text-sm text-white/70 mb-3">Debug</div>
         <pre className="text-xs whitespace-pre-wrap break-words text-white/80">
           {JSON.stringify(debug, null, 2)}

@@ -3,7 +3,7 @@
 // src/utils/dogSpritePaths.js
 // Sprite asset path helpers for static renders and Pixi sheets.
 
-import { withBaseUrl } from "@/utils/gameUtils.js";
+import { withBaseUrl } from "@/utils/assetUtils.js";
 
 export const DOG_STAGE_IDS = Object.freeze(["PUPPY", "ADULT", "SENIOR"]);
 export const DOG_STAGE_SHORT = Object.freeze(["pup", "adult", "senior"]);

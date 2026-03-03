@@ -1,1 +1,33 @@
-{"mode":"doggerz","route":"/game","dog":{"name":"Pup","stage":"pup","condition":"mange","anim":"walk","isSleeping":false},"stats":{"hunger":100,"thirst":100,"happiness":30.523297316666664,"energy":0,"cleanliness":0,"health":22.398143555555553,"affection":0,"mentalStimulation":0},"moodlets":[{"type":"hungry","intensity":3},{"type":"thirsty","intensity":3},{"type":"tired","intensity":3},{"type":"dirty","intensity":3},{"type":"sick","intensity":2},{"type":"lonely","intensity":3},{"type":"bored","intensity":3},{"type":"lonely","intensity":1},{"type":"itchy","intensity":3}],"coordSystem":"Dog viewport origin top-left; units are CSS pixels. DogPixiView 420x320."}
+{
+  "mode": "doggerz",
+  "route": "/game",
+  "dog": {
+    "name": "Pup",
+    "stage": "pup",
+    "condition": "mange",
+    "anim": "walk",
+    "isSleeping": false
+  },
+  "stats": {
+    "hunger": 100,
+    "thirst": 100,
+    "happiness": 30.523297316666664,
+    "energy": 0,
+    "cleanliness": 0,
+    "health": 22.398143555555553,
+    "affection": 0,
+    "mentalStimulation": 0
+  },
+  "moodlets": [
+    { "type": "hungry", "intensity": 3 },
+    { "type": "thirsty", "intensity": 3 },
+    { "type": "tired", "intensity": 3 },
+    { "type": "dirty", "intensity": 3 },
+    { "type": "sick", "intensity": 2 },
+    { "type": "lonely", "intensity": 3 },
+    { "type": "bored", "intensity": 3 },
+    { "type": "lonely", "intensity": 1 },
+    { "type": "itchy", "intensity": 3 }
+  ],
+  "coordSystem": "Dog viewport origin top-left; units are CSS pixels. DogPixiView 420x320."
+}

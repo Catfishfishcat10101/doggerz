@@ -322,8 +322,12 @@ export default function DogAIEngine() {
   }, [zip]);
 
   const weatherQuery = useQuery({
-    queryKey: ["weather", zip || import.meta.env.VITE_WEATHER_DEFAULT_ZIP || "10001"],
-    queryFn: ({ signal }) => fetchWeatherSnapshot({ zip: zipRef.current || zip, signal }),
+    queryKey: [
+      "weather",
+      zip || import.meta.env.VITE_WEATHER_DEFAULT_ZIP || "10001",
+    ],
+    queryFn: ({ signal }) =>
+      fetchWeatherSnapshot({ zip: zipRef.current || zip, signal }),
     refetchInterval: WEATHER_POLL_INTERVAL_MS,
     refetchIntervalInBackground: false,
     staleTime: WEATHER_POLL_INTERVAL_MS,
@@ -340,7 +344,11 @@ export default function DogAIEngine() {
 
   useEffect(() => {
     if (!weatherQuery.error) return;
-    dispatch(setWeatherError(getErrorMessage(weatherQuery.error, "Weather fetch failed")));
+    dispatch(
+      setWeatherError(
+        getErrorMessage(weatherQuery.error, "Weather fetch failed")
+      )
+    );
   }, [dispatch, weatherQuery.error]);
 
   useEffect(() => {

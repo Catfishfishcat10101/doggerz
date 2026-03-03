@@ -17,7 +17,7 @@ import {
   loadReminderStateAsync,
   shouldFireReminder,
 } from "@/utils/reminders.js";
-import { withBaseUrl } from "@/utils/gameUtils.js";
+import { withBaseUrl } from "@/utils/assetUtils.js";
 import { CHECK_IN_THRESHOLDS, getCheckInTier } from "@/utils/checkIn.js";
 
 const REMINDERS = [

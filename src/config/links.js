@@ -13,9 +13,8 @@ export const SUPPORT_CONTACT_URL = SUPPORT_EMAIL_FEEDBACK_URL;
 export const SOCIAL_LINKS = Object.freeze({
   website: "https://doggerz.app",
   twitter: "https://twitter.com/doggerz",
-  tiktok: "https://tiktok.com/@doggerz",
   instagram: "https://instagram.com/doggerz",
-  discord: "https://discord.gg/doggerz",
+  facebook: "https://facebook.com/doggerz",
 });
 
 export default {

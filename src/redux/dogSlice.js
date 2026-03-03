@@ -198,8 +198,7 @@ function applyFeedEffect(state, payload = {}, opts = {}) {
   }
   wakeForInteraction(state);
 
-  const careerMultiplier =
-    state.career.perks?.happinessGainMultiplier || 1.0;
+  const careerMultiplier = state.career.perks?.happinessGainMultiplier || 1.0;
   const perks = getPersonalityPerks(state);
   const nextStats = calculateFeedStats({
     stats: state.stats,
@@ -1408,9 +1407,9 @@ function finalizeDerivedState(state, now = nowMs()) {
 
     // Prefer emotionCue, else fall back to a stable "ok"
     const mood =
-      (typeof state.emotionCue === "string" && state.emotionCue.trim()
+      typeof state.emotionCue === "string" && state.emotionCue.trim()
         ? state.emotionCue
-        : "ok");
+        : "ok";
 
     animation.mood = normalizeActionKey(mood);
 

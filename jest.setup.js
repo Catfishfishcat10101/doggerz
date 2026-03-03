@@ -6,19 +6,25 @@ if (!window.matchMedia) {
     matches: false,
     media: "",
     onchange: null,
-    addListener: () => {},
-    removeListener: () => {},
-    addEventListener: () => {},
-    removeEventListener: () => {},
+    addListener: () => undefined,
+    removeListener: () => undefined,
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
     dispatchEvent: () => false,
   });
 }
 
 if (!window.ResizeObserver) {
   window.ResizeObserver = class {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
+    observe() {
+      // noop
+    }
+    unobserve() {
+      // noop
+    }
+    disconnect() {
+      // noop
+    }
   };
 }
 
@@ -30,15 +36,15 @@ if (!window.cancelAnimationFrame) {
 }
 
 HTMLCanvasElement.prototype.getContext = () => ({
-  clearRect: () => {},
-  fillRect: () => {},
-  beginPath: () => {},
-  moveTo: () => {},
-  lineTo: () => {},
-  stroke: () => {},
-  arc: () => {},
-  fill: () => {},
-  setTransform: () => {},
+  clearRect: () => undefined,
+  fillRect: () => undefined,
+  beginPath: () => undefined,
+  moveTo: () => undefined,
+  lineTo: () => undefined,
+  stroke: () => undefined,
+  arc: () => undefined,
+  fill: () => undefined,
+  setTransform: () => undefined,
 });
 
 if (!window.Image) {
@@ -54,9 +60,11 @@ if (!window.Image) {
 try {
   Object.defineProperty(window.location, "reload", {
     configurable: true,
-    value: () => {},
+    value: () => undefined,
   });
-} catch {}
+} catch {
+  // ignore
+}
 
 try {
   delete window.location;
@@ -64,10 +72,12 @@ try {
     configurable: true,
     value: {
       ...globalThis.location,
-      reload: () => {},
+      reload: () => undefined,
     },
   });
-} catch {}
+} catch {
+  // ignore
+}
 
 const ignoredWarnPatterns = [/React Router Future Flag Warning/i];
 const ignoredErrorPatterns = [

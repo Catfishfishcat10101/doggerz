@@ -28,7 +28,9 @@ describe("DailyRewardModal", () => {
       />
     );
 
-    expect(screen.getByRole("dialog", { name: "Daily reward" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("dialog", { name: "Daily reward" })
+    ).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Later" }));
     fireEvent.click(screen.getByRole("button", { name: "Claim" }));
     expect(onClose).toHaveBeenCalled();
@@ -37,7 +39,10 @@ describe("DailyRewardModal", () => {
 
   test("disables claim when reward cannot be claimed", () => {
     renderWithProviders(
-      <DailyRewardModal open rewardState={{ canClaim: false, nextStreakDay: 1 }} />
+      <DailyRewardModal
+        open
+        rewardState={{ canClaim: false, nextStreakDay: 1 }}
+      />
     );
     expect(screen.getByRole("button", { name: "Claim" })).toBeDisabled();
   });

@@ -62,7 +62,7 @@ export function initFirebase() {
       db = initializeFirestore(app, {
         localCache: persistentLocalCache(),
       });
-    } catch (err) {
+    } catch {
       // Fallback if Firestore was already initialized (e.g. hot reload).
       db = getFirestore(app);
     }

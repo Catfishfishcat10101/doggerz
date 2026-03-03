@@ -16,52 +16,77 @@ expect.extend(matchers);
 
 if (!globalThis.ResizeObserver) {
   globalThis.ResizeObserver = class ResizeObserver {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
+    observe() {
+      // noop
+    }
+    unobserve() {
+      // noop
+    }
+    disconnect() {
+      // noop
+    }
   };
 }
 
 if (!globalThis.requestAnimationFrame) {
-  globalThis.requestAnimationFrame = (cb) => setTimeout(() => cb(Date.now()), 0);
+  globalThis.requestAnimationFrame = (cb) =>
+    setTimeout(() => cb(Date.now()), 0);
   globalThis.cancelAnimationFrame = (id) => clearTimeout(id);
 }
 
 if (!globalThis.matchMedia) {
   globalThis.matchMedia = () => ({
     matches: false,
-    addEventListener() {},
-    removeEventListener() {},
+    addEventListener() {
+      // noop
+    },
+    removeEventListener() {
+      // noop
+    },
   });
 }
 
 HTMLCanvasElement.prototype.getContext = () => ({
-  clearRect() {},
-  drawImage() {},
-  setTransform() {},
-  scale() {},
+  clearRect() {
+    // noop
+  },
+  drawImage() {
+    // noop
+  },
+  setTransform() {
+    // noop
+  },
+  scale() {
+    // noop
+  },
 });
 
 try {
   Object.defineProperty(window.location, "reload", {
     configurable: true,
-    value: () => {},
+    value: () => undefined,
   });
-} catch {}
+} catch {
+  // ignore
+}
 
 try {
   Object.defineProperty(window.Location.prototype, "reload", {
     configurable: true,
-    value: () => {},
+    value: () => undefined,
   });
-} catch {}
+} catch {
+  // ignore
+}
 
 try {
   vi.stubGlobal("location", {
     ...window.location,
-    reload: () => {},
+    reload: () => undefined,
   });
-} catch {}
+} catch {
+  // ignore
+}
 
 try {
   delete window.location;
@@ -69,14 +94,14 @@ try {
     configurable: true,
     value: {
       ...globalThis.location,
-      reload: () => {},
+      reload: () => undefined,
     },
   });
-} catch {}
+} catch {
+  // ignore
+}
 
-const ignoredWarnPatterns = [
-  /React Router Future Flag Warning/i,
-];
+const ignoredWarnPatterns = [/React Router Future Flag Warning/i];
 
 const ignoredErrorPatterns = [
   /Warning: Received `true` for a non-boolean attribute `drag`/i,
@@ -115,4 +140,6 @@ try {
       event.preventDefault();
     }
   });
-} catch {}
+} catch {
+  // ignore
+}

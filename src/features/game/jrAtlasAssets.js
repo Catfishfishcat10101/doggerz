@@ -1,8 +1,11 @@
 // src/features/game/jrAtlasAssets.js
 // Jack Russell atlas + frame URL registry for preload and tooling.
 
-import { withBaseUrl } from "@/utils/gameUtils.js";
-import { getDogAnimSpriteUrl, getDogPixiSheetUrl } from "@/utils/dogSpritePaths.js";
+import { withBaseUrl } from "@/utils/assetUtils.js";
+import {
+  getDogAnimSpriteUrl,
+  getDogPixiSheetUrl,
+} from "@/utils/dogSpritePaths.js";
 
 const STAGES = Object.freeze(["pup", "adult", "senior"]);
 const CONDITIONS = Object.freeze(["clean", "dirty", "fleas", "mange"]);
@@ -11,7 +14,6 @@ export const JR_ATLAS_FRAME_SIZE = Object.freeze({ width: 256, height: 256 });
 export const JR_ATLAS_SHEET_SIZE = Object.freeze({ width: 3072, height: 768 });
 
 const ATLAS_COLUMNS = JR_ATLAS_SHEET_SIZE.width / JR_ATLAS_FRAME_SIZE.width; // 12
-const ATLAS_ROWS = JR_ATLAS_SHEET_SIZE.height / JR_ATLAS_FRAME_SIZE.height; // 3
 
 const STAGE_ROW = Object.freeze({
   pup: 0,
@@ -151,4 +153,3 @@ export function preloadJackRussellSheets() {
   preloadPromise = Promise.all(sources.map((url) => preloadImage(url)));
   return preloadPromise;
 }
-

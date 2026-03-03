@@ -47,25 +47,7 @@ export default function Header() {
   }, [isLoggedIn, isPotty, showSettings]);
 
   if (isHome) {
-    return (
-      <header className="dz-header">
-        <div className="dz-header__inner">
-          <NavLink to="/" className="dz-logo" aria-label="Doggerz home">
-            DOGGERZ
-          </NavLink>
-
-          <nav className="dz-nav" aria-label="Primary navigation">
-            <NavLink to="/adopt" className="dz-nav-item">
-              Adopt
-            </NavLink>
-            <NavLink to="/login" className="dz-nav-item">
-              Login
-            </NavLink>
-            {/* <NavLink to="/store" className="dz-nav-item">Store</NavLink> */}
-          </nav>
-        </div>
-      </header>
-    );
+    return null;
   }
 
   return (

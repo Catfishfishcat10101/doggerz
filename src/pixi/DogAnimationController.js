@@ -132,8 +132,6 @@ export class DogAnimationController {
     // If it's a SpriteSheet instance:
     if (sheet && sheet.animations && sheet.textures) {
       this.#animations = sheet.animations;
-    } else if (sheet && sheet.data && sheet.textures && sheet.animations) {
-      this.#animations = sheet.animations;
     } else if (sheet && sheet.animations) {
       this.#animations = sheet.animations;
     } else {
@@ -414,7 +412,6 @@ export class DogAnimationController {
       try {
         this.#pendingOnComplete();
       } catch (e) {
-        // eslint-disable-next-line no-console
         console.warn("[DogAnimationController] onComplete error:", e);
       }
       this.#pendingOnComplete = null;

@@ -5,7 +5,7 @@ import * as React from "react";
 import { Haptics, ImpactStyle } from "@capacitor/haptics";
 
 import jrAudio from "@/features/audio/jrAudio.json";
-import { withBaseUrl } from "@/utils/gameUtils.js";
+import { withBaseUrl } from "@/utils/assetUtils.js";
 
 const clamp01 = (v) => Math.max(0, Math.min(1, Number(v) || 0));
 const HAPTIC_LIGHT_MS = 12;

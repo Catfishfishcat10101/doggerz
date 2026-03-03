@@ -646,7 +646,10 @@ export default function FaqPage() {
           )}
         </div>
 
-        <PageFooter className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-5" unstyled>
+        <PageFooter
+          className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-5"
+          unstyled
+        >
           <h2 className="text-lg font-semibold text-zinc-100">Still stuck?</h2>
           <p className="mt-1 text-sm text-zinc-300">
             No worries. We can help faster if you include your device + browser
