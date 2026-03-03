@@ -3,6 +3,7 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import { getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "@/firebase.js";
 import { dogMainDoc } from "@/firebase/paths.js";
+import { ensureAnonSignIn } from "@/lib/firebaseClient.js";
 import { hydrateDog } from "./dogSlice.js";
 
 function toMs(value) {
@@ -39,7 +40,8 @@ export const loadDogFromCloud = createAsyncThunk(
   async (_, { dispatch, getState, rejectWithValue }) => {
     try {
       if (!db) return rejectWithValue("Cloud sync unavailable");
-      const userId = auth.currentUser?.uid;
+      const user = await ensureAnonSignIn();
+      const userId = user?.uid || auth.currentUser?.uid;
       if (!userId) return rejectWithValue("User not logged in");
 
       const docRef = dogMainDoc(userId);
@@ -76,7 +78,8 @@ export const saveDogToCloud = createAsyncThunk(
   async (_, { getState, rejectWithValue }) => {
     try {
       if (!db) return rejectWithValue("Cloud sync unavailable");
-      const userId = auth.currentUser?.uid;
+      const user = await ensureAnonSignIn();
+      const userId = user?.uid || auth.currentUser?.uid;
       const dogState = getState().dog;
 
       if (!userId || !dogState?.adoptedAt)

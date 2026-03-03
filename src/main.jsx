@@ -20,6 +20,8 @@ import { selectDogRenderModel } from "./features/game/dogSelectors.js";
 
 import { initRuntimeLogging } from "./utils/runtimeLogging.js";
 import { PupProvider } from "./state/PupContext.jsx";
+import { initFirebase } from "./firebase.js";
+import { ensureAnonSignIn } from "./lib/firebaseClient.js";
 
 // Simple fallback UI for ErrorBoundary
 function AppCrashFallback({ error }) {
@@ -93,6 +95,14 @@ if (
 ) {
   initRuntimeLogging({ mode: import.meta.env.PROD ? "prod" : "dev" });
 }
+
+// Ensure Firebase app/auth/db are initialized before feature components mount.
+initFirebase();
+
+// Pre-warm anonymous auth so first Firestore call has request.auth available.
+ensureAnonSignIn().catch((err) => {
+  console.warn("[Doggerz] Startup anonymous sign-in skipped/failed:", err);
+});
 
 if (typeof window !== "undefined") {
   window.render_game_to_text = () => {

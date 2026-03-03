@@ -1,5 +1,5 @@
 // src/features/game/MainGame.jsx
-
+import { onAuthStateChanged } from "firebase/auth";
 import {
   Suspense,
   lazy,
@@ -35,6 +35,11 @@ import {
   setWeatherSnapshot,
 } from "@/redux/weatherSlice.js";
 import { fetchWeatherSnapshot } from "@/features/weather/weatherApi.js";
+import {
+  auth as firebaseAuth,
+  firebaseError,
+  initFirebase,
+} from "@/firebase.js";
 
 const DogPixiView = lazy(() => import("@/components/dog/DogPixiView.jsx"));
 
@@ -181,6 +186,31 @@ export default function MainGame({ scene }) {
   useEffect(() => {
     const timer = window.setInterval(() => setLiveNow(Date.now()), 1000);
     return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    console.log("MainGame mounted!");
+
+    const { auth: initializedAuth } = initFirebase();
+    const auth = initializedAuth || firebaseAuth;
+    if (!auth) {
+      console.warn(
+        "[Doggerz] MainGame auth listener skipped: Firebase unavailable.",
+        firebaseError?.message || ""
+      );
+      return undefined;
+    }
+
+    console.log("Auth currentUser immediately:", auth.currentUser);
+
+    const unsub = onAuthStateChanged(auth, (user) => {
+      console.log(
+        "AUTH STATE CHANGED:",
+        user ? { uid: user.uid, isAnonymous: user.isAnonymous } : null
+      );
+    });
+
+    return () => unsub();
   }, []);
 
   useEffect(() => {

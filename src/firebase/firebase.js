@@ -1,3 +1,4 @@
+//src/firebase/firebase.js
 // Back-compat re-export.
 // Keep legacy imports pointed at the canonical Firebase bootstrap.
 export {

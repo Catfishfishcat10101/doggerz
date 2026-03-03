@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSelector, useDispatch } from "react-redux";
+import { Capacitor } from "@capacitor/core";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/firebase.js";
 import {
@@ -62,9 +63,15 @@ async function getPixiTicker() {
 }
 
 async function getCapacitorApp() {
+  const isNative =
+    typeof Capacitor?.isNativePlatform === "function"
+      ? Capacitor.isNativePlatform()
+      : Capacitor.getPlatform?.() !== "web";
+
+  if (!isNative) return null;
   if (capacitorAppPromise) return capacitorAppPromise;
-  const moduleName = "@capacitor/app";
-  capacitorAppPromise = import(/* @vite-ignore */ moduleName)
+
+  capacitorAppPromise = import("@capacitor/app")
     .then((mod) => mod?.App || null)
     .catch(() => null);
   return capacitorAppPromise;

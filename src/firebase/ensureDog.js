@@ -1,5 +1,6 @@
 import { serverTimestamp, setDoc, getDoc } from "firebase/firestore";
 import { dogMainDoc } from "./paths.js";
+import { ensureAnonSignIn } from "@/lib/firebaseClient.js";
 
 function _defaultDogPayload() {
   return {
@@ -23,9 +24,11 @@ function _defaultDogPayload() {
 }
 
 export async function ensureDogMain(uid) {
-  if (!uid) throw new Error("User ID is required");
+  const user = await ensureAnonSignIn();
+  const targetUid = uid || user?.uid;
+  if (!targetUid) throw new Error("User ID is required");
 
-  const ref = dogMainDoc(uid);
+  const ref = dogMainDoc(targetUid);
 
   try {
     const snap = await getDoc(ref);

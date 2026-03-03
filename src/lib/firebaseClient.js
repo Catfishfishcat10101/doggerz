@@ -11,6 +11,8 @@ import { signInAnonymously, onAuthStateChanged } from "firebase/auth";
  */
 export { auth, db };
 
+let anonSignInPromise = null;
+
 /**
  * Ensure there is an authenticated user (anonymous if needed).
  * Returns the current user (or null if Firebase is not available).
@@ -22,10 +24,21 @@ export async function ensureAnonSignIn() {
     );
     return null;
   }
-  if (!auth.currentUser) {
-    await signInAnonymously(auth);
+  if (auth.currentUser) return auth.currentUser;
+
+  if (!anonSignInPromise) {
+    anonSignInPromise = signInAnonymously(auth)
+      .catch((err) => {
+        console.error("[Doggerz] Anonymous sign-in failed:", err);
+        throw err;
+      })
+      .finally(() => {
+        anonSignInPromise = null;
+      });
   }
-  return auth.currentUser;
+
+  const credential = await anonSignInPromise;
+  return auth.currentUser || credential?.user || null;
 }
 
 /**
@@ -45,9 +58,11 @@ export function subscribeToAuth(callback) {
  */
 export async function loadDogForUser(uid) {
   assertFirebaseReady("Dog save data");
-  if (!uid) return null;
+  const user = await ensureAnonSignIn();
+  const targetUid = uid || user?.uid;
+  if (!targetUid) return null;
 
-  const ref = doc(db, "users", uid, "dog", "main");
+  const ref = doc(db, "users", targetUid, "dog", "main");
   const snap = await getDoc(ref);
   return snap.exists() ? snap.data() : null;
 }
@@ -58,9 +73,11 @@ export async function loadDogForUser(uid) {
  */
 export async function saveDogForUser(uid, dogState) {
   assertFirebaseReady("Dog save data");
-  if (!uid) return;
+  const user = await ensureAnonSignIn();
+  const targetUid = uid || user?.uid;
+  if (!targetUid) return;
   if (!dogState || typeof dogState !== "object") return;
 
-  const ref = doc(db, "users", uid, "dog", "main");
+  const ref = doc(db, "users", targetUid, "dog", "main");
   await setDoc(ref, dogState, { merge: true });
 }
