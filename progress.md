@@ -151,3 +151,19 @@ Original prompt: yes. and remove all teh placeholders too. we are way past that!
 - Validation:
   - `npx eslint src/pages/Help.jsx src/utils/notifications.js src/main.jsx` (pass)
   - `npm run build` (pass)
+
+## 2026-03-02 - Native storage migration pass
+
+- Migrated remaining direct local-storage usage to `nativeStorage` flows:
+  - `src/pages/Login.jsx` remembered-email state now hydrates/saves with `getStoredValue` / `setStoredValue`.
+  - `src/pages/Help.jsx` diagnostics/reset paths now use key listing + remove helpers from `nativeStorage`.
+  - `src/pages/Settings.jsx` export/import/reset paths now use `nativeStorage` APIs.
+  - `src/utils/reminders.js` now persists through `nativeStorage` with async hydration + in-memory cache (no direct `localStorage` calls).
+- Added helper APIs in `src/utils/nativeStorage.js`:
+  - `listStoredKeys()`
+  - `removeStoredValues(keys)`
+  - `removeStoredValuesByPrefix(prefixes)`
+- Updated `src/components/environment/CheckInReminders.jsx` to await reminder-state hydration before scheduling checks.
+- Validation:
+  - `npx eslint src/utils/nativeStorage.js src/utils/reminders.js src/pages/Login.jsx src/pages/Help.jsx src/pages/Settings.jsx src/components/environment/CheckInReminders.jsx` (pass)
+  - `npm run build` (pass)

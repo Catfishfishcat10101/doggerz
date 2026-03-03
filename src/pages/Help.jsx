@@ -1,11 +1,20 @@
 // src/pages/Help.jsx
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import PageShell from "@/components/layout/PageShell.jsx";
 import { SUPPORT_CONTACT_URL } from "@/config/links.js";
 import { useToast } from "@/state/toastContext.js";
 import { DOG_STORAGE_KEY } from "@/redux/dogSlice.js";
+import { SETTINGS_STORAGE_KEY } from "@/redux/settingsSlice.js";
+import { USER_STORAGE_KEY } from "@/redux/userSlice.js";
+import {
+  getStoredValue,
+  listStoredKeys,
+  removeStoredValues,
+  removeStoredValuesByPrefix,
+} from "@/utils/nativeStorage.js";
+import { REMINDER_STORAGE_KEY } from "@/utils/reminders.js";
 
 const SURFACE =
   "rounded-3xl border border-emerald-500/15 bg-black/35 backdrop-blur-md shadow-[0_0_60px_rgba(16,185,129,0.10)]";
@@ -13,7 +22,6 @@ const CARD = "rounded-2xl border border-white/10 bg-black/25";
 const LINK =
   "text-emerald-300 hover:text-emerald-200 underline underline-offset-4";
 
-const USER_STORAGE_KEY = "doggerz:userState";
 const WORKFLOW_STORAGE_KEY = "doggerz:workflows";
 
 function safeJson(value) {
@@ -81,38 +89,54 @@ export default function HelpPage() {
   const toast = useToast();
   const [query, setQuery] = useState("");
   const [notice, setNotice] = useState(null);
+  const [storageDiag, setStorageDiag] = useState({
+    hasDogState: null,
+    hasUserState: null,
+    hasWorkflows: null,
+    hasSettingsState: null,
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const run = async () => {
+      try {
+        const keys = await listStoredKeys();
+        const [userRaw, workflowRaw, settingsRaw] = await Promise.all([
+          getStoredValue(USER_STORAGE_KEY),
+          getStoredValue(WORKFLOW_STORAGE_KEY),
+          getStoredValue(SETTINGS_STORAGE_KEY),
+        ]);
+        if (cancelled) return;
+        setStorageDiag({
+          hasDogState: keys.some(
+            (key) =>
+              key === DOG_STORAGE_KEY || key.startsWith(`${DOG_STORAGE_KEY}:`)
+          ),
+          hasUserState: Boolean(userRaw),
+          hasWorkflows: Boolean(workflowRaw),
+          hasSettingsState: Boolean(settingsRaw),
+        });
+      } catch {
+        if (cancelled) return;
+        setStorageDiag({
+          hasDogState: null,
+          hasUserState: null,
+          hasWorkflows: null,
+          hasSettingsState: null,
+        });
+      }
+    };
+
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const diagnostics = useMemo(() => {
     const hasWindow = typeof window !== "undefined";
     const hasNavigator = typeof navigator !== "undefined";
-
-    /** @type {Record<string, any>} */
-    const storage = {};
-    if (hasWindow) {
-      try {
-        const keys = Object.keys(window.localStorage);
-        storage.hasDogState = keys.some(
-          (key) =>
-            key === DOG_STORAGE_KEY || key.startsWith(`${DOG_STORAGE_KEY}:`)
-        );
-      } catch {
-        storage.hasDogState = null;
-      }
-      try {
-        storage.hasUserState = Boolean(
-          window.localStorage.getItem(USER_STORAGE_KEY)
-        );
-      } catch {
-        storage.hasUserState = null;
-      }
-      try {
-        storage.hasWorkflows = Boolean(
-          window.localStorage.getItem(WORKFLOW_STORAGE_KEY)
-        );
-      } catch {
-        storage.hasWorkflows = null;
-      }
-    }
 
     return {
       generatedAt: new Date().toISOString(),
@@ -120,9 +144,9 @@ export default function HelpPage() {
       url: hasWindow ? window.location.href : null,
       userAgent: hasNavigator ? navigator.userAgent : null,
       language: hasNavigator ? navigator.language : null,
-      storage,
+      storage: storageDiag,
     };
-  }, []);
+  }, [storageDiag]);
 
   const repoUrl = "https://github.com/Catfishfishcat10101/doggerz";
 
@@ -138,22 +162,15 @@ export default function HelpPage() {
       );
       if (!ok) return;
 
-      // Remove known Doggerz keys (avoid nuking unrelated sites' storage)
-      try {
-        Object.keys(window.localStorage).forEach((key) => {
-          if (
-            key === DOG_STORAGE_KEY ||
-            key.startsWith(`${DOG_STORAGE_KEY}:`)
-          ) {
-            window.localStorage.removeItem(key);
-          }
-        });
-        window.localStorage.removeItem(USER_STORAGE_KEY);
-        window.localStorage.removeItem(WORKFLOW_STORAGE_KEY);
-        window.localStorage.removeItem("theme");
-      } catch {
-        // ignore storage permissions
-      }
+      await removeStoredValuesByPrefix([`${DOG_STORAGE_KEY}:`]);
+      await removeStoredValues([
+        DOG_STORAGE_KEY,
+        USER_STORAGE_KEY,
+        WORKFLOW_STORAGE_KEY,
+        SETTINGS_STORAGE_KEY,
+        REMINDER_STORAGE_KEY,
+        "theme",
+      ]);
 
       setNoticeAuto({ kind: "success", text: "Local data reset. Reloading…" });
       window.setTimeout(() => window.location.reload(), 450);

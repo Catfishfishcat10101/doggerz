@@ -1,9 +1,15 @@
 // src/utils/reminders.js
 
+import { getStoredValue, setStoredValue } from "@/utils/nativeStorage.js";
+
 export const REMINDER_STORAGE_KEY = "doggerz:reminders:v1";
 export const REMINDER_EVENT = "doggerz:reminder";
 
 const DEFAULT_STATE = { lastByKey: {}, lastReminder: null };
+
+let reminderStateCache = { ...DEFAULT_STATE };
+let reminderStateHydrated = false;
+let reminderHydrationPromise = null;
 
 function safeParseJson(raw) {
   try {
@@ -13,28 +19,53 @@ function safeParseJson(raw) {
   }
 }
 
-export function loadReminderState() {
-  try {
-    if (typeof localStorage === "undefined") return { ...DEFAULT_STATE };
-    const raw = localStorage.getItem(REMINDER_STORAGE_KEY);
-    const parsed = raw ? safeParseJson(raw) : null;
-    if (!parsed || typeof parsed !== "object") return { ...DEFAULT_STATE };
-    return {
-      lastByKey: { ...(parsed.lastByKey || {}) },
-      lastReminder: parsed.lastReminder || null,
-    };
-  } catch {
-    return { ...DEFAULT_STATE };
+function normalizeReminderState(parsed) {
+  if (!parsed || typeof parsed !== "object") return { ...DEFAULT_STATE };
+  return {
+    lastByKey: { ...(parsed.lastByKey || {}) },
+    lastReminder: parsed.lastReminder || null,
+  };
+}
+
+export async function loadReminderStateAsync() {
+  if (reminderStateHydrated) return { ...reminderStateCache };
+  if (!reminderHydrationPromise) {
+    reminderHydrationPromise = (async () => {
+      try {
+        const raw = await getStoredValue(REMINDER_STORAGE_KEY);
+        const parsed = raw ? safeParseJson(raw) : null;
+        reminderStateCache = normalizeReminderState(parsed);
+      } catch {
+        reminderStateCache = { ...DEFAULT_STATE };
+      } finally {
+        reminderStateHydrated = true;
+        reminderHydrationPromise = null;
+      }
+      return { ...reminderStateCache };
+    })();
   }
+  return reminderHydrationPromise;
+}
+
+export function loadReminderState() {
+  // Kick off background hydration for native builds.
+  if (!reminderStateHydrated && !reminderHydrationPromise) {
+    loadReminderStateAsync().catch(() => {
+      // ignore
+    });
+  }
+  return { ...reminderStateCache };
 }
 
 export function saveReminderState(next) {
-  try {
-    if (typeof localStorage === "undefined") return;
-    localStorage.setItem(REMINDER_STORAGE_KEY, JSON.stringify(next));
-  } catch {
+  reminderStateCache = normalizeReminderState(next);
+  reminderStateHydrated = true;
+  setStoredValue(
+    REMINDER_STORAGE_KEY,
+    JSON.stringify(reminderStateCache)
+  ).catch(() => {
     // ignore
-  }
+  });
 }
 
 export function getLastReminder() {

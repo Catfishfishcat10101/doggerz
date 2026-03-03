@@ -1,5 +1,5 @@
 // src/features/game/DogAIEngine.jsx
-// @ts-nocheck
+// @ts-check
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";

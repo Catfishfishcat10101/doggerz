@@ -1,5 +1,5 @@
 // src/pages/Login.jsx
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { Navigate, useNavigate, Link, useLocation } from "react-router-dom";
 import {
@@ -9,39 +9,37 @@ import {
 
 import { auth, firebaseReady } from "@/firebase.js";
 import { selectIsLoggedIn } from "@/redux/userSlice.js";
+import {
+  getStoredValue,
+  removeStoredValues,
+  setStoredValue,
+} from "@/utils/nativeStorage.js";
 
 import PageShell from "@/components/layout/PageShell.jsx";
 
 const STORAGE_REMEMBER = "doggerz:loginRememberEmail";
 const STORAGE_EMAIL = "doggerz:loginEmail";
 
-function canUseStorage() {
-  return typeof window !== "undefined" && !!window.localStorage;
-}
-
-function loadRememberedEmail() {
-  if (!canUseStorage()) return { remember: false, email: "" };
+async function loadRememberedEmail() {
   try {
-    const remember = window.localStorage.getItem(STORAGE_REMEMBER) === "1";
-    const email = remember
-      ? window.localStorage.getItem(STORAGE_EMAIL) || ""
-      : "";
+    const remember = (await getStoredValue(STORAGE_REMEMBER)) === "1";
+    const email = remember ? (await getStoredValue(STORAGE_EMAIL)) || "" : "";
     return { remember, email };
   } catch {
     return { remember: false, email: "" };
   }
 }
 
-function persistRememberedEmail({ remember, email }) {
-  if (!canUseStorage()) return;
+async function persistRememberedEmail({ remember, email }) {
   try {
     if (remember) {
-      window.localStorage.setItem(STORAGE_REMEMBER, "1");
-      window.localStorage.setItem(STORAGE_EMAIL, String(email || ""));
-    } else {
-      window.localStorage.removeItem(STORAGE_REMEMBER);
-      window.localStorage.removeItem(STORAGE_EMAIL);
+      await Promise.all([
+        setStoredValue(STORAGE_REMEMBER, "1"),
+        setStoredValue(STORAGE_EMAIL, String(email || "")),
+      ]);
+      return;
     }
+    await removeStoredValues([STORAGE_REMEMBER, STORAGE_EMAIL]);
   } catch {
     // ignore
   }
@@ -55,19 +53,33 @@ export default function LoginPage() {
   // So we can send them back where they came from later if needed
   const from = location.state?.from || "/game";
 
-  const remembered = useMemo(() => loadRememberedEmail(), []);
-  const [email, setEmail] = useState(remembered.email || "");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [resetSending, setResetSending] = useState(false);
   const [error, setError] = useState(null);
   const [notice, setNotice] = useState(null);
-  const [rememberEmail, setRememberEmail] = useState(remembered.remember);
+  const [rememberEmail, setRememberEmail] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [storageHydrated, setStorageHydrated] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
+    loadRememberedEmail().then((remembered) => {
+      if (cancelled) return;
+      setRememberEmail(Boolean(remembered.remember));
+      setEmail(String(remembered.email || ""));
+      setStorageHydrated(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!storageHydrated) return;
     persistRememberedEmail({ remember: rememberEmail, email });
-  }, [rememberEmail, email]);
+  }, [rememberEmail, email, storageHydrated]);
 
   if (isLoggedIn) {
     // Already logged in? Don’t even show the screen.

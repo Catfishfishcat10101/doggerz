@@ -24,9 +24,11 @@ export const store = configureStore({
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
-      serializableCheck: false,
+      serializableCheck: {
+        ignoredActionPaths: ["meta.arg", "meta.baseQueryMeta"],
+        warnAfter: 64,
+      },
       immutableCheck: !isProd,
-      actionCreatorCheck: false,
     }),
   devTools: !isProd,
 });

@@ -10,6 +10,7 @@ import {
   setVacationMode,
 } from "../redux/dogSlice.js";
 import {
+  USER_STORAGE_KEY,
   selectDogRenderMode,
   selectUserZip,
   setDogRenderMode,
@@ -56,14 +57,23 @@ import PageShell from "../components/layout/PageShell.jsx";
 import { APP_VERSION } from "../utils/gameUtils.js";
 import { useToast } from "@/state/toastContext.js";
 import {
+  getStoredValue,
+  listStoredKeys,
+  removeStoredValue,
+  removeStoredValues,
+  setStoredValue,
+} from "@/utils/nativeStorage.js";
+import {
   canUseNotifications,
   getNotificationPermission,
   requestNotificationsPermission,
   showDoggerzNotification,
 } from "../utils/notifications.js";
-import { getLastReminder, REMINDER_EVENT } from "../utils/reminders.js";
-
-const USER_STORAGE_KEY = "doggerz:userState";
+import {
+  getLastReminder,
+  loadReminderStateAsync,
+  REMINDER_EVENT,
+} from "../utils/reminders.js";
 
 function pct(n) {
   const v = Math.round(Number(n) * 100);
@@ -242,15 +252,20 @@ export default function Settings() {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+    loadReminderStateAsync().then((state) => {
+      if (cancelled) return;
+      setLastReminder(state?.lastReminder || null);
+    });
+
     const onReminder = (event) => {
       const next = event?.detail || getLastReminder();
       setLastReminder(next || null);
     };
     window.addEventListener(REMINDER_EVENT, onReminder);
-    window.addEventListener("storage", onReminder);
     return () => {
+      cancelled = true;
       window.removeEventListener(REMINDER_EVENT, onReminder);
-      window.removeEventListener("storage", onReminder);
     };
   }, []);
 
@@ -325,50 +340,60 @@ export default function Settings() {
     }
   }
 
-  function exportLocalData() {
-    const dogKey = getDogStorageKey(auth?.currentUser?.uid || null);
-    const payload = {
-      format: "doggerz-export",
-      version: 1,
-      exportedAt: new Date().toISOString(),
-      data: {
-        dog: (() => {
-          try {
-            return JSON.parse(localStorage.getItem(dogKey) || "null");
-          } catch {
-            return null;
-          }
-        })(),
-        user: (() => {
-          try {
-            return JSON.parse(localStorage.getItem(USER_STORAGE_KEY) || "null");
-          } catch {
-            return null;
-          }
-        })(),
-        settings: (() => {
-          try {
-            return JSON.parse(
-              localStorage.getItem(SETTINGS_STORAGE_KEY) || "null"
-            );
-          } catch {
-            return null;
-          }
-        })(),
-      },
-    };
+  async function exportLocalData() {
+    try {
+      const dogKey = getDogStorageKey(auth?.currentUser?.uid || null);
+      const [dogRaw, userRaw, settingsRaw] = await Promise.all([
+        getStoredValue(dogKey),
+        getStoredValue(USER_STORAGE_KEY),
+        getStoredValue(SETTINGS_STORAGE_KEY),
+      ]);
 
-    const blob = new Blob([JSON.stringify(payload, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `doggerz-backup-${new Date().toISOString().slice(0, 10)}.json`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+      const payload = {
+        format: "doggerz-export",
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        data: {
+          dog: (() => {
+            try {
+              return dogRaw ? JSON.parse(dogRaw) : null;
+            } catch {
+              return null;
+            }
+          })(),
+          user: (() => {
+            try {
+              return userRaw ? JSON.parse(userRaw) : null;
+            } catch {
+              return null;
+            }
+          })(),
+          settings: (() => {
+            try {
+              return settingsRaw ? JSON.parse(settingsRaw) : null;
+            } catch {
+              return null;
+            }
+          })(),
+        },
+      };
+
+      const blob = new Blob([JSON.stringify(payload, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `doggerz-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      setLocalActionStatus("Export completed.");
+    } catch (err) {
+      console.error(err);
+      setLocalActionStatus("Export failed. Check the console for details.");
+    }
   }
 
   async function importLocalData(file) {
@@ -400,13 +425,13 @@ export default function Settings() {
     try {
       const dogKey = getDogStorageKey(auth?.currentUser?.uid || null);
       if (data.dog) {
-        localStorage.setItem(dogKey, JSON.stringify(data.dog));
+        await setStoredValue(dogKey, JSON.stringify(data.dog));
       }
       if (data.user) {
-        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(data.user));
+        await setStoredValue(USER_STORAGE_KEY, JSON.stringify(data.user));
       }
       if (data.settings) {
-        localStorage.setItem(
+        await setStoredValue(
           SETTINGS_STORAGE_KEY,
           JSON.stringify(data.settings)
         );
@@ -421,7 +446,7 @@ export default function Settings() {
     }
   }
 
-  function clearLocalStorageAll() {
+  async function clearLocalStorageAll() {
     const confirmGate = settings?.confirmDangerousActions ?? true;
     if (confirmGate) {
       const ok = window.confirm(
@@ -431,8 +456,16 @@ export default function Settings() {
     }
 
     try {
-      localStorage.clear();
-      sessionStorage.clear();
+      const keys = await listStoredKeys();
+      const doggerzKeys = keys.filter((key) =>
+        String(key || "").startsWith("doggerz:")
+      );
+      await removeStoredValues([...doggerzKeys, "theme"]);
+      try {
+        sessionStorage.clear();
+      } catch {
+        // ignore
+      }
       window.location.reload();
     } catch (err) {
       console.error(err);
@@ -440,7 +473,7 @@ export default function Settings() {
     }
   }
 
-  function resetPupLocal() {
+  async function resetPupLocal() {
     const confirmGate = settings?.confirmDangerousActions ?? true;
     if (confirmGate) {
       const ok = window.confirm(
@@ -451,7 +484,7 @@ export default function Settings() {
 
     try {
       const dogKey = getDogStorageKey(auth?.currentUser?.uid || null);
-      localStorage.removeItem(dogKey);
+      await removeStoredValue(dogKey);
     } catch {
       // ignore
     }

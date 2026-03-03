@@ -1,5 +1,5 @@
 // src/features/game/VoiceCommandButton.jsx
-// @ts-nocheck  // Remove this if you want TS to type-check this file
+// @ts-check
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";

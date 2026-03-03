@@ -1,4 +1,5 @@
 /** @format */
+/* eslint-disable react-refresh/only-export-components */
 import * as React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { addXp, goPotty, recordAccident, selectDog } from "@/redux/dogSlice.js";

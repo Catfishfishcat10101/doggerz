@@ -1,5 +1,4 @@
 import { serverTimestamp, setDoc, getDoc } from "firebase/firestore";
-import { db } from "./firebase"; // Use our new central config
 import { dogMainDoc } from "./paths.js";
 
 function _defaultDogPayload() {

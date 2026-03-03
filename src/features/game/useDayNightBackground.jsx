@@ -197,14 +197,12 @@ export function useDayNightBackground(options = {}) {
         withBaseUrl("/backgrounds/backyard-day.svg"),
         withBaseUrl("/backgrounds/backyard-day-wide.webp"),
         withBaseUrl("/backgrounds/backyard-day.webp"),
-        withBaseUrl("/assets/backgrounds/yard_day.png"),
       ]);
       const night = await firstAvailableUrl([
         withBaseUrl("/backgrounds/backyard-night-wide.svg"),
         withBaseUrl("/backgrounds/backyard-night.svg"),
         withBaseUrl("/backgrounds/backyard-night-wide.webp"),
         withBaseUrl("/backgrounds/backyard-night.webp"),
-        withBaseUrl("/assets/backgrounds/yard_night.png"),
       ]);
 
       if (!mounted) return;

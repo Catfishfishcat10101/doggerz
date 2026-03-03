@@ -1,47 +1,58 @@
 # 🐶 Doggerz
 
-**Adopt. Train. Bond.** A realistic pet simulation focused on unpredictable AI behaviors and deep companionship. **Doggerz** is a high-performance **React 18 + Vite** mobile app (via Capacitor) featuring a **PixiJS** rendering engine for smooth, 2D-perspective gameplay.
+**Adopt. Train. Bond.** A realistic pet simulation focused on unpredictable AI behaviors and deep companionship.
 
 [![React 18](https://img.shields.io/badge/React-18-61dafb)](https://react.dev/)
 [![Redux Toolkit](https://img.shields.io/badge/Redux%20Toolkit-RTK-764abc)](https://redux-toolkit.js.org/)
-[![PixiJS](https://img.shields.io/badge/PixiJS-8.0-ff3e81)](https://pixijs.com/)
-[![Capacitor](https://img.shields.io/badge/Capacitor-Mobile-119eff)](https://capacitorjs.com/)
+[![Expo](https://img.shields.io/badge/Expo-SDK_52-000020)](https://expo.dev/)
+[![React Native](https://img.shields.io/badge/React_Native-0.76-61dafb)](https://reactnative.dev/)
 [![Firebase](https://img.shields.io/badge/Firebase-Optional-ffca28)](https://firebase.google.com/)
 
 ---
 
-## ✨ What makes it different?
+## Current Direction
 
-- **Perspective Rendering:** A custom "Depth" engine in PixiJS that scales your pup and adjusts Z-indexing based on yard position (Gate vs. Screen).
-- **Reactive AI Brain:** Uses a presentation-layer state machine to handle realistic transitions (e.g., `Sleep` -> `Alert` -> `Walk`) triggered by user interaction.
-- **Mobile-First UX:** Anchored "Thumb-Zone" navigation and large tactile buttons designed for the Google Play Store.
-- **Hybrid Storage:** Local-first state management with optional Firebase Firestore synchronization for cross-device play.
+Doggerz is now migrating to a **React Native + Expo** architecture.
 
----
+- `npm run dev` starts Expo (native-first workflow).
+- `npm run native:android` / `npm run native:ios` run device builds.
+- `npm run dev:web` still runs the legacy Vite web app during migration.
 
-## 🧱 Tech Stack
+Phase 1 is live in this repository:
 
-- **Frontend:** React 18 (Vite), TailwindCSS, Framer Motion (for UI animations)
-- **Game Engine:** PixiJS (`@pixi/react`) for the Backyard & Sprite rendering
-- **Mobile Bridge:** CapacitorJS (Android Support)
-- **State:** Redux Toolkit (Logic) & Firebase (Cloud Sync)
-- **Architecture:** Headless AIEngine + Pixi Presentation Layer
+- Native Expo entrypoint and app config are in place.
+- Core gameplay state uses the existing `dogSlice` reducer/actions.
+- Native persistence is wired through AsyncStorage.
+- The legacy web/Capacitor code remains intact so migration can continue incrementally.
 
 ---
 
-## 🚀 Mobile Development (Android)
-
-Since Doggerz is targeted for the Play Store, ensure you have the Android SDK installed.
-
-### Syncing to Android Studio
+## Run Native (Expo)
 
 ```powershell
-# Build the web assets
-npm run build
-
-# Sync assets to the Android project
-npx cap sync android
-
-# Open in Android Studio
-npx cap open android
+npm install
+npm run dev
 ```
+
+Then press:
+
+- `a` for Android emulator/device
+- `i` for iOS simulator/device
+- `w` for Expo web preview
+
+---
+
+## Legacy Web Build (Transitional)
+
+```powershell
+npm run dev:web
+npm run build
+```
+
+---
+
+## Migration Notes
+
+- Most gameplay logic under `src/redux`, `src/logic`, and `src/constants` is intended to be reused in native.
+- Existing PixiJS/Tailwind/router UI remains in the web app until screens are fully ported.
+- Ownership and module boundaries are documented in `docs/architecture-ownership.md`.

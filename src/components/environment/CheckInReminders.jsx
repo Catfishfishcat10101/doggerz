@@ -14,6 +14,7 @@ import {
 import {
   buildReminder,
   fireReminder,
+  loadReminderStateAsync,
   shouldFireReminder,
 } from "@/utils/reminders.js";
 import { withBaseUrl } from "@/utils/gameUtils.js";
@@ -111,6 +112,7 @@ export default function CheckInReminders() {
     };
 
     const run = async () => {
+      await loadReminderStateAsync();
       const scheduled = await scheduleLifeLoopNotifications({
         lastSeenAt,
         reminders: REMINDERS,
