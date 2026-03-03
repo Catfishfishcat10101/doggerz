@@ -1,6 +1,6 @@
 // src/components/Header.jsx
 // Single header used across the app (nav pills + halo styling).
-// @ts-nocheck
+// @ts-check
 
 import * as React from "react";
 import { NavLink, useLocation } from "react-router-dom";

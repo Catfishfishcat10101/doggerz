@@ -8,8 +8,6 @@ const CORE_DIRS = ["src/features/game", "src/redux", "src/components"];
 const SOURCE_EXTS = new Set([".js", ".jsx", ".ts", ".tsx"]);
 
 const ALLOWED_NO_CHECK = new Set([
-  "src/components/layout/Header.jsx",
-  "src/components/ui/LongTermProgressionCard.jsx",
   "src/components/dog/DogPixiView.jsx",
   "src/components/environment/WeatherFXCanvas.jsx",
 ]);

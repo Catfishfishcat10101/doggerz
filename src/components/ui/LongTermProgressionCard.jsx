@@ -1,5 +1,5 @@
 // src/components/LongTermProgressionCard.jsx
-// @ts-nocheck
+// @ts-check
 
 function clamp(n, lo = 0, hi = 100) {
   const x = Number.isFinite(Number(n)) ? Number(n) : 0;

@@ -89,11 +89,6 @@ module.exports = [
     files: [
       "src/components/dog/DogPixiView.jsx",
       "src/components/environment/WeatherFXCanvas.jsx",
-      "src/components/layout/Header.jsx",
-      "src/components/ui/LongTermProgressionCard.jsx",
-      "src/hooks/useYardSfx.js",
-      "src/lib/firebaseClient.js",
-      "src/pages/Contact.jsx",
     ],
     rules: {
       "@typescript-eslint/ban-ts-comment": "off",

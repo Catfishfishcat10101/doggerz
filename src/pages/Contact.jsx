@@ -1,5 +1,5 @@
 // src/pages/Contact.jsx
-// @ts-nocheck
+// @ts-check
 
 import PageShell from "@/components/layout/PageShell.jsx";
 import { SUPPORT_EMAIL_FEEDBACK_URL } from "@/config/links.js";

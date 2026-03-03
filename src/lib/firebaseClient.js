@@ -1,5 +1,5 @@
 // src/lib/firebaseClient.js
-// @ts-nocheck
+// @ts-check
 
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db, firebaseReady, assertFirebaseReady } from "@/firebase.js";

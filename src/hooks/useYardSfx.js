@@ -1,7 +1,7 @@
 /** @format */
 
 // src/hooks/useYardSfx.js
-// @ts-nocheck
+// @ts-check
 
 import * as React from "react";
 
