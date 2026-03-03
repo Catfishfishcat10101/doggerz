@@ -1,8 +1,7 @@
 // src/features/game/MainGame.jsx
 
-import { useCallback, useRef, useState } from "react";
+import { Suspense, lazy, useCallback, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import DogPixiView from "@/components/dog/DogPixiView.jsx";
 import DogToy from "@/components/ui/DogToy.jsx";
 import EnvironmentScene from "@/features/game/EnvironmentScene.jsx";
 import { selectSettings } from "@/redux/settingsSlice.js";
@@ -18,6 +17,8 @@ import {
   tryConsumeFoodBowl,
 } from "@/redux/dogSlice.js";
 import { selectDogRenderModel } from "@/features/game/dogSelectors.js";
+
+const DogPixiView = lazy(() => import("@/components/dog/DogPixiView.jsx"));
 
 const ACTION_META = Object.freeze({
   Feed: {
@@ -175,17 +176,25 @@ export default function MainGame({ scene }) {
               className="relative flex items-center justify-center"
               onPointerDown={handleViewportPointerDown}
             >
-              <DogPixiView
-                stage={renderModel?.stage}
-                condition={renderModel?.condition}
-                anim={activeAnim}
-                width={420}
-                height={320}
-                scale={2.25}
-                attentionTarget={attentionTarget}
-                bondValue={Number(dog?.bond?.value ?? 0)}
-                dogIsSleeping={Boolean(renderModel?.isSleeping)}
-              />
+              <Suspense
+                fallback={
+                  <div className="flex h-[320px] w-[420px] items-center justify-center rounded-3xl border border-doggerz-leaf/30 bg-black/40 text-xs uppercase tracking-[0.2em] text-doggerz-paw/80">
+                    Loading Pup
+                  </div>
+                }
+              >
+                <DogPixiView
+                  stage={renderModel?.stage}
+                  condition={renderModel?.condition}
+                  anim={activeAnim}
+                  width={420}
+                  height={320}
+                  scale={2.25}
+                  attentionTarget={attentionTarget}
+                  bondValue={Number(dog?.bond?.value ?? 0)}
+                  dogIsSleeping={Boolean(renderModel?.isSleeping)}
+                />
+              </Suspense>
               {foodBowl ? (
                 <div
                   className="dog-bowl pointer-events-none absolute z-20 grid h-10 w-12 place-items-center rounded-full border border-doggerz-bone/60 bg-doggerz-bone/25 text-lg shadow-[0_8px_20px_rgba(2,6,23,0.35)]"

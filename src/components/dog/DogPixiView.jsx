@@ -26,12 +26,13 @@ const DogPixiView = () => {
   useEffect(() => {
     if (!containerRef.current) return;
 
+    const resolution = Math.min(window.devicePixelRatio || 1, 2);
     const app = new PIXI.Application({
       resizeTo: containerRef.current,
       backgroundAlpha: 0,
       antialias: true,
       autoDensity: true,
-      resolution: window.devicePixelRatio || 1,
+      resolution,
       powerPreference: "high-performance",
     });
 

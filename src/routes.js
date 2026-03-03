@@ -23,7 +23,6 @@ export const PATHS = Object.freeze({
   FAQ: "/faq",
   HELP: "/help",
 
-  BADGES: "/badges",
   MEMORIES: "/memories",
   DREAMS: "/dreams",
 
@@ -95,11 +94,6 @@ export const routes = Object.freeze([
     path: PATHS.STORE,
     name: "Store",
     meta: { title: "Store", description: "Cosmetics and streak rewards." },
-  },
-  {
-    path: PATHS.BADGES,
-    name: "Badges",
-    meta: { title: "Badges", description: "Your achievements." },
   },
   {
     path: PATHS.MEMORIES,

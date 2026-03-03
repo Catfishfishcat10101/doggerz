@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 
 import PageShell from "@/components/layout/PageShell.jsx";
 import { PATHS } from "@/routes.js";
+import { withBaseUrl } from "@/utils/assetUtils.js";
 
 export default function Landing() {
   return (
@@ -22,7 +23,7 @@ export default function Landing() {
             className="mb-8 h-48 w-48 overflow-hidden rounded-full border border-doggerz-leaf/35 bg-black/35 p-1 shadow-[0_0_60px_rgba(34,197,94,0.2)]"
           >
             <img
-              src="/assets/sprites/jr/splash.png"
+              src={withBaseUrl("/assets/sprites/jr/splash.png")}
               alt="Doggerz hero dog"
               className="h-full w-full rounded-full object-cover object-[74%_38%]"
             />

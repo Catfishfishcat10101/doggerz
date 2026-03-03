@@ -1,9 +1,27 @@
 package com.doggerz.app;
 
+import android.os.Build;
+import android.os.Bundle;
 import android.view.View;
+import android.webkit.WebView;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        WebView webView = this.getBridge().getWebView();
+        if (webView != null) {
+            webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                webView.setRendererPriorityPolicy(
+                    WebView.RENDERER_PRIORITY_BOUND,
+                    true
+                );
+            }
+        }
+    }
+
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);

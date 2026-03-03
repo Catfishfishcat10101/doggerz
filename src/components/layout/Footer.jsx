@@ -4,7 +4,6 @@ import { SOCIAL_LINKS } from "@/config/links.js";
 export default function Footer() {
   const year = new Date().getFullYear();
   const socials = [
-    { key: "twitter", label: "X" },
     { key: "instagram", label: "Instagram" },
     { key: "facebook", label: "Facebook" },
   ];
@@ -24,29 +23,40 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="flex flex-col items-start gap-3 md:items-end">
-          <nav className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm text-zinc-300 sm:grid-cols-3">
-            <Link to="/legal" className="hover:text-emerald-200">
-              Legal
-            </Link>
-            <Link to="/privacy" className="hover:text-emerald-200">
-              Privacy
-            </Link>
-            <Link to="/faq" className="hover:text-emerald-200">
-              FAQs
-            </Link>
-            <Link to="/developers" className="hover:text-emerald-200">
-              Developers
-            </Link>
-            <Link to="/settings" className="hover:text-emerald-200">
-              Settings
-            </Link>
-          </nav>
+        <div className="flex flex-col items-start gap-4 md:items-end">
+          <div className="grid w-full gap-4 text-sm text-zinc-300 sm:grid-cols-2">
+            <div>
+              <div className="text-[11px] uppercase tracking-[0.2em] text-zinc-500">
+                Product
+              </div>
+              <nav className="mt-2 flex flex-col gap-1">
+                <Link to="/faq" className="hover:text-emerald-200">
+                  FAQs
+                </Link>
+                <Link to="/developers" className="hover:text-emerald-200">
+                  Developers
+                </Link>
+                <Link to="/settings" className="hover:text-emerald-200">
+                  Settings
+                </Link>
+              </nav>
+            </div>
+            <div>
+              <div className="text-[11px] uppercase tracking-[0.2em] text-zinc-500">
+                Legal
+              </div>
+              <nav className="mt-2 flex flex-col gap-1">
+                <Link to="/legal" className="hover:text-emerald-200">
+                  Legal
+                </Link>
+                <Link to="/privacy" className="hover:text-emerald-200">
+                  Privacy
+                </Link>
+              </nav>
+            </div>
+          </div>
 
           <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-500">
-            <span className="uppercase tracking-[0.2em] text-zinc-500/80">
-              Like us on
-            </span>
             <div className="flex flex-wrap items-center gap-2">
               {socials.map((item) => {
                 const href = SOCIAL_LINKS[item.key];

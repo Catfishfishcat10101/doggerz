@@ -27,7 +27,6 @@ const HelpPage = React.lazy(() => import("./pages/Help.jsx"));
 const DevelopersPage = React.lazy(() => import("./pages/Developers.jsx"));
 const SettingsPage = React.lazy(() => import("./pages/Settings.jsx"));
 const StorePage = React.lazy(() => import("./pages/Store.jsx"));
-const BadgesPage = React.lazy(() => import("./pages/Badges.jsx"));
 const MemoryReelPage = React.lazy(() => import("./pages/MemoryReel.jsx"));
 const DreamsPage = React.lazy(() => import("./pages/Dreams.jsx"));
 const LegalPage = React.lazy(() => import("./pages/Legal.jsx"));
@@ -203,13 +202,6 @@ const router = createBrowserRouter(
           element: suspenseWithLabel(
             withCrashBoundary(<StorePage />),
             "Loading store…"
-          ),
-        },
-        {
-          path: stripLeadingSlash(PATHS.BADGES),
-          element: suspenseWithLabel(
-            withCrashBoundary(<BadgesPage />),
-            "Loading badges…"
           ),
         },
         {
