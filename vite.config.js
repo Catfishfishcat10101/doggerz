@@ -88,14 +88,33 @@ module.exports = async () => {
             }
 
             // Keep common heavy libs in stable chunks.
-            if (hasAnyPkg(id, ["react-router", "react-router-dom"])) {
+            if (
+              hasAnyPkg(id, [
+                "react-router",
+                "react-router-dom",
+                "@remix-run/router",
+              ])
+            ) {
               return "vendor-router";
             }
             if (hasAnyPkg(id, ["@reduxjs/toolkit", "react-redux", "redux"])) {
               return "vendor-redux";
             }
-            if (hasAnyPkg(id, ["firebase"])) return "vendor-firebase";
-            if (hasAnyPkg(id, ["pixi.js", "@pixi/react"])) return "vendor-pixi";
+            if (hasAnyPkg(id, ["firebase", "@firebase"])) {
+              return "vendor-firebase";
+            }
+            if (hasAnyPkg(id, ["@pixi/react"])) {
+              return "vendor-pixi-react";
+            }
+            if (hasAnyPkg(id, ["pixi.js", "@pixi"])) {
+              return "vendor-pixi";
+            }
+            if (hasAnyPkg(id, ["framer-motion", "motion", "motion-dom"])) {
+              return "vendor-motion";
+            }
+            if (hasAnyPkg(id, ["@capacitor", "@revenuecat"])) {
+              return "vendor-native";
+            }
 
             return "vendor";
           },

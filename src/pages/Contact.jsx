@@ -2,6 +2,7 @@
 // @ts-check
 
 import PageShell from "@/components/layout/PageShell.jsx";
+import { PageHeader } from "@/components/layout/PageSections.jsx";
 import { SUPPORT_EMAIL_FEEDBACK_URL } from "@/config/links.js";
 
 export default function Contact() {
@@ -9,13 +10,13 @@ export default function Contact() {
     <PageShell containerClassName="w-full max-w-2xl">
       <div className="flex justify-center px-4 py-10">
         <div className="w-full max-w-2xl space-y-6">
-          <header className="space-y-2">
+          <PageHeader>
             <h1 className="text-2xl font-semibold tracking-tight">Contact</h1>
             <p className="text-sm text-zinc-400">
               Feedback, bug reports, and feature ideas are all welcome. This is
               a living project.
             </p>
-          </header>
+          </PageHeader>
 
           <section className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-5 space-y-4 text-sm text-zinc-300">
             <p>

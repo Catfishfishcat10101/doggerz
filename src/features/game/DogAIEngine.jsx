@@ -2,6 +2,7 @@
 // @ts-check
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useSelector, useDispatch } from "react-redux";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/firebase.js";
@@ -18,7 +19,9 @@ import {
   getDogStorageKey,
 } from "@/redux/dogSlice.js";
 import {
-  fetchWeatherForZip,
+  setWeatherError,
+  setWeatherLoading,
+  setWeatherSnapshot,
   selectWeatherCondition,
 } from "@/redux/weatherSlice.js";
 import { loadDogFromCloud, saveDogToCloud } from "@/redux/dogThunks.js";
@@ -37,6 +40,7 @@ import {
   hasPreRegistrationRewardPurchase,
   PRE_REG_GIFT_COINS,
 } from "@/features/billing/preRegistrationReward.js";
+import { fetchWeatherSnapshot } from "@/features/weather/weatherApi.js";
 
 const TICK_INTERVAL_MS = 60_000; // 60 seconds
 const CLOUD_SAVE_DEBOUNCE = 3_000; // 3 seconds
@@ -78,6 +82,17 @@ function getLocalTimeBucket(ms = Date.now()) {
   }
 }
 
+function getErrorMessage(error, fallback = "Unknown error") {
+  if (!error) return fallback;
+  if (typeof error === "string") return error;
+  if (error instanceof Error && error.message) return error.message;
+  if (typeof error === "object" && "message" in error) {
+    const msg = error.message;
+    return typeof msg === "string" && msg.trim() ? msg : fallback;
+  }
+  return fallback;
+}
+
 export default function DogAIEngine() {
   const dispatch = useDispatch();
   const dogState = useSelector(selectDog);
@@ -88,8 +103,12 @@ export default function DogAIEngine() {
   const renderModel = useSelector(selectDogRenderModel);
 
   const hasHydratedRef = useRef(false);
-  const cloudSaveTimeoutRef = useRef(null);
-  const localSaveTimeoutRef = useRef(null);
+  const cloudSaveTimeoutRef = useRef(
+    /** @type {ReturnType<typeof setTimeout> | null} */ (null)
+  );
+  const localSaveTimeoutRef = useRef(
+    /** @type {ReturnType<typeof setTimeout> | null} */ (null)
+  );
   const growthPauseRef = useRef(Boolean(growthMilestone));
 
   useDogActionSfx({
@@ -263,11 +282,13 @@ export default function DogAIEngine() {
   const weatherRef = useRef(weather);
   const zipRef = useRef(zip);
   const adoptedRef = useRef(Boolean(dogState?.adoptedAt));
-  const userIdRef = useRef(null);
-  const lastHydratedUserIdRef = useRef(null);
+  const userIdRef = useRef(/** @type {string | null} */ (null));
+  const lastHydratedUserIdRef = useRef(/** @type {string | null} */ (null));
   const storageKeyRef = useRef(getDogStorageKey(null));
   const [userId, setUserId] = useState(null);
-  const tickIntervalRef = useRef(null);
+  const tickIntervalRef = useRef(
+    /** @type {ReturnType<typeof setInterval> | null} */ (null)
+  );
 
   const flushLocalSave = useCallback(() => {
     const ds = dogRef.current;
@@ -300,29 +321,27 @@ export default function DogAIEngine() {
     zipRef.current = zip;
   }, [zip]);
 
-  // Keep weather synced with real conditions (if API key is configured).
+  const weatherQuery = useQuery({
+    queryKey: ["weather", zip || import.meta.env.VITE_WEATHER_DEFAULT_ZIP || "10001"],
+    queryFn: ({ signal }) => fetchWeatherSnapshot({ zip: zipRef.current || zip, signal }),
+    refetchInterval: WEATHER_POLL_INTERVAL_MS,
+    refetchIntervalInBackground: false,
+    staleTime: WEATHER_POLL_INTERVAL_MS,
+  });
+
   useEffect(() => {
-    // Kick once at mount and whenever ZIP changes.
-    dispatch(fetchWeatherForZip({ zip }));
+    dispatch(setWeatherLoading({ zip }));
   }, [dispatch, zip]);
 
   useEffect(() => {
-    const tickWeather = () => {
-      if (typeof document !== "undefined" && document?.hidden) return;
-      dispatch(fetchWeatherForZip({ zip: zipRef.current }));
-    };
+    if (!weatherQuery.data) return;
+    dispatch(setWeatherSnapshot(weatherQuery.data));
+  }, [dispatch, weatherQuery.data]);
 
-    const id = setInterval(tickWeather, WEATHER_POLL_INTERVAL_MS);
-    const onVisibility = () => {
-      if (typeof document !== "undefined" && !document.hidden) tickWeather();
-    };
-    window.addEventListener("visibilitychange", onVisibility);
-
-    return () => {
-      clearInterval(id);
-      window.removeEventListener("visibilitychange", onVisibility);
-    };
-  }, [dispatch, dogState?.adoptedAt]);
+  useEffect(() => {
+    if (!weatherQuery.error) return;
+    dispatch(setWeatherError(getErrorMessage(weatherQuery.error, "Weather fetch failed")));
+  }, [dispatch, weatherQuery.error]);
 
   useEffect(() => {
     if (userId) return;

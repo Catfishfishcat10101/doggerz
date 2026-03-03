@@ -1,17 +1,18 @@
 // src/pages/Legal.jsx
 import PageShell from "@/components/layout/PageShell.jsx";
+import { PageHeader } from "@/components/layout/PageSections.jsx";
 import { SUPPORT_EMAIL_ACCOUNT_DELETION_URL } from "@/config/links.js";
 
 export default function LegalPage() {
   return (
     <PageShell mainClassName="px-6 py-10" containerClassName="w-full max-w-3xl">
       <div className="space-y-8 text-sm text-zinc-300">
-        <header>
+        <PageHeader unstyled>
           <h1 className="text-3xl font-black tracking-tight mb-2">
             Legal &amp; Terms
           </h1>
           <p className="text-xs text-zinc-800">Last updated: 2026-01-02</p>
-        </header>
+        </PageHeader>
 
         <section className="space-y-2">
           <h2 className="font-semibold text-zinc-200 text-base">

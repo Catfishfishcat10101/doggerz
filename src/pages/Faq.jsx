@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 
 import PageShell from "@/components/layout/PageShell.jsx";
+import { PageFooter, PageHeader } from "@/components/layout/PageSections.jsx";
 import { selectSettings, setFaqCompactView } from "@/redux/settingsSlice.js";
 
 function nodeToText(node) {
@@ -471,7 +472,7 @@ export default function FaqPage() {
   return (
     <PageShell mainClassName="px-6 py-10" containerClassName="w-full max-w-4xl">
       <div className="w-full space-y-8">
-        <header id="top" className="space-y-3">
+        <PageHeader id="top" className="space-y-3" unstyled>
           <h1 className="text-4xl font-black tracking-tight">FAQs</h1>
           <p className="text-sm text-zinc-300 max-w-2xl">
             Quick answers for curious humans. If you don’t see your question,
@@ -587,7 +588,7 @@ export default function FaqPage() {
               </a>
             ))}
           </div>
-        </header>
+        </PageHeader>
 
         <div className="space-y-10">
           {qn && matchCount === 0 ? (
@@ -645,7 +646,7 @@ export default function FaqPage() {
           )}
         </div>
 
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-5">
+        <PageFooter className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-5" unstyled>
           <h2 className="text-lg font-semibold text-zinc-100">Still stuck?</h2>
           <p className="mt-1 text-sm text-zinc-300">
             No worries. We can help faster if you include your device + browser
@@ -671,7 +672,7 @@ export default function FaqPage() {
               Back to home
             </Link>
           </div>
-        </div>
+        </PageFooter>
       </div>
     </PageShell>
   );

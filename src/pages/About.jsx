@@ -1,6 +1,7 @@
 // src/pages/About.jsx
 
 import PageShell from "@/components/layout/PageShell.jsx";
+import { PageHeader } from "@/components/layout/PageSections.jsx";
 
 const CORE_LOOP = [
   "Play together to keep energy and happiness up.",
@@ -50,7 +51,7 @@ export default function AboutPage() {
           fontFamily: '"Space Grotesk", "IBM Plex Sans", "Manrope", system-ui',
         }}
       >
-        <header className="space-y-4">
+        <PageHeader className="space-y-4" unstyled>
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/40 bg-emerald-500/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-emerald-200">
             How Doggerz Works
           </div>
@@ -62,7 +63,7 @@ export default function AboutPage() {
             and training progresses while you are away. The better you care, the
             more your pup trusts you.
           </p>
-        </header>
+        </PageHeader>
 
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
           <div className="space-y-6">

@@ -1,33 +1,32 @@
 {
   "compilerOptions": {
-    "module": "esnext",
-    "target": "esnext",
-    "moduleResolution": "bundler",
+    "module": "ESNext",
+    "target": "ESNext",
+    "moduleResolution": "Bundler",
     "jsx": "react-jsx",
-    "checkJs": true,
     "allowJs": true,
-
+    "checkJs": false,
+    "noEmit": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
       "@native/*": ["native/*"]
     },
-    "typeRoots": ["./types", "./node_modules/@types"],
     "types": ["vite/client", "node"]
   },
   "include": [
-    "src",
-    "native",
+    "src/**/*",
+    "native/**/*",
     "App.js",
     "index.js",
-    "types",
+    "types/**/*",
     "capacitor.config.json*",
     "vite.config.*",
     "eslint.config.cjs",
     "tailwind.config.*",
     "postcss.config.*"
-  ]
+  ],
+  "exclude": ["node_modules", "dist"]
 }

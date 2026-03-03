@@ -27,7 +27,7 @@ Phase 1 is live in this repository:
 
 ---
 
-## Run Native (Expo)
+## Run Native (Expo)ettings screens
 
 ```powershell
 npm install
@@ -47,6 +47,18 @@ Then press:
 ```powershell
 npm run dev:web
 npm run build
+```
+
+## Automated Tests
+
+```powershell
+npm test
+```
+
+Watch mode:
+
+```powershell
+npm run test:watch
 ```
 
 ---

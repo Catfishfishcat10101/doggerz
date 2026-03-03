@@ -102,6 +102,91 @@ export const DOG_TICK_UI = Object.freeze({
   needPressure: { low: 0.2, medium: 0.5, high: 0.8 },
 });
 
+// ---------- Mood thresholds + animation hinting ----------
+// NOTE: In Doggerz, your stats read like "higher is better" (you default to 90s),
+// so "hungry" means LOW hunger stat, not high.
+export const MOOD_THRESHOLDS = Object.freeze({
+  // Priority needs
+  sleepyEnergyAtOrBelow: 25,
+  hungryHungerAtOrBelow: 35,
+  dirtyCleanlinessAtOrBelow: 35,
+
+  // Emotional
+  sadHappinessAtOrBelow: 30,
+  excitedHappinessAtOrAbove: 85,
+
+  // Meta state
+  stressedNeedPressureAtOrAbove: 0.8,
+  highCareDebtAtOrAbove: 80,
+});
+
+export function deriveMoodFromDog(dog) {
+  if (!dog) return "ok";
+
+  const stats = dog.stats || {};
+  const hunger = Number(stats.hunger ?? 0);
+  const energy = Number(stats.energy ?? 0);
+  const happiness = Number(stats.happiness ?? 0);
+  const cleanliness = Number(stats.cleanliness ?? 0);
+
+  const wellbeing = clamp(Number(dog.wellbeing ?? 0), 0, 100);
+  const careDebt = clamp(Number(dog.careDebt ?? 0), 0, 100);
+  const sleepMode = dog.sleep?.mode || "awake";
+  const needPressure = computeNeedPressure(stats);
+
+  // Highest priority: fragile/critical
+  if (wellbeing <= DECAY_TUNING.wellbeing.fragileThreshold) return "fragile";
+
+  // Strong stress signals
+  if (
+    needPressure >= MOOD_THRESHOLDS.stressedNeedPressureAtOrAbove ||
+    careDebt >= MOOD_THRESHOLDS.highCareDebtAtOrAbove
+  ) {
+    return "stressed";
+  }
+
+  // Sleep state (napping wins)
+  if (
+    sleepMode !== "awake" ||
+    energy <= MOOD_THRESHOLDS.sleepyEnergyAtOrBelow
+  ) {
+    return "sleepy";
+  }
+
+  // Core needs
+  if (hunger <= MOOD_THRESHOLDS.hungryHungerAtOrBelow) return "hungry";
+  if (cleanliness <= MOOD_THRESHOLDS.dirtyCleanlinessAtOrBelow) return "dirty";
+
+  // Emotional
+  if (happiness <= MOOD_THRESHOLDS.sadHappinessAtOrBelow) return "sad";
+  if (happiness >= MOOD_THRESHOLDS.excitedHappinessAtOrAbove) return "excited";
+
+  return "happy";
+}
+
+export function deriveDesiredActionFromMood(mood, dog) {
+  void dog;
+  // IMPORTANT: Only return actions you actually have in your atlas.
+  // Your current puppy atlas plan includes: idle/walk/run/sit/lay/sleep/eat/bark/jump/scratch
+  switch (mood) {
+    case "sleepy":
+      return "sleep";
+    case "hungry":
+      return "eat";
+    case "dirty":
+      return "scratch";
+    case "excited":
+      return "walk";
+    case "sad":
+    case "stressed":
+    case "fragile":
+      return "idle";
+    case "happy":
+    default:
+      return "idle";
+  }
+}
+
 // ---------- Main tick function (mutates dog in-place; Immer-friendly) ----------
 export function applyDogTick(dog, nowMs) {
   if (!dog) return;
@@ -148,6 +233,8 @@ export function getDogTickSummary(dog) {
       careDebt: 0,
       sleepMode: "awake",
       moodHint: "ok",
+      mood: "ok",
+      desiredAction: "idle",
     };
   }
 
@@ -165,11 +252,16 @@ export function getDogTickSummary(dog) {
     moodHint = "content";
   }
 
+  const mood = deriveMoodFromDog(dog);
+  const desiredAction = deriveDesiredActionFromMood(mood, dog);
+
   return {
     needPressure,
     wellbeing,
     careDebt,
     sleepMode,
     moodHint,
+    mood,
+    desiredAction,
   };
 }

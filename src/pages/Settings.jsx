@@ -51,9 +51,71 @@ import {
   setDailyRemindersEnabled,
   setTheme,
   setHapticsEnabled,
+  setStoreHoverPreview,
+  setStoreShowEquippedFirst,
+  setStoreCompactCards,
+  setStoreSortKey,
+  setPottyAutoReturn,
+  setPottyConfirmAccidents,
+  setPottyShowXpTools,
+  setPottyTipsExpanded,
+  setDreamJournalKind,
+  setDreamJournalSort,
+  setDreamJournalShowMotifs,
+  setDreamJournalShowSummary,
+  setDreamJournalShowTimestamp,
+  setDreamJournalCompactCards,
+  setDreamSequenceShowMotifs,
+  setDreamSequenceShowTip,
+  setDreamSequenceAutoDismiss,
+  setDreamSequenceBackdropFx,
+  setFaqCompactView,
+  setBadgesGroupFilter,
+  setBadgesCompactChips,
+  setBadgesShowIds,
+  setSkillTreeBranch,
+  setSkillTreeShowUnlockedOnly,
+  setSkillTreeCompactCards,
+  setTopBarCompact,
+  setTopBarShowXp,
+  setTopBarShowStats,
+  setTopBarShowBadges,
+  setTopBarShowQuickLinks,
+  setMechanicsCompact,
+  setMechanicsShowTips,
+  setMechanicsShowStats,
+  setMechanicsShowUnlockLine,
+  setTraitImpactCompact,
+  setTraitImpactShowMeter,
+  setTraitImpactShowTips,
+  setTraitImpactShowHighlights,
+  setDogCanvasMotion,
+  setDogCanvasShadow,
+  setDogCanvasScale,
+  setDogPixiMotion,
+  setDogPixiScale,
+  setDogPixiQuality,
+  setSpriteSheetMotion,
+  setSpriteSheetUsePixelated,
+  setSpriteSheetSize,
+  setPixiDogMotion,
+  setPixiDogShowHearts,
+  setPixiDogShowShadow,
+  setPixiDogQuality,
+  setGameFxSkillPulse,
+  setGameFxStoryGlow,
+  setGameFxBranchAccent,
+  setCosmeticsOverlayShowLabels,
+  setCosmeticsOverlayShowPreviewTags,
+  setCosmeticsOverlayPosition,
+  setTrainingShowLocked,
+  setTrainingCompactCards,
+  setTrainingShowDetails,
+  setTrainingSortKey,
   SETTINGS_STORAGE_KEY,
 } from "../redux/settingsSlice.js";
 import PageShell from "../components/layout/PageShell.jsx";
+import { PageHeader } from "@/components/layout/PageSections.jsx";
 import { APP_VERSION } from "../utils/gameUtils.js";
 import { useToast } from "@/state/toastContext.js";
 import {
@@ -496,7 +558,7 @@ export default function Settings() {
   return (
     <PageShell>
       <div className="mx-auto max-w-5xl space-y-8">
-        <header className="space-y-2">
+        <PageHeader>
           <h1 className="text-4xl font-black tracking-tight text-doggerz-bone">
             Settings
           </h1>
@@ -504,7 +566,7 @@ export default function Settings() {
             Customize your Doggerz experience on this device. Most settings save
             automatically.
           </p>
-        </header>
+        </PageHeader>
 
         <div className="grid gap-6 lg:grid-cols-2">
           <Card
@@ -776,6 +838,602 @@ export default function Settings() {
               max={1}
               step={0.05}
               rightLabel={`${pct(settings?.roamIntensity ?? 1)}%`}
+            />
+          </Card>
+
+          <Card
+            title="Store & catalog"
+            subtitle="How the Store lists and previews items"
+          >
+            <Switch
+              id="storeHoverPreview"
+              label="Hover previews"
+              description="Show quick previews when hovering items."
+              checked={settings?.storeHoverPreview !== false}
+              onChange={(v) => dispatch(setStoreHoverPreview(v))}
+            />
+
+            <Switch
+              id="storeShowEquippedFirst"
+              label="Show equipped first"
+              description="Pinned equipped cosmetics to the top of the list."
+              checked={settings?.storeShowEquippedFirst !== false}
+              onChange={(v) => dispatch(setStoreShowEquippedFirst(v))}
+            />
+
+            <Switch
+              id="storeCompactCards"
+              label="Compact cards"
+              description="Use a tighter card layout in the Store."
+              checked={settings?.storeCompactCards}
+              onChange={(v) => dispatch(setStoreCompactCards(v))}
+            />
+
+            <SelectRow
+              id="storeSortKey"
+              label="Default sort"
+              description="Controls how Store items are ordered."
+              value={settings?.storeSortKey || "recommended"}
+              onChange={(v) => dispatch(setStoreSortKey(v))}
+              options={[
+                { value: "recommended", label: "Recommended" },
+                { value: "price", label: "Price" },
+                { value: "threshold", label: "Unlock threshold" },
+                { value: "alpha", label: "A → Z" },
+              ]}
+            />
+          </Card>
+
+          <Card
+            title="Potty & routines"
+            subtitle="Accident tracking and quick return settings"
+          >
+            <Switch
+              id="pottyAutoReturn"
+              label="Auto-return to yard"
+              description="After logging a potty event, return to the yard automatically."
+              checked={settings?.pottyAutoReturn}
+              onChange={(v) => dispatch(setPottyAutoReturn(v))}
+            />
+
+            <Switch
+              id="pottyConfirmAccidents"
+              label="Confirm accidents"
+              description="Extra prompt before logging accidents."
+              checked={settings?.pottyConfirmAccidents !== false}
+              onChange={(v) => dispatch(setPottyConfirmAccidents(v))}
+            />
+
+            <Switch
+              id="pottyShowXpTools"
+              label="Show XP tools"
+              description="Show extra XP helpers while logging potty."
+              checked={settings?.pottyShowXpTools}
+              onChange={(v) => dispatch(setPottyShowXpTools(v))}
+            />
+
+            <Switch
+              id="pottyTipsExpanded"
+              label="Tips expanded"
+              description="Show potty tips expanded by default."
+              checked={settings?.pottyTipsExpanded !== false}
+              onChange={(v) => dispatch(setPottyTipsExpanded(v))}
+            />
+          </Card>
+
+          <Card
+            title="Dream journal"
+            subtitle="Filtering and display options for dreams"
+          >
+            <SelectRow
+              id="dreamJournalKind"
+              label="Dream filter"
+              description="Filter dream entries by type."
+              value={settings?.dreamJournalKind || "all"}
+              onChange={(v) => dispatch(setDreamJournalKind(v))}
+              options={[
+                { value: "all", label: "All dreams" },
+                { value: "dream", label: "Dreams" },
+                { value: "lucid", label: "Lucid dreams" },
+                { value: "nightmare", label: "Nightmares" },
+              ]}
+            />
+
+            <SelectRow
+              id="dreamJournalSort"
+              label="Sort order"
+              description="Default ordering for dream entries."
+              value={settings?.dreamJournalSort || "newest"}
+              onChange={(v) => dispatch(setDreamJournalSort(v))}
+              options={[
+                { value: "newest", label: "Newest first" },
+                { value: "oldest", label: "Oldest first" },
+              ]}
+            />
+
+            <Switch
+              id="dreamJournalShowSummary"
+              label="Show summary"
+              description="Display a short summary line for each entry."
+              checked={settings?.dreamJournalShowSummary !== false}
+              onChange={(v) => dispatch(setDreamJournalShowSummary(v))}
+            />
+
+            <Switch
+              id="dreamJournalShowMotifs"
+              label="Show motifs"
+              description="Display key motifs under each entry."
+              checked={settings?.dreamJournalShowMotifs !== false}
+              onChange={(v) => dispatch(setDreamJournalShowMotifs(v))}
+            />
+
+            <Switch
+              id="dreamJournalShowTimestamp"
+              label="Show timestamps"
+              description="Include the time recorded on each entry."
+              checked={settings?.dreamJournalShowTimestamp !== false}
+              onChange={(v) => dispatch(setDreamJournalShowTimestamp(v))}
+            />
+
+            <Switch
+              id="dreamJournalCompactCards"
+              label="Compact cards"
+              description="Use tighter cards in the journal."
+              checked={settings?.dreamJournalCompactCards}
+              onChange={(v) => dispatch(setDreamJournalCompactCards(v))}
+            />
+
+            <Switch
+              id="dreamSequenceShowMotifs"
+              label="Sequence motifs"
+              description="Show motifs during the dream sequence view."
+              checked={settings?.dreamSequenceShowMotifs !== false}
+              onChange={(v) => dispatch(setDreamSequenceShowMotifs(v))}
+            />
+
+            <Switch
+              id="dreamSequenceShowTip"
+              label="Sequence tip"
+              description="Show a quick tip during dream sequences."
+              checked={settings?.dreamSequenceShowTip !== false}
+              onChange={(v) => dispatch(setDreamSequenceShowTip(v))}
+            />
+
+            <Switch
+              id="dreamSequenceAutoDismiss"
+              label="Auto-dismiss sequence"
+              description="Automatically close dream sequences."
+              checked={settings?.dreamSequenceAutoDismiss}
+              onChange={(v) => dispatch(setDreamSequenceAutoDismiss(v))}
+            />
+
+            <Switch
+              id="dreamSequenceBackdropFx"
+              label="Sequence backdrop FX"
+              description="Animated backdrop for dream sequences."
+              checked={settings?.dreamSequenceBackdropFx !== false}
+              onChange={(v) => dispatch(setDreamSequenceBackdropFx(v))}
+            />
+          </Card>
+
+          <Card
+            title="Badges, skill tree, and FAQs"
+            subtitle="Compact views and filters"
+          >
+            <SelectRow
+              id="badgesGroupFilter"
+              label="Badges filter"
+              description="Default category shown in Badges."
+              value={settings?.badgesGroupFilter || "all"}
+              onChange={(v) => dispatch(setBadgesGroupFilter(v))}
+              options={[
+                { value: "all", label: "All badges" },
+                { value: "tricks", label: "Tricks" },
+                { value: "cosmetics", label: "Cosmetics" },
+                { value: "other", label: "Other" },
+              ]}
+            />
+
+            <Switch
+              id="badgesCompactChips"
+              label="Compact badge chips"
+              description="Smaller badge chip layout."
+              checked={settings?.badgesCompactChips}
+              onChange={(v) => dispatch(setBadgesCompactChips(v))}
+            />
+
+            <Switch
+              id="badgesShowIds"
+              label="Show badge IDs"
+              description="Display badge IDs for debugging."
+              checked={settings?.badgesShowIds}
+              onChange={(v) => dispatch(setBadgesShowIds(v))}
+            />
+
+            <SelectRow
+              id="skillTreeBranch"
+              label="Skill tree branch"
+              description="Default branch filter."
+              value={settings?.skillTreeBranch || "all"}
+              onChange={(v) => dispatch(setSkillTreeBranch(v))}
+              options={[
+                { value: "all", label: "All branches" },
+                { value: "companion", label: "Companion" },
+                { value: "guardian", label: "Guardian" },
+                { value: "athlete", label: "Athlete" },
+              ]}
+            />
+
+            <Switch
+              id="skillTreeShowUnlockedOnly"
+              label="Unlocked only"
+              description="Hide locked skills until unlocked."
+              checked={settings?.skillTreeShowUnlockedOnly}
+              onChange={(v) => dispatch(setSkillTreeShowUnlockedOnly(v))}
+            />
+
+            <Switch
+              id="skillTreeCompactCards"
+              label="Compact skill cards"
+              description="Reduce card height in the skill tree."
+              checked={settings?.skillTreeCompactCards}
+              onChange={(v) => dispatch(setSkillTreeCompactCards(v))}
+            />
+
+            <Switch
+              id="faqCompactView"
+              label="Compact FAQ"
+              description="Use a condensed FAQ layout."
+              checked={settings?.faqCompactView}
+              onChange={(v) => dispatch(setFaqCompactView(v))}
+            />
+          </Card>
+
+          <Card
+            title="Top bar & panels"
+            subtitle="HUD, mechanics, and trait panel display"
+          >
+            <Switch
+              id="topBarCompact"
+              label="Compact top bar"
+              description="Smaller top bar when in game views."
+              checked={settings?.topBarCompact}
+              onChange={(v) => dispatch(setTopBarCompact(v))}
+            />
+
+            <Switch
+              id="topBarShowXp"
+              label="Show XP"
+              description="Display XP in the top bar."
+              checked={settings?.topBarShowXp !== false}
+              onChange={(v) => dispatch(setTopBarShowXp(v))}
+            />
+
+            <Switch
+              id="topBarShowStats"
+              label="Show stats"
+              description="Show core stats in the top bar."
+              checked={settings?.topBarShowStats !== false}
+              onChange={(v) => dispatch(setTopBarShowStats(v))}
+            />
+
+            <Switch
+              id="topBarShowBadges"
+              label="Show badges"
+              description="Show badges in the top bar."
+              checked={settings?.topBarShowBadges !== false}
+              onChange={(v) => dispatch(setTopBarShowBadges(v))}
+            />
+
+            <Switch
+              id="topBarShowQuickLinks"
+              label="Show quick links"
+              description="Show quick links on the top bar (if available)."
+              checked={settings?.topBarShowQuickLinks !== false}
+              onChange={(v) => dispatch(setTopBarShowQuickLinks(v))}
+            />
+
+            <Switch
+              id="mechanicsCompact"
+              label="Compact mechanics"
+              description="Tighter mechanics panel layout."
+              checked={settings?.mechanicsCompact}
+              onChange={(v) => dispatch(setMechanicsCompact(v))}
+            />
+
+            <Switch
+              id="mechanicsShowTips"
+              label="Mechanics tips"
+              description="Show tips in the mechanics panel."
+              checked={settings?.mechanicsShowTips !== false}
+              onChange={(v) => dispatch(setMechanicsShowTips(v))}
+            />
+
+            <Switch
+              id="mechanicsShowStats"
+              label="Mechanics stats"
+              description="Show stat blocks in mechanics panel."
+              checked={settings?.mechanicsShowStats !== false}
+              onChange={(v) => dispatch(setMechanicsShowStats(v))}
+            />
+
+            <Switch
+              id="mechanicsShowUnlockLine"
+              label="Unlock line"
+              description="Show unlock hints in mechanics panel."
+              checked={settings?.mechanicsShowUnlockLine !== false}
+              onChange={(v) => dispatch(setMechanicsShowUnlockLine(v))}
+            />
+
+            <Switch
+              id="traitImpactCompact"
+              label="Compact trait impact"
+              description="Compact layout for trait impact panel."
+              checked={settings?.traitImpactCompact}
+              onChange={(v) => dispatch(setTraitImpactCompact(v))}
+            />
+
+            <Switch
+              id="traitImpactShowMeter"
+              label="Trait impact meter"
+              description="Show the impact meter in trait panel."
+              checked={settings?.traitImpactShowMeter !== false}
+              onChange={(v) => dispatch(setTraitImpactShowMeter(v))}
+            />
+
+            <Switch
+              id="traitImpactShowTips"
+              label="Trait impact tips"
+              description="Show tips inside the trait panel."
+              checked={settings?.traitImpactShowTips !== false}
+              onChange={(v) => dispatch(setTraitImpactShowTips(v))}
+            />
+
+            <Switch
+              id="traitImpactShowHighlights"
+              label="Trait highlights"
+              description="Highlight strong/weak trait impacts."
+              checked={settings?.traitImpactShowHighlights !== false}
+              onChange={(v) => dispatch(setTraitImpactShowHighlights(v))}
+            />
+          </Card>
+
+          <Card
+            title="Dog rendering"
+            subtitle="Fine-tune visuals for sprites, Pixi, and canvases"
+          >
+            <Switch
+              id="dogCanvasMotion"
+              label="Canvas motion"
+              description="Enable subtle motion on canvas-based dog renders."
+              checked={settings?.dogCanvasMotion !== false}
+              onChange={(v) => dispatch(setDogCanvasMotion(v))}
+            />
+
+            <Switch
+              id="dogCanvasShadow"
+              label="Canvas shadow"
+              description="Show a soft shadow under the dog."
+              checked={settings?.dogCanvasShadow !== false}
+              onChange={(v) => dispatch(setDogCanvasShadow(v))}
+            />
+
+            <SelectRow
+              id="dogCanvasScale"
+              label="Canvas scale"
+              description="Size of the dog canvas renderer."
+              value={settings?.dogCanvasScale || "normal"}
+              onChange={(v) => dispatch(setDogCanvasScale(v))}
+              options={[
+                { value: "small", label: "Small" },
+                { value: "normal", label: "Normal" },
+                { value: "large", label: "Large" },
+              ]}
+            />
+
+            <Switch
+              id="dogPixiMotion"
+              label="Pixi motion"
+              description="Enable Pixi animation loops."
+              checked={settings?.dogPixiMotion !== false}
+              onChange={(v) => dispatch(setDogPixiMotion(v))}
+            />
+
+            <SelectRow
+              id="dogPixiScale"
+              label="Pixi scale"
+              description="Size of the Pixi renderer."
+              value={settings?.dogPixiScale || "normal"}
+              onChange={(v) => dispatch(setDogPixiScale(v))}
+              options={[
+                { value: "small", label: "Small" },
+                { value: "normal", label: "Normal" },
+                { value: "large", label: "Large" },
+              ]}
+            />
+
+            <SelectRow
+              id="dogPixiQuality"
+              label="Pixi quality"
+              description="Texture quality for Pixi renderer."
+              value={settings?.dogPixiQuality || "auto"}
+              onChange={(v) => dispatch(setDogPixiQuality(v))}
+              options={[
+                { value: "auto", label: "Auto" },
+                { value: "low", label: "Low" },
+                { value: "high", label: "High" },
+              ]}
+            />
+
+            <Switch
+              id="spriteSheetMotion"
+              label="Sprite sheet motion"
+              description="Enable sprite sheet animations."
+              checked={settings?.spriteSheetMotion !== false}
+              onChange={(v) => dispatch(setSpriteSheetMotion(v))}
+            />
+
+            <Switch
+              id="spriteSheetUsePixelated"
+              label="Pixelated sprites"
+              description="Use hard edges for sprite sheet rendering."
+              checked={settings?.spriteSheetUsePixelated}
+              onChange={(v) => dispatch(setSpriteSheetUsePixelated(v))}
+            />
+
+            <SelectRow
+              id="spriteSheetSize"
+              label="Sprite sheet size"
+              description="Scale for sprite sheet rendering."
+              value={settings?.spriteSheetSize || "normal"}
+              onChange={(v) => dispatch(setSpriteSheetSize(v))}
+              options={[
+                { value: "small", label: "Small" },
+                { value: "normal", label: "Normal" },
+                { value: "large", label: "Large" },
+              ]}
+            />
+
+            <Switch
+              id="pixiDogMotion"
+              label="PixiDog motion"
+              description="Enable animated PixiDog layers."
+              checked={settings?.pixiDogMotion !== false}
+              onChange={(v) => dispatch(setPixiDogMotion(v))}
+            />
+
+            <Switch
+              id="pixiDogShowHearts"
+              label="PixiDog hearts"
+              description="Show heart particles for PixiDog."
+              checked={settings?.pixiDogShowHearts !== false}
+              onChange={(v) => dispatch(setPixiDogShowHearts(v))}
+            />
+
+            <Switch
+              id="pixiDogShowShadow"
+              label="PixiDog shadow"
+              description="Show a shadow under PixiDog."
+              checked={settings?.pixiDogShowShadow !== false}
+              onChange={(v) => dispatch(setPixiDogShowShadow(v))}
+            />
+
+            <SelectRow
+              id="pixiDogQuality"
+              label="PixiDog quality"
+              description="Rendering quality for PixiDog."
+              value={settings?.pixiDogQuality || "auto"}
+              onChange={(v) => dispatch(setPixiDogQuality(v))}
+              options={[
+                { value: "auto", label: "Auto" },
+                { value: "low", label: "Low" },
+                { value: "high", label: "High" },
+              ]}
+            />
+          </Card>
+
+          <Card
+            title="Game effects"
+            subtitle="Visual cues for progress and story beats"
+          >
+            <Switch
+              id="gameFxSkillPulse"
+              label="Skill pulse"
+              description="Pulse effect when a skill unlocks."
+              checked={settings?.gameFxSkillPulse !== false}
+              onChange={(v) => dispatch(setGameFxSkillPulse(v))}
+            />
+
+            <Switch
+              id="gameFxStoryGlow"
+              label="Story glow"
+              description="Glow when a story/poll is active."
+              checked={settings?.gameFxStoryGlow !== false}
+              onChange={(v) => dispatch(setGameFxStoryGlow(v))}
+            />
+
+            <Switch
+              id="gameFxBranchAccent"
+              label="Branch accent"
+              description="Accent the active skill branch in the UI."
+              checked={settings?.gameFxBranchAccent !== false}
+              onChange={(v) => dispatch(setGameFxBranchAccent(v))}
+            />
+          </Card>
+
+          <Card
+            title="Cosmetics overlay"
+            subtitle="Control cosmetic labels and preview tags"
+          >
+            <Switch
+              id="cosmeticsOverlayShowLabels"
+              label="Show labels"
+              description="Show collar/tag/backdrop labels in preview."
+              checked={settings?.cosmeticsOverlayShowLabels !== false}
+              onChange={(v) => dispatch(setCosmeticsOverlayShowLabels(v))}
+            />
+
+            <Switch
+              id="cosmeticsOverlayShowPreviewTags"
+              label="Show preview tags"
+              description="Show small tag chips for equipped cosmetics."
+              checked={settings?.cosmeticsOverlayShowPreviewTags !== false}
+              onChange={(v) => dispatch(setCosmeticsOverlayShowPreviewTags(v))}
+            />
+
+            <SelectRow
+              id="cosmeticsOverlayPosition"
+              label="Overlay position"
+              description="Where the cosmetics overlay appears."
+              value={settings?.cosmeticsOverlayPosition || "top-left"}
+              onChange={(v) => dispatch(setCosmeticsOverlayPosition(v))}
+              options={[
+                { value: "top-left", label: "Top left" },
+                { value: "top-right", label: "Top right" },
+                { value: "bottom-left", label: "Bottom left" },
+                { value: "bottom-right", label: "Bottom right" },
+              ]}
+            />
+          </Card>
+
+          <Card
+            title="Training UI"
+            subtitle="Sort order and card detail density"
+          >
+            <Switch
+              id="trainingShowLocked"
+              label="Show locked tricks"
+              description="Keep locked tricks visible in the list."
+              checked={settings?.trainingShowLocked !== false}
+              onChange={(v) => dispatch(setTrainingShowLocked(v))}
+            />
+
+            <Switch
+              id="trainingCompactCards"
+              label="Compact cards"
+              description="Use smaller training cards."
+              checked={settings?.trainingCompactCards}
+              onChange={(v) => dispatch(setTrainingCompactCards(v))}
+            />
+
+            <Switch
+              id="trainingShowDetails"
+              label="Show details"
+              description="Show expanded details in training cards."
+              checked={settings?.trainingShowDetails !== false}
+              onChange={(v) => dispatch(setTrainingShowDetails(v))}
+            />
+
+            <SelectRow
+              id="trainingSortKey"
+              label="Sort order"
+              description="How training items are ordered."
+              value={settings?.trainingSortKey || "status"}
+              onChange={(v) => dispatch(setTrainingSortKey(v))}
+              options={[
+                { value: "status", label: "Status" },
+                { value: "alpha", label: "A → Z" },
+              ]}
             />
           </Card>
 

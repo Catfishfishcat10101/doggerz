@@ -3,6 +3,8 @@ export const selectDogMoodlets = (state) => state.dog.moodlets;
 export const selectDogEmotionCue = (state) => state.dog.emotionCue;
 export const selectDogGrowthMilestone = (state) =>
   state.dog?.milestones?.pending || null;
+export const selectDogAnimation = (state) =>
+  state?.dog?.animation || DEFAULT_ANIMATION_STATE;
 
 import { createSlice } from "@reduxjs/toolkit";
 import { calculateDogAge } from "@/utils/lifecycle.js";
@@ -60,10 +62,32 @@ const normalizeActionKey = (value) =>
     .replace(/\s+/g, "_")
     .replace(/-+/g, "_");
 
+const DEFAULT_ANIMATION_STATE = Object.freeze({
+  mood: "ok",
+  desiredAction: "idle",
+  overrideAction: null,
+  facing: "right",
+});
+
+const MOOD_TO_DESIRED_ACTION = Object.freeze({
+  sleepy: "sleep",
+  hungry: "eat",
+  dirty: "scratch",
+  excited: "walk",
+  sad: "idle",
+  stressed: "idle",
+  fragile: "idle",
+  happy: "idle",
+  ok: "idle",
+});
+
 const resolveActionOverride = (payload, fallback) => {
   const override = normalizeActionKey(payload?.action);
   return override || fallback;
 };
+
+const deriveDesiredActionFromMood = (mood) =>
+  MOOD_TO_DESIRED_ACTION[normalizeActionKey(mood)] || "idle";
 const DECAY_PER_HOUR = {
   hunger: 8,
   thirst: 7,
@@ -120,6 +144,29 @@ function normalizeStatsState(state) {
     state.stats[key] = clamp(state.stats[key], 0, 100);
   });
   return state.stats;
+}
+
+function ensureAnimationState(state) {
+  if (!state.animation || typeof state.animation !== "object") {
+    state.animation = { ...DEFAULT_ANIMATION_STATE };
+    return state.animation;
+  }
+
+  const mood = normalizeActionKey(state.animation.mood || "ok") || "ok";
+  const desiredAction =
+    normalizeActionKey(state.animation.desiredAction) ||
+    deriveDesiredActionFromMood(mood);
+  const overrideAction = normalizeActionKey(state.animation.overrideAction);
+  const facing = state.animation.facing === "left" ? "left" : "right";
+
+  state.animation = {
+    mood,
+    desiredAction,
+    overrideAction: overrideAction || null,
+    facing,
+  };
+
+  return state.animation;
 }
 function getTemperamentTags(state) {
   const t = state?.temperament || {};
@@ -533,6 +580,7 @@ const initialState = {
 
   // Used by UI renderers/selectors to derive simple animation hints
   lastAction: null,
+  animation: { ...DEFAULT_ANIMATION_STATE },
   fsm: { ...DOG_FSM_DEFAULT },
 
   temperament: initialTemperament,
@@ -1267,6 +1315,10 @@ function finalizeDerivedState(state, now = nowMs()) {
   advanceDogFsm(state, now, { allowAutonomy: false });
   state.moodlets = computeMoodlets(state);
   state.emotionCue = deriveEmotionCue(state);
+  const animation = ensureAnimationState(state);
+  const mood = normalizeActionKey(state.emotionCue || "ok") || "ok";
+  animation.mood = mood;
+  animation.desiredAction = deriveDesiredActionFromMood(mood);
   return tier;
 }
 
@@ -1756,6 +1808,7 @@ const dogSlice = createSlice({
       merged.lastAction =
         payload.lastAction ?? state.lastAction ?? initialState.lastAction;
       merged.cleanlinessTier = merged.cleanlinessTier || "FRESH";
+      ensureAnimationState(merged);
 
       if (!merged.temperament || typeof merged.temperament !== "object") {
         merged.temperament = { ...initialTemperament };
@@ -2116,6 +2169,35 @@ const dogSlice = createSlice({
       state.lastAction = action;
       applyFsmAction(state, action, now);
       finalizeDerivedState(state, now);
+    },
+
+    setMood(state, { payload }) {
+      const animation = ensureAnimationState(state);
+      const mood = normalizeActionKey(payload || "ok") || "ok";
+      animation.mood = mood;
+      animation.desiredAction = deriveDesiredActionFromMood(mood);
+    },
+
+    setDesiredAction(state, { payload }) {
+      const animation = ensureAnimationState(state);
+      animation.desiredAction = normalizeActionKey(payload) || "idle";
+    },
+
+    triggerOneShot(state, { payload }) {
+      const animation = ensureAnimationState(state);
+      const action =
+        typeof payload === "string" ? payload : payload?.action || "";
+      animation.overrideAction = normalizeActionKey(action) || null;
+    },
+
+    oneShotFinished(state) {
+      const animation = ensureAnimationState(state);
+      animation.overrideAction = null;
+    },
+
+    setFacing(state, { payload }) {
+      const animation = ensureAnimationState(state);
+      animation.facing = payload === "left" ? "left" : "right";
     },
 
     dismissActiveDream(state) {
@@ -2732,7 +2814,7 @@ const dogSlice = createSlice({
 /* ---------------------- selectors ---------------------- */
 
 export const selectDog = (state) => state.dog;
-export const selectDogStats = (state) => state.dog.stats;
+export const selectDogStats = (state) => state.dog?.stats || DEFAULT_STATS;
 export const selectDogMood = (state) => state.dog.mood;
 export const selectDogJournal = (state) => state.dog.journal;
 export const selectDogTemperament = (state) => state.dog.temperament;
@@ -2844,6 +2926,11 @@ export const {
   rest,
   wakeUp,
   triggerManualAction,
+  setMood,
+  setDesiredAction,
+  triggerOneShot,
+  oneShotFinished,
+  setFacing,
   dismissActiveDream,
   bathe,
   increasePottyLevel,

@@ -1,5 +1,5 @@
 import { doc, collection } from "firebase/firestore";
-import { db } from "./firebase.js";
+import { db } from "@/firebase.js";
 
 /* ------------------ Validation ------------------ */
 const _v = (id) => {

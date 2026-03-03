@@ -23,6 +23,7 @@ export default function StatBar({ label, value, color }) {
 const styles = StyleSheet.create({
   wrap: {
     marginBottom: 10,
+    zIndex: 999,
   },
   row: {
     flexDirection: "row",

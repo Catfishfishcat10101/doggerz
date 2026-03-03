@@ -2,6 +2,7 @@
 import { useSelector } from "react-redux";
 import { selectDog } from "@/redux/dogSlice.js";
 import PageShell from "@/components/layout/PageShell.jsx";
+import { PageHeader } from "@/components/layout/PageSections.jsx";
 
 export default function TemperamentReveal() {
   const dog = useSelector(selectDog);
@@ -13,7 +14,7 @@ export default function TemperamentReveal() {
   return (
     <PageShell>
       <div className="mx-auto w-full max-w-3xl space-y-6">
-        <header className="space-y-2">
+        <PageHeader>
           <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
             Temperament Reveal
           </h1>
@@ -21,7 +22,7 @@ export default function TemperamentReveal() {
             Based on how you&apos;ve been treating your pup so far, this is
             their emerging personality profile.
           </p>
-        </header>
+        </PageHeader>
 
         {!dog && (
           <p className="text-sm text-zinc-700 dark:text-zinc-300">

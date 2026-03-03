@@ -7,6 +7,7 @@ import { useToast } from "@/state/toastContext.js";
 import BackPill from "@/components/layout/BackPill.jsx";
 import SpriteSheetDog from "@/components/dog/SpriteSheetDog.jsx";
 import DogCosmeticsOverlay from "@/components/dog/DogCosmeticsOverlay.jsx";
+import { PageHeader } from "@/components/layout/PageSections.jsx";
 import { getSpriteForStageAndTier } from "@/utils/lifecycle.js";
 import {
   purchaseCosmetic,
@@ -380,7 +381,10 @@ export default function Store() {
 
   return (
     <div className="min-h-dvh bg-zinc-950 text-zinc-100">
-      <header className="sticky top-0 z-30 border-b border-white/10 bg-black/45 px-4 py-3 backdrop-blur-md">
+      <PageHeader
+        className="sticky top-0 z-30 border-b border-white/10 bg-black/45 px-4 py-3 backdrop-blur-md"
+        unstyled
+      >
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-3">
           <div className="min-w-0">
             <div className="text-xs uppercase tracking-[0.22em] text-zinc-400">
@@ -399,7 +403,7 @@ export default function Store() {
             <BackPill to="/game" label="Back to Yard" />
           </div>
         </div>
-      </header>
+      </PageHeader>
 
       <main className="mx-auto w-full max-w-7xl px-4 sm:px-6 py-8">
         {/* Hero */}

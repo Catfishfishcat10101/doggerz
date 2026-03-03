@@ -4,6 +4,7 @@ import { PATHS } from "@/routes.js";
 import { useToast } from "@/state/toastContext.js";
 import { usePup } from "@/state/PupContext.jsx";
 import PageShell from "@/components/layout/PageShell.jsx";
+import { PageFooter, PageHeader } from "@/components/layout/PageSections.jsx";
 import EmptySlate from "@/components/ui/EmptySlate.jsx";
 import { useSelector, useDispatch } from "react-redux";
 import {
@@ -132,7 +133,7 @@ export default function Potty() {
   return (
     <PageShell>
       <div className="mx-auto w-full max-w-3xl space-y-6">
-        <header className="space-y-1">
+        <PageHeader className="space-y-1" unstyled>
           <p className="text-[11px] uppercase tracking-[0.26em] text-emerald-700 dark:text-emerald-300/90">
             Potty Training
           </p>
@@ -157,7 +158,7 @@ export default function Potty() {
               </span>
             ) : null}
           </div>
-        </header>
+        </PageHeader>
 
         {/* Status card */}
         <section className="rounded-2xl border border-zinc-200 bg-white/80 p-4 space-y-4 shadow-lg shadow-black/10 dark:border-zinc-800 dark:bg-zinc-950/60 dark:shadow-black/40">
@@ -386,13 +387,15 @@ export default function Potty() {
           )}
         </section>
 
-        <button
-          type="button"
-          onClick={() => navigate(PATHS.GAME)}
-          className="text-xs text-emerald-700 hover:text-emerald-600 underline underline-offset-4 dark:text-emerald-300 dark:hover:text-emerald-200"
-        >
-          ← Back to your yard
-        </button>
+        <PageFooter>
+          <button
+            type="button"
+            onClick={() => navigate(PATHS.GAME)}
+            className="text-xs text-emerald-700 hover:text-emerald-600 underline underline-offset-4 dark:text-emerald-300 dark:hover:text-emerald-200"
+          >
+            ← Back to your yard
+          </button>
+        </PageFooter>
       </div>
     </PageShell>
   );

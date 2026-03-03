@@ -3,6 +3,7 @@
 // src/main.jsx
 import * as React from "react";
 import ReactDOM from "react-dom/client";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { Provider } from "react-redux";
 import AppRouter from "./AppRouter.jsx";
 import store from "./redux/store.js";
@@ -14,6 +15,8 @@ import CheckInReminders from "./components/environment/CheckInReminders.jsx";
 import { ToastProvider } from "./components/system/ToastProvider.jsx";
 import ErrorBoundary from "./components/system/ErrorBoundary.jsx";
 import DogAIEngine from "./features/game/DogAIEngine.jsx";
+import { queryClient } from "./lib/queryClient.js";
+import { selectDogRenderModel } from "./features/game/dogSelectors.js";
 
 import { initRuntimeLogging } from "./utils/runtimeLogging.js";
 import { PupProvider } from "./state/PupContext.jsx";
@@ -91,23 +94,73 @@ if (
   initRuntimeLogging({ mode: import.meta.env.PROD ? "prod" : "dev" });
 }
 
+if (typeof window !== "undefined") {
+  window.render_game_to_text = () => {
+    const state = store?.getState?.();
+    const renderModel = selectDogRenderModel(state || {});
+    const dog = state?.dog || {};
+    const stats = dog?.stats || {};
+    const moodlets = Array.isArray(dog?.moodlets) ? dog.moodlets : [];
+    const payload = {
+      mode: "doggerz",
+      route: window.location?.pathname || "/",
+      dog: {
+        name: dog?.name || null,
+        stage: renderModel?.stage || null,
+        condition: renderModel?.condition || null,
+        anim: renderModel?.anim || "idle",
+        isSleeping: Boolean(renderModel?.isSleeping),
+      },
+      stats: {
+        hunger: stats?.hunger ?? null,
+        thirst: stats?.thirst ?? null,
+        happiness: stats?.happiness ?? null,
+        energy: stats?.energy ?? null,
+        cleanliness: stats?.cleanliness ?? null,
+        health: stats?.health ?? null,
+        affection: stats?.affection ?? null,
+        mentalStimulation: stats?.mentalStimulation ?? null,
+      },
+      moodlets: moodlets.map((m) => ({
+        type: m?.type || null,
+        intensity: m?.intensity ?? null,
+      })),
+      coordSystem:
+        "Dog viewport origin top-left; units are CSS pixels. DogPixiView 420x320.",
+    };
+    return JSON.stringify(payload);
+  };
+
+  window.advanceTime = (ms) =>
+    new Promise((resolve) => {
+      const start = performance.now();
+      const tick = (now) => {
+        if (now - start >= ms) return resolve();
+        window.requestAnimationFrame(tick);
+      };
+      window.requestAnimationFrame(tick);
+    });
+}
+
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <Provider store={store}>
-      <ToastProvider>
-        <ErrorBoundary fallback={AppCrashFallback}>
-          <PupProvider>
-            <AppStorageHydrator />
-            <AppPreferencesEffects />
-            <AppGameEffects />
-            <CheckInReminders />
-            <DogAIEngine />
+    <QueryClientProvider client={queryClient}>
+      <Provider store={store}>
+        <ToastProvider>
+          <ErrorBoundary fallback={AppCrashFallback}>
+            <PupProvider>
+              <AppStorageHydrator />
+              <AppPreferencesEffects />
+              <AppGameEffects />
+              <CheckInReminders />
+              <DogAIEngine />
 
-            <AppRouter />
-          </PupProvider>
-        </ErrorBoundary>
-      </ToastProvider>
-    </Provider>
+              <AppRouter />
+            </PupProvider>
+          </ErrorBoundary>
+        </ToastProvider>
+      </Provider>
+    </QueryClientProvider>
   </React.StrictMode>
 );
 // End of src/main.jsx

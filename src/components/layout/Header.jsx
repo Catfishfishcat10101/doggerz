@@ -9,9 +9,6 @@ import { selectIsLoggedIn } from "@/redux/userSlice.js";
 
 const nav = [
   { to: "/game", label: "Game" },
-  { to: "/store", label: "Store" },
-  { to: "/skill-tree", label: "Skill Tree" },
-  { to: "/dreams", label: "Dreams" },
   { to: "/settings", label: "Settings" },
 ];
 
@@ -77,7 +74,7 @@ export default function Header() {
         <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 h-[72px] flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-[220px]">
             <NavLink to="/" className="leading-tight">
-              <div className="text-emerald-800 font-extrabold tracking-[0.42em] text-sm sm:text-base">
+              <div className="text-emerald-800 font-extrabold tracking-[0.42em] text-base sm:text-lg">
                 D O G G E R Z
               </div>
               <div className="text-zinc-500 text-xs sm:text-sm">

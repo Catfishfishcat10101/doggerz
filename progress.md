@@ -167,3 +167,24 @@ Original prompt: yes. and remove all teh placeholders too. we are way past that!
 - Validation:
   - `npx eslint src/utils/nativeStorage.js src/utils/reminders.js src/pages/Login.jsx src/pages/Help.jsx src/pages/Settings.jsx src/components/environment/CheckInReminders.jsx` (pass)
   - `npm run build` (pass)
+
+## 2026-03-02 - Custom sprite strip grid detection + test hooks
+
+- Updated src/components/dog/DogPixiView.jsx to slice custom animation sheets using manifest frame size when possible (supports 1-row/1-column strips) and broadened grid estimation to include 1–12 rows/cols.
+- Added window.render_game_to_text + window.advanceTime in src/main.jsx for the Playwright test loop.
+
+### Validation
+
+- Playwright client run failed: http://localhost:5175/game refused connection (dev server not running).
+
+
+## 2026-03-02 - Custom anim mapping passthrough
+
+- Updated DogPixiView to request anim-specific sheets using the requested animation key (not just manifest-resolved), so custom anim names can load when mapped.
+- Added additional anim filename mappings in getDogAnimSpriteUrl for walk_left/right and jump/front_flip to use existing assets (e.g., dult-walk-left.png).
+
+### Validation
+
+- Playwright client run: timed out clicking Play button (element located but click never completed).
+- Playwright client run: http://localhost:5175/game refused connection (dev server not running).
+
