@@ -1,16 +1,21 @@
-/** @format */
-// src/pages/Game.jsx
-
+//src/pages/Game.jsx
 import { useMemo } from "react";
-import { useSelector } from "react-redux";
+import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
 import MainGame from "@/features/game/MainGame.jsx";
-import GrowthCelebration from "@/features/game/GrowthCelebration.jsx";
-import { selectWeatherCondition } from "@/redux/weatherSlice.js";
+import GrowthCelebration from "@/components/dog/GrowthCelebration.jsx";
+import DailyRewardModal from "@/components/modals/DailyRewardModal.jsx";
+import { claimDailyReward, selectDog } from "@/redux/dogSlice.js";
+import { getDailyRewardState } from "@/features/game/dailyRewards.js";
+import {
+  selectWeatherCondition,
+  selectWeatherIntensity,
+} from "@/redux/weatherSlice.js";
 import { selectUserZip } from "@/redux/userSlice.js";
 import { selectSettings } from "@/redux/settingsSlice.js";
 import { useDayNightBackground } from "@/features/game/useDayNightBackground.jsx";
-import WeatherFXCanvas from "@/components/WeatherFXCanvas.jsx";
+import WeatherFXCanvas from "@/components/environment/WeatherFXCanvas.jsx";
 import {
   getWeatherAccent,
   getWeatherLabel,
@@ -41,9 +46,13 @@ function shouldReduceEffects(perfMode) {
 }
 
 export default function GamePage() {
+  const dispatch = useDispatch();
+  const dog = useSelector(selectDog);
   const zip = useSelector(selectUserZip);
   const weather = useSelector(selectWeatherCondition);
+  const weatherIntensity = useSelector(selectWeatherIntensity);
   const settings = useSelector(selectSettings);
+  const [showDailyReward, setShowDailyReward] = useState(false);
 
   const perfReduced = shouldReduceEffects(settings?.perfMode);
   const showBackgroundPhotos = true;
@@ -89,6 +98,35 @@ export default function GamePage() {
     [isNight, timeOfDayBucket, weatherLabel, weatherKey, weatherAccent]
   );
 
+  const dailyRewardState = useMemo(
+    () =>
+      getDailyRewardState({
+        lastRewardClaimedAt: dog?.lastRewardClaimedAt,
+        consecutiveDays: dog?.consecutiveDays,
+        now: Date.now(),
+      }),
+    [dog?.lastRewardClaimedAt, dog?.consecutiveDays]
+  );
+
+  useEffect(() => {
+    if (!dog?.adoptedAt) return;
+    if (dailyRewardState?.canClaim) {
+      setShowDailyReward(true);
+    }
+  }, [dog?.adoptedAt, dailyRewardState?.canClaim]);
+
+  const handleClaimDailyReward = () => {
+    if (!dailyRewardState?.canClaim || !dailyRewardState?.reward) return;
+    dispatch(
+      claimDailyReward({
+        day: dailyRewardState.nextStreakDay,
+        reward: dailyRewardState.reward,
+        now: Date.now(),
+      })
+    );
+    setShowDailyReward(false);
+  };
+
   return (
     <div
       className="relative min-h-dvh overflow-hidden"
@@ -105,6 +143,7 @@ export default function GamePage() {
 
       <WeatherFXCanvas
         mode={showWeatherFx ? weatherKey : "none"}
+        intensity={weatherIntensity}
         reduceMotion={reduceMotion}
         reduceTransparency={reduceTransparency}
         className="z-0"
@@ -114,6 +153,12 @@ export default function GamePage() {
         <MainGame scene={scene} />
       </div>
       <GrowthCelebration />
+      <DailyRewardModal
+        open={showDailyReward}
+        rewardState={dailyRewardState}
+        onClose={() => setShowDailyReward(false)}
+        onClaim={handleClaimDailyReward}
+      />
     </div>
   );
 }

@@ -2,12 +2,12 @@
 
 // src/utils/lifecycle.js
 
-import { withBaseUrl } from "@/utils/assetUrl.js";
+import { withBaseUrl } from "@/utils/gameUtils.js";
 
 // How many in-game "dog days" pass per real day.
 // Tuning: higher => faster aging. Keep this high enough for visible progress,
 // but not so high that stages churn too quickly.
-export const GAME_DAYS_PER_REAL_DAY = 24;
+export const GAME_DAYS_PER_REAL_DAY = 2;
 export const MS_PER_GAME_DAY = (24 * 60 * 60 * 1000) / GAME_DAYS_PER_REAL_DAY;
 
 // Lifecycle / age stages (in-game days)
@@ -115,7 +115,11 @@ export function getDogAgeProgress(adoptedAtMs, now = Date.now()) {
  * Map a life stage to the static Jack Russell sprite.
  */
 export function getSpriteForLifeStage(_stageId) {
-  return withBaseUrl("/assets/imports/jr/idle/frame_000.png");
+  const s = String(_stageId || "PUPPY")
+    .trim()
+    .toUpperCase();
+  const stage = s === "ADULT" ? "adult" : s === "SENIOR" ? "senior" : "pup";
+  return withBaseUrl(`/assets/sprites/jr/${stage}_clean.png`);
 }
 
 /**

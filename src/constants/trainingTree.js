@@ -1,200 +1,212 @@
 /** @format */
-
 // src/constants/trainingTree.js
 
-export const TRAINING_BRANCHES = /** @type {const} */ ({
-  obedience: "Obedience",
-  tricks: "Tricks",
-  behavior: "Behavior",
-});
+function freezeNode(node) {
+  return Object.freeze({
+    ...node,
+    prereq: Object.freeze(
+      Array.isArray(node?.prereq) ? node.prereq.map(String) : []
+    ),
+    tags: Object.freeze(Array.isArray(node?.tags) ? node.tags.map(String) : []),
+  });
+}
 
-export const TRAINING_TREE = /** @type {const} */ ({
-  obedience: {
+function freezeBranch(branch) {
+  return Object.freeze({
+    ...branch,
+    nodes: Object.freeze((branch?.nodes || []).map(freezeNode)),
+  });
+}
+
+const BRANCHES = Object.freeze({
+  obedience: freezeBranch({
     label: "Obedience",
-    description: "Reliable commands and consistency.",
+    description:
+      "Core commands that improve reliability and day-to-day control.",
     nodes: [
       {
-        id: "obedience_sit",
+        id: "sit",
         label: "Sit",
         pose: "sit",
         cost: 1,
-        tier: 1,
         difficulty: "easy",
-        tags: ["foundation", "calm"],
+        rustPerDay: 0.9,
+        tags: ["core", "calm"],
         prereq: [],
-        rustPerDay: 4,
       },
       {
-        id: "obedience_stay",
+        id: "stay",
         label: "Stay",
         pose: "stay",
         cost: 1,
-        tier: 1,
         difficulty: "easy",
-        tags: ["control", "focus"],
-        prereq: ["obedience_sit"],
-        rustPerDay: 5,
+        rustPerDay: 1.0,
+        tags: ["core", "focus"],
+        prereq: ["sit"],
       },
       {
-        id: "obedience_heel",
+        id: "heel",
         label: "Heel",
         pose: "heel",
         cost: 2,
-        tier: 2,
         difficulty: "medium",
+        rustPerDay: 1.2,
         tags: ["walk", "focus"],
-        prereq: ["obedience_stay"],
-        rustPerDay: 6,
+        prereq: ["stay"],
       },
       {
-        id: "obedience_recall",
-        label: "Recall",
-        pose: "alert",
+        id: "quiet",
+        label: "Quiet Focus",
+        pose: "quiet_idle",
         cost: 2,
-        tier: 2,
         difficulty: "medium",
-        tags: ["trust", "safety"],
-        prereq: ["obedience_stay"],
-        rustPerDay: 6,
+        rustPerDay: 1.1,
+        tags: ["calm", "focus"],
+        prereq: ["stay"],
       },
     ],
-  },
-
-  tricks: {
+  }),
+  tricks: freezeBranch({
     label: "Tricks",
-    description: "Fun moves with visible flair.",
+    description: "Flashier poses and show skills that improve engagement.",
     nodes: [
       {
-        id: "trick_paw",
-        label: "Paw",
+        id: "paw_shake",
+        label: "Paw / Shake",
         pose: "paw",
         cost: 1,
-        tier: 1,
         difficulty: "easy",
-        tags: ["greeting", "cute"],
+        rustPerDay: 1.2,
+        tags: ["show", "social"],
         prereq: [],
-        rustPerDay: 6,
       },
       {
-        id: "trick_roll",
-        label: "Roll",
-        pose: "roll",
-        cost: 2,
-        tier: 2,
-        difficulty: "medium",
-        tags: ["coordination", "fun"],
-        prereq: ["trick_paw"],
-        rustPerDay: 7,
-      },
-      {
-        id: "trick_bow",
+        id: "bow",
         label: "Bow",
         pose: "bow",
         cost: 2,
-        tier: 2,
         difficulty: "medium",
-        tags: ["show", "poise"],
-        prereq: ["trick_paw"],
-        rustPerDay: 7,
+        rustPerDay: 1.3,
+        tags: ["show", "mobility"],
+        prereq: ["paw_shake"],
       },
       {
-        id: "trick_sit_pretty",
+        id: "roll_over",
+        label: "Roll Over",
+        pose: "roll",
+        cost: 2,
+        difficulty: "medium",
+        rustPerDay: 1.4,
+        tags: ["show", "mobility"],
+        prereq: ["bow"],
+      },
+      {
+        id: "sit_pretty",
         label: "Sit Pretty",
         pose: "sit_pretty",
         cost: 3,
-        tier: 3,
         difficulty: "hard",
-        tags: ["balance", "style"],
-        prereq: ["trick_bow"],
-        rustPerDay: 8,
+        rustPerDay: 1.6,
+        tags: ["show", "balance"],
+        prereq: ["roll_over"],
       },
     ],
-  },
-
-  behavior: {
-    label: "Behavior",
-    description: "Temperament shaping and habit control.",
+  }),
+  confidence: freezeBranch({
+    label: "Confidence",
+    description: "Stability and confidence poses that support consistency.",
     nodes: [
       {
-        id: "behavior_calm",
-        label: "Calm",
-        pose: "calm_idle",
+        id: "alert_stance",
+        label: "Alert Stance",
+        pose: "alert",
         cost: 1,
-        tier: 1,
         difficulty: "easy",
-        tags: ["settle", "routine"],
+        rustPerDay: 0.8,
+        tags: ["awareness", "calm"],
         prereq: [],
-        rustPerDay: 4,
       },
       {
-        id: "behavior_gentle",
-        label: "Gentle",
-        pose: "gentle_idle",
+        id: "calm_idle",
+        label: "Calm Idle",
+        pose: "calm_idle",
         cost: 2,
-        tier: 2,
         difficulty: "medium",
-        tags: ["soft", "patience"],
-        prereq: ["behavior_calm"],
-        rustPerDay: 5,
+        rustPerDay: 0.9,
+        tags: ["calm", "maintenance"],
+        prereq: ["alert_stance"],
       },
       {
-        id: "behavior_confident",
-        label: "Confident",
+        id: "confident_idle",
+        label: "Confident Idle",
         pose: "confident_idle",
         cost: 2,
-        tier: 2,
         difficulty: "medium",
-        tags: ["bold", "resilient"],
-        prereq: ["behavior_calm"],
-        rustPerDay: 5,
+        rustPerDay: 1.0,
+        tags: ["calm", "confidence"],
+        prereq: ["calm_idle"],
       },
       {
-        id: "behavior_quiet",
-        label: "Quiet",
-        pose: "quiet_idle",
-        cost: 2,
-        tier: 3,
+        id: "play_dead",
+        label: "Play Dead",
+        pose: "play_dead",
+        cost: 3,
         difficulty: "hard",
-        tags: ["focus", "calm"],
-        prereq: ["behavior_gentle"],
-        rustPerDay: 6,
+        rustPerDay: 1.5,
+        tags: ["show", "confidence"],
+        prereq: ["confident_idle"],
       },
     ],
-  },
+  }),
 });
 
+export const TRAINING_TREE = BRANCHES;
+
+const BRANCH_INDEX = Object.freeze(
+  Object.entries(BRANCHES).reduce((acc, [id, branch]) => {
+    acc[id] = Object.freeze({ id, ...branch });
+    return acc;
+  }, {})
+);
+
+const NODE_INDEX = (() => {
+  const m = new Map();
+  for (const branch of Object.values(BRANCHES)) {
+    for (const node of branch.nodes || []) {
+      if (!node?.id) continue;
+      m.set(String(node.id), node);
+    }
+  }
+  return m;
+})();
+
+const ALL_NODES = Object.freeze(Array.from(NODE_INDEX.values()));
+
 export function allSkillNodes() {
-  // @ts-ignore
-  return Object.values(TRAINING_TREE).flatMap((b) => b.nodes);
+  return ALL_NODES;
 }
 
 export function getTrainingBranch(branchId) {
-  return TRAINING_TREE[branchId] || null;
-}
-
-export function getTrainingBranches() {
-  return Object.entries(TRAINING_TREE).map(([id, branch]) => ({
-    id,
-    ...branch,
-  }));
+  const key = String(branchId || "").trim();
+  if (!key) return null;
+  return BRANCH_INDEX[key] || null;
 }
 
 export function getSkillNode(skillId) {
-  return allSkillNodes().find((n) => n.id === skillId) || null;
+  const key = String(skillId || "").trim();
+  if (!key) return null;
+  return NODE_INDEX.get(key) || null;
 }
 
-export function skillPrereqsMet(skillId, unlockedSet) {
+export function skillPrereqsMet(skillId, unlockedIds) {
   const node = getSkillNode(skillId);
   if (!node) return false;
-  return node.prereq.every((p) => unlockedSet.has(p));
-}
+  if (!node.prereq.length) return true;
 
-export function getSkillNodeTags(skillId) {
-  const node = getSkillNode(skillId);
-  return node?.tags ? node.tags.slice() : [];
-}
+  const unlockedSet =
+    unlockedIds instanceof Set
+      ? unlockedIds
+      : new Set(Array.isArray(unlockedIds) ? unlockedIds.map(String) : []);
 
-export function getSkillNodeDifficulty(skillId) {
-  const node = getSkillNode(skillId);
-  return node?.difficulty || "easy";
+  return node.prereq.every((id) => unlockedSet.has(String(id)));
 }

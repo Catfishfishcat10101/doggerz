@@ -12,13 +12,17 @@
 
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@native/*": ["native/*"]
     },
     "typeRoots": ["./types", "./node_modules/@types"],
     "types": ["vite/client", "node"]
   },
   "include": [
     "src",
+    "native",
+    "App.js",
+    "index.js",
     "types",
     "capacitor.config.json*",
     "vite.config.*",

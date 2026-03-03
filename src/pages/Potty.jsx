@@ -1,10 +1,10 @@
 // src/pages/Potty.jsx
 import { useNavigate } from "react-router-dom";
 import { PATHS } from "@/routes.js";
-import { useToast } from "@/components/toastContext.js";
+import { useToast } from "@/state/toastContext.js";
 import { usePup } from "@/state/PupContext.jsx";
-import PageShell from "@/components/PageShell.jsx";
-import EmptySlate from "@/components/EmptySlate.jsx";
+import PageShell from "@/components/layout/PageShell.jsx";
+import EmptySlate from "@/components/ui/EmptySlate.jsx";
 import { useSelector, useDispatch } from "react-redux";
 import {
   selectSettings,

@@ -9,18 +9,12 @@
     <meta name="theme-color" content="#10b981" />
     <meta name="color-scheme" content="dark light" />
     <meta name="application-name" content="Doggerz" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta
-      name="apple-mobile-web-app-status-bar-style"
-      content="black-translucent"
-    />
-    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="format-detection" content="telephone=no" />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
 
     <meta
       name="description"
-      content="Doggerz is a virtual pup simulator: adopt a Jack Russell, manage needs, train, and level up your companion."
+      content="Doggerz is your new virtual best friend: adopt a puppy, train them, and level up your companion. Your new buddy pays attention to you more than you know as you will notice your dog learning your routine patterns "
     />
 
     <meta property="og:title" content="Doggerz" />
@@ -28,39 +22,19 @@
       property="og:description"
       content="Adopt a virtual pup and make choices that shape its behavior."
     />
-    <meta property="og:type" content="website" />
-    <meta property="og:image" content="/icons/doggerz-512.png" />
-    <meta property="og:image:alt" content="Doggerz app icon" />
-    <meta property="og:locale" content="en_US" />
-
-    <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="Doggerz" />
-    <meta
-      name="twitter:description"
-      content="Adopt a virtual pup and shape its behavior over time."
-    />
-    <meta name="twitter:image" content="/icons/doggerz-512.png" />
-
-    <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="icon" href="/favicon.ico" />
-    <link
-      rel="apple-touch-icon"
-      sizes="180x180"
-      href="/icons/doggerz-180.png"
-    />
     <link
       rel="icon"
       type="image/png"
       sizes="192x192"
-      href="/icons/doggerz-192.png"
+      href="/assets/icons/icon-192.png"
     />
     <link
       rel="icon"
       type="image/png"
       sizes="512x512"
-      href="/icons/doggerz-512.png"
+      href="/assets/icons/icon-512.png"
     />
-    <link rel="preload" as="image" href="/icons/doggerz-logo.svg" />
+    <link rel="preload" as="image" href="/assets/icons/icon-192.png" />
 
     <title>Doggerz</title>
 
@@ -138,8 +112,9 @@
         border-radius: 14px;
         border: 1px solid rgba(16, 185, 129, 0.35);
         background: rgba(16, 185, 129, 0.1);
-        padding: 8px;
+        padding: 6px;
         box-sizing: border-box;
+        object-fit: cover;
       }
 
       .dg-boot__title {
@@ -239,12 +214,12 @@
           <div class="dg-boot__row">
             <img
               class="dg-boot__logo"
-              src="/icons/doggerz-logo.svg"
+              src="/assets/icons/icon-192.png"
               alt=""
               decoding="async"
             />
             <div>
-              <p class="dg-boot__title">DOGGERZ</p>
+              <h1 class="dg-boot__title">DOGGERZ</h1>
               <p class="dg-boot__sub">Adopt. Train. Bond.</p>
             </div>
           </div>

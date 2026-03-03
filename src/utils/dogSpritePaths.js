@@ -3,7 +3,7 @@
 // src/utils/dogSpritePaths.js
 // Sprite asset path helpers for static renders and Pixi sheets.
 
-import { withBaseUrl } from "@/utils/assetUrl.js";
+import { withBaseUrl } from "@/utils/gameUtils.js";
 
 export const DOG_STAGE_IDS = Object.freeze(["PUPPY", "ADULT", "SENIOR"]);
 export const DOG_STAGE_SHORT = Object.freeze(["pup", "adult", "senior"]);
@@ -16,8 +16,7 @@ export const DOG_CONDITION_IDS = Object.freeze([
 
 const DEFAULT_SPRITE_DIR = "/assets/sprites";
 const DEFAULT_ATLAS_DIR = "/assets/atlas";
-
-const DEFAULT_STATIC_SPRITE = "/assets/imports/jr/idle/frame_000.png";
+const DOG_SPRITE_REV = "2026-02-25b";
 
 export const DOG_STAGE_LABEL_BY_STAGE_ID = Object.freeze({
   PUPPY: "Puppy",
@@ -80,7 +79,10 @@ export function getDogStageLabel(stageLike) {
  * Static fallback sprite used while strips load (or if strips fail).
  */
 export function getDogStaticSpriteUrl(_stageLike) {
-  return withBaseUrl(DEFAULT_STATIC_SPRITE);
+  const stage = normalizeDogStageShort(_stageLike);
+  return withBaseUrl(
+    `${DEFAULT_SPRITE_DIR}/jr/${stage}_clean.png?v=${DOG_SPRITE_REV}`
+  );
 }
 
 /**
@@ -89,7 +91,55 @@ export function getDogStaticSpriteUrl(_stageLike) {
 export function getDogPixiSheetUrl(_stageLike, _conditionLike) {
   const stage = normalizeDogStageShort(_stageLike);
   const condition = normalizeDogConditionId(_conditionLike);
-  return withBaseUrl(`${DEFAULT_SPRITE_DIR}/jr/${stage}_${condition}.png`);
+  return withBaseUrl(
+    `${DEFAULT_SPRITE_DIR}/jr/${stage}_${condition}.png?v=${DOG_SPRITE_REV}`
+  );
+}
+
+/**
+ * Preferred custom sprite sheets dropped in /public/assets/sprites/jr.
+ * These are animation-specific files and are used before generic stage_condition sheets.
+ */
+export function getDogAnimSpriteUrl(_stageLike, _animLike) {
+  const stage = normalizeDogStageShort(_stageLike);
+  const anim = String(_animLike || "idle")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_")
+    .replace(/-+/g, "_");
+
+  if (stage === "pup") {
+    const pupMap = {
+      idle: "puppy-idle.png",
+      walk: "puppy-bouncing.png",
+      bark: "puppy-barking.png",
+      scratch: "puppy-digging.png",
+      sleep: "puppy-sleeping.png",
+      sit: "puppy-looking.png",
+      wag: "puppy-looking.png",
+      trick: "puppy-levelup.png",
+      eat: "puppy-looking.png",
+    };
+    return withBaseUrl(
+      `${DEFAULT_SPRITE_DIR}/jr/${pupMap[anim] || pupMap.idle}`
+    );
+  }
+
+  const adultMap = {
+    idle: "adult-sit.png",
+    walk: "adult-walk-right.png",
+    bark: "adult-paw.png",
+    scratch: "adult-run-circle.png",
+    sleep: "adult-lay-down.png",
+    sit: "adult-sit.png",
+    wag: "adult-waling-circle.png",
+    trick: "adult-paw.png",
+    eat: "adult-sit.png",
+  };
+
+  return withBaseUrl(
+    `${DEFAULT_SPRITE_DIR}/jr/${adultMap[anim] || adultMap.idle}`
+  );
 }
 
 /**

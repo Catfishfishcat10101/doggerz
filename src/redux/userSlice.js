@@ -1,8 +1,9 @@
 // src/redux/userSlice.js
 
 import { createSlice } from "@reduxjs/toolkit";
+import { removeStoredValue, setStoredValue } from "@/utils/nativeStorage.js";
 
-const USER_STORAGE_KEY = "doggerz:userState";
+export const USER_STORAGE_KEY = "doggerz:userState";
 
 export const DOG_RENDER_MODES = Object.freeze(["sprite", "realistic"]);
 
@@ -31,71 +32,107 @@ const DEFAULT_USER_STATE = {
   createdAt: null,
 };
 
-const loadUserFromStorage = () => {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = window.localStorage.getItem(USER_STORAGE_KEY);
-    if (!raw) return null;
-
-    const parsed = JSON.parse(raw);
-    if (!parsed || typeof parsed !== "object") return null;
-
-    // Revive date-like fields to numbers when possible
-    if (parsed.createdAt && typeof parsed.createdAt === "string") {
-      const t = Date.parse(parsed.createdAt);
-      parsed.createdAt = Number.isFinite(t) ? t : parsed.createdAt;
-    }
-    if (parsed.streak && parsed.streak.lastPlayedAt) {
-      const lp = parsed.streak.lastPlayedAt;
-      if (typeof lp === "string") {
-        const t2 = Date.parse(lp);
-        parsed.streak.lastPlayedAt = Number.isFinite(t2) ? t2 : lp;
-      }
-    }
-
-    return parsed;
-  } catch (e) {
-    console.warn("[userSlice] Failed to parse user from storage:", e);
-    return null;
+function toMaybeTimestamp(value) {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const t = Date.parse(value);
+    return Number.isFinite(t) ? t : null;
   }
-};
+  return null;
+}
 
-// Debounced save to avoid frequent writes when multiple reducers fire in quick succession
+function normalizeUserState(raw) {
+  if (!raw || typeof raw !== "object") {
+    return {
+      ...DEFAULT_USER_STATE,
+      streak: { ...DEFAULT_USER_STATE.streak },
+    };
+  }
+
+  const streak = raw.streak && typeof raw.streak === "object" ? raw.streak : {};
+  const density = String(raw.uiDensity || "").toLowerCase();
+  const preferredScene = String(raw.preferredScene || "")
+    .trim()
+    .toLowerCase();
+  const renderMode = String(raw.dogRenderMode || "").toLowerCase();
+
+  return {
+    id: raw.id ?? null,
+    displayName:
+      typeof raw.displayName === "string" && raw.displayName.trim()
+        ? raw.displayName
+        : DEFAULT_USER_STATE.displayName,
+    email: raw.email ?? null,
+    avatarUrl: raw.avatarUrl ?? null,
+    zip: raw.zip ?? null,
+    dogRenderMode: DOG_RENDER_MODES.includes(renderMode)
+      ? renderMode
+      : DEFAULT_USER_STATE.dogRenderMode,
+    dogName:
+      typeof raw.dogName === "string" && raw.dogName.trim()
+        ? raw.dogName.trim()
+        : null,
+    preferredScene: preferredScene || DEFAULT_USER_STATE.preferredScene,
+    reduceVfx: Boolean(raw.reduceVfx),
+    uiDensity: ["standard", "compact", "spacious"].includes(density)
+      ? density
+      : DEFAULT_USER_STATE.uiDensity,
+    locale: raw.locale ?? null,
+    coins: Number.isFinite(Number(raw.coins))
+      ? Math.max(0, Number(raw.coins))
+      : DEFAULT_USER_STATE.coins,
+    streak: {
+      current: Number.isFinite(Number(streak.current))
+        ? Number(streak.current)
+        : DEFAULT_USER_STATE.streak.current,
+      best: Number.isFinite(Number(streak.best))
+        ? Number(streak.best)
+        : DEFAULT_USER_STATE.streak.best,
+      lastPlayedAt: toMaybeTimestamp(streak.lastPlayedAt),
+    },
+    createdAt: toMaybeTimestamp(raw.createdAt),
+  };
+}
+
+function serializeUserState(state) {
+  const copy = {
+    ...state,
+    streak: {
+      ...state.streak,
+    },
+  };
+
+  // Normalize date fields to ISO strings for portability.
+  if (copy.createdAt && typeof copy.createdAt === "number") {
+    copy.createdAt = new Date(copy.createdAt).toISOString();
+  }
+  if (
+    copy.streak &&
+    copy.streak.lastPlayedAt &&
+    typeof copy.streak.lastPlayedAt === "number"
+  ) {
+    copy.streak.lastPlayedAt = new Date(copy.streak.lastPlayedAt).toISOString();
+  }
+
+  return copy;
+}
+
+// Debounced save to avoid frequent writes when multiple reducers fire in quick succession.
 let _saveTimeout = null;
-let _lastCopy = null;
+let _lastSerialized = null;
 const saveUserToStorage = (state) => {
   if (typeof window === "undefined") return;
   try {
-    const copy = { ...state };
-
-    // Normalize date fields to ISO strings for portability
-    if (copy.createdAt && typeof copy.createdAt === "number") {
-      copy.createdAt = new Date(copy.createdAt).toISOString();
-    }
-    if (
-      copy.streak &&
-      copy.streak.lastPlayedAt &&
-      typeof copy.streak.lastPlayedAt === "number"
-    ) {
-      copy.streak = {
-        ...copy.streak,
-        lastPlayedAt: new Date(copy.streak.lastPlayedAt).toISOString(),
-      };
-    }
-
-    _lastCopy = copy;
+    _lastSerialized = JSON.stringify(serializeUserState(state));
     if (_saveTimeout) clearTimeout(_saveTimeout);
     _saveTimeout = setTimeout(() => {
-      try {
-        window.localStorage.setItem(
-          USER_STORAGE_KEY,
-          JSON.stringify(_lastCopy)
-        );
-      } catch (e) {
-        console.warn("[userSlice] Failed to save user to storage:", e);
-      }
+      const payload = _lastSerialized;
       _saveTimeout = null;
-      _lastCopy = null;
+      _lastSerialized = null;
+      if (!payload) return;
+      setStoredValue(USER_STORAGE_KEY, payload).catch((e) => {
+        console.warn("[userSlice] Failed to save user to storage:", e);
+      });
     }, 150);
   } catch (e) {
     console.warn("[userSlice] Failed to schedule save to storage:", e);
@@ -110,9 +147,12 @@ export function flushUserStorage() {
       clearTimeout(_saveTimeout);
       _saveTimeout = null;
     }
-    if (_lastCopy) {
-      window.localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(_lastCopy));
-      _lastCopy = null;
+    if (_lastSerialized) {
+      const payload = _lastSerialized;
+      _lastSerialized = null;
+      setStoredValue(USER_STORAGE_KEY, payload).catch((e) => {
+        console.warn("[userSlice] Failed to flush user storage:", e);
+      });
     }
   } catch (e) {
     console.warn("[userSlice] Failed to flush user storage:", e);
@@ -123,31 +163,32 @@ if (typeof window !== "undefined" && window.addEventListener) {
   window.addEventListener("beforeunload", flushUserStorage);
 }
 
-const _loaded = loadUserFromStorage();
 const initialState = {
   ...DEFAULT_USER_STATE,
-  ...(_loaded || {}),
-  // keep nested defaults stable
-  streak: { ...DEFAULT_USER_STATE.streak, ...(_loaded?.streak || {}) },
-  dogRenderMode: DOG_RENDER_MODES.includes(_loaded?.dogRenderMode)
-    ? _loaded.dogRenderMode
-    : DEFAULT_USER_STATE.dogRenderMode,
-  uiDensity:
-    _loaded?.uiDensity === "compact" ||
-    _loaded?.uiDensity === "spacious" ||
-    _loaded?.uiDensity === "standard"
-      ? _loaded.uiDensity
-      : DEFAULT_USER_STATE.uiDensity,
-  preferredScene:
-    typeof _loaded?.preferredScene === "string"
-      ? _loaded.preferredScene
-      : DEFAULT_USER_STATE.preferredScene,
-  reduceVfx: Boolean(_loaded?.reduceVfx),
+  streak: { ...DEFAULT_USER_STATE.streak },
 };
+
 const userSlice = createSlice({
   name: "user",
   initialState,
   reducers: {
+    hydrateUserState(state, action) {
+      const next = normalizeUserState(action.payload);
+      state.displayName = next.displayName;
+      state.avatarUrl = next.avatarUrl;
+      state.zip = next.zip;
+      state.dogRenderMode = next.dogRenderMode;
+      state.dogName = next.dogName;
+      state.preferredScene = next.preferredScene;
+      state.reduceVfx = next.reduceVfx;
+      state.uiDensity = next.uiDensity;
+      state.locale = next.locale;
+      state.coins = next.coins;
+      state.streak = { ...next.streak };
+      state.createdAt = next.createdAt;
+      if (!state.id && next.id) state.id = next.id;
+      if (!state.email && next.email) state.email = next.email;
+    },
     setUser(state, action) {
       const {
         id,
@@ -182,20 +223,23 @@ const userSlice = createSlice({
 
     clearUser(state) {
       state.id = null;
-      state.displayName = "Trainer";
+      state.displayName = DEFAULT_USER_STATE.displayName;
       state.email = null;
       state.avatarUrl = null;
+      state.zip = null;
       state.coins = 0;
-      state.streak = { current: 0, best: 0, lastPlayedAt: null };
+      state.streak = { ...DEFAULT_USER_STATE.streak };
       state.createdAt = null;
+      state.dogRenderMode = DEFAULT_USER_STATE.dogRenderMode;
+      state.dogName = null;
+      state.preferredScene = DEFAULT_USER_STATE.preferredScene;
+      state.reduceVfx = DEFAULT_USER_STATE.reduceVfx;
+      state.uiDensity = DEFAULT_USER_STATE.uiDensity;
+      state.locale = DEFAULT_USER_STATE.locale;
 
-      if (typeof window !== "undefined") {
-        try {
-          window.localStorage.removeItem(USER_STORAGE_KEY);
-        } catch {
-          // ignore
-        }
-      }
+      removeStoredValue(USER_STORAGE_KEY).catch(() => {
+        // ignore
+      });
     },
 
     addCoins(state, action) {
@@ -267,6 +311,7 @@ const userSlice = createSlice({
 });
 
 export const {
+  hydrateUserState,
   setUser,
   clearUser,
   addCoins,

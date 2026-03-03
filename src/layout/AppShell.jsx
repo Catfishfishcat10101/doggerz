@@ -1,8 +1,8 @@
 // src/layout/AppShell.jsx
 import { Outlet } from "react-router-dom";
 
-import Header from "@/components/Header.jsx";
-import Footer from "@/components/Footer.jsx";
+import Header from "@/components/layout/Header.jsx";
+import Footer from "@/components/layout/Footer.jsx";
 import { AppShellContext } from "./AppShellContext.js";
 
 export default function AppShell() {

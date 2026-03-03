@@ -1,0 +1,31 @@
+{
+  "expo": {
+    "name": "Doggerz",
+    "slug": "doggerz",
+    "scheme": "doggerz",
+    "version": "1.0.0",
+    "jsEngine": "jsc",
+    "orientation": "portrait",
+    "icon": "./public/assets/sprites/jr/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./public/assets/sprites/jr/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0b1118"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "android": {
+      "package": "com.doggerz.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./public/assets/sprites/jr/icon.png",
+        "backgroundColor": "#0b1118"
+      }
+    },
+    "ios": {
+      "bundleIdentifier": "com.doggerz.app"
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}

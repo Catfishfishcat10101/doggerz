@@ -2,7 +2,7 @@ name: Optimize Puppy Assets
 on:
   push:
     paths:
-      - "public/assets/imports/jr/**"
+      - "public/assets/sprites/jr/**"
 jobs:
   optimize:
     name: Calibre Action

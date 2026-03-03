@@ -1,215 +1,219 @@
-/** @format */
-
-/**
- * scripts/preflight.js
- *
- * A lightweight “are we shippable?” checker.
- * - Verifies key PWA files exist
- * - Ensures manifest icons exist on disk
- * - Ensures service worker CORE_ASSETS entries exist on disk
- *
- * Usage:
- *   node scripts/preflight.js
- *
- * Strict / CI usage:
- *   node scripts/preflight.js --strict --require assetlinks
- */
-
+#!/usr/bin/env node
+/* eslint-disable no-console */
 const fs = require("node:fs");
 const path = require("node:path");
+const { builtinModules } = require("node:module");
 
-const ROOT = path.resolve(__dirname, "..");
-const PUBLIC_DIR = path.join(ROOT, "public");
-const ROOT_INDEX_HTML = path.join(ROOT, "index.html");
+const ROOT = process.cwd();
+const SRC_DIRS = ["src", "native"];
+const SOURCE_EXTS = new Set([".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs"]);
 
-function parseArgs(argv) {
-  const out = {
-    strict: false,
-    require: new Set(),
-  };
-
-  for (let i = 0; i < argv.length; i += 1) {
-    const a = argv[i];
-    if (a === "--strict") {
-      out.strict = true;
+function walk(dir, out = []) {
+  const abs = path.join(ROOT, dir);
+  if (!fs.existsSync(abs)) return out;
+  for (const entry of fs.readdirSync(abs, { withFileTypes: true })) {
+    if (entry.name === "node_modules" || entry.name.startsWith(".")) continue;
+    const rel = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      walk(rel, out);
       continue;
     }
-    if (a === "--require") {
-      const v = argv[i + 1];
-      if (typeof v === "string" && v.trim()) {
-        out.require.add(v.trim());
-        i += 1;
-      }
-      continue;
-    }
-    if (a.startsWith("--require=")) {
-      const v = a.slice("--require=".length).trim();
-      if (v) out.require.add(v);
-      continue;
-    }
+    if (SOURCE_EXTS.has(path.extname(entry.name))) out.push(rel);
   }
-
   return out;
 }
 
-function readJson(filePath) {
-  return JSON.parse(fs.readFileSync(filePath, "utf8"));
+function readJson(file) {
+  return JSON.parse(fs.readFileSync(path.join(ROOT, file), "utf8"));
 }
 
-function existsRelativeToPublic(urlPath) {
-  // urlPath like '/icons/doggerz-192.png'
-  const cleaned = urlPath.startsWith("/") ? urlPath.slice(1) : urlPath;
-  const diskPath = path.join(PUBLIC_DIR, cleaned);
-  return { diskPath, exists: fs.existsSync(diskPath) };
-}
-
-function existsRelativeToRoot(urlPath) {
-  const cleaned = urlPath.startsWith("/") ? urlPath.slice(1) : urlPath;
-  const diskPath = path.join(ROOT, cleaned);
-  return { diskPath, exists: fs.existsSync(diskPath) };
-}
-
-function extractCoreAssetsFromServiceWorker(swText) {
-  // Very small parser for: const CORE_ASSETS = [ '...', "...", ... ];
-  const match = swText.match(
-    /const\s+CORE_ASSETS\s*=\s*\[(?<body>[\s\S]*?)\];/m
-  );
-  if (!match || !match.groups || !match.groups.body) return [];
-
-  const body = match.groups.body;
-  const results = [];
-
-  // Capture both '...' and "..." entries
-  const re = /['"](?<p>\/[^'"\n]+)['"]/g;
-  let m;
-  while ((m = re.exec(body))) {
-    if (m.groups?.p) results.push(m.groups.p);
+function collectBareImports(sourceText) {
+  const results = new Set();
+  const importLike = [
+    /(?:import|export)\s+[^'"]*?from\s+["']([^"']+)["']/g,
+    /import\s*\(\s*["']([^"']+)["']\s*\)/g,
+    /require\s*\(\s*["']([^"']+)["']\s*\)/g,
+  ];
+  for (const rx of importLike) {
+    let m;
+    while ((m = rx.exec(sourceText))) {
+      const spec = String(m[1] || "").trim();
+      if (!spec || spec.startsWith(".") || spec.startsWith("/")) continue;
+      if (spec.startsWith("@/") || spec.startsWith("@native/")) continue;
+      results.add(spec);
+    }
   }
   return results;
 }
 
-function fail(message) {
-  console.error(`\n[Doggerz preflight] FAIL: ${message}`);
-  process.exitCode = 1;
+function packageNameFromSpecifier(spec) {
+  if (spec.startsWith("@")) {
+    const parts = spec.split("/");
+    return parts.length >= 2 ? `${parts[0]}/${parts[1]}` : spec;
+  }
+  return spec.split("/")[0];
 }
 
-function warn(message) {
-  console.warn(`[Doggerz preflight] WARN: ${message}`);
+function isBuiltin(pkg) {
+  if (builtinModules.includes(pkg)) return true;
+  if (pkg.startsWith("node:")) return true;
+  return false;
 }
 
-function ok(message) {
-  console.log(`[Doggerz preflight] OK: ${message}`);
+function assertFilesExist(files) {
+  const missing = files.filter((f) => !fs.existsSync(path.join(ROOT, f)));
+  if (missing.length) {
+    throw new Error(
+      `Missing required files:\n${missing.map((f) => `- ${f}`).join("\n")}`
+    );
+  }
 }
 
-function main() {
-  process.exitCode = 0;
+function extractViteKeys(text) {
+  const keys = new Set();
+  const rx = /VITE_[A-Z0-9_]*[A-Z0-9]/g;
+  let m;
+  while ((m = rx.exec(text))) keys.add(m[0]);
+  return keys;
+}
 
-  const opts = parseArgs(process.argv.slice(2));
+function collectRuntimeEnvKeysFromSource(text) {
+  const keys = new Set();
+  const patterns = [
+    /import\.meta\.env\.(VITE_[A-Z0-9_]+)\b/g,
+    /getEnv\(\s*["'](VITE_[A-Z0-9_]+)["']\s*\)/g,
+  ];
+  for (const rx of patterns) {
+    let m;
+    while ((m = rx.exec(text))) keys.add(m[1]);
+  }
+  return keys;
+}
 
-  const manifestPath = path.join(PUBLIC_DIR, "manifest.webmanifest");
-  const swPath = path.join(PUBLIC_DIR, "sw.js");
-  const assetLinksPath = path.join(
-    PUBLIC_DIR,
-    ".well-known",
-    "assetlinks.json"
-  );
+function ensureEnvExampleCoverage() {
+  const envExamplePath = path.join(ROOT, ".env.example");
+  if (!fs.existsSync(envExamplePath)) {
+    throw new Error("Missing .env.example");
+  }
+  const envText = fs.readFileSync(envExamplePath, "utf8");
+  const declared = extractViteKeys(envText);
+  const files = walk("src");
+  const discovered = new Set();
 
-  if (!fs.existsSync(PUBLIC_DIR)) fail(`Missing public dir: ${PUBLIC_DIR}`);
-  if (!fs.existsSync(manifestPath)) fail(`Missing manifest: ${manifestPath}`);
-  else ok("manifest.webmanifest present");
+  for (const rel of files) {
+    const text = fs.readFileSync(path.join(ROOT, rel), "utf8");
+    for (const k of collectRuntimeEnvKeysFromSource(text)) discovered.add(k);
+  }
 
-  if (!fs.existsSync(swPath)) fail(`Missing service worker: ${swPath}`);
-  else ok("sw.js present");
+  const missing = [...discovered].filter((k) => !declared.has(k)).sort();
+  if (missing.length) {
+    throw new Error(
+      `.env.example is missing VITE_* keys used in source:\n${missing
+        .map((k) => `- ${k}`)
+        .join("\n")}`
+    );
+  }
+}
 
-  // Digital Asset Links (recommended; can be required in CI)
-  const requireAssetLinks = opts.require.has("assetlinks");
-  if (fs.existsSync(assetLinksPath)) {
-    ok("assetlinks.json present (for TWA / Android verification)");
+function ensureTopLevelRouteRenderHealth() {
+  const mainPath = path.join(ROOT, "src/main.jsx");
+  const routerPath = path.join(ROOT, "src/AppRouter.jsx");
+  const mainText = fs.readFileSync(mainPath, "utf8");
+  const routerText = fs.readFileSync(routerPath, "utf8");
+
+  const checks = [
+    {
+      ok: /<AppRouter\s*\/>/.test(mainText),
+      msg: "src/main.jsx must render <AppRouter /> at top level.",
+    },
+    {
+      ok: /createBrowserRouter/.test(routerText),
+      msg: "src/AppRouter.jsx must define createBrowserRouter routes.",
+    },
+    {
+      ok:
+        /path:\s*PATHS\.HOME/.test(routerText) &&
+        /path:\s*PATHS\.GAME/.test(routerText),
+      msg: "src/AppRouter.jsx must include PATHS.HOME and PATHS.GAME route roots.",
+    },
+  ];
+
+  const failed = checks.filter((c) => !c.ok).map((c) => c.msg);
+  if (failed.length) {
+    throw new Error(
+      `Top-level route health checks failed:\n${failed.map((m) => `- ${m}`).join("\n")}`
+    );
+  }
+}
+
+async function verifyRuntimeModules(checks) {
+  const failures = [];
+  for (const check of checks) {
     try {
-      const raw = fs.readFileSync(assetLinksPath, "utf8").trim();
-      if (raw === "[]") {
-        const msg =
-          "assetlinks.json is an empty array. This is OK for local/dev, but must be populated for a verified TWA.";
-        if (opts.strict && requireAssetLinks) {
-          fail(`${msg} (strict + required)`);
-        } else {
-          warn(msg);
-        }
+      const mod = await import(check.pkg);
+      if (check.exportName && !(check.exportName in mod)) {
+        failures.push(`${check.pkg} missing export "${check.exportName}"`);
       }
-    } catch {
-      const msg = "assetlinks.json exists but could not be read";
-      if (opts.strict && requireAssetLinks) fail(`${msg} (strict + required)`);
-      else warn(msg);
+    } catch (error) {
+      failures.push(
+        `${check.pkg} failed to load (${error?.message || "unknown error"})`
+      );
     }
-  } else {
-    const msg =
-      "Missing public/.well-known/assetlinks.json (needed for verified TWA / Play Store web wrapper).";
-    if (requireAssetLinks) fail(`${msg} (required)`);
-    else warn(msg);
   }
-
-  if (process.exitCode) return;
-
-  // Manifest icons
-  const manifest = readJson(manifestPath);
-  const icons = Array.isArray(manifest.icons) ? manifest.icons : [];
-
-  // Quick manifest sanity that improves installability + TWA stability
-  if (!manifest.start_url) warn("Manifest missing start_url");
-  if (!manifest.scope) warn("Manifest missing scope (recommended)");
-  if (!manifest.id) warn("Manifest missing id (recommended)");
-
-  if (icons.length === 0) {
-    warn("Manifest has no icons array");
-  } else {
-    for (const icon of icons) {
-      if (!icon?.src) continue;
-      const { diskPath, exists } = existsRelativeToPublic(icon.src);
-      if (!exists)
-        fail(`Manifest icon missing on disk: ${icon.src} -> ${diskPath}`);
-    }
-    if (!process.exitCode) ok(`Manifest icons exist (${icons.length})`);
-  }
-
-  // Service worker CORE_ASSETS
-  const swText = fs.readFileSync(swPath, "utf8");
-  const coreAssets = extractCoreAssetsFromServiceWorker(swText);
-
-  if (coreAssets.length === 0) {
-    warn("Could not find CORE_ASSETS array in sw.js (or it is empty)");
-  } else {
-    let missingCount = 0;
-    for (const asset of coreAssets) {
-      // ignore entries that are not file paths we can check (only same-origin absolute)
-      if (!asset.startsWith("/")) continue;
-
-      // Vite serves index.html from project root (not /public)
-      if (asset === "/index.html") {
-        if (!fs.existsSync(ROOT_INDEX_HTML)) {
-          missingCount += 1;
-          fail(
-            `SW CORE_ASSETS missing on disk: ${asset} -> ${ROOT_INDEX_HTML}`
-          );
-        }
-        continue;
-      }
-
-      // '/' is a route, not a file on disk
-      if (asset === "/") continue;
-
-      const { diskPath, exists } = existsRelativeToPublic(asset);
-      if (!exists) {
-        missingCount += 1;
-        fail(`SW CORE_ASSETS missing on disk: ${asset} -> ${diskPath}`);
-      }
-    }
-
-    if (missingCount === 0) ok(`SW CORE_ASSETS exist (${coreAssets.length})`);
-  }
-
-  if (!process.exitCode) {
-    console.log("\n[Doggerz preflight] All checks passed.");
+  if (failures.length) {
+    throw new Error(
+      `Runtime module checks failed:\n${failures.map((x) => `- ${x}`).join("\n")}`
+    );
   }
 }
 
-main();
+async function main() {
+  assertFilesExist([
+    "package.json",
+    "src/redux/store.js",
+    "src/features/game/DogAIEngine.jsx",
+  ]);
+  ensureEnvExampleCoverage();
+  ensureTopLevelRouteRenderHealth();
+
+  const pkg = readJson("package.json");
+  const declared = new Set([
+    ...Object.keys(pkg.dependencies || {}),
+    ...Object.keys(pkg.devDependencies || {}),
+  ]);
+
+  const files = SRC_DIRS.flatMap((d) => walk(d));
+  const imports = new Set();
+  for (const rel of files) {
+    const text = fs.readFileSync(path.join(ROOT, rel), "utf8");
+    for (const spec of collectBareImports(text)) {
+      imports.add(packageNameFromSpecifier(spec));
+    }
+  }
+
+  const missingDeps = [...imports]
+    .filter((pkgName) => !isBuiltin(pkgName))
+    .filter((pkgName) => !declared.has(pkgName))
+    .sort();
+
+  if (missingDeps.length) {
+    throw new Error(
+      `Undeclared package imports found:\n${missingDeps.map((d) => `- ${d}`).join("\n")}`
+    );
+  }
+
+  await verifyRuntimeModules([
+    { pkg: "@capacitor/app", exportName: "App" },
+    { pkg: "@capacitor/preferences", exportName: "Preferences" },
+    { pkg: "@reduxjs/toolkit", exportName: "configureStore" },
+  ]);
+
+  console.log(
+    `[preflight] OK - scanned ${files.length} source files; dependency + runtime checks passed.`
+  );
+}
+
+main().catch((error) => {
+  console.error(`[preflight] FAILED\n${error.message}`);
+  process.exit(1);
+});

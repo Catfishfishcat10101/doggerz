@@ -1,49 +1,28 @@
-/** @format */
-
 // src/config/assets.js
 
-export const ASSET_BASE = "/assets";
-
-/** Backgrounds */
-export const BACKGROUNDS = {
-  yard: {
-    day: "/backgrounds/backyard-day.svg",
-    night: "/backgrounds/backyard-night.svg",
-    dayWide: "/backgrounds/backyard-day-wide.svg",
-    nightWide: "/backgrounds/backyard-night-wide.svg",
-  },
+const withSlash = (value) => {
+  const v = String(value || "");
+  if (!v) return v;
+  return v.startsWith("/") ? v : `/${v}`;
 };
 
-/** Dogs (static renders for now; will extend to actions/sheets later) */
-export const DOGS = {
-  puppy: {
-    clean: `/assets/imports/jr/idle/frame_000.png`,
-  },
-  adult: {
-    clean: `/assets/imports/jr/idle/frame_000.png`,
-  },
-  senior: {
-    clean: `/assets/imports/jr/idle/frame_000.png`,
-  },
-};
+export const BACKGROUNDS = Object.freeze({
+  backyardDay: "/backgrounds/backyard-day.svg",
+  backyardNight: "/backgrounds/backyard-night.svg",
+  backyardDayWide: "/backgrounds/backyard-day-wide.svg",
+  backyardNightWide: "/backgrounds/backyard-night-wide.svg",
+});
 
-/** Audio */
-export const AUDIO = {
-  bark: `${ASSET_BASE}/audio/bark.m4a`,
-  musicDir: `${ASSET_BASE}/audio/music`,
-};
+export const DOGS = Object.freeze({
+  staticFallback: "/assets/sprites/jr/puppy-idle.png",
+  walkLeft: "/assets/sprites/jr/adult-walk-left.png",
+  walkLeftAlt: "/assets/sprites/jr/adult-walk-right.png",
+});
 
-/**
- * Safe getter utility for nested maps.
- * @param {object} obj
- * @param {string[]} path
- * @param {string|null} fallback
- */
-export function getAsset(obj, path, fallback = null) {
-  let cur = obj;
-  for (const k of path) {
-    if (!cur || typeof cur !== "object" || !(k in cur)) return fallback;
-    cur = cur[k];
-  }
-  return typeof cur === "string" ? cur : fallback;
+export function getAsset(map, key, fallback = "") {
+  if (!map || typeof map !== "object") return withSlash(fallback);
+  const value = map[key];
+  return withSlash(value || fallback);
 }
+
+export default { BACKGROUNDS, DOGS, getAsset };

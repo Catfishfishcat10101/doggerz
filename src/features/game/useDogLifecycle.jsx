@@ -1,5 +1,5 @@
 // src/features/game/useDogLifecycle.jsx
-// @ts-nocheck
+// @ts-check
 import { useMemo } from "react";
 import { useSelector } from "react-redux";
 import { selectDogTemperament } from "@/redux/dogSlice.js";

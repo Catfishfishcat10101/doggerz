@@ -1,71 +1,222 @@
 // src/pages/About.jsx
 
-import PageShell from "@/components/PageShell.jsx";
+import PageShell from "@/components/layout/PageShell.jsx";
+
+const CORE_LOOP = [
+  "Play together to keep energy and happiness up.",
+  "Bathe regularly to avoid fleas, mange, and illness.",
+  "Pups auto-sleep when tired. Let them recharge.",
+  "Take potty trips to build training and reduce accidents.",
+];
+
+const AGING_LIFE = [
+  "Time is accelerated. Days matter.",
+  "Good care extends life and unlocks more training.",
+  "Neglect lowers cleanliness, health, and temperament.",
+];
+
+const QUICK_QUESTIONS = [
+  {
+    q: "Is Doggerz always running?",
+    a: "Yes. Key stats decay and life stages progress even while you are away.",
+  },
+  {
+    q: "What happens if I ignore my pup?",
+    a: "Needs drop, temperament worsens, and sickness becomes more likely.",
+  },
+  {
+    q: "Can I adopt again later?",
+    a: "Yes. You can start fresh, but your current pup is a single life path.",
+  },
+  {
+    q: "Is potty training permanent?",
+    a: "Once trained, accidents become rare, but poor care can regress habits.",
+  },
+];
+
+const TOUR_STATS = [
+  { label: "Energy", value: "Recharges with sleep" },
+  { label: "Cleanliness", value: "Baths prevent fleas" },
+  { label: "Temperament", value: "Shaped by choices" },
+  { label: "Training", value: "Unlocked by care" },
+];
 
 export default function AboutPage() {
   return (
     <PageShell>
-      <div className="max-w-4xl space-y-8">
-        <header className="space-y-3">
+      <div
+        className="relative mx-auto max-w-6xl space-y-10"
+        style={{
+          fontFamily: '"Space Grotesk", "IBM Plex Sans", "Manrope", system-ui',
+        }}
+      >
+        <header className="space-y-4">
+          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/40 bg-emerald-500/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-emerald-200">
+            How Doggerz Works
+          </div>
           <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-emerald-200">
-            About Doggerz
+            Real-time virtual pup, built for bonding
           </h1>
-          <p className="text-zinc-300 leading-relaxed">
-            Doggerz is a virtual pup simulator focused on bonding and training —
-            not an idle clicker. You adopt one dog, care for it, potty-train it,
-            and unlock trick training as you progress.
-          </p>
-          <p className="text-zinc-400">
-            Your dog&apos;s stats, temperament, and behavior respond to the
-            choices you make — even while you&apos;re away.
+          <p className="max-w-3xl text-base sm:text-lg text-zinc-300 leading-relaxed">
+            Doggerz is a living companion sim. Stats decay, life stages advance,
+            and training progresses while you are away. The better you care, the
+            more your pup trusts you.
           </p>
         </header>
 
-        <section className="rounded-2xl border border-emerald-500/15 bg-white/5 p-5">
-          <h2 className="text-lg font-bold text-emerald-200">
-            Core principles
-          </h2>
-          <ul className="mt-3 space-y-2 text-zinc-300 list-disc pl-5">
-            <li>Action-based gameplay (your choices drive outcomes).</li>
-            <li>Potty training gates trick training.</li>
-            <li>Clear, readable UI with a dark + neon accent style.</li>
-          </ul>
-        </section>
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+          <div className="space-y-6">
+            <section className="rounded-3xl border border-emerald-400/20 bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent p-6">
+              <h2 className="text-lg font-bold text-emerald-100">
+                One real virtual pup
+              </h2>
+              <p className="mt-2 text-zinc-300 leading-relaxed">
+                You adopt a single pup with a persistent life. Its needs,
+                temperament, and habits keep ticking whether you are online or
+                offline.
+              </p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-2xl border border-white/10 bg-black/40 p-4">
+                  <div className="text-xs uppercase tracking-[0.24em] text-emerald-300/80">
+                    Live stats
+                  </div>
+                  <p className="mt-2 text-sm text-zinc-300">
+                    Hunger, energy, cleanliness, and mood change over time.
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-black/40 p-4">
+                  <div className="text-xs uppercase tracking-[0.24em] text-emerald-300/80">
+                    Long memory
+                  </div>
+                  <p className="mt-2 text-sm text-zinc-300">
+                    Your routine shapes temperament and unlocks new behaviors.
+                  </p>
+                </div>
+              </div>
+            </section>
 
-        <section className="rounded-2xl border border-white/10 bg-black/20 p-5">
-          <h2 className="text-lg font-bold text-zinc-100">Core loop</h2>
-          <ul className="mt-3 list-disc list-inside space-y-2 text-zinc-300">
-            <li>Play together, learn together.</li>
-            <li>Bathe regularly to avoid fleas, mange, and disease.</li>
-            <li>Your dog will auto-sleep when tired — let them rest.</li>
-            <li>
-              Take them outside regularly to build potty training and avoid
-              messy accidents.
-            </li>
-          </ul>
-        </section>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <section className="rounded-2xl border border-white/10 bg-black/30 p-5">
+                <h3 className="text-base font-bold text-zinc-100">Core loop</h3>
+                <ul className="mt-3 list-disc list-inside space-y-2 text-sm text-zinc-300">
+                  {CORE_LOOP.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </section>
 
-        <section className="rounded-2xl border border-white/10 bg-black/20 p-5 space-y-2">
-          <h2 className="text-lg font-bold text-zinc-100">Aging &amp; life</h2>
-          <p className="text-zinc-300">
-            Time in Doggerz is <b>accelerated</b>: your dog ages faster than
-            real time. With good care they can live a long, happy life — but
-            ignoring them for days has consequences.
-          </p>
-          <p className="text-zinc-400">
-            Hunger, poor cleanliness, and low health can eventually lead to
-            sickness… and yes, the sad ending.
-          </p>
-        </section>
+              <section className="rounded-2xl border border-white/10 bg-black/30 p-5">
+                <h3 className="text-base font-bold text-zinc-100">
+                  Aging and life
+                </h3>
+                <ul className="mt-3 list-disc list-inside space-y-2 text-sm text-zinc-300">
+                  {AGING_LIFE.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </section>
+            </div>
 
-        <section className="rounded-2xl border border-white/10 bg-black/20 p-5 space-y-2">
-          <h2 className="text-lg font-bold text-zinc-100">Potty training</h2>
-          <p className="text-zinc-300">
-            Every successful potty trip outside raises their potty-training
-            meter. Once it hits 100%, they earn a potty-trained badge and indoor
-            accidents become rare.
-          </p>
-        </section>
+            <section className="rounded-2xl border border-white/10 bg-black/30 p-5 space-y-2">
+              <h3 className="text-base font-bold text-zinc-100">
+                Life stages and temperament
+              </h3>
+              <p className="text-sm text-zinc-300">
+                Life stages are earned through care and time. Temperament is not
+                random. It is the sum of your choices, routines, and
+                consistency.
+              </p>
+              <p className="text-sm text-zinc-400">
+                Keep routines steady and you will see calmer behavior, stronger
+                training performance, and better resilience.
+              </p>
+            </section>
+
+            <section className="rounded-2xl border border-white/10 bg-black/30 p-5">
+              <h3 className="text-base font-bold text-zinc-100">
+                Quick questions
+              </h3>
+              <div className="mt-3 space-y-3">
+                {QUICK_QUESTIONS.map((item) => (
+                  <div
+                    key={item.q}
+                    className="rounded-xl border border-white/10 bg-black/35 p-4"
+                  >
+                    <div className="text-sm font-semibold text-emerald-200">
+                      {item.q}
+                    </div>
+                    <div className="mt-2 text-sm text-zinc-300">{item.a}</div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </div>
+
+          <div className="space-y-6">
+            <section className="rounded-3xl border border-emerald-400/20 bg-gradient-to-b from-emerald-500/10 via-black/40 to-black/60 p-6">
+              <div className="text-xs uppercase tracking-[0.28em] text-emerald-300/80">
+                Tour your virtual pup
+              </div>
+              <div className="mt-4 flex items-center gap-4">
+                <div className="h-20 w-20 rounded-2xl border border-white/10 bg-black/40 p-2">
+                  <img
+                    src="/assets/sprites/jr/adult_clean.png"
+                    alt="Jack Russell"
+                    className="h-full w-full rounded-xl object-contain"
+                    loading="lazy"
+                  />
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-zinc-100">
+                    Your pup, one life path
+                  </div>
+                  <p className="mt-1 text-xs text-zinc-400">
+                    Care quality changes outcomes and unlocks new behaviors.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-5 space-y-3">
+                {TOUR_STATS.map((stat) => (
+                  <div
+                    key={stat.label}
+                    className="flex items-center justify-between rounded-xl border border-white/10 bg-black/40 px-3 py-2"
+                  >
+                    <span className="text-xs uppercase tracking-[0.2em] text-emerald-200">
+                      {stat.label}
+                    </span>
+                    <span className="text-xs text-zinc-300">{stat.value}</span>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="rounded-2xl border border-white/10 bg-black/30 p-5 space-y-2">
+              <h3 className="text-base font-bold text-zinc-100">
+                Short care guide
+              </h3>
+              <p className="text-sm text-zinc-300">
+                Check in daily. A few minutes keeps stats stable and training on
+                track. Small routines beat long sessions.
+              </p>
+              <p className="text-sm text-zinc-400">
+                The pup does not pause. If you skip days, expect recovery work.
+              </p>
+            </section>
+
+            <section className="rounded-2xl border border-white/10 bg-black/30 p-5 space-y-2">
+              <h3 className="text-base font-bold text-zinc-100">
+                What keeps ticking
+              </h3>
+              <ul className="mt-2 list-disc list-inside space-y-2 text-sm text-zinc-300">
+                <li>Needs decay and recover based on actions.</li>
+                <li>Training progress gates advanced behaviors.</li>
+                <li>Temperament evolves with consistency.</li>
+                <li>Life stage transitions unlock new animations.</li>
+              </ul>
+            </section>
+          </div>
+        </div>
       </div>
     </PageShell>
   );

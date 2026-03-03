@@ -3,8 +3,8 @@
 
 import * as React from "react";
 
-import SpriteSheetDog from "@/components/SpriteSheetDog.jsx";
-import { withBaseUrl } from "@/utils/assetUrl.js";
+import SpriteSheetDog from "@/components/dog/SpriteSheetDog.jsx";
+import { withBaseUrl } from "@/utils/gameUtils.js";
 import {
   DOG_STAGE_IDS,
   DOG_CONDITION_IDS,
@@ -27,7 +27,7 @@ export default function SpriteTest() {
   const [debug, setDebug] = React.useState(null);
 
   const fallbackSrc = React.useMemo(
-    () => withBaseUrl("/assets/icons/doggerz-192.png"),
+    () => withBaseUrl("/assets/sprites/jr/pup_clean.png"),
     []
   );
   const atlasUrls = React.useMemo(() => getDogAtlasUrls(stage), [stage]);

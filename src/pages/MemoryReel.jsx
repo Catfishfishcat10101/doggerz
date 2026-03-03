@@ -4,8 +4,8 @@ import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 
 import { selectDog, selectDogJournal } from "@/redux/dogSlice.js";
-import PageShell from "@/components/PageShell.jsx";
-import EmptySlate from "@/components/EmptySlate.jsx";
+import PageShell from "@/components/layout/PageShell.jsx";
+import EmptySlate from "@/components/ui/EmptySlate.jsx";
 
 const TYPE_OPTIONS = [
   "All",
@@ -73,8 +73,8 @@ export default function MemoryReel() {
               {dog?.name || "Your pup"}&rsquo;s story
             </h1>
             <p className="mt-2 text-sm text-zinc-200/90 max-w-prose">
-              Every day together leaves a trace. This is the long-form timeline
-              of care, training, and small moments that add up to a bond.
+              A timeline of care, training, and small moments that add up to a
+              lasting bond.
             </p>
           </div>
 
@@ -156,8 +156,6 @@ export default function MemoryReel() {
                     setQuery("");
                     setType("All");
                   }}
-                  backTo="/game"
-                  backLabel="Back to the yard"
                 />
               ) : (
                 entries.map((entry) => (

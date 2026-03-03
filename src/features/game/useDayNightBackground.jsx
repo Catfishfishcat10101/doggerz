@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { getTimeOfDay } from "@/utils/weather.js";
-import { withBaseUrl } from "@/utils/assetUrl.js";
+import { withBaseUrl } from "@/utils/gameUtils.js";
 
 const DAY_START_HOUR = 6;
 const NIGHT_START_HOUR = 19; // 7 PM → night visuals
@@ -197,14 +197,12 @@ export function useDayNightBackground(options = {}) {
         withBaseUrl("/backgrounds/backyard-day.svg"),
         withBaseUrl("/backgrounds/backyard-day-wide.webp"),
         withBaseUrl("/backgrounds/backyard-day.webp"),
-        withBaseUrl("/assets/backgrounds/yard_day.png"),
       ]);
       const night = await firstAvailableUrl([
         withBaseUrl("/backgrounds/backyard-night-wide.svg"),
         withBaseUrl("/backgrounds/backyard-night.svg"),
         withBaseUrl("/backgrounds/backyard-night-wide.webp"),
         withBaseUrl("/backgrounds/backyard-night.webp"),
-        withBaseUrl("/assets/backgrounds/yard_night.png"),
       ]);
 
       if (!mounted) return;

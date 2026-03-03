@@ -2,7 +2,7 @@
 
 import { useNavigate } from "react-router-dom";
 import { PATHS } from "@/routes.js";
-import PageShell from "@/components/PageShell.jsx";
+import PageShell from "@/components/layout/PageShell.jsx";
 
 export default function NotFound() {
   const nav = useNavigate();

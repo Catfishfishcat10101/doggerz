@@ -3,22 +3,16 @@ description: "Expert React 19.2 frontend engineer specializing in modern hooks, 
 name: "Expert React Frontend Engineer"
 tools:
   [
-    "search/changes",
-    "search/codebase",
-    "edit/editFiles",
-    "vscode/extensions",
-    "web/fetch",
-    "web/githubRepo",
-    "vscode/openSimpleBrowser",
-    "read/problems",
-    "execute/runTests",
-    "search",
-    "search/searchResults",
-    "read/terminalLastCommand",
-    "read/terminalSelection",
-    "execute/testFailure",
-    "search/usages",
-    "vscode/vscodeAPI",
+    vscode/extensions,
+    execute/getTerminalOutput,
+    execute/awaitTerminal,
+    execute/killTerminal,
+    execute/createAndRunTask,
+    execute/runInTerminal,
+    read/terminalSelection,
+    read/terminalLastCommand,
+    agent/runSubagent,
+    todo,
   ]
 ---
 

@@ -1,5 +1,5 @@
 // src/pages/Privacy.jsx
-import PageShell from "@/components/PageShell.jsx";
+import PageShell from "@/components/layout/PageShell.jsx";
 import { SUPPORT_EMAIL, SUPPORT_EMAIL_PRIVACY_URL } from "@/config/links.js";
 
 export default function PrivacyPage() {

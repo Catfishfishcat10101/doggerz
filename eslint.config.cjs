@@ -8,6 +8,7 @@ const globals = require("globals");
 const react = require("eslint-plugin-react");
 const reactHooks = require("eslint-plugin-react-hooks");
 const reactRefresh = require("eslint-plugin-react-refresh");
+const tsEslint = require("@typescript-eslint/eslint-plugin");
 
 module.exports = [
   {
@@ -47,6 +48,7 @@ module.exports = [
       react,
       "react-hooks": reactHooks,
       "react-refresh": reactRefresh,
+      "@typescript-eslint": tsEslint,
     },
     rules: {
       // React
@@ -70,6 +72,31 @@ module.exports = [
         "warn",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
+      "@typescript-eslint/ban-ts-comment": [
+        "error",
+        {
+          "ts-expect-error": "allow-with-description",
+          "ts-ignore": false,
+          "ts-nocheck": true,
+          "ts-check": false,
+          minimumDescriptionLength: 3,
+        },
+      ],
+    },
+  },
+  {
+    // Temporary migration carve-outs. Keep this list shrinking.
+    files: [
+      "src/components/dog/DogPixiView.jsx",
+      "src/components/environment/WeatherFXCanvas.jsx",
+      "src/components/layout/Header.jsx",
+      "src/components/ui/LongTermProgressionCard.jsx",
+      "src/hooks/useYardSfx.js",
+      "src/lib/firebaseClient.js",
+      "src/pages/Contact.jsx",
+    ],
+    rules: {
+      "@typescript-eslint/ban-ts-comment": "off",
     },
   },
 ];

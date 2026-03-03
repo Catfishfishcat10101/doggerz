@@ -88,21 +88,12 @@ export async function showDoggerzNotification({
       tag: tag ? String(tag) : undefined,
       renotify: Boolean(renotify),
       requireInteraction: Boolean(requireInteraction),
-      icon: icon || "/assets/icons/doggerz-192.png",
-      badge: badge || "/assets/icons/doggerz-192.png",
+      icon: icon || "/assets/icons/icon-192.png",
+      badge: badge || "/assets/icons/icon-192.png",
       data,
     };
 
-    // Prefer SW notifications if available (better behavior in PWAs).
-    if ("serviceWorker" in navigator) {
-      const reg = await navigator.serviceWorker.getRegistration();
-      if (reg && typeof reg.showNotification === "function") {
-        await reg.showNotification(String(title || "Doggerz"), options);
-        return true;
-      }
-    }
-
-    // Fallback: in-page notification (works while tab/app is active).
+    // Browser fallback (works while tab/app is active).
     new Notification(String(title || "Doggerz"), options);
     return true;
   } catch {

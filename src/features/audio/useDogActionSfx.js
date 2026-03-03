@@ -5,7 +5,7 @@ import * as React from "react";
 import { Haptics, ImpactStyle } from "@capacitor/haptics";
 
 import jrAudio from "@/features/audio/jrAudio.json";
-import { withBaseUrl } from "@/utils/assetUrl.js";
+import { withBaseUrl } from "@/utils/gameUtils.js";
 
 const clamp01 = (v) => Math.max(0, Math.min(1, Number(v) || 0));
 const HAPTIC_LIGHT_MS = 12;
@@ -101,6 +101,7 @@ export function useDogActionSfx({
   const loopKeyRef = React.useRef(null);
   const sleepTimerRef = React.useRef(null);
   const lastFrameRef = React.useRef(null);
+  const lastAnimRef = React.useRef(null);
   const lastPlayAtRef = React.useRef(Object.create(null));
   const hapticTimerRef = React.useRef(null);
   const lastHapticAtRef = React.useRef(Object.create(null));
@@ -112,11 +113,13 @@ export function useDogActionSfx({
     if (!key) return null;
     const existing = audioCacheRef.current[key];
     if (existing) return existing;
-    const src = `${String(jrAudio?.basePath || "/audio/sfx/")}${
-      jrAudio?.sounds?.[key]?.file || ""
-    }`;
-    if (!src || src.endsWith("/") || src.endsWith("/")) return null;
-    const el = createAudio(withBaseUrl(src), { loop });
+    const file = jrAudio?.sounds?.[key]?.file || "";
+    const base = String(jrAudio?.basePath || "/audio/");
+    const resolvedSrc = base.endsWith("/")
+      ? `${base}${file}`
+      : `${base}/${file}`;
+    if (!resolvedSrc || resolvedSrc.endsWith("/")) return null;
+    const el = createAudio(withBaseUrl(resolvedSrc), { loop });
     if (!el) return null;
     audioCacheRef.current[key] = el;
     return el;
@@ -399,4 +402,24 @@ export function useDogActionSfx({
     playOnce,
     tierMultiplier,
   ]);
+
+  React.useEffect(() => {
+    const normalizedAnim = stripConditionPrefix(normalizeKey(anim));
+    if (!normalizedAnim) return;
+    if (lastAnimRef.current === normalizedAnim) return;
+    lastAnimRef.current = normalizedAnim;
+
+    if (normalizedAnim !== "front_flip") return;
+
+    const volume = clamp01(baseVolume * tierMultiplier);
+    playOnce("front_flip", { volume, cooldownMs: 1200 });
+
+    if (hapticsReady) {
+      playHaptic("front_flip", {
+        style: ImpactStyle.Heavy,
+        fallbackMs: HAPTIC_HEAVY_MS,
+        cooldownMs: 900,
+      });
+    }
+  }, [anim, baseVolume, hapticsReady, playHaptic, playOnce, tierMultiplier]);
 }

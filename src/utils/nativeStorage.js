@@ -111,3 +111,43 @@ export async function removeStoredValue(key) {
 export function canUseNativePreferences() {
   return canUsePreferences();
 }
+
+export async function listStoredKeys() {
+  const keys = new Set();
+
+  if (hasLocalStorage()) {
+    try {
+      Object.keys(window.localStorage).forEach((key) => keys.add(key));
+    } catch {
+      // ignore
+    }
+  }
+
+  if (canUsePreferences()) {
+    try {
+      const result = await Preferences.keys();
+      const prefKeys = Array.isArray(result?.keys) ? result.keys : [];
+      prefKeys.forEach((key) => keys.add(key));
+    } catch {
+      // ignore
+    }
+  }
+
+  return Array.from(keys);
+}
+
+export async function removeStoredValues(keys) {
+  if (!Array.isArray(keys) || !keys.length) return 0;
+  await Promise.all(keys.map((key) => removeStoredValue(key)));
+  return keys.length;
+}
+
+export async function removeStoredValuesByPrefix(prefixes) {
+  const list = Array.isArray(prefixes) ? prefixes.filter(Boolean) : [];
+  if (!list.length) return 0;
+  const keys = await listStoredKeys();
+  const toDelete = keys.filter((key) =>
+    list.some((prefix) => String(key).startsWith(String(prefix)))
+  );
+  return removeStoredValues(toDelete);
+}
