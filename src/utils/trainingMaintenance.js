@@ -1,7 +1,7 @@
 /** @format */
 
 // src/utils/trainingMaintenance.js
-import { getSkillNode } from "@/constants/trainingTree.js";
+import { getSkillNode } from "@/logic/trainingTree.js";
 
 const clamp = (n, lo = 0, hi = 100) =>
   Math.max(lo, Math.min(hi, Number(n) || 0));

@@ -8,12 +8,14 @@ import EnvironmentScene from "@/features/game/EnvironmentScene.jsx";
 import { selectSettings } from "@/redux/settingsSlice.js";
 import {
   bathe,
-  feed,
+  dropFoodBowl,
+  giveWater,
   goPotty,
   petDog,
   play,
   selectDog,
   trainObedience,
+  tryConsumeFoodBowl,
 } from "@/redux/dogSlice.js";
 import { selectDogRenderModel } from "@/features/game/dogSelectors.js";
 
@@ -54,6 +56,12 @@ const ACTION_META = Object.freeze({
     card: "from-doggerz-neonSoft/30 to-doggerz-leaf/25",
     edge: "border-doggerz-leaf/45",
   },
+  Interact: {
+    icon: "✨",
+    hint: "Open interaction sheet",
+    card: "from-doggerz-bone/20 to-doggerz-neon/15",
+    edge: "border-doggerz-neon/40",
+  },
 });
 
 function toNightBucket(timeOfDay) {
@@ -69,6 +77,8 @@ export default function MainGame({ scene }) {
   const lastToySqueakAtRef = useRef(0);
   const dogViewportRef = useRef(null);
   const [attentionTarget, setAttentionTarget] = useState(null);
+  const [interactionOpen, setInteractionOpen] = useState(false);
+  const [placingBowl, setPlacingBowl] = useState(false);
 
   const seasonMode = settings?.seasonMode || "auto";
   const reduceMotion = settings?.reduceMotion === "on";
@@ -76,6 +86,7 @@ export default function MainGame({ scene }) {
 
   const activeAnim = renderModel?.anim || "idle";
   const holes = Array.isArray(dog?.yard?.holes) ? dog.yard.holes : [];
+  const foodBowl = dog?.yard?.foodBowl || null;
 
   const handleToySqueak = useCallback(
     (point) => {
@@ -95,6 +106,38 @@ export default function MainGame({ scene }) {
       dispatch(play({ now, source: "toy" }));
     },
     [dispatch]
+  );
+
+  const handleViewportPointerDown = useCallback(
+    (event) => {
+      if (!placingBowl) return;
+      const rect = dogViewportRef.current?.getBoundingClientRect?.();
+      if (!rect) return;
+
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      const xNorm = Math.max(0, Math.min(1, x / rect.width));
+      const yNorm = Math.max(0, Math.min(1, y / rect.height));
+      const now = Date.now();
+
+      dispatch(
+        dropFoodBowl({
+          now,
+          xNorm,
+          yNorm,
+          readyDelayMs: 800,
+        })
+      );
+
+      setPlacingBowl(false);
+      setInteractionOpen(false);
+
+      // Nudge the FSM to consume soon without waiting for the next tick.
+      setTimeout(() => {
+        dispatch(tryConsumeFoodBowl({ now: Date.now() }));
+      }, 1000);
+    },
+    [dispatch, placingBowl]
   );
 
   return (
@@ -130,6 +173,7 @@ export default function MainGame({ scene }) {
             <div
               ref={dogViewportRef}
               className="relative flex items-center justify-center"
+              onPointerDown={handleViewportPointerDown}
             >
               <DogPixiView
                 stage={renderModel?.stage}
@@ -142,6 +186,24 @@ export default function MainGame({ scene }) {
                 bondValue={Number(dog?.bond?.value ?? 0)}
                 dogIsSleeping={Boolean(renderModel?.isSleeping)}
               />
+              {foodBowl ? (
+                <div
+                  className="dog-bowl pointer-events-none absolute z-20 grid h-10 w-12 place-items-center rounded-full border border-doggerz-bone/60 bg-doggerz-bone/25 text-lg shadow-[0_8px_20px_rgba(2,6,23,0.35)]"
+                  style={{
+                    left: `${foodBowl.xNorm * 100}%`,
+                    top: `${foodBowl.yNorm * 100}%`,
+                    transform: "translate(-50%, -50%)",
+                  }}
+                  aria-hidden="true"
+                >
+                  🥣
+                </div>
+              ) : null}
+              {placingBowl ? (
+                <div className="pointer-events-none absolute bottom-3 left-1/2 z-30 -translate-x-1/2 rounded-full border border-white/15 bg-black/70 px-3 py-1 text-[10px] uppercase tracking-[0.18em] text-doggerz-bone">
+                  Tap to place bowl
+                </div>
+              ) : null}
               <DogToy
                 onSqueak={handleToySqueak}
                 className="left-4 top-4 z-30 h-14 w-14"
@@ -151,8 +213,8 @@ export default function MainGame({ scene }) {
 
           <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
             <ActionButton
-              label="Feed"
-              onClick={() => dispatch(feed({ now: Date.now() }))}
+              label="Interact"
+              onClick={() => setInteractionOpen(true)}
             />
             <ActionButton
               label="Play"
@@ -185,6 +247,45 @@ export default function MainGame({ scene }) {
           </div>
         </div>
       </div>
+      {interactionOpen ? (
+        <InteractionSheet
+          onClose={() => setInteractionOpen(false)}
+          onDropBowl={() => {
+            setPlacingBowl(true);
+            setInteractionOpen(false);
+          }}
+          onGiveWater={() => {
+            dispatch(giveWater({ now: Date.now() }));
+            setInteractionOpen(false);
+          }}
+          onPlay={() => {
+            dispatch(play({ now: Date.now() }));
+            setInteractionOpen(false);
+          }}
+          onPet={() => {
+            dispatch(petDog({ now: Date.now() }));
+            setInteractionOpen(false);
+          }}
+          onBath={() => {
+            dispatch(bathe({ now: Date.now() }));
+            setInteractionOpen(false);
+          }}
+          onPotty={() => {
+            dispatch(goPotty({ now: Date.now() }));
+            setInteractionOpen(false);
+          }}
+          onTrain={() => {
+            dispatch(
+              trainObedience({
+                now: Date.now(),
+                commandId: "sit",
+                input: "button",
+              })
+            );
+            setInteractionOpen(false);
+          }}
+        />
+      ) : null}
     </div>
   );
 }
@@ -212,6 +313,60 @@ function ActionButton({ label, onClick }) {
           </span>
         </span>
       </div>
+    </button>
+  );
+}
+
+function InteractionSheet({
+  onClose,
+  onDropBowl,
+  onGiveWater,
+  onPlay,
+  onPet,
+  onBath,
+  onPotty,
+  onTrain,
+}) {
+  return (
+    <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/45 p-4 sm:p-6">
+      <div className="w-full max-w-xl rounded-[28px] border border-doggerz-leaf/30 bg-black/85 p-4 text-doggerz-bone shadow-[0_18px_48px_rgba(2,6,23,0.65)] backdrop-blur-md">
+        <div className="flex items-center justify-between">
+          <div className="text-sm font-semibold uppercase tracking-[0.2em] text-doggerz-paw">
+            Interactions
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-doggerz-bone hover:bg-white/10"
+          >
+            Close
+          </button>
+        </div>
+        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+          <SheetButton label="Drop Food Bowl" icon="🥣" onClick={onDropBowl} />
+          <SheetButton label="Give Water" icon="💧" onClick={onGiveWater} />
+          <SheetButton label="Play" icon="🎾" onClick={onPlay} />
+          <SheetButton label="Pet" icon="🖐️" onClick={onPet} />
+          <SheetButton label="Bath" icon="🧼" onClick={onBath} />
+          <SheetButton label="Potty" icon="🌿" onClick={onPotty} />
+          <SheetButton label="Train" icon="🎯" onClick={onTrain} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SheetButton({ label, icon, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="group flex items-center gap-2 rounded-2xl border border-doggerz-leaf/30 bg-black/40 px-3 py-3 text-left text-sm font-semibold text-doggerz-bone transition hover:border-doggerz-neon/60 hover:bg-white/5"
+    >
+      <span className="grid h-9 w-9 place-items-center rounded-xl border border-white/20 bg-black/25 text-base">
+        {icon}
+      </span>
+      <span className="leading-tight">{label}</span>
     </button>
   );
 }

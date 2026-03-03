@@ -42,7 +42,7 @@ export async function ensureDogMain(uid) {
     return {
       created: true,
       ref,
-      data: { ...payload, createdAt: new Date() }, // Local estimate of the timestamp
+      data: { ...payload, createdAt: Date.now() }, // Local estimate of the timestamp
     };
   } catch (err) {
     console.error("[Doggerz] Database check failed:", err);

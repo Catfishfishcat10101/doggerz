@@ -18,7 +18,7 @@ import {
   setSkillTreeShowUnlockedOnly,
   setSkillTreeCompactCards,
 } from "@/redux/settingsSlice.js";
-import { SKILL_TREE_BRANCHES } from "@/constants/skillTree.js";
+import { SKILL_TREE_BRANCHES } from "@/logic/skillTree.js";
 
 const BRANCH_STYLES = {
   companion: {

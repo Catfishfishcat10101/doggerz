@@ -1,7 +1,7 @@
 /** @format */
 
 // src/utils/resolveDogPoseFromTraining.js
-import { getSkillNode } from "@/constants/trainingTree.js";
+import { getSkillNode } from "@/logic/trainingTree.js";
 import { resolvePoseKey } from "@/utils/mapPoseToDogAction.js";
 
 /**

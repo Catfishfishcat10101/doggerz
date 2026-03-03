@@ -6,7 +6,7 @@ import {
   allSkillNodes,
   getSkillNode,
   skillPrereqsMet,
-} from "@/constants/trainingTree.js";
+} from "@/logic/trainingTree.js";
 import {
   computeRustDelta,
   applyRustToLevel,

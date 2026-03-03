@@ -59,6 +59,8 @@ export const loadDogFromCloud = createAsyncThunk(
         return { hydrated: true, cloudTs };
       }
 
+      // Local is newer: push it to cloud to keep the server in sync.
+      dispatch(saveDogToCloud());
       return { hydrated: false, reason: "local_is_newer" };
     } catch (err) {
       return rejectWithValue(err.message);

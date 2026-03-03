@@ -8,6 +8,11 @@ import {
   SETTINGS_STORAGE_KEY,
 } from "@/redux/settingsSlice.js";
 import { hydrateUserState, USER_STORAGE_KEY } from "@/redux/userSlice.js";
+import {
+  DOG_STORAGE_KEY,
+  getDogStorageKey,
+  hydrateDog,
+} from "@/redux/dogSlice.js";
 
 function parseStoredJson(raw, label) {
   if (!raw) return null;
@@ -26,9 +31,11 @@ export default function AppStorageHydrator() {
     let cancelled = false;
 
     const run = async () => {
-      const [userRaw, settingsRaw] = await Promise.all([
+      const [userRaw, settingsRaw, dogRaw, dogLegacyRaw] = await Promise.all([
         getStoredValue(USER_STORAGE_KEY),
         getStoredValue(SETTINGS_STORAGE_KEY),
+        getStoredValue(getDogStorageKey(null)),
+        getStoredValue(DOG_STORAGE_KEY),
       ]);
       if (cancelled) return;
 
@@ -40,6 +47,13 @@ export default function AppStorageHydrator() {
       const settingsParsed = parseStoredJson(settingsRaw, SETTINGS_STORAGE_KEY);
       if (settingsParsed && typeof settingsParsed === "object") {
         dispatch(hydrateSettings(settingsParsed));
+      }
+
+      const dogParsed = parseStoredJson(dogRaw, getDogStorageKey(null));
+      const dogLegacyParsed = parseStoredJson(dogLegacyRaw, DOG_STORAGE_KEY);
+      const dogPayload = dogParsed || dogLegacyParsed;
+      if (dogPayload && typeof dogPayload === "object") {
+        dispatch(hydrateDog(dogPayload));
       }
     };
 

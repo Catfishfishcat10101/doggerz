@@ -21,18 +21,19 @@ import {
   OBEDIENCE_COMMANDS,
   commandRequirementsMet,
   getObedienceCommand,
-} from "@/constants/obedienceCommands.js";
+} from "@/logic/obedienceCommands.js";
 import { computeTrainingSuccessChance } from "@/utils/trainingMath.js";
 import {
   computeSkillTreeModifiers,
   getSkillTreeBranchIdForPerk,
   getSkillTreePerk,
   getSkillTreeRequiredPerkId,
-} from "@/constants/skillTree.js";
+} from "@/logic/skillTree.js";
 import {
   advanceDogFsm,
   applyFsmAction,
   ensureDogFsmState,
+  isDogFsmLocked,
   DOG_FSM_DEFAULT,
 } from "@/utils/dogFsm.js";
 import {
@@ -170,6 +171,87 @@ function ensureAnimationState(state) {
   };
 
   return state.animation;
+}
+
+function ensureYardState(state) {
+  if (!state.yard || typeof state.yard !== "object") {
+    state.yard = { holes: [], foodBowl: null };
+    return state.yard;
+  }
+
+  if (!Array.isArray(state.yard.holes)) {
+    state.yard.holes = [];
+  }
+
+  if (!("foodBowl" in state.yard)) {
+    state.yard.foodBowl = null;
+  }
+
+  return state.yard;
+}
+
+function applyFeedEffect(state, payload = {}, opts = {}) {
+  const now = payload?.now ?? nowMs();
+  const skipDecay = opts?.skipDecay === true;
+  if (!skipDecay) {
+    applyDecay(state, now);
+  }
+  wakeForInteraction(state);
+
+  const careerMultiplier =
+    state.career.perks?.happinessGainMultiplier || 1.0;
+  const perks = getPersonalityPerks(state);
+  const nextStats = calculateFeedStats({
+    stats: state.stats,
+    amount: payload?.amount ?? 100,
+    careerHappinessMultiplier: careerMultiplier,
+    feedHappinessBonus: perks.feedHappinessBonus,
+  });
+  state.stats.hunger = nextStats.hunger;
+  state.stats.happiness = nextStats.happiness;
+
+  state.memory.lastFedAt = now;
+  state.memory.lastSeenAt = now;
+  state.lastAction = resolveActionOverride(payload, "feed");
+  applyFsmAction(state, "feed", now);
+
+  const sweetBondMultiplier = hasTemperamentTag(state, "SWEET") ? 1.25 : 1;
+  applyBondGain(state, 0.7 * sweetBondMultiplier, now);
+  gainPottyNeed(state, 25);
+
+  applyPersonalityShift(state, {
+    now,
+    source: "FEED",
+    deltas: { affectionate: 2, social: 1 },
+  });
+
+  applyXp(state, 5);
+  maybeSampleMood(state, now, "FEED");
+
+  const date = getIsoDate(now);
+  updateStreak(state.streak, date);
+  updateTemperamentReveal(state, now);
+  finalizeDerivedState(state, now);
+}
+
+function maybeConsumeFoodBowl(state, now, opts = {}) {
+  const yard = ensureYardState(state);
+  const bowl = yard.foodBowl;
+  if (!bowl) return false;
+
+  const readyAt = Number(bowl.readyAt || bowl.placedAt || 0);
+  if (readyAt && now < readyAt) return false;
+
+  if (state.isAsleep) return false;
+  if (isDogFsmLocked(state, now)) return false;
+
+  const hunger = Number(state.stats?.hunger ?? 0);
+  const threshold = Number(opts?.hungerThreshold ?? 50);
+  if (hunger < threshold) return false;
+
+  applyFeedEffect(state, { now, action: "feed" }, { skipDecay: true });
+  yard.foodBowl = null;
+  return true;
 }
 function getTemperamentTags(state) {
   const t = state?.temperament || {};
@@ -583,6 +665,7 @@ const initialState = {
 
   // Used by UI renderers/selectors to derive simple animation hints
   lastAction: null,
+  yard: { holes: [], foodBowl: null },
   animation: { ...DEFAULT_ANIMATION_STATE },
   fsm: { ...DOG_FSM_DEFAULT },
 
@@ -1849,6 +1932,7 @@ const dogSlice = createSlice({
       ensureTrainingState(merged);
       ensurePollState(merged);
       ensureAnimationState(merged);
+      ensureYardState(merged);
       ensurePersonalityState(merged);
       ensureDreamState(merged);
       ensureVacationState(merged);
@@ -1915,44 +1999,31 @@ const dogSlice = createSlice({
     /* ------------- care actions ------------- */
 
     feed(state, { payload }) {
+      applyFeedEffect(state, payload);
+    },
+
+    dropFoodBowl(state, { payload }) {
       const now = payload?.now ?? nowMs();
-      applyDecay(state, now);
-      wakeForInteraction(state);
+      const yard = ensureYardState(state);
+      const xNorm = clamp(Number(payload?.xNorm ?? 0.55), 0.05, 0.95);
+      const yNorm = clamp(Number(payload?.yNorm ?? 0.75), 0.05, 0.95);
+      const readyDelayMs = Number(payload?.readyDelayMs ?? 900);
+      const placedAt = now;
+      const readyAt = placedAt + Math.max(0, readyDelayMs);
 
-      const careerMultiplier =
-        state.career.perks?.happinessGainMultiplier || 1.0;
-      const perks = getPersonalityPerks(state);
-      const nextStats = calculateFeedStats({
-        stats: state.stats,
-        amount: payload?.amount ?? 100,
-        careerHappinessMultiplier: careerMultiplier,
-        feedHappinessBonus: perks.feedHappinessBonus,
-      });
-      state.stats.hunger = nextStats.hunger;
-      state.stats.happiness = nextStats.happiness;
+      yard.foodBowl = {
+        id: `${placedAt}-${Math.random().toString(36).slice(2, 8)}`,
+        xNorm,
+        yNorm,
+        placedAt,
+        readyAt,
+      };
+    },
 
-      state.memory.lastFedAt = now;
-      state.memory.lastSeenAt = now;
-      state.lastAction = resolveActionOverride(payload, "feed");
-      applyFsmAction(state, "feed", now);
-
-      const sweetBondMultiplier = hasTemperamentTag(state, "SWEET") ? 1.25 : 1;
-      applyBondGain(state, 0.7 * sweetBondMultiplier, now);
-      gainPottyNeed(state, 25);
-
-      applyPersonalityShift(state, {
-        now,
-        source: "FEED",
-        deltas: { affectionate: 2, social: 1 },
-      });
-
-      applyXp(state, 5);
-      maybeSampleMood(state, now, "FEED");
-
-      const date = getIsoDate(now);
-      updateStreak(state.streak, date);
-      updateTemperamentReveal(state, now);
-      finalizeDerivedState(state, now);
+    tryConsumeFoodBowl(state, { payload }) {
+      const now = payload?.now ?? nowMs();
+      const hungerThreshold = payload?.hungerThreshold ?? 50;
+      maybeConsumeFoodBowl(state, now, { hungerThreshold });
     },
 
     giveWater(state, { payload }) {
@@ -2354,6 +2425,9 @@ const dogSlice = createSlice({
       advanceDogFsm(state, now, { allowAutonomy: true });
       const tier = finalizeDerivedState(state, now);
       applyCleanlinessPenalties(state, tier);
+
+      // Auto-consume any placed food bowl once the dog is "close enough".
+      maybeConsumeFoodBowl(state, now);
 
       // Ambient behavior: itchy dogs will scratch sometimes.
       if (!state.isAsleep && (tier === "FLEAS" || tier === "MANGE")) {
@@ -2964,6 +3038,8 @@ export const {
   triggerOneShot,
   oneShotFinished,
   setFacing,
+  dropFoodBowl,
+  tryConsumeFoodBowl,
   dismissActiveDream,
   bathe,
   increasePottyLevel,

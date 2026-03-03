@@ -7,7 +7,11 @@
 
 import { initializeApp, getApps } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import {
+  getFirestore,
+  initializeFirestore,
+  persistentLocalCache,
+} from "firebase/firestore";
 
 import {
   FIREBASE,
@@ -54,7 +58,14 @@ export function initFirebase() {
     app = getApps().length ? getApps()[0] : initializeApp(FIREBASE);
 
     auth = getAuth(app);
-    db = getFirestore(app);
+    try {
+      db = initializeFirestore(app, {
+        localCache: persistentLocalCache(),
+      });
+    } catch (err) {
+      // Fallback if Firestore was already initialized (e.g. hot reload).
+      db = getFirestore(app);
+    }
 
     _initError = null;
     firebaseError = null;
