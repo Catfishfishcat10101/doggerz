@@ -62,10 +62,16 @@ const normalizeActionKey = (value) =>
     .replace(/\s+/g, "_")
     .replace(/-+/g, "_");
 
+const resolveActionOverride = (payload, fallback) => {
+  const override = normalizeActionKey(payload?.action);
+  return override || fallback;
+};
+
 const DEFAULT_ANIMATION_STATE = Object.freeze({
-  mood: "ok",
-  desiredAction: "idle",
-  overrideAction: null,
+  mood: "ok", // string mood for animation routing
+  desiredAction: "idle", // looping action
+  overrideAction: null, // one-shot action
+  overrideUntilDone: false,
   facing: "right",
 });
 
@@ -80,11 +86,6 @@ const MOOD_TO_DESIRED_ACTION = Object.freeze({
   happy: "idle",
   ok: "idle",
 });
-
-const resolveActionOverride = (payload, fallback) => {
-  const override = normalizeActionKey(payload?.action);
-  return override || fallback;
-};
 
 const deriveDesiredActionFromMood = (mood) =>
   MOOD_TO_DESIRED_ACTION[normalizeActionKey(mood)] || "idle";
@@ -158,11 +159,13 @@ function ensureAnimationState(state) {
     deriveDesiredActionFromMood(mood);
   const overrideAction = normalizeActionKey(state.animation.overrideAction);
   const facing = state.animation.facing === "left" ? "left" : "right";
+  const overrideUntilDone = Boolean(state.animation.overrideUntilDone);
 
   state.animation = {
     mood,
     desiredAction,
     overrideAction: overrideAction || null,
+    overrideUntilDone,
     facing,
   };
 
@@ -1315,10 +1318,25 @@ function finalizeDerivedState(state, now = nowMs()) {
   advanceDogFsm(state, now, { allowAutonomy: false });
   state.moodlets = computeMoodlets(state);
   state.emotionCue = deriveEmotionCue(state);
-  const animation = ensureAnimationState(state);
-  const mood = normalizeActionKey(state.emotionCue || "ok") || "ok";
-  animation.mood = mood;
-  animation.desiredAction = deriveDesiredActionFromMood(mood);
+
+  // --- animation mood routing (string mood separate from mood history object) ---
+  {
+    const animation = ensureAnimationState(state);
+
+    // Prefer emotionCue, else fall back to a stable "ok"
+    const mood =
+      (typeof state.emotionCue === "string" && state.emotionCue.trim()
+        ? state.emotionCue
+        : "ok");
+
+    animation.mood = normalizeActionKey(mood);
+
+    // Don’t stomp the loop while a one-shot is playing
+    if (!animation.overrideUntilDone) {
+      animation.desiredAction = deriveDesiredActionFromMood(animation.mood);
+    }
+  }
+
   return tier;
 }
 
@@ -1808,7 +1826,6 @@ const dogSlice = createSlice({
       merged.lastAction =
         payload.lastAction ?? state.lastAction ?? initialState.lastAction;
       merged.cleanlinessTier = merged.cleanlinessTier || "FRESH";
-      ensureAnimationState(merged);
 
       if (!merged.temperament || typeof merged.temperament !== "object") {
         merged.temperament = { ...initialTemperament };
@@ -1831,6 +1848,7 @@ const dogSlice = createSlice({
 
       ensureTrainingState(merged);
       ensurePollState(merged);
+      ensureAnimationState(merged);
       ensurePersonalityState(merged);
       ensureDreamState(merged);
       ensureVacationState(merged);
@@ -2175,7 +2193,9 @@ const dogSlice = createSlice({
       const animation = ensureAnimationState(state);
       const mood = normalizeActionKey(payload || "ok") || "ok";
       animation.mood = mood;
-      animation.desiredAction = deriveDesiredActionFromMood(mood);
+      if (!animation.overrideUntilDone) {
+        animation.desiredAction = deriveDesiredActionFromMood(mood);
+      }
     },
 
     setDesiredAction(state, { payload }) {
@@ -2185,14 +2205,27 @@ const dogSlice = createSlice({
 
     triggerOneShot(state, { payload }) {
       const animation = ensureAnimationState(state);
+
       const action =
         typeof payload === "string" ? payload : payload?.action || "";
-      animation.overrideAction = normalizeActionKey(action) || null;
+
+      const normalized = normalizeActionKey(action);
+
+      if (!normalized) return;
+
+      animation.overrideAction = normalized;
+      animation.overrideUntilDone = true;
     },
 
     oneShotFinished(state) {
       const animation = ensureAnimationState(state);
       animation.overrideAction = null;
+      animation.overrideUntilDone = false;
+
+      // Immediately restore loop based on current mood
+      animation.desiredAction = deriveDesiredActionFromMood(
+        animation.mood || "ok"
+      );
     },
 
     setFacing(state, { payload }) {
@@ -2814,7 +2847,7 @@ const dogSlice = createSlice({
 /* ---------------------- selectors ---------------------- */
 
 export const selectDog = (state) => state.dog;
-export const selectDogStats = (state) => state.dog?.stats || DEFAULT_STATS;
+export const selectDogStats = (state) => state.dog.stats;
 export const selectDogMood = (state) => state.dog.mood;
 export const selectDogJournal = (state) => state.dog.journal;
 export const selectDogTemperament = (state) => state.dog.temperament;

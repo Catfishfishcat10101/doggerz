@@ -1,6 +1,6 @@
 /** @format */
 
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import * as PIXI from "pixi.js";
 import { useDispatch, useSelector } from "react-redux";
 
