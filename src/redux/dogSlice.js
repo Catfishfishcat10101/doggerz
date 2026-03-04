@@ -223,6 +223,28 @@ function ensureYardState(state) {
   return state.yard;
 }
 
+function ensureInventoryState(state) {
+  if (!state.inventory || typeof state.inventory !== "object") {
+    state.inventory = { ...initialInventory };
+    return state.inventory;
+  }
+  const premium = Number(state.inventory.premiumKibble);
+  state.inventory.premiumKibble = Number.isFinite(premium)
+    ? Math.max(0, Math.floor(premium))
+    : 0;
+  const activeToyId = String(state.inventory.activeToyId || "").trim();
+  state.inventory.activeToyId = activeToyId || "toy_tennis_ball_basic";
+  const chewUntil = Number(state.inventory.chewProtectionUntil);
+  state.inventory.chewProtectionUntil = Number.isFinite(chewUntil)
+    ? chewUntil
+    : null;
+  state.inventory.autoBallLauncherOwned = Boolean(
+    state.inventory.autoBallLauncherOwned
+  );
+  state.inventory.robotMouseOwned = Boolean(state.inventory.robotMouseOwned);
+  return state.inventory;
+}
+
 function applyFeedEffect(state, payload = {}, opts = {}) {
   const now = payload?.now ?? nowMs();
   const skipDecay = opts?.skipDecay === true;
@@ -231,11 +253,53 @@ function applyFeedEffect(state, payload = {}, opts = {}) {
   }
   wakeForInteraction(state);
   const healthSilo = ensureHealthSiloState(state);
-
-  const foodTexture = normalizeActionKey(
-    payload?.foodTexture || payload?.texture || "soft"
+  const rawFoodType = normalizeActionKey(
+    payload?.foodType || payload?.food || "regular_kibble"
   );
-  const hardFoodRequested = foodTexture === "hard";
+  const foodType =
+    rawFoodType === "kibble" || rawFoodType === "regular"
+      ? "regular_kibble"
+      : rawFoodType;
+  const isHumanFood =
+    foodType === "human_food" ||
+    foodType === "humanfood" ||
+    foodType === "junk_food" ||
+    foodType === "junk" ||
+    foodType === "junkfood";
+  const isPremiumKibble =
+    foodType === "premium_kibble" || foodType === "premium";
+  const inventory = ensureInventoryState(state);
+  const hasPremiumKibble = Number(inventory.premiumKibble || 0) > 0;
+  const usePremiumKibble = isPremiumKibble && hasPremiumKibble;
+  const premiumCooldownMs = 24 * 60 * 60 * 1000;
+  const foodTexture = normalizeActionKey(
+    payload?.foodTexture || payload?.texture || (isHumanFood ? "soft" : "hard")
+  );
+
+  const hardFoodRequested = !isHumanFood && foodTexture === "hard";
+
+  if (isPremiumKibble) {
+    if (!hasPremiumKibble) {
+      state.memory.lastSeenAt = now;
+      state.lastAction = "feed_premium_empty";
+      maybeSampleMood(state, now, "FEED_PREMIUM_EMPTY");
+      finalizeDerivedState(state, now);
+      return;
+    }
+    const lastFedAt = Number(state.memory?.lastFedAt || 0);
+    const lastFedType = String(state.memory?.lastFedFoodType || "");
+    if (
+      lastFedAt &&
+      lastFedType === "premium_kibble" &&
+      now - lastFedAt < premiumCooldownMs
+    ) {
+      state.memory.lastSeenAt = now;
+      state.lastAction = "feed_premium_cooldown";
+      maybeSampleMood(state, now, "FEED_PREMIUM_COOLDOWN");
+      finalizeDerivedState(state, now);
+      return;
+    }
+  }
 
   if (
     hardFoodRequested &&
@@ -267,7 +331,13 @@ function applyFeedEffect(state, payload = {}, opts = {}) {
         : healthSilo.dentalHealth <= 65
           ? 0.88
           : 1;
-  const adjustedAmount = Number(payload?.amount ?? 100) * dentalMultiplier;
+  const effectiveFoodType =
+    foodType === "premium_kibble" && !usePremiumKibble
+      ? "regular_kibble"
+      : foodType;
+  const baseAmount =
+    payload?.amount ?? (effectiveFoodType === "regular_kibble" ? 50 : 100);
+  const adjustedAmount = Number(baseAmount) * dentalMultiplier;
   const hungerBefore = Number(state.stats.hunger || 0);
   const nextStats = calculateFeedStats({
     stats: state.stats,
@@ -277,19 +347,77 @@ function applyFeedEffect(state, payload = {}, opts = {}) {
   });
   state.stats.hunger = nextStats.hunger;
   state.stats.happiness = nextStats.happiness;
+  const isRegularKibble = effectiveFoodType === "regular_kibble";
+  if (isRegularKibble && hungerBefore >= 50) {
+    // Regular kibble is a half-fill meal: dog will be hungry again around 12h.
+    state.stats.hunger = 50;
+  }
+  if (usePremiumKibble) {
+    // Premium kibble is a full-fill meal: tuned for roughly once per 24h.
+    state.stats.hunger = 0;
+  }
 
   // Overfeeding trends positive; long hunger trends are handled in decay.
   const fedWhileLowNeed = hungerBefore < 35 ? 1.6 : hungerBefore < 55 ? 1 : 0.5;
   healthSilo.weightStatus = clamp(
-    healthSilo.weightStatus + fedWhileLowNeed,
+    healthSilo.weightStatus + fedWhileLowNeed * (isHumanFood ? 1.35 : 0.85),
     -50,
     50
   );
 
+  let junkBingeTriggered = false;
+  if (isHumanFood) {
+    const dayKey = getIsoDate(now);
+    if (state.memory.junkFoodDayKey !== dayKey) {
+      state.memory.junkFoodDayKey = dayKey;
+      state.memory.junkFoodCountToday = 0;
+    }
+    state.memory.junkFoodCountToday = Math.max(
+      0,
+      Number(state.memory.junkFoodCountToday || 0)
+    );
+    state.memory.junkFoodCountToday += 1;
+
+    // Gentle per-junk penalty: allows occasional spoiling without harsh punishment.
+    state.stats.happiness = clamp(state.stats.happiness + 5, 0, 100);
+    state.stats.health = clamp(state.stats.health - 1, 0, 100);
+
+    if (
+      state.memory.junkFoodCountToday >= 3 &&
+      state.memory.junkFoodBingeDayKey !== dayKey
+    ) {
+      state.memory.junkFoodBingeDayKey = dayKey;
+      state.stats.health = clamp(state.stats.health - 3, 0, 100);
+      junkBingeTriggered = true;
+    }
+  } else if (usePremiumKibble) {
+    // Premium kibble nudges long-term wellness and fully restores energy.
+    state.stats.health = clamp(state.stats.health + 1, 0, 100);
+    state.stats.energy = 100;
+    inventory.premiumKibble = Math.max(
+      0,
+      Number(inventory.premiumKibble || 0) - 1
+    );
+  }
+
   state.memory.lastFedAt = now;
+  state.memory.lastFedFoodType = effectiveFoodType;
   state.memory.lastSeenAt = now;
   state.lastAction = resolveActionOverride(payload, "feed");
   applyFsmAction(state, "feed", now);
+
+  if (junkBingeTriggered) {
+    state.lastAction = "lethargic_lay";
+    state.isAsleep = true;
+    applyFsmAction(state, "rest", now, { reason: "junk_binge" });
+    pushJournalEntry(state, {
+      type: "HEALTH",
+      moodTag: "RESTLESS",
+      summary: "Junk food binge crash",
+      body: "Three junk feeds in one day triggered a lethargic crash. Health dropped and your pup needs recovery care.",
+      timestamp: now,
+    });
+  }
 
   const sweetBondMultiplier = hasTemperamentTag(state, "SWEET") ? 1.25 : 1;
   applyBondGain(state, 0.7 * sweetBondMultiplier, now);
@@ -302,7 +430,7 @@ function applyFeedEffect(state, payload = {}, opts = {}) {
   });
 
   applyXp(state, 5);
-  maybeSampleMood(state, now, "FEED");
+  maybeSampleMood(state, now, isHumanFood ? "FEED_JUNK" : "FEED");
 
   const date = getIsoDate(now);
   updateStreak(state.streak, date);
@@ -603,6 +731,18 @@ const initialMemory = {
   lastSeenAt: null,
   neglectStrikes: 0,
   lastChewingIncidentAt: null,
+  junkFoodDayKey: null,
+  junkFoodCountToday: 0,
+  junkFoodBingeDayKey: null,
+  lastFedFoodType: null,
+};
+
+const initialInventory = {
+  premiumKibble: 0,
+  activeToyId: "toy_tennis_ball_basic",
+  chewProtectionUntil: null,
+  autoBallLauncherOwned: false,
+  robotMouseOwned: false,
 };
 
 const initialCareer = {
@@ -694,9 +834,9 @@ const initialLegacyJourney = {
 };
 
 const initialCosmetics = {
-  unlockedIds: [],
+  unlockedIds: ["collar_plain_red", "toy_tennis_ball_basic"],
   equipped: {
-    collar: null,
+    collar: "collar_plain_red",
     tag: null,
     backdrop: null,
   },
@@ -716,16 +856,210 @@ const initialMilestones = {
 };
 
 const DEFAULT_COSMETIC_CATALOG = Object.freeze([
-  { id: "collar_leaf", slot: "collar", threshold: 3, label: "Leaf Collar" },
-  { id: "collar_neon", slot: "collar", threshold: 7, label: "Neon Collar" },
-  { id: "tag_star", slot: "tag", threshold: 10, label: "Star Tag" },
+  {
+    id: "toy_tennis_ball_basic",
+    slot: "toy",
+    category: "toys",
+    threshold: 0,
+    label: "Old Tennis Ball",
+    price: 0,
+    currency: "coins",
+    starter: true,
+  },
+  {
+    id: "toy_squeaky_squirrel",
+    slot: "toy",
+    category: "toys",
+    threshold: 2,
+    label: "Squeaky Squirrel",
+    price: 50,
+    currency: "coins",
+  },
+  {
+    id: "toy_tug_rope",
+    slot: "toy",
+    category: "toys",
+    threshold: 4,
+    label: "Tug-o-War Rope",
+    price: 150,
+    currency: "coins",
+  },
+  {
+    id: "toy_heavy_frisbee",
+    slot: "toy",
+    category: "toys",
+    threshold: 6,
+    label: "Heavy Duty Frisbee",
+    price: 300,
+    currency: "coins",
+  },
+  {
+    id: "toy_indestructible_bone",
+    slot: "consumable",
+    category: "care",
+    threshold: 0,
+    label: "Indestructible Bone",
+    price: 0,
+    repeatable: true,
+    iap: "$0.99",
+  },
+  {
+    id: "toy_plush_squeaky_fox",
+    slot: "toy",
+    category: "toys",
+    threshold: 0,
+    label: "Plush Squeaky Fox",
+    price: 0,
+    iap: "$1.99",
+  },
+  {
+    id: "toy_rc_robot_mouse",
+    slot: "toy",
+    category: "toys",
+    threshold: 0,
+    label: "RC Robot Mouse",
+    price: 0,
+    iap: "$2.99",
+  },
+  {
+    id: "collar_plain_red",
+    slot: "collar",
+    category: "apparel",
+    threshold: 0,
+    label: "Plain Red Collar",
+    price: 0,
+    starter: true,
+  },
+  {
+    id: "collar_leaf",
+    slot: "collar",
+    category: "apparel",
+    threshold: 3,
+    label: "Leaf Collar",
+  },
+  {
+    id: "collar_neon",
+    slot: "collar",
+    category: "apparel",
+    threshold: 7,
+    label: "Neon Collar",
+  },
+  {
+    id: "tag_star",
+    slot: "tag",
+    category: "apparel",
+    threshold: 10,
+    label: "Star Tag",
+  },
   {
     id: "backdrop_sunset",
     slot: "backdrop",
+    category: "apparel",
     threshold: 14,
     label: "Sunset Backdrop",
   },
+  {
+    id: "care_oatmeal_shampoo",
+    slot: "consumable",
+    category: "care",
+    threshold: 4,
+    label: "Oatmeal Shampoo",
+    price: 120,
+  },
+  {
+    id: "care_dental_chew",
+    slot: "consumable",
+    category: "care",
+    threshold: 6,
+    label: "Dental Chew",
+    price: 90,
+  },
+  {
+    id: "care_premium_kibble_pack_small",
+    slot: "consumable",
+    category: "care",
+    threshold: 0,
+    label: "Premium Diet Pack x5",
+    price: 0,
+    iap: "$0.99",
+  },
+  {
+    id: "care_premium_kibble_pack_large",
+    slot: "consumable",
+    category: "care",
+    threshold: 0,
+    label: "Premium Diet Pack x15",
+    price: 0,
+    iap: "$1.99",
+  },
+  {
+    id: "yard_digging_sandbox",
+    slot: "yard_upgrade",
+    category: "yard",
+    threshold: 12,
+    label: "Digging Sandbox",
+    price: 320,
+  },
+  {
+    id: "yard_fancy_doghouse",
+    slot: "yard_upgrade",
+    category: "yard",
+    threshold: 15,
+    label: "Fancy Doghouse",
+    price: 420,
+  },
 ]);
+
+const TOY_PLAY_PROFILES = Object.freeze({
+  toy_tennis_ball_basic: {
+    baseHappiness: 5,
+    boredomRelief: 10,
+    extraEnergyCost: 0,
+    bondBonus: 0,
+  },
+  toy_squeaky_squirrel: {
+    baseHappiness: 10,
+    boredomRelief: 20,
+    extraEnergyCost: 0,
+    bondBonus: 0,
+    preyDriveBonus: 10,
+  },
+  toy_tug_rope: {
+    baseHappiness: 6,
+    boredomRelief: 12,
+    extraEnergyCost: 5,
+    bondBonus: 2,
+  },
+  toy_heavy_frisbee: {
+    baseHappiness: 8,
+    boredomRelief: 30,
+    extraEnergyCost: 20,
+    bondBonus: 0,
+  },
+  toy_plush_squeaky_fox: {
+    baseHappiness: 25,
+    boredomRelief: 20,
+    extraEnergyCost: 8,
+    bondBonus: 2,
+    overrideAction: "thrashing",
+  },
+  toy_rc_robot_mouse: {
+    baseHappiness: 10,
+    boredomRelief: 25,
+    extraEnergyCost: 40,
+    bondBonus: 10,
+  },
+});
+
+function getCatalogItemById(id) {
+  const target = String(id || "").trim();
+  if (!target) return null;
+  return (
+    DEFAULT_COSMETIC_CATALOG.find(
+      (it) => it && String(it.id || "").trim() === target
+    ) || null
+  );
+}
 
 function createInitialTrainingState() {
   return {
@@ -757,6 +1091,7 @@ const initialState = {
   level: 1,
   xp: 0,
   coins: 0,
+  gems: 0,
   adoptedAt: null,
   lifeStage: { ...DEFAULT_LIFE_STAGE },
 
@@ -794,6 +1129,7 @@ const initialState = {
   healthSilo: { ...initialHealthSilo },
   personalityProfile: null,
   memory: initialMemory,
+  inventory: { ...initialInventory },
   career: initialCareer,
   skills: initialSkills,
   mood: initialMood,
@@ -1519,6 +1855,25 @@ function applyCompoundingStage(ctx) {
   if (!ctx.sleeping && ctx.idleish && Number.isFinite(ctx.decayByStat.energy)) {
     ctx.decayByStat.energy *= ctx.multipliers.idleEnergy;
   }
+
+  const inventory = ensureInventoryState(ctx.state);
+  const unlocked = new Set(
+    Array.isArray(ctx.state?.cosmetics?.unlockedIds)
+      ? ctx.state.cosmetics.unlockedIds
+      : []
+  );
+  const hasPassiveToySupport =
+    inventory.autoBallLauncherOwned ||
+    inventory.robotMouseOwned ||
+    unlocked.has("toy_rc_robot_mouse");
+  if (hasPassiveToySupport) {
+    if (Number.isFinite(ctx.decayByStat.happiness)) {
+      ctx.decayByStat.happiness *= 0.55;
+    }
+    if (Number.isFinite(ctx.decayByStat.mentalStimulation)) {
+      ctx.decayByStat.mentalStimulation *= 0.45;
+    }
+  }
 }
 
 function evaluateThresholdsStage(ctx) {
@@ -1695,6 +2050,9 @@ function maybeTriggerDestructiveChewing(ctx) {
   const urge = clamp(Number(ctx?.instinctEngine?.chewingUrge || 0), 0, 100);
   if (urge < CHEWING_URGE_DESTRUCTIVE_THRESHOLD) return;
   if (ctx.vacation.enabled) return;
+  const inventory = ensureInventoryState(ctx.state);
+  const chewProtectionUntil = Number(inventory.chewProtectionUntil || 0);
+  if (chewProtectionUntil && ctx.now < chewProtectionUntil) return;
   if (hasChewOutlet(ctx.state)) return;
 
   const lastAt = Number(ctx.state?.memory?.lastChewingIncidentAt || 0);
@@ -2682,6 +3040,7 @@ const dogSlice = createSlice({
       ensureYardState(merged);
       ensurePersonalityState(merged);
       ensureHealthSiloState(merged);
+      ensureInventoryState(merged);
       ensureDreamState(merged);
       ensureVacationState(merged);
       ensureDogFsmState(merged);
@@ -2806,6 +3165,40 @@ const dogSlice = createSlice({
       state.memory.favoriteToyId = payload || null;
     },
 
+    setActiveToy(state, { payload }) {
+      const toyId = String(payload?.toyId || payload || "").trim();
+      if (!toyId) return;
+      const unlocked = new Set(
+        Array.isArray(state?.cosmetics?.unlockedIds)
+          ? state.cosmetics.unlockedIds
+          : []
+      );
+      if (!unlocked.has(toyId)) return;
+      const inventory = ensureInventoryState(state);
+      inventory.activeToyId = toyId;
+      state.memory.favoriteToyId = toyId;
+      state.lastAction = "equip_toy";
+    },
+
+    buyPremiumKibblePack(state, { payload }) {
+      const amount = Math.max(0, Math.floor(Number(payload?.amount || 0)));
+      if (!amount) return;
+      const inventory = ensureInventoryState(state);
+      inventory.premiumKibble = Math.max(
+        0,
+        Number(inventory.premiumKibble || 0)
+      );
+      inventory.premiumKibble += amount;
+      state.lastAction = "purchase_premium_kibble";
+      pushJournalEntry(state, {
+        type: "CARE",
+        moodTag: "PROUD",
+        summary: "Premium kibble stocked",
+        body: `Added ${amount} premium kibble bowls to your pantry.`,
+        timestamp: nowMs(),
+      });
+    },
+
     /* ------------- care actions ------------- */
 
     feed(state, { payload }) {
@@ -2867,6 +3260,23 @@ const dogSlice = createSlice({
       applyDecay(state, now);
       wakeForInteraction(state);
 
+      const inventory = ensureInventoryState(state);
+      const unlocked = new Set(
+        Array.isArray(state?.cosmetics?.unlockedIds)
+          ? state.cosmetics.unlockedIds
+          : []
+      );
+      let activeToyId = payload?.toyId
+        ? String(payload.toyId).trim()
+        : String(inventory.activeToyId || "").trim();
+      if (!activeToyId || !unlocked.has(activeToyId)) {
+        activeToyId = "toy_tennis_ball_basic";
+      }
+      inventory.activeToyId = activeToyId;
+      const toyProfile =
+        TOY_PLAY_PROFILES[activeToyId] ||
+        TOY_PLAY_PROFILES.toy_tennis_ball_basic;
+
       const zoomiesMultiplier = payload?.timeOfDay === "MORNING" ? 2 : 1;
       const careerMultiplier =
         state.career.perks?.happinessGainMultiplier || 1.0;
@@ -2875,7 +3285,7 @@ const dogSlice = createSlice({
       const toyObsessed = getTemperamentTraitIntensity(state, "toyObsessed");
       const nextStats = calculatePlayStats({
         stats: state.stats,
-        baseHappiness: payload?.happinessGain ?? 15,
+        baseHappiness: payload?.happinessGain ?? toyProfile.baseHappiness ?? 15,
         zoomiesMultiplier,
         careerHappinessMultiplier: careerMultiplier,
         playHappinessBonus: perks.playHappinessBonus,
@@ -2884,14 +3294,37 @@ const dogSlice = createSlice({
       });
       state.stats.happiness = nextStats.happiness;
       state.stats.energy = nextStats.energy;
+      if (toyProfile.preyDriveBonus && toyObsessed >= 65) {
+        state.stats.happiness = clamp(
+          state.stats.happiness + toyProfile.preyDriveBonus,
+          0,
+          100
+        );
+      }
+      if (toyProfile.boredomRelief) {
+        state.stats.mentalStimulation = clamp(
+          Number(state.stats.mentalStimulation || 0) + toyProfile.boredomRelief,
+          0,
+          100
+        );
+      }
+      if (toyProfile.extraEnergyCost) {
+        state.stats.energy = clamp(
+          state.stats.energy - toyProfile.extraEnergyCost,
+          0,
+          100
+        );
+      }
 
       state.memory.lastPlayedAt = now;
       state.memory.lastSeenAt = now;
-      state.lastAction = resolveActionOverride(payload, "play");
+      state.lastAction = resolveActionOverride(
+        payload,
+        toyProfile.overrideAction || "play"
+      );
       applyFsmAction(state, "play", now);
 
       const legacy = ensureLegacyJourneyState(state);
-      const activeToyId = payload?.toyId ? String(payload.toyId).trim() : null;
       const sameLegacyToy =
         !!activeToyId &&
         !!legacy.favoriteToyId &&
@@ -2915,7 +3348,11 @@ const dogSlice = createSlice({
       }
 
       const sweetBondMultiplier = hasTemperamentTag(state, "SWEET") ? 1.35 : 1;
-      applyBondGain(state, 2 * sweetBondMultiplier, now);
+      applyBondGain(
+        state,
+        (2 + Number(toyProfile.bondBonus || 0)) * sweetBondMultiplier,
+        now
+      );
       state.stats.thirst = nextStats.thirst;
       gainPottyNeed(state, 12);
 
@@ -3270,8 +3707,11 @@ const dogSlice = createSlice({
       // Auto-consume any placed food bowl once the dog is "close enough".
       maybeConsumeFoodBowl(state, now);
 
-      // Ambient behavior: itchy dogs will scratch sometimes.
-      if (!state.isAsleep && (tier === "FLEAS" || tier === "MANGE")) {
+      // Ambient behavior: dirty/itchy dogs will scratch sometimes.
+      if (
+        !state.isAsleep &&
+        (tier === "DIRTY" || tier === "FLEAS" || tier === "MANGE")
+      ) {
         const last = String(state.lastAction || "").toLowerCase();
         const protectedActions = [
           "feed",
@@ -3284,7 +3724,7 @@ const dogSlice = createSlice({
           "pet",
         ];
         const canOverride = !protectedActions.some((a) => last.startsWith(a));
-        const chance = tier === "MANGE" ? 0.35 : 0.25;
+        const chance = tier === "MANGE" ? 0.35 : tier === "FLEAS" ? 0.25 : 0.12;
         if (canOverride && Math.random() < chance) {
           state.lastAction = "scratch";
         }
@@ -3653,26 +4093,63 @@ const dogSlice = createSlice({
       const id = String(payload?.id || "").trim();
       if (!id) return;
 
-      const price = Math.max(0, Math.round(Number(payload?.price) || 0));
+      const catalogItem = getCatalogItemById(id);
+      const price = Math.max(
+        0,
+        Math.round(Number(payload?.price ?? catalogItem?.price) || 0)
+      );
+      const currency = String(
+        payload?.currency || catalogItem?.currency || "coins"
+      )
+        .trim()
+        .toLowerCase();
       const now = typeof payload?.now === "number" ? payload.now : nowMs();
+      const repeatable = Boolean(catalogItem?.repeatable);
 
       if (!state.cosmetics) state.cosmetics = { ...initialCosmetics };
       if (!Array.isArray(state.cosmetics.unlockedIds))
         state.cosmetics.unlockedIds = [];
       if (!state.cosmetics.equipped)
         state.cosmetics.equipped = { ...initialCosmetics.equipped };
+      ensureInventoryState(state);
 
-      if (state.cosmetics.unlockedIds.includes(id)) return;
-      if (price > 0 && (state.coins || 0) < price) return;
+      if (!repeatable && state.cosmetics.unlockedIds.includes(id)) return;
+      if (currency === "gems") {
+        state.gems = Math.max(0, Math.round(Number(state.gems || 0)));
+        if (price > 0 && state.gems < price) return;
+      } else {
+        state.coins = Math.max(0, Math.round(Number(state.coins || 0)));
+        if (price > 0 && state.coins < price) return;
+      }
 
-      state.coins = Math.max(0, Math.round((state.coins || 0) - price));
-      state.cosmetics.unlockedIds.push(id);
+      if (currency === "gems") {
+        state.gems = Math.max(0, Math.round((state.gems || 0) - price));
+      } else {
+        state.coins = Math.max(0, Math.round((state.coins || 0) - price));
+      }
+      if (!repeatable && !state.cosmetics.unlockedIds.includes(id)) {
+        state.cosmetics.unlockedIds.push(id);
+      }
+
+      if (id === "toy_indestructible_bone") {
+        state.inventory.chewProtectionUntil = now + 3 * 24 * 60 * 60 * 1000;
+      }
+      if (id === "yard_auto_ball_launcher" || id === "toy_rc_robot_mouse") {
+        state.inventory.autoBallLauncherOwned = true;
+        state.inventory.robotMouseOwned = true;
+      }
+      if (
+        String(catalogItem?.slot || "").toLowerCase() === "toy" &&
+        !state.inventory.activeToyId
+      ) {
+        state.inventory.activeToyId = id;
+      }
 
       pushJournalEntry(state, {
         type: "STORE",
         moodTag: "HAPPY",
-        summary: "Bought a cosmetic",
-        body: `Purchased: ${id}${price ? ` for ${price} coins` : ""}.`,
+        summary: "Store purchase complete",
+        body: `Purchased: ${id}${price ? ` for ${price} ${currency}` : ""}.`,
         timestamp: now,
       });
     },
@@ -3873,6 +4350,7 @@ export const selectNextStreakReward = (state) => {
   const next =
     DEFAULT_COSMETIC_CATALOG.filter((it) => it && it.id)
       .filter((it) => !unlocked.has(it.id))
+      .filter((it) => (Number(it?.threshold) || 0) > 0)
       .sort((a, b) => (Number(a.threshold) || 0) - (Number(b.threshold) || 0))
       .find((it) => (Number(it.threshold) || 0) > streakDays) || null;
 
@@ -3890,6 +4368,7 @@ export const {
   ackTemperamentReveal,
   markTemperamentRevealed,
   updateFavoriteToy,
+  setActiveToy,
   feed,
   giveWater,
   play,
@@ -3923,6 +4402,7 @@ export const {
   respecSkillTree,
   addJournalEntry,
   purchaseCosmetic,
+  buyPremiumKibblePack,
   equipCosmetic,
   startRainbowBridge,
   completeRainbowBridge,

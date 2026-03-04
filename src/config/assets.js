@@ -14,9 +14,9 @@ export const BACKGROUNDS = Object.freeze({
 });
 
 export const DOGS = Object.freeze({
-  staticFallback: "/assets/sprites/jr/puppy-idle.png",
-  walkLeft: "/assets/sprites/jr/adult-walk-left.png",
-  walkLeftAlt: "/assets/sprites/jr/adult-walk-right.png",
+  staticFallback: "/assets/sprites/jr/pup_clean.png",
+  walkLeft: "/assets/sprites/jr/pup_walk_left.png",
+  walkLeftAlt: "/assets/sprites/jr/pup_walk_right.png",
 });
 
 export function getAsset(map, key, fallback = "") {

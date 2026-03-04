@@ -27,6 +27,8 @@ export default function DogPixiView({
   height,
   scale = 2.25,
   dogIsSleeping = false,
+  animSpeedMultiplier = 1,
+  onPositionChange = null,
 }) {
   const containerRef = useRef(null);
   const rafRef = useRef(0);
@@ -114,11 +116,18 @@ export default function DogPixiView({
           padding
         );
         state.moving = true;
-        state.speed = randBetween(18, 42);
+        const speedMult = clamp(Number(animSpeedMultiplier), 0.2, 2);
+        state.speed = randBetween(18, 42) * speedMult;
       }
 
       setPos((prev) => {
-        if (!state.moving) return { ...prev, moving: false };
+        if (!state.moving) {
+          const next = { ...prev, moving: false };
+          if (typeof onPositionChange === "function") {
+            onPositionChange(next);
+          }
+          return next;
+        }
 
         const dx = state.target.x - prev.x;
         const dy = state.target.y - prev.y;
@@ -135,12 +144,18 @@ export default function DogPixiView({
         const ny = prev.y + (dy / dist) * step;
         const facing = dx < -0.5 ? -1 : dx > 0.5 ? 1 : prev.facing;
 
-        return {
+        const next = {
           x: clamp(nx, padding, viewportWidth - padding),
           y: clamp(ny, padding, viewportHeight - padding),
           facing,
           moving: true,
         };
+
+        if (typeof onPositionChange === "function") {
+          onPositionChange(next);
+        }
+
+        return next;
       });
 
       rafRef.current = requestAnimationFrame(tick);
@@ -152,7 +167,14 @@ export default function DogPixiView({
       rafRef.current = 0;
       lastTsRef.current = 0;
     };
-  }, [dogIsSleeping, size, viewportHeight, viewportWidth]);
+  }, [
+    animSpeedMultiplier,
+    dogIsSleeping,
+    onPositionChange,
+    size,
+    viewportHeight,
+    viewportWidth,
+  ]);
 
   const animLower = String(anim || "idle")
     .trim()
@@ -185,6 +207,7 @@ export default function DogPixiView({
           anim={effectiveAnim}
           facing={pos.facing}
           size={size}
+          speedMultiplier={animSpeedMultiplier}
         />
       </div>
     </div>

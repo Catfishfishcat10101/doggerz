@@ -18,6 +18,8 @@ import { setZip, selectUserZip } from "@/redux/userSlice.js";
 import {
   bathe,
   dropFoodBowl,
+  buyPremiumKibblePack,
+  feed,
   giveWater,
   goPotty,
   ackTemperamentReveal,
@@ -92,6 +94,13 @@ const ACTION_META = Object.freeze({
   },
 });
 
+const PAW_PRINT_TTL_MS = 8000;
+const PAW_PRINT_COLORS = Object.freeze({
+  DIRTY: "rgba(92, 64, 42, 0.5)",
+  FLEAS: "rgba(82, 56, 38, 0.6)",
+  MANGE: "rgba(70, 46, 30, 0.7)",
+});
+
 function toNightBucket(timeOfDay) {
   const key = String(timeOfDay || "").toLowerCase();
   return key === "night" || key === "evening" ? "night" : "day";
@@ -103,6 +112,25 @@ function formatLiveClock(ts) {
     minute: "2-digit",
     second: "2-digit",
   }).format(new Date(ts));
+}
+
+function PawPrintSvg({ className = "" }) {
+  return (
+    <svg
+      viewBox="0 0 64 64"
+      className={className}
+      aria-hidden="true"
+      focusable="false"
+    >
+      <g fill="currentColor">
+        <circle cx="20" cy="16" r="6" />
+        <circle cx="44" cy="16" r="6" />
+        <circle cx="12" cy="34" r="6" />
+        <circle cx="52" cy="34" r="6" />
+        <path d="M32 36c-9 0-16 7-16 16 0 7 6 12 16 12s16-5 16-12c0-9-7-16-16-16z" />
+      </g>
+    </svg>
+  );
 }
 
 export default function MainGame({ scene, dogInteractive = true }) {
@@ -117,6 +145,8 @@ export default function MainGame({ scene, dogInteractive = true }) {
   const weatherError = useSelector(selectWeatherError);
   const weatherLastFetchedAt = useSelector(selectWeatherLastFetchedAt);
   const lastToySqueakAtRef = useRef(0);
+  const pawPrintIdRef = useRef(0);
+  const lastPawPrintRef = useRef({ x: 0, y: 0, at: 0 });
   const dogViewportRef = useRef(null);
   const [attentionTarget, setAttentionTarget] = useState(null);
   const [interactionOpen, setInteractionOpen] = useState(false);
@@ -127,14 +157,27 @@ export default function MainGame({ scene, dogInteractive = true }) {
   const [weatherBusy, setWeatherBusy] = useState(false);
   const [temperamentCardDismissed, setTemperamentCardDismissed] =
     useState(false);
+  const [pawPrints, setPawPrints] = useState([]);
 
   const seasonMode = settings?.seasonMode || "auto";
   const reduceMotion = settings?.reduceMotion === "on";
   const reduceTransparency = settings?.reduceTransparency === true;
+  const cleanlinessTier = String(dog?.cleanlinessTier || "").toUpperCase();
+  const pawPrintsEnabled = ["DIRTY", "FLEAS", "MANGE"].includes(
+    cleanlinessTier
+  );
 
   const activeAnim = renderModel?.anim || "idle";
+  const animationSpeedMultiplier = Number(
+    renderModel?.animationSpeedMultiplier || 1
+  );
+  const toysIgnored = Boolean(renderModel?.ignoreToys);
   const holes = Array.isArray(dog?.yard?.holes) ? dog.yard.holes : [];
   const foodBowl = dog?.yard?.foodBowl || null;
+  const premiumKibbleCount = Math.max(
+    0,
+    Math.floor(Number(dog?.inventory?.premiumKibble || 0))
+  );
   const zipIsValid = /^\d{5}$/.test(String(zipDraft || "").trim());
   const effectiveZip = userZip || zipDraft || "10001";
   const controlsDisabled = !dogInteractive;
@@ -168,9 +211,61 @@ export default function MainGame({ scene, dogInteractive = true }) {
     };
   }, [dog?.temperament?.primary, dog?.temperament?.secondary]);
 
+  useEffect(() => {
+    if (pawPrintsEnabled) return;
+    setPawPrints([]);
+    lastPawPrintRef.current = { x: 0, y: 0, at: 0 };
+  }, [pawPrintsEnabled]);
+
+  const handleDogPositionChange = useCallback(
+    (pos) => {
+      if (!pawPrintsEnabled) return;
+      if (!pos?.moving) return;
+      const now = Date.now();
+      const last = lastPawPrintRef.current;
+      const dx = Number(pos.x || 0) - Number(last.x || 0);
+      const dy = Number(pos.y || 0) - Number(last.y || 0);
+      const dist = Math.hypot(dx, dy);
+      const minDist = cleanlinessTier === "DIRTY" ? 22 : 18;
+      const minMs =
+        cleanlinessTier === "DIRTY"
+          ? 420
+          : cleanlinessTier === "FLEAS"
+            ? 320
+            : 260;
+      if (now - last.at < minMs && dist < minDist) return;
+
+      lastPawPrintRef.current = { x: pos.x, y: pos.y, at: now };
+      const size = cleanlinessTier === "MANGE" ? 22 : 18;
+      const rot = (pos.facing < 0 ? 180 : 0) + (Math.random() * 50 - 25);
+      const fill =
+        PAW_PRINT_COLORS[cleanlinessTier] ||
+        PAW_PRINT_COLORS.DIRTY ||
+        "rgba(92, 64, 42, 0.5)";
+
+      setPawPrints((prev) => {
+        const fresh = prev.filter(
+          (p) => now - Number(p.createdAt || 0) < PAW_PRINT_TTL_MS
+        );
+        const next = {
+          id: ++pawPrintIdRef.current,
+          x: pos.x,
+          y: pos.y,
+          rot,
+          size,
+          fill,
+          createdAt: now,
+        };
+        return [...fresh, next];
+      });
+    },
+    [cleanlinessTier, pawPrintsEnabled]
+  );
+
   const handleToySqueak = useCallback(
     (point) => {
       if (controlsDisabled) return;
+      if (toysIgnored) return;
       const now = Date.now();
       if (now - lastToySqueakAtRef.current < 600) return;
       lastToySqueakAtRef.current = now;
@@ -186,7 +281,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
 
       dispatch(play({ now, source: "toy" }));
     },
-    [controlsDisabled, dispatch]
+    [controlsDisabled, dispatch, toysIgnored]
   );
 
   const handleViewportPointerDown = useCallback(
@@ -381,6 +476,28 @@ export default function MainGame({ scene, dogInteractive = true }) {
               className="relative flex items-center justify-center"
               onPointerDown={handleViewportPointerDown}
             >
+              {pawPrints.length > 0 ? (
+                <div className="pointer-events-none absolute inset-0 z-10">
+                  {pawPrints.map((print) => (
+                    <span
+                      key={print.id}
+                      className="mud-paw-print"
+                      style={{
+                        left: `${Number(print.x || 0)}px`,
+                        top: `${Number(print.y || 0)}px`,
+                        width: `${Number(print.size || 18)}px`,
+                        height: `${Number(print.size || 18)}px`,
+                        transform: `translate(-50%, -50%) rotate(${Number(
+                          print.rot || 0
+                        )}deg)`,
+                        color: print.fill,
+                      }}
+                    >
+                      <PawPrintSvg className="h-full w-full" />
+                    </span>
+                  ))}
+                </div>
+              ) : null}
               <Suspense
                 fallback={
                   <div className="flex h-[320px] w-[420px] items-center justify-center rounded-3xl border border-doggerz-leaf/30 bg-black/40 text-xs uppercase tracking-[0.2em] text-doggerz-paw/80">
@@ -388,17 +505,21 @@ export default function MainGame({ scene, dogInteractive = true }) {
                   </div>
                 }
               >
-                <DogPixiView
-                  stage={renderModel?.stage}
-                  condition={renderModel?.condition}
-                  anim={activeAnim}
-                  width={420}
-                  height={320}
-                  scale={2.25}
-                  attentionTarget={attentionTarget}
-                  bondValue={Number(dog?.bond?.value ?? 0)}
-                  dogIsSleeping={Boolean(renderModel?.isSleeping)}
-                />
+                <div className="relative z-20">
+                  <DogPixiView
+                    stage={renderModel?.stage}
+                    condition={renderModel?.condition}
+                    anim={activeAnim}
+                    width={420}
+                    height={320}
+                    scale={2.25}
+                    animSpeedMultiplier={animationSpeedMultiplier}
+                    attentionTarget={attentionTarget}
+                    bondValue={Number(dog?.bond?.value ?? 0)}
+                    dogIsSleeping={Boolean(renderModel?.isSleeping)}
+                    onPositionChange={handleDogPositionChange}
+                  />
+                </div>
               </Suspense>
               {foodBowl ? (
                 <div
@@ -433,8 +554,11 @@ export default function MainGame({ scene, dogInteractive = true }) {
             />
             <ActionButton
               label="Play"
-              disabled={controlsDisabled}
-              onClick={() => dispatch(play({ now: Date.now() }))}
+              disabled={controlsDisabled || toysIgnored}
+              onClick={() => {
+                if (toysIgnored) return;
+                dispatch(play({ now: Date.now(), source: "toy" }));
+              }}
             />
             <ActionButton
               label="Pet"
@@ -489,9 +613,34 @@ export default function MainGame({ scene, dogInteractive = true }) {
             setInteractionOpen(false);
           }}
           onPlay={() => {
+            if (toysIgnored) {
+              setInteractionOpen(false);
+              return;
+            }
             dispatch(play({ now: Date.now() }));
             setInteractionOpen(false);
           }}
+          onFeedRegular={() => {
+            dispatch(feed({ now: Date.now(), foodType: "regular_kibble" }));
+            setInteractionOpen(false);
+          }}
+          onFeedHuman={() => {
+            dispatch(feed({ now: Date.now(), foodType: "human_food" }));
+            setInteractionOpen(false);
+          }}
+          onFeedPremium={() => {
+            dispatch(feed({ now: Date.now(), foodType: "premium_kibble" }));
+            setInteractionOpen(false);
+          }}
+          onBuyPremiumPackSmall={() => {
+            dispatch(buyPremiumKibblePack({ amount: 5, price: 0.99 }));
+            setInteractionOpen(false);
+          }}
+          onBuyPremiumPackLarge={() => {
+            dispatch(buyPremiumKibblePack({ amount: 15, price: 1.99 }));
+            setInteractionOpen(false);
+          }}
+          premiumKibbleCount={premiumKibbleCount}
           onPet={() => {
             dispatch(petDog({ now: Date.now() }));
             setInteractionOpen(false);
@@ -588,6 +737,12 @@ function ActionButton({ label, onClick, disabled = false }) {
 function InteractionSheet({
   onClose,
   onDropBowl,
+  onFeedRegular,
+  onFeedHuman,
+  onFeedPremium,
+  onBuyPremiumPackSmall,
+  onBuyPremiumPackLarge,
+  premiumKibbleCount = 0,
   onGiveWater,
   onPlay,
   onPet,
@@ -602,6 +757,9 @@ function InteractionSheet({
           <div className="text-sm font-semibold uppercase tracking-[0.2em] text-doggerz-paw">
             Interactions
           </div>
+          <div className="rounded-full border border-white/15 bg-black/40 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-100">
+            Premium bowls: {premiumKibbleCount}
+          </div>
           <button
             type="button"
             onClick={onClose}
@@ -611,6 +769,32 @@ function InteractionSheet({
           </button>
         </div>
         <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+          <SheetButton
+            label="Feed Regular Kibble"
+            icon="🦴"
+            onClick={onFeedRegular}
+          />
+          <SheetButton
+            label="Feed Human Food"
+            icon="🍟"
+            onClick={onFeedHuman}
+          />
+          <SheetButton
+            label="Feed Premium Kibble"
+            icon="🥩"
+            onClick={onFeedPremium}
+            disabled={premiumKibbleCount <= 0}
+          />
+          <SheetButton
+            label="Premium Pack x5 ($0.99)"
+            icon="🧺"
+            onClick={onBuyPremiumPackSmall}
+          />
+          <SheetButton
+            label="Premium Pack x15 ($1.99)"
+            icon="🧺"
+            onClick={onBuyPremiumPackLarge}
+          />
           <SheetButton label="Drop Food Bowl" icon="🥣" onClick={onDropBowl} />
           <SheetButton label="Give Water" icon="💧" onClick={onGiveWater} />
           <SheetButton label="Play" icon="🎾" onClick={onPlay} />
@@ -624,12 +808,13 @@ function InteractionSheet({
   );
 }
 
-function SheetButton({ label, icon, onClick }) {
+function SheetButton({ label, icon, onClick, disabled = false }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="group flex items-center gap-2 rounded-2xl border border-doggerz-leaf/30 bg-black/40 px-3 py-3 text-left text-sm font-semibold text-doggerz-bone transition hover:border-doggerz-neon/60 hover:bg-white/5"
+      disabled={disabled}
+      className="group flex items-center gap-2 rounded-2xl border border-doggerz-leaf/30 bg-black/40 px-3 py-3 text-left text-sm font-semibold text-doggerz-bone transition hover:border-doggerz-neon/60 hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-60"
     >
       <span className="grid h-9 w-9 place-items-center rounded-xl border border-white/20 bg-black/25 text-base">
         {icon}

@@ -107,48 +107,8 @@ export function getDogAnimSpriteUrl(_stageLike, _animLike) {
     .toLowerCase()
     .replace(/\s+/g, "_")
     .replace(/-+/g, "_");
-
-  if (stage === "pup") {
-    const pupMap = {
-      idle: "puppy-idle.png",
-      walk: "puppy-bouncing.png",
-      walk_left: "puppy-bouncing.png",
-      walk_right: "puppy-bouncing.png",
-      turn_walk_right: "puppy-bouncing.png",
-      bark: "puppy-barking.png",
-      scratch: "puppy-digging.png",
-      sleep: "puppy-sleeping.png",
-      sit: "puppy-looking.png",
-      wag: "puppy-looking.png",
-      jump: "puppy-bouncing.png",
-      front_flip: "puppy-levelup.png",
-      trick: "puppy-levelup.png",
-      eat: "puppy-looking.png",
-    };
-    return withBaseUrl(
-      `${DEFAULT_SPRITE_DIR}/jr/${pupMap[anim] || pupMap.idle}`
-    );
-  }
-
-  const adultMap = {
-    idle: "adult-sit.png",
-    walk: "adult-walk-right.png",
-    walk_left: "adult-walk-left.png",
-    walk_right: "adult-walk-right.png",
-    turn_walk_right: "adult-walk-right.png",
-    bark: "adult-paw.png",
-    scratch: "adult-run-circle.png",
-    sleep: "adult-lay-down.png",
-    sit: "adult-sit.png",
-    wag: "adult-waling-circle.png",
-    jump: "adult-run-circle.png",
-    front_flip: "adult-paw.png",
-    trick: "adult-paw.png",
-    eat: "adult-sit.png",
-  };
-
   return withBaseUrl(
-    `${DEFAULT_SPRITE_DIR}/jr/${adultMap[anim] || adultMap.idle}`
+    `${DEFAULT_SPRITE_DIR}/jr/${stage}_${anim}.png?v=${DOG_SPRITE_REV}`
   );
 }
 

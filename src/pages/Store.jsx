@@ -14,6 +14,7 @@ import {
   selectCosmeticCatalog,
   selectDog,
   equipCosmetic,
+  setActiveToy,
   selectNextStreakReward,
 } from "@/redux/dogSlice.js";
 import { selectUserCoins } from "@/redux/userSlice.js";
@@ -31,7 +32,55 @@ const EMPTY_EQUIPPED = Object.freeze({
   backdrop: null,
 });
 
+const WEARABLE_SLOTS = new Set(["collar", "tag", "backdrop"]);
+
+const STORE_CATEGORY_META = Object.freeze({
+  toys: {
+    label: "Toys",
+    impact: "Boosts Happiness and Bond; reduces boredom.",
+  },
+  apparel: {
+    label: "Apparel",
+    impact: "Mostly cosmetic; some gear can reduce weather stress.",
+  },
+  care: {
+    label: "Care & Consumables",
+    impact: "Restores health, dirtiness, and dental condition.",
+  },
+  yard: {
+    label: "Yard Upgrades",
+    impact: "Improves passive comfort and long-term routine stability.",
+  },
+});
+
+function getStoreCategory(item) {
+  const explicit = String(item?.category || "")
+    .trim()
+    .toLowerCase();
+  if (explicit && STORE_CATEGORY_META[explicit]) return explicit;
+  const slot = String(item?.slot || "")
+    .trim()
+    .toLowerCase();
+  if (slot === "toy") return "toys";
+  if (slot === "collar" || slot === "tag" || slot === "backdrop")
+    return "apparel";
+  if (slot === "consumable") return "care";
+  if (slot === "yard_upgrade") return "yard";
+  return "apparel";
+}
+
+function getCurrencyForItem(item) {
+  const raw = String(item?.currency || "coins")
+    .trim()
+    .toLowerCase();
+  return raw === "gems" ? "gems" : "coins";
+}
+
 function priceForCatalogItem(item) {
+  const explicit = Number(item?.price);
+  if (Number.isFinite(explicit) && explicit >= 0) {
+    return Math.round(explicit);
+  }
   const threshold = Math.max(0, Math.round(Number(item?.threshold) || 0));
   // Keep it simple: make store prices scale with streak thresholds.
   return Math.max(25, threshold * 25);
@@ -54,9 +103,47 @@ function titleCase(s) {
 }
 
 function cosmeticDescription(item) {
+  const category = getStoreCategory(item);
   const slot = String(item?.slot || "").toLowerCase();
   const id = String(item?.id || "");
+  if (category === "toys") {
+    if (id === "toy_tennis_ball_basic")
+      return "Free starter toy. Lower impact; works best with sustained active play.";
+    if (id === "toy_squeaky_squirrel")
+      return "Strong boredom relief. High prey-drive pups get bonus happiness.";
+    if (id === "toy_tug_rope")
+      return "Great for bond growth through shared interaction.";
+    if (id === "toy_heavy_frisbee")
+      return "High-intensity toy that burns energy quickly.";
+    if (id === "toy_plush_squeaky_fox")
+      return "Big happiness spike and boredom relief; triggers thrashing behavior.";
+    if (id === "toy_rc_robot_mouse")
+      return "Ultimate toy: major bond gains and passive boredom management.";
+    return "Reusable toy for active play and mood boosts.";
+  }
+  if (category === "care") {
+    if (id === "toy_indestructible_bone")
+      return "Chewing urge suppression item; blocks destructive chewing for 3 real days.";
+    if (id === "care_oatmeal_shampoo")
+      return "Soothes skin and helps recover from dirty states.";
+    if (id === "care_dental_chew")
+      return "Supports dental health and slows tooth decay.";
+    if (id === "care_premium_kibble_pack_small")
+      return "IAP pack with 5 premium bowls.";
+    if (id === "care_premium_kibble_pack_large")
+      return "IAP pack with 15 premium bowls.";
+    return "Single-use care item to improve core wellbeing.";
+  }
+  if (category === "yard") {
+    if (id === "yard_digging_sandbox")
+      return "Redirects digging and lowers destructive outlets.";
+    if (id === "yard_fancy_doghouse")
+      return "Long-term comfort boost for rest and stress recovery.";
+    return "Permanent yard upgrade that improves passive routine.";
+  }
   if (slot === "collar") {
+    if (id === "collar_plain_red")
+      return "Starter collar included free at adoption.";
     if (id === "collar_leaf")
       return "A fresh, leafy collar with a soft emerald glow.";
     if (id === "collar_neon")
@@ -123,7 +210,14 @@ function ProgressBar({ value = 0, className = "" }) {
 
 function SlotPill({ slot }) {
   const s = String(slot || "cosmetic").toLowerCase();
-  const label = s ? titleCase(s) : "Cosmetic";
+  const label =
+    s === "yard_upgrade"
+      ? "Yard"
+      : s === "consumable"
+        ? "Consumable"
+        : s
+          ? titleCase(s)
+          : "Cosmetic";
   const color =
     s === "collar"
       ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-100"
@@ -131,12 +225,28 @@ function SlotPill({ slot }) {
         ? "border-amber-500/25 bg-amber-500/10 text-amber-100"
         : s === "backdrop"
           ? "border-sky-500/25 bg-sky-500/10 text-sky-100"
-          : "border-white/15 bg-white/5 text-zinc-200";
+          : s === "toy"
+            ? "border-cyan-500/25 bg-cyan-500/10 text-cyan-100"
+            : s === "consumable"
+              ? "border-rose-500/25 bg-rose-500/10 text-rose-100"
+              : s === "yard_upgrade"
+                ? "border-orange-500/25 bg-orange-500/10 text-orange-100"
+                : "border-white/15 bg-white/5 text-zinc-200";
 
   return (
     <span
       className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] ${color}`}
     >
+      {label}
+    </span>
+  );
+}
+
+function CategoryPill({ category }) {
+  const key = String(category || "apparel").toLowerCase();
+  const label = STORE_CATEGORY_META[key]?.label || titleCase(key);
+  return (
+    <span className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-200">
       {label}
     </span>
   );
@@ -172,6 +282,7 @@ export default function Store() {
   const coins = Number.isFinite(Number(dog?.coins))
     ? Math.max(0, Math.round(Number(dog.coins)))
     : Math.max(0, Math.round(Number(userCoins) || 0));
+  const gems = Math.max(0, Math.round(Number(dog?.gems || 0)));
 
   const unlocked = useMemo(
     () =>
@@ -184,8 +295,9 @@ export default function Store() {
   );
 
   const equipped = dog?.cosmetics?.equipped ?? EMPTY_EQUIPPED;
+  const activeToyId = String(dog?.inventory?.activeToyId || "").trim();
 
-  const [slotFilter, setSlotFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
   const [query, setQuery] = useState("");
   const [ownedFilter, setOwnedFilter] = useState("all"); // all | owned | unowned
   const [affordFilter, setAffordFilter] = useState("all"); // all | affordable
@@ -234,7 +346,7 @@ export default function Store() {
   const trimmedQuery = String(query || "").trim();
   const hasActiveFilters =
     trimmedQuery.length > 0 ||
-    slotFilter !== "all" ||
+    categoryFilter !== "all" ||
     ownedFilter !== "all" ||
     affordFilter !== "all" ||
     sortKey !== "recommended";
@@ -268,24 +380,29 @@ export default function Store() {
         const id = String(it.id || "").trim();
         if (!id) return false;
 
-        const slot = String(it.slot || "").toLowerCase();
-        if (slotFilter !== "all" && slot !== slotFilter) return false;
+        const category = getStoreCategory(it);
+        if (categoryFilter !== "all" && category !== categoryFilter)
+          return false;
 
         const owned = unlocked.has(id);
         if (ownedFilter === "owned" && !owned) return false;
         if (ownedFilter === "unowned" && owned) return false;
 
         const price = priceForCatalogItem(it);
-        const afford = coins >= price;
+        const currency = getCurrencyForItem(it);
+        const balance = currency === "gems" ? gems : coins;
+        const afford = !it?.iap && balance >= price;
         if (affordFilter === "affordable" && !afford) return false;
 
         if (q) {
           const label = String(it.label || id).toLowerCase();
           const slotText = String(it.slot || "").toLowerCase();
+          const categoryText = getStoreCategory(it);
           if (
             !label.includes(q) &&
             !id.toLowerCase().includes(q) &&
-            !slotText.includes(q)
+            !slotText.includes(q) &&
+            !categoryText.includes(q)
           )
             return false;
         }
@@ -295,7 +412,29 @@ export default function Store() {
 
     const sorted = [...filtered];
     const slotRank = (s) =>
-      s === "collar" ? 0 : s === "tag" ? 1 : s === "backdrop" ? 2 : 9;
+      s === "collar"
+        ? 0
+        : s === "tag"
+          ? 1
+          : s === "backdrop"
+            ? 2
+            : s === "toy"
+              ? 3
+              : s === "consumable"
+                ? 4
+                : s === "yard_upgrade"
+                  ? 5
+                  : 9;
+    const categoryRank = (c) =>
+      c === "toys"
+        ? 0
+        : c === "apparel"
+          ? 1
+          : c === "care"
+            ? 2
+            : c === "yard"
+              ? 3
+              : 9;
 
     const baseComparator = (a, b) => {
       if (sortKey === "price") {
@@ -316,6 +455,11 @@ export default function Store() {
       // recommended: slot grouping + threshold
       const sa = String(a.slot || "").toLowerCase();
       const sb = String(b.slot || "").toLowerCase();
+      const ca = getStoreCategory(a);
+      const cb = getStoreCategory(b);
+      const cra = categoryRank(ca);
+      const crb = categoryRank(cb);
+      if (cra !== crb) return cra - crb;
       const ra = slotRank(sa);
       const rb = slotRank(sb);
       if (ra !== rb) return ra - rb;
@@ -336,10 +480,11 @@ export default function Store() {
     affordFilter,
     catalog,
     coins,
+    gems,
     equipped,
     ownedFilter,
     showEquippedFirst,
-    slotFilter,
+    categoryFilter,
     sortKey,
     trimmedQuery,
     unlocked,
@@ -368,14 +513,17 @@ export default function Store() {
       .filter((it) => {
         const id = String(it?.id || "").trim();
         if (!id) return false;
+        if (it?.iap) return false;
         if (unlocked.has(id)) return false;
         const price = priceForCatalogItem(it);
-        return coins >= price;
+        const currency = getCurrencyForItem(it);
+        const balance = currency === "gems" ? gems : coins;
+        return balance >= price;
       })
       .sort((a, b) => priceForCatalogItem(a) - priceForCatalogItem(b));
 
     return unownedAffordable[0] || null;
-  }, [catalog, coins, unlocked]);
+  }, [catalog, coins, gems, unlocked]);
 
   const canHoverPreview = previewOnHover && !previewLocked;
 
@@ -399,6 +547,10 @@ export default function Store() {
             <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/25 px-3 py-1 text-[11px] font-semibold">
               <span className="text-emerald-200">Coins</span>
               <span className="tabular-nums">{coins}</span>
+            </span>
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/25 px-3 py-1 text-[11px] font-semibold">
+              <span className="text-sky-200">Gems</span>
+              <span className="tabular-nums">{gems}</span>
             </span>
             <BackPill to="/game" label="Back to Yard" />
           </div>
@@ -476,6 +628,37 @@ export default function Store() {
                 streak will matter.
               </div>
             </div>
+          </div>
+        </section>
+
+        <section className="mb-8 rounded-3xl border border-white/10 bg-black/25 p-5 sm:p-6">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <div className="text-xs uppercase tracking-[0.22em] text-zinc-400">
+                Economy map
+              </div>
+              <div className="mt-1 text-lg font-extrabold text-zinc-100">
+                Category design and stat impact
+              </div>
+            </div>
+            <div className="text-xs text-zinc-400">
+              Starter freebies: Basic Tennis Ball + Plain Red Collar.
+            </div>
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {Object.entries(STORE_CATEGORY_META).map(([id, meta]) => (
+              <div
+                key={id}
+                className="rounded-2xl border border-white/10 bg-black/25 p-4"
+              >
+                <div className="text-xs uppercase tracking-[0.2em] text-zinc-400">
+                  {meta.label}
+                </div>
+                <div className="mt-2 text-sm text-zinc-300 leading-relaxed">
+                  {meta.impact}
+                </div>
+              </div>
+            ))}
           </div>
         </section>
 
@@ -710,9 +893,9 @@ export default function Store() {
                   </div>
 
                   <div className="mt-4 text-sm text-zinc-300 leading-relaxed">
-                    Buy cosmetics with coins, or unlock them free from streak
-                    rewards. Try-on previews don’t change your save until you
-                    equip.
+                    Buy items with coins, claim starter freebies, and unlock
+                    selected rewards from streak milestones. Try-on previews
+                    only affect wearable items.
                   </div>
                   <div className="mt-2 text-xs text-zinc-400">
                     {previewLocked
@@ -727,6 +910,7 @@ export default function Store() {
                         const slot = String(
                           focusedItem?.slot || "cosmetic"
                         ).toLowerCase();
+                        const category = getStoreCategory(focusedItem);
                         const label = String(focusedItem?.label || id);
                         const threshold = clamp(
                           Number(focusedItem?.threshold || 0),
@@ -734,9 +918,14 @@ export default function Store() {
                           9999
                         );
                         const price = priceForCatalogItem(focusedItem);
+                        const iapLabel = String(focusedItem?.iap || "").trim();
+                        const isIapOnly = Boolean(iapLabel);
+                        const currency = getCurrencyForItem(focusedItem);
+                        const balance = currency === "gems" ? gems : coins;
                         const owned = unlocked.has(id);
-                        const afford = coins >= price;
+                        const afford = !isIapOnly && balance >= price;
                         const isEquipped = slot && equipped?.[slot] === id;
+                        const wearable = WEARABLE_SLOTS.has(slot);
                         const rarity = rarityForThreshold(threshold);
 
                         const progress =
@@ -754,6 +943,7 @@ export default function Store() {
                               <div className="min-w-0">
                                 <div className="flex flex-wrap items-center gap-2">
                                   <SlotPill slot={slot} />
+                                  <CategoryPill category={category} />
                                   <span
                                     className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] ${rarity.className}`}
                                   >
@@ -769,13 +959,19 @@ export default function Store() {
                               </div>
                               <div className="text-right">
                                 <div className="text-xs text-zinc-400">
-                                  Price
+                                  {isIapOnly ? "IAP" : "Price"}
                                 </div>
                                 <div className="mt-1 text-sm font-extrabold tabular-nums text-emerald-200">
-                                  {price}
+                                  {isIapOnly
+                                    ? iapLabel
+                                    : price > 0
+                                      ? `${price} ${currency}`
+                                      : "Free"}
                                 </div>
                                 <div className="mt-2 text-[11px] text-zinc-500">
-                                  Free at day {threshold}
+                                  {threshold > 0
+                                    ? `Free at day ${threshold}`
+                                    : "Starter / direct unlock"}
                                 </div>
                               </div>
                             </div>
@@ -807,66 +1003,100 @@ export default function Store() {
                                 type="button"
                                 className="rounded-2xl px-4 py-3 text-xs font-bold border border-white/15 bg-black/25 text-zinc-100 hover:bg-black/35 transition"
                                 onClick={() => {
+                                  if (!wearable) return;
                                   setPreview({ slot, id });
                                   setPreviewLocked(true);
                                 }}
                               >
-                                Try on
+                                {wearable ? "Try on" : "Details"}
                               </button>
 
                               {owned ? (
-                                <button
-                                  type="button"
-                                  className={`rounded-2xl px-4 py-3 text-xs font-bold transition ${
-                                    isEquipped
-                                      ? "border border-emerald-500/25 bg-emerald-500/10 text-emerald-100"
-                                      : "border border-white/15 bg-black/25 text-zinc-100 hover:bg-black/35"
-                                  }`}
-                                  onClick={() => {
-                                    if (!slot) return;
-                                    dispatch(equipCosmetic({ slot, id }));
-                                    toast.success(
+                                wearable ? (
+                                  <button
+                                    type="button"
+                                    className={`rounded-2xl px-4 py-3 text-xs font-bold transition ${
                                       isEquipped
-                                        ? "Already equipped."
-                                        : `Equipped ${label}.`,
-                                      1400
-                                    );
-                                  }}
-                                >
-                                  {isEquipped ? "Equipped" : "Equip"}
-                                </button>
+                                        ? "border border-emerald-500/25 bg-emerald-500/10 text-emerald-100"
+                                        : "border border-white/15 bg-black/25 text-zinc-100 hover:bg-black/35"
+                                    }`}
+                                    onClick={() => {
+                                      if (!slot) return;
+                                      dispatch(equipCosmetic({ slot, id }));
+                                      toast.success(
+                                        isEquipped
+                                          ? "Already equipped."
+                                          : `Equipped ${label}.`,
+                                        1400
+                                      );
+                                    }}
+                                  >
+                                    {isEquipped ? "Equipped" : "Equip"}
+                                  </button>
+                                ) : slot === "toy" ? (
+                                  <button
+                                    type="button"
+                                    className={`rounded-2xl px-4 py-3 text-xs font-bold transition ${
+                                      activeToyId === id
+                                        ? "border border-emerald-500/25 bg-emerald-500/10 text-emerald-100"
+                                        : "border border-white/15 bg-black/25 text-zinc-100 hover:bg-black/35"
+                                    }`}
+                                    onClick={() => {
+                                      dispatch(setActiveToy({ toyId: id }));
+                                      toast.success(
+                                        activeToyId === id
+                                          ? "Already active."
+                                          : `Active toy set: ${label}.`,
+                                        1400
+                                      );
+                                    }}
+                                  >
+                                    {activeToyId === id
+                                      ? "Active"
+                                      : "Set active"}
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    disabled
+                                    className="rounded-2xl px-4 py-3 text-xs font-bold border border-white/15 bg-black/25 text-zinc-300 opacity-80"
+                                  >
+                                    Owned
+                                  </button>
+                                )
                               ) : (
                                 <button
                                   type="button"
-                                  disabled={!afford}
+                                  disabled={!afford || isIapOnly}
                                   onClick={() => {
-                                    if (!afford) return;
+                                    if (!afford || isIapOnly) return;
                                     dispatch(
                                       purchaseCosmetic({
                                         id,
                                         price,
+                                        currency,
                                         now: Date.now(),
                                       })
                                     );
 
                                     // QoL: auto-equip on purchase for wearable slots.
-                                    if (
-                                      slot === "collar" ||
-                                      slot === "tag" ||
-                                      slot === "backdrop"
-                                    ) {
+                                    if (WEARABLE_SLOTS.has(slot)) {
                                       dispatch(equipCosmetic({ slot, id }));
                                     }
 
                                     toast.success(`Purchased ${label}.`, 1600);
                                   }}
                                   className={`rounded-2xl px-4 py-3 text-xs font-bold transition active:scale-[0.99] ${
-                                    afford
+                                    afford && !isIapOnly
                                       ? "bg-emerald-500/20 text-emerald-100 border border-emerald-500/25 hover:bg-emerald-500/25"
                                       : "bg-white/5 text-zinc-500 cursor-not-allowed"
                                   }`}
                                 >
-                                  {afford ? "Buy" : "Not enough"}
+                                  {isIapOnly
+                                    ? "Buy in game panel"
+                                    : afford
+                                      ? "Buy"
+                                      : "Not enough"}
                                 </button>
                               )}
                             </div>
@@ -886,17 +1116,20 @@ export default function Store() {
                     <div className="mt-1 text-lg font-extrabold text-emerald-200 tabular-nums">
                       {coins} coins
                     </div>
+                    <div className="mt-1 text-sm font-bold text-sky-200 tabular-nums">
+                      {gems} gems
+                    </div>
                   </div>
                   <Link
                     to="/settings"
                     className="rounded-2xl px-3 py-2 text-xs font-semibold border border-white/15 bg-black/25 text-zinc-100 hover:bg-black/35 transition"
                   >
-                    Manage cosmetics
+                    Manage settings
                   </Link>
                 </div>
                 <div className="mt-3 text-xs text-zinc-400">
-                  Tip: streak rewards unlock automatically; the Store is the
-                  fast lane.
+                  Tip: starter gear is free, streak rewards unlock over time,
+                  and coins cover most upgrades.
                 </div>
               </section>
 
@@ -971,7 +1204,8 @@ export default function Store() {
                           {featuredDeal.label || featuredDeal.id}
                         </div>
                         <div className="mt-1 text-xs text-emerald-100/80">
-                          {priceForCatalogItem(featuredDeal)} coins
+                          {priceForCatalogItem(featuredDeal)}{" "}
+                          {getCurrencyForItem(featuredDeal)}
                         </div>
                       </div>
                       <button
@@ -1011,20 +1245,21 @@ export default function Store() {
                     Catalog
                   </div>
                   <div className="mt-1 text-lg font-extrabold text-zinc-100">
-                    Dress your dog like they own the yard
+                    Toys, apparel, care, and yard upgrades
                   </div>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
                   <select
                     className="rounded-2xl border border-white/15 bg-black/25 px-3 py-2 text-xs font-semibold text-zinc-100"
-                    value={slotFilter}
-                    onChange={(e) => setSlotFilter(e.target.value)}
+                    value={categoryFilter}
+                    onChange={(e) => setCategoryFilter(e.target.value)}
                   >
-                    <option value="all">All slots</option>
-                    <option value="collar">Collars</option>
-                    <option value="tag">Tags</option>
-                    <option value="backdrop">Backdrops</option>
+                    <option value="all">All categories</option>
+                    <option value="toys">Toys</option>
+                    <option value="apparel">Apparel</option>
+                    <option value="care">Care & Consumables</option>
+                    <option value="yard">Yard Upgrades</option>
                   </select>
 
                   <select
@@ -1064,7 +1299,7 @@ export default function Store() {
                   <input
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Search collars, tags, backdrops…"
+                    placeholder="Search toys, apparel, care, yard upgrades…"
                     className="w-full rounded-2xl border border-white/15 bg-black/25 px-4 py-3 pr-12 text-sm text-zinc-100 placeholder:text-zinc-500 outline-none focus:border-emerald-500/40"
                   />
                   {trimmedQuery ? (
@@ -1111,7 +1346,7 @@ export default function Store() {
                     <button
                       type="button"
                       onClick={() => {
-                        setSlotFilter("all");
+                        setCategoryFilter("all");
                         setOwnedFilter("all");
                         setAffordFilter("all");
                         dispatch(setStoreSortKey("recommended"));
@@ -1138,6 +1373,7 @@ export default function Store() {
                   if (!id) return null;
 
                   const slot = String(item?.slot || "cosmetic").toLowerCase();
+                  const category = getStoreCategory(item);
                   const label = String(item?.label || id);
                   const threshold = clamp(
                     Number(item?.threshold || 0),
@@ -1146,9 +1382,14 @@ export default function Store() {
                   );
 
                   const price = priceForCatalogItem(item);
+                  const iapLabel = String(item?.iap || "").trim();
+                  const isIapOnly = Boolean(iapLabel);
+                  const currency = getCurrencyForItem(item);
+                  const balance = currency === "gems" ? gems : coins;
                   const owned = unlocked.has(id);
-                  const afford = coins >= price;
+                  const afford = !isIapOnly && balance >= price;
                   const isEquipped = slot && equipped?.[slot] === id;
+                  const wearable = WEARABLE_SLOTS.has(slot);
                   const rarity = rarityForThreshold(threshold);
                   const streakProgress =
                     threshold > 0 ? clamp(streakDays / threshold, 0, 1) : 0;
@@ -1177,6 +1418,7 @@ export default function Store() {
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
                             <SlotPill slot={slot} />
+                            <CategoryPill category={category} />
                             <span
                               className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] ${rarity.className}`}
                             >
@@ -1193,12 +1435,20 @@ export default function Store() {
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-xs text-zinc-400">Price</div>
+                          <div className="text-xs text-zinc-400">
+                            {isIapOnly ? "IAP" : "Price"}
+                          </div>
                           <div className="mt-1 text-sm font-bold tabular-nums text-emerald-200">
-                            {price}
+                            {isIapOnly
+                              ? iapLabel
+                              : price > 0
+                                ? `${price} ${currency}`
+                                : "Free"}
                           </div>
                           <div className="mt-2 text-[11px] text-zinc-500">
-                            Streak day {threshold}
+                            {threshold > 0
+                              ? `Streak day ${threshold}`
+                              : "Starter / direct unlock"}
                           </div>
                         </div>
                       </div>
@@ -1220,66 +1470,98 @@ export default function Store() {
                           type="button"
                           className={`rounded-2xl text-xs font-bold border border-white/15 bg-black/25 text-zinc-100 hover:bg-black/35 transition ${buttonSize}`}
                           onClick={() => {
+                            if (!wearable) return;
                             setPreview({ slot, id });
                             setPreviewLocked(true);
                           }}
                         >
-                          Try on
+                          {wearable ? "Try on" : "Details"}
                         </button>
 
                         {owned ? (
-                          <button
-                            type="button"
-                            className={`rounded-2xl text-xs font-bold transition ${buttonSize} ${
-                              isEquipped
-                                ? "border border-emerald-500/25 bg-emerald-500/10 text-emerald-100"
-                                : "border border-white/15 bg-black/25 text-zinc-100 hover:bg-black/35"
-                            }`}
-                            onClick={() => {
-                              if (!slot) return;
-                              dispatch(equipCosmetic({ slot, id }));
-                              toast.success(
+                          wearable ? (
+                            <button
+                              type="button"
+                              className={`rounded-2xl text-xs font-bold transition ${buttonSize} ${
                                 isEquipped
-                                  ? "Already equipped."
-                                  : `Equipped ${label}.`,
-                                1400
-                              );
-                            }}
-                          >
-                            {isEquipped ? "Equipped" : "Equip"}
-                          </button>
+                                  ? "border border-emerald-500/25 bg-emerald-500/10 text-emerald-100"
+                                  : "border border-white/15 bg-black/25 text-zinc-100 hover:bg-black/35"
+                              }`}
+                              onClick={() => {
+                                if (!slot) return;
+                                dispatch(equipCosmetic({ slot, id }));
+                                toast.success(
+                                  isEquipped
+                                    ? "Already equipped."
+                                    : `Equipped ${label}.`,
+                                  1400
+                                );
+                              }}
+                            >
+                              {isEquipped ? "Equipped" : "Equip"}
+                            </button>
+                          ) : slot === "toy" ? (
+                            <button
+                              type="button"
+                              className={`rounded-2xl text-xs font-bold transition ${buttonSize} ${
+                                activeToyId === id
+                                  ? "border border-emerald-500/25 bg-emerald-500/10 text-emerald-100"
+                                  : "border border-white/15 bg-black/25 text-zinc-100 hover:bg-black/35"
+                              }`}
+                              onClick={() => {
+                                dispatch(setActiveToy({ toyId: id }));
+                                toast.success(
+                                  activeToyId === id
+                                    ? "Already active."
+                                    : `Active toy set: ${label}.`,
+                                  1400
+                                );
+                              }}
+                            >
+                              {activeToyId === id ? "Active" : "Set active"}
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              disabled
+                              className={`rounded-2xl text-xs font-bold border border-white/15 bg-black/25 text-zinc-300 opacity-80 ${buttonSize}`}
+                            >
+                              Owned
+                            </button>
+                          )
                         ) : (
                           <button
                             type="button"
-                            disabled={!afford}
+                            disabled={!afford || isIapOnly}
                             onClick={() => {
-                              if (!afford) return;
+                              if (!afford || isIapOnly) return;
                               dispatch(
                                 purchaseCosmetic({
                                   id,
                                   price,
+                                  currency,
                                   now: Date.now(),
                                 })
                               );
 
                               // QoL: auto-equip on purchase for wearable slots.
-                              if (
-                                slot === "collar" ||
-                                slot === "tag" ||
-                                slot === "backdrop"
-                              ) {
+                              if (WEARABLE_SLOTS.has(slot)) {
                                 dispatch(equipCosmetic({ slot, id }));
                               }
 
                               toast.success(`Purchased ${label}.`, 1600);
                             }}
                             className={`rounded-2xl text-xs font-bold transition active:scale-[0.99] ${buttonSize} ${
-                              afford
+                              afford && !isIapOnly
                                 ? "bg-emerald-500/20 text-emerald-100 border border-emerald-500/25 hover:bg-emerald-500/25"
                                 : "bg-white/5 text-zinc-500 cursor-not-allowed"
                             }`}
                           >
-                            {afford ? "Buy" : "Not enough"}
+                            {isIapOnly
+                              ? "Buy in game panel"
+                              : afford
+                                ? "Buy"
+                                : "Not enough"}
                           </button>
                         )}
                       </div>
@@ -1288,7 +1570,9 @@ export default function Store() {
                         <span>{owned ? "Owned" : "Not owned"}</span>
                         <span className="tabular-nums">
                           Balance after:{" "}
-                          {owned ? coins : Math.max(0, coins - price)}
+                          {owned
+                            ? `${balance} ${currency}`
+                            : `${Math.max(0, balance - price)} ${currency}`}
                         </span>
                       </div>
                     </div>
@@ -1308,7 +1592,7 @@ export default function Store() {
                     <button
                       type="button"
                       onClick={() => {
-                        setSlotFilter("all");
+                        setCategoryFilter("all");
                         setOwnedFilter("all");
                         setAffordFilter("all");
                         dispatch(setStoreSortKey("recommended"));

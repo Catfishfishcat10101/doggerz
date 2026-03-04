@@ -96,6 +96,7 @@ export default function SpriteSheetDog({
   facing = 1,
   size = 320,
   reduceMotion = false,
+  speedMultiplier = 1,
   fallbackSrc = "/assets/sprites/jr/pup_clean.png",
   className = "",
   onDebug,
@@ -118,7 +119,9 @@ export default function SpriteSheetDog({
   const currentSrc = candidates[sourceIndex] || null;
   const totalRows = Math.max(1, ANIM_ROWS.length || 1);
   const boxSize = clamp(size, 64, 1024);
-  const msPerFrame = Math.max(16, Math.round(1000 / animMeta.fps));
+  const effectiveSpeedMultiplier = clamp(speedMultiplier, 0.2, 2);
+  const effectiveFps = Math.max(1, animMeta.fps * effectiveSpeedMultiplier);
+  const msPerFrame = Math.max(16, Math.round(1000 / effectiveFps));
 
   useEffect(() => {
     setSourceIndex(0);
@@ -164,6 +167,8 @@ export default function SpriteSheetDog({
       frame: frameIndex,
       frames: animMeta.frames,
       fps: animMeta.fps,
+      effectiveFps,
+      speedMultiplier: effectiveSpeedMultiplier,
       src: currentSrc,
       fallbackSrc,
       candidateCount: candidates.length,
@@ -188,6 +193,8 @@ export default function SpriteSheetDog({
     sheetFailed,
     sheetLoaded,
     sourceIndex,
+    effectiveFps,
+    effectiveSpeedMultiplier,
     stage,
   ]);
 
@@ -256,7 +263,9 @@ export default function SpriteSheetDog({
   const frameCol = frameIndex % effectiveColumns;
   const frameRowOffset = Math.floor(frameIndex / effectiveColumns);
   const posX = -frameCol * boxSize;
-  const posY = -(animMeta.rowIndex + frameRowOffset) * boxSize;
+  const posY = isAnimSpecific
+    ? -frameRowOffset * boxSize
+    : -(animMeta.rowIndex + frameRowOffset) * boxSize;
 
   return (
     <div className={className} style={wrapperStyle}>

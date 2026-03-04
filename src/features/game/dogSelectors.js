@@ -75,8 +75,8 @@ const EXPLICIT_ACTION_ALIASES = {
   drink: "wag",
   pet: "wag",
   play: "walk",
-  rest: "idle",
-  nap: "idle",
+  rest: "idle_resting",
+  nap: "light_sleep",
   territorial_bark: "bark",
   gate_watch: "idle",
   point_position: "idle",
@@ -89,9 +89,7 @@ const EXPLICIT_ACTION_ALIASES = {
 
 function sanitizeAnimForCurrentSpriteSet(anim) {
   const key = normalizeAction(anim);
-  // Current supplied strip maps "sleep" to the unwanted plate frame.
-  // Keep the dog on idle until a dedicated sleep row is available.
-  if (key === "sleep") return "idle";
+  // Keep passthrough; manifest aliases + rows handle compatibility.
   return key || null;
 }
 
@@ -161,6 +159,29 @@ function applyJointStiffnessAnimationLimit(anim, dog, stage) {
     return "walk";
   }
   return key;
+}
+
+function getHealthAnimationState(dog) {
+  const health = Math.max(0, Math.min(100, Number(dog?.stats?.health ?? 0)));
+  if (health <= 19) {
+    return {
+      healthBand: "lethargic",
+      animationSpeedMultiplier: 0.4,
+      ignoreToys: true,
+    };
+  }
+  if (health <= 49) {
+    return {
+      healthBand: "unwell",
+      animationSpeedMultiplier: 0.7,
+      ignoreToys: false,
+    };
+  }
+  return {
+    healthBand: "normal",
+    animationSpeedMultiplier: 1,
+    ignoreToys: false,
+  };
 }
 
 function resolveDog(stateOrDog) {
@@ -291,6 +312,7 @@ function buildDogRenderModel(stateOrDog) {
       : derivePersonalityProfile(dog || {});
 
   const stageLabel = dog.lifeStage?.label || getDogStageLabel(stage);
+  const healthAnimation = getHealthAnimationState(dog);
 
   const staticSpriteUrl = getDogStaticSpriteUrl(stage);
   const pixiSheetUrl = getDogPixiSheetUrl(stage, condition);
@@ -304,6 +326,9 @@ function buildDogRenderModel(stateOrDog) {
     isSleeping,
     restState,
     animCategory,
+    healthBand: healthAnimation.healthBand,
+    animationSpeedMultiplier: healthAnimation.animationSpeedMultiplier,
+    ignoreToys: healthAnimation.ignoreToys,
     personalityProfile,
     ghostSyncRate: Number(dog?.legacyJourney?.spiritSyncRate || 0),
     ghostMimicAction: dog?.legacyJourney?.ghostMimicAction || null,

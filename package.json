@@ -36,6 +36,7 @@
     "sprites:frames:validate": "node scripts/validate-sprite-frames.js",
     "sprites:jrt:base": "node scripts/generate-jack-russell-base-sprites.js",
     "sprites:jr": "node scripts/generate-jr-pixi-sheets.js",
+    "sprites:jr:action": "node scripts/generate-jr-action-sheet.js",
     "sprites:check": "node scripts/validate-sprites.js",
     "postinstall": "patch-package",
     "preflight": "node scripts/check-ts-nocheck.js && node scripts/preflight.js && npm run assets:verify",
