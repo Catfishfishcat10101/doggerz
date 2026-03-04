@@ -53,22 +53,6 @@ const POSE_TO_ACTION = {
   quiet_idle: "idle",
 };
 
-export const KNOWN_DOG_ACTIONS = Object.freeze(
-  Array.from(
-    new Set([
-      DEFAULT_DOG_ACTION,
-      ...Object.values(POSE_TO_ACTION),
-      "walk",
-      "bark",
-      "scratch",
-      "shake",
-      "sleep",
-      "wag",
-      "trick",
-    ])
-  )
-);
-
 const MAINTENANCE_ACTIONS = new Set([
   "eat",
   "eating",
@@ -122,6 +106,41 @@ const PATHOLOGICAL_ACTIONS = new Set([
   "sick_lay",
   "ill",
 ]);
+
+export const KNOWN_DOG_ACTIONS = Object.freeze(
+  Array.from(
+    new Set([
+      DEFAULT_DOG_ACTION,
+      ...Object.values(POSE_TO_ACTION),
+      "walk",
+      "walk_left",
+      "walk_right",
+      "turn_walk_right",
+      "bark",
+      "scratch",
+      "shake",
+      "sleep",
+      "sleep_auto",
+      "wag",
+      "trick",
+      "eat",
+      "drink",
+      "lay_down",
+      "rest",
+      "nap",
+      "idle_resting",
+      "light_sleep",
+      "deep_sleep",
+      "rem_sleep",
+      "deep_rem_sleep",
+      "dream",
+      ...MAINTENANCE_ACTIONS,
+      ...REST_ACTIONS,
+      ...HIGH_ALERT_ACTIONS,
+      ...PATHOLOGICAL_ACTIONS,
+    ])
+  )
+);
 
 /**
  * Normalize a pose string safely
