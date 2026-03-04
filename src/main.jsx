@@ -14,12 +14,12 @@ import AppStorageHydrator from "./components/system/AppStorageHydrator.jsx";
 import CheckInReminders from "./components/environment/CheckInReminders.jsx";
 import { ToastProvider } from "./components/system/ToastProvider.jsx";
 import ErrorBoundary from "./components/system/ErrorBoundary.jsx";
-import DogAIEngine from "./features/game/DogAIEngine.jsx";
+import DogAIEngine from "./components/dog/DogAIEngine.jsx";
 import { queryClient } from "./lib/queryClient.js";
 import { selectDogRenderModel } from "./features/game/dogSelectors.js";
 
 import { initRuntimeLogging } from "./utils/runtimeLogging.js";
-import { PupProvider } from "./state/PupContext.jsx";
+import { PupProvider } from "./components/dog/PupContext.jsx";
 import { initFirebase } from "./firebase.js";
 import { ensureAnonSignIn } from "./lib/firebaseClient.js";
 

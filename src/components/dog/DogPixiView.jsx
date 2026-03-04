@@ -1,190 +1,192 @@
 /** @format */
 
-import { useEffect, useRef } from "react";
-import * as PIXI from "pixi.js";
-import { useDispatch, useSelector } from "react-redux";
+import { useEffect, useMemo, useRef, useState } from "react";
+import SpriteSheetDog from "@/components/dog/SpriteSheetDog.jsx";
 
-import DogAnimationController from "@/pixi/DogAnimationController";
-import { selectDogAnimation, oneShotFinished } from "@/redux/dogSlice";
-import { mapPoseToDogAction } from "@/utils/mapPoseToDogAction";
+function clamp(n, lo, hi) {
+  const x = Number(n);
+  if (!Number.isFinite(x)) return lo;
+  return Math.max(lo, Math.min(hi, x));
+}
 
-const DogPixiView = () => {
+function randBetween(min, max) {
+  return min + Math.random() * (max - min);
+}
+
+function pickNextTarget(bounds, padding) {
+  const x = randBetween(padding, Math.max(padding, bounds.width - padding));
+  const y = randBetween(padding, Math.max(padding, bounds.height - padding));
+  return { x, y };
+}
+
+export default function DogPixiView({
+  stage = "PUPPY",
+  condition = "clean",
+  anim = "idle",
+  width,
+  height,
+  scale = 2.25,
+  dogIsSleeping = false,
+}) {
   const containerRef = useRef(null);
-  const pixiAppRef = useRef(null);
-  const dogRef = useRef(null);
+  const rafRef = useRef(0);
+  const lastTsRef = useRef(0);
 
-  // guards
-  const isReadyRef = useRef(false);
-  const lastOneShotRef = useRef(null); // prevents replay spam
+  const [bounds, setBounds] = useState({ width: 0, height: 0 });
+  const viewportWidth = bounds.width;
+  const viewportHeight = bounds.height;
+  const [pos, setPos] = useState({ x: 0, y: 0, facing: 1, moving: false });
 
-  const dispatch = useDispatch();
-  const animationState = useSelector(selectDogAnimation);
+  const motionRef = useRef({
+    target: { x: 0, y: 0 },
+    moving: false,
+    pauseUntil: 0,
+    speed: 32,
+  });
 
-  // --------------------------
-  // INIT PIXI + DOG
-  // --------------------------
+  const size = useMemo(() => {
+    const base =
+      Math.min(bounds.width || 0, bounds.height || 0) ||
+      Math.min(Number(width) || 320, Number(height) || 320);
+    const scaleFactor = Number.isFinite(scale)
+      ? clamp(scale / 2.25, 0.6, 2)
+      : 1;
+    return clamp(Math.round(base * 0.7 * scaleFactor), 96, 512);
+  }, [bounds.height, bounds.width, height, scale, width]);
+
   useEffect(() => {
-    if (!containerRef.current) return;
-
-    const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
-    const isAndroid = /Android/i.test(ua);
-    const deviceMemory =
-      typeof navigator !== "undefined" && navigator.deviceMemory
-        ? navigator.deviceMemory
-        : 4;
-
-    let resolution = Math.min(window.devicePixelRatio || 1, 2);
-    let antialias = true;
-
-    if (isAndroid && deviceMemory <= 4) {
-      resolution = Math.min(resolution, 1.5);
-    }
-    if (isAndroid && deviceMemory <= 2) {
-      resolution = Math.min(resolution, 1.25);
-      antialias = false;
-    }
-
-    const app = new PIXI.Application({
-      resizeTo: containerRef.current,
-      backgroundAlpha: 0,
-      antialias,
-      autoDensity: true,
-      resolution,
-      powerPreference: "high-performance",
-    });
-
-    containerRef.current.appendChild(app.view);
-    pixiAppRef.current = app;
-
-    const dog = new DogAnimationController({
-      atlasJsonUrl: "/sprites/puppy/puppy_v1.json",
-      scale: 1,
-      oneshotActions: ["bark", "jump"],
-    });
-
-    dogRef.current = dog;
-
-    const updateDogPosition = () => {
-      const currentDog = dogRef.current;
-      const currentApp = pixiAppRef.current;
-      if (!currentDog || !currentDog.view || !currentApp) return;
-
-      currentDog.view.position.set(
-        currentApp.renderer.width / 2,
-        currentApp.renderer.height / 2
-      );
+    if (!containerRef.current) return undefined;
+    const el = containerRef.current;
+    const update = () => {
+      const rect = el.getBoundingClientRect();
+      setBounds({ width: rect.width, height: rect.height });
     };
+    update();
 
-    (async () => {
-      await dog.load();
-      dog.mount(app.stage);
-
-      updateDogPosition();
-
-      isReadyRef.current = true;
-    })();
-
-    let resizeObserver;
+    let ro;
     if (typeof ResizeObserver !== "undefined") {
-      resizeObserver = new ResizeObserver(() => {
-        updateDogPosition();
-      });
-      resizeObserver.observe(containerRef.current);
+      ro = new ResizeObserver(update);
+      ro.observe(el);
     }
 
-    const handleWindowResize = () => updateDogPosition();
-    window.addEventListener("resize", handleWindowResize);
-
+    window.addEventListener("resize", update);
     return () => {
-      window.removeEventListener("resize", handleWindowResize);
-      if (resizeObserver) resizeObserver.disconnect();
-
-      isReadyRef.current = false;
-      lastOneShotRef.current = null;
-
-      try {
-        dog.destroy();
-      } catch {
-        // noop
-      }
-      try {
-        app.destroy(true, true);
-      } catch {
-        // noop
-      }
+      window.removeEventListener("resize", update);
+      if (ro) ro.disconnect();
     };
   }, []);
 
-  // --------------------------
-  // REDUX → ANIMATION SYNC
-  // --------------------------
   useEffect(() => {
-    const dog = dogRef.current;
-    if (!dog) return;
-    if (!isReadyRef.current) return;
-
-    const availableActions = dog.availableActions || [];
-
-    // Apply facing every time (cheap + safe)
-    if (animationState?.facing) {
-      dog.setFacing(animationState.facing);
-    }
-
-    const desiredLoopRaw = animationState?.desiredAction || "idle";
-    const desiredLoop = mapPoseToDogAction(desiredLoopRaw, {
-      availableActions,
-      allowUnknown: false,
-      fallback: "idle",
+    if (!viewportWidth || !viewportHeight) return;
+    const padding = Math.max(24, size * 0.45);
+    const target = pickNextTarget(
+      { width: viewportWidth, height: viewportHeight },
+      padding
+    );
+    motionRef.current.target = target;
+    setPos({
+      x: clamp(viewportWidth / 2, padding, viewportWidth - padding),
+      y: clamp(viewportHeight / 2, padding, viewportHeight - padding),
+      facing: 1,
+      moving: false,
     });
+  }, [viewportHeight, viewportWidth, size]);
 
-    // ONE-SHOT override takes priority
-    const overrideRaw = animationState?.overrideAction || null;
-    const overrideKey = overrideRaw ? String(overrideRaw).trim() : "";
+  useEffect(() => {
+    const tick = (ts) => {
+      if (!lastTsRef.current) lastTsRef.current = ts;
+      const dt = Math.min(0.05, (ts - lastTsRef.current) / 1000);
+      lastTsRef.current = ts;
 
-    if (overrideKey) {
-      // Prevent replay spam while overrideAction remains set during the one-shot.
-      if (lastOneShotRef.current === overrideKey) return;
-      lastOneShotRef.current = overrideKey;
+      if (!viewportWidth || !viewportHeight || dogIsSleeping) {
+        setPos((prev) => ({ ...prev, moving: false }));
+        rafRef.current = requestAnimationFrame(tick);
+        return;
+      }
 
-      const oneshot = mapPoseToDogAction(overrideKey, {
-        availableActions,
-        allowUnknown: false,
-        fallback: "idle",
+      const padding = Math.max(24, size * 0.45);
+      const state = motionRef.current;
+      const now = ts;
+
+      if (!state.moving && now >= state.pauseUntil) {
+        state.target = pickNextTarget(
+          { width: viewportWidth, height: viewportHeight },
+          padding
+        );
+        state.moving = true;
+        state.speed = randBetween(18, 42);
+      }
+
+      setPos((prev) => {
+        if (!state.moving) return { ...prev, moving: false };
+
+        const dx = state.target.x - prev.x;
+        const dy = state.target.y - prev.y;
+        const dist = Math.hypot(dx, dy);
+
+        if (dist < 4) {
+          state.moving = false;
+          state.pauseUntil = now + randBetween(800, 2000);
+          return { ...prev, moving: false };
+        }
+
+        const step = Math.min(dist, state.speed * dt);
+        const nx = prev.x + (dx / dist) * step;
+        const ny = prev.y + (dy / dist) * step;
+        const facing = dx < -0.5 ? -1 : dx > 0.5 ? 1 : prev.facing;
+
+        return {
+          x: clamp(nx, padding, viewportWidth - padding),
+          y: clamp(ny, padding, viewportHeight - padding),
+          facing,
+          moving: true,
+        };
       });
 
-      dog.playOneShot(oneshot, {
-        returnAction: desiredLoop,
-        onComplete: () => {
-          // Clear local guard first so future one-shots can run
-          lastOneShotRef.current = null;
-          dispatch(oneShotFinished());
-        },
-      });
+      rafRef.current = requestAnimationFrame(tick);
+    };
 
-      return;
-    }
+    rafRef.current = requestAnimationFrame(tick);
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = 0;
+      lastTsRef.current = 0;
+    };
+  }, [dogIsSleeping, size, viewportHeight, viewportWidth]);
 
-    // If no override is active, ensure our guard resets
-    lastOneShotRef.current = null;
+  const animLower = String(anim || "idle")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_")
+    .replace(/-+/g, "_");
+  const autoAnim = pos.moving ? "walk" : "idle";
+  const effectiveAnim =
+    animLower && animLower !== "idle" ? animLower : autoAnim;
 
-    // Otherwise apply looping mood-based animation
-    dog.setAction(desiredLoop);
-  }, [
-    animationState?.desiredAction,
-    animationState?.overrideAction,
-    animationState?.facing,
-    dispatch,
-  ]);
+  const style = {
+    width: Number.isFinite(Number(width)) ? Number(width) : "100%",
+    height: Number.isFinite(Number(height)) ? Number(height) : "100%",
+  };
 
   return (
-    <div
-      ref={containerRef}
-      style={{
-        width: "100%",
-        height: "100%",
-      }}
-    />
+    <div ref={containerRef} className="relative" style={style}>
+      <div
+        style={{
+          position: "absolute",
+          left: pos.x,
+          top: pos.y,
+          transform: "translate(-50%, -50%)",
+          pointerEvents: "none",
+        }}
+      >
+        <SpriteSheetDog
+          stage={stage}
+          condition={condition}
+          anim={effectiveAnim}
+          facing={pos.facing}
+          size={size}
+        />
+      </div>
+    </div>
   );
-};
-
-export default DogPixiView;
+}

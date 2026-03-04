@@ -42,6 +42,7 @@ import {
   calculateFeedStats,
   calculatePlayStats,
 } from "@/logic/dogEngine.js";
+import { derivePersonalityProfile } from "@/logic/personalityProfile.js";
 
 export const DOG_STORAGE_KEY = "doggerz:dogState";
 export const DOG_GUEST_STORAGE_KEY = `${DOG_STORAGE_KEY}:guest`;
@@ -109,6 +110,22 @@ const AUTO_WAKE_THRESHOLD = 80;
 const POTTY_FILL_PER_HOUR = 10;
 const MAX_ACCIDENTS_PER_DECAY = 3;
 const MOOD_SAMPLE_MINUTES = 60;
+const DOG_LIFECYCLE_STATUS = Object.freeze({
+  NONE: "NONE",
+  ACTIVE: "ACTIVE",
+  RESCUED: "RESCUED",
+  FAREWELL: "FAREWELL",
+});
+const DANGER_TIER = Object.freeze({
+  SAFE: "SAFE",
+  ELEVATED: "ELEVATED",
+  HIGH: "HIGH",
+  CRITICAL: "CRITICAL",
+});
+const DANGER_RUNAWAY_LETTER_THRESHOLD = 72;
+const DANGER_RESCUE_THRESHOLD = 92;
+const DANGER_RUNAWAY_COOLDOWN_MS = 24 * 60 * 60 * 1000;
+const LONG_LIFE_FAREWELL_AGE_DAYS = 5000;
 export const LEVEL_XP_STEP = 100;
 const SKILL_LEVEL_STEP = 50;
 const LEGACY_VACATION_MULTIPLIER = 0.35;
@@ -118,6 +135,14 @@ const DEFAULT_VACATION_STATE = Object.freeze({
   startedAt: null,
   skippedMs: 0,
 });
+
+const DOG_RULE_PIPELINE_STAGES = Object.freeze([
+  "computeDegradation",
+  "applyEnvironmentModifiers",
+  "applyCompounding",
+  "evaluateThresholds",
+  "runLegacyEvents",
+]);
 
 const nowMs = () => Date.now();
 function parseAdoptedAt(raw) {
@@ -572,6 +597,23 @@ const initialMemorial = {
   completedAt: null,
 };
 
+const initialDanger = {
+  score: 0,
+  tier: DANGER_TIER.SAFE,
+  lastRunawayLetterAt: null,
+  rescuedAt: null,
+  rescueReason: null,
+};
+
+const initialLegacyJourney = {
+  farewellLetterAt: null,
+  rainbowBridgeReadyAt: null,
+  ghostDogUnlocked: false,
+  ghostPlayBowPending: false,
+  ghostPlayBowAt: null,
+  previousDogs: [],
+};
+
 const initialCosmetics = {
   unlockedIds: [],
   equipped: {
@@ -670,6 +712,7 @@ const initialState = {
 
   temperament: initialTemperament,
   personality: initialPersonality,
+  personalityProfile: null,
   memory: initialMemory,
   career: initialCareer,
   skills: initialSkills,
@@ -682,6 +725,9 @@ const initialState = {
   claimedPreReg: false,
   claimedPreRegAt: null,
   training: createInitialTrainingState(),
+  lifecycleStatus: DOG_LIFECYCLE_STATUS.NONE,
+  danger: { ...initialDanger },
+  legacyJourney: { ...initialLegacyJourney },
 
   // Relationship / collectibles (used by Store + Rainbow Bridge pages)
   bond: initialBond,
@@ -720,6 +766,220 @@ function pushJournalEntry(state, entry) {
 
   if (state.journal.entries.length > 200) {
     state.journal.entries.length = 200;
+  }
+}
+
+function ensureLifecycleStatus(state) {
+  const valid = new Set(Object.values(DOG_LIFECYCLE_STATUS));
+  const current = String(state.lifecycleStatus || "").toUpperCase();
+
+  if (!valid.has(current)) {
+    state.lifecycleStatus = state.adoptedAt
+      ? DOG_LIFECYCLE_STATUS.ACTIVE
+      : DOG_LIFECYCLE_STATUS.NONE;
+  }
+
+  return state.lifecycleStatus;
+}
+
+function ensureDangerState(state) {
+  if (!state.danger || typeof state.danger !== "object") {
+    state.danger = { ...initialDanger };
+    return state.danger;
+  }
+  state.danger.score = clamp(Number(state.danger.score || 0), 0, 100);
+  const tier = String(state.danger.tier || "").toUpperCase();
+  if (!Object.values(DANGER_TIER).includes(tier)) {
+    state.danger.tier = DANGER_TIER.SAFE;
+  }
+  if (typeof state.danger.lastRunawayLetterAt !== "number") {
+    state.danger.lastRunawayLetterAt = null;
+  }
+  if (typeof state.danger.rescuedAt !== "number") {
+    state.danger.rescuedAt = null;
+  }
+  if (state.danger.rescueReason != null) {
+    state.danger.rescueReason = String(state.danger.rescueReason);
+  } else {
+    state.danger.rescueReason = null;
+  }
+  return state.danger;
+}
+
+function ensureLegacyJourneyState(state) {
+  if (!state.legacyJourney || typeof state.legacyJourney !== "object") {
+    state.legacyJourney = { ...initialLegacyJourney };
+    return state.legacyJourney;
+  }
+  if (typeof state.legacyJourney.farewellLetterAt !== "number") {
+    state.legacyJourney.farewellLetterAt = null;
+  }
+  if (typeof state.legacyJourney.rainbowBridgeReadyAt !== "number") {
+    state.legacyJourney.rainbowBridgeReadyAt = null;
+  }
+  state.legacyJourney.ghostDogUnlocked = Boolean(
+    state.legacyJourney.ghostDogUnlocked
+  );
+  state.legacyJourney.ghostPlayBowPending = Boolean(
+    state.legacyJourney.ghostPlayBowPending
+  );
+  if (typeof state.legacyJourney.ghostPlayBowAt !== "number") {
+    state.legacyJourney.ghostPlayBowAt = null;
+  }
+  if (!Array.isArray(state.legacyJourney.previousDogs)) {
+    state.legacyJourney.previousDogs = [];
+  }
+  return state.legacyJourney;
+}
+
+function getDangerTier(score) {
+  if (score >= 85) return DANGER_TIER.CRITICAL;
+  if (score >= 60) return DANGER_TIER.HIGH;
+  if (score >= 35) return DANGER_TIER.ELEVATED;
+  return DANGER_TIER.SAFE;
+}
+
+function computeDangerScore(state) {
+  const stats = state.stats || {};
+  const hungerNeed = clamp(Number(stats.hunger || 0), 0, 100);
+  const thirstNeed = clamp(Number(stats.thirst || 0), 0, 100);
+  const energyNeed = 100 - clamp(Number(stats.energy || 0), 0, 100);
+  const cleanlinessNeed = 100 - clamp(Number(stats.cleanliness || 0), 0, 100);
+  const healthNeed = 100 - clamp(Number(stats.health || 0), 0, 100);
+  const happinessNeed = 100 - clamp(Number(stats.happiness || 0), 0, 100);
+
+  const pressure =
+    (hungerNeed +
+      thirstNeed +
+      energyNeed +
+      cleanlinessNeed +
+      healthNeed +
+      happinessNeed) /
+    6;
+
+  const neglect = clamp(Number(state.memory?.neglectStrikes || 0) * 9, 0, 32);
+  const accidents = clamp(Number(state.potty?.totalAccidents || 0) * 2, 0, 20);
+  const cleanlinessTier = String(state.cleanlinessTier || "").toUpperCase();
+  const tierPenalty =
+    cleanlinessTier === "MANGE" ? 16 : cleanlinessTier === "FLEAS" ? 8 : 0;
+
+  return clamp(Math.round(pressure * 0.62 + neglect + accidents + tierPenalty));
+}
+
+function pushDearHoomanRunawayLetter(state, now, score) {
+  const danger = ensureDangerState(state);
+  const last = Number(danger.lastRunawayLetterAt || 0);
+  if (last && now - last < DANGER_RUNAWAY_COOLDOWN_MS) return;
+
+  danger.lastRunawayLetterAt = now;
+  pushJournalEntry(state, {
+    type: "LETTER",
+    moodTag: "RESTLESS",
+    summary: "Dear hooman letter",
+    body:
+      "Dear hooman,\n\nI keep pacing and watching the gate. Things feel rough around here " +
+      `(${score}% danger). I don’t want to run, but I need you to notice me.\n\nLove,\n${state.name || "your pup"}`,
+    timestamp: now,
+  });
+}
+
+function recordPreviousDog(state, outcome, now) {
+  const legacy = ensureLegacyJourneyState(state);
+  legacy.previousDogs.unshift({
+    name: state.name || "Pup",
+    outcome: String(outcome || "").toUpperCase() || "UNKNOWN",
+    bond: Math.round(Number(state.bond?.value || 0)),
+    ageDays: Math.round(Number(state.lifeStage?.days || 0)),
+    recordedAt: now,
+  });
+  if (legacy.previousDogs.length > 20) {
+    legacy.previousDogs.length = 20;
+  }
+}
+
+function triggerAnimalRescueCenter(state, now, score) {
+  if (ensureLifecycleStatus(state) !== DOG_LIFECYCLE_STATUS.ACTIVE) return;
+  const danger = ensureDangerState(state);
+  const reason =
+    "Major mistreatment risk detected (critical neglect and unsafe conditions).";
+
+  recordPreviousDog(state, "RESCUED", now);
+
+  danger.rescuedAt = now;
+  danger.rescueReason = reason;
+  state.lifecycleStatus = DOG_LIFECYCLE_STATUS.RESCUED;
+  state.adoptedAt = null;
+  state.lastAction = "rescued";
+  state.isAsleep = false;
+
+  pushJournalEntry(state, {
+    type: "RESCUE",
+    moodTag: "URGENT",
+    summary: "Animal Rescue Center intervened",
+    body:
+      "Animal Rescue Center has taken your dog into protective care. " +
+      `Danger meter reached ${score}%. Improve care before your next adoption.`,
+    timestamp: now,
+  });
+}
+
+function triggerLongLifeFarewell(state, now) {
+  if (ensureLifecycleStatus(state) !== DOG_LIFECYCLE_STATUS.ACTIVE) return;
+
+  const legacy = ensureLegacyJourneyState(state);
+  if (legacy.farewellLetterAt) return;
+
+  recordPreviousDog(state, "LONG_LIFE", now);
+
+  legacy.farewellLetterAt = now;
+  legacy.rainbowBridgeReadyAt = now;
+  legacy.ghostDogUnlocked = true;
+  legacy.ghostPlayBowPending = true;
+
+  state.lifecycleStatus = DOG_LIFECYCLE_STATUS.FAREWELL;
+  state.adoptedAt = null;
+  state.lastAction = "farewell";
+
+  pushJournalEntry(state, {
+    type: "LETTER",
+    moodTag: "CALM",
+    summary: "Farewell letter",
+    body:
+      "Dear hooman,\n\nWe had a full, happy life. Thank you for every walk, toy, and nap together. " +
+      "I’ll meet you at Rainbow Bridge.\n\nAlways your pup.",
+    timestamp: now,
+  });
+}
+
+function evaluateDangerAndLifecycleEvents(state, now) {
+  const status = ensureLifecycleStatus(state);
+  const danger = ensureDangerState(state);
+  ensureLegacyJourneyState(state);
+  if (status !== DOG_LIFECYCLE_STATUS.ACTIVE || !state.adoptedAt) {
+    return;
+  }
+
+  const score = computeDangerScore(state);
+  danger.score = score;
+  danger.tier = getDangerTier(score);
+
+  if (score >= DANGER_RUNAWAY_LETTER_THRESHOLD) {
+    pushDearHoomanRunawayLetter(state, now, score);
+  }
+
+  const neglect = Number(state.memory?.neglectStrikes || 0);
+  const majorMistreatment = score >= DANGER_RESCUE_THRESHOLD || neglect >= 8;
+  if (majorMistreatment) {
+    triggerAnimalRescueCenter(state, now, score);
+    return;
+  }
+
+  const isSenior =
+    String(state.lifeStage?.stage || "").toUpperCase() === "SENIOR";
+  const ageDays = Number(state.lifeStage?.days || 0);
+  const bond = Number(state.bond?.value || 0);
+  if (isSenior && ageDays >= LONG_LIFE_FAREWELL_AGE_DAYS && bond >= 60) {
+    triggerLongLifeFarewell(state, now);
   }
 }
 
@@ -910,13 +1170,13 @@ function getStageMultiplier(state, statKey) {
   return modifiers[statKey] ?? 1;
 }
 
-function applyDecay(state, now = nowMs()) {
+function createDecayRuleContext(state, now) {
   normalizeStatsState(state);
 
   const lastUpdatedAt = Number(state.lastUpdatedAt);
   if (!Number.isFinite(lastUpdatedAt)) {
     state.lastUpdatedAt = now;
-    return;
+    return null;
   }
 
   const MAX_DECAY_HOURS = 72;
@@ -925,7 +1185,7 @@ function applyDecay(state, now = nowMs()) {
     (now - state.lastUpdatedAt) / (1000 * 60 * 60)
   );
   const diffHours = Math.min(MAX_DECAY_HOURS, diffHoursRaw);
-  if (diffHours <= 0) return;
+  if (diffHours <= 0) return null;
 
   const vacation = ensureVacationState(state);
   const decayMultiplier = vacation.enabled
@@ -936,12 +1196,7 @@ function applyDecay(state, now = nowMs()) {
   const careerHungerMultiplier =
     state.career.perks?.hungerDecayMultiplier || 1.0;
   const skillMods = getSkillTreeModifiersFromDogState(state);
-  const hungerMultiplier =
-    careerHungerMultiplier * (skillMods.hungerDecayMultiplier || 1);
-  const happinessDecayMultiplier = skillMods.happinessDecayMultiplier || 1;
-  const sweetHappinessMultiplier = hasTemperamentTag(state, "SWEET") ? 0.85 : 1;
-  const cleanlinessDecayMultiplier = skillMods.cleanlinessDecayMultiplier || 1;
-  const idleEnergyDecayMultiplier = skillMods.idleEnergyDecayMultiplier || 1;
+
   const sleeping = Boolean(state.isAsleep);
   const idleish = (() => {
     const a = String(state.lastAction || "")
@@ -950,96 +1205,147 @@ function applyDecay(state, now = nowMs()) {
     return !a || a === "idle";
   })();
 
-  Object.entries(state.stats).forEach(([key, value]) => {
+  return {
+    state,
+    now,
+    diffHours,
+    effectiveHours,
+    vacation,
+    sleeping,
+    idleish,
+    multipliers: {
+      hunger: careerHungerMultiplier * (skillMods.hungerDecayMultiplier || 1),
+      happiness:
+        (skillMods.happinessDecayMultiplier || 1) *
+        (hasTemperamentTag(state, "SWEET") ? 0.85 : 1),
+      cleanliness: skillMods.cleanlinessDecayMultiplier || 1,
+      idleEnergy: skillMods.idleEnergyDecayMultiplier || 1,
+    },
+    stageMultipliers: {},
+    decayByStat: {},
+    energyRecoveryGain: 0,
+  };
+}
+
+function computeDegradationStage(ctx) {
+  Object.keys(ctx.state.stats).forEach((key) => {
+    if (!isValidStat(key)) return;
+    const stageMultiplier = getStageMultiplier(ctx.state, key);
+    ctx.stageMultipliers[key] = stageMultiplier;
+    ctx.decayByStat[key] =
+      (DECAY_PER_HOUR[key] || 0) *
+      DECAY_SPEED *
+      ctx.effectiveHours *
+      stageMultiplier;
+  });
+}
+
+function applyEnvironmentModifiersStage(ctx) {
+  if (!ctx.sleeping) return;
+  if (Number.isFinite(ctx.decayByStat.hunger)) {
+    ctx.decayByStat.hunger *= SLEEP_NEEDS_MULTIPLIER;
+  }
+  if (Number.isFinite(ctx.decayByStat.thirst)) {
+    ctx.decayByStat.thirst *= SLEEP_NEEDS_MULTIPLIER;
+  }
+  ctx.energyRecoveryGain =
+    SLEEP_RECOVERY_PER_HOUR *
+    DECAY_SPEED *
+    ctx.effectiveHours *
+    Number(ctx.stageMultipliers.energy || 1);
+}
+
+function applyCompoundingStage(ctx) {
+  if (Number.isFinite(ctx.decayByStat.hunger)) {
+    ctx.decayByStat.hunger *= ctx.multipliers.hunger;
+  }
+  if (Number.isFinite(ctx.decayByStat.happiness)) {
+    ctx.decayByStat.happiness *= ctx.multipliers.happiness;
+  }
+  if (Number.isFinite(ctx.decayByStat.cleanliness)) {
+    ctx.decayByStat.cleanliness *= ctx.multipliers.cleanliness;
+  }
+  if (!ctx.sleeping && ctx.idleish && Number.isFinite(ctx.decayByStat.energy)) {
+    ctx.decayByStat.energy *= ctx.multipliers.idleEnergy;
+  }
+}
+
+function evaluateThresholdsStage(ctx) {
+  Object.entries(ctx.state.stats).forEach(([key, value]) => {
     if (!isValidStat(key)) return;
 
-    const rate = DECAY_PER_HOUR[key] || 0;
-    const stageMultiplier = getStageMultiplier(state, key);
-    let delta = rate * DECAY_SPEED * effectiveHours * stageMultiplier;
-
-    if (sleeping && (key === "hunger" || key === "thirst")) {
-      delta *= SLEEP_NEEDS_MULTIPLIER;
-    }
-
-    if (key === "hunger") {
-      delta *= hungerMultiplier;
-      state.stats.hunger = clamp(value + delta, 0, 100);
-      return;
-    }
-    if (key === "thirst") {
-      state.stats.thirst = clamp(value + delta, 0, 100);
+    const delta = Number(ctx.decayByStat[key] || 0);
+    if (key === "hunger" || key === "thirst") {
+      ctx.state.stats[key] = clamp(Number(value || 0) + delta, 0, 100);
       return;
     }
 
-    {
-      if (key === "happiness") {
-        delta *= happinessDecayMultiplier * sweetHappinessMultiplier;
-      }
-      if (key === "cleanliness") delta *= cleanlinessDecayMultiplier;
-
-      if (key === "energy") {
-        if (sleeping) {
-          const gain =
-            SLEEP_RECOVERY_PER_HOUR *
-            DECAY_SPEED *
-            effectiveHours *
-            stageMultiplier;
-          state.stats.energy = clamp(value + gain, 0, 100);
-          return;
-        }
-        if (idleish) delta *= idleEnergyDecayMultiplier;
-      }
-
-      state.stats[key] = clamp(value - delta, 0, 100);
+    if (key === "energy" && ctx.sleeping) {
+      ctx.state.stats.energy = clamp(
+        Number(value || 0) + Number(ctx.energyRecoveryGain || 0),
+        0,
+        100
+      );
+      return;
     }
+
+    ctx.state.stats[key] = clamp(Number(value || 0) - delta, 0, 100);
   });
 
   // Auto-sleep / auto-wake around very low energy.
-  if (!sleeping && Number(state.stats?.energy || 0) <= AUTO_SLEEP_THRESHOLD) {
-    state.isAsleep = true;
-    state.lastAction = "sleep_auto";
-  } else if (
-    sleeping &&
-    Number(state.stats?.energy || 0) >= AUTO_WAKE_THRESHOLD
+  if (
+    !ctx.sleeping &&
+    Number(ctx.state.stats?.energy || 0) <= AUTO_SLEEP_THRESHOLD
   ) {
-    state.isAsleep = false;
-    state.lastAction = "wake";
-    const dreams = ensureDreamState(state);
+    ctx.state.isAsleep = true;
+    ctx.state.lastAction = "sleep_auto";
+  } else if (
+    ctx.sleeping &&
+    Number(ctx.state.stats?.energy || 0) >= AUTO_WAKE_THRESHOLD
+  ) {
+    ctx.state.isAsleep = false;
+    ctx.state.lastAction = "wake";
+    const dreams = ensureDreamState(ctx.state);
     dreams.active = null;
   }
 
   // Potty need rises over time; trigger accidents if it overflows.
-  if (!vacation.enabled) {
-    const effects = getCleanlinessEffect(state);
+  if (!ctx.vacation.enabled) {
+    const effects = getCleanlinessEffect(ctx.state);
     const tierMultiplier = Number(effects?.pottyGainMultiplier || 1) || 1;
-    const trainingMultiplier = getPottyTrainingMultiplier(state);
-    const asleepMultiplier = state.isAsleep ? 0.75 : 1;
+    const trainingMultiplier = getPottyTrainingMultiplier(ctx.state);
+    const asleepMultiplier = ctx.state.isAsleep ? 0.75 : 1;
     const perHour = POTTY_FILL_PER_HOUR * tierMultiplier * trainingMultiplier;
     let pottyNeed =
-      Number(state.pottyLevel || 0) +
-      perHour * effectiveHours * asleepMultiplier;
+      Number(ctx.state.pottyLevel || 0) +
+      perHour * ctx.effectiveHours * asleepMultiplier;
 
     let accidents = 0;
     while (pottyNeed >= 100 && accidents < MAX_ACCIDENTS_PER_DECAY) {
       accidents += 1;
       pottyNeed -= 100;
-      applyAccidentInternal(state, now);
+      applyAccidentInternal(ctx.state, ctx.now);
     }
 
-    state.pottyLevel = clamp(pottyNeed, 0, 100);
+    ctx.state.pottyLevel = clamp(pottyNeed, 0, 100);
   }
+}
+
+function runLegacyEventsStage(ctx) {
+  evaluateDangerAndLifecycleEvents(ctx.state, ctx.now);
+  if (ensureLifecycleStatus(ctx.state) !== DOG_LIFECYCLE_STATUS.ACTIVE) return;
 
   // Vacation mode implies your pup is cared for; we skip neglect strikes/journal.
-  if (!vacation.enabled && diffHours >= 24) {
-    state.memory.neglectStrikes = Math.min(
-      (state.memory.neglectStrikes || 0) + 1,
+  if (!ctx.vacation.enabled && ctx.diffHours >= 24) {
+    ctx.state.memory.neglectStrikes = Math.min(
+      (ctx.state.memory.neglectStrikes || 0) + 1,
       999
     );
     // Bond no longer decays from passive neglect; only explicit actions raise it.
 
     // Neglect nudges personality toward cautious/independent/reserved.
-    applyPersonalityShift(state, {
-      now,
+    applyPersonalityShift(ctx.state, {
+      now: ctx.now,
       source: "NEGLECT",
       note: "Stayed away a while",
       deltas: {
@@ -1051,16 +1357,38 @@ function applyDecay(state, now = nowMs()) {
       },
     });
 
-    pushJournalEntry(state, {
+    pushJournalEntry(ctx.state, {
       type: "NEGLECT",
       moodTag: "LONELY",
       summary: "Dear hooman… I missed you.",
       body:
         "Dear hooman,\n\nI wasn’t sure if you were chasing squirrels or just busy, " +
         "but I got pretty lonely while you were gone. Next time, can we play a little sooner?\n\n– your pup",
-      timestamp: now,
+      timestamp: ctx.now,
     });
   }
+}
+
+function applyDecay(state, now = nowMs()) {
+  const status = ensureLifecycleStatus(state);
+  if (status !== DOG_LIFECYCLE_STATUS.ACTIVE || !state.adoptedAt) {
+    state.lastUpdatedAt = now;
+    return;
+  }
+
+  const ctx = createDecayRuleContext(state, now);
+  if (!ctx) return;
+
+  const stageHandlers = {
+    computeDegradation: computeDegradationStage,
+    applyEnvironmentModifiers: applyEnvironmentModifiersStage,
+    applyCompounding: applyCompoundingStage,
+    evaluateThresholds: evaluateThresholdsStage,
+    runLegacyEvents: runLegacyEventsStage,
+  };
+  DOG_RULE_PIPELINE_STAGES.forEach((stageName) => {
+    stageHandlers[stageName]?.(ctx);
+  });
 
   state.lastUpdatedAt = now;
 }
@@ -1205,7 +1533,7 @@ function updateTemperamentReveal(state, now = nowMs()) {
   if (state.temperament.revealedAt) return;
 
   const days = getDaysBetween(adoptedAt, now);
-  if (days >= 3) {
+  if (days >= 14) {
     state.temperament.revealReady = true;
   }
 }
@@ -1394,12 +1722,16 @@ function syncCleanlinessTier(state, now = nowMs()) {
 
 function finalizeDerivedState(state, now = nowMs()) {
   normalizeStatsState(state);
+  ensureLifecycleStatus(state);
+  ensureDangerState(state);
+  ensureLegacyJourneyState(state);
   syncLifecycleState(state, now);
   const tier = syncCleanlinessTier(state, now);
   evaluateObedienceUnlocks(state, now);
   advanceDogFsm(state, now, { allowAutonomy: false });
   state.moodlets = computeMoodlets(state);
   state.emotionCue = deriveEmotionCue(state);
+  state.personalityProfile = derivePersonalityProfile(state);
 
   // --- animation mood routing (string mood separate from mood history object) ---
   {
@@ -1418,6 +1750,8 @@ function finalizeDerivedState(state, now = nowMs()) {
       animation.desiredAction = deriveDesiredActionFromMood(animation.mood);
     }
   }
+
+  evaluateDangerAndLifecycleEvents(state, now);
 
   return tier;
 }
@@ -1938,6 +2272,9 @@ const dogSlice = createSlice({
       ensureDogFsmState(merged);
       ensureSkillTreeState(merged);
       ensureMilestonesState(merged);
+      ensureLifecycleStatus(merged);
+      ensureDangerState(merged);
+      ensureLegacyJourneyState(merged);
 
       finalizeDerivedState(merged, nowMs());
       return merged;
@@ -1949,8 +2286,65 @@ const dogSlice = createSlice({
 
     setAdoptedAt(state, { payload }) {
       const adoptedAt = parseAdoptedAt(payload) ?? nowMs();
+      const legacy = ensureLegacyJourneyState(state);
+      const priorStatus = ensureLifecycleStatus(state);
+
+      // Starting a fresh pup after rescue/farewell resets care-sensitive runtime fields.
+      if (
+        priorStatus === DOG_LIFECYCLE_STATUS.RESCUED ||
+        priorStatus === DOG_LIFECYCLE_STATUS.FAREWELL ||
+        priorStatus === DOG_LIFECYCLE_STATUS.NONE
+      ) {
+        const obedienceReset = Object.fromEntries(
+          Object.keys(initialSkills.obedience || {}).map((id) => [
+            id,
+            { level: 0, xp: 0 },
+          ])
+        );
+        state.stats = { ...DEFAULT_STATS };
+        state.lifeStage = { ...DEFAULT_LIFE_STAGE };
+        state.cleanlinessTier = "FRESH";
+        state.poopCount = 0;
+        state.pottyLevel = 0;
+        state.potty = {
+          training: 0,
+          lastSuccessAt: null,
+          lastAccidentAt: null,
+          totalSuccesses: 0,
+          totalAccidents: 0,
+        };
+        state.memory = { ...initialMemory };
+        state.training = createInitialTrainingState();
+        state.skills = { obedience: obedienceReset };
+        state.mood = { ...initialMood };
+        state.moodlets = [];
+        state.emotionCue = null;
+        state.isAsleep = false;
+        state.lastAction = null;
+        state.fsm = { ...DOG_FSM_DEFAULT };
+        state.memorial = { ...initialMemorial };
+        state.danger = { ...initialDanger };
+        state.temperament = { ...initialTemperament };
+        state.personality = { ...initialPersonality };
+      }
+
+      state.lifecycleStatus = DOG_LIFECYCLE_STATUS.ACTIVE;
       state.temperament.adoptedAt = adoptedAt;
       state.adoptedAt = adoptedAt;
+      state.lastUpdatedAt = adoptedAt;
+
+      if (legacy.ghostPlayBowPending) {
+        legacy.ghostPlayBowPending = false;
+        legacy.ghostPlayBowAt = adoptedAt;
+        pushJournalEntry(state, {
+          type: "LEGACY",
+          moodTag: "PROUD",
+          summary: "Ghost dog play bow",
+          body: "At the gate, your new pup and the ghost of your old friend shared a gentle play bow.",
+          timestamp: adoptedAt,
+        });
+      }
+
       ensurePersonalityState(state);
       finalizeDerivedState(state, adoptedAt);
     },
@@ -2420,6 +2814,13 @@ const dogSlice = createSlice({
 
     tickDog(state, { payload }) {
       const now = payload?.now ?? nowMs();
+      if (
+        ensureLifecycleStatus(state) !== DOG_LIFECYCLE_STATUS.ACTIVE ||
+        !state.adoptedAt
+      ) {
+        state.lastUpdatedAt = now;
+        return;
+      }
       applyDecay(state, now);
       advanceDogFsm(state, now, { allowAutonomy: true });
       const tier = finalizeDerivedState(state, now);
@@ -2455,6 +2856,13 @@ const dogSlice = createSlice({
 
     registerSessionStart(state, { payload }) {
       const now = payload?.now ?? nowMs();
+      if (
+        ensureLifecycleStatus(state) !== DOG_LIFECYCLE_STATUS.ACTIVE ||
+        !state.adoptedAt
+      ) {
+        state.lastUpdatedAt = now;
+        return;
+      }
       applyDecay(state, now);
       const tier = finalizeDerivedState(state, now);
       applyCleanlinessPenalties(state, tier);
@@ -2944,6 +3352,9 @@ export const selectDogSkillTreePoints = (state) =>
 export const selectDogBond = (state) => state.dog.bond;
 export const selectDogMemorial = (state) => state.dog.memorial;
 export const selectDogVacation = (state) => state.dog.vacation;
+export const selectDogLifecycleStatus = (state) => state.dog.lifecycleStatus;
+export const selectDogDanger = (state) => state.dog.danger;
+export const selectDogLegacyJourney = (state) => state.dog.legacyJourney;
 
 export const selectCosmeticCatalog = () => DEFAULT_COSMETIC_CATALOG;
 

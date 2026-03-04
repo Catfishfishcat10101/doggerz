@@ -1,15 +1,17 @@
 // src/features/game/MainGame.jsx
 import { onAuthStateChanged } from "firebase/auth";
+import { useNavigate } from "react-router-dom";
 import {
   Suspense,
   lazy,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import DogToy from "@/components/ui/DogToy.jsx";
+import DogToy from "@/components/dog/DogToy.jsx";
 import EnvironmentScene from "@/features/game/EnvironmentScene.jsx";
 import { selectSettings } from "@/redux/settingsSlice.js";
 import { setZip, selectUserZip } from "@/redux/userSlice.js";
@@ -18,6 +20,7 @@ import {
   dropFoodBowl,
   giveWater,
   goPotty,
+  ackTemperamentReveal,
   petDog,
   play,
   selectDog,
@@ -25,6 +28,7 @@ import {
   tryConsumeFoodBowl,
 } from "@/redux/dogSlice.js";
 import { selectDogRenderModel } from "@/features/game/dogSelectors.js";
+import { PATHS } from "@/routes.js";
 import {
   selectWeatherDetails,
   selectWeatherError,
@@ -101,8 +105,9 @@ function formatLiveClock(ts) {
   }).format(new Date(ts));
 }
 
-export default function MainGame({ scene }) {
+export default function MainGame({ scene, dogInteractive = true }) {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const dog = useSelector(selectDog);
   const settings = useSelector(selectSettings);
   const renderModel = useSelector(selectDogRenderModel);
@@ -120,6 +125,8 @@ export default function MainGame({ scene }) {
   const [zipDraft, setZipDraft] = useState(userZip || "");
   const [zipTouched, setZipTouched] = useState(false);
   const [weatherBusy, setWeatherBusy] = useState(false);
+  const [temperamentCardDismissed, setTemperamentCardDismissed] =
+    useState(false);
 
   const seasonMode = settings?.seasonMode || "auto";
   const reduceMotion = settings?.reduceMotion === "on";
@@ -130,9 +137,40 @@ export default function MainGame({ scene }) {
   const foodBowl = dog?.yard?.foodBowl || null;
   const zipIsValid = /^\d{5}$/.test(String(zipDraft || "").trim());
   const effectiveZip = userZip || zipDraft || "10001";
+  const controlsDisabled = !dogInteractive;
+  const temperamentReady = Boolean(
+    dog?.temperament?.revealReady && !dog?.temperament?.revealedAt
+  );
+  const temperamentCardCopy = useMemo(() => {
+    const primary = String(dog?.temperament?.primary || "SWEET").toUpperCase();
+    const secondary = String(
+      dog?.temperament?.secondary || "CHILL"
+    ).toUpperCase();
+    const byPrimary = {
+      SWEET:
+        "Your care pattern built a trusting, people-first pup that seeks connection.",
+      CHILL:
+        "Your steady routine shaped a calm, balanced temperament with dependable habits.",
+      SPICY:
+        "Your pup developed a bold, independent streak and tests boundaries more often.",
+    };
+    const bySecondary = {
+      SWEET: "Warm social responses and fast emotional recovery.",
+      CHILL: "Stable mood and good self-regulation.",
+      SPICY: "Higher reactivity, stronger autonomy, and selective obedience.",
+    };
+    return {
+      title: "2-Week Temperament Card Ready",
+      summary: byPrimary[primary] || byPrimary.CHILL,
+      detail: bySecondary[secondary] || bySecondary.CHILL,
+      primary,
+      secondary,
+    };
+  }, [dog?.temperament?.primary, dog?.temperament?.secondary]);
 
   const handleToySqueak = useCallback(
     (point) => {
+      if (controlsDisabled) return;
       const now = Date.now();
       if (now - lastToySqueakAtRef.current < 600) return;
       lastToySqueakAtRef.current = now;
@@ -148,11 +186,12 @@ export default function MainGame({ scene }) {
 
       dispatch(play({ now, source: "toy" }));
     },
-    [dispatch]
+    [controlsDisabled, dispatch]
   );
 
   const handleViewportPointerDown = useCallback(
     (event) => {
+      if (controlsDisabled) return;
       if (!placingBowl) return;
       const rect = dogViewportRef.current?.getBoundingClientRect?.();
       if (!rect) return;
@@ -180,7 +219,7 @@ export default function MainGame({ scene }) {
         dispatch(tryConsumeFoodBowl({ now: Date.now() }));
       }, 1000);
     },
-    [dispatch, placingBowl]
+    [controlsDisabled, dispatch, placingBowl]
   );
 
   useEffect(() => {
@@ -217,6 +256,12 @@ export default function MainGame({ scene }) {
     if (zipTouched) return;
     setZipDraft(userZip || "");
   }, [userZip, zipTouched]);
+
+  useEffect(() => {
+    if (!temperamentReady) {
+      setTemperamentCardDismissed(false);
+    }
+  }, [temperamentReady]);
 
   const refreshWeatherNow = useCallback(
     async (zipValue) => {
@@ -383,26 +428,32 @@ export default function MainGame({ scene }) {
           <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
             <ActionButton
               label="Interact"
+              disabled={controlsDisabled}
               onClick={() => setInteractionOpen(true)}
             />
             <ActionButton
               label="Play"
+              disabled={controlsDisabled}
               onClick={() => dispatch(play({ now: Date.now() }))}
             />
             <ActionButton
               label="Pet"
+              disabled={controlsDisabled}
               onClick={() => dispatch(petDog({ now: Date.now() }))}
             />
             <ActionButton
               label="Bath"
+              disabled={controlsDisabled}
               onClick={() => dispatch(bathe({ now: Date.now() }))}
             />
             <ActionButton
               label="Potty"
+              disabled={controlsDisabled}
               onClick={() => dispatch(goPotty({ now: Date.now() }))}
             />
             <ActionButton
               label="Train"
+              disabled={controlsDisabled}
               onClick={() =>
                 dispatch(
                   trainObedience({
@@ -416,6 +467,16 @@ export default function MainGame({ scene }) {
           </div>
         </div>
       </div>
+      {temperamentReady && !temperamentCardDismissed ? (
+        <TemperamentRevealCard
+          copy={temperamentCardCopy}
+          onLater={() => setTemperamentCardDismissed(true)}
+          onReveal={() => {
+            dispatch(ackTemperamentReveal({ now: Date.now() }));
+            navigate(PATHS.TEMPERAMENT_REVEAL);
+          }}
+        />
+      ) : null}
       {interactionOpen ? (
         <InteractionSheet
           onClose={() => setInteractionOpen(false)}
@@ -459,14 +520,52 @@ export default function MainGame({ scene }) {
   );
 }
 
-function ActionButton({ label, onClick }) {
+function TemperamentRevealCard({ copy, onLater, onReveal }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4">
+      <div className="w-full max-w-lg rounded-3xl border border-doggerz-leaf/35 bg-black/90 p-5 text-doggerz-bone shadow-[0_20px_50px_rgba(2,6,23,0.7)]">
+        <div className="text-xs uppercase tracking-[0.2em] text-doggerz-paw/90">
+          Temperament Milestone
+        </div>
+        <h3 className="mt-2 text-xl font-black tracking-tight">
+          {copy?.title}
+        </h3>
+        <p className="mt-3 text-sm text-doggerz-bone/85">{copy?.summary}</p>
+        <p className="mt-2 text-xs text-doggerz-bone/70">{copy?.detail}</p>
+        <div className="mt-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs">
+          Primary: {copy?.primary || "Unknown"} • Secondary:{" "}
+          {copy?.secondary || "Unknown"}
+        </div>
+        <div className="mt-4 flex items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={onLater}
+            className="rounded-xl border border-white/20 bg-white/5 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-doggerz-bone/80 hover:bg-white/10"
+          >
+            Later
+          </button>
+          <button
+            type="button"
+            onClick={onReveal}
+            className="rounded-xl border border-doggerz-leaf/45 bg-doggerz-neon/20 px-3 py-2 text-xs font-bold uppercase tracking-[0.14em] text-doggerz-bone hover:bg-doggerz-neon/30"
+          >
+            Open Card
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ActionButton({ label, onClick, disabled = false }) {
   const meta = ACTION_META[label] || ACTION_META.Play;
 
   return (
     <button
       type="button"
+      disabled={disabled}
       onClick={onClick}
-      className={`group relative overflow-hidden rounded-2xl border px-3 py-3 text-left transition active:translate-y-[1px] active:scale-[0.99] ${meta.edge} bg-gradient-to-b ${meta.card} shadow-[0_10px_22px_rgba(2,6,23,0.25)] hover:brightness-110`}
+      className={`group relative overflow-hidden rounded-2xl border px-3 py-3 text-left transition active:translate-y-[1px] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-45 ${meta.edge} bg-gradient-to-b ${meta.card} shadow-[0_10px_22px_rgba(2,6,23,0.25)] hover:brightness-110`}
     >
       <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.3),transparent_55%)]" />
       <div className="relative flex items-center gap-2">

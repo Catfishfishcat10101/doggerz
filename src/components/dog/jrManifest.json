@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "frame": { "width": 128, "height": 128 },
+  "frame": { "width": 256, "height": 256 },
   "columns": 8,
   "defaultAnim": "idle",
   "defaultFps": 8,
   "rows": [
-    { "anim": "idle", "frames": 6, "fps": 8 },
+    { "anim": "idle", "frames": 16, "columns": 4, "fps": 4 },
     { "anim": "walk", "frames": 8, "fps": 10 },
     { "anim": "bark", "frames": 4, "fps": 8 },
     { "anim": "scratch", "frames": 6, "fps": 8 },

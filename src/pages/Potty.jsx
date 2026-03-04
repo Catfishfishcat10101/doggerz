@@ -2,7 +2,7 @@
 import { useNavigate } from "react-router-dom";
 import { PATHS } from "@/routes.js";
 import { useToast } from "@/state/toastContext.js";
-import { usePup } from "@/state/PupContext.jsx";
+import { usePup } from "@/components/dog/PupContext.jsx";
 import PageShell from "@/components/layout/PageShell.jsx";
 import { PageFooter, PageHeader } from "@/components/layout/PageSections.jsx";
 import EmptySlate from "@/components/ui/EmptySlate.jsx";

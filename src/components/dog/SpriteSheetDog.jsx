@@ -1,10 +1,11 @@
-// src/components/SpriteSheetDog.jsx
+// src/components/dog/SpriteSheetDog.jsx
 // Lightweight sprite-strip renderer with resilient fallback chain.
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import jrManifest from "@/features/game/jrManifest.json";
+import jrManifest from "@/components/dog/jrManifest.json";
 import {
+  getDogAnimSpriteUrl,
   getDogPixiSheetUrl,
   normalizeDogConditionId,
   normalizeDogStageShort,
@@ -18,6 +19,9 @@ const ANIM_ALIASES =
   jrManifest?.aliases && typeof jrManifest.aliases === "object"
     ? jrManifest.aliases
     : {};
+const DEFAULT_FRAME = jrManifest?.frame || {};
+const DEFAULT_FRAME_WIDTH = Math.max(1, Number(DEFAULT_FRAME.width || 128));
+const DEFAULT_FRAME_HEIGHT = Math.max(1, Number(DEFAULT_FRAME.height || 128));
 
 function clamp(n, lo, hi) {
   const x = Number(n);
@@ -69,18 +73,20 @@ function getAnimMeta(anim) {
   );
   const row = ANIM_ROWS[rowIndex] || null;
   const frames = Math.max(1, Number(row?.frames || DEFAULT_COLUMNS));
+  const columns = Math.max(1, Number(row?.columns || DEFAULT_COLUMNS));
   const fps = Math.max(1, Number(row?.fps || DEFAULT_FPS));
-  return { key, rowIndex, frames, fps };
+  return { key, rowIndex, frames, columns, fps };
 }
 
-function getSheetCandidates(stage, condition) {
+function getSheetCandidates(stage, condition, anim) {
   const s = normalizeDogStageShort(stage);
   const c = normalizeDogConditionId(condition);
+  const animSpecific = getDogAnimSpriteUrl(s, anim);
   const requested = getDogPixiSheetUrl(s, c);
   const cleanSameStage = getDogPixiSheetUrl(s, "clean");
   const cleanPup = getDogPixiSheetUrl("pup", "clean");
 
-  return [...new Set([requested, cleanSameStage, cleanPup])];
+  return [...new Set([animSpecific, requested, cleanSameStage, cleanPup])];
 }
 
 export default function SpriteSheetDog({
@@ -96,14 +102,15 @@ export default function SpriteSheetDog({
 }) {
   const animMeta = useMemo(() => getAnimMeta(anim), [anim]);
   const candidates = useMemo(
-    () => getSheetCandidates(stage, condition),
-    [condition, stage]
+    () => getSheetCandidates(stage, condition, animMeta.key),
+    [animMeta.key, condition, stage]
   );
 
   const [sourceIndex, setSourceIndex] = useState(0);
   const [sheetLoaded, setSheetLoaded] = useState(false);
   const [sheetFailed, setSheetFailed] = useState(false);
   const [frameIndex, setFrameIndex] = useState(0);
+  const [sheetMeta, setSheetMeta] = useState(null);
 
   const rafRef = useRef(0);
   const frameStartRef = useRef(0);
@@ -118,6 +125,7 @@ export default function SpriteSheetDog({
     setSheetLoaded(false);
     setSheetFailed(false);
     setFrameIndex(0);
+    setSheetMeta(null);
   }, [stage, condition]);
 
   useEffect(() => {
@@ -207,9 +215,23 @@ export default function SpriteSheetDog({
     );
   }
 
-  const handleSheetLoad = () => {
+  const handleSheetLoad = (event) => {
     setSheetLoaded(true);
     setSheetFailed(false);
+    const img = event?.currentTarget;
+    if (img && img.naturalWidth && img.naturalHeight) {
+      const columns = Math.max(
+        1,
+        Math.round(img.naturalWidth / DEFAULT_FRAME_WIDTH)
+      );
+      const rows = Math.max(
+        1,
+        Math.round(img.naturalHeight / DEFAULT_FRAME_HEIGHT)
+      );
+      setSheetMeta({ columns, rows });
+    } else {
+      setSheetMeta(null);
+    }
   };
 
   const handleSheetError = () => {
@@ -221,10 +243,20 @@ export default function SpriteSheetDog({
     setSheetFailed(true);
   };
 
-  const bgSizeX = DEFAULT_COLUMNS * boxSize;
-  const bgSizeY = totalRows * boxSize;
-  const posX = -frameIndex * boxSize;
-  const posY = -animMeta.rowIndex * boxSize;
+  const effectiveColumns =
+    animMeta.columns || sheetMeta?.columns || DEFAULT_COLUMNS;
+  const isAnimSpecific = Boolean(
+    currentSrc && currentSrc === getDogAnimSpriteUrl(stage, animMeta.key)
+  );
+  const effectiveRows = isAnimSpecific
+    ? Math.max(1, Math.ceil(animMeta.frames / effectiveColumns))
+    : sheetMeta?.rows || totalRows;
+  const bgSizeX = effectiveColumns * boxSize;
+  const bgSizeY = effectiveRows * boxSize;
+  const frameCol = frameIndex % effectiveColumns;
+  const frameRowOffset = Math.floor(frameIndex / effectiveColumns);
+  const posX = -frameCol * boxSize;
+  const posY = -(animMeta.rowIndex + frameRowOffset) * boxSize;
 
   return (
     <div className={className} style={wrapperStyle}>

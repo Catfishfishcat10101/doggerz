@@ -1,4 +1,4 @@
-// src/features/game/DogAIEngine.jsx
+// src/components/dog/DogAIEngine.jsx
 // @ts-check
 
 import { useCallback, useEffect, useRef, useState } from "react";

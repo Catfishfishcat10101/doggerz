@@ -9,6 +9,7 @@ import {
   selectDogLifeStage,
   selectDogBond,
   selectDogMemorial,
+  selectDogLegacyJourney,
   startRainbowBridge,
   completeRainbowBridge,
 } from "@/redux/dogSlice.js";
@@ -19,6 +20,7 @@ export default function RainbowBridge() {
   const lifeStage = useSelector(selectDogLifeStage);
   const bond = useSelector(selectDogBond);
   const memorial = useSelector(selectDogMemorial);
+  const legacyJourney = useSelector(selectDogLegacyJourney);
   const [showConfirm, setShowConfirm] = React.useState(false);
   const modalRef = React.useRef(null);
 
@@ -26,6 +28,13 @@ export default function RainbowBridge() {
   const bondValue = Math.round(bond?.value ?? 0);
   const memorialCompleted = Boolean(memorial?.completedAt);
   const memorialActive = Boolean(memorial?.active);
+  const farewellAt = legacyJourney?.farewellLetterAt
+    ? new Date(legacyJourney.farewellLetterAt)
+    : null;
+  const ghostDogUnlocked = Boolean(legacyJourney?.ghostDogUnlocked);
+  const ghostPlayBowAt = legacyJourney?.ghostPlayBowAt
+    ? new Date(legacyJourney.ghostPlayBowAt)
+    : null;
 
   const bondTone =
     bondValue >= 80 ? "deep" : bondValue >= 45 ? "steady" : "growing";
@@ -67,6 +76,11 @@ export default function RainbowBridge() {
               <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-zinc-200">
                 Stage {lifeStage?.label || "Pup"}
               </span>
+              {ghostDogUnlocked ? (
+                <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-zinc-200">
+                  Ghost companion unlocked
+                </span>
+              ) : null}
             </div>
           </div>
 
@@ -94,6 +108,11 @@ export default function RainbowBridge() {
                 </div>
               ) : null}
               <div className="mt-4 grid gap-2 text-xs text-zinc-300/80">
+                {farewellAt ? (
+                  <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-emerald-100">
+                    Farewell letter recorded {farewellAt.toLocaleDateString()}.
+                  </div>
+                ) : null}
                 {!isSenior ? (
                   <div className="rounded-2xl border border-white/10 bg-black/25 p-3">
                     This moment unlocks once your pup reaches the senior stage.
@@ -102,6 +121,12 @@ export default function RainbowBridge() {
                   <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-emerald-100">
                     Your memorial is complete. You can revisit this space
                     anytime.
+                  </div>
+                ) : null}
+                {ghostPlayBowAt ? (
+                  <div className="rounded-2xl border border-sky-500/20 bg-sky-500/10 p-3 text-sky-100">
+                    Ghost dog + new pup play bow happened{" "}
+                    {ghostPlayBowAt.toLocaleString()}.
                   </div>
                 ) : null}
               </div>

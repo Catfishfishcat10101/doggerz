@@ -6,7 +6,12 @@ import {
   getDogStageLabel,
   getDogStaticSpriteUrl,
 } from "@/utils/dogSpritePaths.js";
+import {
+  DOG_ANIMATION_CATEGORIES,
+  getDogAnimationCategory,
+} from "@/utils/mapPoseToDogAction.js";
 import { derivePersonalityAnimationHint } from "@/logic/dogEngine.js";
+import { derivePersonalityProfile } from "@/logic/personalityProfile.js";
 
 const EMPTY_DOG = Object.freeze({});
 
@@ -14,6 +19,11 @@ export const selectDog = (state) => state?.dog || EMPTY_DOG;
 
 export const selectDogAnimation = createSelector([selectDog], (dog) =>
   derivePersonalityAnimationHint(dog?.personality?.traits || {})
+);
+export const selectDogPersonalityProfile = createSelector([selectDog], (dog) =>
+  dog?.personalityProfile && typeof dog.personalityProfile === "object"
+    ? dog.personalityProfile
+    : derivePersonalityProfile(dog || {})
 );
 
 const TRICK_ACTIONS = new Set([
@@ -39,38 +49,24 @@ const TRICK_ACTIONS = new Set([
 
 const EXPLICIT_ANIMS = new Set([
   "idle",
-  "walk",
   "wag",
   "sleep",
   "bark",
   "scratch",
-  "trick",
   "eat",
   "sit",
-  "stay",
-  "laydown",
   "lay_down",
-  "roll",
-  "rollover",
   "roll_over",
-  "playdead",
   "play_dead",
-  "shake",
   "beg",
   "bow",
-  "paw",
   "jump",
   "spin",
   "wave",
-  "highfive",
-  "high_five",
-  "crawl",
   "fetch",
-  "dance",
   "walk_left",
   "walk_right",
   "turn_walk_right",
-  "front_flip",
 ]);
 
 const EXPLICIT_ACTION_ALIASES = {
@@ -81,6 +77,12 @@ const EXPLICIT_ACTION_ALIASES = {
   play: "walk",
   rest: "idle",
   nap: "idle",
+  territorial_bark: "bark",
+  gate_watch: "idle",
+  point_position: "idle",
+  limping: "walk",
+  shivering: "idle",
+  lethargic_lay: "sleep",
 };
 
 function sanitizeAnimForCurrentSpriteSet(anim) {
@@ -116,6 +118,28 @@ function resolveExplicitAnim(lastAction, lastTrainedCommandId) {
 
   if (EXPLICIT_ANIMS.has(normalized)) return normalized;
   return null;
+}
+
+function resolveRestState({ anim, isSleeping, dog }) {
+  const key = normalizeAction(anim);
+  if (!isSleeping) {
+    return key === "idle" ? "idle_resting" : null;
+  }
+
+  const sleepMode = normalizeAction(dog?.sleep?.mode || "");
+  const hasDream = Boolean(dog?.dreams?.active?.id || dog?.dreams?.active);
+  if (hasDream) return "deep_rem_sleep";
+  if (sleepMode === "nap") return "light_sleep";
+  return "deep_rem_sleep";
+}
+
+function resolveAnimCategory({ anim, lastAction, restState }) {
+  const categoryFromLast = getDogAnimationCategory(lastAction);
+  if (categoryFromLast !== DOG_ANIMATION_CATEGORIES.ACTIVE) {
+    return categoryFromLast;
+  }
+  if (restState) return DOG_ANIMATION_CATEGORIES.REST;
+  return getDogAnimationCategory(anim);
 }
 
 function resolveDog(stateOrDog) {
@@ -169,11 +193,21 @@ export function selectDogRenderParams(stateOrDog) {
   );
   const explicitAnim = resolveExplicitAnim(last, lastTrainedCommandId);
   if (explicitAnim) {
+    const resolvedAnim =
+      sanitizeAnimForCurrentSpriteSet(explicitAnim) || "idle";
+    const restState = resolveRestState({ anim: resolvedAnim, isSleeping, dog });
+    const animCategory = resolveAnimCategory({
+      anim: resolvedAnim,
+      lastAction: last,
+      restState,
+    });
     return {
       stage,
       condition,
-      anim: sanitizeAnimForCurrentSpriteSet(explicitAnim) || "idle",
+      anim: resolvedAnim,
       isSleeping,
+      restState,
+      animCategory,
     };
   }
 
@@ -212,12 +246,24 @@ export function selectDogRenderParams(stateOrDog) {
               ? "walk"
               : "idle";
 
-  return { stage, condition, anim, isSleeping };
+  const restState = resolveRestState({ anim, isSleeping, dog });
+  const animCategory = resolveAnimCategory({
+    anim,
+    lastAction: last,
+    restState,
+  });
+
+  return { stage, condition, anim, isSleeping, restState, animCategory };
 }
 
 function buildDogRenderModel(stateOrDog) {
   const dog = resolveDog(stateOrDog);
-  const { stage, condition, anim, isSleeping } = selectDogRenderParams(dog);
+  const { stage, condition, anim, isSleeping, restState, animCategory } =
+    selectDogRenderParams(dog);
+  const personalityProfile =
+    dog?.personalityProfile && typeof dog.personalityProfile === "object"
+      ? dog.personalityProfile
+      : derivePersonalityProfile(dog || {});
 
   const stageLabel = dog.lifeStage?.label || getDogStageLabel(stage);
 
@@ -231,6 +277,9 @@ function buildDogRenderModel(stateOrDog) {
     condition,
     anim,
     isSleeping,
+    restState,
+    animCategory,
+    personalityProfile,
     staticSpriteUrl,
     pixiSheetUrl,
     pixiSheetFallbackUrl,
@@ -244,6 +293,24 @@ export const selectDogRenderModel = createSelector([selectDog], (dog) =>
 export function selectDogRenderModelFromDog(dogLike) {
   return buildDogRenderModel(dogLike);
 }
+
+export const selectDogTrustProfile = createSelector(
+  [selectDog],
+  (dog) =>
+    (dog?.personalityProfile && typeof dog.personalityProfile === "object"
+      ? dog.personalityProfile
+      : derivePersonalityProfile(dog || {})
+    ).trust
+);
+
+export const selectDogStressSignals = createSelector(
+  [selectDog],
+  (dog) =>
+    (dog?.personalityProfile && typeof dog.personalityProfile === "object"
+      ? dog.personalityProfile
+      : derivePersonalityProfile(dog || {})
+    ).stressSignals
+);
 
 export function selectDogSpriteHint(stateOrDog) {
   const dog = resolveDog(stateOrDog);

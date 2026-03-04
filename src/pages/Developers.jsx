@@ -276,7 +276,7 @@ npm run build`}
                 The headless engine lives in
                 <span className="font-semibold text-zinc-200">
                   {" "}
-                  src/features/game/DogAIEngine.jsx
+                  src/components/dog/DogAIEngine.jsx
                 </span>
                 . It hydrates from localStorage, runs ticks, and optionally
                 syncs to Firebase when configured.

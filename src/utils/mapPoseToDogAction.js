@@ -3,6 +3,14 @@
 
 export const DEFAULT_DOG_ACTION = "idle";
 
+export const DOG_ANIMATION_CATEGORIES = Object.freeze({
+  MAINTENANCE: "maintenance",
+  REST: "rest",
+  HIGH_ALERT: "high_alert",
+  PATHOLOGICAL: "pathological",
+  ACTIVE: "active",
+});
+
 const POSE_ALIASES = {
   alert_idle: "alert",
   alerting: "alert",
@@ -61,11 +69,73 @@ export const KNOWN_DOG_ACTIONS = Object.freeze(
   )
 );
 
+const MAINTENANCE_ACTIONS = new Set([
+  "eat",
+  "eating",
+  "feed",
+  "drink",
+  "drinking",
+  "water",
+  "scratch",
+  "scratching",
+  "self_groom",
+  "self_grooming",
+  "groom",
+  "grooming",
+  "lick",
+  "clean",
+  "potty",
+  "sniff",
+]);
+
+const REST_ACTIONS = new Set([
+  "idle",
+  "idle_resting",
+  "rest",
+  "nap",
+  "light_sleep",
+  "sleep",
+  "sleeping",
+  "deep_sleep",
+  "rem_sleep",
+  "deep_rem_sleep",
+  "dream",
+]);
+
+const HIGH_ALERT_ACTIONS = new Set([
+  "point_position",
+  "point",
+  "pointing",
+  "territorial_bark",
+  "gate_watch",
+  "guard",
+  "guarding",
+  "watch",
+]);
+
+const PATHOLOGICAL_ACTIONS = new Set([
+  "limping",
+  "limp",
+  "shivering",
+  "lethargic_lay",
+  "lethargy",
+  "sick_lay",
+  "ill",
+]);
+
 /**
  * Normalize a pose string safely
  */
 export function normalizePoseKey(pose) {
   return String(pose ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_")
+    .replace(/[^\w_]/g, "");
+}
+
+export function normalizeDogActionKey(action) {
+  return String(action ?? "")
     .trim()
     .toLowerCase()
     .replace(/[\s-]+/g, "_")
@@ -116,4 +186,25 @@ export function mapPoseToDogAction(pose, options = {}) {
   }
 
   return action || fallback;
+}
+
+export function getDogAnimationCategory(actionLike) {
+  const key = normalizeDogActionKey(actionLike);
+  if (!key) return DOG_ANIMATION_CATEGORIES.ACTIVE;
+  if (PATHOLOGICAL_ACTIONS.has(key))
+    return DOG_ANIMATION_CATEGORIES.PATHOLOGICAL;
+  if (HIGH_ALERT_ACTIONS.has(key)) return DOG_ANIMATION_CATEGORIES.HIGH_ALERT;
+  if (MAINTENANCE_ACTIONS.has(key)) return DOG_ANIMATION_CATEGORIES.MAINTENANCE;
+  if (REST_ACTIONS.has(key)) return DOG_ANIMATION_CATEGORIES.REST;
+  return DOG_ANIMATION_CATEGORIES.ACTIVE;
+}
+
+export function isMaintenanceAnimation(actionLike) {
+  return (
+    getDogAnimationCategory(actionLike) === DOG_ANIMATION_CATEGORIES.MAINTENANCE
+  );
+}
+
+export function isRestAnimation(actionLike) {
+  return getDogAnimationCategory(actionLike) === DOG_ANIMATION_CATEGORIES.REST;
 }

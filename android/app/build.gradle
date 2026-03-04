@@ -1,39 +1,31 @@
 import java.io.FileInputStream
-import java.io.ByteArrayOutputStream
 import java.util.Properties
+import groovy.json.JsonSlurper
 
 apply plugin: 'com.android.application'
 
-def getGitCommitCount() {
-    try {
-        def stdout = new ByteArrayOutputStream()
-        exec {
-            commandLine 'git', 'rev-list', '--count', 'HEAD'
-            standardOutput = stdout
-            errorOutput = new ByteArrayOutputStream()
-            ignoreExitValue = true
-        }
-        def s = stdout.toString().trim()
-        return (s ==~ /\d+/) ? s.toInteger() : 0
-    } catch (Exception ignored) {
-        return 0
-    }
+def versionFile = file("../../version.json")
+def versionData = null
+if (versionFile.exists()) {
+    versionData = new JsonSlurper().parseText(versionFile.text)
 }
-
-// Base offset so your codes start high enough for Play.
-// Set this to 100 so commitCount+100 => 101, 102, 103...
-def baseVersionCode = (project.findProperty('DOGGERZ_VERSION_CODE_BASE') ?: '100').toInteger()
-def autoVersionCode = (baseVersionCode + getGitCommitCount()).toString()
+def versionNameFallback = (versionData?.versionName ?: "1.0.0").toString()
+def versionCodeFallback = (versionData?.versionCode ?: 1).toString()
 
 def versionCodeRaw =
         System.getenv('DOGGERZ_VERSION_CODE')
                 ?: project.findProperty('DOGGERZ_VERSION_CODE')
-                ?: autoVersionCode
+                ?: versionCodeFallback
 
 def versionNameRaw =
         System.getenv('DOGGERZ_VERSION_NAME')
                 ?: project.findProperty('DOGGERZ_VERSION_NAME')
-                ?: '1.0.0'
+                ?: versionNameFallback
+
+def parsedVersionCode = (versionCodeRaw ?: "1").toString().trim().toInteger()
+if (parsedVersionCode <= 0) {
+    throw new GradleException("DOGGERZ_VERSION_CODE must be a positive integer. Got: ${parsedVersionCode}")
+}
 
 def keystoreProperties = new Properties()
 def keystorePropertiesFile = rootProject.file('keystore.properties')
@@ -49,7 +41,7 @@ android {
         applicationId 'com.doggerz.app'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode versionCodeRaw.toString().toInteger()
+        versionCode parsedVersionCode
         versionName versionNameRaw.toString()
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
         aaptOptions {

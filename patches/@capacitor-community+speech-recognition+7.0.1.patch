@@ -1,5 +1,5 @@
 diff --git a/node_modules/@capacitor-community/speech-recognition/android/build.gradle b/node_modules/@capacitor-community/speech-recognition/android/build.gradle
-index d31e442..eb1f3d6 100644
+index d31e442..37f5128 100644
 --- a/node_modules/@capacitor-community/speech-recognition/android/build.gradle
 +++ b/node_modules/@capacitor-community/speech-recognition/android/build.gradle
 @@ -30,7 +30,7 @@ android {
@@ -11,3 +11,8 @@ index d31e442..eb1f3d6 100644
          }
      }
      lintOptions {
+@@ -55,3 +55,4 @@ dependencies {
+     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+ }
++
