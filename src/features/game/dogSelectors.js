@@ -83,6 +83,8 @@ const EXPLICIT_ACTION_ALIASES = {
   limping: "walk",
   shivering: "idle",
   lethargic_lay: "sleep",
+  sore: "walk",
+  dental_pain: "idle",
 };
 
 function sanitizeAnimForCurrentSpriteSet(anim) {
@@ -142,6 +144,25 @@ function resolveAnimCategory({ anim, lastAction, restState }) {
   return getDogAnimationCategory(anim);
 }
 
+function applyJointStiffnessAnimationLimit(anim, dog, stage) {
+  const key = normalizeAction(anim);
+  const stiffness = Number(dog?.healthSilo?.jointStiffness || 0);
+  if (stage !== "senior" || stiffness < 55) return key;
+
+  if (
+    key === "jump" ||
+    key === "spin" ||
+    key === "fetch" ||
+    key === "trick" ||
+    key === "turn_walk_right" ||
+    key === "walk_right" ||
+    key === "walk_left"
+  ) {
+    return "walk";
+  }
+  return key;
+}
+
 function resolveDog(stateOrDog) {
   if (!stateOrDog) return EMPTY_DOG;
 
@@ -193,8 +214,11 @@ export function selectDogRenderParams(stateOrDog) {
   );
   const explicitAnim = resolveExplicitAnim(last, lastTrainedCommandId);
   if (explicitAnim) {
-    const resolvedAnim =
-      sanitizeAnimForCurrentSpriteSet(explicitAnim) || "idle";
+    const resolvedAnim = applyJointStiffnessAnimationLimit(
+      sanitizeAnimForCurrentSpriteSet(explicitAnim) || "idle",
+      dog,
+      stage
+    );
     const restState = resolveRestState({ anim: resolvedAnim, isSleeping, dog });
     const animCategory = resolveAnimCategory({
       anim: resolvedAnim,
@@ -232,7 +256,7 @@ export function selectDogRenderParams(stateOrDog) {
     last.includes("wag") ||
     (!isWalking && !isTrick && !isScratch && happiness >= 80);
 
-  const anim = isSleeping
+  const animRaw = isSleeping
     ? "idle"
     : isBarking
       ? "bark"
@@ -245,6 +269,7 @@ export function selectDogRenderParams(stateOrDog) {
             : isWalking
               ? "walk"
               : "idle";
+  const anim = applyJointStiffnessAnimationLimit(animRaw, dog, stage);
 
   const restState = resolveRestState({ anim, isSleeping, dog });
   const animCategory = resolveAnimCategory({
@@ -280,6 +305,9 @@ function buildDogRenderModel(stateOrDog) {
     restState,
     animCategory,
     personalityProfile,
+    ghostSyncRate: Number(dog?.legacyJourney?.spiritSyncRate || 0),
+    ghostMimicAction: dog?.legacyJourney?.ghostMimicAction || null,
+    ghostMimicMatch: Boolean(dog?.legacyJourney?.ghostMimicMatch),
     staticSpriteUrl,
     pixiSheetUrl,
     pixiSheetFallbackUrl,

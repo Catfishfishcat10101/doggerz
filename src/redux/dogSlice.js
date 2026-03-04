@@ -110,6 +110,11 @@ const AUTO_WAKE_THRESHOLD = 80;
 const POTTY_FILL_PER_HOUR = 10;
 const MAX_ACCIDENTS_PER_DECAY = 3;
 const MOOD_SAMPLE_MINUTES = 60;
+const SENIOR_STAGE_START_DAY = 2556;
+const SENIOR_STIFFNESS_WINDOW_DAYS = 40;
+const DENTAL_HARD_FOOD_REJECT_AT = 35;
+const CHEWING_URGE_DESTRUCTIVE_THRESHOLD = 88;
+const CHEWING_INCIDENT_COOLDOWN_MS = 6 * 60 * 60 * 1000;
 const DOG_LIFECYCLE_STATUS = Object.freeze({
   NONE: "NONE",
   ACTIVE: "ACTIVE",
@@ -200,7 +205,7 @@ function ensureAnimationState(state) {
 
 function ensureYardState(state) {
   if (!state.yard || typeof state.yard !== "object") {
-    state.yard = { holes: [], foodBowl: null };
+    state.yard = { holes: [], foodBowl: null, chewBoneAvailable: false };
     return state.yard;
   }
 
@@ -210,6 +215,9 @@ function ensureYardState(state) {
 
   if (!("foodBowl" in state.yard)) {
     state.yard.foodBowl = null;
+  }
+  if (typeof state.yard.chewBoneAvailable !== "boolean") {
+    state.yard.chewBoneAvailable = false;
   }
 
   return state.yard;
@@ -222,17 +230,61 @@ function applyFeedEffect(state, payload = {}, opts = {}) {
     applyDecay(state, now);
   }
   wakeForInteraction(state);
+  const healthSilo = ensureHealthSiloState(state);
+
+  const foodTexture = normalizeActionKey(
+    payload?.foodTexture || payload?.texture || "soft"
+  );
+  const hardFoodRequested = foodTexture === "hard";
+
+  if (
+    hardFoodRequested &&
+    healthSilo.dentalHealth <= DENTAL_HARD_FOOD_REJECT_AT
+  ) {
+    const rejectChance = clamp01(
+      0.15 +
+        ((DENTAL_HARD_FOOD_REJECT_AT - healthSilo.dentalHealth) /
+          DENTAL_HARD_FOOD_REJECT_AT) *
+          0.75
+    );
+    if (Math.random() <= rejectChance) {
+      state.stats.happiness = clamp(state.stats.happiness - 1, 0, 100);
+      state.memory.lastSeenAt = now;
+      state.lastAction = "feed_rejected_hard";
+      maybeSampleMood(state, now, "FEED_REJECTED");
+      finalizeDerivedState(state, now);
+      return;
+    }
+  }
 
   const careerMultiplier = state.career.perks?.happinessGainMultiplier || 1.0;
   const perks = getPersonalityPerks(state);
+  const dentalMultiplier =
+    healthSilo.dentalHealth <= 25
+      ? 0.5
+      : healthSilo.dentalHealth <= 45
+        ? 0.72
+        : healthSilo.dentalHealth <= 65
+          ? 0.88
+          : 1;
+  const adjustedAmount = Number(payload?.amount ?? 100) * dentalMultiplier;
+  const hungerBefore = Number(state.stats.hunger || 0);
   const nextStats = calculateFeedStats({
     stats: state.stats,
-    amount: payload?.amount ?? 100,
+    amount: adjustedAmount,
     careerHappinessMultiplier: careerMultiplier,
     feedHappinessBonus: perks.feedHappinessBonus,
   });
   state.stats.hunger = nextStats.hunger;
   state.stats.happiness = nextStats.happiness;
+
+  // Overfeeding trends positive; long hunger trends are handled in decay.
+  const fedWhileLowNeed = hungerBefore < 35 ? 1.6 : hungerBefore < 55 ? 1 : 0.5;
+  healthSilo.weightStatus = clamp(
+    healthSilo.weightStatus + fedWhileLowNeed,
+    -50,
+    50
+  );
 
   state.memory.lastFedAt = now;
   state.memory.lastSeenAt = now;
@@ -367,6 +419,16 @@ function computeMoodlets(state) {
   if (state.lastAction === "trainFailed") {
     add("stubborn", 1, "Training");
   }
+  if (Number(state?.healthSilo?.jointStiffness || 0) >= 70) {
+    add(
+      "sore",
+      Number(state.healthSilo.jointStiffness) >= 85 ? 2 : 1,
+      "Joints"
+    );
+  }
+  if (Number(state?.healthSilo?.dentalHealth || 100) <= 35) {
+    add("dental_pain", 1, "Teeth");
+  }
   if (state.cleanlinessTier === "FLEAS") {
     add("itchy", 2, "Fleas");
   }
@@ -388,6 +450,7 @@ function deriveEmotionCue(state) {
 
   if (state.lastAction === "trainFailed") return "stubborn";
   if (energy <= 20) return "sleepy";
+  if (Number(state?.healthSilo?.jointStiffness || 0) >= 85) return "sore";
   if (health <= 20) return "sick";
   if (thirst >= 85) return "thirsty";
   if (hunger >= 85) return "hungry";
@@ -522,6 +585,13 @@ const initialPersonality = {
   history: [],
   lastUpdatedAt: null,
 };
+const initialHealthSilo = {
+  dentalHealth: 100, // 0-100
+  jointStiffness: 0, // 0-100
+  weightStatus: 0, // -50..+50
+  coatCondition: 100, // 0-100
+  parasiteLoad: 0, // 0-100, drives flea risk
+};
 const initialMemory = {
   favoriteToyId: null,
   lastFedAt: null,
@@ -532,6 +602,7 @@ const initialMemory = {
   lastTrainedCommandId: null,
   lastSeenAt: null,
   neglectStrikes: 0,
+  lastChewingIncidentAt: null,
 };
 
 const initialCareer = {
@@ -611,6 +682,14 @@ const initialLegacyJourney = {
   ghostDogUnlocked: false,
   ghostPlayBowPending: false,
   ghostPlayBowAt: null,
+  favoriteToyId: null,
+  generationalWisdomPct: 0,
+  spiritSyncRate: 0,
+  ghostMimicAction: null,
+  ghostMimicAt: null,
+  ghostMimicMatch: false,
+  ghostLastCheckedAction: null,
+  lastFavoriteToyBonusAt: null,
   previousDogs: [],
 };
 
@@ -712,6 +791,7 @@ const initialState = {
 
   temperament: initialTemperament,
   personality: initialPersonality,
+  healthSilo: { ...initialHealthSilo },
   personalityProfile: null,
   memory: initialMemory,
   career: initialCareer,
@@ -826,6 +906,35 @@ function ensureLegacyJourneyState(state) {
   if (typeof state.legacyJourney.ghostPlayBowAt !== "number") {
     state.legacyJourney.ghostPlayBowAt = null;
   }
+  state.legacyJourney.favoriteToyId = state.legacyJourney.favoriteToyId
+    ? String(state.legacyJourney.favoriteToyId)
+    : null;
+  state.legacyJourney.generationalWisdomPct = clamp(
+    Number(state.legacyJourney.generationalWisdomPct || 0),
+    0,
+    100
+  );
+  state.legacyJourney.spiritSyncRate = clamp(
+    Number(state.legacyJourney.spiritSyncRate || 0),
+    0,
+    100
+  );
+  state.legacyJourney.ghostMimicAction = state.legacyJourney.ghostMimicAction
+    ? String(state.legacyJourney.ghostMimicAction)
+    : null;
+  if (typeof state.legacyJourney.ghostMimicAt !== "number") {
+    state.legacyJourney.ghostMimicAt = null;
+  }
+  state.legacyJourney.ghostMimicMatch = Boolean(
+    state.legacyJourney.ghostMimicMatch
+  );
+  state.legacyJourney.ghostLastCheckedAction = state.legacyJourney
+    .ghostLastCheckedAction
+    ? String(state.legacyJourney.ghostLastCheckedAction)
+    : null;
+  if (typeof state.legacyJourney.lastFavoriteToyBonusAt !== "number") {
+    state.legacyJourney.lastFavoriteToyBonusAt = null;
+  }
   if (!Array.isArray(state.legacyJourney.previousDogs)) {
     state.legacyJourney.previousDogs = [];
   }
@@ -889,12 +998,83 @@ function recordPreviousDog(state, outcome, now) {
     name: state.name || "Pup",
     outcome: String(outcome || "").toUpperCase() || "UNKNOWN",
     bond: Math.round(Number(state.bond?.value || 0)),
+    favoriteToyId: state?.memory?.favoriteToyId
+      ? String(state.memory.favoriteToyId)
+      : null,
     ageDays: Math.round(Number(state.lifeStage?.days || 0)),
     recordedAt: now,
   });
   if (legacy.previousDogs.length > 20) {
     legacy.previousDogs.length = 20;
   }
+}
+
+function applyLegacyAdoptionBonuses(state, now) {
+  const legacy = ensureLegacyJourneyState(state);
+  const previous = Array.isArray(legacy.previousDogs)
+    ? legacy.previousDogs[0]
+    : null;
+  if (!previous) return;
+
+  const priorBond = clamp(Number(previous.bond || 0), 0, 100);
+  const favoriteToyId = previous.favoriteToyId
+    ? String(previous.favoriteToyId)
+    : null;
+
+  legacy.favoriteToyId = favoriteToyId;
+  legacy.generationalWisdomPct = clamp(Math.round(priorBond * 0.2), 0, 30);
+  legacy.spiritSyncRate = clamp(Math.round(15 + priorBond * 0.5), 0, 100);
+
+  if (favoriteToyId && !state.memory.favoriteToyId) {
+    state.memory.favoriteToyId = favoriteToyId;
+  }
+
+  const wisdomLevelBonus = Math.floor(legacy.generationalWisdomPct / 8);
+  if (wisdomLevelBonus > 0 && state?.skills?.obedience) {
+    ["sit", "stay", "come", "heel"].forEach((id) => {
+      const current = state.skills.obedience[id];
+      if (!current || typeof current !== "object") return;
+      current.level = clamp(
+        Number(current.level || 0) + wisdomLevelBonus,
+        0,
+        100
+      );
+    });
+  }
+
+  pushJournalEntry(state, {
+    type: "LEGACY",
+    moodTag: "PROUD",
+    summary: "Legacy instincts inherited",
+    body:
+      `Generational wisdom +${legacy.generationalWisdomPct}% applied.` +
+      (favoriteToyId ? ` Favorite toy remembered: ${favoriteToyId}.` : ""),
+    timestamp: now,
+  });
+}
+
+function syncSpiritMimicState(state, now) {
+  const legacy = ensureLegacyJourneyState(state);
+  if (
+    !legacy.ghostDogUnlocked ||
+    ensureLifecycleStatus(state) !== DOG_LIFECYCLE_STATUS.ACTIVE
+  ) {
+    legacy.ghostMimicMatch = false;
+    legacy.ghostMimicAction = null;
+    legacy.ghostLastCheckedAction = null;
+    legacy.ghostMimicAt = null;
+    return;
+  }
+
+  const action = normalizeActionKey(state.lastAction || "");
+  if (!action || action === legacy.ghostLastCheckedAction) return;
+
+  legacy.ghostLastCheckedAction = action;
+  const rate = clamp(Number(legacy.spiritSyncRate || 0), 0, 100);
+  const matched = Math.random() * 100 <= rate;
+  legacy.ghostMimicMatch = matched;
+  legacy.ghostMimicAt = now;
+  legacy.ghostMimicAction = matched ? action : null;
 }
 
 function triggerAnimalRescueCenter(state, now, score) {
@@ -1128,6 +1308,44 @@ function ensurePersonalityState(state) {
   return state.personality;
 }
 
+function ensureHealthSiloState(state) {
+  if (!state.healthSilo || typeof state.healthSilo !== "object") {
+    state.healthSilo = { ...initialHealthSilo };
+  } else {
+    state.healthSilo = {
+      ...initialHealthSilo,
+      ...state.healthSilo,
+    };
+  }
+
+  state.healthSilo.dentalHealth = clamp(
+    Number(state.healthSilo.dentalHealth || 0),
+    0,
+    100
+  );
+  state.healthSilo.jointStiffness = clamp(
+    Number(state.healthSilo.jointStiffness || 0),
+    0,
+    100
+  );
+  state.healthSilo.weightStatus = clamp(
+    Number(state.healthSilo.weightStatus || 0),
+    -50,
+    50
+  );
+  state.healthSilo.coatCondition = clamp(
+    Number(state.healthSilo.coatCondition || 0),
+    0,
+    100
+  );
+  state.healthSilo.parasiteLoad = clamp(
+    Number(state.healthSilo.parasiteLoad || 0),
+    0,
+    100
+  );
+  return state.healthSilo;
+}
+
 function pushPersonalityHistory(state, entry) {
   const personality = ensurePersonalityState(state);
   personality.history.unshift(entry);
@@ -1172,6 +1390,8 @@ function getStageMultiplier(state, statKey) {
 
 function createDecayRuleContext(state, now) {
   normalizeStatsState(state);
+  ensurePersonalityState(state);
+  ensureHealthSiloState(state);
 
   const lastUpdatedAt = Number(state.lastUpdatedAt);
   if (!Number.isFinite(lastUpdatedAt)) {
@@ -1196,6 +1416,30 @@ function createDecayRuleContext(state, now) {
   const careerHungerMultiplier =
     state.career.perks?.hungerDecayMultiplier || 1.0;
   const skillMods = getSkillTreeModifiersFromDogState(state);
+  const profile =
+    state?.personalityProfile && typeof state.personalityProfile === "object"
+      ? state.personalityProfile
+      : derivePersonalityProfile(state);
+  const instinctEngine =
+    profile?.instinctEngine && typeof profile.instinctEngine === "object"
+      ? profile.instinctEngine
+      : {};
+  const separationAnxiety = clamp(
+    Number(instinctEngine.separationAnxiety || 0),
+    0,
+    100
+  );
+  const trainabilitySpeed = clamp(
+    Number(instinctEngine.trainabilitySpeed || 1),
+    0.6,
+    2.2
+  );
+  const vocalizationThreshold = clamp(
+    Number(instinctEngine.vocalizationThreshold || 50),
+    0,
+    100
+  );
+  const chewingUrge = clamp(Number(instinctEngine.chewingUrge || 0), 0, 100);
 
   const sleeping = Boolean(state.isAsleep);
   const idleish = (() => {
@@ -1217,9 +1461,16 @@ function createDecayRuleContext(state, now) {
       hunger: careerHungerMultiplier * (skillMods.hungerDecayMultiplier || 1),
       happiness:
         (skillMods.happinessDecayMultiplier || 1) *
-        (hasTemperamentTag(state, "SWEET") ? 0.85 : 1),
+        (hasTemperamentTag(state, "SWEET") ? 0.85 : 1) *
+        (1 + separationAnxiety * 0.008),
       cleanliness: skillMods.cleanlinessDecayMultiplier || 1,
       idleEnergy: skillMods.idleEnergyDecayMultiplier || 1,
+    },
+    instinctEngine: {
+      separationAnxiety,
+      trainabilitySpeed,
+      vocalizationThreshold,
+      chewingUrge,
     },
     stageMultipliers: {},
     decayByStat: {},
@@ -1329,6 +1580,161 @@ function evaluateThresholdsStage(ctx) {
 
     ctx.state.pottyLevel = clamp(pottyNeed, 0, 100);
   }
+
+  updateHealthAndIllnessSilo(ctx);
+  maybeTriggerDestructiveChewing(ctx);
+}
+
+function getSeniorDays(state) {
+  const stage = String(state?.lifeStage?.stage || "").toUpperCase();
+  if (stage !== LIFE_STAGES.SENIOR) return 0;
+  const ageDays = Number(state?.lifeStage?.days || 0);
+  return Math.max(0, ageDays - SENIOR_STAGE_START_DAY);
+}
+
+function updateHealthAndIllnessSilo(ctx) {
+  const silo = ensureHealthSiloState(ctx.state);
+  const stats = ctx.state.stats || {};
+  const tier = String(ctx.state.cleanlinessTier || "FRESH").toUpperCase();
+  const hours = Math.max(0, Number(ctx.effectiveHours || 0));
+  if (!hours) return;
+
+  const cleanliness = clamp(Number(stats.cleanliness || 0), 0, 100);
+  const dirtiness = 100 - cleanliness;
+  const hungerNeed = clamp(Number(stats.hunger || 0), 0, 100);
+  const seniorDays = getSeniorDays(ctx.state);
+
+  // Dental wear slowly rises over time and faster in poor care conditions.
+  const dentalLoss =
+    hours *
+    (0.04 +
+      (tier === "MANGE" ? 0.06 : tier === "FLEAS" ? 0.04 : 0.01) +
+      Math.max(0, hungerNeed - 65) / 900);
+  silo.dentalHealth = clamp(silo.dentalHealth - dentalLoss, 0, 100);
+
+  // Joint stiffness is mostly meaningful in the first 40 senior days.
+  if (seniorDays > 0 && seniorDays <= SENIOR_STIFFNESS_WINDOW_DAYS) {
+    const stiffnessGain =
+      hours * (0.08 + Math.max(0, 55 - Number(stats.energy || 0)) / 600);
+    silo.jointStiffness = clamp(silo.jointStiffness + stiffnessGain, 0, 100);
+  } else if (seniorDays <= 0) {
+    silo.jointStiffness = clamp(silo.jointStiffness - hours * 0.06, 0, 100);
+  } else {
+    silo.jointStiffness = clamp(silo.jointStiffness - hours * 0.02, 0, 100);
+  }
+
+  // Weight trends from persistent overfeeding/underfeeding pressure.
+  if (hungerNeed >= 75) {
+    silo.weightStatus = clamp(silo.weightStatus - hours * 0.22, -50, 50);
+  } else if (hungerNeed <= 35) {
+    silo.weightStatus = clamp(silo.weightStatus + hours * 0.18, -50, 50);
+  } else {
+    const settle = Math.sign(silo.weightStatus) * hours * 0.04;
+    silo.weightStatus = clamp(silo.weightStatus - settle, -50, 50);
+  }
+
+  // Coat condition degrades under sustained dirt; can recover slowly when clean.
+  const coatLoss =
+    hours *
+    (0.04 +
+      dirtiness / 220 +
+      (tier === "MANGE" ? 0.11 : tier === "FLEAS" ? 0.07 : 0));
+  const coatRecovery = cleanliness >= 78 ? hours * 0.07 : 0;
+  silo.coatCondition = clamp(
+    silo.coatCondition - coatLoss + coatRecovery,
+    0,
+    100
+  );
+
+  // Parasite load builds from dirty coat + poor cleanliness and fades with care.
+  let parasiteDelta = 0;
+  if (silo.coatCondition <= 45) parasiteDelta += hours * 0.16;
+  if (cleanliness <= 35) parasiteDelta += hours * 0.14;
+  if (tier === "FLEAS") parasiteDelta += hours * 0.2;
+  if (tier === "MANGE") parasiteDelta += hours * 0.28;
+  if (cleanliness >= 80 && tier === "FRESH") parasiteDelta -= hours * 0.1;
+  silo.parasiteLoad = clamp(silo.parasiteLoad + parasiteDelta, 0, 100);
+
+  // Heavy under/over weight makes energy drain harsher.
+  const absWeight = Math.abs(silo.weightStatus);
+  if (absWeight >= 30) {
+    ctx.state.stats.energy = clamp(
+      Number(ctx.state.stats.energy || 0) - (absWeight - 29) * 0.2,
+      0,
+      100
+    );
+  }
+
+  if (
+    Number(silo.jointStiffness || 0) >= 80 &&
+    !ctx.state.isAsleep &&
+    /run|play|zoom/i.test(String(ctx.state.lastAction || ""))
+  ) {
+    ctx.state.lastAction = "limping";
+  }
+}
+
+function hasChewOutlet(state) {
+  const yard = ensureYardState(state);
+  if (yard.chewBoneAvailable) return true;
+  const toyId = String(state?.memory?.favoriteToyId || "")
+    .trim()
+    .toLowerCase();
+  return (
+    toyId.includes("bone") || toyId.includes("chew") || toyId.includes("kong")
+  );
+}
+
+function resolveVocalizationIntensityLabel(threshold, signal) {
+  return Number(signal || 0) >= Number(threshold || 50)
+    ? "loud bark"
+    : "soft yip";
+}
+
+function maybeTriggerDestructiveChewing(ctx) {
+  const urge = clamp(Number(ctx?.instinctEngine?.chewingUrge || 0), 0, 100);
+  if (urge < CHEWING_URGE_DESTRUCTIVE_THRESHOLD) return;
+  if (ctx.vacation.enabled) return;
+  if (hasChewOutlet(ctx.state)) return;
+
+  const lastAt = Number(ctx.state?.memory?.lastChewingIncidentAt || 0);
+  if (lastAt && ctx.now - lastAt < CHEWING_INCIDENT_COOLDOWN_MS) return;
+
+  ctx.state.memory.lastChewingIncidentAt = ctx.now;
+
+  const intensity = clamp(
+    Math.round((urge - CHEWING_URGE_DESTRUCTIVE_THRESHOLD) / 4) + 2,
+    2,
+    8
+  );
+  ctx.state.stats.cleanliness = clamp(
+    Number(ctx.state.stats.cleanliness || 0) - intensity * 1.5,
+    0,
+    100
+  );
+  ctx.state.stats.happiness = clamp(
+    Number(ctx.state.stats.happiness || 0) - intensity,
+    0,
+    100
+  );
+  ctx.state.stats.mentalStimulation = clamp(
+    Number(ctx.state.stats.mentalStimulation || 0) + intensity,
+    0,
+    100
+  );
+  ctx.state.lastAction = "destructive_chewing";
+
+  const vocalization = resolveVocalizationIntensityLabel(
+    ctx?.instinctEngine?.vocalizationThreshold,
+    urge
+  );
+  pushJournalEntry(ctx.state, {
+    type: "INSTINCT",
+    moodTag: "RESTLESS",
+    summary: "Chewing urge spiked",
+    body: `Without a chew bone available, your pup released stress with destructive chewing and a ${vocalization}.`,
+    timestamp: ctx.now,
+  });
 }
 
 function runLegacyEventsStage(ctx) {
@@ -1698,7 +2104,13 @@ function syncLifecycleState(state, now = nowMs()) {
 
 function syncCleanlinessTier(state, now = nowMs()) {
   const cleanliness = state.stats?.cleanliness ?? 0;
-  const nextTier = resolveCleanlinessTierFromValue(cleanliness);
+  const silo = ensureHealthSiloState(state);
+  let nextTier = resolveCleanlinessTierFromValue(cleanliness);
+  if (silo.parasiteLoad >= 90) {
+    nextTier = "MANGE";
+  } else if (silo.parasiteLoad >= 70 && nextTier !== "MANGE") {
+    nextTier = "FLEAS";
+  }
   const previousTier = state.cleanlinessTier || "FRESH";
 
   if (nextTier !== previousTier) {
@@ -1722,6 +2134,7 @@ function syncCleanlinessTier(state, now = nowMs()) {
 
 function finalizeDerivedState(state, now = nowMs()) {
   normalizeStatsState(state);
+  ensureHealthSiloState(state);
   ensureLifecycleStatus(state);
   ensureDangerState(state);
   ensureLegacyJourneyState(state);
@@ -1752,6 +2165,7 @@ function finalizeDerivedState(state, now = nowMs()) {
   }
 
   evaluateDangerAndLifecycleEvents(state, now);
+  syncSpiritMimicState(state, now);
 
   return tier;
 }
@@ -2267,6 +2681,7 @@ const dogSlice = createSlice({
       ensureAnimationState(merged);
       ensureYardState(merged);
       ensurePersonalityState(merged);
+      ensureHealthSiloState(merged);
       ensureDreamState(merged);
       ensureVacationState(merged);
       ensureDogFsmState(merged);
@@ -2326,12 +2741,14 @@ const dogSlice = createSlice({
         state.danger = { ...initialDanger };
         state.temperament = { ...initialTemperament };
         state.personality = { ...initialPersonality };
+        state.healthSilo = { ...initialHealthSilo };
       }
 
       state.lifecycleStatus = DOG_LIFECYCLE_STATUS.ACTIVE;
       state.temperament.adoptedAt = adoptedAt;
       state.adoptedAt = adoptedAt;
       state.lastUpdatedAt = adoptedAt;
+      applyLegacyAdoptionBonuses(state, adoptedAt);
 
       if (legacy.ghostPlayBowPending) {
         legacy.ghostPlayBowPending = false;
@@ -2472,6 +2889,30 @@ const dogSlice = createSlice({
       state.memory.lastSeenAt = now;
       state.lastAction = resolveActionOverride(payload, "play");
       applyFsmAction(state, "play", now);
+
+      const legacy = ensureLegacyJourneyState(state);
+      const activeToyId = payload?.toyId ? String(payload.toyId).trim() : null;
+      const sameLegacyToy =
+        !!activeToyId &&
+        !!legacy.favoriteToyId &&
+        activeToyId.toLowerCase() ===
+          String(legacy.favoriteToyId).toLowerCase();
+      if (sameLegacyToy) {
+        const lastBonusAt = Number(legacy.lastFavoriteToyBonusAt || 0);
+        const canAward = !lastBonusAt || now - lastBonusAt >= 60 * 60 * 1000;
+        if (canAward) {
+          legacy.lastFavoriteToyBonusAt = now;
+          state.stats.happiness = clamp(state.stats.happiness + 4, 0, 100);
+          applyXp(state, 3);
+          pushJournalEntry(state, {
+            type: "LEGACY",
+            moodTag: "PROUD",
+            summary: "Favorite toy memory activated",
+            body: "Playing with a remembered favorite toy sparked a legacy joy bonus.",
+            timestamp: now,
+          });
+        }
+      }
 
       const sweetBondMultiplier = hasTemperamentTag(state, "SWEET") ? 1.35 : 1;
       applyBondGain(state, 2 * sweetBondMultiplier, now);
@@ -3005,7 +3446,17 @@ const dogSlice = createSlice({
 
       const explicitSuccess =
         typeof payload?.success === "boolean" ? payload.success : null;
-      const successChance = computeTrainingSuccessChance({
+      const profile =
+        state?.personalityProfile &&
+        typeof state.personalityProfile === "object"
+          ? state.personalityProfile
+          : derivePersonalityProfile(state);
+      const trainabilitySpeed = clamp(
+        Number(profile?.instinctEngine?.trainabilitySpeed || 1),
+        0.6,
+        2.2
+      );
+      const successChanceRaw = computeTrainingSuccessChance({
         input,
         bond: bondValue,
         energy,
@@ -3016,6 +3467,7 @@ const dogSlice = createSlice({
         foodMotivated,
         fedRecently,
       });
+      const successChance = clamp01(successChanceRaw / trainabilitySpeed);
 
       const isSuccess =
         explicitSuccess !== null
@@ -3042,7 +3494,8 @@ const dogSlice = createSlice({
         xp *
           trainingMultiplier *
           (skillMods.trainingSkillXpMultiplier || 1) *
-          spicyXpMultiplier
+          spicyXpMultiplier *
+          (1 / trainabilitySpeed)
       );
 
       applySkillXp("obedience", commandId, state.skills, adjustedXp);
@@ -3333,6 +3786,7 @@ export const selectDogMood = (state) => state.dog.mood;
 export const selectDogJournal = (state) => state.dog.journal;
 export const selectDogTemperament = (state) => state.dog.temperament;
 export const selectDogPersonality = (state) => state.dog.personality;
+export const selectDogHealthSilo = (state) => state.dog.healthSilo;
 export const selectDogDreams = (state) => state.dog.dreams;
 export const selectDogSkills = (state) => state.dog.skills;
 export const selectDogStreak = (state) => state.dog.streak;

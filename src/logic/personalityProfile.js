@@ -219,6 +219,9 @@ function computeDynamicStates(dog) {
     frustration,
     confidence,
     affection,
+    needPressure: clamp(Math.round(needPressure), 0, 100),
+    negativeMoodletsScore,
+    positiveMoodletsScore: clamp(Math.round(positiveLoad * 12.5), 0, 100),
   };
 }
 
@@ -387,6 +390,104 @@ function computeTrustProfile(dog, dynamicStates = {}, learnedTraits = {}) {
   };
 }
 
+function computeInstinctEngine(
+  dog,
+  coreTemperament = {},
+  dynamicStates = {},
+  learnedTraits = {},
+  trust = {},
+  bigFive = {}
+) {
+  const socialDrive = clamp(Number(coreTemperament.socialDrive || 0), 0, 100);
+  const energyCeiling = clamp(
+    Number(coreTemperament.energyCeiling || 0),
+    0,
+    100
+  );
+  const inquisitiveness = clamp(
+    Number(coreTemperament.inquisitiveness || 0),
+    0,
+    100
+  );
+  const frustration = clamp(Number(dynamicStates.frustration || 0), 0, 100);
+  const confidence = clamp(Number(dynamicStates.confidence || 0), 0, 100);
+  const needPressure = clamp(Number(dynamicStates.needPressure || 0), 0, 100);
+  const positiveMoodletsScore = clamp(
+    Number(dynamicStates.positiveMoodletsScore || 0),
+    0,
+    100
+  );
+  const reliability = clamp(Number(learnedTraits.reliability || 0), 0, 100);
+  const trustScore = clamp(Number(trust.score || 0), 0, 100);
+  const neuroticism = clamp(Number(bigFive.neuroticism || 0), 0, 100);
+  const mentalStimulation = clamp(
+    Number(dog?.stats?.mentalStimulation || 0),
+    0,
+    100
+  );
+  const affection = clamp(Number(dog?.stats?.affection || 0), 0, 100);
+  const neglectStrikes = clamp(Number(dog?.memory?.neglectStrikes || 0), 0, 12);
+
+  const separationAnxiety = clamp(
+    Math.round(
+      socialDrive * 0.22 +
+        affection * 0.2 +
+        frustration * 0.2 +
+        (100 - trustScore) * 0.16 +
+        needPressure * 0.12 +
+        neglectStrikes * 3
+    ),
+    0,
+    100
+  );
+
+  // Multiplier for repetitions required; >1 means slower learning, <1 means faster.
+  const trainabilitySpeed = clamp(
+    Math.round(
+      (1 +
+        frustration * 0.005 +
+        inquisitiveness * 0.0025 +
+        (100 - confidence) * 0.0015 -
+        reliability * 0.004 -
+        positiveMoodletsScore * 0.001) *
+        100
+    ) / 100,
+    0.6,
+    2.2
+  );
+
+  const vocalizationThreshold = clamp(
+    Math.round(
+      52 +
+        confidence * 0.18 +
+        trustScore * 0.16 -
+        frustration * 0.2 -
+        neuroticism * 0.14
+    ),
+    0,
+    100
+  );
+
+  const chewingUrge = clamp(
+    Math.round(
+      frustration * 0.36 +
+        (100 - mentalStimulation) * 0.34 +
+        energyCeiling * 0.12 +
+        inquisitiveness * 0.1 +
+        (100 - trustScore) * 0.08
+    ),
+    0,
+    100
+  );
+
+  return {
+    separationAnxiety,
+    trainabilitySpeed,
+    vocalizationThreshold,
+    chewingUrge,
+  };
+}
+
 export function derivePersonalityProfile(dog) {
   const traits = dog?.personality?.traits || {};
   const coreTemperament = computeCoreTemperament(traits);
@@ -398,10 +499,18 @@ export function derivePersonalityProfile(dog) {
   );
   const bigFive = computeBigFive(traits, dynamicStates, learnedTraits);
   const trust = computeTrustProfile(dog, dynamicStates, learnedTraits);
+  const instinctEngine = computeInstinctEngine(
+    dog,
+    coreTemperament,
+    dynamicStates,
+    learnedTraits,
+    trust,
+    bigFive
+  );
   const stressSignals = computeStressSignals(dog, dynamicStates, trust);
 
   return {
-    modelVersion: PERSONALITY_MODEL_VERSION,
+    modelVersion: 3,
     coreTemperament,
     bigFive,
     dynamicStates: {
@@ -410,6 +519,7 @@ export function derivePersonalityProfile(dog) {
       affection: dynamicStates.affection,
     },
     learnedTraits,
+    instinctEngine,
     trust,
     stressSignals,
   };

@@ -105,6 +105,8 @@ const PATHOLOGICAL_ACTIONS = new Set([
   "lethargy",
   "sick_lay",
   "ill",
+  "sore",
+  "dental_pain",
 ]);
 
 export const KNOWN_DOG_ACTIONS = Object.freeze(
