@@ -107,7 +107,9 @@ function clamp01(value) {
 }
 
 function normalizeWeatherKey(value) {
-  const key = String(value || "").trim().toLowerCase();
+  const key = String(value || "")
+    .trim()
+    .toLowerCase();
   if (!key) return "clear";
   if (["storm", "thunderstorm", "tstorm"].includes(key)) return "storm";
   if (["rain", "drizzle", "showers"].includes(key)) return "rain";
@@ -194,7 +196,9 @@ function buildQueue(tracks, lastTrack) {
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
   if (lastTrack && shuffled.length > 1 && shuffled[0] === lastTrack) {
-    const swapIndex = shuffled.findIndex((item, index) => index > 0 && item !== lastTrack);
+    const swapIndex = shuffled.findIndex(
+      (item, index) => index > 0 && item !== lastTrack
+    );
     if (swapIndex > 0) {
       [shuffled[0], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[0]];
     }

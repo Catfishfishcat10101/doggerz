@@ -183,9 +183,13 @@ export default function MainGame({ scene, dogInteractive = true }) {
 
   const activeAnim = renderModel?.anim || "idle";
   const sceneTime = String(scene?.timeOfDay || "").toLowerCase();
-  const sceneWeather = String(scene?.weatherKey || scene?.weather || "").toLowerCase();
-  const isNightScene = sceneTime.includes("night") || sceneTime.includes("evening");
-  const isRainScene = sceneWeather.includes("rain") || sceneWeather.includes("storm");
+  const sceneWeather = String(
+    scene?.weatherKey || scene?.weather || ""
+  ).toLowerCase();
+  const isNightScene =
+    sceneTime.includes("night") || sceneTime.includes("evening");
+  const isRainScene =
+    sceneWeather.includes("rain") || sceneWeather.includes("storm");
   const forceSleepForScene = isNightScene && isRainScene;
   const effectiveAnim = forceSleepForScene ? "deep_rem_sleep" : activeAnim;
   const effectiveDogSleeping =

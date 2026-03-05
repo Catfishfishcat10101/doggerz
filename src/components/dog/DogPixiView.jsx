@@ -122,13 +122,14 @@ export default function DogPixiView({
   }, [viewportHeight, viewportWidth, size]);
 
   useEffect(() => {
-    const stationaryByAnim = /(sleep|lay_down|play_dead|stay|sit|idle_resting)/.test(
-      String(anim || "")
-        .trim()
-        .toLowerCase()
-        .replace(/\s+/g, "_")
-        .replace(/-+/g, "_")
-    );
+    const stationaryByAnim =
+      /(sleep|lay_down|play_dead|stay|sit|idle_resting)/.test(
+        String(anim || "")
+          .trim()
+          .toLowerCase()
+          .replace(/\s+/g, "_")
+          .replace(/-+/g, "_")
+      );
     const shouldFreezeMovement = dogIsSleeping || stationaryByAnim;
 
     const tick = (ts) => {
