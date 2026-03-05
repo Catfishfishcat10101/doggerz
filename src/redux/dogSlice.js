@@ -24,10 +24,11 @@ import {
 } from "@/logic/obedienceCommands.js";
 import { computeTrainingSuccessChance } from "@/utils/trainingMath.js";
 import {
+  computeSkillTreePoints,
   computeSkillTreeModifiers,
   getSkillTreeBranchIdForPerk,
+  getSkillTreeUnlockCheck,
   getSkillTreePerk,
-  getSkillTreeRequiredPerkId,
 } from "@/logic/skillTree.js";
 import {
   advanceDogFsm,
@@ -1568,13 +1569,10 @@ function ensureMilestonesState(state) {
 
 function getSkillTreePointsFromDogState(dogState) {
   const level = Math.max(1, Math.floor(Number(dogState?.level || 1)));
-  const pointsEarned = Math.max(0, level - 1);
   const unlocked = Array.isArray(dogState?.skillTree?.unlockedIds)
     ? dogState.skillTree.unlockedIds
     : [];
-  const pointsSpent = unlocked.length;
-  const pointsAvailable = Math.max(0, pointsEarned - pointsSpent);
-  return { pointsEarned, pointsSpent, pointsAvailable };
+  return computeSkillTreePoints(level, unlocked);
 }
 
 function getSkillTreeModifiersFromDogState(dogState) {
@@ -3995,11 +3993,14 @@ const dogSlice = createSlice({
       const skillTree = ensureSkillTreeState(state);
       if (skillTree.unlockedIds.includes(perkId)) return;
 
-      const requiredId = getSkillTreeRequiredPerkId(perkId);
-      if (requiredId && !skillTree.unlockedIds.includes(requiredId)) return;
-
       const points = getSkillTreePointsFromDogState(state);
-      if (points.pointsAvailable <= 0) return;
+      const unlockCheck = getSkillTreeUnlockCheck({
+        perkId,
+        unlockedIds: skillTree.unlockedIds,
+        pointsAvailable: points.pointsAvailable,
+        dogLevel: state.level,
+      });
+      if (!unlockCheck.ok) return;
 
       const now = typeof payload?.now === "number" ? payload.now : nowMs();
 
@@ -4062,7 +4063,7 @@ const dogSlice = createSlice({
         type: "SKILL_TREE",
         moodTag: "PROUD",
         summary: `Unlocked perk: ${perk.name}.`,
-        body: perk.effect || "",
+        body: `${perk.effect || ""} (Cost: ${perk.cost || 1} SP)`,
         timestamp: now,
       });
     },
@@ -4081,6 +4082,41 @@ const dogSlice = createSlice({
         moodTag: "CALM",
         summary: "Reset skill tree.",
         body: "All perk points were refunded.",
+        timestamp: now,
+      });
+    },
+
+    respecSkillTreeBranch(state, { payload }) {
+      const branchId = String(payload?.branchId || "").trim();
+      if (!branchId) return;
+
+      const skillTree = ensureSkillTreeState(state);
+      if (!skillTree.unlockedIds.length) return;
+
+      const remaining = skillTree.unlockedIds.filter(
+        (id) => getSkillTreeBranchIdForPerk(id) !== branchId
+      );
+      if (remaining.length === skillTree.unlockedIds.length) return;
+
+      skillTree.unlockedIds = remaining;
+      if (skillTree.lastBranchId === branchId) {
+        skillTree.lastBranchId = null;
+      }
+      if (
+        skillTree.lastUnlockedId &&
+        getSkillTreeBranchIdForPerk(skillTree.lastUnlockedId) === branchId
+      ) {
+        skillTree.lastUnlockedId =
+          remaining.length > 0 ? remaining[remaining.length - 1] : null;
+        if (!skillTree.lastUnlockedId) skillTree.lastUnlockedAt = null;
+      }
+
+      const now = typeof payload?.now === "number" ? payload.now : nowMs();
+      pushJournalEntry(state, {
+        type: "SKILL_TREE",
+        moodTag: "CALM",
+        summary: "Reset a skill branch.",
+        body: `Perks in the ${branchId} branch were refunded.`,
         timestamp: now,
       });
     },
@@ -4400,6 +4436,7 @@ export const {
   trainObedience,
   unlockSkillTreePerk,
   respecSkillTree,
+  respecSkillTreeBranch,
   addJournalEntry,
   purchaseCosmetic,
   buyPremiumKibblePack,

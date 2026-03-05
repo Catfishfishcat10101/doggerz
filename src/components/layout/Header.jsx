@@ -59,8 +59,8 @@ export default function Header() {
               <div className="bg-gradient-to-r from-emerald-300 to-cyan-300 bg-clip-text text-base font-extrabold tracking-[0.42em] text-transparent sm:text-lg">
                 D O G G E R Z
               </div>
-              <div className="text-zinc-500 text-xs sm:text-sm">
-                Adopt. Train. Bond.
+              <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/90 sm:text-xs">
+                ADOPT. TRAIN. BOND.
               </div>
             </NavLink>
           </div>

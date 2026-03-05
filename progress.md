@@ -19,3 +19,19 @@ Original prompt: Review every PNG file and sprite sheet, locate puppy idle asset
 - Deleted unused branch: src/features/game/MechanicsPanel.jsx, src/features/game/TrainingPanel.jsx, src/features/game/useDogLifecycle.jsx, src/components/ui/VoiceCommandButton.jsx.
 - Fixed hook dependency lint warnings in src/components/dog/DogPixiView.jsx.
 - Validation after cleanup: npm run lint PASS, npm run build PASS.
+- Updated src/components/dog/DogPixiView.jsx locomotion selection to always use canonical walk while moving (facing flip handles direction) to address stuck-paw moonwalk from directional sheets.
+- MainGame UI pass: added explicit backyard viewport layers (sky, fence, grass, tree) so yard visuals remain visible behind dog and overlays.
+- MainGame behavior pass: when scene is rainy night, force sleeping animation (deep_rem_sleep) and set dogIsSleeping true for expected resting behavior.
+- MainGame HUD restored with Level, Age, Stage, Mood, Energy, Health, and Hunger readouts.
+- Interaction sheet de-scoped from Store: removed premium pack purchase buttons from in-yard interactions.
+- Yard viewport polish: stronger rain overlay when weather is rain/storm, larger visible tree, smaller dog scale and larger movement area.
+- DogToy visual updated from plain yellow circle to tennis-ball style and hidden while sleeping.
+- DogPixiView movement logic updated to reduce in-place rocking/jitter by enforcing minimum travel distance, larger settle threshold, and longer pauses.
+- Skill system overhaul phase 1: introduced perk cost + min-level gates and explicit unlock checks in `src/logic/skillTree.js`.
+- Skill system wiring updated: `dogSlice` now calculates spent points by perk cost and enforces new unlock checks.
+- Skill Tree page updated to show dynamic perk cost and rule-based unlock messages from the new skill rules engine.
+- Implemented Dog Radio playlist logic in src/features/audio/useDynamicMusic.js: station selection by events (holiday/adoption/growth), weather, mood, and time-of-day; playlist rotation on track end with fades; removed bell-heavy night theme from rotation.
+- Playwright run for Dog Radio update blocked by policy when attempting to start dev server via Start-Process; tests not executed.
+- Sprite audit: pup/adult manifest sheets are dimension-correct; all senior anim sheets are currently missing. Updated SpriteSheetDog fallback chain so senior requests now prefer adult anim/clean sheets before falling back to pup clean.
+- Dog Radio fine-tune: expanded station playlists (events, weather variants, mood recovery/playful), added station hold hysteresis (90s) to reduce abrupt switching, and improved queue reshuffle behavior with weighted track entries and anti-immediate-repeat.
+- Replaced SpriteSheetDog renderer with Pixi grid slicing + AnimatedSprite ticker playback. Loader now tries candidate URLs in order (stage anim, adult fallback for senior, stage condition, clean fallback) and falls back to static image on total load failure. Build passes.

@@ -48,13 +48,22 @@ export default function DogToy({ onSqueak, className = "", style }) {
           source: "drop",
         });
       }}
-      className={`absolute bottom-4 left-4 z-50 flex h-16 w-16 cursor-grab items-center justify-center rounded-full border-b-4 border-yellow-600 shadow-lg transition-colors ${
-        isSqueaking ? "bg-yellow-300" : "bg-yellow-400"
+      className={`absolute bottom-4 left-4 z-50 flex h-12 w-12 cursor-grab items-center justify-center rounded-full border border-lime-100/80 shadow-lg transition-colors ${
+        isSqueaking
+          ? "bg-[radial-gradient(circle_at_35%_35%,#fef9c3_0%,#eab308_62%,#ca8a04_100%)]"
+          : "bg-[radial-gradient(circle_at_35%_35%,#fef08a_0%,#84cc16_62%,#4d7c0f_100%)]"
       } ${className}`}
       style={{ touchAction: "none", ...style }} // Prevents mobile scrolling while dragging
+      title="Toy: drag and drop to play"
     >
-      {/* A simple emoji placeholder until you add your pixel art sprite! */}
-      <span className="select-none text-2xl">{isSqueaking ? "💢" : "🎾"}</span>
+      <span
+        className="pointer-events-none absolute h-6 w-6 rounded-full border-2 border-white/70"
+        style={{ transform: "translateX(-35%)" }}
+      />
+      <span
+        className="pointer-events-none absolute h-6 w-6 rounded-full border-2 border-white/70"
+        style={{ transform: "translateX(35%)" }}
+      />
     </motion.div>
   );
 }

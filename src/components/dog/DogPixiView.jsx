@@ -13,10 +13,31 @@ function randBetween(min, max) {
   return min + Math.random() * (max - min);
 }
 
-function pickNextTarget(bounds, padding) {
-  const x = randBetween(padding, Math.max(padding, bounds.width - padding));
-  const y = randBetween(padding, Math.max(padding, bounds.height - padding));
-  return { x, y };
+function pickNextTarget(bounds, padding, from = null, minDistance = 0) {
+  const minX = padding;
+  const maxX = Math.max(padding, bounds.width - padding);
+  const minY = padding;
+  const maxY = Math.max(padding, bounds.height - padding);
+
+  for (let i = 0; i < 10; i += 1) {
+    const candidate = {
+      x: randBetween(minX, maxX),
+      y: randBetween(minY, maxY),
+    };
+    if (!from || minDistance <= 0) return candidate;
+    if (Math.hypot(candidate.x - from.x, candidate.y - from.y) >= minDistance) {
+      return candidate;
+    }
+  }
+
+  if (!from) {
+    return { x: randBetween(minX, maxX), y: randBetween(minY, maxY) };
+  }
+
+  return {
+    x: from.x < (minX + maxX) / 2 ? maxX : minX,
+    y: randBetween(minY, maxY),
+  };
 }
 
 export default function DogPixiView({
@@ -80,47 +101,65 @@ export default function DogPixiView({
 
   useEffect(() => {
     if (!viewportWidth || !viewportHeight) return;
-    const padding = Math.max(24, size * 0.45);
+    const padding = Math.max(16, size * 0.25);
+    const center = {
+      x: clamp(viewportWidth / 2, padding, viewportWidth - padding),
+      y: clamp(viewportHeight / 2, padding, viewportHeight - padding),
+    };
     const target = pickNextTarget(
       { width: viewportWidth, height: viewportHeight },
-      padding
+      padding,
+      center,
+      Math.max(36, size * 0.3)
     );
     motionRef.current.target = target;
     setPos({
-      x: clamp(viewportWidth / 2, padding, viewportWidth - padding),
-      y: clamp(viewportHeight / 2, padding, viewportHeight - padding),
+      x: center.x,
+      y: center.y,
       facing: 1,
       moving: false,
     });
   }, [viewportHeight, viewportWidth, size]);
 
   useEffect(() => {
+    const stationaryByAnim = /(sleep|lay_down|play_dead|stay|sit|idle_resting)/.test(
+      String(anim || "")
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, "_")
+        .replace(/-+/g, "_")
+    );
+    const shouldFreezeMovement = dogIsSleeping || stationaryByAnim;
+
     const tick = (ts) => {
       if (!lastTsRef.current) lastTsRef.current = ts;
       const dt = Math.min(0.05, (ts - lastTsRef.current) / 1000);
       lastTsRef.current = ts;
 
-      if (!viewportWidth || !viewportHeight || dogIsSleeping) {
+      if (!viewportWidth || !viewportHeight || shouldFreezeMovement) {
         setPos((prev) => ({ ...prev, moving: false }));
         rafRef.current = requestAnimationFrame(tick);
         return;
       }
 
-      const padding = Math.max(24, size * 0.45);
+      const padding = Math.max(16, size * 0.25);
       const state = motionRef.current;
       const now = ts;
 
-      if (!state.moving && now >= state.pauseUntil) {
-        state.target = pickNextTarget(
-          { width: viewportWidth, height: viewportHeight },
-          padding
-        );
-        state.moving = true;
-        const speedMult = clamp(Number(animSpeedMultiplier), 0.2, 2);
-        state.speed = randBetween(18, 42) * speedMult;
-      }
-
       setPos((prev) => {
+        if (!state.moving && now >= state.pauseUntil) {
+          const minTravel = Math.max(48, size * 0.35);
+          state.target = pickNextTarget(
+            { width: viewportWidth, height: viewportHeight },
+            padding,
+            prev,
+            minTravel
+          );
+          state.moving = true;
+          const speedMult = clamp(Number(animSpeedMultiplier), 0.2, 2);
+          state.speed = randBetween(24, 52) * speedMult;
+        }
+
         if (!state.moving) {
           const next = { ...prev, moving: false };
           if (typeof onPositionChange === "function") {
@@ -133,16 +172,16 @@ export default function DogPixiView({
         const dy = state.target.y - prev.y;
         const dist = Math.hypot(dx, dy);
 
-        if (dist < 4) {
+        if (dist < 10) {
           state.moving = false;
-          state.pauseUntil = now + randBetween(800, 2000);
+          state.pauseUntil = now + randBetween(1200, 2800);
           return { ...prev, moving: false };
         }
 
         const step = Math.min(dist, state.speed * dt);
         const nx = prev.x + (dx / dist) * step;
         const ny = prev.y + (dy / dist) * step;
-        const facing = dx < -0.5 ? -1 : dx > 0.5 ? 1 : prev.facing;
+        const facing = dx < -1 ? -1 : dx > 1 ? 1 : prev.facing;
 
         const next = {
           x: clamp(nx, padding, viewportWidth - padding),
@@ -168,6 +207,7 @@ export default function DogPixiView({
       lastTsRef.current = 0;
     };
   }, [
+    anim,
     animSpeedMultiplier,
     dogIsSleeping,
     onPositionChange,
@@ -181,9 +221,19 @@ export default function DogPixiView({
     .toLowerCase()
     .replace(/\s+/g, "_")
     .replace(/-+/g, "_");
-  const autoAnim = pos.moving ? "walk" : "idle";
-  const effectiveAnim =
-    animLower && animLower !== "idle" ? animLower : autoAnim;
+  const resolveDirectionalWalk = () => {
+    if (!pos.moving || dogIsSleeping) return "idle";
+    // Always use the canonical walk sheet and let facing handle mirroring.
+    // Direction-specific sheets were producing a frozen-paw moonwalk look.
+    return "walk";
+  };
+
+  const autoAnim = resolveDirectionalWalk();
+  const effectiveAnim = (() => {
+    if (!animLower || animLower === "idle") return autoAnim;
+    if (animLower === "walk") return resolveDirectionalWalk();
+    return animLower;
+  })();
 
   const style = {
     width: Number.isFinite(Number(width)) ? Number(width) : "100%",

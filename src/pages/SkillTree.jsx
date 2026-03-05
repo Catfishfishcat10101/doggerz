@@ -7,6 +7,7 @@ import PageShell from "@/components/layout/PageShell.jsx";
 import { PATHS } from "@/routes.js";
 import {
   respecSkillTree,
+  respecSkillTreeBranch,
   selectDog,
   selectDogSkillTreePoints,
   selectDogSkillTreeUnlockedIds,
@@ -18,7 +19,13 @@ import {
   setSkillTreeShowUnlockedOnly,
   setSkillTreeCompactCards,
 } from "@/redux/settingsSlice.js";
-import { SKILL_TREE_BRANCHES } from "@/logic/skillTree.js";
+import {
+  SKILL_TREE_BRANCHES,
+  getSkillTreeBranchIdForPerk,
+  getSkillTreePerkCost,
+  getSkillTreeRequiredPerkIds,
+  getSkillTreeUnlockCheck,
+} from "@/logic/skillTree.js";
 
 const BRANCH_STYLES = {
   companion: {
@@ -50,6 +57,12 @@ export default function SkillTree() {
   const pointsSpent = points?.pointsSpent ?? unlockedIds.length;
   const settings = useSelector(selectSettings);
   const activeBranchId = settings?.skillTreeBranch || "all";
+  const activeBranchUnlocks =
+    activeBranchId === "all"
+      ? 0
+      : unlockedIds.filter(
+          (id) => getSkillTreeBranchIdForPerk(id) === activeBranchId
+        ).length;
   const showUnlockedOnly = settings?.skillTreeShowUnlockedOnly === true;
   const compactCards = settings?.skillTreeCompactCards === true;
   const hasUnlocked = unlockedIds.length > 0;
@@ -64,6 +77,15 @@ export default function SkillTree() {
     );
     if (!ok) return;
     dispatch(respecSkillTree());
+  };
+
+  const onRespecBranch = () => {
+    if (activeBranchId === "all") return;
+    const ok = window.confirm(
+      `Reset the ${activeBranchId} branch? This will refund only those perks.`
+    );
+    if (!ok) return;
+    dispatch(respecSkillTreeBranch({ branchId: activeBranchId }));
   };
 
   const branches = React.useMemo(
@@ -135,6 +157,15 @@ export default function SkillTree() {
                   className="inline-flex items-center justify-center rounded-full border border-slate-300/80 bg-white/60 px-4 py-2 text-xs font-semibold text-slate-600 transition hover:bg-white"
                 >
                   Reset perks
+                </button>
+              ) : null}
+              {activeBranchId !== "all" && activeBranchUnlocks > 0 ? (
+                <button
+                  type="button"
+                  onClick={onRespecBranch}
+                  className="inline-flex items-center justify-center rounded-full border border-slate-300/80 bg-white/60 px-4 py-2 text-xs font-semibold text-slate-600 transition hover:bg-white"
+                >
+                  Reset branch
                 </button>
               ) : null}
             </div>
@@ -232,12 +263,20 @@ export default function SkillTree() {
                 </div>
 
                 <div className="mt-6 space-y-4">
-                  {branch.perks.map((perk, index) => {
-                    const requiredId = branch.perks[index - 1]?.id || null;
+                  {branch.perks.map((perk) => {
+                    const requiredIds = getSkillTreeRequiredPerkIds(perk.id);
+                    const perkCost = getSkillTreePerkCost(perk.id);
                     const isUnlocked = unlocked.has(perk.id);
-                    const isBlocked = requiredId && !unlocked.has(requiredId);
-                    const canUnlock =
-                      pointsAvailable > 0 && !isUnlocked && !isBlocked;
+                    const isBlocked =
+                      requiredIds.length > 0 &&
+                      requiredIds.some((id) => !unlocked.has(id));
+                    const unlockCheck = getSkillTreeUnlockCheck({
+                      perkId: perk.id,
+                      unlockedIds,
+                      pointsAvailable,
+                      dogLevel: level,
+                    });
+                    const canUnlock = unlockCheck.ok;
 
                     if (showUnlockedOnly && !isUnlocked) return null;
 
@@ -251,11 +290,7 @@ export default function SkillTree() {
 
                     const statusLabel = isUnlocked
                       ? "Unlocked"
-                      : isBlocked
-                        ? "Unlock the perk above first"
-                        : pointsAvailable > 0
-                          ? "Spend 1 point to unlock"
-                          : "Need a skill point";
+                      : unlockCheck.reason || "Unavailable";
 
                     return (
                       <div key={perk.id} className="relative pl-6">
@@ -288,7 +323,7 @@ export default function SkillTree() {
                               </p>
                             </div>
                             <div className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
-                              Cost 1
+                              Cost {perkCost}
                             </div>
                           </div>
 

@@ -18,7 +18,6 @@ import { setZip, selectUserZip } from "@/redux/userSlice.js";
 import {
   bathe,
   dropFoodBowl,
-  buyPremiumKibblePack,
   feed,
   giveWater,
   goPotty,
@@ -114,6 +113,21 @@ function formatLiveClock(ts) {
   }).format(new Date(ts));
 }
 
+function toPct(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return 0;
+  return Math.max(0, Math.min(100, Math.round(n)));
+}
+
+function toTitle(input, fallback = "Calm") {
+  const raw = String(input || "")
+    .trim()
+    .replace(/[_-]+/g, " ")
+    .toLowerCase();
+  if (!raw) return fallback;
+  return raw.replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 function PawPrintSvg({ className = "" }) {
   return (
     <svg
@@ -168,6 +182,14 @@ export default function MainGame({ scene, dogInteractive = true }) {
   );
 
   const activeAnim = renderModel?.anim || "idle";
+  const sceneTime = String(scene?.timeOfDay || "").toLowerCase();
+  const sceneWeather = String(scene?.weatherKey || scene?.weather || "").toLowerCase();
+  const isNightScene = sceneTime.includes("night") || sceneTime.includes("evening");
+  const isRainScene = sceneWeather.includes("rain") || sceneWeather.includes("storm");
+  const forceSleepForScene = isNightScene && isRainScene;
+  const effectiveAnim = forceSleepForScene ? "deep_rem_sleep" : activeAnim;
+  const effectiveDogSleeping =
+    Boolean(renderModel?.isSleeping) || forceSleepForScene;
   const animationSpeedMultiplier = Number(
     renderModel?.animationSpeedMultiplier || 1
   );
@@ -178,6 +200,17 @@ export default function MainGame({ scene, dogInteractive = true }) {
     0,
     Math.floor(Number(dog?.inventory?.premiumKibble || 0))
   );
+  const overallLevel = Math.max(1, Math.floor(Number(dog?.level || 1)));
+  const stageLabel = String(
+    dog?.lifeStage?.label || renderModel?.stageLabel || "Puppy"
+  );
+  const ageDays = Math.max(0, Math.floor(Number(dog?.lifeStage?.days || 0)));
+  const moodLabel = toTitle(
+    dog?.emotionCue || dog?.animation?.mood || dog?.mood || "ok"
+  );
+  const hungerPct = toPct(dog?.stats?.hunger);
+  const energyPct = toPct(dog?.stats?.energy);
+  const healthPct = toPct(dog?.stats?.health);
   const zipIsValid = /^\d{5}$/.test(String(zipDraft || "").trim());
   const effectiveZip = userZip || zipDraft || "10001";
   const controlsDisabled = !dogInteractive;
@@ -389,7 +422,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
       />
 
       <div className="relative z-20 mx-auto w-full max-w-6xl px-4 py-6 sm:py-8">
-        <div className="rounded-[28px] border border-doggerz-leaf/30 bg-black/55 p-4 shadow-[0_18px_48px_rgba(2,6,23,0.65)] backdrop-blur-md sm:p-6">
+        <div className="rounded-[28px] border border-doggerz-leaf/35 bg-black/45 p-4 shadow-[0_18px_48px_rgba(2,6,23,0.65)] backdrop-blur-md sm:p-6">
           <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-doggerz-paw">
             <span className="rounded-full border border-doggerz-leaf/40 bg-doggerz-neon/15 px-3 py-1">
               {scene?.label || "Backyard"}
@@ -469,15 +502,89 @@ export default function MainGame({ scene, dogInteractive = true }) {
           <div className="mt-3 text-2xl font-black tracking-tight text-doggerz-bone sm:text-3xl">
             {dog?.name || "Your pup"}
           </div>
+          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+            <HudChip label="Level" value={`Lv ${overallLevel}`} />
+            <HudChip label="Age" value={`${ageDays}d`} />
+            <HudChip label="Stage" value={stageLabel} />
+            <HudChip label="Mood" value={moodLabel} />
+            <HudChip label="Energy" value={`${energyPct}%`} />
+            <HudChip label="Health" value={`${healthPct}%`} />
+          </div>
+          <div className="mt-2 text-xs text-doggerz-paw/80">
+            Hunger: {hungerPct}%
+          </div>
 
-          <div className="mt-4 rounded-3xl border border-doggerz-leaf/30 bg-black/45 px-2 py-4 sm:px-4">
+          <div className="mt-4 rounded-3xl border border-doggerz-leaf/35 bg-black/30 px-2 py-4 sm:px-4">
             <div
               ref={dogViewportRef}
-              className="relative flex items-center justify-center"
+              className="relative flex items-center justify-center overflow-hidden rounded-[24px] border border-doggerz-leaf/25 bg-black/20"
               onPointerDown={handleViewportPointerDown}
             >
+              <div className="pointer-events-none absolute inset-0 z-0">
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background: isNightScene
+                      ? "linear-gradient(180deg, rgba(13,24,46,0.88) 0%, rgba(9,15,30,0.86) 45%, rgba(5,8,18,0.92) 100%)"
+                      : "linear-gradient(180deg, rgba(127,212,255,0.75) 0%, rgba(86,156,228,0.72) 46%, rgba(39,70,120,0.78) 100%)",
+                  }}
+                />
+                <div
+                  className="absolute inset-x-0 top-[38%] h-[20%]"
+                  style={{
+                    background:
+                      "repeating-linear-gradient(90deg, rgba(202,160,102,0.78) 0 10px, rgba(181,141,88,0.74) 10px 20px)",
+                    borderTop: "2px solid rgba(116,83,48,0.8)",
+                    borderBottom: "2px solid rgba(104,74,43,0.75)",
+                  }}
+                />
+                <div
+                  className="absolute inset-x-0 bottom-0 h-[42%]"
+                  style={{
+                    background: isNightScene
+                      ? "linear-gradient(180deg, rgba(33,78,42,0.9) 0%, rgba(20,51,28,0.94) 100%)"
+                      : "linear-gradient(180deg, rgba(64,151,72,0.9) 0%, rgba(34,102,42,0.94) 100%)",
+                  }}
+                />
+                <div
+                  className="absolute inset-x-0 bottom-0 h-[42%]"
+                  style={{
+                    backgroundImage:
+                      "radial-gradient(circle at 5px 5px, rgba(255,255,255,0.14) 1px, transparent 1.2px)",
+                    backgroundSize: "12px 12px",
+                    opacity: 0.25,
+                  }}
+                />
+                <div className="absolute right-6 bottom-[26%] h-28 w-24">
+                  <div className="absolute bottom-0 left-[44%] h-16 w-4 -translate-x-1/2 rounded-t bg-[#5f4228]/90" />
+                  <div className="absolute bottom-10 left-1/2 h-16 w-20 -translate-x-1/2 rounded-[50%] bg-[#2f6f3b]/90 blur-[0.3px]" />
+                  <div className="absolute bottom-16 left-1/2 h-14 w-16 -translate-x-1/2 rounded-[50%] bg-[#2a5e32]/88" />
+                </div>
+                <div className="absolute left-4 bottom-[22%] h-40 w-28 opacity-95">
+                  <div className="absolute bottom-0 left-1/2 h-24 w-5 -translate-x-1/2 rounded-t bg-[#5b3f27]/95" />
+                  <div className="absolute bottom-14 left-1/2 h-20 w-24 -translate-x-1/2 rounded-[50%] bg-[#366f3f]/95" />
+                  <div className="absolute bottom-24 left-1/2 h-16 w-20 -translate-x-1/2 rounded-[50%] bg-[#2d5f35]/92" />
+                </div>
+              </div>
+              {isRainScene ? (
+                <div
+                  className="pointer-events-none absolute inset-0 z-10 overflow-hidden"
+                  style={{ opacity: 0.78 }}
+                >
+                  <div
+                    className="absolute -inset-[18%]"
+                    style={{
+                      backgroundImage:
+                        "repeating-linear-gradient(106deg, rgba(191,219,254,0) 0px, rgba(191,219,254,0) 10px, rgba(191,219,254,0.82) 11px, rgba(191,219,254,0.82) 12px)",
+                      animation: reduceMotion
+                        ? "none"
+                        : "dgViewportRain 0.62s linear infinite",
+                    }}
+                  />
+                </div>
+              ) : null}
               {pawPrints.length > 0 ? (
-                <div className="pointer-events-none absolute inset-0 z-10">
+                <div className="pointer-events-none absolute inset-0 z-20">
                   {pawPrints.map((print) => (
                     <span
                       key={print.id}
@@ -500,23 +607,23 @@ export default function MainGame({ scene, dogInteractive = true }) {
               ) : null}
               <Suspense
                 fallback={
-                  <div className="flex h-[320px] w-[420px] items-center justify-center rounded-3xl border border-doggerz-leaf/30 bg-black/40 text-xs uppercase tracking-[0.2em] text-doggerz-paw/80">
+                  <div className="flex h-[340px] w-full max-w-[540px] items-center justify-center rounded-3xl border border-doggerz-leaf/30 bg-black/30 text-xs uppercase tracking-[0.2em] text-doggerz-paw/80">
                     Loading Pup
                   </div>
                 }
               >
-                <div className="relative z-20">
+                <div className="relative z-30 w-full max-w-[540px]">
                   <DogPixiView
                     stage={renderModel?.stage}
                     condition={renderModel?.condition}
-                    anim={activeAnim}
-                    width={420}
-                    height={320}
-                    scale={2.25}
+                    anim={effectiveAnim}
+                    width="100%"
+                    height={340}
+                    scale={1.6}
                     animSpeedMultiplier={animationSpeedMultiplier}
                     attentionTarget={attentionTarget}
                     bondValue={Number(dog?.bond?.value ?? 0)}
-                    dogIsSleeping={Boolean(renderModel?.isSleeping)}
+                    dogIsSleeping={effectiveDogSleeping}
                     onPositionChange={handleDogPositionChange}
                   />
                 </div>
@@ -539,10 +646,12 @@ export default function MainGame({ scene, dogInteractive = true }) {
                   Tap to place bowl
                 </div>
               ) : null}
-              <DogToy
-                onSqueak={handleToySqueak}
-                className="left-4 top-4 z-30 h-14 w-14"
-              />
+              {!effectiveDogSleeping ? (
+                <DogToy
+                  onSqueak={handleToySqueak}
+                  className="bottom-3 right-3 left-auto top-auto z-30 h-11 w-11"
+                />
+              ) : null}
             </div>
           </div>
 
@@ -632,14 +741,6 @@ export default function MainGame({ scene, dogInteractive = true }) {
             dispatch(feed({ now: Date.now(), foodType: "premium_kibble" }));
             setInteractionOpen(false);
           }}
-          onBuyPremiumPackSmall={() => {
-            dispatch(buyPremiumKibblePack({ amount: 5, price: 0.99 }));
-            setInteractionOpen(false);
-          }}
-          onBuyPremiumPackLarge={() => {
-            dispatch(buyPremiumKibblePack({ amount: 15, price: 1.99 }));
-            setInteractionOpen(false);
-          }}
           premiumKibbleCount={premiumKibbleCount}
           onPet={() => {
             dispatch(petDog({ now: Date.now() }));
@@ -665,6 +766,12 @@ export default function MainGame({ scene, dogInteractive = true }) {
           }}
         />
       ) : null}
+      <style>
+        {`@keyframes dgViewportRain {
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-30px, 120px, 0); }
+}`}
+      </style>
     </div>
   );
 }
@@ -740,8 +847,6 @@ function InteractionSheet({
   onFeedRegular,
   onFeedHuman,
   onFeedPremium,
-  onBuyPremiumPackSmall,
-  onBuyPremiumPackLarge,
   premiumKibbleCount = 0,
   onGiveWater,
   onPlay,
@@ -785,16 +890,6 @@ function InteractionSheet({
             onClick={onFeedPremium}
             disabled={premiumKibbleCount <= 0}
           />
-          <SheetButton
-            label="Premium Pack x5 ($0.99)"
-            icon="🧺"
-            onClick={onBuyPremiumPackSmall}
-          />
-          <SheetButton
-            label="Premium Pack x15 ($1.99)"
-            icon="🧺"
-            onClick={onBuyPremiumPackLarge}
-          />
           <SheetButton label="Drop Food Bowl" icon="🥣" onClick={onDropBowl} />
           <SheetButton label="Give Water" icon="💧" onClick={onGiveWater} />
           <SheetButton label="Play" icon="🎾" onClick={onPlay} />
@@ -821,5 +916,16 @@ function SheetButton({ label, icon, onClick, disabled = false }) {
       </span>
       <span className="leading-tight">{label}</span>
     </button>
+  );
+}
+
+function HudChip({ label, value }) {
+  return (
+    <div className="rounded-xl border border-doggerz-leaf/35 bg-black/35 px-3 py-2">
+      <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-doggerz-paw/85">
+        {label}
+      </div>
+      <div className="mt-0.5 text-sm font-bold text-doggerz-bone">{value}</div>
+    </div>
   );
 }

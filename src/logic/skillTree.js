@@ -39,6 +39,8 @@ export const SKILL_TREE_BRANCHES = Object.freeze(
           name: "Lap Loyalty",
           type: "Passive",
           effect: "Slows happiness decay during downtime.",
+          cost: 1,
+          minDogLevel: 1,
           modifiers: { happinessDecayMultiplier: 0.95 },
         },
         {
@@ -47,6 +49,8 @@ export const SKILL_TREE_BRANCHES = Object.freeze(
           type: "Unlock",
           effect: "Unlocks the Star Tag cosmetic and improves mood resilience.",
           unlocks: "Star Tag",
+          cost: 1,
+          minDogLevel: 2,
           modifiers: { happinessDecayMultiplier: 0.92 },
         },
         {
@@ -54,6 +58,8 @@ export const SKILL_TREE_BRANCHES = Object.freeze(
           name: "Heart Sync",
           type: "Passive",
           effect: "Reduces passive energy drain while relaxing.",
+          cost: 2,
+          minDogLevel: 4,
           modifiers: { idleEnergyDecayMultiplier: 0.95 },
         },
         {
@@ -61,6 +67,8 @@ export const SKILL_TREE_BRANCHES = Object.freeze(
           name: "Calm Presence",
           type: "Passive",
           effect: "Reduces cleanliness decay from minor stress behavior.",
+          cost: 2,
+          minDogLevel: 6,
           modifiers: { cleanlinessDecayMultiplier: 0.94 },
         },
         {
@@ -68,6 +76,8 @@ export const SKILL_TREE_BRANCHES = Object.freeze(
           name: "Comfort Routine",
           type: "Passive",
           effect: "Improves rest recovery speed.",
+          cost: 3,
+          minDogLevel: 8,
           modifiers: { restEnergyGainMultiplier: 1.12 },
         },
       ],
@@ -82,6 +92,8 @@ export const SKILL_TREE_BRANCHES = Object.freeze(
           name: "Tidy Patrol",
           type: "Passive",
           effect: "Slows cleanliness decay while active in the yard.",
+          cost: 1,
+          minDogLevel: 1,
           modifiers: { cleanlinessDecayMultiplier: 0.92 },
         },
         {
@@ -91,6 +103,8 @@ export const SKILL_TREE_BRANCHES = Object.freeze(
           effect:
             "Unlocks the Leaf Collar cosmetic and boosts rest efficiency.",
           unlocks: "Leaf Collar",
+          cost: 1,
+          minDogLevel: 2,
           modifiers: { restEnergyGainMultiplier: 1.08 },
         },
         {
@@ -98,6 +112,8 @@ export const SKILL_TREE_BRANCHES = Object.freeze(
           name: "Weather Watch",
           type: "Passive",
           effect: "Reduces hunger decay during harsh weather swings.",
+          cost: 2,
+          minDogLevel: 4,
           modifiers: { hungerDecayMultiplier: 0.95 },
         },
         {
@@ -105,6 +121,8 @@ export const SKILL_TREE_BRANCHES = Object.freeze(
           name: "Accident Shield",
           type: "Passive",
           effect: "Slows potty pressure gain between breaks.",
+          cost: 2,
+          minDogLevel: 6,
           modifiers: { pottyGainMultiplier: 0.88 },
         },
         {
@@ -112,6 +130,8 @@ export const SKILL_TREE_BRANCHES = Object.freeze(
           name: "Cleanup Drill",
           type: "Passive",
           effect: "Further reduces cleanliness decay in long sessions.",
+          cost: 3,
+          minDogLevel: 8,
           modifiers: { cleanlinessDecayMultiplier: 0.9 },
         },
       ],
@@ -126,6 +146,8 @@ export const SKILL_TREE_BRANCHES = Object.freeze(
           name: "Trail Legs",
           type: "Passive",
           effect: "Improves idle energy efficiency after movement.",
+          cost: 1,
+          minDogLevel: 1,
           modifiers: { idleEnergyDecayMultiplier: 0.94 },
         },
         {
@@ -134,6 +156,8 @@ export const SKILL_TREE_BRANCHES = Object.freeze(
           type: "Unlock",
           effect: "Unlocks the Neon Collar cosmetic and boosts training XP.",
           unlocks: "Neon Collar",
+          cost: 1,
+          minDogLevel: 2,
           modifiers: { trainingSkillXpMultiplier: 1.08 },
         },
         {
@@ -141,6 +165,8 @@ export const SKILL_TREE_BRANCHES = Object.freeze(
           name: "Zoomie Focus",
           type: "Passive",
           effect: "Increases obedience training XP gain.",
+          cost: 2,
+          minDogLevel: 4,
           modifiers: { trainingSkillXpMultiplier: 1.12 },
         },
         {
@@ -148,6 +174,8 @@ export const SKILL_TREE_BRANCHES = Object.freeze(
           name: "Recovery Breath",
           type: "Passive",
           effect: "Improves rest recovery between sessions.",
+          cost: 2,
+          minDogLevel: 6,
           modifiers: { restEnergyGainMultiplier: 1.1 },
         },
         {
@@ -155,6 +183,8 @@ export const SKILL_TREE_BRANCHES = Object.freeze(
           name: "Trick Cascade",
           type: "Passive",
           effect: "Major training XP boost for advanced command chaining.",
+          cost: 3,
+          minDogLevel: 8,
           modifiers: { trainingSkillXpMultiplier: 1.18 },
         },
       ],
@@ -177,7 +207,19 @@ export const SKILL_TREE_PERKS = Object.freeze(
         branchId: branch.id,
         branchName: branch.name,
         order: index,
-        requiredPerkId: index > 0 ? branch.perks[index - 1]?.id || null : null,
+        cost: Math.max(1, Math.floor(Number(perk?.cost || 1))),
+        minDogLevel: Math.max(1, Math.floor(Number(perk?.minDogLevel || 1))),
+        requiredPerkIds: Object.freeze(
+          Array.isArray(perk?.requiredPerkIds)
+            ? perk.requiredPerkIds
+                .map((id) => String(id || "").trim())
+                .filter(Boolean)
+            : index > 0
+              ? [String(branch.perks[index - 1]?.id || "").trim()].filter(
+                  Boolean
+                )
+              : []
+        ),
       })
     )
   )
@@ -201,7 +243,66 @@ export function getSkillTreeBranchIdForPerk(perkId) {
 }
 
 export function getSkillTreeRequiredPerkId(perkId) {
-  return getSkillTreePerk(perkId)?.requiredPerkId || null;
+  return getSkillTreePerk(perkId)?.requiredPerkIds?.[0] || null;
+}
+
+export function getSkillTreeRequiredPerkIds(perkId) {
+  const ids = getSkillTreePerk(perkId)?.requiredPerkIds;
+  return Array.isArray(ids) ? ids : [];
+}
+
+export function getSkillTreePerkCost(perkId) {
+  return Math.max(1, Math.floor(Number(getSkillTreePerk(perkId)?.cost || 1)));
+}
+
+export function computeSkillTreePoints(level, unlockedIds) {
+  const pointsEarned = Math.max(0, Math.floor(Number(level || 1)) - 1);
+  const spent = Array.isArray(unlockedIds) ? unlockedIds : [];
+  const pointsSpent = spent.reduce(
+    (sum, id) => sum + getSkillTreePerkCost(id),
+    0
+  );
+  const pointsAvailable = Math.max(0, pointsEarned - pointsSpent);
+  return { pointsEarned, pointsSpent, pointsAvailable };
+}
+
+export function getSkillTreeUnlockCheck({
+  perkId,
+  unlockedIds = [],
+  pointsAvailable = 0,
+  dogLevel = 1,
+} = {}) {
+  const perk = getSkillTreePerk(perkId);
+  if (!perk) return { ok: false, reason: "Unknown perk." };
+
+  const unlocked = new Set(
+    Array.isArray(unlockedIds) ? unlockedIds.map((id) => String(id)) : []
+  );
+  if (unlocked.has(perk.id)) {
+    return { ok: false, reason: "Already unlocked.", perk };
+  }
+
+  const required = Array.isArray(perk.requiredPerkIds)
+    ? perk.requiredPerkIds
+    : [];
+  const missing = required.filter((id) => !unlocked.has(String(id)));
+  if (missing.length > 0) {
+    return { ok: false, reason: "Unlock prerequisite perks first.", perk };
+  }
+
+  if (Math.max(1, Math.floor(Number(dogLevel || 1))) < perk.minDogLevel) {
+    return {
+      ok: false,
+      reason: `Requires level ${perk.minDogLevel}.`,
+      perk,
+    };
+  }
+
+  if (Number(pointsAvailable || 0) < perk.cost) {
+    return { ok: false, reason: `Need ${perk.cost} skill point(s).`, perk };
+  }
+
+  return { ok: true, reason: "", perk };
 }
 
 export function computeSkillTreeModifiers(unlockedIds) {

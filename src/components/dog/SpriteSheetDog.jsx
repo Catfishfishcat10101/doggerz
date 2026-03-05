@@ -1,7 +1,8 @@
 // src/components/dog/SpriteSheetDog.jsx
-// Lightweight sprite-strip renderer with resilient fallback chain.
+// Pixi-backed grid spritesheet renderer with resilient fallback chain.
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import * as PIXI from "pixi.js";
 
 import jrManifest from "@/components/dog/jrManifest.json";
 import {
@@ -81,12 +82,58 @@ function getAnimMeta(anim) {
 function getSheetCandidates(stage, condition, anim) {
   const s = normalizeDogStageShort(stage);
   const c = normalizeDogConditionId(condition);
+  const fallbackStage = s === "senior" ? "adult" : "pup";
+
   const animSpecific = getDogAnimSpriteUrl(s, anim);
+  const animFallback = getDogAnimSpriteUrl(fallbackStage, anim);
   const requested = getDogPixiSheetUrl(s, c);
   const cleanSameStage = getDogPixiSheetUrl(s, "clean");
+  const cleanFallbackStage = getDogPixiSheetUrl(fallbackStage, "clean");
   const cleanPup = getDogPixiSheetUrl("pup", "clean");
 
-  return [...new Set([animSpecific, requested, cleanSameStage, cleanPup])];
+  const ordered = [
+    animSpecific,
+    animFallback,
+    requested,
+    cleanSameStage,
+    cleanFallbackStage,
+    cleanPup,
+  ];
+  const withNoQueryFallbacks = ordered.flatMap((url) => {
+    const raw = String(url || "");
+    const plain = raw.split("?")[0];
+    return plain && plain !== raw ? [raw, plain] : [raw];
+  });
+  return [...new Set(withNoQueryFallbacks)];
+}
+
+function clearPixi(appRef, spriteRef) {
+  const app = appRef.current;
+  if (!app) return;
+  try {
+    if (spriteRef.current) {
+      app.stage.removeChild(spriteRef.current);
+      spriteRef.current.destroy();
+      spriteRef.current = null;
+    }
+    app.destroy(true, { children: true, texture: true, baseTexture: true });
+  } catch {
+    // best-effort cleanup
+  } finally {
+    appRef.current = null;
+  }
+}
+
+async function loadFirstAvailableTexture(candidates) {
+  for (const src of candidates) {
+    try {
+      const texture = await PIXI.Assets.load(src);
+      if (texture) return { src, texture };
+    } catch {
+      // try next candidate
+    }
+  }
+  return null;
 }
 
 export default function SpriteSheetDog({
@@ -97,6 +144,7 @@ export default function SpriteSheetDog({
   size = 320,
   reduceMotion = false,
   speedMultiplier = 1,
+  smoothing = true,
   fallbackSrc = "/assets/sprites/jr/pup_clean.png",
   className = "",
   onDebug,
@@ -107,54 +155,158 @@ export default function SpriteSheetDog({
     [animMeta.key, condition, stage]
   );
 
-  const [sourceIndex, setSourceIndex] = useState(0);
-  const [sheetLoaded, setSheetLoaded] = useState(false);
+  const hostRef = useRef(null);
+  const appRef = useRef(null);
+  const spriteRef = useRef(null);
+  const [activeSrc, setActiveSrc] = useState(null);
   const [sheetFailed, setSheetFailed] = useState(false);
-  const [frameIndex, setFrameIndex] = useState(0);
-  const [sheetMeta, setSheetMeta] = useState(null);
 
-  const rafRef = useRef(0);
-  const frameStartRef = useRef(0);
-
-  const currentSrc = candidates[sourceIndex] || null;
-  const totalRows = Math.max(1, ANIM_ROWS.length || 1);
   const boxSize = clamp(size, 64, 1024);
   const effectiveSpeedMultiplier = clamp(speedMultiplier, 0.2, 2);
   const effectiveFps = Math.max(1, animMeta.fps * effectiveSpeedMultiplier);
-  const msPerFrame = Math.max(16, Math.round(1000 / effectiveFps));
 
   useEffect(() => {
-    setSourceIndex(0);
-    setSheetLoaded(false);
-    setSheetFailed(false);
-    setFrameIndex(0);
-    setSheetMeta(null);
-  }, [stage, condition]);
+    let cancelled = false;
 
-  useEffect(() => {
-    setFrameIndex(0);
-  }, [animMeta.key]);
+    async function boot() {
+      const host = hostRef.current;
+      if (!host) return;
 
-  useEffect(() => {
-    if (!sheetLoaded || reduceMotion || animMeta.frames <= 1) return undefined;
+      setSheetFailed(false);
+      setActiveSrc(null);
+      clearPixi(appRef, spriteRef);
 
-    const tick = (ts) => {
-      if (!frameStartRef.current) frameStartRef.current = ts;
-      const elapsed = ts - frameStartRef.current;
-      if (elapsed >= msPerFrame) {
-        frameStartRef.current = ts;
-        setFrameIndex((prev) => (prev + 1) % animMeta.frames);
+      const loaded = await loadFirstAvailableTexture(candidates);
+      if (!loaded || cancelled) {
+        setSheetFailed(true);
+        return;
       }
-      rafRef.current = window.requestAnimationFrame(tick);
-    };
 
-    rafRef.current = window.requestAnimationFrame(tick);
+      const { src, texture } = loaded;
+      const app = new PIXI.Application({
+        width: boxSize,
+        height: boxSize,
+        backgroundAlpha: 0,
+        antialias: true,
+        autoDensity: true,
+        resolution: Math.max(1, window.devicePixelRatio || 1),
+      });
+      if (cancelled) {
+        app.destroy(true);
+        return;
+      }
+
+      host.innerHTML = "";
+      host.appendChild(app.view);
+      appRef.current = app;
+      setActiveSrc(src);
+
+      const baseTexture = texture.baseTexture;
+      baseTexture.scaleMode = smoothing
+        ? PIXI.SCALE_MODES.LINEAR
+        : PIXI.SCALE_MODES.NEAREST;
+      baseTexture.update();
+
+      const sheetColumns = Math.max(
+        1,
+        Math.floor((texture.width || DEFAULT_FRAME_WIDTH) / DEFAULT_FRAME_WIDTH)
+      );
+      const sheetRows = Math.max(
+        1,
+        Math.floor(
+          (texture.height || DEFAULT_FRAME_HEIGHT) / DEFAULT_FRAME_HEIGHT
+        )
+      );
+      const safeColumns = Math.max(1, Math.min(animMeta.columns, sheetColumns));
+      const maxFrames = Math.max(1, safeColumns * sheetRows);
+      const safeFrames = Math.max(1, Math.min(animMeta.frames, maxFrames));
+
+      const textures = [];
+      for (let i = 0; i < safeFrames; i += 1) {
+        const x = (i % safeColumns) * DEFAULT_FRAME_WIDTH;
+        const y = Math.floor(i / safeColumns) * DEFAULT_FRAME_HEIGHT;
+        const frame = new PIXI.Rectangle(
+          x,
+          y,
+          DEFAULT_FRAME_WIDTH,
+          DEFAULT_FRAME_HEIGHT
+        );
+        textures.push(new PIXI.Texture(baseTexture, frame));
+      }
+
+      if (!textures.length) {
+        setSheetFailed(true);
+        clearPixi(appRef, spriteRef);
+        return;
+      }
+
+      const dog = new PIXI.AnimatedSprite(textures);
+      dog.anchor.set(0.5);
+      dog.x = boxSize / 2;
+      dog.y = boxSize / 2;
+
+      const scaleX =
+        (boxSize / DEFAULT_FRAME_WIDTH) *
+        (Number(facing) < 0 ? -1 : 1) *
+        (DEFAULT_FRAME_WIDTH / DEFAULT_FRAME_HEIGHT);
+      const scaleY = boxSize / DEFAULT_FRAME_HEIGHT;
+      dog.scale.set(scaleX, scaleY);
+      dog.animationSpeed = Math.max(0.01, effectiveFps / 60);
+      dog.loop = true;
+      dog.autoUpdate = false;
+
+      if (reduceMotion || safeFrames <= 1) {
+        dog.gotoAndStop(0);
+      } else {
+        dog.play();
+      }
+
+      app.stage.addChild(dog);
+      spriteRef.current = dog;
+      app.ticker.add((ticker) => {
+        if (!spriteRef.current) return;
+        spriteRef.current.update(ticker.deltaTime);
+      });
+      app.ticker.start();
+    }
+
+    boot();
     return () => {
-      if (rafRef.current) window.cancelAnimationFrame(rafRef.current);
-      rafRef.current = 0;
-      frameStartRef.current = 0;
+      cancelled = true;
+      clearPixi(appRef, spriteRef);
     };
-  }, [animMeta.frames, msPerFrame, reduceMotion, sheetLoaded]);
+  }, [
+    animMeta.columns,
+    animMeta.frames,
+    boxSize,
+    candidates,
+    effectiveFps,
+    facing,
+    reduceMotion,
+    smoothing,
+  ]);
+
+  useEffect(() => {
+    const dog = spriteRef.current;
+    if (!dog) return;
+    const scaleX =
+      (boxSize / DEFAULT_FRAME_WIDTH) *
+      (Number(facing) < 0 ? -1 : 1) *
+      (DEFAULT_FRAME_WIDTH / DEFAULT_FRAME_HEIGHT);
+    const scaleY = boxSize / DEFAULT_FRAME_HEIGHT;
+    dog.scale.set(scaleX, scaleY);
+  }, [boxSize, facing]);
+
+  useEffect(() => {
+    const dog = spriteRef.current;
+    if (!dog) return;
+    dog.animationSpeed = Math.max(0.01, effectiveFps / 60);
+    if (reduceMotion) {
+      dog.gotoAndStop(0);
+      return;
+    }
+    if (!dog.playing) dog.play();
+  }, [effectiveFps, reduceMotion]);
 
   useEffect(() => {
     if (!onDebug) return;
@@ -164,20 +316,19 @@ export default function SpriteSheetDog({
       anim,
       resolvedAnim: animMeta.key,
       row: animMeta.rowIndex,
-      frame: frameIndex,
       frames: animMeta.frames,
       fps: animMeta.fps,
       effectiveFps,
       speedMultiplier: effectiveSpeedMultiplier,
-      src: currentSrc,
+      src: activeSrc,
       fallbackSrc,
       candidateCount: candidates.length,
-      sourceIndex,
-      sheetLoaded,
+      sheetLoaded: Boolean(activeSrc) && !sheetFailed,
       sheetFailed,
       reduceMotion: Boolean(reduceMotion),
     });
   }, [
+    activeSrc,
     anim,
     animMeta.fps,
     animMeta.frames,
@@ -185,27 +336,16 @@ export default function SpriteSheetDog({
     animMeta.rowIndex,
     candidates.length,
     condition,
-    currentSrc,
+    effectiveFps,
+    effectiveSpeedMultiplier,
     fallbackSrc,
-    frameIndex,
     onDebug,
     reduceMotion,
     sheetFailed,
-    sheetLoaded,
-    sourceIndex,
-    effectiveFps,
-    effectiveSpeedMultiplier,
     stage,
   ]);
 
-  const wrapperStyle = {
-    width: boxSize,
-    height: boxSize,
-    transform: Number(facing) < 0 ? "scaleX(-1)" : undefined,
-    transformOrigin: "center",
-  };
-
-  if (!currentSrc || sheetFailed) {
+  if (sheetFailed) {
     return (
       <img
         src={fallbackSrc}
@@ -214,93 +354,25 @@ export default function SpriteSheetDog({
         height={boxSize}
         className={className}
         style={{
-          ...wrapperStyle,
           objectFit: "contain",
           imageRendering: "auto",
+          transform: Number(facing) < 0 ? "scaleX(-1)" : undefined,
         }}
       />
     );
   }
 
-  const handleSheetLoad = (event) => {
-    setSheetLoaded(true);
-    setSheetFailed(false);
-    const img = event?.currentTarget;
-    if (img && img.naturalWidth && img.naturalHeight) {
-      const columns = Math.max(
-        1,
-        Math.round(img.naturalWidth / DEFAULT_FRAME_WIDTH)
-      );
-      const rows = Math.max(
-        1,
-        Math.round(img.naturalHeight / DEFAULT_FRAME_HEIGHT)
-      );
-      setSheetMeta({ columns, rows });
-    } else {
-      setSheetMeta(null);
-    }
-  };
-
-  const handleSheetError = () => {
-    if (sourceIndex < candidates.length - 1) {
-      setSourceIndex((i) => i + 1);
-      return;
-    }
-    setSheetLoaded(false);
-    setSheetFailed(true);
-  };
-
-  const effectiveColumns =
-    animMeta.columns || sheetMeta?.columns || DEFAULT_COLUMNS;
-  const isAnimSpecific = Boolean(
-    currentSrc && currentSrc === getDogAnimSpriteUrl(stage, animMeta.key)
-  );
-  const effectiveRows = isAnimSpecific
-    ? Math.max(1, Math.ceil(animMeta.frames / effectiveColumns))
-    : sheetMeta?.rows || totalRows;
-  const bgSizeX = effectiveColumns * boxSize;
-  const bgSizeY = effectiveRows * boxSize;
-  const frameCol = frameIndex % effectiveColumns;
-  const frameRowOffset = Math.floor(frameIndex / effectiveColumns);
-  const posX = -frameCol * boxSize;
-  const posY = isAnimSpecific
-    ? -frameRowOffset * boxSize
-    : -(animMeta.rowIndex + frameRowOffset) * boxSize;
-
   return (
-    <div className={className} style={wrapperStyle}>
-      <img
-        src={currentSrc}
-        alt=""
-        aria-hidden="true"
-        className="hidden"
-        onLoad={handleSheetLoad}
-        onError={handleSheetError}
-      />
-
-      {sheetLoaded ? (
-        <div
-          role="img"
-          aria-label="Dog"
-          style={{
-            width: "100%",
-            height: "100%",
-            backgroundImage: `url("${currentSrc}")`,
-            backgroundRepeat: "no-repeat",
-            backgroundSize: `${bgSizeX}px ${bgSizeY}px`,
-            backgroundPosition: `${posX}px ${posY}px`,
-            imageRendering: "auto",
-          }}
-        />
-      ) : (
-        <img
-          src={fallbackSrc}
-          alt="Dog"
-          width={boxSize}
-          height={boxSize}
-          style={{ width: "100%", height: "100%", objectFit: "contain" }}
-        />
-      )}
-    </div>
+    <div
+      ref={hostRef}
+      className={className}
+      role="img"
+      aria-label="Dog"
+      style={{
+        width: boxSize,
+        height: boxSize,
+        pointerEvents: "none",
+      }}
+    />
   );
 }

@@ -12,7 +12,7 @@
 ## Current Direction
 
 Doggerz is built as a **Vite web app wrapped by Capacitor** for Android (and iOS later).
-The Expo runtime has been removed.
+Native wrapper config now lives in `capacitor.config.json`.
 
 ## Run Web (Vite)
 

@@ -5,11 +5,8 @@ node_modules/
 dist/
 dist-ssr/
 *.tsbuildinfo
-.expo/
-.expo-shared/
 web-build/
 ios/
-.expo-export-test/
 
 ### Vite / tool caches
 .cache/
