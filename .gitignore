@@ -7,6 +7,8 @@ dist-ssr/
 *.tsbuildinfo
 web-build/
 ios/
+output/
+test-results/
 
 ### Vite / tool caches
 .cache/
@@ -77,4 +79,6 @@ my-app/
 *.exe
 *.msi
 *.bak
+*.jks
+*.keystore
 

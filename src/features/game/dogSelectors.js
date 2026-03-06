@@ -72,6 +72,7 @@ const EXPLICIT_ANIMS = new Set([
 
 const EXPLICIT_ACTION_ALIASES = {
   feed: "eat",
+  feed_quick: "eat",
   water: "wag",
   drink: "wag",
   sniff_kibble_reject: "sniff",

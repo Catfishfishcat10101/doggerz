@@ -20,7 +20,6 @@ allprojects {
 }
 
 subprojects { subproj ->
-    // Fix for Capacitor Plugins (like AdMob) using deprecated proguard-android.txt
     subproj.afterEvaluate {
         if (subproj.hasProperty('android')) {
             subproj.android {

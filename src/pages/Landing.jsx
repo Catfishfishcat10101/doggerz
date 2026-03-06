@@ -2,7 +2,6 @@
 // src/pages/Landing.jsx
 
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
 
 import PageShell from "@/components/layout/PageShell.jsx";
 import { PATHS } from "@/routes.js";
@@ -16,55 +15,30 @@ export default function Landing() {
         <div className="pointer-events-none absolute -bottom-20 -right-20 h-72 w-72 rounded-full bg-doggerz-sky/20 blur-[100px]" />
 
         <div className="z-10 mt-10 flex flex-1 flex-col items-center justify-center p-8 text-center">
-          <motion.div
-            initial={{ scale: 0.82, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="mb-8 h-48 w-48 overflow-hidden rounded-full border border-doggerz-leaf/35 bg-black/35 p-1 shadow-[0_0_60px_rgba(34,197,94,0.2)]"
-          >
+          <div className="mb-8 h-48 w-48 overflow-hidden rounded-full border border-doggerz-leaf/35 bg-black/35 p-1 shadow-[0_0_60px_rgba(34,197,94,0.2)]">
             <img
-              src={withBaseUrl("/assets/sprites/jr/splash.png")}
+              src={withBaseUrl("/assets/sprites/jr/adult_clean.png")}
               alt="Doggerz hero dog"
               className="h-full w-full rounded-full object-cover object-[74%_38%]"
             />
-          </motion.div>
+          </div>
 
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="text-5xl font-extrabold tracking-tight"
-          >
+          <h1 className="text-5xl font-extrabold tracking-tight">
             <span className="bg-gradient-to-r from-doggerz-leaf to-doggerz-sky bg-clip-text text-transparent">
               DOGGERZ
             </span>
-          </motion.h1>
+          </h1>
 
-          <motion.h2
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4 }}
-            className="mt-2 text-xl font-bold tracking-widest text-white/90"
-          >
+          <h2 className="mt-2 text-xl font-bold tracking-widest text-white/90">
             ADOPT. TRAIN. BOND.
-          </motion.h2>
+          </h2>
 
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6 }}
-            className="mt-4 max-w-xs text-sm leading-relaxed text-doggerz-paw/75"
-          >
+          <p className="mt-4 max-w-xs text-sm leading-relaxed text-doggerz-paw/75">
             Your highly unpredictable AI companion.
-          </motion.p>
+          </p>
         </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8, duration: 0.5 }}
-          className="z-10 flex w-full flex-col gap-4 p-6 pb-12"
-        >
+        <div className="z-10 flex w-full flex-col gap-4 p-6 pb-12">
           <Link
             to={PATHS.ADOPT}
             className="w-full rounded-2xl bg-doggerz-leaf py-4 text-center text-lg font-extrabold text-black shadow-lg transition-all hover:scale-[1.01] hover:bg-doggerz-neonSoft hover:shadow-[0_0_40px_rgba(34,197,94,0.5)]"
@@ -78,7 +52,7 @@ export default function Landing() {
           >
             Login
           </Link>
-        </motion.div>
+        </div>
       </div>
     </PageShell>
   );

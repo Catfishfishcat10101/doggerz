@@ -109,9 +109,6 @@ module.exports = async () => {
             if (hasAnyPkg(id, ["pixi.js", "@pixi"])) {
               return "vendor-pixi";
             }
-            if (hasAnyPkg(id, ["framer-motion", "motion", "motion-dom"])) {
-              return "vendor-motion";
-            }
             if (hasAnyPkg(id, ["@capacitor", "@revenuecat"])) {
               return "vendor-native";
             }

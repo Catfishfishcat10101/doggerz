@@ -51,6 +51,7 @@ export default function DogPixiView({
   animSpeedMultiplier = 1,
   attentionTarget = null,
   sleepSpot = null,
+  movementLocked = false,
   onPositionChange = null,
 }) {
   const containerRef = useRef(null);
@@ -159,7 +160,8 @@ export default function DogPixiView({
           .replace(/\s+/g, "_")
           .replace(/-+/g, "_")
       );
-    const shouldFreezeMovement = dogIsSleeping || stationaryByAnim;
+    const shouldFreezeMovement =
+      dogIsSleeping || stationaryByAnim || movementLocked;
 
     const tick = (ts) => {
       if (!lastTsRef.current) lastTsRef.current = ts;
@@ -233,6 +235,7 @@ export default function DogPixiView({
     animSpeedMultiplier,
     attentionTarget,
     dogIsSleeping,
+    movementLocked,
     onPositionChange,
     size,
     viewportHeight,

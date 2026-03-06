@@ -104,7 +104,7 @@ const MIN_STATION_HOLD_MS = 90 * 1000;
 const AMBIENT_TRACKS = Object.freeze({
   rain: ["rain-loop.mp3", "night-shrine.mp3"],
   storm: ["rain-loop.mp3", "night-shrine.mp3"],
-  default: ["wind-trees-loop.mp3", "night-shrine.mp3", "calm-loop.mp3"],
+  default: ["night-shrine.mp3", "calm-loop.mp3"],
 });
 
 function clamp01(value) {
@@ -303,13 +303,13 @@ export default function useDynamicMusic() {
     if (typeof Audio === "undefined") return;
     if (!audioRef.current) {
       const audio = new Audio();
-      audio.preload = "auto";
+      audio.preload = "metadata";
       audio.loop = false;
       audioRef.current = audio;
     }
     if (!ambientRef.current) {
       const ambient = new Audio();
-      ambient.preload = "auto";
+      ambient.preload = "metadata";
       ambient.loop = true;
       ambientRef.current = ambient;
     }

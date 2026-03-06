@@ -17,6 +17,38 @@ export const DOG_CONDITION_IDS = Object.freeze([
 const DEFAULT_SPRITE_DIR = "/assets/sprites";
 const DEFAULT_ATLAS_DIR = "/assets/atlas";
 const DOG_SPRITE_REV = "2026-02-25b";
+const DOG_SPRITE_FILE_ALIASES = Object.freeze({
+  bark: "bark",
+  beg: "bow",
+  bow: "bow",
+  crawl: "wag",
+  dance: "dance",
+  eat: "bow",
+  fetch: "fetch",
+  gate_watch: "wag",
+  highfive: "bow",
+  jump: "wag",
+  lay_down: "bow",
+  lethargic_lay: "bow",
+  light_sleep: "wag",
+  limping: "wag",
+  paw: "bow",
+  play_dead: "wag",
+  point_position: "bow",
+  roll_over: "fetch",
+  scratch: "bow",
+  shake: "bow",
+  shivering: "bow",
+  sit: "bark",
+  sleep: "wag",
+  sniff: "wag",
+  spin: "wag",
+  stay: "bark",
+  territorial_bark: "bark",
+  thrashing: "dance",
+  wag: "wag",
+  wave: "bow",
+});
 
 export const DOG_STAGE_LABEL_BY_STAGE_ID = Object.freeze({
   PUPPY: "Puppy",
@@ -107,8 +139,9 @@ export function getDogAnimSpriteUrl(_stageLike, _animLike) {
     .toLowerCase()
     .replace(/\s+/g, "_")
     .replace(/-+/g, "_");
+  const assetAnim = DOG_SPRITE_FILE_ALIASES[anim] || anim;
   return withBaseUrl(
-    `${DEFAULT_SPRITE_DIR}/jr/${stage}_${anim}.png?v=${DOG_SPRITE_REV}`
+    `${DEFAULT_SPRITE_DIR}/jr/${stage}_${assetAnim}.png?v=${DOG_SPRITE_REV}`
   );
 }
 

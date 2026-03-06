@@ -13,16 +13,20 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import DogToy from "@/components/dog/DogToy.jsx";
 import EnvironmentScene from "@/features/game/EnvironmentScene.jsx";
+import YardBackdrop from "@/features/game/YardBackdrop.jsx";
+import { useToast } from "@/state/toastContext.js";
 import { selectSettings } from "@/redux/settingsSlice.js";
 import { setZip, selectUserZip } from "@/redux/userSlice.js";
 import {
   bathe,
   dropFoodBowl,
   feed,
+  quickFeed,
   giveWater,
   goPotty,
   ackTemperamentReveal,
   petDog,
+  rewardSocialShare,
   resolveSessionSurprise,
   play,
   selectDog,
@@ -46,6 +50,7 @@ import { fetchWeatherSnapshot } from "@/features/weather/weatherApi.js";
 import { auth as firebaseAuth, initFirebase } from "@/firebase.js";
 
 const DogPixiView = lazy(() => import("@/components/dog/DogPixiView.jsx"));
+const SHARE_REWARD_COOLDOWN_MS = 12 * 60 * 60 * 1000;
 
 const ACTION_META = Object.freeze({
   Feed: {
@@ -106,6 +111,28 @@ const PAW_PRINT_COLORS = Object.freeze({
   FLEAS: "rgba(82, 56, 38, 0.6)",
   MANGE: "rgba(70, 46, 30, 0.7)",
 });
+const INVESTIGATION_PROPS = Object.freeze([
+  {
+    id: "bone",
+    label: "glow bone",
+    icon: "🦴",
+    xNorm: 0.76,
+    yNorm: 0.78,
+    action: "sniff",
+    triggerChance: 0.3,
+    cooldownMs: 5 * 60_000,
+  },
+  {
+    id: "flower",
+    label: "night-bloom flower",
+    icon: "🌼",
+    xNorm: 0.22,
+    yNorm: 0.75,
+    action: "sniff",
+    triggerChance: 0.26,
+    cooldownMs: 60_000,
+  },
+]);
 
 function toNightBucket(timeOfDay) {
   const key = String(timeOfDay || "").toLowerCase();
@@ -117,14 +144,27 @@ function isNightHour(ms = Date.now()) {
   return hour > 19 || hour < 6;
 }
 
-function isWinterMonth(ms = Date.now()) {
-  const month = new Date(ms).getMonth();
-  return month === 11 || month <= 1;
-}
-
 function isSummerMonth(ms = Date.now()) {
   const month = new Date(ms).getMonth();
   return month >= 5 && month <= 7;
+}
+
+function getSunriseBlend(ms = Date.now()) {
+  const date = new Date(ms);
+  const minutes = date.getHours() * 60 + date.getMinutes();
+  const start = 6 * 60;
+  const peak = 7 * 60;
+  const end = 8 * 60;
+  if (minutes < start || minutes >= end) return 0;
+  if (minutes <= peak) return (minutes - start) / (peak - start);
+  return 1 - (minutes - peak) / (end - peak);
+}
+
+function createInvestigationProps() {
+  return INVESTIGATION_PROPS.map((prop) => ({
+    ...prop,
+    interactedUntil: 0,
+  }));
 }
 
 function formatLiveClock(ts) {
@@ -178,6 +218,7 @@ function PawPrintSvg({ className = "" }) {
 export default function MainGame({ scene, dogInteractive = true }) {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const toast = useToast();
   const dog = useSelector(selectDog);
   const settings = useSelector(selectSettings);
   const renderModel = useSelector(selectDogRenderModel);
@@ -191,9 +232,14 @@ export default function MainGame({ scene, dogInteractive = true }) {
   const lastPlayTapAtRef = useRef(Date.now());
   const lastAnticipationAtRef = useRef(0);
   const ambientEventTimeoutRef = useRef(0);
+  const quickFeedResetRef = useRef(0);
+  const investigationResetRef = useRef(0);
+  const midnightZoomiesResetRef = useRef(0);
   const lastDepthSyncRef = useRef({ at: 0, norm: 0.5 });
+  const lastParallaxSyncRef = useRef({ at: 0, xNorm: 0.5, yNorm: 0.74 });
   const pawPrintIdRef = useRef(0);
   const lastPawPrintRef = useRef({ x: 0, y: 0, at: 0 });
+  const propGateRef = useRef({});
   const dogViewportRef = useRef(null);
   const [attentionTarget, setAttentionTarget] = useState(null);
   const [interactionOpen, setInteractionOpen] = useState(false);
@@ -208,8 +254,22 @@ export default function MainGame({ scene, dogInteractive = true }) {
   const [ambientEvent, setAmbientEvent] = useState(null);
   const [ambientAnimOverride, setAmbientAnimOverride] = useState("");
   const [ambientSpeedBoost, setAmbientSpeedBoost] = useState(1);
+  const [uiAnimOverride, setUiAnimOverride] = useState("");
+  const [uiSpeedBoost, setUiSpeedBoost] = useState(1);
   const [fireflySnapAt, setFireflySnapAt] = useState(0);
   const [dogDepthNorm, setDogDepthNorm] = useState(0.5);
+  const [dogPositionNorm, setDogPositionNorm] = useState({
+    xNorm: 0.5,
+    yNorm: 0.74,
+    moving: false,
+  });
+  const [investigationProps, setInvestigationProps] = useState(() =>
+    createInvestigationProps()
+  );
+  const [activeInvestigationId, setActiveInvestigationId] = useState("");
+  const [movementLocked, setMovementLocked] = useState(false);
+  const [midnightZoomiesBoost, setMidnightZoomiesBoost] = useState(1);
+  const [midnightZoomiesAt, setMidnightZoomiesAt] = useState(0);
 
   const seasonMode = settings?.seasonMode || "auto";
   const reduceMotion = settings?.reduceMotion === "on";
@@ -232,11 +292,11 @@ export default function MainGame({ scene, dogInteractive = true }) {
     weatherKey.includes("rain") || weatherKey.includes("storm");
   const isSnowScene =
     weatherKey.includes("snow") || weatherKey.includes("sleet");
-  const isWinterScene = isWinterMonth(liveNow);
   const isSummerNight = localNight && isSummerMonth(liveNow);
+  const sunriseBlend = getSunriseBlend(liveNow);
   const forceSleepForScene = isNightScene && isRainScene;
   const sceneAnim = forceSleepForScene ? "deep_rem_sleep" : activeAnim;
-  const effectiveAnim = ambientAnimOverride || sceneAnim;
+  const effectiveAnim = uiAnimOverride || ambientAnimOverride || sceneAnim;
   const effectiveDogSleeping =
     Boolean(renderModel?.isSleeping) || forceSleepForScene;
   const sleepInDogHouse = effectiveDogSleeping && (isNightScene || isRainScene);
@@ -248,7 +308,13 @@ export default function MainGame({ scene, dogInteractive = true }) {
   );
   const effectiveAnimationSpeedMultiplier = Math.max(
     0.2,
-    Math.min(2.8, animationSpeedMultiplier * ambientSpeedBoost)
+    Math.min(
+      2.8,
+      animationSpeedMultiplier *
+        ambientSpeedBoost *
+        uiSpeedBoost *
+        midnightZoomiesBoost
+    )
   );
   const toysIgnored = Boolean(renderModel?.ignoreToys);
   const holes = Array.isArray(dog?.yard?.holes) ? dog.yard.holes : [];
@@ -258,6 +324,9 @@ export default function MainGame({ scene, dogInteractive = true }) {
     Math.floor(Number(dog?.inventory?.premiumKibble || 0))
   );
   const overallLevel = Math.max(1, Math.floor(Number(dog?.level || 1)));
+  const shareRewardReady =
+    !dog?.lastShareRewardAt ||
+    Date.now() - Number(dog.lastShareRewardAt) >= SHARE_REWARD_COOLDOWN_MS;
   const stageLabel = String(
     dog?.lifeStage?.label || renderModel?.stageLabel || "Puppy"
   );
@@ -314,6 +383,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
       trainfailed: "Training outcome: not today.",
       sniff_kibble_reject:
         "Feed outcome: sniffed regular kibble and walked away.",
+      feed_quick: "Feed outcome: energy restored to 100%.",
       potty_fakeout: "Potty outcome: fake-out. Circled, then just sat down.",
       surprise_fetch_recover: "Surprise resolved: fetch won, control returned.",
       surprise_cleanup: "Surprise resolved: digging redirected.",
@@ -332,6 +402,11 @@ export default function MainGame({ scene, dogInteractive = true }) {
     Number(dog?.stats?.energy || 0) <= 15;
   const showFireflySnap =
     fireflySnapAt > 0 && liveNow - Number(fireflySnapAt || 0) <= 2600;
+  const showMidnightZoomies =
+    midnightZoomiesAt > 0 && liveNow - midnightZoomiesAt <= 7000;
+  const activeInvestigationLabel =
+    investigationProps.find((prop) => prop.id === activeInvestigationId)
+      ?.label || "";
   const fireflySeeds = useMemo(
     () =>
       Array.from({ length: 9 }, (_, i) => ({
@@ -393,6 +468,25 @@ export default function MainGame({ scene, dogInteractive = true }) {
           setDogDepthNorm(nextNorm);
         }
       }
+      if (rect?.width && rect?.height) {
+        const nextXNorm = clamp(Number(pos.x || 0) / rect.width, 0, 1);
+        const nextYNorm = clamp(Number(pos.y || 0) / rect.height, 0, 1);
+        const parallaxState = lastParallaxSyncRef.current;
+        if (
+          Math.abs(nextXNorm - Number(parallaxState.xNorm || 0.5)) >= 0.02 ||
+          Math.abs(nextYNorm - Number(parallaxState.yNorm || 0.74)) >= 0.02 ||
+          now - Number(parallaxState.at || 0) >= 120
+        ) {
+          parallaxState.xNorm = nextXNorm;
+          parallaxState.yNorm = nextYNorm;
+          parallaxState.at = now;
+          setDogPositionNorm({
+            xNorm: nextXNorm,
+            yNorm: nextYNorm,
+            moving: Boolean(pos?.moving),
+          });
+        }
+      }
 
       if (!pawPrintsEnabled) return;
       if (!pos?.moving) return;
@@ -434,6 +528,90 @@ export default function MainGame({ scene, dogInteractive = true }) {
       });
     },
     [cleanlinessTier, pawPrintsEnabled]
+  );
+
+  const triggerPropHaptic = useCallback(
+    async (mode = "impact") => {
+      if (settings?.hapticsEnabled === false) return;
+      try {
+        const mod = await import("@capacitor/haptics");
+        if (
+          mode === "success" &&
+          mod?.Haptics?.notification &&
+          mod?.NotificationType?.Success
+        ) {
+          await mod.Haptics.notification({
+            type: mod.NotificationType.Success,
+          });
+          return;
+        }
+        if (mod?.Haptics?.impact && mod?.ImpactStyle?.Light) {
+          await mod.Haptics.impact({ style: mod.ImpactStyle.Light });
+          return;
+        }
+      } catch {
+        // Fall back to web vibration below.
+      }
+      try {
+        if (typeof navigator !== "undefined" && navigator?.vibrate) {
+          navigator.vibrate(mode === "success" ? 18 : 10);
+        }
+      } catch {
+        // Ignore haptic fallback failures.
+      }
+    },
+    [settings?.hapticsEnabled]
+  );
+
+  const startPropInvestigation = useCallback(
+    (prop) => {
+      if (!prop || controlsDisabled || effectiveDogSleeping || movementLocked) {
+        return;
+      }
+      const now = Date.now();
+      setMovementLocked(true);
+      setActiveInvestigationId(prop.id);
+      setUiAnimOverride(prop.action || "sniff");
+      setUiSpeedBoost(0.9);
+      setAttentionTarget({ xNorm: prop.xNorm, yNorm: prop.yNorm, at: now });
+
+      if (investigationResetRef.current) {
+        window.clearTimeout(investigationResetRef.current);
+      }
+
+      investigationResetRef.current = window.setTimeout(async () => {
+        const finishedAt = Date.now();
+        setMovementLocked(false);
+        setActiveInvestigationId("");
+        setUiAnimOverride("");
+        setUiSpeedBoost(1);
+        setInvestigationProps((prev) =>
+          prev.map((item) =>
+            item.id === prop.id
+              ? {
+                  ...item,
+                  interactedUntil:
+                    finishedAt + Number(item.cooldownMs || 60_000),
+                }
+              : item
+          )
+        );
+        await triggerPropHaptic("success");
+      }, 3000);
+    },
+    [controlsDisabled, effectiveDogSleeping, movementLocked, triggerPropHaptic]
+  );
+
+  const handlePropTap = useCallback(
+    async (propId) => {
+      const prop = investigationProps.find((item) => item.id === propId);
+      if (!prop || controlsDisabled) return;
+      const now = Date.now();
+      propGateRef.current[propId] = false;
+      setAttentionTarget({ xNorm: prop.xNorm, yNorm: prop.yNorm, at: now });
+      await triggerPropHaptic("impact");
+    },
+    [controlsDisabled, investigationProps, triggerPropHaptic]
   );
 
   const dispatchPlayAction = useCallback(
@@ -604,11 +782,104 @@ export default function MainGame({ scene, dogInteractive = true }) {
   }, [controlsDisabled, isSummerNight]);
 
   useEffect(() => {
+    if (controlsDisabled || effectiveDogSleeping || movementLocked) return;
+    if (Number(dog?.stats?.energy || 0) < 10) return;
+
+    const now = Date.now();
+    const nextGate = { ...propGateRef.current };
+
+    for (const prop of investigationProps) {
+      const nearX = Math.abs(dogPositionNorm.xNorm - Number(prop.xNorm || 0));
+      const nearY = Math.abs(dogPositionNorm.yNorm - Number(prop.yNorm || 0));
+      const withinRange = nearX <= 0.08 && nearY <= 0.12;
+
+      if (!withinRange) {
+        nextGate[prop.id] = false;
+        continue;
+      }
+      if (nextGate[prop.id]) continue;
+
+      nextGate[prop.id] = true;
+      if (Number(prop.interactedUntil || 0) > now) continue;
+      if (Math.random() > Number(prop.triggerChance || 0.25)) continue;
+
+      propGateRef.current = nextGate;
+      startPropInvestigation(prop);
+      return;
+    }
+
+    propGateRef.current = nextGate;
+  }, [
+    controlsDisabled,
+    dog?.stats?.energy,
+    dogPositionNorm.xNorm,
+    dogPositionNorm.yNorm,
+    effectiveDogSleeping,
+    investigationProps,
+    movementLocked,
+    startPropInvestigation,
+  ]);
+
+  useEffect(() => {
+    if (!dogInteractive) return undefined;
+
+    const attemptZoomies = () => {
+      const hour = new Date().getHours();
+      if (hour < 2 || hour >= 4) return;
+      if (controlsDisabled || effectiveDogSleeping || movementLocked) return;
+      if (Number(dog?.stats?.energy || 0) < 18) return;
+      if (Math.random() >= 0.18) return;
+
+      const now = Date.now();
+      setMidnightZoomiesAt(now);
+      setMidnightZoomiesBoost(2);
+      setAttentionTarget({
+        xNorm: dogPositionNorm.xNorm < 0.5 ? 0.88 : 0.12,
+        yNorm: 0.74,
+        at: now,
+      });
+
+      if (midnightZoomiesResetRef.current) {
+        window.clearTimeout(midnightZoomiesResetRef.current);
+      }
+      midnightZoomiesResetRef.current = window.setTimeout(() => {
+        setMidnightZoomiesBoost(1);
+      }, 6500);
+    };
+
+    const timer = window.setInterval(attemptZoomies, 60_000);
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [
+    controlsDisabled,
+    dog?.stats?.energy,
+    dogInteractive,
+    dogPositionNorm.xNorm,
+    effectiveDogSleeping,
+    movementLocked,
+  ]);
+
+  useEffect(() => {
     if (!effectiveDogSleeping) return;
     setAmbientEvent(null);
     setAmbientAnimOverride("");
     setAmbientSpeedBoost(1);
   }, [effectiveDogSleeping]);
+
+  useEffect(() => {
+    return () => {
+      if (quickFeedResetRef.current) {
+        window.clearTimeout(quickFeedResetRef.current);
+      }
+      if (investigationResetRef.current) {
+        window.clearTimeout(investigationResetRef.current);
+      }
+      if (midnightZoomiesResetRef.current) {
+        window.clearTimeout(midnightZoomiesResetRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!dogInteractive) return undefined;
@@ -700,6 +971,103 @@ export default function MainGame({ scene, dogInteractive = true }) {
     },
     [controlsDisabled, overallLevel]
   );
+
+  const handleQuickFeed = useCallback(() => {
+    if (controlsDisabled) return;
+    const now = Date.now();
+
+    dispatch(quickFeed({ now }));
+    setUiAnimOverride("wag");
+    setUiSpeedBoost(1.15);
+    setAttentionTarget({ xNorm: 0.54, yNorm: 0.7, at: now });
+
+    if (quickFeedResetRef.current) {
+      window.clearTimeout(quickFeedResetRef.current);
+    }
+    quickFeedResetRef.current = window.setTimeout(() => {
+      setUiAnimOverride("");
+      setUiSpeedBoost(1);
+    }, 1400);
+
+    const audioEnabled = settings?.audio?.enabled !== false;
+    const masterVolume = clamp(
+      Number(settings?.audio?.masterVolume ?? 0.8),
+      0,
+      1
+    );
+    const sfxVolume = clamp(Number(settings?.audio?.sfxVolume ?? 0.7), 0, 1);
+    if (!audioEnabled || masterVolume * sfxVolume <= 0) return;
+
+    try {
+      const bark = new Audio("/audio/bark.m4a");
+      bark.volume = clamp(masterVolume * sfxVolume, 0, 1);
+      bark.play().catch(() => {});
+    } catch {
+      // Ignore audio playback failures on unsupported environments.
+    }
+  }, [
+    controlsDisabled,
+    dispatch,
+    settings?.audio?.enabled,
+    settings?.audio?.masterVolume,
+    settings?.audio?.sfxVolume,
+  ]);
+
+  const handleSharePup = useCallback(async () => {
+    const pupName = dog?.name || "my Doggerz pup";
+    const shareUrl = String(
+      import.meta.env.VITE_APP_SHARE_URL || "https://doggerz.app"
+    );
+    const shareTitle = "Meet my Doggerz pup";
+    const shareText = `Check out ${pupName} in Doggerz. Lv ${overallLevel}, ${energyPct}% energy, ${Math.round(Number(dog?.bond?.value || 0))}% bond.`;
+
+    try {
+      try {
+        const { Share } = await import("@capacitor/share");
+        await Share.share({
+          title: shareTitle,
+          text: shareText,
+          url: shareUrl,
+          dialogTitle: "Show off your pup",
+        });
+      } catch {
+        if (typeof navigator !== "undefined" && navigator.share) {
+          await navigator.share({
+            title: shareTitle,
+            text: `${shareText} ${shareUrl}`,
+          });
+        } else if (typeof navigator !== "undefined" && navigator.clipboard) {
+          await navigator.clipboard.writeText(`${shareText} ${shareUrl}`);
+          toast.success("Share text copied.");
+          return;
+        } else {
+          toast.error("Sharing is not available on this device.");
+          return;
+        }
+      }
+
+      if (shareRewardReady) {
+        dispatch(
+          rewardSocialShare({ now: Date.now(), energy: 10, happiness: 3 })
+        );
+        toast.reward("Shared your pup. +10 energy.");
+      } else {
+        toast.success("Shared your pup.");
+      }
+    } catch (error) {
+      const message = String(error?.message || "").toLowerCase();
+      if (message.includes("cancel")) return;
+      toast.error("Share canceled or unavailable.");
+    }
+  }, [
+    dispatch,
+    dog?.bond?.value,
+    dog?.name,
+    energyPct,
+    overallLevel,
+    shareRewardReady,
+    toast,
+  ]);
 
   return (
     <div className="relative min-h-dvh">
@@ -816,6 +1184,16 @@ export default function MainGame({ scene, dogInteractive = true }) {
               {actionOutcomeLabel}
             </div>
           ) : null}
+          {activeInvestigationLabel ? (
+            <div className="mt-2 rounded-xl border border-cyan-300/35 bg-cyan-300/10 px-3 py-2 text-xs font-semibold text-cyan-50">
+              Investigating the {activeInvestigationLabel}.
+            </div>
+          ) : null}
+          {showMidnightZoomies ? (
+            <div className="mt-2 rounded-xl border border-fuchsia-300/35 bg-fuchsia-300/10 px-3 py-2 text-xs font-semibold text-fuchsia-50">
+              Midnight zoomies.
+            </div>
+          ) : null}
 
           <div className="mt-4 rounded-3xl border border-doggerz-leaf/35 bg-black/30 px-2 py-4 sm:px-4">
             <div
@@ -824,154 +1202,39 @@ export default function MainGame({ scene, dogInteractive = true }) {
               className={`yard-viewport ${localNight ? "yard-night" : "yard-day"} relative flex items-center justify-center overflow-hidden rounded-[24px] border border-doggerz-leaf/25 bg-black/20`}
               onPointerDown={handleViewportPointerDown}
             >
-              <div className="pointer-events-none absolute inset-0 z-0">
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    background: isNightScene
-                      ? "linear-gradient(180deg, rgba(13,24,46,0.88) 0%, rgba(9,15,30,0.86) 45%, rgba(5,8,18,0.92) 100%)"
-                      : "linear-gradient(180deg, rgba(127,212,255,0.75) 0%, rgba(86,156,228,0.72) 46%, rgba(39,70,120,0.78) 100%)",
-                  }}
-                />
-                {isNightScene ? (
-                  <div
-                    className="absolute right-7 top-5 h-10 w-10 rounded-full"
-                    style={{
-                      background:
-                        "radial-gradient(circle at 30% 30%, rgba(255,255,255,0.95) 0%, rgba(226,232,240,0.92) 45%, rgba(148,163,184,0.7) 100%)",
-                      boxShadow: "0 0 18px rgba(226,232,240,0.45)",
-                    }}
-                  />
-                ) : null}
-                <div
-                  className="absolute inset-x-0 top-[38%] h-[20%]"
-                  style={{
-                    background:
-                      "repeating-linear-gradient(90deg, rgba(202,160,102,0.78) 0 10px, rgba(181,141,88,0.74) 10px 20px)",
-                    borderTop: "2px solid rgba(116,83,48,0.8)",
-                    borderBottom: "2px solid rgba(104,74,43,0.75)",
-                  }}
-                />
-                <div
-                  className="absolute inset-x-0 bottom-0 h-[42%]"
-                  style={{
-                    background: isNightScene
-                      ? "linear-gradient(180deg, rgba(33,78,42,0.9) 0%, rgba(20,51,28,0.94) 100%)"
-                      : "linear-gradient(180deg, rgba(64,151,72,0.9) 0%, rgba(34,102,42,0.94) 100%)",
-                  }}
-                />
-                <div
-                  className="absolute inset-x-0 bottom-0 h-[42%]"
-                  style={{
-                    backgroundImage:
-                      "radial-gradient(circle at 5px 5px, rgba(255,255,255,0.14) 1px, transparent 1.2px)",
-                    backgroundSize: "12px 12px",
-                    opacity: 0.25,
-                  }}
-                />
-                {isRainScene ? (
-                  <div
-                    className="absolute inset-0"
-                    style={{
-                      background:
-                        "linear-gradient(180deg, rgba(30,58,138,0.15) 0%, rgba(15,23,42,0.28) 100%)",
-                    }}
-                  />
-                ) : null}
-                {isSnowScene ? (
-                  <div
-                    className="absolute inset-0"
-                    style={{
-                      background:
-                        "linear-gradient(180deg, rgba(125,211,252,0.12) 0%, rgba(226,232,240,0.22) 100%)",
-                    }}
-                  />
-                ) : null}
-                <div className="absolute right-6 bottom-[26%] h-28 w-24">
-                  <div className="absolute bottom-0 left-[44%] h-16 w-4 -translate-x-1/2 rounded-t bg-[#5f4228]/90" />
-                  <div
-                    className="absolute bottom-10 left-1/2 h-16 w-20 -translate-x-1/2 rounded-[50%] bg-[#2f6f3b]/90 blur-[0.3px]"
-                    style={{
-                      animation: reduceMotion
-                        ? "none"
-                        : "dgTreeSway 5.8s ease-in-out infinite",
-                    }}
-                  />
-                  <div
-                    className="absolute bottom-16 left-1/2 h-14 w-16 -translate-x-1/2 rounded-[50%] bg-[#2a5e32]/88"
-                    style={{
-                      animation: reduceMotion
-                        ? "none"
-                        : "dgTreeSway 6.7s ease-in-out infinite reverse",
-                    }}
-                  />
+              <YardBackdrop
+                dogXNorm={dogPositionNorm.xNorm}
+                isNight={localNight || sunriseBlend > 0}
+                sunriseProgress={sunriseBlend}
+                reduceMotion={reduceMotion}
+                props={investigationProps}
+                activePropId={activeInvestigationId}
+                onPropTap={handlePropTap}
+              />
+              <div
+                id="ui-container"
+                className="absolute left-4 top-4 z-40 flex flex-col gap-2"
+              >
+                <div className="rounded-2xl border border-white/15 bg-white/80 px-3 py-2 text-sm font-semibold text-slate-900 shadow-[0_10px_28px_rgba(15,23,42,0.25)] backdrop-blur-sm">
+                  <strong>Energy: </strong>
+                  <span id="energy-display">{energyPct}</span>%
                 </div>
-                <div className="absolute left-4 bottom-[22%] h-40 w-28 opacity-95">
-                  <div className="absolute bottom-0 left-1/2 h-24 w-5 -translate-x-1/2 rounded-t bg-[#5b3f27]/95" />
-                  <div
-                    className="absolute bottom-14 left-1/2 h-20 w-24 -translate-x-1/2 rounded-[50%] bg-[#366f3f]/95"
-                    style={{
-                      animation: reduceMotion
-                        ? "none"
-                        : "dgTreeSway 6.1s ease-in-out infinite",
-                    }}
-                  />
-                  <div
-                    className="absolute bottom-24 left-1/2 h-16 w-20 -translate-x-1/2 rounded-[50%] bg-[#2d5f35]/92"
-                    style={{
-                      animation: reduceMotion
-                        ? "none"
-                        : "dgTreeSway 7.2s ease-in-out infinite reverse",
-                    }}
-                  />
-                </div>
-                <div className="absolute right-16 bottom-[18%] h-24 w-28">
-                  <div
-                    className="absolute inset-x-1 bottom-10 h-12"
-                    style={{
-                      clipPath: "polygon(50% 0%, 100% 100%, 0% 100%)",
-                      background:
-                        "linear-gradient(180deg, rgba(120,53,15,0.95) 0%, rgba(92,38,8,0.98) 100%)",
-                      border: "1px solid rgba(255,255,255,0.1)",
-                    }}
-                  />
-                  <div className="absolute inset-x-3 bottom-0 h-12 rounded-[10px] border border-[#5c2a11]/80 bg-[#8b5a2b]/95">
-                    <div className="absolute left-1/2 bottom-0 h-8 w-7 -translate-x-1/2 rounded-t-md border border-black/30 bg-[#3b2616]/85" />
-                  </div>
-                </div>
-                <div className="absolute left-[27%] bottom-[11%] z-[24] h-12 w-24">
-                  <div
-                    className="absolute inset-0 rounded-[45%] bg-[#2f7a42]/90"
-                    style={{
-                      animation: reduceMotion
-                        ? "none"
-                        : "dgTreeSway 7.4s ease-in-out infinite",
-                    }}
-                  />
-                  <div className="absolute left-[12%] top-[-14%] h-8 w-12 rounded-[50%] bg-[#3f8f52]/85" />
-                  <div className="absolute right-[10%] top-[-18%] h-7 w-11 rounded-[50%] bg-[#3a8550]/85" />
-                </div>
-                <div className="absolute right-[26%] bottom-[10%] z-[24] h-11 w-20">
-                  <div
-                    className="absolute inset-0 rounded-[48%] bg-[#2a6d3d]/88"
-                    style={{
-                      animation: reduceMotion
-                        ? "none"
-                        : "dgTreeSway 6.8s ease-in-out infinite reverse",
-                    }}
-                  />
-                  <div className="absolute left-[8%] top-[-16%] h-7 w-10 rounded-[50%] bg-[#3b8750]/80" />
-                </div>
-                {isSnowScene && isWinterScene ? (
-                  <div className="absolute left-6 bottom-[16%] z-[12] h-20 w-16 opacity-95">
-                    <div className="absolute left-1/2 bottom-0 h-12 w-12 -translate-x-1/2 rounded-full border border-white/45 bg-white/85" />
-                    <div className="absolute left-1/2 bottom-9 h-9 w-9 -translate-x-1/2 rounded-full border border-white/45 bg-white/90" />
-                    <div className="absolute left-1/2 bottom-[52px] h-6 w-6 -translate-x-1/2 rounded-full border border-white/45 bg-white/95" />
-                    <div className="absolute left-1/2 bottom-[48px] -translate-x-1/2 text-[10px]">
-                      🐾
-                    </div>
-                  </div>
-                ) : null}
+                <button
+                  id="feed-button"
+                  type="button"
+                  onClick={handleQuickFeed}
+                  disabled={controlsDisabled}
+                  className="rounded-2xl border border-emerald-300/45 bg-gradient-to-b from-emerald-300 to-lime-300 px-4 py-2 text-sm font-black tracking-[0.02em] text-slate-950 shadow-[0_10px_24px_rgba(16,185,129,0.28)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Feed Pup
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSharePup}
+                  className="min-h-11 rounded-2xl border border-cyan-300/45 bg-gradient-to-b from-cyan-300 to-sky-300 px-4 py-2 text-sm font-black tracking-[0.02em] text-slate-950 shadow-[0_10px_24px_rgba(34,211,238,0.28)] transition hover:brightness-105"
+                >
+                  Share My Pup
+                </button>
               </div>
               {isRainScene ? (
                 <div
@@ -1103,6 +1366,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
                     bondValue={Number(dog?.bond?.value ?? 0)}
                     dogIsSleeping={effectiveDogSleeping}
                     sleepSpot={sleepSpot}
+                    movementLocked={movementLocked}
                     onPositionChange={handleDogPositionChange}
                   />
                 </div>
@@ -1340,11 +1604,6 @@ export default function MainGame({ scene, dogInteractive = true }) {
   0% { transform: translate3d(0, 0, 0); opacity: 0.2; }
   45% { opacity: 0.95; }
   100% { transform: translate3d(0, -12px, 0); opacity: 0.15; }
-}
-@keyframes dgTreeSway {
-  0% { transform: rotate(0deg) translateX(0px); }
-  50% { transform: rotate(1.6deg) translateX(1px); }
-  100% { transform: rotate(0deg) translateX(0px); }
 }
 @keyframes dgButterflyTraverse {
   0% { transform: translate3d(0, 0, 0); }

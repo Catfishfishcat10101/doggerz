@@ -19,3 +19,11 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# Doggerz billing/share safety:
+# release minification is currently disabled, so these are a future-proof no-op.
+-keep class com.revenuecat.purchases.** { *; }
+-keep class com.revenuecat.purchases.hybridcommon.** { *; }
+-keep class com.revenuecat.purchases.capacitor.** { *; }
+-keep class com.android.billingclient.api.** { *; }
+-dontwarn com.android.billingclient.**

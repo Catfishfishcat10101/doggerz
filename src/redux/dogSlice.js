@@ -139,6 +139,7 @@ const SKILL_LEVEL_STEP = 50;
 const LEGACY_VACATION_MULTIPLIER = 0.35;
 const SESSION_SURPRISE_COOLDOWN_MS = 3 * 60 * 60 * 1000;
 const SESSION_SURPRISE_CHANCE = 0.42;
+const SHARE_REWARD_COOLDOWN_MS = 12 * 60 * 60 * 1000;
 const SESSION_SURPRISE_TYPES = Object.freeze({
   DIG_HOLE: "DIG_HOLE",
   STOLEN_BUTTON: "STOLEN_BUTTON",
@@ -1175,6 +1176,7 @@ const initialState = {
   streak: initialStreak,
   surprise: initialSurprise,
   lastRewardClaimedAt: null,
+  lastShareRewardAt: null,
   consecutiveDays: 0,
   claimedPreReg: false,
   claimedPreRegAt: null,
@@ -3459,6 +3461,36 @@ const dogSlice = createSlice({
       applyFeedEffect(state, payload);
     },
 
+    quickFeed(state, { payload }) {
+      const now = payload?.now ?? nowMs();
+      applyDecay(state, now);
+      wakeForInteraction(state);
+
+      state.stats.hunger = clamp(
+        Math.max(0, Number(state.stats.hunger || 0) - 60),
+        0,
+        100
+      );
+      state.stats.energy = 100;
+      state.stats.happiness = clamp(
+        Number(state.stats.happiness || 0) + 6,
+        0,
+        100
+      );
+
+      state.memory.lastFedAt = now;
+      state.memory.lastFedFoodType = "quick_feed";
+      state.memory.lastSeenAt = now;
+      state.lastAction = resolveActionOverride(payload, "feed_quick");
+      applyFsmAction(state, "feed", now);
+
+      applyBondGain(state, 0.8, now);
+      applyXp(state, 4);
+      maybeSampleMood(state, now, "FEED");
+      updateTemperamentReveal(state, now);
+      finalizeDerivedState(state, now);
+    },
+
     dropFoodBowl(state, { payload }) {
       const now = payload?.now ?? nowMs();
       const yard = ensureYardState(state);
@@ -4229,6 +4261,43 @@ const dogSlice = createSlice({
       }
     },
 
+    rewardSocialShare(state, { payload }) {
+      const now = typeof payload?.now === "number" ? payload.now : nowMs();
+      const lastSharedAt = Number(state.lastShareRewardAt || 0);
+      if (lastSharedAt > 0 && now - lastSharedAt < SHARE_REWARD_COOLDOWN_MS) {
+        return;
+      }
+
+      const energyBonus = Math.max(
+        0,
+        Math.round(Number(payload?.energy ?? 10) || 0)
+      );
+      const happinessBonus = Math.max(
+        0,
+        Math.round(Number(payload?.happiness ?? 3) || 0)
+      );
+
+      state.lastShareRewardAt = now;
+      state.stats.energy = clamp(
+        Number(state.stats.energy || 0) + energyBonus,
+        0,
+        100
+      );
+      state.stats.happiness = clamp(
+        Number(state.stats.happiness || 0) + happinessBonus,
+        0,
+        100
+      );
+
+      pushJournalEntry(state, {
+        type: "MEMORY",
+        moodTag: "PROUD",
+        summary: "Shared your pup with a friend.",
+        body: `Your pup soaked up the attention and gained +${energyBonus} energy.`,
+        timestamp: now,
+      });
+    },
+
     grantPreRegGift(state, { payload }) {
       if (state.claimedPreReg) return;
 
@@ -4895,6 +4964,7 @@ export const {
   updateFavoriteToy,
   setActiveToy,
   feed,
+  quickFeed,
   giveWater,
   play,
   petDog,
@@ -4923,6 +4993,7 @@ export const {
   tickDogPolls,
   respondToDogPoll,
   claimDailyReward,
+  rewardSocialShare,
   grantPreRegGift,
   trainObedience,
   unlockSkillTreePerk,

@@ -318,10 +318,10 @@ npm run build`}
             <div className="rounded-2xl border border-zinc-800/70 bg-zinc-950/30 p-5">
               <h3 className="font-semibold">Config & env</h3>
               <p className="mt-2 text-sm text-zinc-300">
-                Firebase env handling is in
+                Firebase bootstrap and env validation live in
                 <span className="font-semibold text-zinc-200">
                   {" "}
-                  src/config/env.js
+                  src/firebase.js
                 </span>
                 . If keys are missing, the app stays playable locally.
               </p>
