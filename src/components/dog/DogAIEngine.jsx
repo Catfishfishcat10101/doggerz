@@ -454,7 +454,6 @@ export default function DogAIEngine() {
       if (user) {
         try {
           await ensureDogMain(user.uid);
-          console.log("[Doggerz] Cloud document ensured for UID:", user.uid);
         } catch (err) {
           console.error("[Doggerz] Failed to ensure cloud document:", err);
         }
@@ -553,7 +552,6 @@ export default function DogAIEngine() {
           if (!cancelled && localData) {
             const parsed = JSON.parse(localData);
             dispatch(hydrateDog(reviveDogDates(parsed)));
-            console.log("[Doggerz] Hydrated dog from storage");
           }
         } catch (err) {
           console.error("[Doggerz] Failed to parse dog data", err);
@@ -656,7 +654,6 @@ export default function DogAIEngine() {
       : 0;
 
     if (today > lastClaimDate) {
-      console.log("[Doggerz] Daily Reward is available!");
       // TODO: dispatch(openModal("DAILY_REWARD"));
     }
   }, [dogState?.adoptedAt, dogState?.lastRewardClaimedAt]);
@@ -676,7 +673,6 @@ export default function DogAIEngine() {
           now: Date.now(),
         })
       );
-      console.log("[Doggerz] Pre-registration reward granted.");
     };
 
     run().catch((err) => {

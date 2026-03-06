@@ -101,6 +101,11 @@ const HOLIDAY_DATES = Object.freeze([
 const FADE_STEP = 0.05;
 const FADE_INTERVAL_MS = 50;
 const MIN_STATION_HOLD_MS = 90 * 1000;
+const AMBIENT_TRACKS = Object.freeze({
+  rain: ["rain-loop.mp3", "night-shrine.mp3"],
+  storm: ["rain-loop.mp3", "night-shrine.mp3"],
+  default: ["wind-trees-loop.mp3", "night-shrine.mp3", "calm-loop.mp3"],
+});
 
 function clamp01(value) {
   return Math.max(0, Math.min(1, Number(value) || 0));
@@ -213,6 +218,12 @@ function shouldInterruptStation(nextStation) {
   );
 }
 
+function resolveAmbientCandidates(weatherKey) {
+  if (weatherKey === "storm") return AMBIENT_TRACKS.storm;
+  if (weatherKey === "rain") return AMBIENT_TRACKS.rain;
+  return AMBIENT_TRACKS.default;
+}
+
 function useUserGestureGate() {
   const readyRef = useRef(false);
 
@@ -246,7 +257,14 @@ export default function useDynamicMusic() {
   const weather = useSelector(selectWeatherCondition);
 
   const audioRef = useRef(null);
+  const ambientRef = useRef(null);
   const currentTrackRef = useRef(null);
+  const currentAmbientSrcRef = useRef(null);
+  const ambientStateRef = useRef({
+    key: "",
+    candidates: [],
+    index: 0,
+  });
   const currentStationRef = useRef(null);
   const stationLockRef = useRef({ stationKey: null, startedAt: 0 });
   const fadeTimerRef = useRef(null);
@@ -289,6 +307,12 @@ export default function useDynamicMusic() {
       audio.loop = false;
       audioRef.current = audio;
     }
+    if (!ambientRef.current) {
+      const ambient = new Audio();
+      ambient.preload = "auto";
+      ambient.loop = true;
+      ambientRef.current = ambient;
+    }
   }, []);
 
   useEffect(() => {
@@ -304,7 +328,31 @@ export default function useDynamicMusic() {
   }, [requestNextTrack]);
 
   useEffect(() => {
+    const ambient = ambientRef.current;
+    if (!ambient) return;
+    const handleError = () => {
+      const ambientState = ambientStateRef.current;
+      if (!Array.isArray(ambientState.candidates)) return;
+      if (ambientState.index >= ambientState.candidates.length - 1) return;
+      ambientState.index += 1;
+      const fallbackSrc = ambientState.candidates[ambientState.index];
+      if (!fallbackSrc || fallbackSrc === currentAmbientSrcRef.current) return;
+      currentAmbientSrcRef.current = fallbackSrc;
+      ambient.src = fallbackSrc;
+      ambient.currentTime = 0;
+      if (canPlay()) {
+        ambient.play().catch(() => {});
+      }
+    };
+    ambient.addEventListener("error", handleError);
+    return () => {
+      ambient.removeEventListener("error", handleError);
+    };
+  }, [canPlay]);
+
+  useEffect(() => {
     const audio = audioRef.current;
+    const ambient = ambientRef.current;
     if (!audio) return;
 
     const audioEnabled = settings?.audio?.enabled !== false;
@@ -315,7 +363,38 @@ export default function useDynamicMusic() {
 
     if (!audioEnabled || !musicEnabled) {
       audio.pause();
+      if (ambient) ambient.pause();
       return;
+    }
+    if (ambient) {
+      const weatherKey = normalizeWeatherKey(weather);
+      const ambientCandidates = resolveAmbientCandidates(weatherKey).map(
+        (track) => `${BASE_PATH}${track}`
+      );
+      const ambientState = ambientStateRef.current;
+      const ambientKey = `${weatherKey}:${ambientCandidates.join("|")}`;
+      if (ambientState.key !== ambientKey) {
+        ambientState.key = ambientKey;
+        ambientState.candidates = ambientCandidates;
+        ambientState.index = 0;
+      }
+      const ambientSrc =
+        ambientState.candidates[ambientState.index] ||
+        `${BASE_PATH}night-shrine.mp3`;
+      const ambientVolBase =
+        weatherKey === "storm" ? 0.2 : weatherKey === "rain" ? 0.16 : 0.1;
+      const ambientVolume = clamp01(
+        masterVolume * musicVolume * ambientVolBase
+      );
+      if (currentAmbientSrcRef.current !== ambientSrc) {
+        currentAmbientSrcRef.current = ambientSrc;
+        ambient.src = ambientSrc;
+        ambient.currentTime = 0;
+      }
+      ambient.volume = ambientVolume;
+      if (canPlay() && ambient.paused) {
+        ambient.play().catch(() => {});
+      }
     }
 
     const now = Date.now();
@@ -424,6 +503,7 @@ export default function useDynamicMusic() {
     settings?.audio?.musicVolume,
     stationKey,
     trackToken,
+    weather,
   ]);
 
   useEffect(() => {
@@ -434,6 +514,10 @@ export default function useDynamicMusic() {
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current.src = "";
+      }
+      if (ambientRef.current) {
+        ambientRef.current.pause();
+        ambientRef.current.src = "";
       }
     };
   }, []);

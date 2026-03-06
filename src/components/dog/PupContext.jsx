@@ -31,7 +31,7 @@ export function PupProvider({ children }) {
       logPottySuccess: () => dispatch(goPotty({ now: Date.now() })),
       logAccident: () => dispatch(recordAccident({ now: Date.now() })),
       // Stubs for future expansion
-      awardBadge: () => console.log("Badge system coming soon!"),
+      awardBadge: () => {},
     }),
     [dispatch]
   );

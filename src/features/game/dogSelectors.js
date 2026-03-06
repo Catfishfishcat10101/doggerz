@@ -67,16 +67,24 @@ const EXPLICIT_ANIMS = new Set([
   "walk_left",
   "walk_right",
   "turn_walk_right",
+  "sniff",
 ]);
 
 const EXPLICIT_ACTION_ALIASES = {
   feed: "eat",
   water: "wag",
   drink: "wag",
+  sniff_kibble_reject: "sniff",
   pet: "wag",
+  pet_cuddle: "wag",
+  pet_side_eye: "idle",
+  pet_doze_off: "sleep",
   play: "walk",
+  pet_zoomies: "walk",
+  zoomies: "walk",
   rest: "idle_resting",
   nap: "light_sleep",
+  train_doze_off: "sleep",
   territorial_bark: "bark",
   gate_watch: "idle",
   point_position: "idle",
@@ -85,6 +93,12 @@ const EXPLICIT_ACTION_ALIASES = {
   lethargic_lay: "sleep",
   sore: "walk",
   dental_pain: "idle",
+  button_heist: "fetch",
+  surprise_fetch_recover: "fetch",
+  surprise_cleanup: "sit",
+  surprise_fetch_cleanup: "fetch",
+  guilty_paws: "sit",
+  potty_fakeout: "sit",
 };
 
 function sanitizeAnimForCurrentSpriteSet(anim) {

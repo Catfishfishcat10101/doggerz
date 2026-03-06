@@ -12,14 +12,6 @@ const cfg = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-if (import.meta.env.DEV) {
-  console.log("Firebase project:", import.meta.env.VITE_FIREBASE_PROJECT_ID);
-  console.log(
-    "Firebase apiKey starts:",
-    String(import.meta.env.VITE_FIREBASE_API_KEY).slice(0, 8)
-  );
-}
-
 export const firebaseMissingKeys = Object.entries(cfg)
   .filter(([, v]) => !v)
   .map(([k]) => k);

@@ -1,0 +1,14 @@
+[
+  {
+    "type": "console.error",
+    "text": "[Doggerz] Database check failed: FirebaseError: Missing or insufficient permissions."
+  },
+  {
+    "type": "console.error",
+    "text": "[Doggerz] Failed to ensure cloud document: FirebaseError: Missing or insufficient permissions."
+  },
+  {
+    "type": "console.error",
+    "text": "[Doggerz] Late cloud load failed Missing or insufficient permissions."
+  }
+]

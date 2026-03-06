@@ -4,30 +4,20 @@
   "dog": {
     "name": "Pup",
     "stage": "pup",
-    "condition": "mange",
-    "anim": "walk",
+    "condition": "clean",
+    "anim": "idle",
     "isSleeping": false
   },
   "stats": {
-    "hunger": 100,
-    "thirst": 100,
-    "happiness": 30.523297316666664,
-    "energy": 0,
-    "cleanliness": 0,
-    "health": 22.398143555555553,
-    "affection": 0,
-    "mentalStimulation": 0
+    "hunger": 50,
+    "thirst": 40,
+    "happiness": 60,
+    "energy": 60,
+    "cleanliness": 60,
+    "health": 80,
+    "affection": 60,
+    "mentalStimulation": 60
   },
-  "moodlets": [
-    { "type": "hungry", "intensity": 3 },
-    { "type": "thirsty", "intensity": 3 },
-    { "type": "tired", "intensity": 3 },
-    { "type": "dirty", "intensity": 3 },
-    { "type": "sick", "intensity": 2 },
-    { "type": "lonely", "intensity": 3 },
-    { "type": "bored", "intensity": 3 },
-    { "type": "lonely", "intensity": 1 },
-    { "type": "itchy", "intensity": 3 }
-  ],
+  "moodlets": [],
   "coordSystem": "Dog viewport origin top-left; units are CSS pixels. DogPixiView 420x320."
 }

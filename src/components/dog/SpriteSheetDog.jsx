@@ -23,6 +23,7 @@ const ANIM_ALIASES =
 const DEFAULT_FRAME = jrManifest?.frame || {};
 const DEFAULT_FRAME_WIDTH = Math.max(1, Number(DEFAULT_FRAME.width || 128));
 const DEFAULT_FRAME_HEIGHT = Math.max(1, Number(DEFAULT_FRAME.height || 128));
+const SPRITE_DEFAULT_FACING = -1; // Source art faces left by default.
 
 function clamp(n, lo, hi) {
   const x = Number(n);
@@ -217,14 +218,22 @@ export default function SpriteSheetDog({
           (texture.height || DEFAULT_FRAME_HEIGHT) / DEFAULT_FRAME_HEIGHT
         )
       );
-      const safeColumns = Math.max(1, Math.min(animMeta.columns, sheetColumns));
-      const maxFrames = Math.max(1, safeColumns * sheetRows);
-      const safeFrames = Math.max(1, Math.min(animMeta.frames, maxFrames));
+      const sheetCapacity = Math.max(1, sheetColumns * sheetRows);
+      const atlasStartFrame = Math.max(0, animMeta.rowIndex * DEFAULT_COLUMNS);
+      const canUseAtlasOffset =
+        sheetCapacity >= atlasStartFrame + Math.max(1, animMeta.frames);
+      const startFrame = canUseAtlasOffset ? atlasStartFrame : 0;
+      const requestedFrames = Math.max(1, Number(animMeta.frames || 1));
+      const safeFrames = Math.max(
+        1,
+        Math.min(requestedFrames, sheetCapacity - startFrame)
+      );
 
       const textures = [];
       for (let i = 0; i < safeFrames; i += 1) {
-        const x = (i % safeColumns) * DEFAULT_FRAME_WIDTH;
-        const y = Math.floor(i / safeColumns) * DEFAULT_FRAME_HEIGHT;
+        const frameIndex = startFrame + i;
+        const x = (frameIndex % sheetColumns) * DEFAULT_FRAME_WIDTH;
+        const y = Math.floor(frameIndex / sheetColumns) * DEFAULT_FRAME_HEIGHT;
         const frame = new PIXI.Rectangle(
           x,
           y,
@@ -241,19 +250,19 @@ export default function SpriteSheetDog({
       }
 
       const dog = new PIXI.AnimatedSprite(textures);
-      dog.anchor.set(0.5);
+      dog.anchor.set(0.5, 1);
       dog.x = boxSize / 2;
-      dog.y = boxSize / 2;
+      dog.y = boxSize * 0.93;
 
-      const scaleX =
-        (boxSize / DEFAULT_FRAME_WIDTH) *
-        (Number(facing) < 0 ? -1 : 1) *
-        (DEFAULT_FRAME_WIDTH / DEFAULT_FRAME_HEIGHT);
-      const scaleY = boxSize / DEFAULT_FRAME_HEIGHT;
-      dog.scale.set(scaleX, scaleY);
+      const displayScale = boxSize / DEFAULT_FRAME_HEIGHT;
+      const facingSign = Number(facing) < 0 ? 1 : -1;
+      dog.scale.set(
+        displayScale * facingSign * SPRITE_DEFAULT_FACING,
+        displayScale
+      );
       dog.animationSpeed = Math.max(0.01, effectiveFps / 60);
       dog.loop = true;
-      dog.autoUpdate = false;
+      dog.autoUpdate = true;
 
       if (reduceMotion || safeFrames <= 1) {
         dog.gotoAndStop(0);
@@ -261,12 +270,18 @@ export default function SpriteSheetDog({
         dog.play();
       }
 
+      const groundShadow = new PIXI.Graphics();
+      groundShadow.beginFill(0x020617, 0.32);
+      groundShadow.drawEllipse(
+        boxSize / 2,
+        boxSize * 0.94,
+        boxSize * 0.2,
+        boxSize * 0.05
+      );
+      groundShadow.endFill();
+      app.stage.addChild(groundShadow);
       app.stage.addChild(dog);
       spriteRef.current = dog;
-      app.ticker.add((ticker) => {
-        if (!spriteRef.current) return;
-        spriteRef.current.update(ticker.deltaTime);
-      });
       app.ticker.start();
     }
 
@@ -278,6 +293,7 @@ export default function SpriteSheetDog({
   }, [
     animMeta.columns,
     animMeta.frames,
+    animMeta.rowIndex,
     boxSize,
     candidates,
     effectiveFps,
@@ -289,12 +305,12 @@ export default function SpriteSheetDog({
   useEffect(() => {
     const dog = spriteRef.current;
     if (!dog) return;
-    const scaleX =
-      (boxSize / DEFAULT_FRAME_WIDTH) *
-      (Number(facing) < 0 ? -1 : 1) *
-      (DEFAULT_FRAME_WIDTH / DEFAULT_FRAME_HEIGHT);
-    const scaleY = boxSize / DEFAULT_FRAME_HEIGHT;
-    dog.scale.set(scaleX, scaleY);
+    const displayScale = boxSize / DEFAULT_FRAME_HEIGHT;
+    const facingSign = Number(facing) < 0 ? 1 : -1;
+    dog.scale.set(
+      displayScale * facingSign * SPRITE_DEFAULT_FACING,
+      displayScale
+    );
   }, [boxSize, facing]);
 
   useEffect(() => {
@@ -345,20 +361,62 @@ export default function SpriteSheetDog({
     stage,
   ]);
 
+  const cssSheetSrc = String(activeSrc || candidates[0] || fallbackSrc || "");
+  const cssFrameCount = Math.max(1, Number(animMeta.frames || 1));
+  const cssDurationSeconds = Math.max(
+    0.35,
+    cssFrameCount / Math.max(1, effectiveFps)
+  );
+  const cssRowOffset =
+    Math.max(0, Number(animMeta.rowIndex || 0)) * DEFAULT_FRAME_HEIGHT;
+  const cssScale = boxSize / DEFAULT_FRAME_HEIGHT;
+  const cssFacing = Number(facing) < 0 ? -1 : 1;
+  const cssShouldAnimate = !reduceMotion && cssFrameCount > 1;
+
   if (sheetFailed) {
     return (
-      <img
-        src={fallbackSrc}
-        alt="Dog"
-        width={boxSize}
-        height={boxSize}
-        className={className}
+      <div
+        className={`dog-css-container ${className}`}
+        data-dog-container="true"
+        role="img"
+        aria-label="Dog"
         style={{
-          objectFit: "contain",
-          imageRendering: "auto",
-          transform: Number(facing) < 0 ? "scaleX(-1)" : undefined,
+          width: boxSize,
+          height: boxSize,
+          pointerEvents: "none",
         }}
-      />
+      >
+        <style>
+          {`@keyframes dgPlay8Frames {
+  from { background-position: 0px var(--dog-row-offset); }
+  to { background-position: calc(var(--dog-frame-width) * var(--dog-frames) * -1) var(--dog-row-offset); }
+}`}
+        </style>
+        <div
+          className={`dog-css-sprite state-${animMeta.key}`}
+          data-dog-sprite="true"
+          style={{
+            width: `${DEFAULT_FRAME_WIDTH}px`,
+            height: `${DEFAULT_FRAME_HEIGHT}px`,
+            position: "absolute",
+            left: "50%",
+            top: "100%",
+            transform: `translate(-50%, -100%) scaleX(${cssFacing}) scale(${cssScale})`,
+            transformOrigin: "50% 100%",
+            backgroundImage: `url('${cssSheetSrc}')`,
+            backgroundRepeat: "no-repeat",
+            backgroundPosition: `0px -${cssRowOffset}px`,
+            imageRendering: smoothing ? "auto" : "pixelated",
+            transition: "transform 0.1s ease-in-out",
+            animation: cssShouldAnimate
+              ? `dgPlay8Frames ${cssDurationSeconds.toFixed(3)}s steps(${cssFrameCount}) infinite`
+              : "none",
+            "--dog-frame-width": `${DEFAULT_FRAME_WIDTH}px`,
+            "--dog-frames": String(cssFrameCount),
+            "--dog-row-offset": `-${cssRowOffset}px`,
+          }}
+        />
+      </div>
     );
   }
 

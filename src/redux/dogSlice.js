@@ -58,6 +58,8 @@ const clamp = (n, lo = 0, hi = 100) =>
   Math.max(lo, Math.min(hi, Number.isFinite(n) ? n : 0));
 
 const clamp01 = (n) => Math.max(0, Math.min(1, Number.isFinite(n) ? n : 0));
+const randomBetween = (lo, hi) =>
+  Number(lo) + Math.random() * (Number(hi) - Number(lo));
 const normalizeActionKey = (value) =>
   String(value || "")
     .trim()
@@ -135,6 +137,19 @@ const LONG_LIFE_FAREWELL_AGE_DAYS = 5000;
 export const LEVEL_XP_STEP = 100;
 const SKILL_LEVEL_STEP = 50;
 const LEGACY_VACATION_MULTIPLIER = 0.35;
+const SESSION_SURPRISE_COOLDOWN_MS = 3 * 60 * 60 * 1000;
+const SESSION_SURPRISE_CHANCE = 0.42;
+const SESSION_SURPRISE_TYPES = Object.freeze({
+  DIG_HOLE: "DIG_HOLE",
+  STOLEN_BUTTON: "STOLEN_BUTTON",
+});
+const STOLENABLE_ACTION_KEYS = Object.freeze([
+  "play",
+  "pet",
+  "bath",
+  "potty",
+  "train",
+]);
 const DEFAULT_VACATION_STATE = Object.freeze({
   enabled: false,
   multiplier: 0,
@@ -336,6 +351,16 @@ function applyFeedEffect(state, payload = {}, opts = {}) {
     foodType === "premium_kibble" && !usePremiumKibble
       ? "regular_kibble"
       : foodType;
+  const isRegularKibbleFeed = effectiveFoodType === "regular_kibble";
+  if (isRegularKibbleFeed && Math.random() <= 0.1) {
+    state.stats.happiness = clamp(state.stats.happiness - 1, 0, 100);
+    state.memory.lastSeenAt = now;
+    state.lastAction = resolveActionOverride(payload, "sniff_kibble_reject");
+    applyFsmAction(state, "feed", now);
+    maybeSampleMood(state, now, "FEED_SNIFF_REJECT");
+    finalizeDerivedState(state, now);
+    return;
+  }
   const baseAmount =
     payload?.amount ?? (effectiveFoodType === "regular_kibble" ? 50 : 100);
   const adjustedAmount = Number(baseAmount) * dentalMultiplier;
@@ -348,8 +373,7 @@ function applyFeedEffect(state, payload = {}, opts = {}) {
   });
   state.stats.hunger = nextStats.hunger;
   state.stats.happiness = nextStats.happiness;
-  const isRegularKibble = effectiveFoodType === "regular_kibble";
-  if (isRegularKibble && hungerBefore >= 50) {
+  if (isRegularKibbleFeed && hungerBefore >= 50) {
     // Regular kibble is a half-fill meal: dog will be hungry again around 12h.
     state.stats.hunger = 50;
   }
@@ -431,7 +455,10 @@ function applyFeedEffect(state, payload = {}, opts = {}) {
   });
 
   applyXp(state, 5);
-  maybeSampleMood(state, now, isHumanFood ? "FEED_JUNK" : "FEED");
+  const guiltyTriggered = maybeTriggerGuiltyPaws(state, now, "feed");
+  if (!guiltyTriggered) {
+    maybeSampleMood(state, now, isHumanFood ? "FEED_JUNK" : "FEED");
+  }
 
   const date = getIsoDate(now);
   updateStreak(state.streak, date);
@@ -736,6 +763,9 @@ const initialMemory = {
   junkFoodCountToday: 0,
   junkFoodBingeDayKey: null,
   lastFedFoodType: null,
+  lastZoomiesAt: null,
+  lastDreamWoofAt: null,
+  lastGuiltyPawsAt: null,
 };
 
 const initialInventory = {
@@ -796,6 +826,12 @@ const initialStreak = {
   currentStreakDays: 0,
   bestStreakDays: 0,
   lastActiveDate: null,
+};
+
+const initialSurprise = {
+  active: null,
+  lastSpawnedAt: null,
+  lastResolvedAt: null,
 };
 
 const initialBond = {
@@ -1137,6 +1173,7 @@ const initialState = {
   dreams: initialDreams,
   journal: initialJournal,
   streak: initialStreak,
+  surprise: initialSurprise,
   lastRewardClaimedAt: null,
   consecutiveDays: 0,
   claimedPreReg: false,
@@ -2907,6 +2944,223 @@ function ensurePollState(state) {
   return state.polls;
 }
 
+function ensureSurpriseState(state) {
+  if (!state.surprise || typeof state.surprise !== "object") {
+    state.surprise = { ...initialSurprise };
+    return state.surprise;
+  }
+
+  const surprise = state.surprise;
+  if (typeof surprise.lastSpawnedAt !== "number") {
+    surprise.lastSpawnedAt = null;
+  }
+  if (typeof surprise.lastResolvedAt !== "number") {
+    surprise.lastResolvedAt = null;
+  }
+  if (!surprise.active || typeof surprise.active !== "object") {
+    surprise.active = null;
+    return surprise;
+  }
+
+  const active = surprise.active;
+  const activeType = String(active.type || "").toUpperCase();
+  if (!Object.values(SESSION_SURPRISE_TYPES).includes(activeType)) {
+    surprise.active = null;
+    return surprise;
+  }
+  active.type = activeType;
+  active.id = String(active.id || "").trim() || null;
+  active.title = String(active.title || "").trim() || null;
+  active.message = String(active.message || "").trim() || null;
+  if (typeof active.startedAt !== "number") {
+    active.startedAt = nowMs();
+  }
+  if (activeType === SESSION_SURPRISE_TYPES.STOLEN_BUTTON) {
+    const action = normalizeActionKey(active.stolenAction || "train");
+    active.stolenAction = STOLENABLE_ACTION_KEYS.includes(action)
+      ? action
+      : "train";
+  } else {
+    active.stolenAction = null;
+  }
+  if (activeType === SESSION_SURPRISE_TYPES.DIG_HOLE) {
+    active.holeId = String(active.holeId || "").trim() || null;
+  } else {
+    active.holeId = null;
+  }
+
+  return surprise;
+}
+
+function spawnDigHoleSurprise(state, now) {
+  const surprise = ensureSurpriseState(state);
+  const yard = ensureYardState(state);
+  const holeId = `surprise-hole-${now}-${Math.random().toString(36).slice(2, 8)}`;
+  const hole = {
+    id: holeId,
+    xPct: Math.round(randomBetween(18, 82)),
+    yPct: Math.round(randomBetween(64, 82)),
+    radius: Math.round(randomBetween(14, 28)),
+    fillPct: Number(randomBetween(0.2, 0.55).toFixed(2)),
+    spawnedAt: now,
+  };
+  yard.holes = [...(Array.isArray(yard.holes) ? yard.holes : []), hole].slice(
+    -8
+  );
+
+  surprise.active = {
+    id: `surprise-${now}-dig`,
+    type: SESSION_SURPRISE_TYPES.DIG_HOLE,
+    startedAt: now,
+    title: "Yard Surprise",
+    message: "Your pup started digging before you even tapped anything.",
+    holeId,
+    stolenAction: null,
+  };
+  surprise.lastSpawnedAt = now;
+
+  state.stats.cleanliness = clamp(state.stats.cleanliness - 3, 0, 100);
+  state.stats.energy = clamp(state.stats.energy - 2, 0, 100);
+  state.stats.happiness = clamp(state.stats.happiness + 2, 0, 100);
+  state.lastAction = "digging";
+  applyFsmAction(state, "play", now);
+  pushJournalEntry(state, {
+    type: "SURPRISE",
+    moodTag: "PLAYFUL",
+    summary: "Caught digging at startup",
+    body: "Your pup was already mid-dig when you opened the app.",
+    timestamp: now,
+  });
+}
+
+function spawnStolenButtonSurprise(state, now) {
+  const surprise = ensureSurpriseState(state);
+  const stolenAction =
+    STOLENABLE_ACTION_KEYS[
+      Math.floor(Math.random() * STOLENABLE_ACTION_KEYS.length)
+    ] || "train";
+
+  surprise.active = {
+    id: `surprise-${now}-stolen`,
+    type: SESSION_SURPRISE_TYPES.STOLEN_BUTTON,
+    startedAt: now,
+    title: "Button Heist",
+    message: "Your pup stole one control. Play fetch to win it back.",
+    stolenAction,
+    holeId: null,
+  };
+  surprise.lastSpawnedAt = now;
+
+  state.stats.happiness = clamp(state.stats.happiness + 1, 0, 100);
+  state.stats.mentalStimulation = clamp(
+    Number(state.stats.mentalStimulation || 0) + 5,
+    0,
+    100
+  );
+  state.lastAction = "button_heist";
+  applyFsmAction(state, "play", now);
+  pushJournalEntry(state, {
+    type: "SURPRISE",
+    moodTag: "SASSY",
+    summary: "Control stolen",
+    body: "Your pup grabbed a control and ran. Fetch time.",
+    timestamp: now,
+  });
+}
+
+function maybeSpawnSessionSurprise(state, now = nowMs()) {
+  const surprise = ensureSurpriseState(state);
+  if (surprise.active) return surprise.active;
+  const lastSpawnedAt = Number(surprise.lastSpawnedAt || 0);
+  if (lastSpawnedAt && now - lastSpawnedAt < SESSION_SURPRISE_COOLDOWN_MS) {
+    return null;
+  }
+  if (Math.random() > SESSION_SURPRISE_CHANCE) return null;
+
+  spawnDigHoleSurprise(state, now);
+  return surprise.active;
+}
+
+function spawnButtonHeistSurprise(state, now = nowMs(), options = {}) {
+  const surprise = ensureSurpriseState(state);
+  if (surprise.active) return null;
+
+  const lastResolvedAt = Number(surprise.lastResolvedAt || 0);
+  const minGapMs = Number(options?.minGapMs ?? 90_000);
+  if (lastResolvedAt && now - lastResolvedAt < minGapMs) return null;
+
+  const forcedAction = normalizeActionKey(options?.stolenAction || "");
+  const forced = STOLENABLE_ACTION_KEYS.includes(forcedAction)
+    ? forcedAction
+    : null;
+
+  const chosen =
+    forced ||
+    STOLENABLE_ACTION_KEYS[
+      Math.floor(Math.random() * STOLENABLE_ACTION_KEYS.length)
+    ] ||
+    "train";
+
+  spawnStolenButtonSurprise(state, now);
+  if (surprise.active) {
+    surprise.active.stolenAction = chosen;
+  }
+  return surprise.active;
+}
+
+function maybeTriggerZoomiesBurst(state, now = nowMs()) {
+  if (state.isAsleep) return false;
+  const energy = Number(state.stats?.energy || 0);
+  if (energy < 80) return false;
+
+  const lastZoomiesAt = Number(state.memory?.lastZoomiesAt || 0);
+  if (lastZoomiesAt && now - lastZoomiesAt < 45_000) return false;
+  if (Math.random() > 0.15) return false;
+
+  state.memory.lastZoomiesAt = now;
+  state.stats.energy = clamp(state.stats.energy - 5, 0, 100);
+  state.stats.happiness = clamp(state.stats.happiness + 3, 0, 100);
+  state.lastAction = "zoomies";
+  applyFsmAction(state, "play", now);
+  maybeSampleMood(state, now, "ZOOMIES_BURST");
+  return true;
+}
+
+function maybeTriggerAiDreamCue(state, now = nowMs()) {
+  const energy = Number(state.stats?.energy || 0);
+  const cue = String(state.emotionCue || "").toLowerCase();
+  const isSleepyCue = cue === "sleepy" || cue === "tired";
+  if (!isSleepyCue || energy > 5) return false;
+
+  const lastDreamWoofAt = Number(state.memory?.lastDreamWoofAt || 0);
+  if (lastDreamWoofAt && now - lastDreamWoofAt < 60_000) return false;
+  if (Math.random() > 0.25) return false;
+
+  state.memory.lastDreamWoofAt = now;
+  state.isAsleep = true;
+  state.lastAction = "dream_woof";
+  applyFsmAction(state, "rest", now);
+  maybeGenerateDream(state, now);
+  maybeSampleMood(state, now, "AI_DREAM_WOOF");
+  return true;
+}
+
+function maybeTriggerGuiltyPaws(state, now = nowMs(), source = "feed") {
+  const key = normalizeActionKey(source);
+  const chance = key === "potty" ? 0.12 : 0.18;
+  const lastGuiltyPawsAt = Number(state.memory?.lastGuiltyPawsAt || 0);
+  if (lastGuiltyPawsAt && now - lastGuiltyPawsAt < 8 * 60 * 1000) {
+    return false;
+  }
+  if (Math.random() > chance) return false;
+
+  state.memory.lastGuiltyPawsAt = now;
+  state.stats.happiness = clamp(state.stats.happiness - 1, 0, 100);
+  state.lastAction = "guilty_paws";
+  maybeSampleMood(state, now, "GUILTY_PAWS");
+  return true;
+}
+
 function pickNextPoll(previousId) {
   const prompts = DOG_POLL_CONFIG?.prompts || [];
   if (!prompts.length) return null;
@@ -3047,6 +3301,7 @@ const dogSlice = createSlice({
       ensureLifecycleStatus(merged);
       ensureDangerState(merged);
       ensureLegacyJourneyState(merged);
+      ensureSurpriseState(merged);
 
       finalizeDerivedState(merged, nowMs());
       return merged;
@@ -3099,6 +3354,7 @@ const dogSlice = createSlice({
         state.temperament = { ...initialTemperament };
         state.personality = { ...initialPersonality };
         state.healthSilo = { ...initialHealthSilo };
+        state.surprise = { ...initialSurprise };
       }
 
       state.lifecycleStatus = DOG_LIFECYCLE_STATUS.ACTIVE;
@@ -3380,22 +3636,84 @@ const dogSlice = createSlice({
       applyDecay(state, now);
       wakeForInteraction(state);
 
-      const sweetBondMultiplier = hasTemperamentTag(state, "SWEET") ? 1.45 : 1;
-      applyBondGain(state, 1.2 * sweetBondMultiplier, now);
-
-      state.stats.happiness = clamp(state.stats.happiness + 2, 0, 100);
       state.memory.lastSeenAt = now;
-      state.lastAction = resolveActionOverride(payload, "pet");
-      applyFsmAction(state, "pet", now);
+      const sweetBondMultiplier = hasTemperamentTag(state, "SWEET") ? 1.45 : 1;
+      const energy = Number(state.stats?.energy || 0);
+      const happiness = Number(state.stats?.happiness || 0);
+      const isSpicy = hasTemperamentTag(state, "SPICY");
 
-      applyPersonalityShift(state, {
-        now,
-        source: "PET",
-        deltas: { affectionate: 2, social: 1 },
-      });
+      const dozeChance = energy <= 30 ? 0.3 : energy <= 55 ? 0.18 : 0.08;
+      const zoomiesChance = happiness >= 75 ? 0.24 : 0.14;
+      const sassChance = isSpicy ? 0.16 : 0.09;
+      const roll = Math.random();
 
-      applyXp(state, 2);
-      maybeSampleMood(state, now, "PET");
+      let outcome = "PET_CUDDLE";
+      let threshold = dozeChance;
+      if (roll <= threshold) {
+        outcome = "PET_DOZE";
+      } else {
+        threshold += zoomiesChance;
+        if (roll <= threshold) {
+          outcome = "PET_ZOOMIES";
+        } else {
+          threshold += sassChance;
+          if (roll <= threshold) {
+            outcome = "PET_SIDE_EYE";
+          }
+        }
+      }
+
+      if (outcome === "PET_DOZE") {
+        state.isAsleep = true;
+        state.stats.energy = clamp(state.stats.energy + 10, 0, 100);
+        state.stats.happiness = clamp(state.stats.happiness + 2, 0, 100);
+        applyBondGain(state, 0.85 * sweetBondMultiplier, now);
+        state.lastAction = resolveActionOverride(payload, "pet_doze_off");
+        applyFsmAction(state, "rest", now);
+        applyPersonalityShift(state, {
+          now,
+          source: "PET",
+          deltas: { affectionate: 2, energetic: -1 },
+        });
+        applyXp(state, 2);
+      } else if (outcome === "PET_ZOOMIES") {
+        state.stats.happiness = clamp(state.stats.happiness + 6, 0, 100);
+        state.stats.energy = clamp(state.stats.energy - 4, 0, 100);
+        state.stats.thirst = clamp(state.stats.thirst + 2, 0, 100);
+        applyBondGain(state, 1.05 * sweetBondMultiplier, now);
+        state.lastAction = resolveActionOverride(payload, "pet_zoomies");
+        applyFsmAction(state, "play", now);
+        applyPersonalityShift(state, {
+          now,
+          source: "PET",
+          deltas: { affectionate: 1, social: 1, playful: 2, energetic: 1 },
+        });
+        applyXp(state, 4);
+      } else if (outcome === "PET_SIDE_EYE") {
+        state.stats.happiness = clamp(state.stats.happiness - 1, 0, 100);
+        applyBondGain(state, 0.55 * sweetBondMultiplier, now);
+        state.lastAction = resolveActionOverride(payload, "pet_side_eye");
+        applyFsmAction(state, "pet", now);
+        applyPersonalityShift(state, {
+          now,
+          source: "PET",
+          deltas: { affectionate: 1, social: -1 },
+        });
+        applyXp(state, 1);
+      } else {
+        state.stats.happiness = clamp(state.stats.happiness + 4, 0, 100);
+        applyBondGain(state, 1.65 * sweetBondMultiplier, now);
+        state.lastAction = resolveActionOverride(payload, "pet_cuddle");
+        applyFsmAction(state, "pet", now);
+        applyPersonalityShift(state, {
+          now,
+          source: "PET",
+          deltas: { affectionate: 3, social: 1 },
+        });
+        applyXp(state, 3);
+      }
+
+      maybeSampleMood(state, now, outcome);
       updateTemperamentReveal(state, now);
       finalizeDerivedState(state, now);
     },
@@ -3621,6 +3939,17 @@ const dogSlice = createSlice({
       const now = payload?.now ?? nowMs();
       applyDecay(state, now);
       wakeForInteraction(state);
+      if (Math.random() <= 0.18) {
+        state.stats.energy = clamp(state.stats.energy - 1, 0, 100);
+        state.stats.happiness = clamp(state.stats.happiness + 1, 0, 100);
+        state.memory.lastSeenAt = now;
+        state.lastAction = "potty_fakeout";
+        applyFsmAction(state, "sit", now);
+        maybeSampleMood(state, now, "POTTY_FAKEOUT");
+        updateTemperamentReveal(state, now);
+        finalizeDerivedState(state, now);
+        return;
+      }
       const training = ensureTrainingState(state).potty;
       state.pottyLevel = 0;
       state.poopCount += 1;
@@ -3633,7 +3962,10 @@ const dogSlice = createSlice({
       applyBondGain(state, 0.8 * sweetBondMultiplier, now);
 
       applyXp(state, 2);
-      maybeSampleMood(state, now, "POTTY");
+      const guiltyTriggered = maybeTriggerGuiltyPaws(state, now, "potty");
+      if (!guiltyTriggered) {
+        maybeSampleMood(state, now, "POTTY");
+      }
       recordPuppyPottySuccess(state, now);
       if (training?.goal) {
         const pct = Math.round(
@@ -3728,6 +4060,11 @@ const dogSlice = createSlice({
         }
       }
 
+      const didZoomies = maybeTriggerZoomiesBurst(state, now);
+      if (!didZoomies) {
+        maybeTriggerAiDreamCue(state, now);
+      }
+
       maybeSampleMood(state, now, "TICK");
       updateTemperamentReveal(state, now);
       evaluateTemperament(state, now);
@@ -3754,6 +4091,85 @@ const dogSlice = createSlice({
       updateTemperamentReveal(state, now);
       evaluateTemperament(state, now);
       applyAdultTrainingMissPenalty(state, now);
+      maybeSpawnSessionSurprise(state, now);
+      finalizeDerivedState(state, now);
+    },
+
+    triggerButtonHeist(state, { payload }) {
+      const now = payload?.now ?? nowMs();
+      const silenceMs = Number(payload?.silenceMs || 0);
+      if (silenceMs < 60_000) return;
+      const spawned = spawnButtonHeistSurprise(state, now, {
+        minGapMs: 60_000,
+        stolenAction: payload?.stolenAction || "play",
+      });
+      if (!spawned) return;
+      state.memory.lastSeenAt = now;
+      finalizeDerivedState(state, now);
+    },
+
+    resolveSessionSurprise(state, { payload }) {
+      const now = payload?.now ?? nowMs();
+      const surprise = ensureSurpriseState(state);
+      const active = surprise.active;
+      if (!active) return;
+
+      const method = normalizeActionKey(payload?.method || "manual");
+      const resolvedType = String(active.type || "").toUpperCase();
+
+      if (resolvedType === SESSION_SURPRISE_TYPES.DIG_HOLE) {
+        const yard = ensureYardState(state);
+        const holeId = String(active.holeId || "").trim();
+        if (holeId) {
+          yard.holes = (Array.isArray(yard.holes) ? yard.holes : []).filter(
+            (hole) => String(hole?.id || "") !== holeId
+          );
+        }
+
+        state.stats.cleanliness = clamp(state.stats.cleanliness + 2, 0, 100);
+        state.stats.happiness = clamp(state.stats.happiness + 3, 0, 100);
+        state.coins = Math.max(
+          0,
+          Math.round(Number(state.coins || 0) + (method === "fetch" ? 10 : 6))
+        );
+        applyBondGain(state, 0.8, now);
+        applyXp(state, 4);
+        state.lastAction =
+          method === "fetch" ? "surprise_fetch_cleanup" : "surprise_cleanup";
+        applyFsmAction(state, method === "fetch" ? "play" : "pet", now);
+        pushJournalEntry(state, {
+          type: "SURPRISE",
+          moodTag: "PROUD",
+          summary: "Resolved digging surprise",
+          body: "You redirected the digging and turned it into a positive moment.",
+          timestamp: now,
+        });
+      }
+
+      if (resolvedType === SESSION_SURPRISE_TYPES.STOLEN_BUTTON) {
+        const stolenAction = String(active.stolenAction || "action");
+        state.stats.happiness = clamp(state.stats.happiness + 5, 0, 100);
+        state.stats.energy = clamp(state.stats.energy - 3, 0, 100);
+        state.stats.thirst = clamp(state.stats.thirst + 2, 0, 100);
+        applyBondGain(state, 1.25, now);
+        applyXp(state, 6);
+        state.lastAction = "surprise_fetch_recover";
+        applyFsmAction(state, "play", now);
+        pushJournalEntry(state, {
+          type: "SURPRISE",
+          moodTag: "HAPPY",
+          summary: "Recovered stolen control",
+          body: `Fetch won. Your "${stolenAction}" control is back.`,
+          timestamp: now,
+        });
+      }
+
+      surprise.active = null;
+      surprise.lastResolvedAt = now;
+      state.memory.lastSeenAt = now;
+      maybeSampleMood(state, now, "SURPRISE_RESOLVED");
+      updateTemperamentReveal(state, now);
+      finalizeDerivedState(state, now);
     },
 
     tickDogPolls(state, { payload }) {
@@ -3907,12 +4323,24 @@ const dogSlice = createSlice({
       });
       const successChance = clamp01(successChanceRaw / trainabilitySpeed);
 
-      const isSuccess =
-        explicitSuccess !== null
-          ? explicitSuccess
-          : Math.random() <= successChance;
+      const roll = Math.random();
+      const dozeChance = energy <= 30 ? 0.28 : energy <= 55 ? 0.16 : 0.08;
+      const perfectChance = clamp01(successChance * 0.42);
 
-      if (!isSuccess) {
+      let trainingOutcome = "FAIL";
+      if (explicitSuccess === true) {
+        trainingOutcome = roll <= 0.38 ? "PERFECT" : "SUCCESS";
+      } else if (explicitSuccess === false) {
+        trainingOutcome = roll <= dozeChance ? "DOZE_OFF" : "FAIL";
+      } else if (roll <= perfectChance) {
+        trainingOutcome = "PERFECT";
+      } else if (roll <= successChance) {
+        trainingOutcome = "SUCCESS";
+      } else if (roll <= successChance + dozeChance) {
+        trainingOutcome = "DOZE_OFF";
+      }
+
+      if (trainingOutcome === "FAIL") {
         state.stats.energy = clamp(state.stats.energy - 4, 0, 100);
         state.stats.happiness = clamp(state.stats.happiness - 2, 0, 100);
         state.memory.lastTrainedAt = now;
@@ -3925,35 +4353,85 @@ const dogSlice = createSlice({
         return;
       }
 
+      if (trainingOutcome === "DOZE_OFF") {
+        const sweetBondMultiplier = hasTemperamentTag(state, "SWEET") ? 1.2 : 1;
+
+        state.isAsleep = true;
+        state.stats.energy = clamp(state.stats.energy + 8, 0, 100);
+        state.stats.happiness = clamp(state.stats.happiness + 1, 0, 100);
+        state.stats.thirst = clamp(state.stats.thirst + 2, 0, 100);
+        state.memory.lastTrainedAt = now;
+        state.memory.lastTrainedCommandId = commandId;
+        state.memory.lastSeenAt = now;
+        state.lastAction = "train_doze_off";
+        applyFsmAction(state, "rest", now);
+        applyBondGain(state, 0.55 * sweetBondMultiplier, now);
+        applyXp(state, 2);
+        maybeSampleMood(state, now, "TRAINING_DOZE_OFF");
+
+        const commandLabel = command?.label || commandId;
+        pushJournalEntry(state, {
+          type: "TRAINING",
+          moodTag: "CALM",
+          summary: `Dozed off during ${commandLabel}`,
+          body: `You started "${commandLabel}" practice, but your pup rolled over and fell asleep mid-session.`,
+          timestamp: now,
+        });
+
+        updateTemperamentReveal(state, now);
+        finalizeDerivedState(state, now);
+        return;
+      }
+
       const trainingMultiplier =
         state.career.perks?.trainingXpMultiplier || 1.0;
       const spicyXpMultiplier = isSpicy ? 1.1 : 1;
-      const adjustedXp = Math.round(
+      const baseAdjustedXp = Math.round(
         xp *
           trainingMultiplier *
           (skillMods.trainingSkillXpMultiplier || 1) *
           spicyXpMultiplier *
           (1 / trainabilitySpeed)
       );
+      const performanceXpMultiplier = trainingOutcome === "PERFECT" ? 1.65 : 1;
+      const adjustedXp = Math.max(
+        1,
+        Math.round(baseAdjustedXp * performanceXpMultiplier)
+      );
 
       applySkillXp("obedience", commandId, state.skills, adjustedXp);
       state.memory.lastTrainedAt = now;
       state.memory.lastTrainedCommandId = commandId;
       state.memory.lastSeenAt = now;
-      state.lastAction = "train";
+      state.lastAction =
+        trainingOutcome === "PERFECT" ? "train_perfect" : "train";
       applyFsmAction(state, "train", now);
 
       const sweetBondMultiplier = hasTemperamentTag(state, "SWEET") ? 1.2 : 1;
-      applyBondGain(state, 1.0 * sweetBondMultiplier, now);
-      state.stats.thirst = clamp(state.stats.thirst + 4, 0, 100);
-      gainPottyNeed(state, 8);
-
-      state.stats.happiness = clamp(
-        state.stats.happiness + 8 * perks.trainingHappinessBonus,
+      applyBondGain(
+        state,
+        (trainingOutcome === "PERFECT" ? 1.35 : 1.0) * sweetBondMultiplier,
+        now
+      );
+      state.stats.thirst = clamp(
+        state.stats.thirst + (trainingOutcome === "PERFECT" ? 5 : 4),
         0,
         100
       );
-      state.stats.energy = clamp(state.stats.energy - 5, 0, 100);
+      gainPottyNeed(state, 8);
+
+      state.stats.happiness = clamp(
+        state.stats.happiness +
+          (trainingOutcome === "PERFECT" ? 12 : 8) *
+            perks.trainingHappinessBonus,
+        0,
+        100
+      );
+      state.stats.energy = clamp(
+        state.stats.energy - (trainingOutcome === "PERFECT" ? 7 : 5),
+        0,
+        100
+      );
 
       applyPersonalityShift(state, {
         now,
@@ -3961,16 +4439,26 @@ const dogSlice = createSlice({
         deltas: { playful: -2, social: -1, adventurous: -1 },
       });
 
-      applyXp(state, 10);
+      applyXp(state, trainingOutcome === "PERFECT" ? 14 : 10);
       completeAdultTrainingSession(state, now);
-      maybeSampleMood(state, now, "TRAINING");
+      maybeSampleMood(
+        state,
+        now,
+        trainingOutcome === "PERFECT" ? "TRAINING_PERFECT" : "TRAINING"
+      );
 
       const commandLabel = command?.label || commandId;
       pushJournalEntry(state, {
         type: "TRAINING",
         moodTag: "HAPPY",
-        summary: `Practiced ${commandLabel}.`,
-        body: `We worked on "${commandLabel}" today. I think I'm getting the hang of it!`,
+        summary:
+          trainingOutcome === "PERFECT"
+            ? `Nailed ${commandLabel}.`
+            : `Practiced ${commandLabel}.`,
+        body:
+          trainingOutcome === "PERFECT"
+            ? `Your pup executed "${commandLabel}" perfectly on cue. Big training win.`
+            : `We worked on "${commandLabel}" today. I think I'm getting the hang of it!`,
         timestamp: now,
       });
 
@@ -4307,6 +4795,7 @@ export const selectDogLifeStage = (state) => state.dog.lifeStage;
 export const selectDogCleanlinessTier = (state) => state.dog.cleanlinessTier;
 export const selectDogPolls = (state) => state.dog.polls;
 export const selectDogTraining = (state) => state.dog.training;
+export const selectDogSurprise = (state) => state.dog.surprise;
 
 export const selectDogSkillTree = (state) => state.dog.skillTree;
 export const selectDogSkillTreeUnlockedIds = (state) =>
@@ -4429,6 +4918,8 @@ export const {
   removeXp,
   tickDog,
   registerSessionStart,
+  triggerButtonHeist,
+  resolveSessionSurprise,
   tickDogPolls,
   respondToDogPoll,
   claimDailyReward,

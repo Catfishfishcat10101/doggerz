@@ -49,6 +49,8 @@ export default function DogPixiView({
   scale = 2.25,
   dogIsSleeping = false,
   animSpeedMultiplier = 1,
+  attentionTarget = null,
+  sleepSpot = null,
   onPositionChange = null,
 }) {
   const containerRef = useRef(null);
@@ -122,6 +124,33 @@ export default function DogPixiView({
   }, [viewportHeight, viewportWidth, size]);
 
   useEffect(() => {
+    if (!dogIsSleeping) return;
+    if (!viewportWidth || !viewportHeight) return;
+    if (!sleepSpot || typeof sleepSpot !== "object") return;
+
+    const xNorm = Number(sleepSpot.xNorm);
+    const yNorm = Number(sleepSpot.yNorm);
+    if (!Number.isFinite(xNorm) || !Number.isFinite(yNorm)) return;
+
+    const padding = Math.max(16, size * 0.25);
+    const next = {
+      x: clamp(xNorm * viewportWidth, padding, viewportWidth - padding),
+      y: clamp(yNorm * viewportHeight, padding, viewportHeight - padding),
+      moving: false,
+      facing: 1,
+    };
+    motionRef.current.target = { x: next.x, y: next.y };
+    motionRef.current.moving = false;
+    motionRef.current.pauseUntil = Number.MAX_SAFE_INTEGER;
+    setPos((prev) => ({ ...prev, ...next }));
+  }, [dogIsSleeping, size, sleepSpot, viewportHeight, viewportWidth]);
+
+  useEffect(() => {
+    if (dogIsSleeping) return;
+    motionRef.current.pauseUntil = 0;
+  }, [dogIsSleeping]);
+
+  useEffect(() => {
     const stationaryByAnim =
       /(sleep|lay_down|play_dead|stay|sit|idle_resting)/.test(
         String(anim || "")
@@ -162,11 +191,7 @@ export default function DogPixiView({
         }
 
         if (!state.moving) {
-          const next = { ...prev, moving: false };
-          if (typeof onPositionChange === "function") {
-            onPositionChange(next);
-          }
-          return next;
+          return { ...prev, moving: false };
         }
 
         const dx = state.target.x - prev.x;
@@ -191,10 +216,6 @@ export default function DogPixiView({
           moving: true,
         };
 
-        if (typeof onPositionChange === "function") {
-          onPositionChange(next);
-        }
-
         return next;
       });
 
@@ -210,12 +231,35 @@ export default function DogPixiView({
   }, [
     anim,
     animSpeedMultiplier,
+    attentionTarget,
     dogIsSleeping,
     onPositionChange,
     size,
     viewportHeight,
     viewportWidth,
   ]);
+
+  useEffect(() => {
+    if (typeof onPositionChange !== "function") return;
+    onPositionChange(pos);
+  }, [onPositionChange, pos]);
+
+  useEffect(() => {
+    if (!viewportWidth || !viewportHeight) return;
+    if (!attentionTarget || typeof attentionTarget !== "object") return;
+
+    const xNorm = Number(attentionTarget.xNorm);
+    const yNorm = Number(attentionTarget.yNorm);
+    if (!Number.isFinite(xNorm) || !Number.isFinite(yNorm)) return;
+
+    const padding = Math.max(16, size * 0.25);
+    motionRef.current.target = {
+      x: clamp(xNorm * viewportWidth, padding, viewportWidth - padding),
+      y: clamp(yNorm * viewportHeight, padding, viewportHeight - padding),
+    };
+    motionRef.current.moving = true;
+    motionRef.current.pauseUntil = 0;
+  }, [attentionTarget, size, viewportHeight, viewportWidth]);
 
   const animLower = String(anim || "idle")
     .trim()
@@ -235,6 +279,15 @@ export default function DogPixiView({
     if (animLower === "walk") return resolveDirectionalWalk();
     return animLower;
   })();
+  const depthRatio =
+    viewportHeight > 0 ? clamp(pos.y / viewportHeight, 0, 1) : 0.5;
+  const depthScale = clamp(0.95 + depthRatio * 0.55, 0.9, 1.5);
+  const depthZIndex = Math.max(6, Math.round(8 + depthRatio * 24));
+  const shadowWidth = Math.round(size * (0.34 + depthRatio * 0.14));
+  const shadowHeight = Math.max(
+    10,
+    Math.round(size * (0.075 + depthRatio * 0.03))
+  );
 
   const style = {
     width: Number.isFinite(Number(width)) ? Number(width) : "100%",
@@ -248,10 +301,27 @@ export default function DogPixiView({
           position: "absolute",
           left: pos.x,
           top: pos.y,
-          transform: "translate(-50%, -50%)",
+          transform: `translate(-50%, ${dogIsSleeping ? "-68%" : "-76%"}) scale(${depthScale})`,
+          transformOrigin: "50% 100%",
+          zIndex: depthZIndex,
           pointerEvents: "none",
         }}
       >
+        <span
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            left: "50%",
+            top: `${Math.round(size * 0.82)}px`,
+            width: `${shadowWidth}px`,
+            height: `${shadowHeight}px`,
+            transform: "translate(-50%, -50%)",
+            borderRadius: "999px",
+            background:
+              "radial-gradient(ellipse at center, rgba(2,6,23,0.42) 0%, rgba(2,6,23,0.08) 70%, transparent 100%)",
+            filter: "blur(1.5px)",
+          }}
+        />
         <SpriteSheetDog
           stage={stage}
           condition={condition}
