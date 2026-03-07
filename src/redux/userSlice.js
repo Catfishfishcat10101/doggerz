@@ -21,6 +21,7 @@ const DEFAULT_USER_STATE = {
   reduceVfx: false,
   uiDensity: "standard", // standard | compact | spacious
   locale: null,
+  isFounder: false,
 
   coins: 0,
   streak: {
@@ -78,6 +79,7 @@ function normalizeUserState(raw) {
       ? density
       : DEFAULT_USER_STATE.uiDensity,
     locale: raw.locale ?? null,
+    isFounder: Boolean(raw.isFounder),
     coins: Number.isFinite(Number(raw.coins))
       ? Math.max(0, Number(raw.coins))
       : DEFAULT_USER_STATE.coins,
@@ -183,6 +185,7 @@ const userSlice = createSlice({
       state.reduceVfx = next.reduceVfx;
       state.uiDensity = next.uiDensity;
       state.locale = next.locale;
+      state.isFounder = next.isFounder;
       state.coins = next.coins;
       state.streak = { ...next.streak };
       state.createdAt = next.createdAt;
@@ -199,6 +202,12 @@ const userSlice = createSlice({
         streak,
         createdAt,
         zip,
+        dogName,
+        preferredScene,
+        reduceVfx,
+        uiDensity,
+        locale,
+        isFounder,
       } = action.payload || {};
 
       state.id = id ?? state.id;
@@ -217,6 +226,15 @@ const userSlice = createSlice({
 
       state.createdAt = createdAt ?? state.createdAt;
       if (zip !== undefined) state.zip = zip;
+      if (dogName !== undefined) state.dogName = dogName || null;
+      if (preferredScene !== undefined) {
+        state.preferredScene = preferredScene || state.preferredScene;
+      }
+      if (reduceVfx !== undefined) state.reduceVfx = Boolean(reduceVfx);
+      if (uiDensity !== undefined)
+        state.uiDensity = uiDensity || state.uiDensity;
+      if (locale !== undefined) state.locale = locale || null;
+      if (isFounder !== undefined) state.isFounder = Boolean(isFounder);
 
       saveUserToStorage(state);
     },
@@ -236,6 +254,7 @@ const userSlice = createSlice({
       state.reduceVfx = DEFAULT_USER_STATE.reduceVfx;
       state.uiDensity = DEFAULT_USER_STATE.uiDensity;
       state.locale = DEFAULT_USER_STATE.locale;
+      state.isFounder = DEFAULT_USER_STATE.isFounder;
 
       removeStoredValue(USER_STORAGE_KEY).catch(() => {
         // ignore
@@ -347,5 +366,6 @@ export const selectUserLocale = (state) => state.user?.locale || null;
 export const selectUserCoins = (state) => state.user?.coins ?? 0;
 export const selectUserStreak = (state) =>
   state.user?.streak ?? { current: 0, best: 0, lastPlayedAt: null };
+export const selectUserIsFounder = (state) => Boolean(state.user?.isFounder);
 
 export default userSlice.reducer;

@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import * as PIXI from "pixi.js";
 
 import jrManifest from "@/components/dog/jrManifest.json";
+import { DOGS } from "@/config/assets.js";
 import {
   getDogAnimSpriteUrl,
   getDogPixiSheetUrl,
@@ -24,6 +25,7 @@ const DEFAULT_FRAME = jrManifest?.frame || {};
 const DEFAULT_FRAME_WIDTH = Math.max(1, Number(DEFAULT_FRAME.width || 128));
 const DEFAULT_FRAME_HEIGHT = Math.max(1, Number(DEFAULT_FRAME.height || 128));
 const SPRITE_DEFAULT_FACING = -1; // Source art faces left by default.
+const HARD_TEXTURE_FALLBACK_SRC = DOGS.staticFallback;
 
 function clamp(n, lo, hi) {
   const x = Number(n);
@@ -125,15 +127,30 @@ function clearPixi(appRef, spriteRef) {
   }
 }
 
-async function loadFirstAvailableTexture(candidates) {
+async function loadFirstAvailableTexture(candidates, fallbackSrc) {
   for (const src of candidates) {
     try {
       const texture = await PIXI.Assets.load(src);
       if (texture) return { src, texture };
-    } catch {
-      // try next candidate
+    } catch (error) {
+      console.error("[Doggerz] Failed to load Pixi texture:", src, error);
     }
   }
+
+  const fallbackPath = String(fallbackSrc || HARD_TEXTURE_FALLBACK_SRC || "");
+  if (!fallbackPath) return null;
+
+  try {
+    const texture = await PIXI.Assets.load(fallbackPath);
+    if (texture) return { src: fallbackPath, texture };
+  } catch (error) {
+    console.error(
+      "[Doggerz] Failed to load Pixi fallback texture:",
+      fallbackPath,
+      error
+    );
+  }
+
   return null;
 }
 
@@ -177,7 +194,7 @@ export default function SpriteSheetDog({
       setActiveSrc(null);
       clearPixi(appRef, spriteRef);
 
-      const loaded = await loadFirstAvailableTexture(candidates);
+      const loaded = await loadFirstAvailableTexture(candidates, fallbackSrc);
       if (!loaded || cancelled) {
         setSheetFailed(true);
         return;
@@ -298,6 +315,7 @@ export default function SpriteSheetDog({
     candidates,
     effectiveFps,
     facing,
+    fallbackSrc,
     reduceMotion,
     smoothing,
   ]);

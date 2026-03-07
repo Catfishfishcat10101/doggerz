@@ -16,9 +16,14 @@ import EnvironmentScene from "@/features/game/EnvironmentScene.jsx";
 import YardBackdrop from "@/features/game/YardBackdrop.jsx";
 import { useToast } from "@/state/toastContext.js";
 import { selectSettings } from "@/redux/settingsSlice.js";
-import { setZip, selectUserZip } from "@/redux/userSlice.js";
+import {
+  selectUserIsFounder,
+  setZip,
+  selectUserZip,
+} from "@/redux/userSlice.js";
 import {
   bathe,
+  claimTreasureFind,
   dropFoodBowl,
   feed,
   quickFeed,
@@ -48,6 +53,7 @@ import {
 } from "@/redux/weatherSlice.js";
 import { fetchWeatherSnapshot } from "@/features/weather/weatherApi.js";
 import { auth as firebaseAuth, initFirebase } from "@/firebase.js";
+import { getObedienceCommand } from "@/logic/obedienceCommands.js";
 
 const DogPixiView = lazy(() => import("@/components/dog/DogPixiView.jsx"));
 const SHARE_REWARD_COOLDOWN_MS = 12 * 60 * 60 * 1000;
@@ -111,7 +117,7 @@ const PAW_PRINT_COLORS = Object.freeze({
   FLEAS: "rgba(82, 56, 38, 0.6)",
   MANGE: "rgba(70, 46, 30, 0.7)",
 });
-const INVESTIGATION_PROPS = Object.freeze([
+const YARD_INVESTIGATION_PROPS = Object.freeze([
   {
     id: "bone",
     label: "glow bone",
@@ -133,6 +139,96 @@ const INVESTIGATION_PROPS = Object.freeze([
     cooldownMs: 60_000,
   },
 ]);
+
+const APARTMENT_INVESTIGATION_PROPS = Object.freeze([
+  {
+    id: "table",
+    label: "low table",
+    icon: "🍗",
+    xNorm: 0.69,
+    yNorm: 0.53,
+    action: "sniff",
+    triggerChance: 0.42,
+    cooldownMs: 45_000,
+    theme: "amber",
+  },
+  {
+    id: "couch",
+    label: "couch cushion",
+    icon: "🛋️",
+    xNorm: 0.22,
+    yNorm: 0.66,
+    action: "sniff",
+    triggerChance: 0.24,
+    cooldownMs: 70_000,
+    theme: "rose",
+  },
+  {
+    id: "shoe",
+    label: "shoe pile",
+    icon: "👟",
+    xNorm: 0.84,
+    yNorm: 0.83,
+    action: "sniff",
+    triggerChance: 0.36,
+    cooldownMs: 55_000,
+    theme: "slate",
+  },
+]);
+
+const TREASURE_HUNT_CHECK_INTERVAL_MS = 5 * 60_000;
+const TREASURE_HUNT_MIN_COOLDOWN_MS = 4 * 60 * 60_000;
+const TREASURE_HUNT_FULL_CHANCE_MS = 12 * 60 * 60_000;
+const TREASURE_HUNT_TRIGGER_CHANCE_FLOOR = 0.12;
+const TREASURE_HUNT_TRIGGER_CHANCE_CEILING = 0.32;
+const TREASURE_HUNT_RESPONSE_MS = 10_000;
+const TREASURE_HUNT_DIG_REVEAL_MS = 1800;
+const TREASURE_REWARDS = Object.freeze([
+  { id: "rusty_key", name: "Rusty Key", icon: "🔑", weight: 0.1 },
+  { id: "old_bone", name: "Fossilized Bone", icon: "🦴", weight: 0.4 },
+  { id: "tennis_ball", name: "Muddy Tennis Ball", icon: "🎾", weight: 0.5 },
+]);
+
+function rollTreasureReward() {
+  const roll = Math.random();
+  let cumulative = 0;
+  for (const reward of TREASURE_REWARDS) {
+    cumulative += Number(reward.weight || 0);
+    if (roll <= cumulative) return reward;
+  }
+  return TREASURE_REWARDS[TREASURE_REWARDS.length - 1];
+}
+
+function createTreasureHuntTarget(environment = "yard") {
+  const indoor = String(environment || "").toLowerCase() === "apartment";
+  return {
+    xNorm: indoor
+      ? clamp(0.18 + Math.random() * 0.64, 0.12, 0.88)
+      : clamp(0.14 + Math.random() * 0.72, 0.08, 0.92),
+    yNorm: indoor
+      ? clamp(0.72 + Math.random() * 0.1, 0.68, 0.86)
+      : clamp(0.7 + Math.random() * 0.12, 0.66, 0.88),
+  };
+}
+
+function getTreasureHuntTriggerChance(lastTreasureAt, now = Date.now()) {
+  const lastAt = Number(lastTreasureAt || 0);
+  if (!lastAt) return 0.18;
+  const elapsed = Math.max(0, now - lastAt);
+  if (elapsed < TREASURE_HUNT_MIN_COOLDOWN_MS) return 0;
+  const ramp = clamp(
+    (elapsed - TREASURE_HUNT_MIN_COOLDOWN_MS) /
+      (TREASURE_HUNT_FULL_CHANCE_MS - TREASURE_HUNT_MIN_COOLDOWN_MS),
+    0,
+    1
+  );
+  return (
+    TREASURE_HUNT_TRIGGER_CHANCE_FLOOR +
+    (TREASURE_HUNT_TRIGGER_CHANCE_CEILING -
+      TREASURE_HUNT_TRIGGER_CHANCE_FLOOR) *
+      ramp
+  );
+}
 
 function toNightBucket(timeOfDay) {
   const key = String(timeOfDay || "").toLowerCase();
@@ -160,8 +256,12 @@ function getSunriseBlend(ms = Date.now()) {
   return 1 - (minutes - peak) / (end - peak);
 }
 
-function createInvestigationProps() {
-  return INVESTIGATION_PROPS.map((prop) => ({
+function createInvestigationProps(environment = "yard") {
+  const source =
+    String(environment || "").toLowerCase() === "apartment"
+      ? APARTMENT_INVESTIGATION_PROPS
+      : YARD_INVESTIGATION_PROPS;
+  return source.map((prop) => ({
     ...prop,
     interactedUntil: 0,
   }));
@@ -196,6 +296,12 @@ function toTitle(input, fallback = "Calm") {
   return raw.replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+function getCommandLabel(commandId, fallback = "That trick") {
+  const command = getObedienceCommand(commandId);
+  if (command?.label) return command.label;
+  return toTitle(commandId, fallback);
+}
+
 function PawPrintSvg({ className = "" }) {
   return (
     <svg
@@ -223,6 +329,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
   const settings = useSelector(selectSettings);
   const renderModel = useSelector(selectDogRenderModel);
   const userZip = useSelector(selectUserZip);
+  const isFounder = useSelector(selectUserIsFounder);
   const weatherCondition = useSelector(selectWeatherCondition);
   const weatherStatus = useSelector(selectWeatherStatus);
   const weatherDetails = useSelector(selectWeatherDetails);
@@ -234,6 +341,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
   const ambientEventTimeoutRef = useRef(0);
   const quickFeedResetRef = useRef(0);
   const investigationResetRef = useRef(0);
+  const treasureHuntTimeoutRef = useRef(0);
   const midnightZoomiesResetRef = useRef(0);
   const lastDepthSyncRef = useRef({ at: 0, norm: 0.5 });
   const lastParallaxSyncRef = useRef({ at: 0, xNorm: 0.5, yNorm: 0.74 });
@@ -264,9 +372,10 @@ export default function MainGame({ scene, dogInteractive = true }) {
     moving: false,
   });
   const [investigationProps, setInvestigationProps] = useState(() =>
-    createInvestigationProps()
+    createInvestigationProps(dog?.yard?.environment || "apartment")
   );
   const [activeInvestigationId, setActiveInvestigationId] = useState("");
+  const [treasureHunt, setTreasureHunt] = useState(null);
   const [movementLocked, setMovementLocked] = useState(false);
   const [midnightZoomiesBoost, setMidnightZoomiesBoost] = useState(1);
   const [midnightZoomiesAt, setMidnightZoomiesAt] = useState(0);
@@ -278,6 +387,10 @@ export default function MainGame({ scene, dogInteractive = true }) {
   const pawPrintsEnabled = ["DIRTY", "FLEAS", "MANGE"].includes(
     cleanlinessTier
   );
+  const environmentMode = String(dog?.yard?.environment || "apartment")
+    .trim()
+    .toLowerCase();
+  const isApartmentEnvironment = environmentMode === "apartment";
 
   const activeAnim = renderModel?.anim || "idle";
   const sceneTime = String(scene?.timeOfDay || "").toLowerCase();
@@ -289,20 +402,28 @@ export default function MainGame({ scene, dogInteractive = true }) {
   const isNightScene =
     sceneTime.includes("night") || sceneTime.includes("evening") || localNight;
   const isRainScene =
-    weatherKey.includes("rain") || weatherKey.includes("storm");
+    !isApartmentEnvironment &&
+    (weatherKey.includes("rain") || weatherKey.includes("storm"));
   const isSnowScene =
-    weatherKey.includes("snow") || weatherKey.includes("sleet");
-  const isSummerNight = localNight && isSummerMonth(liveNow);
+    !isApartmentEnvironment &&
+    (weatherKey.includes("snow") || weatherKey.includes("sleet"));
+  const isSummerNight =
+    !isApartmentEnvironment && localNight && isSummerMonth(liveNow);
   const sunriseBlend = getSunriseBlend(liveNow);
   const forceSleepForScene = isNightScene && isRainScene;
   const sceneAnim = forceSleepForScene ? "deep_rem_sleep" : activeAnim;
   const effectiveAnim = uiAnimOverride || ambientAnimOverride || sceneAnim;
   const effectiveDogSleeping =
     Boolean(renderModel?.isSleeping) || forceSleepForScene;
-  const sleepInDogHouse = effectiveDogSleeping && (isNightScene || isRainScene);
+  const sleepInDogHouse =
+    !isApartmentEnvironment &&
+    effectiveDogSleeping &&
+    (isNightScene || isRainScene);
   const sleepSpot = sleepInDogHouse
     ? { xNorm: 0.82, yNorm: 0.73 }
-    : { xNorm: 0.5, yNorm: 0.73 };
+    : isApartmentEnvironment && effectiveDogSleeping
+      ? { xNorm: 0.2, yNorm: 0.72 }
+      : { xNorm: 0.5, yNorm: 0.73 };
   const animationSpeedMultiplier = Number(
     renderModel?.animationSpeedMultiplier || 1
   );
@@ -373,6 +494,40 @@ export default function MainGame({ scene, dogInteractive = true }) {
     const key = String(dog?.lastAction || "")
       .trim()
       .toLowerCase();
+    const trainingReaction =
+      dog?.memory?.lastTrainingReaction &&
+      typeof dog.memory.lastTrainingReaction === "object"
+        ? dog.memory.lastTrainingReaction
+        : null;
+    const requestedLabel = getCommandLabel(
+      trainingReaction?.requestedCommandId,
+      "That trick"
+    );
+    const performedLabel = getCommandLabel(
+      trainingReaction?.performedCommandId ||
+        trainingReaction?.performedActionId,
+      "something else"
+    );
+
+    if (key === "train_zoomies") {
+      return `Training outcome: ignored "${requestedLabel}" and exploded into zoomies.`;
+    }
+
+    if (key === "train_ignore") {
+      const reason = String(trainingReaction?.reasonId || "").toLowerCase();
+      if (reason === "sniff") {
+        return `Training outcome: heard "${requestedLabel}", then followed a smell instead.`;
+      }
+      if (reason === "scratch") {
+        return `Training outcome: "${requestedLabel}" lost to an urgent scratch break.`;
+      }
+      return `Training outcome: stared at you, declined "${requestedLabel}".`;
+    }
+
+    if (key === "train_reinterpret") {
+      return `Training outcome: you asked for "${requestedLabel}", he freestyled "${performedLabel}".`;
+    }
+
     const labels = {
       pet_cuddle: "Pet outcome: full cuddle mode.",
       pet_zoomies: "Pet outcome: instant zoomies.",
@@ -383,6 +538,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
       trainfailed: "Training outcome: not today.",
       sniff_kibble_reject:
         "Feed outcome: sniffed regular kibble and walked away.",
+      table_theft: "Apartment outcome: low-table snack stolen.",
       feed_quick: "Feed outcome: energy restored to 100%.",
       potty_fakeout: "Potty outcome: fake-out. Circled, then just sat down.",
       surprise_fetch_recover: "Surprise resolved: fetch won, control returned.",
@@ -390,7 +546,9 @@ export default function MainGame({ scene, dogInteractive = true }) {
       surprise_fetch_cleanup: "Surprise resolved: fetched then cleaned up.",
     };
     return labels[key] || null;
-  }, [dog?.lastAction]);
+  }, [dog?.lastAction, dog?.memory?.lastTrainingReaction]);
+  const lastMasteredCommandId = dog?.memory?.lastMasteredCommandId || null;
+  const lastMasteredCommandAt = Number(dog?.memory?.lastMasteredCommandAt || 0);
   const lastDreamWoofAt = Number(dog?.memory?.lastDreamWoofAt || 0);
   const showDreamBubble =
     lastDreamWoofAt > 0 && liveNow - lastDreamWoofAt <= 35_000;
@@ -407,6 +565,10 @@ export default function MainGame({ scene, dogInteractive = true }) {
   const activeInvestigationLabel =
     investigationProps.find((prop) => prop.id === activeInvestigationId)
       ?.label || "";
+  const treasurePhase = String(treasureHunt?.phase || "").toLowerCase();
+  const showTreasurePrompt =
+    treasurePhase === "sniffing" || treasurePhase === "digging";
+  const showTreasureMarker = Boolean(treasureHunt);
   const fireflySeeds = useMemo(
     () =>
       Array.from({ length: 9 }, (_, i) => ({
@@ -446,10 +608,31 @@ export default function MainGame({ scene, dogInteractive = true }) {
   }, [dog?.temperament?.primary, dog?.temperament?.secondary]);
 
   useEffect(() => {
+    if (!lastMasteredCommandAt || !lastMasteredCommandId) return;
+    const commandLabel = getCommandLabel(lastMasteredCommandId, "That trick");
+    toast.once(
+      `mastered:${lastMasteredCommandId}:${lastMasteredCommandAt}`,
+      {
+        type: "reward",
+        message: `Mastered: ${commandLabel}.`,
+        durationMs: 3200,
+        haptic: true,
+      },
+      60_000
+    );
+  }, [lastMasteredCommandAt, lastMasteredCommandId, toast]);
+
+  useEffect(() => {
     if (pawPrintsEnabled) return;
     setPawPrints([]);
     lastPawPrintRef.current = { x: 0, y: 0, at: 0 };
   }, [pawPrintsEnabled]);
+
+  useEffect(() => {
+    setInvestigationProps(createInvestigationProps(environmentMode));
+    setActiveInvestigationId("");
+    setTreasureHunt(null);
+  }, [environmentMode]);
 
   const handleDogPositionChange = useCallback(
     (pos) => {
@@ -563,9 +746,101 @@ export default function MainGame({ scene, dogInteractive = true }) {
     [settings?.hapticsEnabled]
   );
 
+  const clearTreasureHuntTimer = useCallback(() => {
+    if (!treasureHuntTimeoutRef.current) return;
+    window.clearTimeout(treasureHuntTimeoutRef.current);
+    treasureHuntTimeoutRef.current = 0;
+  }, []);
+
+  const clearTreasureHunt = useCallback(() => {
+    clearTreasureHuntTimer();
+    setTreasureHunt(null);
+    setMovementLocked(false);
+    setUiAnimOverride("");
+    setUiSpeedBoost(1);
+  }, [clearTreasureHuntTimer]);
+
+  const startTreasureHunt = useCallback(() => {
+    if (
+      controlsDisabled ||
+      effectiveDogSleeping ||
+      movementLocked ||
+      activeSurprise ||
+      treasureHunt
+    ) {
+      return;
+    }
+
+    const now = Date.now();
+    const reward = rollTreasureReward();
+    const target = createTreasureHuntTarget(environmentMode);
+    clearTreasureHuntTimer();
+    setTreasureHunt({
+      id: `treasure-${now}`,
+      phase: "approaching",
+      startedAt: now,
+      rewardId: reward.id,
+      rewardName: reward.name,
+      rewardIcon: reward.icon,
+      ...target,
+    });
+    setAttentionTarget({ xNorm: target.xNorm, yNorm: target.yNorm, at: now });
+  }, [
+    activeSurprise,
+    clearTreasureHuntTimer,
+    controlsDisabled,
+    effectiveDogSleeping,
+    environmentMode,
+    movementLocked,
+    treasureHunt,
+  ]);
+
+  const handleTreasureHuntTap = useCallback(() => {
+    if (treasurePhase !== "sniffing" || !treasureHunt) return;
+
+    const activeHunt = treasureHunt;
+    clearTreasureHuntTimer();
+    setTreasureHunt((current) =>
+      current?.id === activeHunt.id
+        ? { ...current, phase: "digging", tappedAt: Date.now() }
+        : current
+    );
+    setUiAnimOverride("scratch");
+    setUiSpeedBoost(1.05);
+
+    treasureHuntTimeoutRef.current = window.setTimeout(async () => {
+      dispatch(
+        claimTreasureFind({
+          id: activeHunt.rewardId,
+          now: Date.now(),
+        })
+      );
+      await triggerPropHaptic("success");
+      toast.reward(
+        `${activeHunt.rewardIcon} Dug up ${activeHunt.rewardName}.`,
+        2400
+      );
+      clearTreasureHunt();
+    }, TREASURE_HUNT_DIG_REVEAL_MS);
+  }, [
+    clearTreasureHunt,
+    clearTreasureHuntTimer,
+    dispatch,
+    toast,
+    treasureHunt,
+    treasurePhase,
+    triggerPropHaptic,
+  ]);
+
   const startPropInvestigation = useCallback(
     (prop) => {
-      if (!prop || controlsDisabled || effectiveDogSleeping || movementLocked) {
+      if (
+        !prop ||
+        controlsDisabled ||
+        effectiveDogSleeping ||
+        movementLocked ||
+        treasureHunt
+      ) {
         return;
       }
       const now = Date.now();
@@ -599,7 +874,13 @@ export default function MainGame({ scene, dogInteractive = true }) {
         await triggerPropHaptic("success");
       }, 3000);
     },
-    [controlsDisabled, effectiveDogSleeping, movementLocked, triggerPropHaptic]
+    [
+      controlsDisabled,
+      effectiveDogSleeping,
+      movementLocked,
+      treasureHunt,
+      triggerPropHaptic,
+    ]
   );
 
   const handlePropTap = useCallback(
@@ -613,6 +894,95 @@ export default function MainGame({ scene, dogInteractive = true }) {
     },
     [controlsDisabled, investigationProps, triggerPropHaptic]
   );
+
+  useEffect(() => {
+    return () => {
+      clearTreasureHuntTimer();
+    };
+  }, [clearTreasureHuntTimer]);
+
+  useEffect(() => {
+    if (!treasureHunt || treasurePhase !== "approaching") return;
+    const nearX = Math.abs(
+      dogPositionNorm.xNorm - Number(treasureHunt.xNorm || 0.5)
+    );
+    const nearY = Math.abs(
+      dogPositionNorm.yNorm - Number(treasureHunt.yNorm || 0.75)
+    );
+    if (nearX > 0.09 || nearY > 0.12) return;
+
+    setMovementLocked(true);
+    setTreasureHunt((current) =>
+      current?.id === treasureHunt.id
+        ? { ...current, phase: "sniffing", sniffingAt: Date.now() }
+        : current
+    );
+    setUiAnimOverride("sniff");
+    setUiSpeedBoost(0.85);
+    clearTreasureHuntTimer();
+    treasureHuntTimeoutRef.current = window.setTimeout(() => {
+      clearTreasureHunt();
+    }, TREASURE_HUNT_RESPONSE_MS);
+  }, [
+    clearTreasureHunt,
+    clearTreasureHuntTimer,
+    dogPositionNorm.xNorm,
+    dogPositionNorm.yNorm,
+    treasureHunt,
+    treasurePhase,
+  ]);
+
+  useEffect(() => {
+    if (
+      !dogInteractive ||
+      controlsDisabled ||
+      effectiveDogSleeping ||
+      movementLocked ||
+      activeSurprise ||
+      treasureHunt
+    ) {
+      return undefined;
+    }
+
+    const timer = window.setInterval(() => {
+      const now = Date.now();
+      const lastTreasureAt = Number(dog?.memory?.lastTreasureHuntAt || 0);
+      if (activeInvestigationId) return;
+      if (Number(dog?.stats?.energy || 0) < 18) return;
+      const triggerChance = getTreasureHuntTriggerChance(lastTreasureAt, now);
+      if (triggerChance <= 0) return;
+      if (Math.random() >= triggerChance) return;
+      startTreasureHunt();
+    }, TREASURE_HUNT_CHECK_INTERVAL_MS);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [
+    activeInvestigationId,
+    activeSurprise,
+    controlsDisabled,
+    dog?.memory?.lastTreasureHuntAt,
+    dog?.stats?.energy,
+    dogInteractive,
+    effectiveDogSleeping,
+    movementLocked,
+    startTreasureHunt,
+    treasureHunt,
+  ]);
+
+  useEffect(() => {
+    if (!treasureHunt) return;
+    if (!dogInteractive || effectiveDogSleeping || activeSurprise) {
+      clearTreasureHunt();
+    }
+  }, [
+    activeSurprise,
+    clearTreasureHunt,
+    dogInteractive,
+    effectiveDogSleeping,
+    treasureHunt,
+  ]);
 
   const dispatchPlayAction = useCallback(
     (source = "button") => {
@@ -678,6 +1048,30 @@ export default function MainGame({ scene, dogInteractive = true }) {
     },
     [controlsDisabled, dispatch, placingBowl]
   );
+
+  useEffect(() => {
+    if (!isApartmentEnvironment) return undefined;
+    if (!foodBowl || String(foodBowl.surface || "") !== "low_table") {
+      return undefined;
+    }
+
+    const now = Date.now();
+    const stealReadyAt = Number(
+      foodBowl.stealReadyAt || foodBowl.readyAt || foodBowl.placedAt || now
+    );
+    const delayMs = Math.max(0, stealReadyAt - now);
+    const timer = window.setTimeout(() => {
+      dispatch(
+        tryConsumeFoodBowl({
+          now: Date.now(),
+          hungerThreshold: 26,
+          action: "table_theft",
+        })
+      );
+    }, delayMs + 250);
+
+    return () => window.clearTimeout(timer);
+  }, [dispatch, foodBowl, isApartmentEnvironment]);
 
   useEffect(() => {
     const timer = window.setInterval(() => setLiveNow(Date.now()), 1000);
@@ -782,7 +1176,13 @@ export default function MainGame({ scene, dogInteractive = true }) {
   }, [controlsDisabled, isSummerNight]);
 
   useEffect(() => {
-    if (controlsDisabled || effectiveDogSleeping || movementLocked) return;
+    if (
+      controlsDisabled ||
+      effectiveDogSleeping ||
+      movementLocked ||
+      treasureHunt
+    )
+      return;
     if (Number(dog?.stats?.energy || 0) < 10) return;
 
     const now = Date.now();
@@ -818,6 +1218,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
     investigationProps,
     movementLocked,
     startPropInvestigation,
+    treasureHunt,
   ]);
 
   useEffect(() => {
@@ -1072,6 +1473,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
   return (
     <div className="relative min-h-dvh">
       <EnvironmentScene
+        environment={environmentMode}
         season={seasonMode}
         timeOfDay={toNightBucket(scene?.timeOfDay)}
         weather={scene?.weatherKey || "clear"}
@@ -1165,8 +1567,13 @@ export default function MainGame({ scene, dogInteractive = true }) {
             />
           ) : null}
 
-          <div className="mt-3 text-2xl font-black tracking-tight text-doggerz-bone sm:text-3xl">
-            {dog?.name || "Your pup"}
+          <div className="mt-3 flex items-center gap-2 text-2xl font-black tracking-tight text-doggerz-bone sm:text-3xl">
+            <span>{dog?.name || "Your pup"}</span>
+            {isFounder ? (
+              <span className="inline-flex items-center rounded-full border border-sky-300/35 bg-sky-400/12 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.18em] text-sky-100 shadow-[0_0_20px_rgba(96,165,250,0.18)]">
+                Founder
+              </span>
+            ) : null}
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
             <HudChip label="Level" value={`Lv ${overallLevel}`} />
@@ -1182,6 +1589,11 @@ export default function MainGame({ scene, dogInteractive = true }) {
           {actionOutcomeLabel ? (
             <div className="mt-2 rounded-xl border border-doggerz-leaf/35 bg-doggerz-neon/10 px-3 py-2 text-xs font-semibold text-doggerz-bone">
               {actionOutcomeLabel}
+            </div>
+          ) : null}
+          {isApartmentEnvironment ? (
+            <div className="mt-2 rounded-xl border border-amber-300/35 bg-amber-400/10 px-3 py-2 text-xs font-semibold text-amber-50">
+              Apartment hard mode: food left on the low table can be stolen.
             </div>
           ) : null}
           {activeInvestigationLabel ? (
@@ -1203,6 +1615,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
               onPointerDown={handleViewportPointerDown}
             >
               <YardBackdrop
+                environment={environmentMode}
                 dogXNorm={dogPositionNorm.xNorm}
                 isNight={localNight || sunriseBlend > 0}
                 sunriseProgress={sunriseBlend}
@@ -1358,6 +1771,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
                     stage={renderModel?.stage}
                     condition={renderModel?.condition}
                     anim={effectiveAnim}
+                    equippedCosmetics={dog?.cosmetics?.equipped || null}
                     width="100%"
                     height={340}
                     scale={1.6}
@@ -1368,12 +1782,39 @@ export default function MainGame({ scene, dogInteractive = true }) {
                     sleepSpot={sleepSpot}
                     movementLocked={movementLocked}
                     onPositionChange={handleDogPositionChange}
+                    onDogTap={
+                      treasurePhase === "sniffing"
+                        ? handleTreasureHuntTap
+                        : null
+                    }
                   />
                 </div>
               </Suspense>
+              {showTreasureMarker ? (
+                <div
+                  className="pointer-events-none absolute z-[24]"
+                  style={{
+                    left: `${Number(treasureHunt?.xNorm || 0.5) * 100}%`,
+                    top: `${Number(treasureHunt?.yNorm || 0.75) * 100}%`,
+                    transform: "translate(-50%, -50%)",
+                  }}
+                  aria-hidden="true"
+                >
+                  <div className="grid h-10 w-10 place-items-center rounded-full border border-amber-200/45 bg-black/55 text-xl shadow-[0_0_28px_rgba(250,204,21,0.22)]">
+                    {treasurePhase === "digging" ? "🕳️" : "❓"}
+                  </div>
+                </div>
+              ) : null}
               {showDreamBubble ? (
                 <div className="pointer-events-none absolute left-1/2 top-8 z-30 -translate-x-1/2 rounded-2xl border border-white/25 bg-black/55 px-3 py-1 text-xs font-semibold text-doggerz-bone">
                   💭 woof...
+                </div>
+              ) : null}
+              {showTreasurePrompt ? (
+                <div className="pointer-events-none absolute left-1/2 top-8 z-30 -translate-x-1/2 rounded-2xl border border-amber-300/45 bg-black/70 px-3 py-1 text-xs font-semibold text-amber-100 shadow-[0_10px_24px_rgba(120,53,15,0.28)]">
+                  {treasurePhase === "digging"
+                    ? `Digging up ${treasureHunt?.rewardName || "something"}...`
+                    : "Caught a scent. Tap your pup before it disappears."}
                 </div>
               ) : null}
               {isSleepyState ? (
@@ -1388,7 +1829,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
               ) : null}
               {foodBowl ? (
                 <div
-                  className="dog-bowl pointer-events-none absolute z-20 grid h-10 w-12 place-items-center rounded-full border border-doggerz-bone/60 bg-doggerz-bone/25 text-lg shadow-[0_8px_20px_rgba(2,6,23,0.35)]"
+                  className="pointer-events-none absolute z-20"
                   style={{
                     left: `${foodBowl.xNorm * 100}%`,
                     top: `${foodBowl.yNorm * 100}%`,
@@ -1396,7 +1837,14 @@ export default function MainGame({ scene, dogInteractive = true }) {
                   }}
                   aria-hidden="true"
                 >
-                  🥣
+                  <div className="dog-bowl grid h-10 w-12 place-items-center rounded-full border border-doggerz-bone/60 bg-doggerz-bone/25 text-lg shadow-[0_8px_20px_rgba(2,6,23,0.35)]">
+                    🥣
+                  </div>
+                  {String(foodBowl.surface || "") === "low_table" ? (
+                    <div className="mt-1 whitespace-nowrap rounded-full border border-amber-300/35 bg-black/60 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-amber-100">
+                      theft risk
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
               {showGuiltyPaws ? (
@@ -1424,7 +1872,9 @@ export default function MainGame({ scene, dogInteractive = true }) {
               ) : null}
               {placingBowl ? (
                 <div className="pointer-events-none absolute bottom-3 left-1/2 z-30 -translate-x-1/2 rounded-full border border-white/15 bg-black/70 px-3 py-1 text-[10px] uppercase tracking-[0.18em] text-doggerz-bone">
-                  Tap to place bowl
+                  {isApartmentEnvironment
+                    ? "Tap the floor or low table"
+                    : "Tap to place bowl"}
                 </div>
               ) : null}
               {!effectiveDogSleeping ? (

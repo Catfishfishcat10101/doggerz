@@ -22,6 +22,10 @@ import {
   commandRequirementsMet,
   getObedienceCommand,
 } from "@/logic/obedienceCommands.js";
+import {
+  getObedienceSkillMasteryPct,
+  resolveJrtTrainingReaction,
+} from "@/logic/jrtTrainingController.js";
 import { computeTrainingSuccessChance } from "@/utils/trainingMath.js";
 import {
   computeSkillTreePoints,
@@ -36,6 +40,7 @@ import {
   ensureDogFsmState,
   isDogFsmLocked,
   DOG_FSM_DEFAULT,
+  transitionDogFsm,
 } from "@/utils/dogFsm.js";
 import {
   applyPersonalityDrift,
@@ -151,6 +156,10 @@ const STOLENABLE_ACTION_KEYS = Object.freeze([
   "potty",
   "train",
 ]);
+const YARD_ENVIRONMENTS = Object.freeze({
+  APARTMENT: "apartment",
+  YARD: "yard",
+});
 const DEFAULT_VACATION_STATE = Object.freeze({
   enabled: false,
   multiplier: 0,
@@ -222,9 +231,25 @@ function ensureAnimationState(state) {
 
 function ensureYardState(state) {
   if (!state.yard || typeof state.yard !== "object") {
-    state.yard = { holes: [], foodBowl: null, chewBoneAvailable: false };
+    state.yard = {
+      environment: YARD_ENVIRONMENTS.APARTMENT,
+      holes: [],
+      foodBowl: null,
+      chewBoneAvailable: false,
+      lastTableTheftAt: null,
+    };
     return state.yard;
   }
+
+  const environment = String(
+    state.yard.environment || YARD_ENVIRONMENTS.APARTMENT
+  )
+    .trim()
+    .toLowerCase();
+  state.yard.environment =
+    environment === YARD_ENVIRONMENTS.YARD
+      ? YARD_ENVIRONMENTS.YARD
+      : YARD_ENVIRONMENTS.APARTMENT;
 
   if (!Array.isArray(state.yard.holes)) {
     state.yard.holes = [];
@@ -236,8 +261,26 @@ function ensureYardState(state) {
   if (typeof state.yard.chewBoneAvailable !== "boolean") {
     state.yard.chewBoneAvailable = false;
   }
+  const lastTableTheftAt = Number(state.yard.lastTableTheftAt);
+  state.yard.lastTableTheftAt = Number.isFinite(lastTableTheftAt)
+    ? lastTableTheftAt
+    : null;
 
   return state.yard;
+}
+
+function getYardEnvironment(state) {
+  return ensureYardState(state).environment || YARD_ENVIRONMENTS.APARTMENT;
+}
+
+function isApartmentEnvironment(state) {
+  return getYardEnvironment(state) === YARD_ENVIRONMENTS.APARTMENT;
+}
+
+function isApartmentLowTableZone(xNorm, yNorm) {
+  const x = clamp(Number(xNorm || 0), 0, 1);
+  const y = clamp(Number(yNorm || 0), 0, 1);
+  return x >= 0.56 && x <= 0.82 && y >= 0.42 && y <= 0.62;
 }
 
 function ensureInventoryState(state) {
@@ -259,6 +302,18 @@ function ensureInventoryState(state) {
     state.inventory.autoBallLauncherOwned
   );
   state.inventory.robotMouseOwned = Boolean(state.inventory.robotMouseOwned);
+  const foundTreasures =
+    state.inventory.foundTreasures &&
+    typeof state.inventory.foundTreasures === "object"
+      ? state.inventory.foundTreasures
+      : {};
+  state.inventory.foundTreasures = { ...DEFAULT_TREASURE_COUNTS };
+  Object.keys(DEFAULT_TREASURE_COUNTS).forEach((id) => {
+    const count = Number(foundTreasures[id]);
+    state.inventory.foundTreasures[id] = Number.isFinite(count)
+      ? Math.max(0, Math.floor(count))
+      : 0;
+  });
   return state.inventory;
 }
 
@@ -417,13 +472,19 @@ function applyFeedEffect(state, payload = {}, opts = {}) {
       junkBingeTriggered = true;
     }
   } else if (usePremiumKibble) {
-    // Premium kibble nudges long-term wellness and fully restores energy.
-    state.stats.health = clamp(state.stats.health + 1, 0, 100);
+    // Premium kibble gives a larger health recovery bump.
+    if (Number(state.stats.health || 0) < 100) {
+      state.stats.health = clamp(Number(state.stats.health || 0) + 5, 0, 100);
+    }
     state.stats.energy = 100;
     inventory.premiumKibble = Math.max(
       0,
       Number(inventory.premiumKibble || 0) - 1
     );
+  } else if (effectiveFoodType === "regular_kibble") {
+    if (Number(state.stats.health || 0) < 100) {
+      state.stats.health = clamp(Number(state.stats.health || 0) + 2, 0, 100);
+    }
   }
 
   state.memory.lastFedAt = now;
@@ -482,8 +543,57 @@ function maybeConsumeFoodBowl(state, now, opts = {}) {
   const threshold = Number(opts?.hungerThreshold ?? 50);
   if (hunger < threshold) return false;
 
-  applyFeedEffect(state, { now, action: "feed" }, { skipDecay: true });
+  applyFeedEffect(
+    state,
+    { now, action: String(opts?.action || "feed") },
+    { skipDecay: true }
+  );
   yard.foodBowl = null;
+  return true;
+}
+
+function maybeStealApartmentTableFood(state, now) {
+  const yard = ensureYardState(state);
+  const bowl = yard.foodBowl;
+  if (!isApartmentEnvironment(state) || !bowl) return false;
+  if (String(bowl.surface || "") !== "low_table") return false;
+
+  const stealReadyAt = Number(
+    bowl.stealReadyAt || bowl.readyAt || bowl.placedAt || 0
+  );
+  if (stealReadyAt && now < stealReadyAt) return false;
+
+  const lastTableTheftAt = Number(yard.lastTableTheftAt || 0);
+  if (lastTableTheftAt && now - lastTableTheftAt < 12_000) return false;
+
+  const hunger = Number(state.stats?.hunger ?? 0);
+  const spicyBoost = hasTemperamentTag(state, "SPICY") ? 10 : 0;
+  const threshold = Math.max(18, 26 - spicyBoost);
+  if (hunger < threshold) return false;
+
+  const consumed = maybeConsumeFoodBowl(state, now, {
+    hungerThreshold: threshold,
+    action: "table_theft",
+  });
+  if (!consumed) return false;
+
+  yard.lastTableTheftAt = now;
+  state.stats.happiness = clamp(Number(state.stats.happiness || 0) + 2, 0, 100);
+  state.stats.mentalStimulation = clamp(
+    Number(state.stats.mentalStimulation || 0) + 4,
+    0,
+    100
+  );
+  state.lastAction = "table_theft";
+
+  pushJournalEntry(state, {
+    type: "SURPRISE",
+    moodTag: "SASSY",
+    summary: "Low-table snack stolen",
+    body: "You left food on the apartment table and your pup swiped it the second you looked away.",
+    timestamp: now,
+  });
+
   return true;
 }
 function getTemperamentTags(state) {
@@ -767,7 +877,41 @@ const initialMemory = {
   lastZoomiesAt: null,
   lastDreamWoofAt: null,
   lastGuiltyPawsAt: null,
+  lastTrainingReaction: null,
+  lastMasteredCommandId: null,
+  lastMasteredCommandAt: null,
+  lastTreasureHuntAt: null,
+  lastTreasureFoundAt: null,
+  lastTreasureFoundId: null,
 };
+
+const TREASURE_REWARD_CATALOG = Object.freeze({
+  rusty_key: {
+    id: "rusty_key",
+    name: "Rusty Key",
+    icon: "🔑",
+    coinBonus: 18,
+  },
+  old_bone: {
+    id: "old_bone",
+    name: "Fossilized Bone",
+    icon: "🦴",
+    coinBonus: 12,
+  },
+  tennis_ball: {
+    id: "tennis_ball",
+    name: "Muddy Tennis Ball",
+    icon: "🎾",
+    coinBonus: 8,
+  },
+});
+
+const DEFAULT_TREASURE_COUNTS = Object.freeze(
+  Object.keys(TREASURE_REWARD_CATALOG).reduce((acc, id) => {
+    acc[id] = 0;
+    return acc;
+  }, {})
+);
 
 const initialInventory = {
   premiumKibble: 0,
@@ -775,6 +919,7 @@ const initialInventory = {
   chewProtectionUntil: null,
   autoBallLauncherOwned: false,
   robotMouseOwned: false,
+  foundTreasures: { ...DEFAULT_TREASURE_COUNTS },
 };
 
 const initialCareer = {
@@ -983,6 +1128,14 @@ const DEFAULT_COSMETIC_CATALOG = Object.freeze([
     label: "Neon Collar",
   },
   {
+    id: "beta_collar_2026",
+    slot: "collar",
+    category: "apparel",
+    threshold: 0,
+    label: "Beta Blue Collar",
+    founderOnly: true,
+  },
+  {
     id: "tag_star",
     slot: "tag",
     category: "apparel",
@@ -1158,7 +1311,13 @@ const initialState = {
 
   // Used by UI renderers/selectors to derive simple animation hints
   lastAction: null,
-  yard: { holes: [], foodBowl: null },
+  yard: {
+    environment: YARD_ENVIRONMENTS.APARTMENT,
+    holes: [],
+    foodBowl: null,
+    chewBoneAvailable: false,
+    lastTableTheftAt: null,
+  },
   animation: { ...DEFAULT_ANIMATION_STATE },
   fsm: { ...DOG_FSM_DEFAULT },
 
@@ -2287,11 +2446,48 @@ function applySkillXp(skillBranch, skillId, skillState, amount = 5) {
   const node = skillState[branchKey][idKey];
   if (typeof node.xp !== "number") node.xp = 0;
   if (typeof node.level !== "number") node.level = 0;
+  const masteryBefore = getObedienceSkillMasteryPct(node);
+  const levelBefore = Number(node.level || 0);
 
   node.xp += Number(amount) || 0;
 
   const targetLevel = Math.floor(node.xp / SKILL_LEVEL_STEP);
   if (targetLevel > node.level) node.level = targetLevel;
+
+  const masteryAfter = getObedienceSkillMasteryPct(node);
+  return {
+    node,
+    levelBefore,
+    levelAfter: Number(node.level || 0),
+    masteryBefore,
+    masteryAfter,
+    mastered: masteryBefore < 100 && masteryAfter >= 100,
+  };
+}
+
+function setLastTrainingReaction(state, reaction, now) {
+  state.memory.lastTrainingReaction =
+    reaction && typeof reaction === "object"
+      ? {
+          kind:
+            String(reaction.kind || "")
+              .trim()
+              .toLowerCase() || "obey",
+          requestedCommandId: reaction.requestedCommandId
+            ? String(reaction.requestedCommandId).trim()
+            : null,
+          performedActionId: reaction.performedActionId
+            ? String(reaction.performedActionId).trim()
+            : null,
+          performedCommandId: reaction.performedCommandId
+            ? String(reaction.performedCommandId).trim()
+            : null,
+          reasonId: reaction.reasonId
+            ? String(reaction.reasonId).trim().toLowerCase()
+            : null,
+          createdAt: typeof now === "number" ? now : nowMs(),
+        }
+      : null;
 }
 
 function updateStreak(streakState, isoDate) {
@@ -3499,6 +3695,8 @@ const dogSlice = createSlice({
       const readyDelayMs = Number(payload?.readyDelayMs ?? 900);
       const placedAt = now;
       const readyAt = placedAt + Math.max(0, readyDelayMs);
+      const lowTablePlacement =
+        isApartmentEnvironment(state) && isApartmentLowTableZone(xNorm, yNorm);
 
       yard.foodBowl = {
         id: `${placedAt}-${Math.random().toString(36).slice(2, 8)}`,
@@ -3506,13 +3704,18 @@ const dogSlice = createSlice({
         yNorm,
         placedAt,
         readyAt,
+        surface: lowTablePlacement ? "low_table" : "floor",
+        stealReadyAt: lowTablePlacement ? readyAt + 2400 : null,
       };
     },
 
     tryConsumeFoodBowl(state, { payload }) {
       const now = payload?.now ?? nowMs();
       const hungerThreshold = payload?.hungerThreshold ?? 50;
-      maybeConsumeFoodBowl(state, now, { hungerThreshold });
+      maybeConsumeFoodBowl(state, now, {
+        hungerThreshold,
+        action: payload?.action || "feed",
+      });
     },
 
     giveWater(state, { payload }) {
@@ -3936,6 +4139,7 @@ const dogSlice = createSlice({
       const perks = getPersonalityPerks(state);
 
       state.stats.cleanliness = clamp(state.stats.cleanliness + 30, 0, 100);
+      state.stats.health = clamp(Number(state.stats.health || 0) + 5, 0, 100);
       state.stats.happiness = clamp(
         state.stats.happiness -
           5 * Math.max(0.6, perks.bathHappinessPenaltyMultiplier),
@@ -4066,8 +4270,20 @@ const dogSlice = createSlice({
       const tier = finalizeDerivedState(state, now);
       applyCleanlinessPenalties(state, tier);
 
-      // Auto-consume any placed food bowl once the dog is "close enough".
-      maybeConsumeFoodBowl(state, now);
+      const severeNeglect =
+        Number(state.stats.cleanliness || 100) <= 15 ||
+        Number(state.stats.hunger || 0) >= 85;
+      if (severeNeglect && Number(state.memory?.neglectStrikes || 0) >= 3) {
+        state.stats.health = clamp(Number(state.stats.health || 0) - 3, 0, 100);
+      }
+
+      // Apartment hard mode: bowls left on the low table get stolen fast.
+      const tableTheftTriggered = maybeStealApartmentTableFood(state, now);
+
+      // Auto-consume any placed floor bowl once the dog is "close enough".
+      if (!tableTheftTriggered) {
+        maybeConsumeFoodBowl(state, now);
+      }
 
       // Ambient behavior: dirty/itchy dogs will scratch sometimes.
       if (
@@ -4363,6 +4579,8 @@ const dogSlice = createSlice({
         state,
         "foodMotivated"
       );
+      const commandSkillNode = state.skills?.obedience?.[commandId] || null;
+      const commandMasteryPct = getObedienceSkillMasteryPct(commandSkillNode);
       const fedRecently =
         state.memory?.lastFedAt &&
         now - state.memory.lastFedAt < 2 * 60 * 60 * 1000;
@@ -4379,6 +4597,11 @@ const dogSlice = createSlice({
         0.6,
         2.2
       );
+      const lastTrainingKind = String(
+        state.memory?.lastTrainingReaction?.kind || state.lastAction || ""
+      )
+        .trim()
+        .toLowerCase();
       const successChanceRaw = computeTrainingSuccessChance({
         input,
         bond: bondValue,
@@ -4389,8 +4612,132 @@ const dogSlice = createSlice({
         isSpicy,
         foodMotivated,
         fedRecently,
+        focus: profile?.dynamicStates?.confidence ?? 50,
+        trust: profile?.trust?.score ?? bondValue,
+        stress: profile?.dynamicStates?.frustration ?? 30,
+        distraction: profile?.coreTemperament?.inquisitiveness ?? 25,
+        trainingStreak: Number(state.training?.adult?.streak || 0),
+        lastTrainingSuccess:
+          lastTrainingKind !== "fail" &&
+          lastTrainingKind !== "ignore" &&
+          lastTrainingKind !== "zoomies" &&
+          lastTrainingKind !== "trainfailed",
       });
-      const successChance = clamp01(successChanceRaw / trainabilitySpeed);
+      const successChance = clamp01(
+        (successChanceRaw + (commandMasteryPct / 100) * 0.22) /
+          trainabilitySpeed
+      );
+
+      const jrtReaction = resolveJrtTrainingReaction({
+        commandId,
+        unlockedIds: unlocks.unlockedIds,
+        skillNode: commandSkillNode,
+        stats: state.stats,
+        bond: bondValue,
+        profile,
+        isSpicy,
+        rng: Math.random,
+      });
+      const commandLabel = command?.label || commandId;
+
+      if (jrtReaction.kind === "zoomies") {
+        state.stats.energy = clamp(state.stats.energy - 7, 0, 100);
+        state.stats.happiness = clamp(state.stats.happiness + 4, 0, 100);
+        state.stats.thirst = clamp(state.stats.thirst + 4, 0, 100);
+        state.memory.lastTrainedAt = now;
+        state.memory.lastTrainedCommandId = commandId;
+        state.memory.lastSeenAt = now;
+        state.memory.lastZoomiesAt = now;
+        state.lastAction = "train_zoomies";
+        setLastTrainingReaction(state, jrtReaction, now);
+        transitionDogFsm(state, "zoomies", now, {
+          reason: "training_chaos",
+          locked: true,
+        });
+        maybeSampleMood(state, now, "ZOOMIES_BURST");
+
+        pushJournalEntry(state, {
+          type: "TRAINING",
+          moodTag: "WILD",
+          summary: `Ignored ${commandLabel}. Chose zoomies.`,
+          body: `You cued "${commandLabel}", but your pup detonated into zoomies instead.`,
+          timestamp: now,
+        });
+
+        updateTemperamentReveal(state, now);
+        finalizeDerivedState(state, now);
+        return;
+      }
+
+      if (jrtReaction.kind === "ignore") {
+        state.stats.energy = clamp(state.stats.energy - 2, 0, 100);
+        state.stats.happiness = clamp(state.stats.happiness - 1, 0, 100);
+        state.memory.lastTrainedAt = now;
+        state.memory.lastTrainedCommandId = commandId;
+        state.memory.lastSeenAt = now;
+        state.lastAction = "train_ignore";
+        setLastTrainingReaction(state, jrtReaction, now);
+        maybeSampleMood(state, now, "TRAINING_FAIL");
+
+        const ignoreBodyByReason = {
+          sniff: `You asked for "${commandLabel}". Your pup heard you, then followed a smell instead.`,
+          scratch: `You asked for "${commandLabel}", but an itchy distraction won the argument.`,
+          blank_stare: `You asked for "${commandLabel}". Your pup made eye contact, then committed to doing absolutely nothing.`,
+        };
+
+        pushJournalEntry(state, {
+          type: "TRAINING",
+          moodTag: "SASSY",
+          summary: `Blew off ${commandLabel}.`,
+          body:
+            ignoreBodyByReason[jrtReaction.reasonId] ||
+            `You asked for "${commandLabel}", but your pup ignored the cue.`,
+          timestamp: now,
+        });
+
+        updateTemperamentReveal(state, now);
+        finalizeDerivedState(state, now);
+        return;
+      }
+
+      if (jrtReaction.kind === "reinterpret") {
+        const sweetBondMultiplier = hasTemperamentTag(state, "SWEET") ? 1.2 : 1;
+        state.stats.energy = clamp(state.stats.energy - 4, 0, 100);
+        state.stats.happiness = clamp(
+          state.stats.happiness + 5 * perks.trainingHappinessBonus,
+          0,
+          100
+        );
+        state.stats.thirst = clamp(state.stats.thirst + 3, 0, 100);
+        state.memory.lastTrainedAt = now;
+        state.memory.lastTrainedCommandId = commandId;
+        state.memory.lastSeenAt = now;
+        state.lastAction = "train_reinterpret";
+        setLastTrainingReaction(state, jrtReaction, now);
+        applyBondGain(state, 0.45 * sweetBondMultiplier, now);
+        applyXp(state, 4);
+        maybeSampleMood(state, now, "TRAINING");
+
+        const performedCommand = getObedienceCommand(
+          jrtReaction.performedCommandId
+        );
+        const performedLabel =
+          performedCommand?.label ||
+          jrtReaction.performedCommandId ||
+          "a trick";
+
+        pushJournalEntry(state, {
+          type: "TRAINING",
+          moodTag: "PROUD",
+          summary: `Asked for ${commandLabel}. Got ${performedLabel}.`,
+          body: `You cued "${commandLabel}", but your pup decided "${performedLabel}" was a better idea and showed off instead.`,
+          timestamp: now,
+        });
+
+        updateTemperamentReveal(state, now);
+        finalizeDerivedState(state, now);
+        return;
+      }
 
       const roll = Math.random();
       const dozeChance = energy <= 30 ? 0.28 : energy <= 55 ? 0.16 : 0.08;
@@ -4416,6 +4763,17 @@ const dogSlice = createSlice({
         state.memory.lastTrainedCommandId = commandId;
         state.memory.lastSeenAt = now;
         state.lastAction = "trainFailed";
+        setLastTrainingReaction(
+          state,
+          {
+            kind: "fail",
+            requestedCommandId: commandId,
+            performedActionId: null,
+            performedCommandId: null,
+            reasonId: "failed",
+          },
+          now
+        );
         maybeSampleMood(state, now, "TRAINING_FAIL");
         updateTemperamentReveal(state, now);
         finalizeDerivedState(state, now);
@@ -4433,12 +4791,22 @@ const dogSlice = createSlice({
         state.memory.lastTrainedCommandId = commandId;
         state.memory.lastSeenAt = now;
         state.lastAction = "train_doze_off";
+        setLastTrainingReaction(
+          state,
+          {
+            kind: "doze_off",
+            requestedCommandId: commandId,
+            performedActionId: "sleep",
+            performedCommandId: null,
+            reasonId: "doze_off",
+          },
+          now
+        );
         applyFsmAction(state, "rest", now);
         applyBondGain(state, 0.55 * sweetBondMultiplier, now);
         applyXp(state, 2);
         maybeSampleMood(state, now, "TRAINING_DOZE_OFF");
 
-        const commandLabel = command?.label || commandId;
         pushJournalEntry(state, {
           type: "TRAINING",
           moodTag: "CALM",
@@ -4468,12 +4836,28 @@ const dogSlice = createSlice({
         Math.round(baseAdjustedXp * performanceXpMultiplier)
       );
 
-      applySkillXp("obedience", commandId, state.skills, adjustedXp);
+      const skillProgress = applySkillXp(
+        "obedience",
+        commandId,
+        state.skills,
+        adjustedXp
+      );
       state.memory.lastTrainedAt = now;
       state.memory.lastTrainedCommandId = commandId;
       state.memory.lastSeenAt = now;
       state.lastAction =
         trainingOutcome === "PERFECT" ? "train_perfect" : "train";
+      setLastTrainingReaction(
+        state,
+        {
+          kind: "obey",
+          requestedCommandId: commandId,
+          performedActionId: commandId,
+          performedCommandId: commandId,
+          reasonId: trainingOutcome === "PERFECT" ? "perfect" : "success",
+        },
+        now
+      );
       applyFsmAction(state, "train", now);
 
       const sweetBondMultiplier = hasTemperamentTag(state, "SWEET") ? 1.2 : 1;
@@ -4516,7 +4900,6 @@ const dogSlice = createSlice({
         trainingOutcome === "PERFECT" ? "TRAINING_PERFECT" : "TRAINING"
       );
 
-      const commandLabel = command?.label || commandId;
       pushJournalEntry(state, {
         type: "TRAINING",
         moodTag: "HAPPY",
@@ -4530,6 +4913,19 @@ const dogSlice = createSlice({
             : `We worked on "${commandLabel}" today. I think I'm getting the hang of it!`,
         timestamp: now,
       });
+
+      if (skillProgress?.mastered) {
+        state.memory.lastMasteredCommandId = commandId;
+        state.memory.lastMasteredCommandAt = now;
+
+        pushJournalEntry(state, {
+          type: "TRAINING",
+          moodTag: "PROUD",
+          summary: `Mastered ${commandLabel}.`,
+          body: `Your pup has fully mastered "${commandLabel}" and now treats it like second nature.`,
+          timestamp: now,
+        });
+      }
 
       const date = getIsoDate(now);
       updateStreak(state.streak, date);
@@ -4680,6 +5076,92 @@ const dogSlice = createSlice({
 
     addJournalEntry(state, { payload }) {
       pushJournalEntry(state, payload || {});
+    },
+
+    grantFounderReward(state, { payload }) {
+      const now = typeof payload?.now === "number" ? payload.now : nowMs();
+
+      if (!state.cosmetics) state.cosmetics = { ...initialCosmetics };
+      if (!Array.isArray(state.cosmetics.unlockedIds)) {
+        state.cosmetics.unlockedIds = [...initialCosmetics.unlockedIds];
+      }
+      if (!state.cosmetics.equipped) {
+        state.cosmetics.equipped = { ...initialCosmetics.equipped };
+      }
+
+      if (state.cosmetics.unlockedIds.includes("beta_collar_2026")) return;
+
+      state.cosmetics.unlockedIds.push("beta_collar_2026");
+
+      const equippedCollar = String(
+        state.cosmetics.equipped.collar || ""
+      ).trim();
+      if (!equippedCollar || equippedCollar === "collar_plain_red") {
+        state.cosmetics.equipped.collar = "beta_collar_2026";
+      }
+
+      pushJournalEntry(state, {
+        type: "REWARD",
+        moodTag: "PROUD",
+        summary: "Founder reward unlocked",
+        body: "The exclusive Beta Blue Collar is now permanently unlocked.",
+        timestamp: now,
+      });
+    },
+
+    claimTreasureFind(state, { payload }) {
+      const treasureId = normalizeActionKey(payload?.id);
+      const treasure = TREASURE_REWARD_CATALOG[treasureId];
+      if (!treasure) return;
+
+      const now = typeof payload?.now === "number" ? payload.now : nowMs();
+      applyDecay(state, now);
+      wakeForInteraction(state);
+
+      const inventory = ensureInventoryState(state);
+      inventory.foundTreasures[treasureId] = Math.max(
+        0,
+        Math.floor(Number(inventory.foundTreasures[treasureId] || 0))
+      );
+      inventory.foundTreasures[treasureId] += 1;
+
+      const coinBonus = Math.max(
+        0,
+        Math.round(Number(payload?.coinBonus ?? treasure.coinBonus) || 0)
+      );
+      if (coinBonus > 0) {
+        state.coins = Math.max(
+          0,
+          Math.round(Number(state.coins || 0) + coinBonus)
+        );
+      }
+
+      state.stats.happiness = clamp(Number(state.stats.happiness || 0) + 4);
+      state.stats.mentalStimulation = clamp(
+        Number(state.stats.mentalStimulation || 0) + 6
+      );
+      state.stats.energy = clamp(Number(state.stats.energy || 0) - 1);
+
+      state.memory.lastTreasureHuntAt = now;
+      state.memory.lastTreasureFoundAt = now;
+      state.memory.lastTreasureFoundId = treasureId;
+      state.memory.lastSeenAt = now;
+      state.lastAction = resolveActionOverride(payload, "treasure_found");
+      applyFsmAction(state, "play", now);
+      applyBondGain(state, 0.9, now);
+      applyXp(state, 5);
+
+      pushJournalEntry(state, {
+        type: "DISCOVERY",
+        moodTag: "CURIOUS",
+        summary: `Treasure found: ${treasure.name}`,
+        body: `Your pup followed a scent trail and dug up ${treasure.icon} ${treasure.name}.`,
+        timestamp: now,
+      });
+
+      maybeSampleMood(state, now, "TREASURE_FOUND");
+      updateTemperamentReveal(state, now);
+      finalizeDerivedState(state, now);
     },
 
     purchaseCosmetic(state, { payload }) {
@@ -5000,6 +5482,8 @@ export const {
   respecSkillTree,
   respecSkillTreeBranch,
   addJournalEntry,
+  grantFounderReward,
+  claimTreasureFind,
   purchaseCosmetic,
   buyPremiumKibblePack,
   equipCosmetic,

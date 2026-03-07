@@ -8,6 +8,11 @@ const _v = (id) => {
 
 /* ------------------ Paths ------------------ */
 
+export const userProfileDoc = (uid) => {
+  _v(uid);
+  return doc(db, "users", uid);
+};
+
 // The central "Brain" of the dog - Keep stats/training/personality here!
 export const dogMainDoc = (uid) => {
   _v(uid);

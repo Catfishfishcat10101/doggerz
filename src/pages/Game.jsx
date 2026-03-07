@@ -1,13 +1,13 @@
 //src/pages/Game.jsx
 import { useMemo } from "react";
 import { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 
+import DailyRewardModal from "@/components/DailyRewardModal.jsx";
 import MainGame from "@/features/game/MainGame.jsx";
 import GrowthCelebration from "@/components/dog/GrowthCelebration.jsx";
-import DailyRewardModal from "@/components/modals/DailyRewardModal.jsx";
-import { claimDailyReward, selectDog } from "@/redux/dogSlice.js";
+import { selectDog } from "@/redux/dogSlice.js";
 import { PATHS } from "@/routes.js";
 import { getDailyRewardState } from "@/features/game/dailyRewards.js";
 import {
@@ -48,7 +48,6 @@ function shouldReduceEffects(perfMode) {
 }
 
 export default function GamePage() {
-  const dispatch = useDispatch();
   const dog = useSelector(selectDog);
   const zip = useSelector(selectUserZip);
   const weather = useSelector(selectWeatherCondition);
@@ -93,13 +92,24 @@ export default function GamePage() {
 
   const scene = useMemo(
     () => ({
-      label: "Backyard",
+      label:
+        String(dog?.yard?.environment || "apartment").toLowerCase() ===
+        "apartment"
+          ? "Apartment"
+          : "Backyard",
       timeOfDay: isNight ? "Night" : titleCase(timeOfDayBucket || "Day"),
       weather: weatherLabel,
       weatherKey,
       weatherAccent,
     }),
-    [isNight, timeOfDayBucket, weatherLabel, weatherKey, weatherAccent]
+    [
+      dog?.yard?.environment,
+      isNight,
+      timeOfDayBucket,
+      weatherLabel,
+      weatherKey,
+      weatherAccent,
+    ]
   );
 
   const dailyRewardState = useMemo(
@@ -118,18 +128,6 @@ export default function GamePage() {
       setShowDailyReward(true);
     }
   }, [dog?.adoptedAt, dailyRewardState?.canClaim]);
-
-  const handleClaimDailyReward = () => {
-    if (!dailyRewardState?.canClaim || !dailyRewardState?.reward) return;
-    dispatch(
-      claimDailyReward({
-        day: dailyRewardState.nextStreakDay,
-        reward: dailyRewardState.reward,
-        now: Date.now(),
-      })
-    );
-    setShowDailyReward(false);
-  };
 
   return (
     <div
@@ -164,7 +162,6 @@ export default function GamePage() {
         open={showDailyReward}
         rewardState={dailyRewardState}
         onClose={() => setShowDailyReward(false)}
-        onClaim={handleClaimDailyReward}
       />
     </div>
   );

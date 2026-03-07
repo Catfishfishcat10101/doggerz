@@ -6,8 +6,10 @@ import { useQuery } from "@tanstack/react-query";
 import { useSelector, useDispatch } from "react-redux";
 import { Capacitor } from "@capacitor/core";
 import { onAuthStateChanged } from "firebase/auth";
+import { onSnapshot } from "firebase/firestore";
 import { auth } from "@/firebase.js";
 import {
+  grantFounderReward,
   grantPreRegGift,
   hydrateDog,
   resetDogState,
@@ -26,7 +28,12 @@ import {
   selectWeatherCondition,
 } from "@/redux/weatherSlice.js";
 import { loadDogFromCloud, saveDogToCloud } from "@/redux/dogThunks.js";
-import { clearUser, selectUserZip, setUser } from "@/redux/userSlice.js";
+import {
+  clearUser,
+  selectUserIsFounder,
+  selectUserZip,
+  setUser,
+} from "@/redux/userSlice.js";
 import {
   getStoredValue,
   removeStoredValue,
@@ -37,6 +44,7 @@ import { selectDogRenderModel } from "@/features/game/dogSelectors.js";
 import { useDogActionSfx } from "@/features/audio/useDogActionSfx.js";
 import useDynamicMusic from "@/features/audio/useDynamicMusic.js";
 import { ensureDogMain } from "@/firebase/ensureDog.js";
+import { userProfileDoc } from "@/firebase/paths.js";
 import {
   hasPreRegistrationRewardPurchase,
   PRE_REG_GIFT_COINS,
@@ -108,6 +116,7 @@ export default function DogAIEngine() {
   const growthMilestone = useSelector(selectDogGrowthMilestone);
   const settings = useSelector(selectSettings);
   const renderModel = useSelector(selectDogRenderModel);
+  const isFounder = useSelector(selectUserIsFounder);
 
   const hasHydratedRef = useRef(false);
   const cloudSaveTimeoutRef = useRef(
@@ -483,6 +492,60 @@ export default function DogAIEngine() {
       }
     };
   }, [dispatch]);
+
+  useEffect(() => {
+    if (!userId) return undefined;
+
+    const unsub = onSnapshot(
+      userProfileDoc(userId),
+      (snap) => {
+        const data =
+          snap.exists() && snap.data() && typeof snap.data() === "object"
+            ? snap.data()
+            : {};
+        const streak =
+          data.streak && typeof data.streak === "object"
+            ? data.streak
+            : undefined;
+
+        dispatch(
+          setUser({
+            zip: data.zip,
+            dogName: data.dogName,
+            preferredScene: data.preferredScene,
+            reduceVfx: data.reduceVfx,
+            uiDensity: data.uiDensity,
+            locale: data.locale,
+            isFounder: Boolean(data.isFounder),
+            coins: Number.isFinite(Number(data.coins))
+              ? Number(data.coins)
+              : undefined,
+            streak,
+          })
+        );
+      },
+      (err) => {
+        console.error("[Doggerz] Failed to watch user profile:", err);
+      }
+    );
+
+    return () => {
+      try {
+        unsub();
+      } catch {
+        // ignore
+      }
+    };
+  }, [dispatch, userId]);
+
+  useEffect(() => {
+    if (!isFounder) return;
+    const unlocked = Array.isArray(dogState?.cosmetics?.unlockedIds)
+      ? dogState.cosmetics.unlockedIds
+      : [];
+    if (unlocked.includes("beta_collar_2026")) return;
+    dispatch(grantFounderReward({ now: Date.now() }));
+  }, [dispatch, dogState?.cosmetics?.unlockedIds, isFounder]);
 
   // Swap local dog storage when switching auth contexts (guest <-> logged-in).
   useEffect(() => {

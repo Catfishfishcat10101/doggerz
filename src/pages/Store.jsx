@@ -17,7 +17,7 @@ import {
   setActiveToy,
   selectNextStreakReward,
 } from "@/redux/dogSlice.js";
-import { selectUserCoins } from "@/redux/userSlice.js";
+import { selectUserCoins, selectUserIsFounder } from "@/redux/userSlice.js";
 import {
   selectSettings,
   setStoreHoverPreview,
@@ -50,6 +50,27 @@ const STORE_CATEGORY_META = Object.freeze({
   yard: {
     label: "Yard Upgrades",
     impact: "Improves passive comfort and long-term routine stability.",
+  },
+});
+
+const TREASURE_DISPLAY_META = Object.freeze({
+  rusty_key: {
+    id: "rusty_key",
+    label: "Rusty Key",
+    icon: "🔑",
+    flavor: "Rare pull from a deep scent trail.",
+  },
+  old_bone: {
+    id: "old_bone",
+    label: "Fossilized Bone",
+    icon: "🦴",
+    flavor: "Classic terrier jackpot.",
+  },
+  tennis_ball: {
+    id: "tennis_ball",
+    label: "Muddy Tennis Ball",
+    icon: "🎾",
+    flavor: "Common, but still worth bragging about.",
   },
 });
 
@@ -148,6 +169,8 @@ function cosmeticDescription(item) {
       return "A fresh, leafy collar with a soft emerald glow.";
     if (id === "collar_neon")
       return "A bright neon collar for maximum main-character energy.";
+    if (id === "beta_collar_2026")
+      return "Exclusive founder reward with a crisp beta-blue glow.";
     return "A stylish collar for your pup.";
   }
   if (slot === "tag") {
@@ -275,6 +298,7 @@ export default function Store() {
 
   const dog = useSelector(selectDog);
   const userCoins = useSelector(selectUserCoins);
+  const isFounder = useSelector(selectUserIsFounder);
   const catalog = useSelector(selectCosmeticCatalog);
   const nextRewardInfo = useSelector(selectNextStreakReward);
   const settings = useSelector(selectSettings);
@@ -296,6 +320,25 @@ export default function Store() {
 
   const equipped = dog?.cosmetics?.equipped ?? EMPTY_EQUIPPED;
   const activeToyId = String(dog?.inventory?.activeToyId || "").trim();
+  const foundTreasures = useMemo(() => {
+    const raw =
+      dog?.inventory?.foundTreasures &&
+      typeof dog.inventory.foundTreasures === "object"
+        ? dog.inventory.foundTreasures
+        : {};
+    return Object.values(TREASURE_DISPLAY_META).map((item) => ({
+      ...item,
+      count: Math.max(0, Math.floor(Number(raw[item.id] || 0))),
+    }));
+  }, [dog?.inventory?.foundTreasures]);
+  const totalTreasuresFound = useMemo(
+    () =>
+      foundTreasures.reduce(
+        (sum, item) => sum + Math.max(0, Number(item.count || 0)),
+        0
+      ),
+    [foundTreasures]
+  );
 
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [query, setQuery] = useState("");
@@ -379,6 +422,7 @@ export default function Store() {
       .filter((it) => {
         const id = String(it.id || "").trim();
         if (!id) return false;
+        if (it?.founderOnly && !isFounder && !unlocked.has(id)) return false;
 
         const category = getStoreCategory(it);
         if (categoryFilter !== "all" && category !== categoryFilter)
@@ -488,6 +532,7 @@ export default function Store() {
     sortKey,
     trimmedQuery,
     unlocked,
+    isFounder,
   ]);
 
   const focusedItem = useMemo(() => {
@@ -513,6 +558,7 @@ export default function Store() {
       .filter((it) => {
         const id = String(it?.id || "").trim();
         if (!id) return false;
+        if (it?.founderOnly && !isFounder && !unlocked.has(id)) return false;
         if (it?.iap) return false;
         if (unlocked.has(id)) return false;
         const price = priceForCatalogItem(it);
@@ -523,7 +569,7 @@ export default function Store() {
       .sort((a, b) => priceForCatalogItem(a) - priceForCatalogItem(b));
 
     return unownedAffordable[0] || null;
-  }, [catalog, coins, gems, unlocked]);
+  }, [catalog, coins, gems, isFounder, unlocked]);
 
   const canHoverPreview = previewOnHover && !previewLocked;
 
@@ -628,6 +674,52 @@ export default function Store() {
                 streak will matter.
               </div>
             </div>
+          </div>
+        </section>
+
+        <section className="mb-8 rounded-3xl border border-white/10 bg-black/25 p-5 sm:p-6">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <div className="text-xs uppercase tracking-[0.22em] text-zinc-400">
+                Discoveries
+              </div>
+              <div className="mt-1 text-lg font-extrabold text-zinc-100">
+                Treasure stash
+              </div>
+            </div>
+            <div className="text-xs text-zinc-400">
+              Total found:{" "}
+              <span className="font-semibold text-amber-100">
+                {totalTreasuresFound}
+              </span>
+            </div>
+          </div>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            {foundTreasures.map((item) => (
+              <div
+                key={item.id}
+                className="rounded-2xl border border-white/10 bg-black/20 p-4"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="text-xs uppercase tracking-[0.2em] text-zinc-400">
+                      Treasure
+                    </div>
+                    <div className="mt-1 text-sm font-extrabold text-zinc-100">
+                      {item.label}
+                    </div>
+                  </div>
+                  <div className="text-2xl" aria-hidden="true">
+                    {item.icon}
+                  </div>
+                </div>
+                <div className="mt-3 text-xs text-zinc-300">{item.flavor}</div>
+                <div className="mt-4 inline-flex items-center rounded-full border border-amber-300/30 bg-amber-500/10 px-3 py-1 text-[11px] font-semibold text-amber-100">
+                  Owned: {item.count}
+                </div>
+              </div>
+            ))}
           </div>
         </section>
 
@@ -826,8 +918,9 @@ export default function Store() {
                             <DogCosmeticsOverlay
                               equipped={previewEquipped}
                               size={360}
+                              stage={stageId}
                               facing={1}
-                              reduceMotion={false}
+                              showEditorUi
                             />
                           </div>
                         </div>

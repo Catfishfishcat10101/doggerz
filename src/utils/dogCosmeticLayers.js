@@ -1,0 +1,155 @@
+import { normalizeDogStageShort } from "@/utils/dogSpritePaths.js";
+
+function toDataUrl(svg) {
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+}
+
+function resolveStageScale(stageLike) {
+  const stage = normalizeDogStageShort(stageLike);
+  if (stage === "adult") return 1.03;
+  if (stage === "senior") return 1.01;
+  return 0.94;
+}
+
+function buildCollarSvg({
+  strap = "#ef4444",
+  buckle = "#f8fafc",
+  glow = "none",
+  tag = "#f8fafc",
+}) {
+  return toDataUrl(`
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+      <defs>
+        <filter id="g" x="-40%" y="-40%" width="180%" height="180%">
+          <feGaussianBlur stdDeviation="6" result="b"/>
+          <feMerge>
+            <feMergeNode in="b"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+      </defs>
+      <g ${glow !== "none" ? 'filter="url(#g)"' : ""}>
+        <path d="M72 138c19 10 44 15 60 15 19 0 40-5 56-14" fill="none" stroke="${strap}" stroke-width="18" stroke-linecap="round"/>
+        <rect x="160" y="126" width="20" height="18" rx="5" fill="${buckle}" opacity="0.92"/>
+        <circle cx="184" cy="140" r="5" fill="${tag}" opacity="0.9"/>
+      </g>
+      ${
+        glow !== "none"
+          ? `<path d="M72 138c19 10 44 15 60 15 19 0 40-5 56-14" fill="none" stroke="${glow}" stroke-width="26" stroke-linecap="round" opacity="0.35"/>`
+          : ""
+      }
+    </svg>
+  `);
+}
+
+function buildTagSvg({ fill = "#fbbf24", stroke = "#f8fafc" }) {
+  return toDataUrl(`
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+      <g opacity="0.96">
+        <circle cx="128" cy="152" r="11" fill="${stroke}" opacity="0.9"/>
+        <path d="M128 162l8 15 17 2-12 12 3 17-16-8-16 8 3-17-12-12 17-2z" fill="${fill}" stroke="${stroke}" stroke-width="3" stroke-linejoin="round"/>
+      </g>
+    </svg>
+  `);
+}
+
+function getCollarLayer(id) {
+  const key = String(id || "")
+    .trim()
+    .toLowerCase();
+  if (!key) return null;
+
+  if (key === "collar_leaf") {
+    return {
+      slot: "collar",
+      src: buildCollarSvg({
+        strap: "#22c55e",
+        buckle: "#dcfce7",
+        tag: "#86efac",
+      }),
+    };
+  }
+
+  if (key === "collar_neon") {
+    return {
+      slot: "collar",
+      src: buildCollarSvg({
+        strap: "#67e8f9",
+        buckle: "#ecfeff",
+        tag: "#22d3ee",
+        glow: "#22d3ee",
+      }),
+    };
+  }
+
+  if (key === "beta_collar_2026") {
+    return {
+      slot: "collar",
+      src: buildCollarSvg({
+        strap: "#38bdf8",
+        buckle: "#eff6ff",
+        tag: "#bfdbfe",
+        glow: "#60a5fa",
+      }),
+    };
+  }
+
+  return {
+    slot: "collar",
+    src: buildCollarSvg({
+      strap: "#ef4444",
+      buckle: "#fee2e2",
+      tag: "#fda4af",
+    }),
+  };
+}
+
+function getTagLayer(id) {
+  const key = String(id || "")
+    .trim()
+    .toLowerCase();
+  if (!key) return null;
+  if (key === "tag_star") {
+    return {
+      slot: "tag",
+      src: buildTagSvg({
+        fill: "#fbbf24",
+        stroke: "#fef3c7",
+      }),
+    };
+  }
+  return null;
+}
+
+export function getDogCosmeticLayerSpecs({
+  equipped = {},
+  stage = "PUPPY",
+  facing = 1,
+} = {}) {
+  const stageScale = resolveStageScale(stage);
+  const facingScale = Number(facing) < 0 ? -1 : 1;
+  const baseStyle = {
+    position: "absolute",
+    inset: 0,
+    width: "100%",
+    height: "100%",
+    objectFit: "contain",
+    transform: `scale(${stageScale}) scaleX(${facingScale})`,
+    transformOrigin: "50% 50%",
+    pointerEvents: "none",
+    userSelect: "none",
+  };
+
+  const layers = [getCollarLayer(equipped?.collar), getTagLayer(equipped?.tag)]
+    .filter(Boolean)
+    .map((layer, index) => ({
+      ...layer,
+      key: `${layer.slot}-${index}`,
+      style: {
+        ...baseStyle,
+        zIndex: layer.slot === "tag" ? 3 : 2,
+      },
+    }));
+
+  return layers;
+}

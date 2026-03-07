@@ -63,12 +63,27 @@ const EXPLICIT_ANIMS = new Set([
   "jump",
   "spin",
   "wave",
+  "shake",
+  "highfive",
   "fetch",
+  "dance",
+  "stay",
+  "paw",
   "walk_left",
   "walk_right",
   "turn_walk_right",
   "sniff",
 ]);
+
+const TRAINED_COMMAND_ANIMS = Object.freeze({
+  down: "lay_down",
+  come: "walk",
+  heel: "walk",
+  rollover: "roll_over",
+  playdead: "play_dead",
+  highfive: "highfive",
+  speak: "bark",
+});
 
 const EXPLICIT_ACTION_ALIASES = {
   feed: "eat",
@@ -116,16 +131,39 @@ function normalizeAction(action) {
     .replace(/-+/g, "_");
 }
 
-function resolveExplicitAnim(lastAction, lastTrainedCommandId) {
+function resolveTrainedCommandAnim(commandId) {
+  const normalized = normalizeAction(commandId);
+  if (!normalized) return null;
+  const mapped = TRAINED_COMMAND_ANIMS[normalized] || normalized;
+  return EXPLICIT_ANIMS.has(mapped) ? mapped : null;
+}
+
+function resolveExplicitAnim(
+  lastAction,
+  lastTrainedCommandId,
+  trainingReaction
+) {
   const normalized = normalizeAction(lastAction);
   if (!normalized) return null;
 
+  if (normalized === "train_ignore" || normalized === "train_reinterpret") {
+    const reactionAnim = resolveTrainedCommandAnim(
+      trainingReaction?.performedActionId ||
+        trainingReaction?.performedCommandId
+    );
+    if (reactionAnim) return reactionAnim;
+  }
+
+  if (normalized === "train_zoomies") {
+    return "walk";
+  }
+
   if (
-    normalized === "train" &&
-    lastTrainedCommandId &&
-    EXPLICIT_ANIMS.has(lastTrainedCommandId)
+    (normalized === "train" || normalized === "train_perfect") &&
+    lastTrainedCommandId
   ) {
-    return lastTrainedCommandId;
+    const trainedAnim = resolveTrainedCommandAnim(lastTrainedCommandId);
+    if (trainedAnim) return trainedAnim;
   }
 
   const alias = EXPLICIT_ACTION_ALIASES[normalized];
@@ -248,7 +286,16 @@ export function selectDogRenderParams(stateOrDog) {
   const lastTrainedCommandId = normalizeAction(
     dog?.memory?.lastTrainedCommandId
   );
-  const explicitAnim = resolveExplicitAnim(last, lastTrainedCommandId);
+  const trainingReaction =
+    dog?.memory?.lastTrainingReaction &&
+    typeof dog.memory.lastTrainingReaction === "object"
+      ? dog.memory.lastTrainingReaction
+      : null;
+  const explicitAnim = resolveExplicitAnim(
+    last,
+    lastTrainedCommandId,
+    trainingReaction
+  );
   if (explicitAnim) {
     const resolvedAnim = applyJointStiffnessAnimationLimit(
       sanitizeAnimForCurrentSpriteSet(explicitAnim) || "idle",
@@ -328,6 +375,11 @@ function buildDogRenderModel(stateOrDog) {
 
   const stageLabel = dog.lifeStage?.label || getDogStageLabel(stage);
   const healthAnimation = getHealthAnimationState(dog);
+  const actionBoost = /zoomies/.test(
+    normalizeAction(dog.lastAction || dog.last_action)
+  )
+    ? 1.55
+    : 1;
 
   const staticSpriteUrl = getDogStaticSpriteUrl(stage);
   const pixiSheetUrl = getDogPixiSheetUrl(stage, condition);
@@ -342,7 +394,8 @@ function buildDogRenderModel(stateOrDog) {
     restState,
     animCategory,
     healthBand: healthAnimation.healthBand,
-    animationSpeedMultiplier: healthAnimation.animationSpeedMultiplier,
+    animationSpeedMultiplier:
+      healthAnimation.animationSpeedMultiplier * actionBoost,
     ignoreToys: healthAnimation.ignoreToys,
     personalityProfile,
     ghostSyncRate: Number(dog?.legacyJourney?.spiritSyncRate || 0),

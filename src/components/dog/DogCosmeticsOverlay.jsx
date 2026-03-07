@@ -1,10 +1,10 @@
 // src/components/DogCosmeticsOverlay.jsx
 //
-// Minimal cosmetics overlay for the Store preview.
-// The "real" rendering can evolve later (sprites, SVGs, etc). For now this keeps
-// the app building even if cosmetic art assets aren't present.
+// Layered cosmetic renderer for collar/tag overlays.
+// Asset-backed sprite layers can plug into the same interface later.
 
 import { useDispatch, useSelector } from "react-redux";
+import { useMemo } from "react";
 
 import {
   selectSettings,
@@ -12,6 +12,7 @@ import {
   setCosmeticsOverlayShowLabels,
   setCosmeticsOverlayShowPreviewTags,
 } from "@/redux/settingsSlice.js";
+import { getDogCosmeticLayerSpecs } from "@/utils/dogCosmeticLayers.js";
 
 function labelFor(id) {
   return String(id || "")
@@ -20,17 +21,34 @@ function labelFor(id) {
     .trim();
 }
 
-export default function DogCosmeticsOverlay({ equipped, size = 360 }) {
+export default function DogCosmeticsOverlay({
+  equipped,
+  size = 360,
+  stage = "PUPPY",
+  facing = 1,
+  showLabels,
+  showPreviewTags,
+  showEditorUi = false,
+}) {
   const dispatch = useDispatch();
   const settings = useSelector(selectSettings);
-
-  const showLabels = settings?.cosmeticsOverlayShowLabels !== false;
-  const showPreviewTags = settings?.cosmeticsOverlayShowPreviewTags !== false;
+  const displayLabels =
+    typeof showLabels === "boolean"
+      ? showLabels
+      : settings?.cosmeticsOverlayShowLabels === true;
+  const displayPreviewTags =
+    typeof showPreviewTags === "boolean"
+      ? showPreviewTags
+      : settings?.cosmeticsOverlayShowPreviewTags === true;
   const position = settings?.cosmeticsOverlayPosition || "top-left";
 
   const collar = equipped?.collar ? labelFor(equipped.collar) : "";
   const tag = equipped?.tag ? labelFor(equipped.tag) : "";
   const backdrop = equipped?.backdrop ? labelFor(equipped.backdrop) : "";
+  const renderLayers = useMemo(
+    () => getDogCosmeticLayerSpecs({ equipped, stage, facing }),
+    [equipped, facing, stage]
+  );
   const items = [
     {
       key: "collar",
@@ -49,8 +67,13 @@ export default function DogCosmeticsOverlay({ equipped, size = 360 }) {
     },
   ].filter((item) => item.label);
 
-  // No cosmetics equipped => render nothing (keeps layout clean).
-  if (!collar && !tag && !backdrop) return null;
+  // No renderable layers and no requested preview UI => render nothing.
+  if (
+    !renderLayers.length &&
+    !(displayLabels || displayPreviewTags || showEditorUi)
+  ) {
+    return null;
+  }
 
   const posClass =
     position === "top-right"
@@ -68,8 +91,19 @@ export default function DogCosmeticsOverlay({ equipped, size = 360 }) {
       style={{ width: size, height: size }}
       aria-hidden="true"
     >
+      {renderLayers.map((layer) => (
+        <img
+          key={layer.key}
+          src={layer.src}
+          alt=""
+          className="absolute select-none"
+          style={layer.style}
+          draggable="false"
+        />
+      ))}
+
       <div className={`absolute flex flex-col gap-1 ${posClass}`}>
-        {showLabels
+        {displayLabels
           ? items.map((item) => (
               <span
                 key={item.key}
@@ -80,7 +114,7 @@ export default function DogCosmeticsOverlay({ equipped, size = 360 }) {
             ))
           : null}
 
-        {showPreviewTags ? (
+        {displayPreviewTags ? (
           <div className="mt-1 flex flex-wrap gap-1">
             {items.map((item) => (
               <span
@@ -94,38 +128,44 @@ export default function DogCosmeticsOverlay({ equipped, size = 360 }) {
         ) : null}
       </div>
 
-      <div className="absolute right-2 top-2 pointer-events-auto">
-        <div className="flex items-center gap-2 rounded-full border border-white/10 bg-black/50 px-2 py-1 text-[10px] uppercase tracking-[0.2em] text-zinc-200">
-          <button
-            type="button"
-            className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] text-zinc-200 hover:bg-white/10"
-            onClick={() => dispatch(setCosmeticsOverlayShowLabels(!showLabels))}
-          >
-            {showLabels ? "Labels on" : "Labels off"}
-          </button>
-          <button
-            type="button"
-            className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] text-zinc-200 hover:bg-white/10"
-            onClick={() =>
-              dispatch(setCosmeticsOverlayShowPreviewTags(!showPreviewTags))
-            }
-          >
-            {showPreviewTags ? "Tags on" : "Tags off"}
-          </button>
-          <select
-            value={position}
-            onChange={(e) =>
-              dispatch(setCosmeticsOverlayPosition(e.target.value))
-            }
-            className="rounded-full border border-white/10 bg-black/40 px-2 py-0.5 text-[10px] text-zinc-200"
-          >
-            <option value="top-left">Top left</option>
-            <option value="top-right">Top right</option>
-            <option value="bottom-left">Bottom left</option>
-            <option value="bottom-right">Bottom right</option>
-          </select>
+      {showEditorUi ? (
+        <div className="absolute right-2 top-2 pointer-events-auto">
+          <div className="flex items-center gap-2 rounded-full border border-white/10 bg-black/50 px-2 py-1 text-[10px] uppercase tracking-[0.2em] text-zinc-200">
+            <button
+              type="button"
+              className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] text-zinc-200 hover:bg-white/10"
+              onClick={() =>
+                dispatch(setCosmeticsOverlayShowLabels(!displayLabels))
+              }
+            >
+              {displayLabels ? "Labels on" : "Labels off"}
+            </button>
+            <button
+              type="button"
+              className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] text-zinc-200 hover:bg-white/10"
+              onClick={() =>
+                dispatch(
+                  setCosmeticsOverlayShowPreviewTags(!displayPreviewTags)
+                )
+              }
+            >
+              {displayPreviewTags ? "Tags on" : "Tags off"}
+            </button>
+            <select
+              value={position}
+              onChange={(e) =>
+                dispatch(setCosmeticsOverlayPosition(e.target.value))
+              }
+              className="rounded-full border border-white/10 bg-black/40 px-2 py-0.5 text-[10px] text-zinc-200"
+            >
+              <option value="top-left">Top left</option>
+              <option value="top-right">Top right</option>
+              <option value="bottom-left">Bottom left</option>
+              <option value="bottom-right">Bottom right</option>
+            </select>
+          </div>
         </div>
-      </div>
+      ) : null}
     </div>
   );
 }

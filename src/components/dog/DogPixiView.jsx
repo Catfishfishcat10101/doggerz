@@ -1,6 +1,7 @@
 /** @format */
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import DogCosmeticsOverlay from "@/components/dog/DogCosmeticsOverlay.jsx";
 import SpriteSheetDog from "@/components/dog/SpriteSheetDog.jsx";
 
 function clamp(n, lo, hi) {
@@ -44,6 +45,7 @@ export default function DogPixiView({
   stage = "PUPPY",
   condition = "clean",
   anim = "idle",
+  equippedCosmetics = null,
   width,
   height,
   scale = 2.25,
@@ -53,6 +55,7 @@ export default function DogPixiView({
   sleepSpot = null,
   movementLocked = false,
   onPositionChange = null,
+  onDogTap = null,
 }) {
   const containerRef = useRef(null);
   const rafRef = useRef(0);
@@ -296,6 +299,8 @@ export default function DogPixiView({
     width: Number.isFinite(Number(width)) ? Number(width) : "100%",
     height: Number.isFinite(Number(height)) ? Number(height) : "100%",
   };
+  const dogTapHitboxSize = Math.max(80, Math.round(size * 0.72));
+  const dogTapHitboxHeight = Math.max(88, Math.round(size * 0.82));
 
   return (
     <div ref={containerRef} className="relative" style={style}>
@@ -333,7 +338,41 @@ export default function DogPixiView({
           size={size}
           speedMultiplier={animSpeedMultiplier}
         />
+        <DogCosmeticsOverlay
+          equipped={equippedCosmetics}
+          size={size}
+          stage={stage}
+          facing={pos.facing}
+          showLabels={false}
+          showPreviewTags={false}
+        />
       </div>
+      {typeof onDogTap === "function" ? (
+        <button
+          type="button"
+          aria-label="Interact with dog"
+          onPointerDown={(event) => {
+            event.stopPropagation();
+          }}
+          onClick={(event) => {
+            event.stopPropagation();
+            onDogTap();
+          }}
+          className="absolute rounded-full bg-transparent"
+          style={{
+            left: pos.x,
+            top: pos.y - Math.round(size * 0.16),
+            width: dogTapHitboxSize,
+            height: dogTapHitboxHeight,
+            transform: "translate(-50%, -50%)",
+            zIndex: depthZIndex + 1,
+            border: 0,
+            padding: 0,
+            pointerEvents: "auto",
+            touchAction: "manipulation",
+          }}
+        />
+      ) : null}
     </div>
   );
 }
