@@ -295,6 +295,7 @@ export default function DogAIEngine() {
   };
 
   const dogRef = useRef(dogState);
+  const dispatchRef = useRef(dispatch);
   const weatherRef = useRef(weather);
   const zipRef = useRef(zip);
   const adoptedRef = useRef(Boolean(dogState?.adoptedAt));
@@ -302,6 +303,7 @@ export default function DogAIEngine() {
   const lastHydratedUserIdRef = useRef(/** @type {string | null} */ (null));
   const storageKeyRef = useRef(getDogStorageKey(null));
   const [userId, setUserId] = useState(null);
+  const lastTickAtRef = useRef(0);
   const tickIntervalRef = useRef(
     /** @type {ReturnType<typeof setInterval> | null} */ (null)
   );
@@ -324,6 +326,10 @@ export default function DogAIEngine() {
       console.error("[Doggerz] Failed to flush local save", err);
     }
   }, []);
+
+  useEffect(() => {
+    dispatchRef.current = dispatch;
+  }, [dispatch]);
 
   useEffect(() => {
     weatherRef.current = weather;
@@ -806,28 +812,43 @@ export default function DogAIEngine() {
 
   // 4. Game loop tick (every 60 seconds → decay + polls). Keep the interval stable.
   useEffect(() => {
+    if (!lastTickAtRef.current) {
+      lastTickAtRef.current = Date.now();
+    }
+
+    const startTickInterval = () => {
+      if (tickIntervalRef.current) {
+        clearInterval(tickIntervalRef.current);
+      }
+      tickIntervalRef.current = setInterval(() => {
+        tickOnce();
+      }, TICK_INTERVAL_MS);
+    };
+
     const tickOnce = () => {
       if (typeof document !== "undefined" && document?.hidden) return;
       if (growthPauseRef.current) return;
       if (!adoptedRef.current) return;
       const now = Date.now();
+      if (now - lastTickAtRef.current < TICK_INTERVAL_MS) return false;
+      lastTickAtRef.current = now;
       const w = weatherRef.current;
-      dispatch(
+      dispatchRef.current(
         tickDog({ now, weather: w, timeBucket: getLocalTimeBucket(now) })
       );
-      dispatch(tickDogPolls({ now }));
+      dispatchRef.current(tickDogPolls({ now }));
+      return true;
     };
 
-    // Clear any existing interval before creating a new one.
-    if (tickIntervalRef.current) {
-      clearInterval(tickIntervalRef.current);
-    }
-
-    tickIntervalRef.current = setInterval(tickOnce, TICK_INTERVAL_MS);
+    startTickInterval();
 
     // Also tick when returning to the tab.
     const onVisibility = () => {
-      if (!document.hidden) tickOnce();
+      if (document.hidden) return;
+      const didTick = tickOnce();
+      if (didTick) {
+        startTickInterval();
+      }
     };
     window.addEventListener("visibilitychange", onVisibility);
 
@@ -838,7 +859,7 @@ export default function DogAIEngine() {
         tickIntervalRef.current = null;
       }
     };
-  }, [dispatch]);
+  }, []);
 
   // Headless "brain" component: never renders UI
   return null;

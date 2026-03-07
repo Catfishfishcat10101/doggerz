@@ -1,6 +1,7 @@
 // src/features/game/MainGame.jsx
 import { onAuthStateChanged } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
+import { Capacitor } from "@capacitor/core";
 import {
   Suspense,
   lazy,
@@ -54,6 +55,7 @@ import {
 import { fetchWeatherSnapshot } from "@/features/weather/weatherApi.js";
 import { auth as firebaseAuth, initFirebase } from "@/firebase.js";
 import { getObedienceCommand } from "@/logic/obedienceCommands.js";
+import { withBaseUrl } from "@/utils/assetUtils.js";
 
 const DogPixiView = lazy(() => import("@/components/dog/DogPixiView.jsx"));
 const SHARE_REWARD_COOLDOWN_MS = 12 * 60 * 60 * 1000;
@@ -716,6 +718,16 @@ export default function MainGame({ scene, dogInteractive = true }) {
   const triggerPropHaptic = useCallback(
     async (mode = "impact") => {
       if (settings?.hapticsEnabled === false) return;
+      if (Capacitor.getPlatform?.() === "web") {
+        try {
+          if (typeof navigator !== "undefined" && navigator?.vibrate) {
+            navigator.vibrate(mode === "success" ? 18 : 10);
+          }
+        } catch {
+          // Ignore haptic fallback failures.
+        }
+        return;
+      }
       try {
         const mod = await import("@capacitor/haptics");
         if (
@@ -1400,7 +1412,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
     if (!audioEnabled || masterVolume * sfxVolume <= 0) return;
 
     try {
-      const bark = new Audio("/audio/bark.m4a");
+      const bark = new Audio(withBaseUrl("/audio/bark.m4a"));
       bark.volume = clamp(masterVolume * sfxVolume, 0, 1);
       bark.play().catch(() => {});
     } catch {
@@ -1423,30 +1435,43 @@ export default function MainGame({ scene, dogInteractive = true }) {
     const shareText = `Check out ${pupName} in Doggerz. Lv ${overallLevel}, ${energyPct}% energy, ${Math.round(Number(dog?.bond?.value || 0))}% bond.`;
 
     try {
-      try {
-        const { Share } = await import("@capacitor/share");
-        await Share.share({
-          title: shareTitle,
-          text: shareText,
-          url: shareUrl,
-          dialogTitle: "Show off your pup",
-        });
-      } catch {
-        if (typeof navigator !== "undefined" && navigator.share) {
-          await navigator.share({
+      if (Capacitor.getPlatform?.() !== "web") {
+        try {
+          const { Share } = await import("@capacitor/share");
+          await Share.share({
             title: shareTitle,
-            text: `${shareText} ${shareUrl}`,
+            text: shareText,
+            url: shareUrl,
+            dialogTitle: "Show off your pup",
           });
-        } else if (typeof navigator !== "undefined" && navigator.clipboard) {
-          await navigator.clipboard.writeText(`${shareText} ${shareUrl}`);
-          toast.success("Share text copied.");
-          return;
-        } else {
-          toast.error("Sharing is not available on this device.");
-          return;
+        } catch {
+          if (typeof navigator !== "undefined" && navigator.share) {
+            await navigator.share({
+              title: shareTitle,
+              text: `${shareText} ${shareUrl}`,
+            });
+          } else if (typeof navigator !== "undefined" && navigator.clipboard) {
+            await navigator.clipboard.writeText(`${shareText} ${shareUrl}`);
+            toast.success("Share text copied.");
+            return;
+          } else {
+            toast.error("Sharing is not available on this device.");
+            return;
+          }
         }
+      } else if (typeof navigator !== "undefined" && navigator.share) {
+        await navigator.share({
+          title: shareTitle,
+          text: `${shareText} ${shareUrl}`,
+        });
+      } else if (typeof navigator !== "undefined" && navigator.clipboard) {
+        await navigator.clipboard.writeText(`${shareText} ${shareUrl}`);
+        toast.success("Share text copied.");
+        return;
+      } else {
+        toast.error("Sharing is not available on this device.");
+        return;
       }
-
       if (shareRewardReady) {
         dispatch(
           rewardSocialShare({ now: Date.now(), energy: 10, happiness: 3 })

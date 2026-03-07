@@ -110,6 +110,11 @@ const DECAY_PER_HOUR = {
   mentalStimulation: 4,
 };
 const DECAY_SPEED = 0.4;
+const MAX_DECAY_HOURS = 72;
+const SEVERE_NEGLECT_CLEANLINESS_THRESHOLD = 15;
+const SEVERE_NEGLECT_HUNGER_THRESHOLD = 85;
+const SEVERE_NEGLECT_GRACE_HOURS = 3 / 60;
+const OFFLINE_SEVERE_NEGLECT_HEALTH_DECAY_PER_HOUR = 3;
 
 const SLEEP_RECOVERY_PER_HOUR = 45;
 const SLEEP_NEEDS_MULTIPLIER = 0.85;
@@ -1931,7 +1936,6 @@ function createDecayRuleContext(state, now) {
     return null;
   }
 
-  const MAX_DECAY_HOURS = 72;
   const diffHoursRaw = Math.max(
     0,
     (now - state.lastUpdatedAt) / (1000 * 60 * 60)
@@ -1986,6 +1990,11 @@ function createDecayRuleContext(state, now) {
     now,
     diffHours,
     effectiveHours,
+    startingStats: {
+      hunger: clamp(Number(state.stats?.hunger || 0), 0, 100),
+      cleanliness: clamp(Number(state.stats?.cleanliness || 0), 0, 100),
+      health: clamp(Number(state.stats?.health || 0), 0, 100),
+    },
     vacation,
     sleeping,
     idleish,
@@ -2072,6 +2081,61 @@ function applyCompoundingStage(ctx) {
   }
 }
 
+function getSevereNeglectHours(ctx) {
+  const totalHours = Math.max(0, Number(ctx?.effectiveHours || 0));
+  if (!totalHours) return 0;
+
+  const startCleanliness = clamp(
+    Number(ctx?.startingStats?.cleanliness || 0),
+    0,
+    100
+  );
+  const startHunger = clamp(Number(ctx?.startingStats?.hunger || 0), 0, 100);
+
+  const cleanlinessRatePerHour = Math.max(
+    0,
+    Number(ctx?.decayByStat?.cleanliness || 0) / totalHours
+  );
+  const hungerRatePerHour = Math.max(
+    0,
+    Number(ctx?.decayByStat?.hunger || 0) / totalHours
+  );
+
+  const hoursUntilDirtyThreshold =
+    startCleanliness <= SEVERE_NEGLECT_CLEANLINESS_THRESHOLD
+      ? 0
+      : cleanlinessRatePerHour > 0
+        ? (startCleanliness - SEVERE_NEGLECT_CLEANLINESS_THRESHOLD) /
+          cleanlinessRatePerHour
+        : Number.POSITIVE_INFINITY;
+
+  const hoursUntilHungerThreshold =
+    startHunger >= SEVERE_NEGLECT_HUNGER_THRESHOLD
+      ? 0
+      : hungerRatePerHour > 0
+        ? (SEVERE_NEGLECT_HUNGER_THRESHOLD - startHunger) / hungerRatePerHour
+        : Number.POSITIVE_INFINITY;
+
+  const severeNeglectStartHour = Math.min(
+    hoursUntilDirtyThreshold,
+    hoursUntilHungerThreshold
+  );
+
+  if (
+    !Number.isFinite(severeNeglectStartHour) ||
+    severeNeglectStartHour >= totalHours
+  ) {
+    return 0;
+  }
+
+  return Math.max(
+    0,
+    totalHours -
+      Math.max(0, severeNeglectStartHour) -
+      SEVERE_NEGLECT_GRACE_HOURS
+  );
+}
+
 function evaluateThresholdsStage(ctx) {
   Object.entries(ctx.state.stats).forEach(([key, value]) => {
     if (!isValidStat(key)) return;
@@ -2130,6 +2194,16 @@ function evaluateThresholdsStage(ctx) {
     }
 
     ctx.state.pottyLevel = clamp(pottyNeed, 0, 100);
+  }
+
+  const severeNeglectHours = getSevereNeglectHours(ctx);
+  if (severeNeglectHours > 0) {
+    ctx.state.stats.health = clamp(
+      Number(ctx.state.stats.health || 0) -
+        severeNeglectHours * OFFLINE_SEVERE_NEGLECT_HEALTH_DECAY_PER_HOUR,
+      0,
+      100
+    );
   }
 
   updateHealthAndIllnessSilo(ctx);
@@ -2351,6 +2425,28 @@ function applyDecay(state, now = nowMs()) {
   });
 
   state.lastUpdatedAt = now;
+}
+
+function getOfflineCatchUpHours(lastTickAt, now = nowMs()) {
+  const savedAt = Number(lastTickAt);
+  if (!Number.isFinite(savedAt)) return 0;
+  const diffHoursRaw = Math.max(0, (now - savedAt) / (1000 * 60 * 60));
+  return Math.min(MAX_DECAY_HOURS, diffHoursRaw);
+}
+
+function applyOfflineCatchUp(state, now = nowMs()) {
+  const hoursPassed = getOfflineCatchUpHours(state.lastUpdatedAt, now);
+  if (!hoursPassed) {
+    if (!Number.isFinite(Number(state.lastUpdatedAt))) {
+      state.lastUpdatedAt = now;
+    }
+    normalizeStatsState(state);
+    return 0;
+  }
+
+  applyDecay(state, now);
+  normalizeStatsState(state);
+  return hoursPassed;
 }
 
 function maybeSampleMood(state, now = nowMs(), reason = "TICK") {
@@ -3453,11 +3549,12 @@ const dogSlice = createSlice({
   reducers: {
     hydrateDog(state, { payload }) {
       if (!payload || typeof payload !== "object") return;
+      const now = nowMs();
 
       const adoptedAt =
         parseAdoptedAt(payload.adoptedAt) ||
         parseAdoptedAt(state.adoptedAt) ||
-        nowMs();
+        now;
 
       const merged = deepMergeDefined(initialState, state, payload);
       merged.adoptedAt = adoptedAt;
@@ -3501,7 +3598,9 @@ const dogSlice = createSlice({
       ensureLegacyJourneyState(merged);
       ensureSurpriseState(merged);
 
-      finalizeDerivedState(merged, nowMs());
+      applyOfflineCatchUp(merged, now);
+      normalizeStatsState(merged);
+      finalizeDerivedState(merged, now);
       return merged;
     },
 
@@ -4265,7 +4364,7 @@ const dogSlice = createSlice({
         state.lastUpdatedAt = now;
         return;
       }
-      applyDecay(state, now);
+      applyOfflineCatchUp(state, now);
       advanceDogFsm(state, now, { allowAutonomy: true });
       const tier = finalizeDerivedState(state, now);
       applyCleanlinessPenalties(state, tier);
@@ -4327,7 +4426,7 @@ const dogSlice = createSlice({
         state.lastUpdatedAt = now;
         return;
       }
-      applyDecay(state, now);
+      applyOfflineCatchUp(state, now);
       const tier = finalizeDerivedState(state, now);
       applyCleanlinessPenalties(state, tier);
       maybeSampleMood(state, now, "SESSION_START");

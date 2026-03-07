@@ -156,19 +156,18 @@ ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <Provider store={store}>
-        <ToastProvider>
-          <ErrorBoundary fallback={AppCrashFallback}>
+        <ErrorBoundary fallback={AppCrashFallback}>
+          <AppStorageHydrator />
+          <AppPreferencesEffects />
+          <AppGameEffects />
+          <CheckInReminders />
+          <DogAIEngine />
+          <ToastProvider>
             <PupProvider>
-              <AppStorageHydrator />
-              <AppPreferencesEffects />
-              <AppGameEffects />
-              <CheckInReminders />
-              <DogAIEngine />
-
               <AppRouter />
             </PupProvider>
-          </ErrorBoundary>
-        </ToastProvider>
+          </ToastProvider>
+        </ErrorBoundary>
       </Provider>
     </QueryClientProvider>
   </React.StrictMode>

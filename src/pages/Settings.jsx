@@ -1,7 +1,7 @@
 // src/pages/Settings.jsx
 /** @format */
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
   resetDogState,
@@ -11,15 +11,13 @@ import {
 } from "../redux/dogSlice.js";
 import {
   USER_STORAGE_KEY,
-  clearUser,
   selectDogRenderMode,
   selectUserZip,
   setDogRenderMode,
   setZip,
 } from "../redux/userSlice.js";
-import { auth, db, firebaseReady } from "../firebase.js";
-import { deleteUser, onAuthStateChanged, signOut } from "firebase/auth";
-import { deleteDoc, doc } from "firebase/firestore";
+import { auth, firebaseReady } from "../firebase.js";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 import {
   hydrateSettings,
   resetSettings,
@@ -126,8 +124,7 @@ import {
   removeStoredValues,
   setStoredValue,
 } from "@/utils/nativeStorage.js";
-import { dogMainDoc, userProfileDoc } from "@/firebase/paths.js";
-import { PATHS } from "@/routes.js";
+import DataDeletion from "@/features/settings/DataDeletion.jsx";
 import {
   canUseNotifications,
   getNotificationPermission,
@@ -281,7 +278,6 @@ function Card({
 
 export default function Settings() {
   const dispatch = useDispatch();
-  const navigate = useNavigate();
   const settings = useSelector(selectSettings);
   const vacation = /** @type {any} */ (useSelector(selectDogVacation));
   const currentZip = useSelector(selectUserZip);
@@ -364,66 +360,6 @@ export default function Settings() {
     } catch (e) {
       console.error(e);
       setCloudActionStatus("Sign out failed. See console.");
-    } finally {
-      setCloudBusy(false);
-    }
-  }
-
-  async function handleDeleteAccount() {
-    if (!auth || !db) return;
-    const user = auth.currentUser;
-    if (!user?.uid) return;
-
-    const ok = window.confirm(
-      "Are you sure? This permanently deletes your dog, your cloud save data, and your account."
-    );
-    if (!ok) return;
-
-    const strictConfirm = window.prompt(
-      "Type DELETE to permanently remove your Doggerz account and save data."
-    );
-    if (strictConfirm !== "DELETE") {
-      setCloudActionStatus("Account deletion canceled.");
-      return;
-    }
-
-    setCloudBusy(true);
-    setCloudActionStatus("");
-    try {
-      const dogKey = getDogStorageKey(user.uid);
-
-      // Best-effort cleanup (older branches used /dog/state; newer uses /dog/main)
-      try {
-        await deleteDoc(doc(db, "users", user.uid, "dog", "state"));
-      } catch {
-        // ignore
-      }
-      try {
-        await deleteDoc(dogMainDoc(user.uid));
-      } catch {
-        // ignore
-      }
-      try {
-        await deleteDoc(userProfileDoc(user.uid));
-      } catch {
-        // ignore
-      }
-
-      await deleteUser(user);
-      try {
-        await removeStoredValue(dogKey);
-        await removeStoredValue(USER_STORAGE_KEY);
-      } catch {
-        // ignore local cleanup failures
-      }
-
-      dispatch(resetDogState());
-      dispatch(clearUser());
-      setCloudActionStatus("Account and save data deleted.");
-      navigate(PATHS.HOME, { replace: true });
-    } catch (e) {
-      console.error(e);
-      setCloudActionStatus(String(e?.message || e || "Delete failed"));
     } finally {
       setCloudBusy(false);
     }
@@ -623,15 +559,6 @@ export default function Settings() {
                   >
                     Sign out
                   </button>
-
-                  <button
-                    type="button"
-                    disabled={cloudBusy}
-                    onClick={handleDeleteAccount}
-                    className="inline-flex items-center justify-center rounded-xl bg-red-500/90 px-4 py-2 text-sm font-semibold text-white hover:bg-red-400 disabled:opacity-60"
-                  >
-                    Delete Account &amp; Save Data
-                  </button>
                 </div>
 
                 {cloudActionStatus ? (
@@ -639,6 +566,8 @@ export default function Settings() {
                     {cloudActionStatus}
                   </p>
                 ) : null}
+
+                <DataDeletion />
               </div>
             ) : (
               <p className="text-sm text-doggerz-paw/70">

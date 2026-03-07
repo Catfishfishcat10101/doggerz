@@ -2,6 +2,7 @@
 // src/features/audio/useDogActionSfx.js
 
 import * as React from "react";
+import { Capacitor } from "@capacitor/core";
 import { Haptics, ImpactStyle } from "@capacitor/haptics";
 
 import jrAudio from "@/features/audio/jrAudio.json";
@@ -51,6 +52,14 @@ function createAudio(src, { loop = false } = {}) {
     return el;
   } catch {
     return null;
+  }
+}
+
+function isWebPlatform() {
+  try {
+    return Capacitor?.getPlatform?.() === "web";
+  } catch {
+    return true;
   }
 }
 
@@ -175,6 +184,17 @@ export function useDogActionSfx({
       const last = Number(lastHapticAtRef.current[key] || 0);
       if (now - last < Math.max(0, cooldownMs)) return;
       lastHapticAtRef.current[key] = now;
+
+      if (isWebPlatform()) {
+        try {
+          if (typeof navigator !== "undefined" && navigator?.vibrate) {
+            navigator.vibrate(Math.max(4, fallbackMs));
+          }
+        } catch {
+          // ignore haptics errors
+        }
+        return;
+      }
 
       try {
         if (Haptics?.impact) {

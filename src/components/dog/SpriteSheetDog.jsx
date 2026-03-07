@@ -116,10 +116,16 @@ function clearPixi(appRef, spriteRef) {
   try {
     if (spriteRef.current) {
       app.stage.removeChild(spriteRef.current);
-      spriteRef.current.destroy();
+      spriteRef.current.destroy({
+        children: true,
+        texture: false,
+        baseTexture: false,
+      });
       spriteRef.current = null;
     }
-    app.destroy(true, { children: true, texture: true, baseTexture: true });
+    // Loaded textures come from PIXI.Assets cache and are reused across anim swaps.
+    // Destroying shared textures here makes later idle/walk loads come back blank.
+    app.destroy(true, { children: true, texture: false, baseTexture: false });
   } catch {
     // best-effort cleanup
   } finally {

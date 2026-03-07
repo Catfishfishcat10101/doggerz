@@ -2,6 +2,7 @@
 
 import PageShell from "@/components/layout/PageShell.jsx";
 import { PageHeader } from "@/components/layout/PageSections.jsx";
+import { withBaseUrl } from "@/utils/assetUtils.js";
 
 const CORE_LOOP = [
   "Play together to keep energy and happiness up.",
@@ -161,7 +162,7 @@ export default function AboutPage() {
               <div className="mt-4 flex items-center gap-4">
                 <div className="h-20 w-20 rounded-2xl border border-white/10 bg-black/40 p-2">
                   <img
-                    src="/assets/sprites/jr/adult_clean.png"
+                    src={withBaseUrl("/assets/sprites/jr/adult_clean.png")}
                     alt="Jack Russell"
                     className="h-full w-full rounded-xl object-contain"
                     loading="lazy"

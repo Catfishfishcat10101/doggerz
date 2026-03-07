@@ -2,6 +2,7 @@
 
 import { Capacitor } from "@capacitor/core";
 import { LocalNotifications } from "@capacitor/local-notifications";
+import { withBaseUrl } from "@/utils/assetUtils.js";
 
 const LIFE_LOOP_IDS = Object.freeze({
   hungry: 9101,
@@ -88,8 +89,8 @@ export async function showDoggerzNotification({
       tag: tag ? String(tag) : undefined,
       renotify: Boolean(renotify),
       requireInteraction: Boolean(requireInteraction),
-      icon: icon || "/assets/icons/icon-192.png",
-      badge: badge || "/assets/icons/icon-192.png",
+      icon: icon || withBaseUrl("/assets/icons/icon-192.png"),
+      badge: badge || withBaseUrl("/assets/icons/icon-192.png"),
       data,
     };
 
