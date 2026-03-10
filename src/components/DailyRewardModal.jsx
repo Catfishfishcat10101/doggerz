@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 
 import { showRewardedAd } from "@/features/ads/AdManager.js";
 import { getDailyRewardState } from "@/features/game/dailyRewards.js";
-import { claimDailyReward, selectDog } from "@/redux/dogSlice.js";
+import { claimDailyReward } from "@/redux/dogSlice.js";
+import { useDog } from "@/hooks/useDogState.js";
 
 function buildRewardWithMultiplier(reward, multiplier) {
   if (!reward || typeof reward !== "object") return null;
@@ -30,7 +31,7 @@ export default function DailyRewardModal({
   rewardState = null,
 }) {
   const dispatch = useDispatch();
-  const dog = useSelector(selectDog);
+  const dog = useDog();
   const [adBusy, setAdBusy] = useState(false);
 
   const resolvedRewardState = useMemo(

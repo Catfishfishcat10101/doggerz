@@ -61,6 +61,10 @@ export default function DreamJournal({ dreams = [] }) {
         const motifs = Array.isArray(dream?.motifs)
           ? dream.motifs.filter(Boolean).map((m) => String(m))
           : [];
+        const sourceMemory = String(dream?.sourceMemory || "")
+          .trim()
+          .replace(/_/g, " ");
+        const emotion = String(dream?.emotion || "").trim();
         const when = formatWhen(dream?.timestamp);
         const key = dream?.id || `${Number(dream?.timestamp || 0)}-${idx}`;
 
@@ -90,6 +94,21 @@ export default function DreamJournal({ dreams = [] }) {
                     {motif}
                   </span>
                 ))}
+              </div>
+            ) : null}
+
+            {sourceMemory || emotion ? (
+              <div className="mt-3 flex flex-wrap gap-1">
+                {sourceMemory ? (
+                  <span className="rounded-full border border-white/10 bg-black/25 px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] text-zinc-300">
+                    From {sourceMemory}
+                  </span>
+                ) : null}
+                {emotion ? (
+                  <span className="rounded-full border border-white/10 bg-black/25 px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] text-zinc-300">
+                    {emotion}
+                  </span>
+                ) : null}
               </div>
             ) : null}
 

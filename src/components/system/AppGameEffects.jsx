@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useSelector } from "react-redux";
-import { selectDogPolls, selectDogSkillTree } from "@/redux/dogSlice.js";
+import { useDogAppEffectsState } from "@/hooks/useDogState.js";
 import { selectSettings } from "@/redux/settingsSlice.js";
 
 /**
@@ -12,8 +12,7 @@ import { selectSettings } from "@/redux/settingsSlice.js";
  * from user preferences.
  */
 export default function AppGameEffects() {
-  const skillTree = useSelector(selectDogSkillTree);
-  const polls = useSelector(selectDogPolls);
+  const { skillTree, polls } = useDogAppEffectsState();
   const settings = useSelector(selectSettings);
 
   const lastUnlockedAt =

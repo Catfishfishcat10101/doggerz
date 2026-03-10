@@ -37,9 +37,6 @@ const TemperamentRevealPage = React.lazy(
 );
 const RainbowBridgePage = React.lazy(() => import("./pages/RainbowBridge.jsx"));
 const NotFoundPage = React.lazy(() => import("./pages/NotFound.jsx"));
-const SpriteTestPage = import.meta.env.DEV
-  ? React.lazy(() => import("./pages/SpriteTest.jsx"))
-  : null;
 
 const stripLeadingSlash = (path) => String(path || "").replace(/^\//, "");
 
@@ -255,17 +252,6 @@ const router = createBrowserRouter(
             "Loading rainbow bridge…"
           ),
         },
-        ...(SpriteTestPage
-          ? [
-              {
-                path: stripLeadingSlash(PATHS.SPRITE_TEST),
-                element: suspenseWithLabel(
-                  withCrashBoundary(<SpriteTestPage />),
-                  "Loading sprite test…"
-                ),
-              },
-            ]
-          : []),
 
         // Catch-all (must be last)
         { path: "*", element: suspense(withCrashBoundary(<NotFoundPage />)) },

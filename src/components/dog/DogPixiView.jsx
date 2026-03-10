@@ -3,6 +3,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import DogCosmeticsOverlay from "@/components/dog/DogCosmeticsOverlay.jsx";
 import SpriteSheetDog from "@/components/dog/SpriteSheetDog.jsx";
+import {
+  DOG_WORLD_HEIGHT,
+  DOG_WORLD_WIDTH,
+} from "@/engine/DogWanderBehavior.js";
 
 function clamp(n, lo, hi) {
   const x = Number(n);
@@ -10,34 +14,21 @@ function clamp(n, lo, hi) {
   return Math.max(lo, Math.min(hi, x));
 }
 
-function randBetween(min, max) {
-  return min + Math.random() * (max - min);
-}
-
-function pickNextTarget(bounds, padding, from = null, minDistance = 0) {
-  const minX = padding;
-  const maxX = Math.max(padding, bounds.width - padding);
-  const minY = padding;
-  const maxY = Math.max(padding, bounds.height - padding);
-
-  for (let i = 0; i < 10; i += 1) {
-    const candidate = {
-      x: randBetween(minX, maxX),
-      y: randBetween(minY, maxY),
-    };
-    if (!from || minDistance <= 0) return candidate;
-    if (Math.hypot(candidate.x - from.x, candidate.y - from.y) >= minDistance) {
-      return candidate;
-    }
-  }
-
-  if (!from) {
-    return { x: randBetween(minX, maxX), y: randBetween(minY, maxY) };
-  }
+function getRoamBounds(bounds, size) {
+  const width = Math.max(0, Number(bounds?.width || 0));
+  const height = Math.max(0, Number(bounds?.height || 0));
+  const sidePadding = Math.max(24, size * 0.18);
+  const topFloor = Math.max(18, height * 0.56);
+  const bottomPadding = Math.max(20, size * 0.08);
 
   return {
-    x: from.x < (minX + maxX) / 2 ? maxX : minX,
-    y: randBetween(minY, maxY),
+    minX: sidePadding,
+    maxX: Math.max(sidePadding, width - sidePadding),
+    minY: clamp(topFloor, 18, Math.max(18, height - bottomPadding)),
+    maxY: Math.max(
+      clamp(topFloor, 18, Math.max(18, height - bottomPadding)),
+      height - bottomPadding
+    ),
   };
 }
 
@@ -45,33 +36,23 @@ export default function DogPixiView({
   stage = "PUPPY",
   condition = "clean",
   anim = "idle",
+  behaviorState = "idle",
+  position = null,
+  facing = "right",
   equippedCosmetics = null,
   width,
   height,
   scale = 2.25,
   dogIsSleeping = false,
   animSpeedMultiplier = 1,
-  attentionTarget = null,
-  sleepSpot = null,
-  movementLocked = false,
   onPositionChange = null,
   onDogTap = null,
 }) {
   const containerRef = useRef(null);
-  const rafRef = useRef(0);
-  const lastTsRef = useRef(0);
 
   const [bounds, setBounds] = useState({ width: 0, height: 0 });
   const viewportWidth = bounds.width;
   const viewportHeight = bounds.height;
-  const [pos, setPos] = useState({ x: 0, y: 0, facing: 1, moving: false });
-
-  const motionRef = useRef({
-    target: { x: 0, y: 0 },
-    moving: false,
-    pauseUntil: 0,
-    speed: 32,
-  });
 
   const size = useMemo(() => {
     const base =
@@ -82,6 +63,50 @@ export default function DogPixiView({
       : 1;
     return clamp(Math.round(base * 0.7 * scaleFactor), 96, 512);
   }, [bounds.height, bounds.width, height, scale, width]);
+
+  const renderPos = useMemo(() => {
+    if (!viewportWidth || !viewportHeight) {
+      return {
+        x: 0,
+        y: 0,
+        facing: facing === "left" ? -1 : 1,
+        moving: false,
+      };
+    }
+
+    const roamBounds = getRoamBounds(
+      { width: viewportWidth, height: viewportHeight },
+      size
+    );
+    const worldX = clamp(
+      Number(position?.x ?? DOG_WORLD_WIDTH / 2),
+      0,
+      DOG_WORLD_WIDTH
+    );
+    const worldY = clamp(
+      Number(position?.y ?? DOG_WORLD_HEIGHT * 0.72),
+      0,
+      DOG_WORLD_HEIGHT
+    );
+
+    return {
+      x: clamp(
+        (worldX / DOG_WORLD_WIDTH) * viewportWidth,
+        roamBounds.minX,
+        roamBounds.maxX
+      ),
+      y: clamp(
+        (worldY / DOG_WORLD_HEIGHT) * viewportHeight,
+        roamBounds.minY,
+        roamBounds.maxY
+      ),
+      facing: facing === "left" ? -1 : 1,
+      moving:
+        String(behaviorState || "idle")
+          .trim()
+          .toLowerCase() === "walk",
+    };
+  }, [behaviorState, facing, position, size, viewportHeight, viewportWidth]);
 
   useEffect(() => {
     if (!containerRef.current) return undefined;
@@ -106,166 +131,9 @@ export default function DogPixiView({
   }, []);
 
   useEffect(() => {
-    if (!viewportWidth || !viewportHeight) return;
-    const padding = Math.max(16, size * 0.25);
-    const center = {
-      x: clamp(viewportWidth / 2, padding, viewportWidth - padding),
-      y: clamp(viewportHeight / 2, padding, viewportHeight - padding),
-    };
-    const target = pickNextTarget(
-      { width: viewportWidth, height: viewportHeight },
-      padding,
-      center,
-      Math.max(36, size * 0.3)
-    );
-    motionRef.current.target = target;
-    setPos({
-      x: center.x,
-      y: center.y,
-      facing: 1,
-      moving: false,
-    });
-  }, [viewportHeight, viewportWidth, size]);
-
-  useEffect(() => {
-    if (!dogIsSleeping) return;
-    if (!viewportWidth || !viewportHeight) return;
-    if (!sleepSpot || typeof sleepSpot !== "object") return;
-
-    const xNorm = Number(sleepSpot.xNorm);
-    const yNorm = Number(sleepSpot.yNorm);
-    if (!Number.isFinite(xNorm) || !Number.isFinite(yNorm)) return;
-
-    const padding = Math.max(16, size * 0.25);
-    const next = {
-      x: clamp(xNorm * viewportWidth, padding, viewportWidth - padding),
-      y: clamp(yNorm * viewportHeight, padding, viewportHeight - padding),
-      moving: false,
-      facing: 1,
-    };
-    motionRef.current.target = { x: next.x, y: next.y };
-    motionRef.current.moving = false;
-    motionRef.current.pauseUntil = Number.MAX_SAFE_INTEGER;
-    setPos((prev) => ({ ...prev, ...next }));
-  }, [dogIsSleeping, size, sleepSpot, viewportHeight, viewportWidth]);
-
-  useEffect(() => {
-    if (dogIsSleeping) return;
-    motionRef.current.pauseUntil = 0;
-  }, [dogIsSleeping]);
-
-  useEffect(() => {
-    const stationaryByAnim =
-      /(sleep|lay_down|play_dead|stay|sit|idle_resting)/.test(
-        String(anim || "")
-          .trim()
-          .toLowerCase()
-          .replace(/\s+/g, "_")
-          .replace(/-+/g, "_")
-      );
-    const shouldFreezeMovement =
-      dogIsSleeping || stationaryByAnim || movementLocked;
-
-    const tick = (ts) => {
-      if (!lastTsRef.current) lastTsRef.current = ts;
-      const dt = Math.min(0.05, (ts - lastTsRef.current) / 1000);
-      lastTsRef.current = ts;
-
-      if (!viewportWidth || !viewportHeight || shouldFreezeMovement) {
-        setPos((prev) => ({ ...prev, moving: false }));
-        rafRef.current = requestAnimationFrame(tick);
-        return;
-      }
-
-      const padding = Math.max(16, size * 0.25);
-      const state = motionRef.current;
-      const now = ts;
-
-      setPos((prev) => {
-        if (!state.moving && now >= state.pauseUntil) {
-          const minTravel = Math.max(48, size * 0.35);
-          state.target = pickNextTarget(
-            { width: viewportWidth, height: viewportHeight },
-            padding,
-            prev,
-            minTravel
-          );
-          state.moving = true;
-          const speedMult = clamp(Number(animSpeedMultiplier), 0.2, 2);
-          state.speed = randBetween(24, 52) * speedMult;
-        }
-
-        if (!state.moving) {
-          return { ...prev, moving: false };
-        }
-
-        const dx = state.target.x - prev.x;
-        const dy = state.target.y - prev.y;
-        const dist = Math.hypot(dx, dy);
-
-        if (dist < 10) {
-          state.moving = false;
-          state.pauseUntil = now + randBetween(1200, 2800);
-          return { ...prev, moving: false };
-        }
-
-        const step = Math.min(dist, state.speed * dt);
-        const nx = prev.x + (dx / dist) * step;
-        const ny = prev.y + (dy / dist) * step;
-        const facing = dx < -1 ? -1 : dx > 1 ? 1 : prev.facing;
-
-        const next = {
-          x: clamp(nx, padding, viewportWidth - padding),
-          y: clamp(ny, padding, viewportHeight - padding),
-          facing,
-          moving: true,
-        };
-
-        return next;
-      });
-
-      rafRef.current = requestAnimationFrame(tick);
-    };
-
-    rafRef.current = requestAnimationFrame(tick);
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      rafRef.current = 0;
-      lastTsRef.current = 0;
-    };
-  }, [
-    anim,
-    animSpeedMultiplier,
-    attentionTarget,
-    dogIsSleeping,
-    movementLocked,
-    onPositionChange,
-    size,
-    viewportHeight,
-    viewportWidth,
-  ]);
-
-  useEffect(() => {
     if (typeof onPositionChange !== "function") return;
-    onPositionChange(pos);
-  }, [onPositionChange, pos]);
-
-  useEffect(() => {
-    if (!viewportWidth || !viewportHeight) return;
-    if (!attentionTarget || typeof attentionTarget !== "object") return;
-
-    const xNorm = Number(attentionTarget.xNorm);
-    const yNorm = Number(attentionTarget.yNorm);
-    if (!Number.isFinite(xNorm) || !Number.isFinite(yNorm)) return;
-
-    const padding = Math.max(16, size * 0.25);
-    motionRef.current.target = {
-      x: clamp(xNorm * viewportWidth, padding, viewportWidth - padding),
-      y: clamp(yNorm * viewportHeight, padding, viewportHeight - padding),
-    };
-    motionRef.current.moving = true;
-    motionRef.current.pauseUntil = 0;
-  }, [attentionTarget, size, viewportHeight, viewportWidth]);
+    onPositionChange(renderPos);
+  }, [onPositionChange, renderPos]);
 
   const animLower = String(anim || "idle")
     .trim()
@@ -273,7 +141,7 @@ export default function DogPixiView({
     .replace(/\s+/g, "_")
     .replace(/-+/g, "_");
   const resolveDirectionalWalk = () => {
-    if (!pos.moving || dogIsSleeping) return "idle";
+    if (!renderPos.moving || dogIsSleeping) return "idle";
     // Always use the canonical walk sheet and let facing handle mirroring.
     // Direction-specific sheets were producing a frozen-paw moonwalk look.
     return "walk";
@@ -286,7 +154,7 @@ export default function DogPixiView({
     return animLower;
   })();
   const depthRatio =
-    viewportHeight > 0 ? clamp(pos.y / viewportHeight, 0, 1) : 0.5;
+    viewportHeight > 0 ? clamp(renderPos.y / viewportHeight, 0, 1) : 0.5;
   const depthScale = clamp(0.95 + depthRatio * 0.55, 0.9, 1.5);
   const depthZIndex = Math.max(6, Math.round(8 + depthRatio * 24));
   const shadowWidth = Math.round(size * (0.34 + depthRatio * 0.14));
@@ -307,10 +175,13 @@ export default function DogPixiView({
       <div
         style={{
           position: "absolute",
-          left: pos.x,
-          top: pos.y,
+          left: renderPos.x,
+          top: renderPos.y,
           transform: `translate(-50%, ${dogIsSleeping ? "-68%" : "-76%"}) scale(${depthScale})`,
           transformOrigin: "50% 100%",
+          transition: renderPos.moving
+            ? "left 0.92s linear, top 0.92s linear, transform 0.2s ease"
+            : "transform 0.2s ease",
           zIndex: depthZIndex,
           pointerEvents: "none",
         }}
@@ -334,7 +205,7 @@ export default function DogPixiView({
           stage={stage}
           condition={condition}
           anim={effectiveAnim}
-          facing={pos.facing}
+          facing={renderPos.facing}
           size={size}
           speedMultiplier={animSpeedMultiplier}
         />
@@ -342,7 +213,7 @@ export default function DogPixiView({
           equipped={equippedCosmetics}
           size={size}
           stage={stage}
-          facing={pos.facing}
+          facing={renderPos.facing}
           showLabels={false}
           showPreviewTags={false}
         />
@@ -360,8 +231,8 @@ export default function DogPixiView({
           }}
           className="absolute rounded-full bg-transparent"
           style={{
-            left: pos.x,
-            top: pos.y - Math.round(size * 0.16),
+            left: renderPos.x,
+            top: renderPos.y - Math.round(size * 0.16),
             width: dogTapHitboxSize,
             height: dogTapHitboxHeight,
             transform: "translate(-50%, -50%)",

@@ -10,6 +10,7 @@ import {
   DOG_ANIMATION_CATEGORIES,
   getDogAnimationCategory,
 } from "@/utils/mapPoseToDogAction.js";
+import { DOG_ANIMATIONS } from "@/animation/dogAnimationMap.js";
 import { derivePersonalityAnimationHint } from "@/logic/dogEngine.js";
 import { derivePersonalityProfile } from "@/logic/personalityProfile.js";
 
@@ -265,11 +266,13 @@ export function selectDogRenderParams(stateOrDog) {
         : "senior";
 
   const last = normalizeAction(dog.lastAction || dog.last_action);
+  const aiState = normalizeAction(dog.aiState || "");
   const isSleeping =
     !!dog.isAsleep ||
     !!dog.is_sleeping ||
     last === "sleep" ||
-    last === "sleep_auto";
+    last === "sleep_auto" ||
+    aiState === "sleep";
 
   const tierRaw =
     dog.cleanlinessTier || dog.cleanliness_tier || dog.cleanliness || "FRESH";
@@ -302,6 +305,25 @@ export function selectDogRenderParams(stateOrDog) {
       dog,
       stage
     );
+    const restState = resolveRestState({ anim: resolvedAnim, isSleeping, dog });
+    const animCategory = resolveAnimCategory({
+      anim: resolvedAnim,
+      lastAction: last,
+      restState,
+    });
+    return {
+      stage,
+      condition,
+      anim: resolvedAnim,
+      isSleeping,
+      restState,
+      animCategory,
+    };
+  }
+
+  const aiAnim = sanitizeAnimForCurrentSpriteSet(DOG_ANIMATIONS[aiState] || "");
+  if (aiAnim) {
+    const resolvedAnim = applyJointStiffnessAnimationLimit(aiAnim, dog, stage);
     const restState = resolveRestState({ anim: resolvedAnim, isSleeping, dog });
     const animCategory = resolveAnimCategory({
       anim: resolvedAnim,

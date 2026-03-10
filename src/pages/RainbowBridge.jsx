@@ -1,26 +1,15 @@
 // src/pages/RainbowBridge.jsx
 import * as React from "react";
 import { Link } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 
 import PageShell from "@/components/layout/PageShell.jsx";
-import {
-  selectDog,
-  selectDogLifeStage,
-  selectDogBond,
-  selectDogMemorial,
-  selectDogLegacyJourney,
-  startRainbowBridge,
-  completeRainbowBridge,
-} from "@/redux/dogSlice.js";
+import { useDogLegacyView } from "@/hooks/useDogState.js";
+import { startRainbowBridge, completeRainbowBridge } from "@/redux/dogSlice.js";
 
 export default function RainbowBridge() {
   const dispatch = useDispatch();
-  const dog = useSelector(selectDog);
-  const lifeStage = useSelector(selectDogLifeStage);
-  const bond = useSelector(selectDogBond);
-  const memorial = useSelector(selectDogMemorial);
-  const legacyJourney = useSelector(selectDogLegacyJourney);
+  const { name, lifeStage, bond, memorial, legacyJourney } = useDogLegacyView();
   const [showConfirm, setShowConfirm] = React.useState(false);
   const modalRef = React.useRef(null);
 
@@ -91,13 +80,11 @@ export default function RainbowBridge() {
                 pup made you smile. That’s the kind of magic we’re collecting
                 here.
               </p>
-              {dog?.name ? (
+              {name ? (
                 <div className="mt-4 text-xs text-zinc-400">
                   Pup:{" "}
-                  <span className="font-semibold text-zinc-100">
-                    {dog.name}
-                  </span>{" "}
-                  · Bond:{" "}
+                  <span className="font-semibold text-zinc-100">{name}</span> ·
+                  Bond:{" "}
                   <span className="font-semibold text-emerald-200">
                     {bondValue}%
                   </span>{" "}

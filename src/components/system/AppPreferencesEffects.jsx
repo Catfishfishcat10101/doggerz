@@ -1,8 +1,8 @@
-// src/pages/AppPreferencesEffects.jsx
+// src/components/system/AppPreferencesEffects.jsx
 
 import * as React from "react";
 import { useSelector } from "react-redux";
-import { selectSettings } from "../redux/settingsSlice.js";
+import { selectSettings } from "@/redux/settingsSlice.js";
 
 function getSystemTheme() {
   if (typeof window === "undefined") return "dark";

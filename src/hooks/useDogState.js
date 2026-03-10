@@ -1,0 +1,240 @@
+/** @format */
+
+import { createSelector } from "@reduxjs/toolkit";
+import { shallowEqual } from "react-redux";
+import { useAppDispatch, useAppSelector } from "@/redux/hooks.js";
+import {
+  bathe,
+  feed,
+  giveWater,
+  goPotty,
+  petDog,
+  play,
+  quickFeed,
+  selectDog,
+  selectDogAgeInfo,
+  selectDogBond,
+  selectDogCleanlinessMeta,
+  selectCosmeticCatalog,
+  selectDogDreams,
+  selectDogGrowthMilestone,
+  selectDogJournal,
+  selectDogLegacyJourney,
+  selectDogLifeStage,
+  selectDogMemories,
+  selectDogMemorial,
+  selectDogMoodLabel,
+  selectDogNeedsNormalized,
+  selectDogPolls,
+  selectDogSkillTree,
+  selectDogSkillTreePoints,
+  selectDogSkillTreeUnlockedIds,
+  selectDogStats,
+  selectDogVacation,
+  selectNextStreakReward,
+  trainObedience,
+} from "@/redux/dogSlice.js";
+import { selectDogRenderModel } from "@/features/game/dogSelectors.js";
+import { scoreRecentMemoryDrives } from "@/engine/DogMemoryDrives.js";
+
+const selectDogIdentityModel = createSelector([selectDog], (dog) => ({
+  name: dog?.name || "Pup",
+  level: Math.max(1, Math.floor(Number(dog?.level || 1))),
+  xp: Math.max(0, Math.floor(Number(dog?.xp || 0))),
+  coins: Math.max(0, Math.floor(Number(dog?.coins || 0))),
+}));
+
+const selectDogVitalsModel = createSelector(
+  [selectDogStats, selectDogBond, selectDogMoodLabel, selectDogNeedsNormalized],
+  (stats, bond, moodLabel, needs) => ({
+    hunger: Number(stats?.hunger || 0),
+    thirst: Number(stats?.thirst || 0),
+    energy: Number(stats?.energy || 0),
+    happiness: Number(stats?.happiness || 0),
+    health: Number(stats?.health || 0),
+    cleanliness: Number(stats?.cleanliness || 0),
+    bondValue: Number(bond?.value || 0),
+    moodLabel,
+    needs,
+  })
+);
+
+const selectDogLifeModel = createSelector(
+  [selectDogAgeInfo, selectDogLifeStage, selectDogCleanlinessMeta],
+  (ageInfo, lifeStage, cleanliness) => ({
+    ageDays: Math.max(
+      0,
+      Math.floor(Number(ageInfo?.days ?? lifeStage?.days ?? 0))
+    ),
+    stage: lifeStage?.stage || ageInfo?.stage || "PUPPY",
+    stageLabel: lifeStage?.label || ageInfo?.label || "Puppy",
+    cleanliness,
+  })
+);
+
+const selectDogGameViewModel = createSelector(
+  [selectDog, selectDogVitalsModel, selectDogLifeModel, selectDogRenderModel],
+  (dog, vitals, life, renderModel) => ({
+    dog,
+    vitals,
+    life,
+    renderModel,
+  })
+);
+
+const selectDogSkillTreeModel = createSelector(
+  [
+    selectDogIdentityModel,
+    selectDogSkillTreeUnlockedIds,
+    selectDogSkillTreePoints,
+    selectDogSkillTree,
+  ],
+  (identity, unlockedIds, points, skillTree) => ({
+    level: identity.level,
+    unlockedIds,
+    points,
+    lastUnlockedId: skillTree?.lastUnlockedId || null,
+    lastUnlockedAt: Number(skillTree?.lastUnlockedAt || 0) || null,
+  })
+);
+
+const selectDogLegacyViewModel = createSelector(
+  [
+    selectDogIdentityModel,
+    selectDogLifeStage,
+    selectDogBond,
+    selectDogMemorial,
+    selectDogLegacyJourney,
+  ],
+  (identity, lifeStage, bond, memorial, legacyJourney) => ({
+    name: identity.name,
+    lifeStage,
+    bond,
+    memorial,
+    legacyJourney,
+  })
+);
+
+const selectDogDreamStateModel = createSelector(
+  [selectDogIdentityModel, selectDogDreams, selectDogMemories],
+  (identity, dreamsState, memories) => ({
+    name: identity.name,
+    dreamsState,
+    memories,
+    memoryDrives: scoreRecentMemoryDrives(memories),
+  })
+);
+
+const selectDogMemoryStateModel = createSelector(
+  [selectDogIdentityModel, selectDogJournal, selectDogMemories],
+  (identity, journal, memories) => ({
+    name: identity.name,
+    journal,
+    memories,
+    memoryDrives: scoreRecentMemoryDrives(memories),
+  })
+);
+
+const selectDogStoreViewModel = createSelector(
+  [selectDog, selectCosmeticCatalog, selectNextStreakReward],
+  (dog, catalog, nextRewardInfo) => ({
+    dog,
+    catalog,
+    nextRewardInfo,
+  })
+);
+
+const selectDogEngineStateModel = createSelector(
+  [selectDog, selectDogGrowthMilestone, selectDogRenderModel],
+  (dog, growthMilestone, renderModel) => ({
+    dog,
+    growthMilestone,
+    renderModel,
+  })
+);
+
+const selectDogAppEffectsModel = createSelector(
+  [selectDogSkillTree, selectDogPolls],
+  (skillTree, polls) => ({
+    skillTree,
+    polls,
+  })
+);
+
+export function useDogState(selector, equalityFn = undefined) {
+  return useAppSelector(selector, equalityFn);
+}
+
+export function useDog() {
+  return useDogState(selectDog);
+}
+
+export function useDogIdentity() {
+  return useDogState(selectDogIdentityModel, shallowEqual);
+}
+
+export function useDogVitals() {
+  return useDogState(selectDogVitalsModel, shallowEqual);
+}
+
+export function useDogLife() {
+  return useDogState(selectDogLifeModel, shallowEqual);
+}
+
+export function useDogRenderState() {
+  return useDogState(selectDogRenderModel, shallowEqual);
+}
+
+export function useDogGameView() {
+  return useDogState(selectDogGameViewModel, shallowEqual);
+}
+
+export function useDogGrowthMilestone() {
+  return useDogState(selectDogGrowthMilestone);
+}
+
+export function useDogSkillTreeState() {
+  return useDogState(selectDogSkillTreeModel, shallowEqual);
+}
+
+export function useDogLegacyView() {
+  return useDogState(selectDogLegacyViewModel, shallowEqual);
+}
+
+export function useDogDreamState() {
+  return useDogState(selectDogDreamStateModel, shallowEqual);
+}
+
+export function useDogMemoryState() {
+  return useDogState(selectDogMemoryStateModel, shallowEqual);
+}
+
+export function useDogStoreView() {
+  return useDogState(selectDogStoreViewModel, shallowEqual);
+}
+
+export function useDogEngineState() {
+  return useDogState(selectDogEngineStateModel, shallowEqual);
+}
+
+export function useDogAppEffectsState() {
+  return useDogState(selectDogAppEffectsModel, shallowEqual);
+}
+
+export function useDogVacation() {
+  return useDogState(selectDogVacation, shallowEqual);
+}
+
+export function useDogActions() {
+  const dispatch = useAppDispatch();
+  return {
+    quickFeed: (payload) => dispatch(quickFeed(payload)),
+    feed: (payload) => dispatch(feed(payload)),
+    play: (payload) => dispatch(play(payload)),
+    petDog: (payload) => dispatch(petDog(payload)),
+    bathe: (payload) => dispatch(bathe(payload)),
+    goPotty: (payload) => dispatch(goPotty(payload)),
+    giveWater: (payload) => dispatch(giveWater(payload)),
+    trainObedience: (payload) => dispatch(trainObedience(payload)),
+  };
+}

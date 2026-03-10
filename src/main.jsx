@@ -8,7 +8,7 @@ import { Provider } from "react-redux";
 import AppRouter from "./AppRouter.jsx";
 import store from "./redux/store.js";
 import "./index.css";
-import AppPreferencesEffects from "./pages/AppPreferencesEffects.jsx";
+import AppPreferencesEffects from "./components/system/AppPreferencesEffects.jsx";
 import AppGameEffects from "./components/system/AppGameEffects.jsx";
 import AppStorageHydrator from "./components/system/AppStorageHydrator.jsx";
 import CheckInReminders from "./components/environment/CheckInReminders.jsx";

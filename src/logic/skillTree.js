@@ -1,8 +1,9 @@
 // src/constants/skillTree.js
 
-function freezePerk(perk) {
+function freezePerk(perk, index = 0) {
   return Object.freeze({
     ...perk,
+    tier: Math.max(1, Math.floor(Number(perk?.tier || index + 1))),
     modifiers:
       perk?.modifiers && typeof perk.modifiers === "object"
         ? Object.freeze({ ...perk.modifiers })
@@ -207,6 +208,7 @@ export const SKILL_TREE_PERKS = Object.freeze(
         branchId: branch.id,
         branchName: branch.name,
         order: index,
+        tier: Math.max(1, Math.floor(Number(perk?.tier || index + 1))),
         cost: Math.max(1, Math.floor(Number(perk?.cost || 1))),
         minDogLevel: Math.max(1, Math.floor(Number(perk?.minDogLevel || 1))),
         requiredPerkIds: Object.freeze(

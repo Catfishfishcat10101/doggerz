@@ -4,13 +4,14 @@
 import * as React from "react";
 import { useSelector } from "react-redux";
 
-import { selectDog } from "@/redux/dogSlice.js";
 import { selectSettings } from "@/redux/settingsSlice.js";
 import {
-  cancelLifeLoopNotifications,
-  scheduleLifeLoopNotifications,
-  showDoggerzNotification,
-} from "@/utils/notifications.js";
+  DEFAULT_DOGGERZ_REMINDERS,
+  cancelDogNotifications,
+  scheduleDogNotifications,
+  sendDogNotification,
+} from "@/logic/NotificationScheduler.js";
+import { useDog } from "@/hooks/useDogState.js";
 import {
   buildReminder,
   fireReminder,
@@ -18,41 +19,24 @@ import {
   shouldFireReminder,
 } from "@/utils/reminders.js";
 import { withBaseUrl } from "@/utils/assetUtils.js";
-import { CHECK_IN_THRESHOLDS, getCheckInTier } from "@/utils/checkIn.js";
+import { getCheckInTier } from "@/utils/checkIn.js";
 
-const REMINDERS = [
-  {
-    key: "checkin-hungry",
-    label: "Hungry",
-    title: "Your pup is hungry",
-    message: "It has been 4 hours. A quick snack keeps them happy.",
-    thresholdMs: CHECK_IN_THRESHOLDS.hungryMs,
-    cooldownMs: 3 * 60 * 60 * 1000,
-    icon: "/assets/icons/icon-192.png",
-  },
-  {
-    key: "checkin-dirty",
-    label: "Needs a bath",
-    title: "Your pup needs a rinse",
-    message: "It has been 12 hours. They are getting scruffy.",
-    thresholdMs: CHECK_IN_THRESHOLDS.dirtyMs,
-    cooldownMs: 6 * 60 * 60 * 1000,
-    icon: "/assets/icons/icon-192.png",
-  },
-  {
-    key: "checkin-stray",
-    label: "Feeling lonely",
-    title: "Your Jack Russell is lonely",
-    message:
-      "It has been 24 hours. Your pup is looking a bit stray. Come check in.",
-    thresholdMs: CHECK_IN_THRESHOLDS.strayMs,
-    cooldownMs: 12 * 60 * 60 * 1000,
-    icon: "/assets/sprites/jr/pup_clean.png",
-  },
-];
+const REMINDERS = DEFAULT_DOGGERZ_REMINDERS.map((item) => ({
+  ...item,
+  cooldownMs:
+    item.key === "checkin-hungry"
+      ? 3 * 60 * 60 * 1000
+      : item.key === "checkin-dirty"
+        ? 6 * 60 * 60 * 1000
+        : 12 * 60 * 60 * 1000,
+  icon:
+    item.key === "checkin-stray"
+      ? "/assets/sprites/jr/pup_clean.png"
+      : "/assets/icons/icon-192.png",
+}));
 
 export default function CheckInReminders() {
-  const dog = useSelector(selectDog);
+  const dog = useDog();
   const settings = useSelector(selectSettings);
   const timersRef = React.useRef([]);
 
@@ -87,11 +71,11 @@ export default function CheckInReminders() {
         ) {
           return;
         }
-        const ok = await showDoggerzNotification({
+        const ok = await sendDogNotification({
           title: reminder.title,
           body: reminder.message,
           tag: reminder.key,
-          icon: withBaseUrl(reminder.icon),
+          data: { icon: withBaseUrl(reminder.icon) },
         });
         if (ok) {
           fireReminder(
@@ -113,7 +97,7 @@ export default function CheckInReminders() {
 
     const run = async () => {
       await loadReminderStateAsync();
-      const scheduled = await scheduleLifeLoopNotifications({
+      const scheduled = await scheduleDogNotifications({
         lastSeenAt,
         reminders: REMINDERS,
       });
@@ -139,7 +123,7 @@ export default function CheckInReminders() {
     if (settings?.dailyRemindersEnabled) return;
     const root = document.documentElement;
     delete root.dataset.checkinTier;
-    cancelLifeLoopNotifications();
+    cancelDogNotifications();
     clearTimers();
   }, [clearTimers, settings?.dailyRemindersEnabled]);
 

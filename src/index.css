@@ -15,6 +15,10 @@
   /* Color tokens (dark theme default) */
   --bg: #020617;
   --text-main: #e5e7eb;
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
 
   /* Gradients */
   --grad-shell: radial-gradient(
@@ -27,6 +31,13 @@
   /* Focus ring (used by focus-visible styles below) */
   --focus-ring: #22c55e;
   --focus-ring-soft: rgba(34, 197, 94, 0.28);
+}
+
+.dz-safe-area {
+  padding-top: var(--safe-area-top);
+  padding-right: var(--safe-area-right);
+  padding-bottom: var(--safe-area-bottom);
+  padding-left: var(--safe-area-left);
 }
 
 html[data-theme="light"] {
@@ -116,6 +127,68 @@ html[data-skill-branch="athlete"] {
 
 html[data-skill-pulse="1"] .dz-perk-card[data-state="unlocked"] {
   animation: dzSkillPulse 650ms ease-out 1;
+}
+
+.dz-skill-link {
+  background: rgba(148, 163, 184, 0.45);
+  transition:
+    background 220ms ease,
+    box-shadow 220ms ease,
+    opacity 220ms ease;
+}
+
+.dz-skill-link[data-state="active"] {
+  background: rgba(251, 191, 36, 0.65);
+  box-shadow: 0 0 16px rgba(251, 191, 36, 0.35);
+}
+
+.dz-skill-link[data-state="unlocked"] {
+  background: rgba(52, 211, 153, 0.8);
+  box-shadow: 0 0 18px rgba(16, 185, 129, 0.45);
+}
+
+.dz-skill-node {
+  transition:
+    transform 220ms ease,
+    box-shadow 220ms ease,
+    background 220ms ease,
+    border-color 220ms ease;
+}
+
+.dz-skill-node[data-state="active"] {
+  border-color: rgba(251, 191, 36, 0.75);
+  background: rgba(254, 240, 138, 0.95);
+  box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.16);
+}
+
+.dz-skill-node[data-state="unlocked"] {
+  box-shadow:
+    0 0 0 4px rgba(16, 185, 129, 0.14),
+    0 0 18px rgba(16, 185, 129, 0.3);
+}
+
+.dz-perk-card[data-recent-unlock="true"],
+.dz-skill-link[data-recent-unlock="true"],
+.dz-skill-node[data-recent-unlock="true"] {
+  animation: dzSkillUnlockFlow 1.2s ease-out 1;
+}
+
+@keyframes dzSkillUnlockFlow {
+  0% {
+    filter: brightness(1);
+    box-shadow: 0 0 0 rgba(251, 191, 36, 0);
+  }
+  35% {
+    filter: brightness(1.06);
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.24),
+      0 0 22px rgba(251, 191, 36, 0.5),
+      0 0 38px rgba(16, 185, 129, 0.24);
+  }
+  100% {
+    filter: brightness(1);
+    box-shadow: 0 0 0 rgba(251, 191, 36, 0);
+  }
 }
 
 @keyframes dzStoryPulse {

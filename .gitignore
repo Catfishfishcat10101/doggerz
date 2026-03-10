@@ -1,51 +1,57 @@
-### Node / dependencies
+# -----------------------------
+# Doggerz .gitignore
+# Stack: Vite + React + Capacitor + Android + Firebase
+# -----------------------------
+
+# Node dependencies
 node_modules/
 
-### Build output
+# Build output
 dist/
 dist-ssr/
-*.tsbuildinfo
 web-build/
-ios/
 output/
 test-results/
+coverage/
+*.tsbuildinfo
 
-### Vite / tool caches
+# Tooling caches
 .cache/
 .vite/
+.eslintcache
+.stylelintcache
 
-### Logs
+# Logs
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-### Environment / secrets
+# Environment / secrets
 .env
 .env.*
 !.env.example
 
-### Coverage / tests
-coverage/
-
-### OS junk
+# OS / editor junk
 .DS_Store
 Thumbs.db
 *.swp
+*.swo
+*~
 
-### IDEs
+# IDEs / local workspace
 .vscode/
 .idea/
+*.iml
 *.suo
 *.sln
-*.iml
 
-### Local tooling caches / templates
+# Local tooling dirs
 .gradle-user-home/
 my-app/
 
-### Android / Capacitor generated outputs
+# Android / Gradle / Capacitor generated
 android/.gradle/
 android/.idea/
 android/**/build/
@@ -55,30 +61,30 @@ android/app/src/main/assets/capacitor.config.json
 android/app/src/main/assets/capacitor.plugins.json
 android/capacitor-cordova-android-plugins/
 
-### Bundle reports
-stats.html
-dist/stats.html
-
-# --- Doggerz: generated/temp assets (do not ship/commit) ---
-public/sprites/puppy/
-public/sprites/_tmp/
-
-# Android / Gradle / Android Studio
-android/.gradle/
-android/.idea/
-android/**/build/
-android/local.properties
+# Android signing / release secrets
 android/keystore.properties
 android/*.jks
 android/*.keystore
+*.jks
+*.keystore
 
-# Capacitor starter template (not used)
-my-app/
+# Android release artifacts
+*.apk
+*.aab
+*.ap_
 
-# Never commit installers / binaries / backup files
+# Binary / installer leftovers
 *.exe
 *.msi
 *.bak
-*.jks
-*.keystore
+*.tmp
+*.old
+
+# Reports
+stats.html
+dist/stats.html
+
+# Doggerz generated / temp assets (do not commit)
+public/sprites/puppy/
+public/sprites/_tmp/
 

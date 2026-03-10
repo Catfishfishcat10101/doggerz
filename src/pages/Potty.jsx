@@ -1,4 +1,5 @@
 // src/pages/Potty.jsx
+import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { PATHS } from "@/routes.js";
 import { useToast } from "@/state/toastContext.js";
@@ -6,7 +7,8 @@ import { usePup } from "@/components/dog/PupContext.jsx";
 import PageShell from "@/components/layout/PageShell.jsx";
 import { PageFooter, PageHeader } from "@/components/layout/PageSections.jsx";
 import EmptySlate from "@/components/ui/EmptySlate.jsx";
-import { useSelector, useDispatch } from "react-redux";
+import { useSelector, useDispatch, useStore } from "react-redux";
+import { simulationTick } from "@/redux/dogSlice.js";
 import {
   selectSettings,
   setPottyAutoReturn,
@@ -25,7 +27,7 @@ function describePottyTraining(training) {
     return "Mostly trained! Just a few more trips needed.";
   }
   if (t >= 50) {
-    return "Well hot dog! Keep taking them out after meals and naps.";
+    return "Good progress! Keep taking them out after meals and naps.";
   }
   if (t > 0) {
     return "You got this, Young pups will go often!";
@@ -48,11 +50,23 @@ function formatRelativeTime(date) {
 
 export default function Potty() {
   const dispatch = useDispatch();
+  const store = useStore();
   const navigate = useNavigate();
   const toast = useToast();
   const { pup, addXP, removeXP, logPottySuccess, logAccident } = usePup();
   const dog = pup;
   const settings = useSelector(selectSettings);
+  const reactionTimeoutsRef = useRef([]);
+
+  useEffect(
+    () => () => {
+      reactionTimeoutsRef.current.forEach((timeoutId) =>
+        window.clearTimeout(timeoutId)
+      );
+      reactionTimeoutsRef.current = [];
+    },
+    []
+  );
 
   // If there is no dog at all, send them to adopt
   if (!dog) {
@@ -62,7 +76,7 @@ export default function Potty() {
           <EmptySlate
             kicker="Potty Training"
             title="No pup yet"
-            description="You’ll need to adopt a Doggerz pup before you can start potty training."
+            description="You’ll need to adopt a Dog before you can start potty training."
             primaryLabel="Adopt your pup"
             onPrimary={() => navigate(PATHS.ADOPT)}
             backTo={PATHS.HOME}
@@ -73,15 +87,15 @@ export default function Potty() {
     );
   }
 
-  const trainingGoal = Number(dog.pottyGoal || 0);
-  const trainingCount = Number(dog.pottySuccesses || 0);
-  const training = Number(dog.pottyTrainingPct || 0);
-  const accidents = Number(dog.accidents || 0);
-  const lastSuccessAt = dog.lastPottySuccessAt
-    ? new Date(dog.lastPottySuccessAt)
+  const trainingGoal = Number(dog.training?.potty?.goal || 0);
+  const trainingCount = Number(dog.training?.potty?.successCount || 0);
+  const training = Number(dog.pottyTrainingPct ?? dog.potty?.training ?? 0);
+  const accidents = Number(dog.potty?.totalAccidents || 0);
+  const lastSuccessAt = dog.potty?.lastSuccessAt
+    ? new Date(dog.potty.lastSuccessAt)
     : null;
-  const lastAccidentAt = dog.lastPottyAccidentAt
-    ? new Date(dog.lastPottyAccidentAt)
+  const lastAccidentAt = dog.potty?.lastAccidentAt
+    ? new Date(dog.potty.lastAccidentAt)
     : null;
   const autoReturn = settings?.pottyAutoReturn === true;
   const confirmAccidents = settings?.pottyConfirmAccidents !== false;
@@ -109,6 +123,32 @@ export default function Potty() {
       : null;
 
     logPottySuccess();
+    const latestDog = store.getState()?.dog;
+    if (String(latestDog?.lastAction || "") === "potty") {
+      reactionTimeoutsRef.current.forEach((timeoutId) =>
+        window.clearTimeout(timeoutId)
+      );
+      reactionTimeoutsRef.current = [
+        window.setTimeout(() => {
+          dispatch(
+            simulationTick({
+              now: Date.now(),
+              action: "sniff",
+              aiState: "idle",
+            })
+          );
+        }, 700),
+        window.setTimeout(() => {
+          dispatch(
+            simulationTick({
+              now: Date.now(),
+              action: "wag",
+              aiState: "idle",
+            })
+          );
+        }, 1550),
+      ];
+    }
     toast.reward(
       `Potty trip logged (+2 XP)${
         typeof nextPct === "number" ? ` • Training ${nextPct}%` : ""
@@ -227,7 +267,7 @@ export default function Potty() {
                 <p className="text-[11px] text-rose-300">{lastAccidentAgo}</p>
               ) : null}
               <p className="text-[11px] text-zinc-600 dark:text-zinc-500">
-                Consistent & quick cleanups helps training progress.
+                Consistent & quick cleanups help training progress.
               </p>
             </div>
           </div>
@@ -320,7 +360,8 @@ export default function Potty() {
             </button>
           </div>
           <p className="text-xs text-zinc-700 dark:text-zinc-300">
-            Current XP: <span className="font-semibold">{dog.xp ?? 0}</span>
+            Current XP:{" "}
+            <span className="font-semibold tabular-nums">{dog.xp ?? 0}</span>
           </p>
           {showXPTools ? (
             <div className="flex flex-wrap gap-2">

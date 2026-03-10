@@ -2,26 +2,23 @@
 /** @format */
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
+import { useDogVacation } from "@/hooks/useDogState.js";
+import {
+  useUserActions,
+  useUserSettingsView,
+} from "@/hooks/useUserSettings.js";
 import {
   resetDogState,
   getDogStorageKey,
-  selectDogVacation,
   setVacationMode,
 } from "../redux/dogSlice.js";
-import {
-  USER_STORAGE_KEY,
-  selectDogRenderMode,
-  selectUserZip,
-  setDogRenderMode,
-  setZip,
-} from "../redux/userSlice.js";
+import { USER_STORAGE_KEY } from "../redux/userSlice.js";
 import { auth, firebaseReady } from "../firebase.js";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import {
   hydrateSettings,
   resetSettings,
-  selectSettings,
   setAudioEnabled,
   setConfirmDangerousActions,
   setFontScale,
@@ -151,10 +148,15 @@ function formatTimestamp(ts) {
 }
 
 function Switch({ id, checked, onChange, label, description }) {
+  const tooltip = description || label;
   return (
     <div className="flex items-start justify-between gap-4">
       <div className="min-w-0">
-        <label htmlFor={id} className="text-sm font-semibold text-doggerz-bone">
+        <label
+          htmlFor={id}
+          className="text-sm font-semibold text-doggerz-bone"
+          title={tooltip}
+        >
           {label}
         </label>
         {description ? (
@@ -169,9 +171,11 @@ function Switch({ id, checked, onChange, label, description }) {
           className="peer sr-only"
           checked={!!checked}
           onChange={(e) => onChange(e.target.checked)}
+          title={tooltip}
         />
         <label
           htmlFor={id}
+          title={tooltip}
           className="relative inline-flex h-6 w-11 cursor-pointer items-center rounded-full border border-doggerz-mange/55 bg-doggerz-paw/20 transition peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-doggerz-leaf/80 peer-focus-visible:outline-offset-2 peer-checked:bg-doggerz-leaf/80 dark:border-doggerz-mange/55 dark:bg-black/50"
         >
           <span className="sr-only">{label}</span>
@@ -183,10 +187,15 @@ function Switch({ id, checked, onChange, label, description }) {
 }
 
 function SelectRow({ id, label, description = "", value, onChange, options }) {
+  const tooltip = description || label;
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
       <div className="min-w-0">
-        <label htmlFor={id} className="text-sm font-semibold text-doggerz-bone">
+        <label
+          htmlFor={id}
+          className="text-sm font-semibold text-doggerz-bone"
+          title={tooltip}
+        >
           {label}
         </label>
         {description ? (
@@ -197,6 +206,7 @@ function SelectRow({ id, label, description = "", value, onChange, options }) {
         id={id}
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        title={tooltip}
         className="w-full sm:w-56 rounded-xl border border-doggerz-mange/55 bg-black/30 px-3 py-2 text-sm text-doggerz-bone focus:border-doggerz-leaf/70 focus:outline-none"
       >
         {options.map((o) => (
@@ -220,6 +230,7 @@ function SliderRow({
   step,
   rightLabel,
 }) {
+  const tooltip = description || label;
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-start justify-between gap-4">
@@ -227,6 +238,7 @@ function SliderRow({
           <label
             htmlFor={id}
             className="text-sm font-semibold text-doggerz-bone"
+            title={tooltip}
           >
             {label}
           </label>
@@ -248,6 +260,7 @@ function SliderRow({
         step={step}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
+        title={tooltip}
         className="w-full"
       />
     </div>
@@ -278,10 +291,9 @@ function Card({
 
 export default function Settings() {
   const dispatch = useDispatch();
-  const settings = useSelector(selectSettings);
-  const vacation = /** @type {any} */ (useSelector(selectDogVacation));
-  const currentZip = useSelector(selectUserZip);
-  const dogRenderMode = useSelector(selectDogRenderMode);
+  const { settings, currentZip, dogRenderMode } = useUserSettingsView();
+  const { setDogRenderMode, setZip } = useUserActions();
+  const vacation = /** @type {any} */ (useDogVacation());
   const toast = useToast();
 
   const [zipInput, setZipInput] = useState(currentZip || "");
@@ -555,6 +567,7 @@ export default function Settings() {
                     type="button"
                     disabled={cloudBusy}
                     onClick={handleSignOut}
+                    title="Sign out of cloud sync on this device."
                     className="inline-flex items-center justify-center rounded-xl border border-doggerz-mange/55 bg-black/30 px-4 py-2 text-sm font-semibold text-doggerz-bone hover:border-doggerz-leaf/70 hover:text-doggerz-leaf disabled:opacity-60"
                   >
                     Sign out
@@ -575,6 +588,7 @@ export default function Settings() {
                 <Link
                   className="text-doggerz-leaf hover:text-doggerz-neonSoft"
                   to="/login"
+                  title="Open login to enable cloud sync features."
                 >
                   Login
                 </Link>{" "}
@@ -741,7 +755,7 @@ export default function Settings() {
               label="Dog render style"
               description="Switch between pixel sprites and realistic assets."
               value={dogRenderMode || "sprite"}
-              onChange={(v) => dispatch(setDogRenderMode(v))}
+              onChange={setDogRenderMode}
               options={[
                 { value: "sprite", label: "Sprite (pixel)" },
                 { value: "realistic", label: "Realistic" },
@@ -1434,6 +1448,7 @@ export default function Settings() {
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
+                  title="Request notification permission from the device."
                   onClick={async () => {
                     if (!canUseNotifications()) {
                       toast.info("Notifications are not supported here.");
@@ -1455,6 +1470,7 @@ export default function Settings() {
 
                 <button
                   type="button"
+                  title="Send a test Doggerz notification to this device."
                   onClick={async () => {
                     if (!canUseNotifications()) {
                       toast.info("Notifications are not supported here.");
@@ -1578,6 +1594,7 @@ export default function Settings() {
                   className="w-full sm:w-56 rounded-xl border border-doggerz-mange/55 bg-black/30 px-3 py-2 text-sm text-doggerz-bone placeholder:text-doggerz-paw/45 outline-none focus:border-doggerz-leaf/70"
                   placeholder="e.g. 10001"
                   value={zipInput}
+                  title="Save a ZIP code for local sunrise/sunset and weather timing."
                   onChange={(e) => {
                     const v = e.target.value.replace(/\D+/g, "").slice(0, 5);
                     setZipInput(v);
@@ -1594,8 +1611,9 @@ export default function Settings() {
                 <button
                   type="button"
                   className="inline-flex items-center justify-center rounded-xl bg-doggerz-leaf px-4 py-2 text-sm font-semibold text-black hover:bg-doggerz-neonSoft disabled:opacity-60 disabled:cursor-not-allowed"
-                  onClick={() => dispatch(setZip(zipInput))}
+                  onClick={() => setZip(zipInput)}
                   disabled={!zipIsValid}
+                  title="Save ZIP code to settings."
                 >
                   Save
                 </button>
@@ -1604,8 +1622,9 @@ export default function Settings() {
                   className="inline-flex items-center justify-center rounded-xl border border-doggerz-mange/55 bg-black/30 px-4 py-2 text-sm font-semibold text-doggerz-bone hover:bg-black/40"
                   onClick={() => {
                     setZipInput("");
-                    dispatch(setZip(""));
+                    setZip("");
                   }}
+                  title="Clear stored ZIP code."
                 >
                   Clear
                 </button>
@@ -1642,6 +1661,7 @@ export default function Settings() {
                 type="button"
                 className="inline-flex items-center justify-center rounded-xl border border-doggerz-mange/55 bg-black/30 px-4 py-2 text-sm font-semibold text-doggerz-bone hover:border-doggerz-leaf/70 hover:text-doggerz-leaf"
                 onClick={exportLocalData}
+                title="Export local dog, user, and settings data as JSON."
               >
                 Export backup
               </button>
@@ -1650,6 +1670,7 @@ export default function Settings() {
                 type="button"
                 className="inline-flex items-center justify-center rounded-xl border border-doggerz-mange/55 bg-black/30 px-4 py-2 text-sm font-semibold text-doggerz-bone hover:border-doggerz-leaf/70 hover:text-doggerz-leaf"
                 onClick={() => fileInputRef.current?.click()}
+                title="Import a previously exported backup JSON."
               >
                 Import backup
               </button>
@@ -1659,6 +1680,7 @@ export default function Settings() {
                 type="file"
                 accept="application/json"
                 className="hidden"
+                title="Choose a Doggerz backup JSON file."
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   // allow re-selecting same file later
@@ -1689,6 +1711,7 @@ export default function Settings() {
                 type="button"
                 className="inline-flex items-center justify-center rounded-xl bg-amber-500/90 px-4 py-2 text-sm font-semibold text-black hover:bg-amber-400"
                 onClick={resetPupLocal}
+                title="Reset local pup progression on this device."
               >
                 Reset pup (local)
               </button>
@@ -1697,6 +1720,7 @@ export default function Settings() {
                 type="button"
                 className="inline-flex items-center justify-center rounded-xl border border-doggerz-mange/55 bg-black/30 px-4 py-2 text-sm font-semibold text-doggerz-bone hover:border-doggerz-leaf/70 hover:text-doggerz-leaf"
                 onClick={() => dispatch(resetSettings())}
+                title="Restore all settings to defaults."
               >
                 Reset settings
               </button>
@@ -1705,6 +1729,7 @@ export default function Settings() {
                 type="button"
                 className="inline-flex items-center justify-center rounded-xl bg-red-500/90 px-4 py-2 text-sm font-semibold text-white hover:bg-red-400"
                 onClick={clearLocalStorageAll}
+                title="Clear all local Doggerz storage on this device."
               >
                 Clear all local storage
               </button>

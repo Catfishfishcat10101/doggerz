@@ -7,7 +7,6 @@ import { Link } from "react-router-dom";
 import DailyRewardModal from "@/components/DailyRewardModal.jsx";
 import MainGame from "@/features/game/MainGame.jsx";
 import GrowthCelebration from "@/components/dog/GrowthCelebration.jsx";
-import { selectDog } from "@/redux/dogSlice.js";
 import { PATHS } from "@/routes.js";
 import { getDailyRewardState } from "@/features/game/dailyRewards.js";
 import {
@@ -18,6 +17,7 @@ import { selectUserZip } from "@/redux/userSlice.js";
 import { selectSettings } from "@/redux/settingsSlice.js";
 import { useDayNightBackground } from "@/features/game/useDayNightBackground.jsx";
 import WeatherFXCanvas from "@/components/environment/WeatherFXCanvas.jsx";
+import { useDog } from "@/hooks/useDogState.js";
 import {
   getWeatherAccent,
   getWeatherLabel,
@@ -48,7 +48,7 @@ function shouldReduceEffects(perfMode) {
 }
 
 export default function GamePage() {
-  const dog = useSelector(selectDog);
+  const dog = useDog();
   const zip = useSelector(selectUserZip);
   const weather = useSelector(selectWeatherCondition);
   const weatherIntensity = useSelector(selectWeatherIntensity);
@@ -131,7 +131,7 @@ export default function GamePage() {
 
   return (
     <div
-      className="relative min-h-dvh overflow-hidden"
+      className="dz-safe-area relative min-h-dvh overflow-hidden"
       style={{ ...dayNightStyle, "--weather-accent": weatherAccent }}
       data-weather={weatherKey}
     >

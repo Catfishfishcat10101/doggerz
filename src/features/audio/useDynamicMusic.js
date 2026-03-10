@@ -3,7 +3,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import { selectDog } from "@/redux/dogSlice.js";
+import { useDog } from "@/hooks/useDogState.js";
 import { selectSettings } from "@/redux/settingsSlice.js";
 import { selectWeatherCondition } from "@/redux/weatherSlice.js";
 
@@ -252,7 +252,7 @@ function useUserGestureGate() {
 }
 
 export default function useDynamicMusic() {
-  const dog = useSelector(selectDog);
+  const dog = useDog();
   const settings = useSelector(selectSettings);
   const weather = useSelector(selectWeatherCondition);
 

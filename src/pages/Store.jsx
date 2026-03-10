@@ -7,15 +7,14 @@ import { useToast } from "@/state/toastContext.js";
 import BackPill from "@/components/layout/BackPill.jsx";
 import SpriteSheetDog from "@/components/dog/SpriteSheetDog.jsx";
 import DogCosmeticsOverlay from "@/components/dog/DogCosmeticsOverlay.jsx";
+import Tooltip from "@/components/ui/Tooltip.jsx";
 import { PageHeader } from "@/components/layout/PageSections.jsx";
+import { useDogStoreView } from "@/hooks/useDogState.js";
 import { getSpriteForStageAndTier } from "@/utils/lifecycle.js";
 import {
   purchaseCosmetic,
-  selectCosmeticCatalog,
-  selectDog,
   equipCosmetic,
   setActiveToy,
-  selectNextStreakReward,
 } from "@/redux/dogSlice.js";
 import { selectUserCoins, selectUserIsFounder } from "@/redux/userSlice.js";
 import {
@@ -275,20 +274,22 @@ function CategoryPill({ category }) {
   );
 }
 
-function ToggleChip({ active, onClick, children }) {
+function ToggleChip({ active, onClick, children, tooltip = "" }) {
   return (
-    <button
-      type="button"
-      aria-pressed={active}
-      onClick={onClick}
-      className={`inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-semibold transition ${
-        active
-          ? "border-emerald-400/40 bg-emerald-500/15 text-emerald-100"
-          : "border-white/15 bg-black/25 text-zinc-200 hover:bg-black/35"
-      }`}
-    >
-      {children}
-    </button>
+    <Tooltip content={tooltip || String(children)} side="top">
+      <button
+        type="button"
+        aria-pressed={active}
+        onClick={onClick}
+        className={`inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-semibold transition ${
+          active
+            ? "border-emerald-400/40 bg-emerald-500/15 text-emerald-100"
+            : "border-white/15 bg-black/25 text-zinc-200 hover:bg-black/35"
+        }`}
+      >
+        {children}
+      </button>
+    </Tooltip>
   );
 }
 
@@ -296,11 +297,9 @@ export default function Store() {
   const dispatch = useDispatch();
   const toast = useToast();
 
-  const dog = useSelector(selectDog);
+  const { dog, catalog, nextRewardInfo } = useDogStoreView();
   const userCoins = useSelector(selectUserCoins);
   const isFounder = useSelector(selectUserIsFounder);
-  const catalog = useSelector(selectCosmeticCatalog);
-  const nextRewardInfo = useSelector(selectNextStreakReward);
   const settings = useSelector(selectSettings);
 
   const coins = Number.isFinite(Number(dog?.coins))
@@ -1347,6 +1346,7 @@ export default function Store() {
                     className="rounded-2xl border border-white/15 bg-black/25 px-3 py-2 text-xs font-semibold text-zinc-100"
                     value={categoryFilter}
                     onChange={(e) => setCategoryFilter(e.target.value)}
+                    title="Filter catalog by item category."
                   >
                     <option value="all">All categories</option>
                     <option value="toys">Toys</option>
@@ -1359,6 +1359,7 @@ export default function Store() {
                     className="rounded-2xl border border-white/15 bg-black/25 px-3 py-2 text-xs font-semibold text-zinc-100"
                     value={ownedFilter}
                     onChange={(e) => setOwnedFilter(e.target.value)}
+                    title="Show all, owned only, or unowned only."
                   >
                     <option value="all">All</option>
                     <option value="owned">Owned</option>
@@ -1369,6 +1370,7 @@ export default function Store() {
                     className="rounded-2xl border border-white/15 bg-black/25 px-3 py-2 text-xs font-semibold text-zinc-100"
                     value={affordFilter}
                     onChange={(e) => setAffordFilter(e.target.value)}
+                    title="Filter by whether current balances can afford items."
                   >
                     <option value="all">Any price</option>
                     <option value="affordable">Affordable</option>
@@ -1378,6 +1380,7 @@ export default function Store() {
                     className="rounded-2xl border border-white/15 bg-black/25 px-3 py-2 text-xs font-semibold text-zinc-100"
                     value={sortKey}
                     onChange={(e) => dispatch(setStoreSortKey(e.target.value))}
+                    title="Choose how catalog cards are sorted."
                   >
                     <option value="recommended">Sort: Recommended</option>
                     <option value="threshold">Sort: Streak day</option>
@@ -1394,12 +1397,14 @@ export default function Store() {
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="Search toys, apparel, care, yard upgrades…"
                     className="w-full rounded-2xl border border-white/15 bg-black/25 px-4 py-3 pr-12 text-sm text-zinc-100 placeholder:text-zinc-500 outline-none focus:border-emerald-500/40"
+                    title="Search by item name, slot, category, or id."
                   />
                   {trimmedQuery ? (
                     <button
                       type="button"
                       onClick={() => setQuery("")}
                       className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full border border-white/15 bg-black/25 px-2.5 py-1 text-[11px] text-zinc-200 hover:bg-black/40"
+                      title="Clear the search query."
                     >
                       Clear
                     </button>
@@ -1411,6 +1416,7 @@ export default function Store() {
                     onClick={() =>
                       dispatch(setStoreHoverPreview(!previewOnHover))
                     }
+                    tooltip="Preview cosmetics when hovering item cards."
                   >
                     Hover preview
                   </ToggleChip>
@@ -1419,6 +1425,7 @@ export default function Store() {
                     onClick={() =>
                       dispatch(setStoreShowEquippedFirst(!showEquippedFirst))
                     }
+                    tooltip="Pin currently equipped items near the top."
                   >
                     Equipped first
                   </ToggleChip>
@@ -1427,6 +1434,7 @@ export default function Store() {
                     onClick={() =>
                       dispatch(setStoreCompactCards(!compactCards))
                     }
+                    tooltip="Switch between denser and roomier card layouts."
                   >
                     Compact cards
                   </ToggleChip>
@@ -1446,6 +1454,7 @@ export default function Store() {
                         setQuery("");
                       }}
                       className="rounded-full border border-white/15 bg-black/25 px-3 py-1 text-[11px] font-semibold text-zinc-200 hover:bg-black/40"
+                      title="Reset all active filters and sorting."
                     >
                       Clear filters
                     </button>
@@ -1562,6 +1571,11 @@ export default function Store() {
                         <button
                           type="button"
                           className={`rounded-2xl text-xs font-bold border border-white/15 bg-black/25 text-zinc-100 hover:bg-black/35 transition ${buttonSize}`}
+                          title={
+                            wearable
+                              ? `Preview ${label} on your pup.`
+                              : `Open details for ${label}.`
+                          }
                           onClick={() => {
                             if (!wearable) return;
                             setPreview({ slot, id });
@@ -1580,6 +1594,11 @@ export default function Store() {
                                   ? "border border-emerald-500/25 bg-emerald-500/10 text-emerald-100"
                                   : "border border-white/15 bg-black/25 text-zinc-100 hover:bg-black/35"
                               }`}
+                              title={
+                                isEquipped
+                                  ? `${label} is currently equipped.`
+                                  : `Equip ${label}.`
+                              }
                               onClick={() => {
                                 if (!slot) return;
                                 dispatch(equipCosmetic({ slot, id }));
@@ -1601,6 +1620,11 @@ export default function Store() {
                                   ? "border border-emerald-500/25 bg-emerald-500/10 text-emerald-100"
                                   : "border border-white/15 bg-black/25 text-zinc-100 hover:bg-black/35"
                               }`}
+                              title={
+                                activeToyId === id
+                                  ? `${label} is already the active toy.`
+                                  : `Set ${label} as active toy.`
+                              }
                               onClick={() => {
                                 dispatch(setActiveToy({ toyId: id }));
                                 toast.success(
@@ -1626,6 +1650,13 @@ export default function Store() {
                           <button
                             type="button"
                             disabled={!afford || isIapOnly}
+                            title={
+                              isIapOnly
+                                ? `${label} is sold through in-game purchase flow.`
+                                : afford
+                                  ? `Buy ${label} for ${price} ${currency}.`
+                                  : `Need ${Math.max(0, price - balance)} more ${currency}.`
+                            }
                             onClick={() => {
                               if (!afford || isIapOnly) return;
                               dispatch(
@@ -1692,6 +1723,7 @@ export default function Store() {
                         setQuery("");
                       }}
                       className="mt-4 rounded-2xl border border-white/15 bg-black/25 px-4 py-2 text-xs font-semibold text-zinc-200 hover:bg-black/35"
+                      title="Reset all active filters and sorting."
                     >
                       Clear filters
                     </button>

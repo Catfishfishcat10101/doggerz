@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
 import { PATHS } from "@/routes.js";
-import { selectDog, setAdoptedAt, setDogName } from "@/redux/dogSlice.js";
+import { setAdoptedAt, setDogName } from "@/redux/dogSlice.js";
 import {
   cancelWorkflow,
   goToStep,
@@ -17,6 +17,7 @@ import {
   startWorkflow,
 } from "@/redux/workflowSlice.js";
 import WorkflowShell from "@/features/workflow/WorkflowShell.jsx";
+import { useDog } from "@/hooks/useDogState.js";
 
 const WORKFLOW_ID = "adopt";
 const ADOPT_STEPS = ["Welcome", "Name", "Confirm"];
@@ -25,7 +26,7 @@ export default function AdoptPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const dog = useSelector(selectDog);
+  const dog = useDog();
   const alreadyAdopted = Boolean(dog?.adoptedAt);
 
   const workflow = useSelector(selectWorkflowById(WORKFLOW_ID));
@@ -144,6 +145,7 @@ export default function AdoptPage() {
           <button
             type="button"
             onClick={() => navigate(PATHS.GAME)}
+            title="Return to your current pup in the yard."
             className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-sm font-semibold shadow-lg"
           >
             Go back to your yard
@@ -209,6 +211,7 @@ export default function AdoptPage() {
               placeholder="Enter your pup's name"
               maxLength={24}
               autoComplete="on"
+              title="Choose your pup's name. You can rename later in Settings."
             />
             <div className="mt-2 flex items-center justify-between text-[11px] text-zinc-500">
               <span>{name.length}/24</span>

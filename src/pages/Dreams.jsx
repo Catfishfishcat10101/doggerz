@@ -1,17 +1,15 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { useSelector } from "react-redux";
 
+import { useDogDreamState } from "@/hooks/useDogState.js";
 import { PATHS } from "@/routes.js";
-import { selectDog, selectDogDreams } from "@/redux/dogSlice.js";
 
 import PageShell from "@/components/layout/PageShell.jsx";
 
 import DreamJournal from "@/features/game/DreamJournal.jsx";
 
 export default function Dreams() {
-  const dog = useSelector(selectDog);
-  const dreamsState = useSelector(selectDogDreams);
+  const { name, dreamsState, memoryDrives } = useDogDreamState();
 
   const dreams = useMemo(() => {
     const raw = Array.isArray(dreamsState?.journal) ? dreamsState.journal : [];
@@ -58,7 +56,7 @@ export default function Dreams() {
               Dream Journal
             </div>
             <h1 className="mt-2 text-2xl sm:text-3xl font-extrabold text-emerald-200">
-              {dog?.name || "Your pup"}&rsquo;s dreams
+              {name || "Your pup"}&rsquo;s dreams
             </h1>
             <p className="mt-2 text-sm text-zinc-200/90 max-w-prose">
               A good day can bring lucid dreams; Neglect can trigger nightmares.
@@ -81,6 +79,12 @@ export default function Dreams() {
                   Latest {latestLabel}
                 </span>
               ) : null}
+              <span className="rounded-full border border-amber-400/30 bg-amber-500/10 px-3 py-1">
+                Hungry drive {Math.round(Number(memoryDrives?.hungry || 0))}
+              </span>
+              <span className="rounded-full border border-fuchsia-400/30 bg-fuchsia-500/10 px-3 py-1">
+                Lonely drive {Math.round(Number(memoryDrives?.lonely || 0))}
+              </span>
             </div>
           </div>
 

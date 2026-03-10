@@ -23,6 +23,12 @@ import {
   getObedienceCommand,
 } from "@/logic/obedienceCommands.js";
 import {
+  CORE_PET_STAT_DECAY_PER_HOUR,
+  applyPetStatDecay,
+  normalizePetStats,
+} from "@/logic/PetStatsManager.js";
+import { getOfflineProgressHours } from "@/logic/OfflineProgressCalculator.js";
+import {
   getObedienceSkillMasteryPct,
   resolveJrtTrainingReaction,
 } from "@/logic/jrtTrainingController.js";
@@ -41,7 +47,7 @@ import {
   isDogFsmLocked,
   DOG_FSM_DEFAULT,
   transitionDogFsm,
-} from "@/utils/dogFsm.js";
+} from "@/logic/StateMachineController.js";
 import {
   applyPersonalityDrift,
   buildDreamFromState,
@@ -99,16 +105,7 @@ const MOOD_TO_DESIRED_ACTION = Object.freeze({
 
 const deriveDesiredActionFromMood = (mood) =>
   MOOD_TO_DESIRED_ACTION[normalizeActionKey(mood)] || "idle";
-const DECAY_PER_HOUR = {
-  hunger: 8,
-  thirst: 7,
-  happiness: 6,
-  energy: 8,
-  cleanliness: 3,
-  health: 2,
-  affection: 5,
-  mentalStimulation: 4,
-};
+const DECAY_PER_HOUR = CORE_PET_STAT_DECAY_PER_HOUR;
 const DECAY_SPEED = 0.4;
 const MAX_DECAY_HOURS = 72;
 const SEVERE_NEGLECT_CLEANLINESS_THRESHOLD = 15;
@@ -199,13 +196,7 @@ function normalizeStatsState(state) {
     state.stats = { ...DEFAULT_STATS };
     return state.stats;
   }
-  state.stats = {
-    ...DEFAULT_STATS,
-    ...state.stats,
-  };
-  Object.keys(DEFAULT_STATS).forEach((key) => {
-    state.stats[key] = clamp(state.stats[key], 0, 100);
-  });
+  state.stats = normalizePetStats(state.stats, DEFAULT_STATS);
   return state.stats;
 }
 
@@ -526,6 +517,25 @@ function applyFeedEffect(state, payload = {}, opts = {}) {
   if (!guiltyTriggered) {
     maybeSampleMood(state, now, isHumanFood ? "FEED_JUNK" : "FEED");
   }
+
+  pushStructuredMemory(state, {
+    type: "ate_food",
+    category: "CARE",
+    moodTag: isHumanFood ? "SPOILED" : usePremiumKibble ? "PROUD" : "CONTENT",
+    summary: usePremiumKibble
+      ? "Ate a premium meal."
+      : isHumanFood
+        ? "Snagged a tasty human-food treat."
+        : "Ate a bowl of kibble.",
+    body: usePremiumKibble
+      ? "A full premium meal left your pup satisfied and recharged."
+      : isHumanFood
+        ? "A special treat made the moment exciting, even if it was a little indulgent."
+        : "A solid meal helped settle the hunger meter.",
+    timestamp: now,
+    happiness: isHumanFood ? 5 : usePremiumKibble ? 4 : 2,
+    hunger: Number(state.stats.hunger || 0),
+  });
 
   const date = getIsoDate(now);
   updateStreak(state.streak, date);
@@ -973,6 +983,8 @@ const initialJournal = {
   entries: [],
 };
 
+const initialSimulationMemories = [];
+
 const initialStreak = {
   currentStreakDays: 0,
   bestStreakDays: 0,
@@ -1304,6 +1316,15 @@ const initialState = {
   stats: { ...DEFAULT_STATS },
   moodlets: [],
   emotionCue: null,
+  aiState: "idle",
+  aiStateUntilAt: null,
+  position: {
+    x: 300,
+    y: 250,
+  },
+  targetPosition: null,
+  speed: 40,
+  facing: "right",
 
   cleanlinessTier: "FRESH",
   poopCount: 0,
@@ -1331,6 +1352,7 @@ const initialState = {
   healthSilo: { ...initialHealthSilo },
   personalityProfile: null,
   memory: initialMemory,
+  memories: initialSimulationMemories,
   inventory: { ...initialInventory },
   career: initialCareer,
   skills: initialSkills,
@@ -1387,6 +1409,52 @@ function pushJournalEntry(state, entry) {
   if (state.journal.entries.length > 200) {
     state.journal.entries.length = 200;
   }
+}
+
+function pushStructuredMemory(state, memory) {
+  if (!Array.isArray(state.memories)) {
+    state.memories = [];
+  }
+
+  state.memories.unshift({
+    id: memory.id || `${Date.now()}-${state.memories.length + 1}`,
+    type: memory.type || "memory",
+    timestamp: Number(memory.timestamp || nowMs()),
+    category: memory.category || "MEMORY",
+    moodTag: memory.moodTag || null,
+    emotion: memory.emotion ? String(memory.emotion) : null,
+    sourceMemory: memory.sourceMemory ? String(memory.sourceMemory) : null,
+    summary: memory.summary || "",
+    body: memory.body || "",
+    position:
+      memory.position && typeof memory.position === "object"
+        ? {
+            x: Number(memory.position.x || 0),
+            y: Number(memory.position.y || 0),
+          }
+        : null,
+    happiness: Number.isFinite(Number(memory.happiness))
+      ? Number(memory.happiness)
+      : null,
+    hunger: Number.isFinite(Number(memory.hunger))
+      ? Number(memory.hunger)
+      : null,
+    energy: Number.isFinite(Number(memory.energy))
+      ? Number(memory.energy)
+      : null,
+  });
+
+  if (state.memories.length > 500) {
+    state.memories.length = 500;
+  }
+
+  pushJournalEntry(state, {
+    timestamp: memory.timestamp,
+    type: memory.category || "MEMORY",
+    moodTag: memory.moodTag || null,
+    summary: memory.summary || "",
+    body: memory.body || "",
+  });
 }
 
 function ensureLifecycleStatus(state) {
@@ -1801,6 +1869,24 @@ function maybeGenerateDream(state, now = nowMs()) {
   dreams.active = dream;
   dreams.lastGeneratedAt = now;
   pushDream(state, dream);
+  pushStructuredMemory(state, {
+    type: "dreamed",
+    category: "MEMORY",
+    moodTag:
+      String(dream?.kind || "").toLowerCase() === "nightmare"
+        ? "UNEASY"
+        : "DREAMY",
+    summary:
+      String(dream?.kind || "").toLowerCase() === "nightmare"
+        ? "Had a rough dream."
+        : "Started dreaming.",
+    body:
+      dream?.summary ||
+      dream?.body ||
+      "Sleep turned into another memory-filled dream.",
+    timestamp: now,
+    happiness: String(dream?.kind || "").toLowerCase() === "nightmare" ? -2 : 2,
+  });
 }
 
 const isValidStat = (key) =>
@@ -2137,25 +2223,11 @@ function getSevereNeglectHours(ctx) {
 }
 
 function evaluateThresholdsStage(ctx) {
-  Object.entries(ctx.state.stats).forEach(([key, value]) => {
-    if (!isValidStat(key)) return;
-
-    const delta = Number(ctx.decayByStat[key] || 0);
-    if (key === "hunger" || key === "thirst") {
-      ctx.state.stats[key] = clamp(Number(value || 0) + delta, 0, 100);
-      return;
-    }
-
-    if (key === "energy" && ctx.sleeping) {
-      ctx.state.stats.energy = clamp(
-        Number(value || 0) + Number(ctx.energyRecoveryGain || 0),
-        0,
-        100
-      );
-      return;
-    }
-
-    ctx.state.stats[key] = clamp(Number(value || 0) - delta, 0, 100);
+  ctx.state.stats = applyPetStatDecay({
+    stats: ctx.state.stats,
+    decayByStat: ctx.decayByStat,
+    sleeping: ctx.sleeping,
+    energyRecoveryGain: ctx.energyRecoveryGain,
   });
 
   // Auto-sleep / auto-wake around very low energy.
@@ -2428,10 +2500,7 @@ function applyDecay(state, now = nowMs()) {
 }
 
 function getOfflineCatchUpHours(lastTickAt, now = nowMs()) {
-  const savedAt = Number(lastTickAt);
-  if (!Number.isFinite(savedAt)) return 0;
-  const diffHoursRaw = Math.max(0, (now - savedAt) / (1000 * 60 * 60));
-  return Math.min(MAX_DECAY_HOURS, diffHoursRaw);
+  return getOfflineProgressHours(lastTickAt, now, MAX_DECAY_HOURS);
 }
 
 function applyOfflineCatchUp(state, now = nowMs()) {
@@ -3782,6 +3851,17 @@ const dogSlice = createSlice({
       applyBondGain(state, 0.8, now);
       applyXp(state, 4);
       maybeSampleMood(state, now, "FEED");
+      pushStructuredMemory(state, {
+        type: "ate_food",
+        category: "CARE",
+        moodTag: "ENERGIZED",
+        summary: "Quick-fed and recharged.",
+        body: "A fast meal topped your pup back up and restored a burst of energy.",
+        timestamp: now,
+        happiness: 3,
+        hunger: Number(state.stats.hunger || 0),
+        energy: Number(state.stats.energy || 0),
+      });
       updateTemperamentReveal(state, now);
       finalizeDerivedState(state, now);
     },
@@ -3958,6 +4038,20 @@ const dogSlice = createSlice({
 
       applyXp(state, 8);
       maybeSampleMood(state, now, "PLAY");
+      pushStructuredMemory(state, {
+        type: "played_with_toy",
+        category: "CARE",
+        moodTag: "PLAYFUL",
+        summary: "Played with a toy.",
+        body: `Your pup had a play session with ${String(
+          toyProfile?.label || activeToyId || "a favorite toy"
+        )
+          .replace(/[_-]+/g, " ")
+          .trim()}.`,
+        timestamp: now,
+        happiness: 6,
+        energy: Number(state.stats.energy || 0),
+      });
 
       const date = getIsoDate(now);
       updateStreak(state.streak, date);
@@ -4046,6 +4140,43 @@ const dogSlice = createSlice({
         });
         applyXp(state, 3);
       }
+
+      pushStructuredMemory(state, {
+        type: "petted",
+        category: "CARE",
+        moodTag:
+          outcome === "PET_SIDE_EYE"
+            ? "SASSY"
+            : outcome === "PET_DOZE"
+              ? "CALM"
+              : "AFFECTIONATE",
+        summary:
+          outcome === "PET_ZOOMIES"
+            ? "Petted into zoomies."
+            : outcome === "PET_SIDE_EYE"
+              ? "Got a little side-eye."
+              : outcome === "PET_DOZE"
+                ? "Petted into a dozy calm."
+                : "Shared a good petting moment.",
+        body:
+          outcome === "PET_ZOOMIES"
+            ? "The attention turned into instant play energy and a burst of happy movement."
+            : outcome === "PET_SIDE_EYE"
+              ? "Your pup accepted the attention, but with a classic terrier opinion attached."
+              : outcome === "PET_DOZE"
+                ? "The petting was so relaxing that your pup started drifting off."
+                : "A few good pets noticeably lifted your pup's mood.",
+        timestamp: now,
+        happiness:
+          outcome === "PET_SIDE_EYE"
+            ? -1
+            : outcome === "PET_ZOOMIES"
+              ? 4
+              : outcome === "PET_DOZE"
+                ? 2
+                : 3,
+        energy: Number(state.stats.energy || 0),
+      });
 
       maybeSampleMood(state, now, outcome);
       updateTemperamentReveal(state, now);
@@ -4312,6 +4443,17 @@ const dogSlice = createSlice({
       const pottyMeta = ensurePottyMeta(state);
       pottyMeta.totalSuccesses += 1;
       pottyMeta.lastSuccessAt = now;
+      pushStructuredMemory(state, {
+        type: "potty_success",
+        category: "CARE",
+        moodTag: "RELIEVED",
+        summary: "Successful potty trip.",
+        body: "Your pup made it outside in time and looked pretty pleased afterward.",
+        timestamp: now,
+        happiness: 3,
+        hunger: Number(state.stats.hunger || 0),
+        energy: Number(state.stats.energy || 0),
+      });
       finalizeDerivedState(state, now);
     },
 
@@ -4319,6 +4461,17 @@ const dogSlice = createSlice({
       const now = payload?.now ?? nowMs();
       state.pottyLevel = 0;
       applyAccidentInternal(state, now);
+      pushStructuredMemory(state, {
+        type: "accident",
+        category: "NEGLECT",
+        moodTag: "UNEASY",
+        summary: "Had an indoor accident.",
+        body: "Routine slipped and your pup had an accident indoors.",
+        timestamp: now,
+        happiness: -3,
+        hunger: Number(state.stats.hunger || 0),
+        energy: Number(state.stats.energy || 0),
+      });
       finalizeDerivedState(state, now);
     },
 
@@ -4351,6 +4504,99 @@ const dogSlice = createSlice({
       const amount = Number(payload?.amount ?? 0);
       if (!amount) return;
       applyXpDelta(state, -Math.abs(amount));
+    },
+
+    simulationTick(state, { payload }) {
+      if (
+        ensureLifecycleStatus(state) !== DOG_LIFECYCLE_STATUS.ACTIVE ||
+        !state.adoptedAt
+      ) {
+        return;
+      }
+
+      const updates = payload && typeof payload === "object" ? payload : {};
+      const nextStats =
+        updates.stats && typeof updates.stats === "object" ? updates.stats : {};
+
+      Object.entries(nextStats).forEach(([key, value]) => {
+        if (!isValidStat(key)) return;
+        state.stats[key] = clamp(Number(value), 0, 100);
+      });
+
+      const mood = String(updates.mood || "")
+        .trim()
+        .toLowerCase();
+      if (mood) {
+        state.emotionCue = mood;
+        const animation = ensureAnimationState(state);
+        animation.mood = normalizeActionKey(mood);
+        if (!animation.overrideUntilDone) {
+          animation.desiredAction = deriveDesiredActionFromMood(animation.mood);
+        }
+      }
+
+      const action = normalizeActionKey(updates.action);
+      if (action && !state.isAsleep) {
+        state.lastAction = action;
+        applyFsmAction(state, action, payload?.now ?? nowMs());
+      }
+
+      const aiState = String(updates.aiState || "")
+        .trim()
+        .toLowerCase();
+      if (aiState) {
+        state.aiState = aiState;
+      }
+      const aiStateUntilAt = Number(updates.aiStateUntilAt);
+      if (Number.isFinite(aiStateUntilAt) && aiStateUntilAt > 0) {
+        state.aiStateUntilAt = aiStateUntilAt;
+      }
+      const position =
+        updates.position && typeof updates.position === "object"
+          ? updates.position
+          : null;
+      if (position) {
+        state.position = {
+          x: clamp(Number(position.x), 0, 800),
+          y: clamp(Number(position.y), 0, 500),
+        };
+      }
+      if (Object.hasOwn(updates, "targetPosition")) {
+        const targetPosition =
+          updates.targetPosition && typeof updates.targetPosition === "object"
+            ? updates.targetPosition
+            : null;
+        state.targetPosition = targetPosition
+          ? {
+              x: clamp(Number(targetPosition.x), 0, 800),
+              y: clamp(Number(targetPosition.y), 0, 500),
+              id: targetPosition.id ? String(targetPosition.id) : null,
+              type: targetPosition.type ? String(targetPosition.type) : null,
+              label: targetPosition.label ? String(targetPosition.label) : null,
+              interaction: targetPosition.interaction
+                ? String(targetPosition.interaction)
+                : null,
+              toyId: targetPosition.toyId ? String(targetPosition.toyId) : null,
+              interactionRadius: clamp(
+                Number(targetPosition.interactionRadius || 18),
+                8,
+                64
+              ),
+            }
+          : null;
+      }
+      const speed = Number(updates.speed);
+      if (Number.isFinite(speed) && speed > 0) {
+        state.speed = clamp(speed, 8, 140);
+      }
+      const facing = String(updates.facing || "")
+        .trim()
+        .toLowerCase();
+      if (facing === "left" || facing === "right") {
+        state.facing = facing;
+      }
+
+      normalizeStatsState(state);
     },
 
     /* ------------- time / login ------------- */
@@ -5177,6 +5423,42 @@ const dogSlice = createSlice({
       pushJournalEntry(state, payload || {});
     },
 
+    addMemories(state, { payload }) {
+      const memories = Array.isArray(payload) ? payload : [];
+      memories.forEach((memory) => {
+        if (!memory || typeof memory !== "object") return;
+        pushStructuredMemory(state, memory);
+      });
+    },
+
+    addDream(state, { payload }) {
+      const dream = payload && typeof payload === "object" ? payload : null;
+      if (!dream) return;
+
+      const dreams = ensureDreamState(state);
+      dreams.lastGeneratedAt = Number(dream.timestamp || nowMs());
+      pushDream(state, dream);
+
+      pushStructuredMemory(state, {
+        type: "dreamed",
+        category: "MEMORY",
+        moodTag:
+          String(dream.kind || "").toLowerCase() === "nightmare"
+            ? "UNEASY"
+            : "DREAMY",
+        emotion: dream.emotion || null,
+        sourceMemory: dream.sourceMemory || null,
+        summary: String(dream.title || "").trim() || "Started dreaming.",
+        body:
+          String(dream.summary || "").trim() ||
+          String(dream.description || "").trim() ||
+          "Sleep turned into another vivid dream.",
+        timestamp: Number(dream.timestamp || nowMs()),
+        happiness:
+          String(dream.kind || "").toLowerCase() === "nightmare" ? -2 : 2,
+      });
+    },
+
     grantFounderReward(state, { payload }) {
       const now = typeof payload?.now === "number" ? payload.now : nowMs();
 
@@ -5435,6 +5717,10 @@ export const selectDog = (state) => state.dog;
 export const selectDogStats = (state) => state.dog.stats;
 export const selectDogMood = (state) => state.dog.mood;
 export const selectDogJournal = (state) => state.dog.journal;
+export const selectDogMemories = (state) =>
+  Array.isArray(state?.dog?.memories)
+    ? state.dog.memories
+    : initialSimulationMemories;
 export const selectDogTemperament = (state) => state.dog.temperament;
 export const selectDogPersonality = (state) => state.dog.personality;
 export const selectDogHealthSilo = (state) => state.dog.healthSilo;
@@ -5567,6 +5853,7 @@ export const {
   scoopPoop,
   addXp,
   removeXp,
+  simulationTick,
   tickDog,
   registerSessionStart,
   triggerButtonHeist,
@@ -5581,6 +5868,8 @@ export const {
   respecSkillTree,
   respecSkillTreeBranch,
   addJournalEntry,
+  addMemories,
+  addDream,
   grantFounderReward,
   claimTreasureFind,
   purchaseCosmetic,

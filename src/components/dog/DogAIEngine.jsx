@@ -13,11 +13,7 @@ import {
   grantPreRegGift,
   hydrateDog,
   resetDogState,
-  tickDog,
   registerSessionStart,
-  tickDogPolls,
-  selectDog,
-  selectDogGrowthMilestone,
   DOG_STORAGE_KEY,
   getDogStorageKey,
 } from "@/redux/dogSlice.js";
@@ -25,7 +21,6 @@ import {
   setWeatherError,
   setWeatherLoading,
   setWeatherSnapshot,
-  selectWeatherCondition,
 } from "@/redux/weatherSlice.js";
 import { loadDogFromCloud, saveDogToCloud } from "@/redux/dogThunks.js";
 import {
@@ -34,24 +29,23 @@ import {
   selectUserZip,
   setUser,
 } from "@/redux/userSlice.js";
-import {
-  getStoredValue,
-  removeStoredValue,
-  setStoredValue,
-} from "@/utils/nativeStorage.js";
 import { selectSettings } from "@/redux/settingsSlice.js";
-import { selectDogRenderModel } from "@/features/game/dogSelectors.js";
 import { useDogActionSfx } from "@/features/audio/useDogActionSfx.js";
 import useDynamicMusic from "@/features/audio/useDynamicMusic.js";
+import { useDogEngineState } from "@/hooks/useDogState.js";
 import { ensureDogMain } from "@/firebase/ensureDog.js";
 import { userProfileDoc } from "@/firebase/paths.js";
 import {
   hasPreRegistrationRewardPurchase,
   PRE_REG_GIFT_COINS,
 } from "@/features/billing/preRegistrationReward.js";
-import { fetchWeatherSnapshot } from "@/features/weather/weatherApi.js";
+import {
+  loadLocalSave,
+  migrateLegacySave,
+  saveLocalSave,
+} from "@/logic/LocalSaveManager.js";
+import { fetchRealTimeWeather } from "@/logic/RealTimeWeatherFetcher.js";
 
-const TICK_INTERVAL_MS = 60_000; // 60 seconds
 const CLOUD_SAVE_DEBOUNCE = 3_000; // 3 seconds
 const WEATHER_POLL_INTERVAL_MS = 12 * 60_000; // 12 minutes (gentle on API limits)
 
@@ -110,12 +104,9 @@ function getErrorMessage(error, fallback = "Unknown error") {
 
 export default function DogAIEngine() {
   const dispatch = useDispatch();
-  const dogState = useSelector(selectDog);
-  const weather = useSelector(selectWeatherCondition);
+  const { dog: dogState, renderModel } = useDogEngineState();
   const zip = useSelector(selectUserZip);
-  const growthMilestone = useSelector(selectDogGrowthMilestone);
   const settings = useSelector(selectSettings);
-  const renderModel = useSelector(selectDogRenderModel);
   const isFounder = useSelector(selectUserIsFounder);
 
   const hasHydratedRef = useRef(false);
@@ -125,7 +116,6 @@ export default function DogAIEngine() {
   const localSaveTimeoutRef = useRef(
     /** @type {ReturnType<typeof setTimeout> | null} */ (null)
   );
-  const growthPauseRef = useRef(Boolean(growthMilestone));
 
   useDogActionSfx({
     anim: renderModel?.anim,
@@ -295,18 +285,11 @@ export default function DogAIEngine() {
   };
 
   const dogRef = useRef(dogState);
-  const dispatchRef = useRef(dispatch);
-  const weatherRef = useRef(weather);
   const zipRef = useRef(zip);
-  const adoptedRef = useRef(Boolean(dogState?.adoptedAt));
   const userIdRef = useRef(/** @type {string | null} */ (null));
   const lastHydratedUserIdRef = useRef(/** @type {string | null} */ (null));
   const storageKeyRef = useRef(getDogStorageKey(null));
   const [userId, setUserId] = useState(null);
-  const lastTickAtRef = useRef(0);
-  const tickIntervalRef = useRef(
-    /** @type {ReturnType<typeof setInterval> | null} */ (null)
-  );
 
   const flushLocalSave = useCallback(() => {
     const ds = dogRef.current;
@@ -321,23 +304,11 @@ export default function DogAIEngine() {
         },
       };
       const key = storageKeyRef.current || getDogStorageKey(userIdRef.current);
-      setStoredValue(key, JSON.stringify(persisted));
+      saveLocalSave(key, persisted);
     } catch (err) {
       console.error("[Doggerz] Failed to flush local save", err);
     }
   }, []);
-
-  useEffect(() => {
-    dispatchRef.current = dispatch;
-  }, [dispatch]);
-
-  useEffect(() => {
-    weatherRef.current = weather;
-  }, [weather]);
-
-  useEffect(() => {
-    growthPauseRef.current = Boolean(growthMilestone);
-  }, [growthMilestone]);
 
   useEffect(() => {
     zipRef.current = zip;
@@ -349,7 +320,7 @@ export default function DogAIEngine() {
       zip || import.meta.env.VITE_WEATHER_DEFAULT_ZIP || "10001",
     ],
     queryFn: ({ signal }) =>
-      fetchWeatherSnapshot({ zip: zipRef.current || zip, signal }),
+      fetchRealTimeWeather({ zip: zipRef.current || zip, signal }),
     refetchInterval: WEATHER_POLL_INTERVAL_MS,
     refetchIntervalInBackground: false,
     staleTime: WEATHER_POLL_INTERVAL_MS,
@@ -429,10 +400,6 @@ export default function DogAIEngine() {
   useEffect(() => {
     dogRef.current = dogState;
   }, [dogState]);
-
-  useEffect(() => {
-    adoptedRef.current = Boolean(dogState?.adoptedAt);
-  }, [dogState?.adoptedAt]);
 
   // 2b. Flush local save when leaving/backgrounding (makes refresh/close feel safe)
   useEffect(() => {
@@ -566,16 +533,14 @@ export default function DogAIEngine() {
 
       let parsed = null;
       try {
-        let localData = await getStoredValue(nextKey);
-        if (!localData && nextKey === getDogStorageKey(null)) {
-          const legacy = await getStoredValue(DOG_STORAGE_KEY);
-          if (legacy) {
-            localData = legacy;
-            await setStoredValue(nextKey, legacy);
-            await removeStoredValue(DOG_STORAGE_KEY);
-          }
+        let parsed = await loadLocalSave(nextKey, null);
+        if (!parsed && nextKey === getDogStorageKey(null)) {
+          parsed = await migrateLegacySave({
+            legacyKey: DOG_STORAGE_KEY,
+            activeKey: nextKey,
+          });
         }
-        if (localData) parsed = reviveDogDates(JSON.parse(localData));
+        if (parsed) parsed = reviveDogDates(parsed);
       } catch (err) {
         console.warn("[Doggerz] Failed to load dog from new storage key", err);
       }
@@ -607,19 +572,16 @@ export default function DogAIEngine() {
         try {
           const activeKey =
             storageKeyRef.current || getDogStorageKey(userIdRef.current);
-          let localData = await getStoredValue(activeKey);
+          let parsed = await loadLocalSave(activeKey, null);
 
-          if (!localData && activeKey === getDogStorageKey(null)) {
-            const legacy = await getStoredValue(DOG_STORAGE_KEY);
-            if (legacy) {
-              localData = legacy;
-              await setStoredValue(activeKey, legacy);
-              await removeStoredValue(DOG_STORAGE_KEY);
-            }
+          if (!parsed && activeKey === getDogStorageKey(null)) {
+            parsed = await migrateLegacySave({
+              legacyKey: DOG_STORAGE_KEY,
+              activeKey,
+            });
           }
 
-          if (!cancelled && localData) {
-            const parsed = JSON.parse(localData);
+          if (!cancelled && parsed) {
             dispatch(hydrateDog(reviveDogDates(parsed)));
           }
         } catch (err) {
@@ -628,13 +590,10 @@ export default function DogAIEngine() {
           // Don't silently wipe user data. Record a recoverable error so the UI can
           // offer reset/restore options.
           try {
-            await setStoredValue(
-              HYDRATE_ERROR_KEY,
-              JSON.stringify({
-                type: "DOG_SAVE_PARSE_FAILED",
-                at: new Date().toISOString(),
-              })
-            );
+            await saveLocalSave(HYDRATE_ERROR_KEY, {
+              type: "DOG_SAVE_PARSE_FAILED",
+              at: new Date().toISOString(),
+            });
           } catch {
             // ignore
           }
@@ -773,7 +732,7 @@ export default function DogAIEngine() {
         };
         const key =
           storageKeyRef.current || getDogStorageKey(userIdRef.current);
-        setStoredValue(key, JSON.stringify(persisted));
+        saveLocalSave(key, persisted);
       } catch (err) {
         console.error("[Doggerz] Failed to save dog state", err);
       }
@@ -809,57 +768,6 @@ export default function DogAIEngine() {
       }
     };
   }, [dogState, dispatch]);
-
-  // 4. Game loop tick (every 60 seconds → decay + polls). Keep the interval stable.
-  useEffect(() => {
-    if (!lastTickAtRef.current) {
-      lastTickAtRef.current = Date.now();
-    }
-
-    const startTickInterval = () => {
-      if (tickIntervalRef.current) {
-        clearInterval(tickIntervalRef.current);
-      }
-      tickIntervalRef.current = setInterval(() => {
-        tickOnce();
-      }, TICK_INTERVAL_MS);
-    };
-
-    const tickOnce = () => {
-      if (typeof document !== "undefined" && document?.hidden) return;
-      if (growthPauseRef.current) return;
-      if (!adoptedRef.current) return;
-      const now = Date.now();
-      if (now - lastTickAtRef.current < TICK_INTERVAL_MS) return false;
-      lastTickAtRef.current = now;
-      const w = weatherRef.current;
-      dispatchRef.current(
-        tickDog({ now, weather: w, timeBucket: getLocalTimeBucket(now) })
-      );
-      dispatchRef.current(tickDogPolls({ now }));
-      return true;
-    };
-
-    startTickInterval();
-
-    // Also tick when returning to the tab.
-    const onVisibility = () => {
-      if (document.hidden) return;
-      const didTick = tickOnce();
-      if (didTick) {
-        startTickInterval();
-      }
-    };
-    window.addEventListener("visibilitychange", onVisibility);
-
-    return () => {
-      window.removeEventListener("visibilitychange", onVisibility);
-      if (tickIntervalRef.current) {
-        clearInterval(tickIntervalRef.current);
-        tickIntervalRef.current = null;
-      }
-    };
-  }, []);
 
   // Headless "brain" component: never renders UI
   return null;

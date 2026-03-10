@@ -1,8 +1,9 @@
 /** @format */
 /* eslint-disable react-refresh/only-export-components */
 import * as React from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { addXp, goPotty, recordAccident, selectDog } from "@/redux/dogSlice.js";
+import { useDispatch } from "react-redux";
+import { addXp, goPotty, recordAccident, removeXp } from "@/redux/dogSlice.js";
+import { useDog } from "@/hooks/useDogState.js";
 
 const PupContext = React.createContext(null);
 
@@ -14,7 +15,7 @@ export const usePup = () => {
 
 export function PupProvider({ children }) {
   const dispatch = useDispatch();
-  const dog = useSelector(selectDog);
+  const dog = useDog();
 
   // --- Optimized Selectors ---
   // We only re-calculate these when specific dog data changes to save battery
@@ -28,6 +29,7 @@ export function PupProvider({ children }) {
   const actions = React.useMemo(
     () => ({
       addXP: (amount) => dispatch(addXp({ amount })),
+      removeXP: (amount) => dispatch(removeXp({ amount })),
       logPottySuccess: () => dispatch(goPotty({ now: Date.now() })),
       logAccident: () => dispatch(recordAccident({ now: Date.now() })),
       // Stubs for future expansion

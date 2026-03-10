@@ -11,10 +11,11 @@ import {
   useRef,
   useState,
 } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch, useSelector, useStore } from "react-redux";
 import DogToy from "@/components/dog/DogToy.jsx";
 import EnvironmentScene from "@/features/game/EnvironmentScene.jsx";
 import YardBackdrop from "@/features/game/YardBackdrop.jsx";
+import Tooltip from "@/components/ui/Tooltip.jsx";
 import { useToast } from "@/state/toastContext.js";
 import { selectSettings } from "@/redux/settingsSlice.js";
 import {
@@ -35,12 +36,10 @@ import {
   rewardSocialShare,
   resolveSessionSurprise,
   play,
-  selectDog,
   triggerButtonHeist,
   trainObedience,
   tryConsumeFoodBowl,
 } from "@/redux/dogSlice.js";
-import { selectDogRenderModel } from "@/features/game/dogSelectors.js";
 import { PATHS } from "@/routes.js";
 import {
   selectWeatherCondition,
@@ -52,9 +51,18 @@ import {
   setWeatherLoading,
   setWeatherSnapshot,
 } from "@/redux/weatherSlice.js";
-import { fetchWeatherSnapshot } from "@/features/weather/weatherApi.js";
+import { fetchRealTimeWeather } from "@/logic/RealTimeWeatherFetcher.js";
 import { auth as firebaseAuth, initFirebase } from "@/firebase.js";
 import { getObedienceCommand } from "@/logic/obedienceCommands.js";
+import { createSwipeGestureRecognizer } from "@/logic/SwipeGestureRecognizer.js";
+import { createDragAndDropManager } from "@/logic/DragAndDropManager.js";
+import { createVoiceCommandHandler } from "@/logic/VoiceCommandHandler.js";
+import { useDogGameView } from "@/hooks/useDogState.js";
+import {
+  startDogSimulation,
+  stopDogSimulation,
+} from "@/engine/DogSimulationEngine.js";
+import { getDogEnvironmentTargets } from "@/engine/DogEnvironmentTargets.js";
 import { withBaseUrl } from "@/utils/assetUtils.js";
 
 const DogPixiView = lazy(() => import("@/components/dog/DogPixiView.jsx"));
@@ -325,11 +333,11 @@ function PawPrintSvg({ className = "" }) {
 
 export default function MainGame({ scene, dogInteractive = true }) {
   const dispatch = useDispatch();
+  const store = useStore();
   const navigate = useNavigate();
   const toast = useToast();
-  const dog = useSelector(selectDog);
+  const { dog, life, renderModel, vitals } = useDogGameView();
   const settings = useSelector(selectSettings);
-  const renderModel = useSelector(selectDogRenderModel);
   const userZip = useSelector(selectUserZip);
   const isFounder = useSelector(selectUserIsFounder);
   const weatherCondition = useSelector(selectWeatherCondition);
@@ -351,7 +359,12 @@ export default function MainGame({ scene, dogInteractive = true }) {
   const lastPawPrintRef = useRef({ x: 0, y: 0, at: 0 });
   const propGateRef = useRef({});
   const dogViewportRef = useRef(null);
-  const [attentionTarget, setAttentionTarget] = useState(null);
+  const swipeRecognizerRef = useRef(null);
+  const dragDropManagerRef = useRef(null);
+  const voiceCommandHandlerRef = useRef(null);
+  const dogPositionNormRef = useRef({ xNorm: 0.5, yNorm: 0.74 });
+  const voiceCommandDispatchRef = useRef(() => false);
+  const [, setAttentionTarget] = useState(null);
   const [interactionOpen, setInteractionOpen] = useState(false);
   const [placingBowl, setPlacingBowl] = useState(false);
   const [liveNow, setLiveNow] = useState(Date.now());
@@ -381,6 +394,8 @@ export default function MainGame({ scene, dogInteractive = true }) {
   const [movementLocked, setMovementLocked] = useState(false);
   const [midnightZoomiesBoost, setMidnightZoomiesBoost] = useState(1);
   const [midnightZoomiesAt, setMidnightZoomiesAt] = useState(0);
+  const [voiceListening, setVoiceListening] = useState(false);
+  const [voiceSupported, setVoiceSupported] = useState(false);
 
   const seasonMode = settings?.seasonMode || "auto";
   const reduceMotion = settings?.reduceMotion === "on";
@@ -393,6 +408,10 @@ export default function MainGame({ scene, dogInteractive = true }) {
     .trim()
     .toLowerCase();
   const isApartmentEnvironment = environmentMode === "apartment";
+  const environmentTargets = useMemo(
+    () => getDogEnvironmentTargets(dog || {}),
+    [dog]
+  );
 
   const activeAnim = renderModel?.anim || "idle";
   const sceneTime = String(scene?.timeOfDay || "").toLowerCase();
@@ -421,11 +440,6 @@ export default function MainGame({ scene, dogInteractive = true }) {
     !isApartmentEnvironment &&
     effectiveDogSleeping &&
     (isNightScene || isRainScene);
-  const sleepSpot = sleepInDogHouse
-    ? { xNorm: 0.82, yNorm: 0.73 }
-    : isApartmentEnvironment && effectiveDogSleeping
-      ? { xNorm: 0.2, yNorm: 0.72 }
-      : { xNorm: 0.5, yNorm: 0.73 };
   const animationSpeedMultiplier = Number(
     renderModel?.animationSpeedMultiplier || 1
   );
@@ -451,19 +465,22 @@ export default function MainGame({ scene, dogInteractive = true }) {
     !dog?.lastShareRewardAt ||
     Date.now() - Number(dog.lastShareRewardAt) >= SHARE_REWARD_COOLDOWN_MS;
   const stageLabel = String(
-    dog?.lifeStage?.label || renderModel?.stageLabel || "Puppy"
+    life?.stageLabel || renderModel?.stageLabel || "Puppy"
   );
-  const ageDays = Math.max(0, Math.floor(Number(dog?.lifeStage?.days || 0)));
-  const moodLabel = toTitle(
-    dog?.emotionCue || dog?.animation?.mood || dog?.mood || "ok"
-  );
+  const ageDays = Math.max(0, Math.floor(Number(life?.ageDays || 0)));
+  const moodLabel = toTitle(vitals?.moodLabel || "ok");
   const displayMoodLabel = ambientEvent?.type === "owl" ? "Curious" : moodLabel;
-  const hungerPct = toPct(dog?.stats?.hunger);
-  const energyPct = toPct(dog?.stats?.energy);
-  const healthPct = toPct(dog?.stats?.health);
+  const hungerPct = toPct(vitals?.hunger);
+  const energyPct = toPct(vitals?.energy);
+  const healthPct = toPct(vitals?.health);
   const zipIsValid = /^\d{5}$/.test(String(zipDraft || "").trim());
   const effectiveZip = userZip || zipDraft || "65401";
   const controlsDisabled = !dogInteractive;
+  const trainingInputMode = String(settings?.trainingInputMode || "both")
+    .trim()
+    .toLowerCase();
+  const voiceInputEnabled =
+    trainingInputMode === "voice" || trainingInputMode === "both";
   const dogRenderZIndex = sleepInDogHouse
     ? 18
     : Math.max(14, Math.round(15 + dogDepthNorm * 20));
@@ -491,6 +508,13 @@ export default function MainGame({ scene, dogInteractive = true }) {
         .toLowerCase() === hijackedActionKey,
     [hijackedActionKey]
   );
+
+  useEffect(() => {
+    startDogSimulation(store);
+    return () => {
+      stopDogSimulation();
+    };
+  }, [store]);
 
   const actionOutcomeLabel = useMemo(() => {
     const key = String(dog?.lastAction || "")
@@ -714,6 +738,168 @@ export default function MainGame({ scene, dogInteractive = true }) {
     },
     [cleanlinessTier, pawPrintsEnabled]
   );
+
+  useEffect(() => {
+    dogPositionNormRef.current = dogPositionNorm;
+  }, [dogPositionNorm]);
+
+  const handlePetSwipeRecognized = useCallback(
+    (event) => {
+      if (controlsDisabled) return;
+      if (placingBowl) return;
+      if (effectiveDogSleeping) return;
+      if (movementLocked) return;
+      if (isActionHijacked("pet")) return;
+
+      const now = Date.now();
+      const rect = dogViewportRef.current?.getBoundingClientRect?.();
+      const rawX = Number(event?.clientX);
+      const rawY = Number(event?.clientY);
+      if (rect && Number.isFinite(rawX) && Number.isFinite(rawY)) {
+        const xNorm = clamp((rawX - rect.left) / rect.width, 0, 1);
+        const yNorm = clamp((rawY - rect.top) / rect.height, 0, 1);
+        setAttentionTarget({ xNorm, yNorm, at: now });
+      }
+      dispatch(petDog({ now, source: "swipe_pet" }));
+    },
+    [
+      controlsDisabled,
+      dispatch,
+      effectiveDogSleeping,
+      isActionHijacked,
+      movementLocked,
+      placingBowl,
+    ]
+  );
+
+  useEffect(() => {
+    const recognizer = createSwipeGestureRecognizer({
+      onRecognized: handlePetSwipeRecognized,
+      shouldIgnoreTarget: (target) =>
+        Boolean(
+          target?.closest?.(
+            "#ui-container, [data-doggerz-ignore-swipe='true'], button, input, textarea, select, a, [role='button']"
+          )
+        ),
+    });
+    swipeRecognizerRef.current = recognizer;
+    return () => {
+      recognizer.cancel();
+      if (swipeRecognizerRef.current === recognizer) {
+        swipeRecognizerRef.current = null;
+      }
+    };
+  }, [handlePetSwipeRecognized]);
+
+  useEffect(() => {
+    const manager = createDragAndDropManager({
+      dropPaddingPx: 18,
+      getDropZone: () => {
+        const rect = dogViewportRef.current?.getBoundingClientRect?.();
+        if (!rect) return null;
+        const pos = dogPositionNormRef.current || { xNorm: 0.5, yNorm: 0.74 };
+        const xNorm = clamp(Number(pos.xNorm || 0.5), 0, 1);
+        const yNorm = clamp(Number(pos.yNorm || 0.74), 0, 1);
+        const centerX = rect.left + xNorm * rect.width;
+        const centerY = rect.top + yNorm * rect.height - rect.height * 0.08;
+        const size = clamp(rect.width * 0.16, 92, 170);
+        return {
+          left: centerX - size / 2,
+          top: centerY - size / 2,
+          right: centerX + size / 2,
+          bottom: centerY + size / 2,
+        };
+      },
+    });
+    dragDropManagerRef.current = manager;
+    return () => {
+      manager.cancelDrag();
+      if (dragDropManagerRef.current === manager) {
+        dragDropManagerRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    voiceCommandDispatchRef.current = (commandId, transcript = "") => {
+      if (!voiceInputEnabled) return false;
+      if (controlsDisabled) return false;
+      if (isActionHijacked("train")) return false;
+
+      const command = getObedienceCommand(commandId);
+      const resolvedCommandId = command?.id || "sit";
+      dispatch(
+        trainObedience({
+          now: Date.now(),
+          commandId: resolvedCommandId,
+          input: "voice",
+        })
+      );
+      const heard = String(transcript || "").trim();
+      const message = heard
+        ? `Voice command: ${command?.label || resolvedCommandId} (${heard}).`
+        : `Voice command: ${command?.label || resolvedCommandId}.`;
+      toast.success(message);
+      return true;
+    };
+  }, [controlsDisabled, dispatch, isActionHijacked, toast, voiceInputEnabled]);
+
+  useEffect(() => {
+    const handler = createVoiceCommandHandler({
+      onCommand: ({ commandId, transcript }) => {
+        voiceCommandDispatchRef.current(commandId, transcript);
+      },
+      onError: ({ code }) => {
+        const key = String(code || "").toLowerCase();
+        if (key === "unmatched_command") {
+          toast.error("Try saying: Sit, Speak, or Roll over.");
+          return;
+        }
+        if (key === "not-allowed" || key === "service-not-allowed") {
+          toast.error("Microphone permission is blocked.");
+        }
+      },
+      onStatusChange: (status) => {
+        setVoiceListening(status === "listening");
+      },
+    });
+    voiceCommandHandlerRef.current = handler;
+    setVoiceSupported(handler.isSupported());
+    return () => {
+      handler.destroy();
+      if (voiceCommandHandlerRef.current === handler) {
+        voiceCommandHandlerRef.current = null;
+      }
+      setVoiceListening(false);
+    };
+  }, [toast]);
+
+  useEffect(() => {
+    if (voiceInputEnabled) return;
+    if (voiceListening) {
+      voiceCommandHandlerRef.current?.stop();
+    }
+  }, [voiceInputEnabled, voiceListening]);
+
+  const handleVoiceTrainTap = useCallback(() => {
+    if (!voiceInputEnabled) {
+      toast.error("Enable voice input in Settings > Game > Training input.");
+      return;
+    }
+    const handler = voiceCommandHandlerRef.current;
+    if (!handler || !handler.isSupported()) {
+      toast.error("Voice commands are not available on this device.");
+      return;
+    }
+    if (voiceListening) {
+      handler.stop();
+      return;
+    }
+    const started = handler.start();
+    if (!started) {
+      toast.error("Could not start voice command listening.");
+    }
+  }, [voiceInputEnabled, voiceListening, toast]);
 
   const triggerPropHaptic = useCallback(
     async (mode = "impact") => {
@@ -1009,7 +1195,11 @@ export default function MainGame({ scene, dogInteractive = true }) {
   const handleToySqueak = useCallback(
     (point) => {
       if (controlsDisabled) return;
-      if (toysIgnored) return;
+      const itemType =
+        String(point?.itemType || "toy").toLowerCase() === "food"
+          ? "food"
+          : "toy";
+      if (itemType === "toy" && toysIgnored) return;
       const now = Date.now();
       if (now - lastToySqueakAtRef.current < 600) return;
       lastToySqueakAtRef.current = now;
@@ -1023,15 +1213,64 @@ export default function MainGame({ scene, dogInteractive = true }) {
         setAttentionTarget({ xNorm, yNorm, at: now });
       }
 
-      dispatchPlayAction("toy");
+      const source = String(point?.source || "").toLowerCase();
+      if (
+        source === "drop" &&
+        Number.isFinite(rawX) &&
+        Number.isFinite(rawY) &&
+        dragDropManagerRef.current
+      ) {
+        const hit = dragDropManagerRef.current.evaluateDrop({
+          itemType,
+          clientX: rawX,
+          clientY: rawY,
+          source: "inventory_drop",
+        });
+        if (hit?.accepted) {
+          if (itemType === "food") {
+            dispatch(
+              feed({
+                now,
+                foodType: "regular_kibble",
+                source: "drag_drop_food",
+              })
+            );
+            setUiAnimOverride("eat");
+            setUiSpeedBoost(1.1);
+            if (quickFeedResetRef.current) {
+              window.clearTimeout(quickFeedResetRef.current);
+            }
+            quickFeedResetRef.current = window.setTimeout(() => {
+              setUiAnimOverride("");
+              setUiSpeedBoost(1);
+            }, 900);
+            return;
+          }
+          dispatchPlayAction("toy_drop");
+          return;
+        }
+      }
+
+      if (itemType === "food") return;
+      dispatchPlayAction(source === "drop" ? "toy_drop_miss" : "toy");
     },
-    [controlsDisabled, dispatchPlayAction, toysIgnored]
+    [controlsDisabled, dispatch, dispatchPlayAction, toysIgnored]
   );
 
   const handleViewportPointerDown = useCallback(
     (event) => {
       if (controlsDisabled) return;
-      if (!placingBowl) return;
+      const ignoredTarget = Boolean(
+        event?.target?.closest?.(
+          "#ui-container, [data-doggerz-ignore-swipe='true']"
+        )
+      );
+      if (ignoredTarget) return;
+
+      if (!placingBowl) {
+        swipeRecognizerRef.current?.start(event);
+        return;
+      }
       const rect = dogViewportRef.current?.getBoundingClientRect?.();
       if (!rect) return;
 
@@ -1060,6 +1299,18 @@ export default function MainGame({ scene, dogInteractive = true }) {
     },
     [controlsDisabled, dispatch, placingBowl]
   );
+
+  const handleViewportPointerMove = useCallback((event) => {
+    swipeRecognizerRef.current?.move(event);
+  }, []);
+
+  const handleViewportPointerUp = useCallback((event) => {
+    swipeRecognizerRef.current?.end(event);
+  }, []);
+
+  const handleViewportPointerCancel = useCallback(() => {
+    swipeRecognizerRef.current?.cancel();
+  }, []);
 
   useEffect(() => {
     if (!isApartmentEnvironment) return undefined;
@@ -1340,7 +1591,10 @@ export default function MainGame({ scene, dogInteractive = true }) {
       setWeatherBusy(true);
       dispatch(setWeatherLoading({ zip: nextZip }));
       try {
-        const snapshot = await fetchWeatherSnapshot({ zip: nextZip });
+        const snapshot = await fetchRealTimeWeather({
+          zip: nextZip,
+          forceRefresh: true,
+        });
         dispatch(setWeatherSnapshot(snapshot));
       } catch (err) {
         dispatch(setWeatherError(err?.message || "Weather refresh failed"));
@@ -1568,11 +1822,13 @@ export default function MainGame({ scene, dogInteractive = true }) {
                 placeholder="ZIP"
                 className="w-24 rounded-xl border border-doggerz-leaf/35 bg-black/55 px-3 py-2 text-sm font-semibold text-doggerz-bone outline-none transition focus:border-doggerz-neon"
                 aria-label="Zip code"
+                title="Enter a 5-digit ZIP to refresh local weather cues."
               />
               <button
                 type="submit"
                 disabled={!zipIsValid || weatherBusy}
                 className="rounded-xl border border-doggerz-leaf/40 bg-doggerz-neon/20 px-3 py-2 text-xs font-bold uppercase tracking-[0.14em] text-doggerz-bone transition hover:bg-doggerz-neon/30 disabled:cursor-not-allowed disabled:opacity-50"
+                title="Fetch latest weather using the ZIP code."
               >
                 {weatherBusy ? "Updating" : "Update"}
               </button>
@@ -1601,12 +1857,36 @@ export default function MainGame({ scene, dogInteractive = true }) {
             ) : null}
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
-            <HudChip label="Level" value={`Lv ${overallLevel}`} />
-            <HudChip label="Age" value={`${ageDays}d`} />
-            <HudChip label="Stage" value={stageLabel} />
-            <HudChip label="Mood" value={displayMoodLabel} />
-            <HudChip label="Energy" value={`${energyPct}%`} />
-            <HudChip label="Health" value={`${healthPct}%`} />
+            <HudChip
+              label="Level"
+              value={`Lv ${overallLevel}`}
+              tooltip="Overall progression level. Higher levels unlock tougher training tracks."
+            />
+            <HudChip
+              label="Age"
+              value={`${ageDays}d`}
+              tooltip="Age in days since adoption."
+            />
+            <HudChip
+              label="Stage"
+              value={stageLabel}
+              tooltip="Current life stage of your pup."
+            />
+            <HudChip
+              label="Mood"
+              value={displayMoodLabel}
+              tooltip="Current emotional state based on needs and events."
+            />
+            <HudChip
+              label="Energy"
+              value={`${energyPct}%`}
+              tooltip="Action stamina. Rest, food, and routine restore this."
+            />
+            <HudChip
+              label="Health"
+              value={`${healthPct}%`}
+              tooltip="Overall wellbeing. Neglect over time causes faster decline."
+            />
           </div>
           <div className="mt-2 text-xs text-doggerz-paw/80">
             Hunger: {hungerPct}%
@@ -1638,6 +1918,9 @@ export default function MainGame({ scene, dogInteractive = true }) {
               id="backyard"
               className={`yard-viewport ${localNight ? "yard-night" : "yard-day"} relative flex items-center justify-center overflow-hidden rounded-[24px] border border-doggerz-leaf/25 bg-black/20`}
               onPointerDown={handleViewportPointerDown}
+              onPointerMove={handleViewportPointerMove}
+              onPointerUp={handleViewportPointerUp}
+              onPointerCancel={handleViewportPointerCancel}
             >
               <YardBackdrop
                 environment={environmentMode}
@@ -1645,6 +1928,8 @@ export default function MainGame({ scene, dogInteractive = true }) {
                 isNight={localNight || sunriseBlend > 0}
                 sunriseProgress={sunriseBlend}
                 reduceMotion={reduceMotion}
+                environmentTargets={environmentTargets}
+                activeEnvironmentTargetId={dog?.targetPosition?.id || ""}
                 props={investigationProps}
                 activePropId={activeInvestigationId}
                 onPropTap={handlePropTap}
@@ -1657,22 +1942,47 @@ export default function MainGame({ scene, dogInteractive = true }) {
                   <strong>Energy: </strong>
                   <span id="energy-display">{energyPct}</span>%
                 </div>
-                <button
-                  id="feed-button"
-                  type="button"
-                  onClick={handleQuickFeed}
-                  disabled={controlsDisabled}
-                  className="rounded-2xl border border-emerald-300/45 bg-gradient-to-b from-emerald-300 to-lime-300 px-4 py-2 text-sm font-black tracking-[0.02em] text-slate-950 shadow-[0_10px_24px_rgba(16,185,129,0.28)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
+                <Tooltip
+                  className="w-full"
+                  content="Quick feed instantly restores energy and helps hunger."
                 >
-                  Feed Pup
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSharePup}
-                  className="min-h-11 rounded-2xl border border-cyan-300/45 bg-gradient-to-b from-cyan-300 to-sky-300 px-4 py-2 text-sm font-black tracking-[0.02em] text-slate-950 shadow-[0_10px_24px_rgba(34,211,238,0.28)] transition hover:brightness-105"
+                  <button
+                    id="feed-button"
+                    type="button"
+                    onClick={handleQuickFeed}
+                    disabled={controlsDisabled}
+                    className="w-full rounded-2xl border border-emerald-300/45 bg-gradient-to-b from-emerald-300 to-lime-300 px-4 py-2 text-sm font-black tracking-[0.02em] text-slate-950 shadow-[0_10px_24px_rgba(16,185,129,0.28)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Feed Pup
+                  </button>
+                </Tooltip>
+                <Tooltip
+                  className="w-full"
+                  content="Share your pup for social rewards when cooldown is ready."
                 >
-                  Share My Pup
-                </button>
+                  <button
+                    type="button"
+                    onClick={handleSharePup}
+                    className="min-h-11 w-full rounded-2xl border border-cyan-300/45 bg-gradient-to-b from-cyan-300 to-sky-300 px-4 py-2 text-sm font-black tracking-[0.02em] text-slate-950 shadow-[0_10px_24px_rgba(34,211,238,0.28)] transition hover:brightness-105"
+                  >
+                    Share My Pup
+                  </button>
+                </Tooltip>
+                {voiceInputEnabled ? (
+                  <Tooltip
+                    className="w-full"
+                    content="Use voice commands like Sit, Speak, or Roll over."
+                  >
+                    <button
+                      type="button"
+                      onClick={handleVoiceTrainTap}
+                      disabled={controlsDisabled || !voiceSupported}
+                      className="min-h-11 w-full rounded-2xl border border-violet-300/45 bg-gradient-to-b from-violet-300 to-fuchsia-300 px-4 py-2 text-sm font-black tracking-[0.02em] text-slate-950 shadow-[0_10px_24px_rgba(167,139,250,0.28)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {voiceListening ? "Listening..." : "Voice Train"}
+                    </button>
+                  </Tooltip>
+                ) : null}
               </div>
               {isRainScene ? (
                 <div
@@ -1783,29 +2093,29 @@ export default function MainGame({ scene, dogInteractive = true }) {
               ) : null}
               <Suspense
                 fallback={
-                  <div className="flex h-[340px] w-full max-w-[540px] items-center justify-center rounded-3xl border border-doggerz-leaf/30 bg-black/30 text-xs uppercase tracking-[0.2em] text-doggerz-paw/80">
+                  <div className="flex h-[340px] w-full items-center justify-center rounded-3xl border border-doggerz-leaf/30 bg-black/30 text-xs uppercase tracking-[0.2em] text-doggerz-paw/80">
                     Loading Pup
                   </div>
                 }
               >
                 <div
-                  className="relative w-full max-w-[540px]"
+                  className="absolute inset-0"
                   style={{ zIndex: dogRenderZIndex }}
                 >
                   <DogPixiView
                     stage={renderModel?.stage}
                     condition={renderModel?.condition}
                     anim={effectiveAnim}
+                    behaviorState={dog?.aiState || "idle"}
+                    position={dog?.position || null}
+                    facing={dog?.facing || "right"}
                     equippedCosmetics={dog?.cosmetics?.equipped || null}
                     width="100%"
-                    height={340}
+                    height="100%"
                     scale={1.6}
                     animSpeedMultiplier={effectiveAnimationSpeedMultiplier}
-                    attentionTarget={attentionTarget}
                     bondValue={Number(dog?.bond?.value ?? 0)}
                     dogIsSleeping={effectiveDogSleeping}
-                    sleepSpot={sleepSpot}
-                    movementLocked={movementLocked}
                     onPositionChange={handleDogPositionChange}
                     onDogTap={
                       treasurePhase === "sniffing"
@@ -1903,10 +2213,20 @@ export default function MainGame({ scene, dogInteractive = true }) {
                 </div>
               ) : null}
               {!effectiveDogSleeping ? (
-                <DogToy
-                  onSqueak={handleToySqueak}
-                  className="bottom-3 right-3 left-auto top-auto z-30 h-11 w-11"
-                />
+                <>
+                  <DogToy
+                    onSqueak={handleToySqueak}
+                    itemType="food"
+                    title="Drag food onto your pup to feed"
+                    className="bottom-3 right-16 left-auto top-auto z-30 h-11 w-11"
+                  />
+                  <DogToy
+                    onSqueak={handleToySqueak}
+                    itemType="toy"
+                    title="Drag toy onto your pup to play"
+                    className="bottom-3 right-3 left-auto top-auto z-30 h-11 w-11"
+                  />
+                </>
               ) : null}
             </div>
           </div>
@@ -2188,36 +2508,44 @@ function ActionButton({
   onPointerEnter,
   disabled = false,
   hijacked = false,
+  tooltip = "",
 }) {
   const meta = ACTION_META[label] || ACTION_META.Play;
+  const tooltipText =
+    tooltip ||
+    (hijacked
+      ? "This action is stolen. Resolve the surprise to recover it."
+      : meta.hint);
 
   return (
-    <button
-      type="button"
-      disabled={disabled}
-      onClick={onClick}
-      onPointerEnter={onPointerEnter}
-      className={`group relative overflow-hidden rounded-2xl border px-3 py-3 text-left transition active:translate-y-[1px] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-45 ${
-        hijacked
-          ? "border-amber-300/65 bg-amber-500/15"
-          : `${meta.edge} bg-gradient-to-b ${meta.card}`
-      } shadow-[0_10px_22px_rgba(2,6,23,0.25)] hover:brightness-110`}
-    >
-      <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.3),transparent_55%)]" />
-      <div className="relative flex items-center gap-2">
-        <span className="grid h-8 w-8 place-items-center rounded-xl border border-white/20 bg-black/25 text-base">
-          {hijacked ? "🕵️" : meta.icon}
-        </span>
-        <span>
-          <span className="block text-sm font-bold text-doggerz-bone">
-            {label}
+    <Tooltip content={tooltipText} className="w-full">
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={onClick}
+        onPointerEnter={onPointerEnter}
+        className={`group relative w-full overflow-hidden rounded-2xl border px-3 py-3 text-left transition active:translate-y-[1px] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-45 ${
+          hijacked
+            ? "border-amber-300/65 bg-amber-500/15"
+            : `${meta.edge} bg-gradient-to-b ${meta.card}`
+        } shadow-[0_10px_22px_rgba(2,6,23,0.25)] hover:brightness-110`}
+      >
+        <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.3),transparent_55%)]" />
+        <div className="relative flex items-center gap-2">
+          <span className="grid h-8 w-8 place-items-center rounded-xl border border-white/20 bg-black/25 text-base">
+            {hijacked ? "🕵️" : meta.icon}
           </span>
-          <span className="block text-[10px] uppercase tracking-[0.14em] text-doggerz-paw/75">
-            {hijacked ? "Stolen - play fetch" : meta.hint}
+          <span>
+            <span className="block text-sm font-bold text-doggerz-bone">
+              {label}
+            </span>
+            <span className="block text-[10px] uppercase tracking-[0.14em] text-doggerz-paw/75">
+              {hijacked ? "Stolen - play fetch" : meta.hint}
+            </span>
           </span>
-        </span>
-      </div>
-    </button>
+        </div>
+      </button>
+    </Tooltip>
   );
 }
 
@@ -2263,49 +2591,87 @@ function InteractionSheet({
             label="Feed Regular Kibble"
             icon="🦴"
             onClick={onFeedRegular}
+            tooltip="Standard meal. Reliable hunger recovery."
           />
           <SheetButton
             label="Feed Human Food"
             icon="🍟"
             onClick={onFeedHuman}
+            tooltip="Fast happiness spike, but not ideal as a routine diet."
           />
           <SheetButton
             label="Feed Premium Kibble"
             icon="🥩"
             onClick={onFeedPremium}
             disabled={premiumKibbleCount <= 0}
+            tooltip="Best meal quality. Uses one premium bowl."
           />
-          <SheetButton label="Drop Food Bowl" icon="🥣" onClick={onDropBowl} />
-          <SheetButton label="Give Water" icon="💧" onClick={onGiveWater} />
+          <SheetButton
+            label="Drop Food Bowl"
+            icon="🥣"
+            onClick={onDropBowl}
+            tooltip="Place a bowl in the scene so your pup can eat from it."
+          />
+          <SheetButton
+            label="Give Water"
+            icon="💧"
+            onClick={onGiveWater}
+            tooltip="Hydration support for mood and health."
+          />
           <SheetButton
             label={playHijacked ? "Play (stolen)" : "Play"}
             icon="🎾"
             onClick={onPlay}
             disabled={playHijacked}
+            tooltip={
+              playHijacked
+                ? "Play is currently stolen by a surprise event."
+                : "Active play boosts happiness and bond."
+            }
           />
           <SheetButton
             label={petHijacked ? "Pet (stolen)" : "Pet"}
             icon="🖐️"
             onClick={onPet}
             disabled={petHijacked}
+            tooltip={
+              petHijacked
+                ? "Pet is currently stolen by a surprise event."
+                : "Petting steadily increases affection."
+            }
           />
           <SheetButton
             label={bathHijacked ? "Bath (stolen)" : "Bath"}
             icon="🧼"
             onClick={onBath}
             disabled={bathHijacked}
+            tooltip={
+              bathHijacked
+                ? "Bath is currently stolen by a surprise event."
+                : "Cleaning prevents hygiene-related penalties."
+            }
           />
           <SheetButton
             label={pottyHijacked ? "Potty (stolen)" : "Potty"}
             icon="🌿"
             onClick={onPotty}
             disabled={pottyHijacked}
+            tooltip={
+              pottyHijacked
+                ? "Potty is currently stolen by a surprise event."
+                : "Potty routine helps avoid accidents."
+            }
           />
           <SheetButton
             label={trainHijacked ? "Train (stolen)" : "Train"}
             icon="🎯"
             onClick={onTrain}
             disabled={trainHijacked}
+            tooltip={
+              trainHijacked
+                ? "Train is currently stolen by a surprise event."
+                : "Training builds per-command mastery."
+            }
           />
         </div>
       </div>
@@ -2313,29 +2679,36 @@ function InteractionSheet({
   );
 }
 
-function SheetButton({ label, icon, onClick, disabled = false }) {
+function SheetButton({ label, icon, onClick, disabled = false, tooltip = "" }) {
+  const tooltipText = tooltip || label;
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className="group flex items-center gap-2 rounded-2xl border border-doggerz-leaf/30 bg-black/40 px-3 py-3 text-left text-sm font-semibold text-doggerz-bone transition hover:border-doggerz-neon/60 hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-60"
-    >
-      <span className="grid h-9 w-9 place-items-center rounded-xl border border-white/20 bg-black/25 text-base">
-        {icon}
-      </span>
-      <span className="leading-tight">{label}</span>
-    </button>
+    <Tooltip content={tooltipText} className="w-full" side="top">
+      <button
+        type="button"
+        onClick={onClick}
+        disabled={disabled}
+        className="group flex w-full items-center gap-2 rounded-2xl border border-doggerz-leaf/30 bg-black/40 px-3 py-3 text-left text-sm font-semibold text-doggerz-bone transition hover:border-doggerz-neon/60 hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        <span className="grid h-9 w-9 place-items-center rounded-xl border border-white/20 bg-black/25 text-base">
+          {icon}
+        </span>
+        <span className="leading-tight">{label}</span>
+      </button>
+    </Tooltip>
   );
 }
 
-function HudChip({ label, value }) {
+function HudChip({ label, value, tooltip = "" }) {
   return (
-    <div className="rounded-xl border border-doggerz-leaf/35 bg-black/35 px-3 py-2">
-      <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-doggerz-paw/85">
-        {label}
+    <Tooltip content={tooltip || label} className="w-full">
+      <div className="w-full rounded-xl border border-doggerz-leaf/35 bg-black/35 px-3 py-2">
+        <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-doggerz-paw/85">
+          {label}
+        </div>
+        <div className="mt-0.5 text-sm font-bold text-doggerz-bone">
+          {value}
+        </div>
       </div>
-      <div className="mt-0.5 text-sm font-bold text-doggerz-bone">{value}</div>
-    </div>
+    </Tooltip>
   );
 }

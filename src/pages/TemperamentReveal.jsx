@@ -1,11 +1,10 @@
 // src/pages/TemperamentReveal.jsx
-import { useSelector } from "react-redux";
-import { selectDog } from "@/redux/dogSlice.js";
 import PageShell from "@/components/layout/PageShell.jsx";
 import { PageHeader } from "@/components/layout/PageSections.jsx";
+import { useDog } from "@/hooks/useDogState.js";
 
 export default function TemperamentReveal() {
-  const dog = useSelector(selectDog);
+  const dog = useDog();
   const temperament = dog?.temperament || {};
   const primary = temperament.primary || "Unknown";
   const secondary = temperament.secondary || null;

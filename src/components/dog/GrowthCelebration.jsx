@@ -3,14 +3,11 @@
 import { useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-import {
-  acknowledgeGrowthMilestone,
-  selectDog,
-  selectDogGrowthMilestone,
-} from "@/redux/dogSlice.js";
+import { acknowledgeGrowthMilestone } from "@/redux/dogSlice.js";
 import { selectSettings } from "@/redux/settingsSlice.js";
 import { getLifeStageLabel } from "@/features/game/game.js";
 import { useYardSfx } from "@/hooks/useYardSfx.js";
+import { useDogGrowthMilestone, useDogIdentity } from "@/hooks/useDogState.js";
 
 function formatAgeLabel(ageDays) {
   const days = Number(ageDays);
@@ -20,8 +17,8 @@ function formatAgeLabel(ageDays) {
 
 export default function GrowthCelebration() {
   const dispatch = useDispatch();
-  const dog = useSelector(selectDog);
-  const milestone = useSelector(selectDogGrowthMilestone);
+  const dog = useDogIdentity();
+  const milestone = useDogGrowthMilestone();
   const settings = useSelector(selectSettings);
   const { playBark } = useYardSfx(settings);
 

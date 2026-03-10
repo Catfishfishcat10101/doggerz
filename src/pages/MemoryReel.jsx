@@ -1,9 +1,8 @@
 // src/pages/MemoryReel.jsx
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { useSelector } from "react-redux";
 
-import { selectDog, selectDogJournal } from "@/redux/dogSlice.js";
+import { useDogMemoryState } from "@/hooks/useDogState.js";
 import PageShell from "@/components/layout/PageShell.jsx";
 import EmptySlate from "@/components/ui/EmptySlate.jsx";
 
@@ -31,8 +30,7 @@ function formatEntryDate(ts) {
 }
 
 export default function MemoryReel() {
-  const dog = useSelector(selectDog);
-  const journal = useSelector(selectDogJournal);
+  const { name, journal, memories, memoryDrives } = useDogMemoryState();
 
   const [query, setQuery] = useState("");
   const [type, setType] = useState("All");
@@ -42,16 +40,22 @@ export default function MemoryReel() {
   const [showMoodTags, setShowMoodTags] = useState(true);
 
   const entries = useMemo(() => {
-    const raw = Array.isArray(journal?.entries) ? journal.entries : [];
+    const rawMemories = Array.isArray(memories) ? memories : [];
+    const rawJournal = Array.isArray(journal?.entries) ? journal.entries : [];
+    const raw = rawMemories.length ? rawMemories : rawJournal;
     const q = query.trim().toLowerCase();
     const filtered = raw.filter((e) => {
-      if (type !== "All" && String(e?.type || "").toUpperCase() !== type) {
+      const entryType = String(e?.category || e?.type || "").toUpperCase();
+      if (type !== "All" && entryType !== type) {
         return false;
       }
       if (!q) return true;
       const summary = String(e?.summary || "").toLowerCase();
       const body = String(e?.body || "").toLowerCase();
-      return summary.includes(q) || body.includes(q);
+      const sourceMemory = String(e?.sourceMemory || "").toLowerCase();
+      return (
+        summary.includes(q) || body.includes(q) || sourceMemory.includes(q)
+      );
     });
     const sorted = filtered.slice().sort((a, b) => {
       const ta = Number(a?.timestamp || 0);
@@ -59,7 +63,7 @@ export default function MemoryReel() {
       return sortNewest ? tb - ta : ta - tb;
     });
     return sorted;
-  }, [journal?.entries, query, type, sortNewest]);
+  }, [journal?.entries, memories, query, type, sortNewest]);
 
   return (
     <PageShell mainClassName="px-4 py-10" containerClassName="w-full max-w-5xl">
@@ -70,12 +74,26 @@ export default function MemoryReel() {
               Memory Reel
             </div>
             <h1 className="mt-2 text-2xl sm:text-3xl font-extrabold text-emerald-200">
-              {dog?.name || "Your pup"}&rsquo;s story
+              {name || "Your pup"}&rsquo;s story
             </h1>
             <p className="mt-2 text-sm text-zinc-200/90 max-w-prose">
               A timeline of care, training, and small moments that add up to a
               lasting bond.
             </p>
+            <div className="mt-4 flex flex-wrap gap-2 text-[11px] text-zinc-300">
+              <span className="rounded-full border border-amber-400/30 bg-amber-500/10 px-3 py-1">
+                Hungry drive {Math.round(Number(memoryDrives?.hungry || 0))}
+              </span>
+              <span className="rounded-full border border-fuchsia-400/30 bg-fuchsia-500/10 px-3 py-1">
+                Lonely drive {Math.round(Number(memoryDrives?.lonely || 0))}
+              </span>
+              <span className="rounded-full border border-emerald-400/30 bg-emerald-500/10 px-3 py-1">
+                Playful drive {Math.round(Number(memoryDrives?.playful || 0))}
+              </span>
+              <span className="rounded-full border border-sky-400/30 bg-sky-500/10 px-3 py-1">
+                Restless drive {Math.round(Number(memoryDrives?.restless || 0))}
+              </span>
+            </div>
           </div>
 
           <div className="p-6 sm:p-8">
@@ -168,11 +186,21 @@ export default function MemoryReel() {
                     <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-zinc-400">
                       <div className="flex items-center gap-2">
                         <span className="uppercase tracking-[0.2em] text-zinc-500">
-                          {entry.type || "MEMORY"}
+                          {entry.category || entry.type || "MEMORY"}
                         </span>
                         {entry.moodTag && showMoodTags ? (
                           <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-zinc-300">
                             {entry.moodTag}
+                          </span>
+                        ) : null}
+                        {entry.emotion ? (
+                          <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-zinc-300">
+                            {entry.emotion}
+                          </span>
+                        ) : null}
+                        {entry.sourceMemory ? (
+                          <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-zinc-300">
+                            from {String(entry.sourceMemory).replace(/_/g, " ")}
                           </span>
                         ) : null}
                       </div>

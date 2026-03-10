@@ -4,13 +4,11 @@ import * as React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import PageShell from "@/components/layout/PageShell.jsx";
+import { useDogSkillTreeState } from "@/hooks/useDogState.js";
 import { PATHS } from "@/routes.js";
 import {
   respecSkillTree,
   respecSkillTreeBranch,
-  selectDog,
-  selectDogSkillTreePoints,
-  selectDogSkillTreeUnlockedIds,
   unlockSkillTreePerk,
 } from "@/redux/dogSlice.js";
 import {
@@ -45,13 +43,30 @@ const BRANCH_STYLES = {
   },
 };
 
+function buildBranchTiers(perks) {
+  const grouped = new Map();
+
+  (Array.isArray(perks) ? perks : []).forEach((perk, index) => {
+    const tier = Math.max(1, Math.floor(Number(perk?.tier || index + 1)));
+    if (!grouped.has(tier)) {
+      grouped.set(tier, []);
+    }
+    grouped.get(tier).push(perk);
+  });
+
+  return Array.from(grouped.entries())
+    .sort((a, b) => a[0] - b[0])
+    .map(([tier, tierPerks]) => ({
+      tier,
+      perks: tierPerks,
+    }));
+}
+
 export default function SkillTree() {
   const dispatch = useDispatch();
-  const dog = useSelector(selectDog);
-  const level = dog?.level ?? 1;
-  const unlockedIds = useSelector(selectDogSkillTreeUnlockedIds);
-  const unlocked = React.useMemo(() => new Set(unlockedIds), [unlockedIds]);
-  const points = useSelector(selectDogSkillTreePoints);
+  const { level, unlockedIds, points, lastUnlockedId, lastUnlockedAt } =
+    useDogSkillTreeState();
+  const unlockedSet = React.useMemo(() => new Set(unlockedIds), [unlockedIds]);
   const pointsAvailable = points?.pointsAvailable ?? 0;
   const pointsEarned = points?.pointsEarned ?? Math.max(0, level - 1);
   const pointsSpent = points?.pointsSpent ?? unlockedIds.length;
@@ -92,6 +107,7 @@ export default function SkillTree() {
     () =>
       SKILL_TREE_BRANCHES.map((b) => ({
         ...b,
+        tiers: buildBranchTiers(b.perks),
         ...(BRANCH_STYLES[b.id] || {}),
       })),
     []
@@ -120,7 +136,6 @@ export default function SkillTree() {
             <div className="text-xs uppercase tracking-[0.4em] text-amber-700/70">
               Skill Tree
             </div>
-            <p className="mt-3 text-sm text-slate-600"></p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <div className="rounded-2xl border border-amber-200/70 bg-white/70 px-4 py-3 shadow-sm">
@@ -245,9 +260,6 @@ export default function SkillTree() {
               key={branch.id}
               className={`relative overflow-hidden rounded-3xl border ${branch.border} bg-white/70 p-6 shadow-[0_20px_70px_rgba(60,35,10,0.1)]`}
             >
-              <div className="absolute left-7 top-24 bottom-8 w-px" aria-hidden>
-                <div className={`h-full w-px ${branch.line}`} />
-              </div>
               <div className="relative">
                 <div className="flex items-start justify-between gap-4">
                   <div>
@@ -262,105 +274,165 @@ export default function SkillTree() {
                   </div>
                 </div>
 
-                <div className="mt-6 space-y-4">
-                  {branch.perks.map((perk) => {
-                    const requiredIds = getSkillTreeRequiredPerkIds(perk.id);
-                    const perkCost = getSkillTreePerkCost(perk.id);
-                    const isUnlocked = unlocked.has(perk.id);
-                    const isBlocked =
-                      requiredIds.length > 0 &&
-                      requiredIds.some((id) => !unlocked.has(id));
-                    const unlockCheck = getSkillTreeUnlockCheck({
-                      perkId: perk.id,
-                      unlockedIds,
-                      pointsAvailable,
-                      dogLevel: level,
-                    });
-                    const canUnlock = unlockCheck.ok;
-
-                    if (showUnlockedOnly && !isUnlocked) return null;
-
-                    const perkState = isUnlocked
-                      ? "unlocked"
-                      : isBlocked
-                        ? "blocked"
-                        : canUnlock
-                          ? "available"
-                          : "locked";
-
-                    const statusLabel = isUnlocked
-                      ? "Unlocked"
-                      : unlockCheck.reason || "Unavailable";
-
-                    return (
-                      <div key={perk.id} className="relative pl-6">
-                        <span
-                          className={`absolute left-0 top-5 h-3 w-3 rounded-full border ${
-                            isUnlocked
-                              ? "border-emerald-400/80 bg-emerald-200/70"
-                              : "border-slate-300/80 bg-white"
-                          }`}
-                        />
-
-                        <div
-                          data-branch={branch.id}
-                          data-state={perkState}
-                          className={`dz-perk-card rounded-2xl border transition ${
-                            isUnlocked
-                              ? "border-emerald-300/70 bg-emerald-50/70"
-                              : "border-slate-200/80 bg-white/80"
-                          } ${isBlocked ? "opacity-70" : ""} ${
-                            compactCards ? "p-3" : "p-4"
-                          }`}
-                        >
-                          <div className="flex items-start justify-between gap-3">
-                            <div>
-                              <div className="text-lg font-semibold text-slate-900">
-                                {perk.name}
-                              </div>
-                              <p className="mt-1 text-sm text-slate-600">
-                                {perk.effect}
-                              </p>
-                            </div>
-                            <div className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
-                              Cost {perkCost}
-                            </div>
-                          </div>
-
-                          <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                            <span className="rounded-full border border-slate-200/80 bg-white/70 px-2.5 py-1">
-                              {perk.type}
-                            </span>
-                            {perk.unlocks ? (
-                              <span className="rounded-full border border-slate-200/80 bg-white/70 px-2.5 py-1">
-                                Unlocks: {perk.unlocks}
-                              </span>
-                            ) : null}
-                          </div>
-
-                          <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                            <span className="text-xs text-slate-500">
-                              {statusLabel}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => unlockPerk(perk.id)}
-                              disabled={!canUnlock}
-                              className={`inline-flex items-center justify-center rounded-full border px-3 py-1 text-xs font-semibold transition ${
-                                isUnlocked
-                                  ? "border-emerald-300/70 bg-emerald-200/60 text-emerald-800"
-                                  : canUnlock
-                                    ? "border-slate-300/80 bg-white text-slate-800 hover:bg-slate-50"
-                                    : "border-slate-200/80 bg-slate-100 text-slate-400"
-                              }`}
-                            >
-                              {isUnlocked ? "Active" : "Unlock"}
-                            </button>
-                          </div>
+                <div className="mt-6 space-y-6">
+                  {branch.tiers.map((tierRow, rowIndex) => (
+                    <div
+                      key={`${branch.id}-tier-${tierRow.tier}`}
+                      className="relative"
+                    >
+                      {rowIndex > 0 ? (
+                        <div className="pointer-events-none absolute -top-5 left-1/2 h-5 w-px -translate-x-1/2">
+                          <div className={`h-full w-px ${branch.line}`} />
                         </div>
+                      ) : null}
+
+                      <div className="mb-2 text-center text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">
+                        Tier {tierRow.tier}
                       </div>
-                    );
-                  })}
+
+                      <div className="flex flex-wrap justify-center gap-4">
+                        {tierRow.perks.map((perk) => {
+                          const requiredIds = getSkillTreeRequiredPerkIds(
+                            perk.id
+                          );
+                          const perkCost = getSkillTreePerkCost(perk.id);
+                          const unlockCheck = getSkillTreeUnlockCheck({
+                            perkId: perk.id,
+                            unlockedIds,
+                            pointsAvailable,
+                            dogLevel: level,
+                          });
+                          const isUnlocked = unlockedSet.has(perk.id);
+                          const canUnlock = unlockCheck.ok;
+                          const isBlocked =
+                            !isUnlocked &&
+                            unlockCheck.reason ===
+                              "Unlock prerequisite perks first.";
+                          const isRecentlyUnlocked =
+                            perk.id === lastUnlockedId &&
+                            Number(lastUnlockedAt || 0) > 0 &&
+                            Date.now() - Number(lastUnlockedAt) < 12_000;
+                          const requirementsMet =
+                            requiredIds.length === 0 ||
+                            requiredIds.every((id) => unlockedSet.has(id));
+                          const connectorState = isUnlocked
+                            ? "unlocked"
+                            : requirementsMet
+                              ? "active"
+                              : "locked";
+
+                          if (showUnlockedOnly && !isUnlocked) return null;
+
+                          const perkState = isUnlocked
+                            ? "unlocked"
+                            : isBlocked
+                              ? "blocked"
+                              : canUnlock
+                                ? "available"
+                                : "locked";
+
+                          const statusLabel = isUnlocked
+                            ? "Unlocked"
+                            : unlockCheck.reason || "Unavailable";
+
+                          return (
+                            <div
+                              key={perk.id}
+                              className="relative w-full max-w-[17rem] flex-1 basis-[13rem] pt-6"
+                            >
+                              {rowIndex > 0 ? (
+                                <span
+                                  aria-hidden
+                                  data-state={connectorState}
+                                  data-branch={branch.id}
+                                  data-recent-unlock={
+                                    isRecentlyUnlocked ? "true" : "false"
+                                  }
+                                  className="dz-skill-link absolute left-1/2 top-0 h-6 w-px -translate-x-1/2"
+                                />
+                              ) : null}
+                              <span
+                                data-state={connectorState}
+                                data-branch={branch.id}
+                                data-recent-unlock={
+                                  isRecentlyUnlocked ? "true" : "false"
+                                }
+                                className={`dz-skill-node absolute left-1/2 top-5 h-3 w-3 -translate-x-1/2 rounded-full border ${
+                                  isUnlocked
+                                    ? "border-emerald-400/80 bg-emerald-200/70"
+                                    : "border-slate-300/80 bg-white"
+                                }`}
+                              />
+
+                              <div
+                                data-branch={branch.id}
+                                data-state={perkState}
+                                data-recent-unlock={
+                                  isRecentlyUnlocked ? "true" : "false"
+                                }
+                                className={`dz-perk-card rounded-2xl border transform transition hover:-translate-y-0.5 hover:shadow-lg ${
+                                  isUnlocked
+                                    ? "border-emerald-300/70 bg-emerald-50/70 shadow-md shadow-emerald-200/70"
+                                    : "border-slate-200/80 bg-white/80"
+                                } ${!isUnlocked && !canUnlock ? "opacity-60 grayscale-[0.2]" : ""} ${
+                                  compactCards ? "p-3" : "p-4"
+                                }`}
+                              >
+                                <div className="flex items-start justify-between gap-3">
+                                  <div>
+                                    <div className="text-lg font-semibold text-slate-900">
+                                      {perk.name}
+                                    </div>
+                                    <p className="mt-1 text-sm text-slate-600">
+                                      {perk.effect}
+                                    </p>
+                                  </div>
+                                  <div className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
+                                    Cost {perkCost}
+                                  </div>
+                                </div>
+
+                                <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                                  <span className="rounded-full border border-slate-200/80 bg-white/70 px-2.5 py-1">
+                                    {perk.type}
+                                  </span>
+                                  {perk.unlocks ? (
+                                    <span className="rounded-full border border-slate-200/80 bg-white/70 px-2.5 py-1">
+                                      Unlocks: {perk.unlocks}
+                                    </span>
+                                  ) : null}
+                                </div>
+
+                                <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                                  <span className="text-xs text-slate-500">
+                                    {statusLabel}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => unlockPerk(perk.id)}
+                                    disabled={!canUnlock}
+                                    className={`inline-flex items-center justify-center rounded-full border px-3 py-1 text-xs font-semibold transition ${
+                                      isUnlocked
+                                        ? "border-emerald-300/70 bg-emerald-200/60 text-emerald-800"
+                                        : canUnlock
+                                          ? "border-slate-300/80 bg-white text-slate-800 hover:bg-slate-50"
+                                          : "border-slate-200/80 bg-slate-100 text-slate-400"
+                                    }`}
+                                  >
+                                    {isUnlocked
+                                      ? "Unlocked"
+                                      : isBlocked
+                                        ? "Locked"
+                                        : "Unlock"}
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </section>

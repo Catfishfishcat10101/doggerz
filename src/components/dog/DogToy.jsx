@@ -1,7 +1,13 @@
 /** @format */
 import { useEffect, useRef, useState } from "react";
 
-export default function DogToy({ onSqueak, className = "", style }) {
+export default function DogToy({
+  onSqueak,
+  className = "",
+  style,
+  itemType = "toy",
+  title = "",
+}) {
   const [isSqueaking, setIsSqueaking] = useState(false);
   const [dragState, setDragState] = useState({
     x: 0,
@@ -29,7 +35,7 @@ export default function DogToy({ onSqueak, className = "", style }) {
   const triggerSqueak = (payload) => {
     setIsSqueaking(true);
     if (onSqueak) {
-      onSqueak(payload);
+      onSqueak({ ...payload, itemType });
     }
     if (squeakResetRef.current) clearTimeout(squeakResetRef.current);
     squeakResetRef.current = setTimeout(() => setIsSqueaking(false), 200);
@@ -56,6 +62,7 @@ export default function DogToy({ onSqueak, className = "", style }) {
       x: Number(event?.clientX || 0),
       y: Number(event?.clientY || 0),
       source,
+      itemType,
     });
   };
 
@@ -103,6 +110,13 @@ export default function DogToy({ onSqueak, className = "", style }) {
     }));
   };
 
+  const normalizedType = String(itemType || "toy").toLowerCase();
+  const isFoodItem = normalizedType === "food";
+  const defaultTitle = isFoodItem
+    ? "Food: drag and drop on pup to feed"
+    : "Toy: drag and drop to play";
+  const dragTitle = String(title || "").trim() || defaultTitle;
+
   return (
     <div
       ref={toyRef}
@@ -110,10 +124,16 @@ export default function DogToy({ onSqueak, className = "", style }) {
       onPointerMove={handlePointerMove}
       onPointerUp={(event) => finishDrag(event, "drop")}
       onPointerCancel={(event) => finishDrag(event, "cancel")}
+      data-doggerz-ignore-swipe="true"
+      data-doggerz-drag-item={normalizedType}
       className={`absolute bottom-4 left-4 z-50 flex h-12 w-12 cursor-grab items-center justify-center rounded-full border border-lime-100/80 shadow-lg transition-colors ${
-        isSqueaking
-          ? "bg-[radial-gradient(circle_at_35%_35%,#fef9c3_0%,#eab308_62%,#ca8a04_100%)]"
-          : "bg-[radial-gradient(circle_at_35%_35%,#fef08a_0%,#84cc16_62%,#4d7c0f_100%)]"
+        isFoodItem
+          ? isSqueaking
+            ? "bg-[radial-gradient(circle_at_35%_35%,#fde68a_0%,#f97316_62%,#9a3412_100%)]"
+            : "bg-[radial-gradient(circle_at_35%_35%,#fef08a_0%,#f59e0b_62%,#92400e_100%)]"
+          : isSqueaking
+            ? "bg-[radial-gradient(circle_at_35%_35%,#fef9c3_0%,#eab308_62%,#ca8a04_100%)]"
+            : "bg-[radial-gradient(circle_at_35%_35%,#fef08a_0%,#84cc16_62%,#4d7c0f_100%)]"
       } ${className}`}
       style={{
         touchAction: "none",
@@ -123,16 +143,22 @@ export default function DogToy({ onSqueak, className = "", style }) {
         transition: dragState.dragging ? "none" : "transform 120ms ease-out",
         ...style,
       }}
-      title="Toy: drag and drop to play"
+      title={dragTitle}
     >
-      <span
-        className="pointer-events-none absolute h-6 w-6 rounded-full border-2 border-white/70"
-        style={{ transform: "translateX(-35%)" }}
-      />
-      <span
-        className="pointer-events-none absolute h-6 w-6 rounded-full border-2 border-white/70"
-        style={{ transform: "translateX(35%)" }}
-      />
+      {isFoodItem ? (
+        <span className="pointer-events-none text-xl leading-none">🍖</span>
+      ) : (
+        <>
+          <span
+            className="pointer-events-none absolute h-6 w-6 rounded-full border-2 border-white/70"
+            style={{ transform: "translateX(-35%)" }}
+          />
+          <span
+            className="pointer-events-none absolute h-6 w-6 rounded-full border-2 border-white/70"
+            style={{ transform: "translateX(35%)" }}
+          />
+        </>
+      )}
     </div>
   );
 }
