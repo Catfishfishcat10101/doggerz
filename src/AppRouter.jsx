@@ -13,9 +13,10 @@ import CrashFallback from "./components/system/CrashFallback.jsx";
 import AppShell from "./layout/AppShell.jsx";
 
 // Keep Landing fast; lazy-load everything else.
-import Landing from "./pages/Landing.jsx";
+import HomeGate from "./pages/HomeGate.jsx";
 
 const GamePage = React.lazy(() => import("./pages/Game.jsx"));
+const MenuPage = React.lazy(() => import("./pages/Menu.jsx"));
 const SkillTreePage = React.lazy(() => import("./pages/SkillTree.jsx"));
 const AdoptPage = React.lazy(() => import("./pages/Adopt.jsx"));
 const LoginPage = React.lazy(() => import("./pages/Login.jsx"));
@@ -124,8 +125,15 @@ const router = createBrowserRouter(
       path: PATHS.HOME,
       element: <AppShell />,
       children: [
-        { index: true, element: <Landing /> },
+        { index: true, element: <HomeGate /> },
 
+        {
+          path: stripLeadingSlash(PATHS.MENU),
+          element: suspenseWithLabel(
+            withCrashBoundary(<MenuPage />),
+            "Loading menu…"
+          ),
+        },
         {
           path: stripLeadingSlash(PATHS.SKILL_TREE),
           element: suspenseWithLabel(
@@ -251,6 +259,10 @@ const router = createBrowserRouter(
             withCrashBoundary(<RainbowBridgePage />),
             "Loading rainbow bridge…"
           ),
+        },
+        {
+          path: stripLeadingSlash(PATHS.NOT_FOUND),
+          element: suspense(withCrashBoundary(<NotFoundPage />)),
         },
 
         // Catch-all (must be last)

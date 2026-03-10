@@ -48,6 +48,7 @@ function normalizeReminders(reminders) {
 
 export async function scheduleDogNotifications({
   lastSeenAt,
+  lastFedAt,
   reminders = DEFAULT_DOGGERZ_REMINDERS,
 } = {}) {
   const permission = await ensureNotificationsEnabled();
@@ -55,6 +56,7 @@ export async function scheduleDogNotifications({
 
   return scheduleLifeLoopNotifications({
     lastSeenAt: Number(lastSeenAt || Date.now()),
+    lastFedAt: Number(lastFedAt || 0),
     reminders: normalizeReminders(reminders),
   });
 }

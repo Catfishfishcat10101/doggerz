@@ -1,6 +1,6 @@
 /** @format */
 
-import { createMemoryEvent } from "@/engine/DogMemoryEvents.js";
+import { createMemoryEvent } from "@/components/dog/DogMemoryEvents.js";
 
 function clonePosition(position) {
   if (!position || typeof position !== "object") return null;

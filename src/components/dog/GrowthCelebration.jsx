@@ -1,11 +1,11 @@
-// src/features/game/GrowthCelebration.jsx
+// src/components/dog/GrowthCelebration.jsx
 
 import { useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import { acknowledgeGrowthMilestone } from "@/redux/dogSlice.js";
 import { selectSettings } from "@/redux/settingsSlice.js";
-import { getLifeStageLabel } from "@/features/game/game.js";
+import { getLifeStageLabel } from "@/utils/lifecycle.js";
 import { useYardSfx } from "@/hooks/useYardSfx.js";
 import { useDogGrowthMilestone, useDogIdentity } from "@/hooks/useDogState.js";
 

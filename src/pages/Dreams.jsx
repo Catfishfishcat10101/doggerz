@@ -6,7 +6,7 @@ import { PATHS } from "@/routes.js";
 
 import PageShell from "@/components/layout/PageShell.jsx";
 
-import DreamJournal from "@/features/game/DreamJournal.jsx";
+import DreamJournal from "@/components/dog/DreamJournal.jsx";
 
 export default function Dreams() {
   const { name, dreamsState, memoryDrives } = useDogDreamState();

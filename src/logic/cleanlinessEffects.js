@@ -1,7 +1,6 @@
-// src/features/game/game.js
-// Effects used by reducers and UI. The reducer currently reads
-// effects.penalties.{happinessTickPenalty,energyTickPenalty}.
-export const CLEANLINESS_TIER_EFFECTS = {
+// Shared cleanliness tier tuning for reducers + UI.
+
+export const CLEANLINESS_TIER_EFFECTS = Object.freeze({
   FRESH: {
     label: "Fresh",
     journalSummary: "Feeling squeaky clean and ready to zoom.",
@@ -54,22 +53,8 @@ export const CLEANLINESS_TIER_EFFECTS = {
       glow: "rgba(217,70,239,0.18)",
     },
   },
-};
-
-// Basic life stage keys (expand as needed)
-export const LIFE_STAGES = Object.freeze({
-  PUPPY: "PUPPY",
-  ADULT: "ADULT",
-  SENIOR: "SENIOR",
 });
 
-export const LIFE_STAGE_LABELS = Object.freeze({
-  PUPPY: "Puppy",
-  ADULT: "Adult",
-  SENIOR: "Senior",
-});
-
-// Stable list of tiers (helps UI + safelisting)
 export const CLEANLINESS_TIERS = Object.freeze([
   "FRESH",
   "DIRTY",
@@ -77,19 +62,12 @@ export const CLEANLINESS_TIERS = Object.freeze([
   "MANGE",
 ]);
 
-/**
- * Get a human-friendly label for a cleanliness tier.
- * Returns the configured label when available, otherwise returns the tier id.
- */
 export function getCleanlinessLabel(tier) {
   if (!tier) return "";
   const key = String(tier).toUpperCase();
   return CLEANLINESS_TIER_EFFECTS[key]?.label || key || "";
 }
 
-/**
- * Get UI metadata for a cleanliness tier.
- */
 export function getCleanlinessUi(tier) {
   const key = String(tier || "").toUpperCase();
   return (
@@ -103,21 +81,8 @@ export function getCleanlinessUi(tier) {
   );
 }
 
-/**
- * Get severity for a cleanliness tier (0..3).
- */
 export function getCleanlinessSeverity(tier) {
   const key = String(tier || "").toUpperCase();
   const v = CLEANLINESS_TIER_EFFECTS[key]?.severity;
   return Number.isFinite(Number(v)) ? Number(v) : 0;
 }
-
-/**
- * Get a user-facing life stage label.
- */
-export function getLifeStageLabel(stage) {
-  const key = String(stage || "").toUpperCase();
-  return LIFE_STAGE_LABELS[key] || key || "";
-}
-
-Object.freeze(CLEANLINESS_TIER_EFFECTS);

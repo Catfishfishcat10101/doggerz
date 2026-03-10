@@ -5,13 +5,21 @@ function freezeCommand(command) {
 }
 
 const COMMANDS = [
-  { id: "sit", label: "Sit", minLevel: 1, minBond: 0, unlockDelayMinutes: 0 },
+  {
+    id: "sit",
+    label: "Sit",
+    minLevel: 1,
+    minBond: 0,
+    unlockDelayMinutes: 0,
+    animationKey: "sit",
+  },
   {
     id: "stay",
     label: "Stay",
     minLevel: 2,
     minBond: 5,
     unlockDelayMinutes: 10,
+    animationKey: "stay",
   },
   {
     id: "down",
@@ -19,6 +27,7 @@ const COMMANDS = [
     minLevel: 3,
     minBond: 8,
     unlockDelayMinutes: 10,
+    animationKey: "lay_down",
   },
   {
     id: "come",
@@ -26,6 +35,7 @@ const COMMANDS = [
     minLevel: 4,
     minBond: 10,
     unlockDelayMinutes: 15,
+    animationKey: "walk",
   },
   {
     id: "heel",
@@ -33,6 +43,7 @@ const COMMANDS = [
     minLevel: 5,
     minBond: 12,
     unlockDelayMinutes: 20,
+    animationKey: "walk",
   },
   {
     id: "rollOver",
@@ -40,6 +51,7 @@ const COMMANDS = [
     minLevel: 6,
     minBond: 16,
     unlockDelayMinutes: 25,
+    animationKey: "roll_over",
   },
   {
     id: "speak",
@@ -47,6 +59,7 @@ const COMMANDS = [
     minLevel: 7,
     minBond: 18,
     unlockDelayMinutes: 25,
+    animationKey: "bark",
   },
   {
     id: "shake",
@@ -54,6 +67,7 @@ const COMMANDS = [
     minLevel: 8,
     minBond: 20,
     unlockDelayMinutes: 30,
+    animationKey: "shake",
   },
   {
     id: "highFive",
@@ -61,6 +75,7 @@ const COMMANDS = [
     minLevel: 9,
     minBond: 22,
     unlockDelayMinutes: 35,
+    animationKey: "highfive",
   },
   {
     id: "wave",
@@ -68,6 +83,7 @@ const COMMANDS = [
     minLevel: 10,
     minBond: 24,
     unlockDelayMinutes: 40,
+    animationKey: "wave",
   },
   {
     id: "spin",
@@ -75,6 +91,7 @@ const COMMANDS = [
     minLevel: 11,
     minBond: 26,
     unlockDelayMinutes: 45,
+    animationKey: "spin",
   },
   {
     id: "jump",
@@ -82,6 +99,7 @@ const COMMANDS = [
     minLevel: 12,
     minBond: 28,
     unlockDelayMinutes: 50,
+    animationKey: "jump",
   },
   {
     id: "bow",
@@ -89,6 +107,7 @@ const COMMANDS = [
     minLevel: 13,
     minBond: 30,
     unlockDelayMinutes: 55,
+    animationKey: "bow",
   },
   {
     id: "playDead",
@@ -96,6 +115,7 @@ const COMMANDS = [
     minLevel: 14,
     minBond: 32,
     unlockDelayMinutes: 60,
+    animationKey: "play_dead",
   },
   {
     id: "fetch",
@@ -103,6 +123,7 @@ const COMMANDS = [
     minLevel: 15,
     minBond: 34,
     unlockDelayMinutes: 60,
+    animationKey: "fetch",
   },
   {
     id: "dance",
@@ -110,6 +131,7 @@ const COMMANDS = [
     minLevel: 16,
     minBond: 36,
     unlockDelayMinutes: 60,
+    animationKey: "dance",
   },
 ];
 

@@ -34,8 +34,8 @@ import {
   selectNextStreakReward,
   trainObedience,
 } from "@/redux/dogSlice.js";
-import { selectDogRenderModel } from "@/features/game/dogSelectors.js";
-import { scoreRecentMemoryDrives } from "@/engine/DogMemoryDrives.js";
+import { selectDogRenderModel } from "@/components/dog/redux/dogSelectors.js";
+import { scoreRecentMemoryDrives } from "@/components/dog/DogMemoryDrives.js";
 
 const selectDogIdentityModel = createSelector([selectDog], (dog) => ({
   name: dog?.name || "Pup",

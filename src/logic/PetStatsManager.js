@@ -1,15 +1,17 @@
+import { getLevelDecayMultiplier } from "@/logic/ExperienceAndLeveling.js";
+
 const DEFAULT_MIN_STAT = 0;
 const DEFAULT_MAX_STAT = 100;
 
 export const CORE_PET_STAT_DECAY_PER_HOUR = Object.freeze({
-  hunger: 8,
-  thirst: 7,
-  happiness: 6,
-  energy: 8,
-  cleanliness: 3,
-  health: 2,
-  affection: 5,
-  mentalStimulation: 4,
+  hunger: 2,
+  thirst: 2,
+  happiness: 2,
+  energy: 2,
+  cleanliness: 1,
+  health: 1,
+  affection: 2,
+  mentalStimulation: 2,
 });
 
 export const NEEDS_THAT_RISE_WITH_NEGLECT = Object.freeze(
@@ -42,12 +44,15 @@ export function applyPetStatDecay({
   decayByStat = {},
   sleeping = false,
   energyRecoveryGain = 0,
+  level = 1,
+  perLevelSlowdown = 0.03,
 }) {
   const next = { ...(stats || {}) };
+  const decayMultiplier = getLevelDecayMultiplier(level, { perLevelSlowdown });
 
   Object.keys(next).forEach((key) => {
     const current = clampPetStat(next[key], DEFAULT_MIN_STAT, DEFAULT_MAX_STAT);
-    const delta = Number(decayByStat[key] || 0);
+    const delta = Number(decayByStat[key] || 0) * decayMultiplier;
 
     if (key === "energy" && sleeping) {
       next[key] = clampPetStat(

@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useSelector } from "react-redux";
 import { selectSettings } from "@/redux/settingsSlice.js";
+import { ensureDogAlertsChannel } from "@/utils/notifications.js";
 
 function getSystemTheme() {
   if (typeof window === "undefined") return "dark";
@@ -43,6 +44,10 @@ function isCoarsePointer() {
 
 export default function AppPreferencesEffects() {
   const settings = useSelector(selectSettings);
+
+  React.useEffect(() => {
+    ensureDogAlertsChannel();
+  }, []);
 
   React.useEffect(() => {
     const root = document.documentElement;

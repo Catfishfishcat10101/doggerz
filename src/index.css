@@ -101,6 +101,49 @@ html[data-skill-branch="athlete"] {
   }
 }
 
+@keyframes dzFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes dzPanelPop {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes dzSheetUp {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 16px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.dz-modal-backdrop {
+  animation: dzFadeIn 140ms ease-out both;
+}
+
+.dz-center-panel {
+  animation: dzPanelPop 180ms ease-out both;
+}
+
+.dz-sheet-panel {
+  animation: dzSheetUp 220ms ease-out both;
+}
+
 .dz-perk-card {
   position: relative;
 }

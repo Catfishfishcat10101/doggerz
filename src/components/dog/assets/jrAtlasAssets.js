@@ -1,4 +1,4 @@
-// src/features/game/jrAtlasAssets.js
+// src/components/dog/assets/jrAtlasAssets.js
 // Jack Russell atlas + frame URL registry for preload and tooling.
 
 import { withBaseUrl } from "@/utils/assetUtils.js";

@@ -1,6 +1,7 @@
-// src/features/game/dogSelectors.js
+// src/components/dog/redux/dogSelectors.js
 
 import { createSelector } from "@reduxjs/toolkit";
+import { getObedienceCommand } from "@/logic/obedienceCommands.js";
 import {
   getDogPixiSheetUrl,
   getDogStageLabel,
@@ -76,16 +77,6 @@ const EXPLICIT_ANIMS = new Set([
   "sniff",
 ]);
 
-const TRAINED_COMMAND_ANIMS = Object.freeze({
-  down: "lay_down",
-  come: "walk",
-  heel: "walk",
-  rollover: "roll_over",
-  playdead: "play_dead",
-  highfive: "highfive",
-  speak: "bark",
-});
-
 const EXPLICIT_ACTION_ALIASES = {
   feed: "eat",
   feed_quick: "eat",
@@ -135,8 +126,12 @@ function normalizeAction(action) {
 function resolveTrainedCommandAnim(commandId) {
   const normalized = normalizeAction(commandId);
   if (!normalized) return null;
-  const mapped = TRAINED_COMMAND_ANIMS[normalized] || normalized;
-  return EXPLICIT_ANIMS.has(mapped) ? mapped : null;
+  const command = getObedienceCommand(normalized);
+  const animationKey = normalizeAction(command?.animationKey || "");
+  if (animationKey && EXPLICIT_ANIMS.has(animationKey)) {
+    return animationKey;
+  }
+  return EXPLICIT_ANIMS.has(normalized) ? normalized : null;
 }
 
 function resolveExplicitAnim(

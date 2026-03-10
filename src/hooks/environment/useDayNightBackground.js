@@ -1,4 +1,4 @@
-// src/features/game/useDayNightBackground.jsx
+// src/hooks/environment/useDayNightBackground.js
 
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -244,5 +244,7 @@ export function useDayNightBackground(options = {}) {
     timeOfDayBucket,
   };
 }
+
+export const useDayNight = useDayNightBackground;
 
 export default useDayNightBackground;

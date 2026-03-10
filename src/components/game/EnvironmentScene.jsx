@@ -1,4 +1,4 @@
-// src/features/game/EnvironmentScene.jsx
+// src/components/game/EnvironmentScene.jsx
 
 import { useEffect, useMemo, useState } from "react";
 

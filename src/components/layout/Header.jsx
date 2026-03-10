@@ -6,11 +6,14 @@ import * as React from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { selectIsLoggedIn } from "@/redux/userSlice.js";
+import { PATHS, PRIMARY_TABS } from "@/routes.js";
 
-const nav = [
-  { to: "/game", label: "Game" },
-  { to: "/settings", label: "Settings" },
-];
+const HIDE_ON_PATHS = new Set([
+  PATHS.HOME,
+  PATHS.ADOPT,
+  PATHS.LOGIN,
+  PATHS.SIGNUP,
+]);
 
 function NavPill({ to, children }) {
   return (
@@ -34,19 +37,15 @@ function NavPill({ to, children }) {
 export default function Header() {
   const isLoggedIn = useSelector(selectIsLoggedIn);
   const location = useLocation();
-  const isHome = location.pathname === "/";
-  const isPotty = location.pathname.startsWith("/potty");
-  const showSettings = location.pathname === "/settings";
+  const isHidden = HIDE_ON_PATHS.has(location.pathname);
   const filteredNav = React.useMemo(() => {
-    return (nav || []).filter((item) => {
-      if (item.to === "/game") return isLoggedIn;
-      if (item.to === "/settings") return showSettings;
-      if (isPotty && item.to === "/skill-tree") return false;
+    return PRIMARY_TABS.filter((item) => {
+      if (item.path === PATHS.GAME) return isLoggedIn;
       return true;
     });
-  }, [isLoggedIn, isPotty, showSettings]);
+  }, [isLoggedIn]);
 
-  if (isHome) {
+  if (isHidden) {
     return null;
   }
 
@@ -67,20 +66,16 @@ export default function Header() {
 
           <nav className="hidden md:flex items-center gap-2">
             {filteredNav.map((item) => (
-              <NavPill key={item.to} to={item.to}>
+              <NavPill key={item.path} to={item.path}>
                 {item.label}
               </NavPill>
             ))}
           </nav>
 
-          {/* Mobile: simple compact pills */}
-          <nav className="flex md:hidden flex-wrap items-center gap-2">
-            {filteredNav.slice(0, 3).map((item) => (
-              <NavPill key={item.to} to={item.to}>
-                {item.label}
-              </NavPill>
-            ))}
-          </nav>
+          <div className="md:hidden text-[11px] font-semibold uppercase tracking-[0.2em] text-zinc-400">
+            {filteredNav.find((item) => location.pathname.startsWith(item.path))
+              ?.label || "Doggerz"}
+          </div>
         </div>
       </div>
     </header>

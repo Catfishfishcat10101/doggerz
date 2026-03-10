@@ -9,17 +9,17 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="mt-10 border-t border-emerald-400/20 bg-slate-950/70 px-4 py-6 text-zinc-400 backdrop-blur-md">
+    <footer className="mt-10 hidden border-t border-emerald-400/20 bg-slate-950/70 px-4 py-6 text-zinc-400 backdrop-blur-md md:block">
       <div className="mx-auto grid w-full max-w-6xl gap-4 md:grid-cols-[1fr_auto] md:items-center">
         <div className="text-sm">
           <div className="flex items-center gap-3">
             <span className="bg-gradient-to-r from-emerald-300 to-cyan-300 bg-clip-text font-black tracking-tight text-transparent">
-              DOGGERZ
+              DOGGERZ @ 2026
             </span>
             <span className="text-zinc-500">(c) {year}</span>
           </div>
           <div className="mt-0.5 text-xs text-zinc-500">
-            Not responsible for chewed shoes or socks.
+            Not responsible for chewed shoes or missing socks.
           </div>
         </div>
 
@@ -39,13 +39,6 @@ export default function Footer() {
                 <Link to="/settings" className="hover:text-emerald-200">
                   Settings
                 </Link>
-              </nav>
-            </div>
-            <div>
-              <div className="text-[11px] uppercase tracking-[0.2em] text-zinc-500">
-                Legal
-              </div>
-              <nav className="mt-2 flex flex-col gap-1">
                 <Link to="/legal" className="hover:text-emerald-200">
                   Legal
                 </Link>

@@ -10,7 +10,6 @@ import { onSnapshot } from "firebase/firestore";
 import { auth } from "@/firebase.js";
 import {
   grantFounderReward,
-  grantPreRegGift,
   hydrateDog,
   resetDogState,
   registerSessionStart,
@@ -30,15 +29,11 @@ import {
   setUser,
 } from "@/redux/userSlice.js";
 import { selectSettings } from "@/redux/settingsSlice.js";
-import { useDogActionSfx } from "@/features/audio/useDogActionSfx.js";
-import useDynamicMusic from "@/features/audio/useDynamicMusic.js";
+import { useDogActionSfx } from "@/hooks/audio/useDogActionSfx.js";
+import useDynamicMusic from "@/hooks/audio/useDynamicMusic.js";
 import { useDogEngineState } from "@/hooks/useDogState.js";
 import { ensureDogMain } from "@/firebase/ensureDog.js";
 import { userProfileDoc } from "@/firebase/paths.js";
-import {
-  hasPreRegistrationRewardPurchase,
-  PRE_REG_GIFT_COINS,
-} from "@/features/billing/preRegistrationReward.js";
 import {
   loadLocalSave,
   migrateLegacySave,
@@ -687,32 +682,6 @@ export default function DogAIEngine() {
       // TODO: dispatch(openModal("DAILY_REWARD"));
     }
   }, [dogState?.adoptedAt, dogState?.lastRewardClaimedAt]);
-
-  // Pre-registration reward entitlement check (native only, one-time grant).
-  useEffect(() => {
-    if (!dogState?.adoptedAt) return;
-    if (dogState?.claimedPreReg) return;
-
-    let cancelled = false;
-    const run = async () => {
-      const hasEntitlement = await hasPreRegistrationRewardPurchase();
-      if (!hasEntitlement || cancelled) return;
-      dispatch(
-        grantPreRegGift({
-          coins: PRE_REG_GIFT_COINS,
-          now: Date.now(),
-        })
-      );
-    };
-
-    run().catch((err) => {
-      console.warn("[Doggerz] Pre-registration reward check failed", err);
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [dispatch, dogState?.adoptedAt, dogState?.claimedPreReg]);
 
   // 2. Debounced save to storage (Preferences + localStorage fallback).
   useEffect(() => {

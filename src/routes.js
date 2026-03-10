@@ -7,8 +7,8 @@ export const PATHS = Object.freeze({
   HOME: "/",
   ADOPT: "/adopt",
   GAME: "/game",
+  MENU: "/menu",
   SKILL_TREE: "/skill-tree",
-  SPRITE_TEST: "/sprite-test",
   LOGIN: "/login",
   SIGNUP: "/signup",
   ABOUT: "/about",
@@ -29,7 +29,7 @@ export const PATHS = Object.freeze({
   // Story / scenes
   RAINBOW_BRIDGE: "/rainbow-bridge",
 
-  // Optional explicit not-found route (AppRouter currently uses "*"; this is useful for redirects)
+  // Explicit not-found route for redirects and direct links.
   NOT_FOUND: "/404",
 });
 
@@ -40,6 +40,11 @@ export const PATHS = Object.freeze({
 export const routes = Object.freeze([
   { path: PATHS.HOME, name: "Home", meta: { title: "Doggerz" } },
   { path: PATHS.GAME, name: "Game", meta: { title: "Your Yard" } },
+  {
+    path: PATHS.MENU,
+    name: "Menu",
+    meta: { title: "Menu", description: "Settings, help, and account links." },
+  },
   {
     path: PATHS.SKILL_TREE,
     name: "Skill Tree",
@@ -137,13 +142,34 @@ export const routes = Object.freeze([
  * - Put Help under Developers (footer).
  * NOTE: We intentionally exclude Adopt here per current UX direction.
  */
-export const PRIMARY_NAV = Object.freeze([
-  { path: PATHS.GAME, label: "Game" },
-  { path: PATHS.SKILL_TREE, label: "Skill Tree" },
-  { path: PATHS.ABOUT, label: "About" },
-  { path: PATHS.CONTACT, label: "Contact Us" },
-  // Secondary links (policy/dev) are in the footer now.
+export const PRIMARY_TABS = Object.freeze([
+  { path: PATHS.GAME, label: "Yard", icon: "yard" },
+  { path: PATHS.SKILL_TREE, label: "Train", icon: "train" },
+  { path: PATHS.STORE, label: "Store", icon: "store" },
+  { path: PATHS.MEMORIES, label: "Memories", icon: "memories" },
+  { path: PATHS.MENU, label: "Menu", icon: "menu" },
 ]);
+
+export const MENU_DESTINATIONS = Object.freeze([
+  {
+    path: PATHS.SETTINGS,
+    label: "Settings",
+    detail: "Preferences and care tuning",
+  },
+  { path: PATHS.HELP, label: "Help", detail: "Support and troubleshooting" },
+  { path: PATHS.ABOUT, label: "About", detail: "What Doggerz is building" },
+  { path: PATHS.CONTACT, label: "Contact", detail: "Reach the Doggerz team" },
+  { path: PATHS.PRIVACY, label: "Privacy", detail: "How data is handled" },
+  { path: PATHS.LEGAL, label: "Legal", detail: "Terms and policies" },
+  {
+    path: PATHS.DEVELOPERS,
+    label: "Developers",
+    detail: "Dev notes and integration",
+  },
+  { path: PATHS.ADOPT, label: "Adopt", detail: "Start with a new pup" },
+]);
+
+export const PRIMARY_NAV = PRIMARY_TABS;
 
 /** Fast lookups by path. */
 export const ROUTE_BY_PATH = Object.freeze(

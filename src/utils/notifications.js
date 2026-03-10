@@ -4,6 +4,10 @@ import { Capacitor } from "@capacitor/core";
 import { LocalNotifications } from "@capacitor/local-notifications";
 import { withBaseUrl } from "@/utils/assetUtils.js";
 
+export const DOG_ALERTS_CHANNEL_ID = "dog-alerts";
+export const DOG_ALERT_SOUND_NAME = "bark";
+export const DOG_ALERT_SOUND_FILE = `${DOG_ALERT_SOUND_NAME}.mp3`;
+
 const LIFE_LOOP_IDS = Object.freeze({
   hungry: 9101,
   dirty: 9102,
@@ -50,6 +54,26 @@ export async function requestNotificationsPermission() {
   }
 }
 
+export async function ensureDogAlertsChannel() {
+  if (!isNativeNotifications()) return false;
+  if (Capacitor?.getPlatform?.() !== "android") return true;
+  if (!LocalNotifications?.createChannel) return false;
+
+  try {
+    await LocalNotifications.createChannel({
+      id: DOG_ALERTS_CHANNEL_ID,
+      name: "Dog Alerts",
+      description: "Barking reminders for Doggerz care alerts",
+      sound: DOG_ALERT_SOUND_NAME,
+      importance: 5,
+      visibility: 1,
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * @param {{ title?: string, body?: string, tag?: string, icon?: string, badge?: string, data?: any, renotify?: boolean, requireInteraction?: boolean }} [params]
  */
@@ -68,6 +92,7 @@ export async function showDoggerzNotification({
     if (isNativeNotifications()) {
       const perm = await requestNotificationsPermission();
       if (perm !== "granted") return false;
+      await ensureDogAlertsChannel();
       const now = Date.now();
       await LocalNotifications.schedule({
         notifications: [
@@ -76,6 +101,8 @@ export async function showDoggerzNotification({
             title: String(title || "Doggerz"),
             body: String(body || ""),
             extra: { tag, data },
+            channelId: DOG_ALERTS_CHANNEL_ID,
+            sound: DOG_ALERT_SOUND_FILE,
             schedule: { at: new Date(now + 1000) },
           },
         ],
@@ -124,27 +151,38 @@ export async function cancelLifeLoopNotifications() {
 
 export async function scheduleLifeLoopNotifications({
   lastSeenAt,
+  lastFedAt,
   reminders = [],
 } = {}) {
   if (!isNativeNotifications()) return false;
   const perm = await requestNotificationsPermission();
   if (perm !== "granted") return false;
+  await ensureDogAlertsChannel();
 
   const now = Date.now();
-  const base = Number(lastSeenAt || now);
+  const seenBase = Number(lastSeenAt || now);
+  const fedBase = Number(lastFedAt || seenBase);
 
   const notifications = reminders.map((reminder, idx) => {
+    const reminderKey = String(reminder.key || "");
+    const base =
+      reminderKey === "checkin-hungry" &&
+      Number.isFinite(fedBase) &&
+      fedBase > 0
+        ? fedBase
+        : seenBase;
     const fireAt = Math.max(
       now + 60_000,
       base + Number(reminder.thresholdMs || 0)
     );
-    const id =
-      LIFE_LOOP_IDS[reminder.key?.replace("checkin-", "")] || 9200 + idx;
+    const id = LIFE_LOOP_IDS[reminderKey.replace("checkin-", "")] || 9200 + idx;
     return {
       id,
       title: String(reminder.title || "Doggerz"),
       body: String(reminder.message || ""),
-      extra: { tag: reminder.key },
+      extra: { tag: reminderKey },
+      channelId: DOG_ALERTS_CHANNEL_ID,
+      sound: DOG_ALERT_SOUND_FILE,
       schedule: { at: new Date(fireAt) },
     };
   });

@@ -1,6 +1,6 @@
 /** @format */
 
-import { fetchWeatherSnapshot } from "@/features/weather/weatherApi.js";
+import { fetchWeatherSnapshot } from "@/lib/weatherApi.js";
 import { loadLocalSave, saveLocalSave } from "@/logic/LocalSaveManager.js";
 
 const WEATHER_CACHE_KEY_PREFIX = "doggerz:weather:";

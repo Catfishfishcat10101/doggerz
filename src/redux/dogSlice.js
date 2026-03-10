@@ -11,12 +11,12 @@ import { calculateDogAge } from "@/utils/lifecycle.js";
 import { deepMergeDefined } from "@/utils/deepMerge.js";
 import {
   CLEANLINESS_TIER_EFFECTS,
-  LIFE_STAGES,
   getCleanlinessLabel,
   getCleanlinessSeverity,
   getCleanlinessUi,
-  getLifeStageLabel,
-} from "@/features/game/game.js";
+} from "@/logic/cleanlinessEffects.js";
+import { LIFE_STAGES } from "@/logic/dogLifeStages.js";
+import { getLifeStageLabel } from "@/utils/lifecycle.js";
 import {
   OBEDIENCE_COMMANDS,
   commandRequirementsMet,
@@ -27,7 +27,12 @@ import {
   applyPetStatDecay,
   normalizePetStats,
 } from "@/logic/PetStatsManager.js";
-import { getOfflineProgressHours } from "@/logic/OfflineProgressCalculator.js";
+import {
+  getElapsedHoursAfterGrace,
+  getOfflineProgressHours,
+  HUNGER_FULLNESS_BUFFER_HOURS,
+  RUNAWAY_LOCKOUT_HOURS,
+} from "@/logic/OfflineProgressCalculator.js";
 import {
   getObedienceSkillMasteryPct,
   resolveJrtTrainingReaction,
@@ -112,6 +117,7 @@ const SEVERE_NEGLECT_CLEANLINESS_THRESHOLD = 15;
 const SEVERE_NEGLECT_HUNGER_THRESHOLD = 85;
 const SEVERE_NEGLECT_GRACE_HOURS = 3 / 60;
 const OFFLINE_SEVERE_NEGLECT_HEALTH_DECAY_PER_HOUR = 3;
+const MS_PER_HOUR = 60 * 60 * 1000;
 
 const SLEEP_RECOVERY_PER_HOUR = 45;
 const SLEEP_NEEDS_MULTIPLIER = 0.85;
@@ -748,6 +754,7 @@ const getDaysBetween = (fromMs, toMs) => {
 };
 const POTTY_TRAINING_GOAL = 8;
 const REAL_DAY_MS = 24 * 60 * 60 * 1000;
+const RUNAWAY_LOCKOUT_MS = RUNAWAY_LOCKOUT_HOURS * 60 * 60 * 1000;
 const POTTY_TRAINED_POTTY_GAIN_MULTIPLIER = 0.65;
 const CLEANLINESS_THRESHOLDS = {
   FRESH: 70,
@@ -898,6 +905,8 @@ const initialMemory = {
   lastTreasureHuntAt: null,
   lastTreasureFoundAt: null,
   lastTreasureFoundId: null,
+  runawayEndTimestamp: null,
+  lastRunawayTriggeredAt: null,
 };
 
 const TREASURE_REWARD_CATALOG = Object.freeze({
@@ -1470,6 +1479,31 @@ function ensureLifecycleStatus(state) {
   return state.lifecycleStatus;
 }
 
+function ensureMemoryState(state) {
+  if (!state.memory || typeof state.memory !== "object") {
+    state.memory = { ...initialMemory };
+    return state.memory;
+  }
+
+  Object.keys(initialMemory).forEach((key) => {
+    if (!(key in state.memory)) {
+      state.memory[key] = initialMemory[key];
+    }
+  });
+
+  const runawayEndTimestamp = Number(state.memory.runawayEndTimestamp);
+  state.memory.runawayEndTimestamp = Number.isFinite(runawayEndTimestamp)
+    ? runawayEndTimestamp
+    : null;
+
+  const lastRunawayTriggeredAt = Number(state.memory.lastRunawayTriggeredAt);
+  state.memory.lastRunawayTriggeredAt = Number.isFinite(lastRunawayTriggeredAt)
+    ? lastRunawayTriggeredAt
+    : null;
+
+  return state.memory;
+}
+
 function ensureDangerState(state) {
   if (!state.danger || typeof state.danger !== "object") {
     state.danger = { ...initialDanger };
@@ -2011,6 +2045,45 @@ function getStageMultiplier(state, statKey) {
   return modifiers[statKey] ?? 1;
 }
 
+function getStatDecayHoursSinceTimestamp({
+  lastUpdatedAt,
+  now,
+  sourceTimestamp,
+  graceHours = 0,
+  decayMultiplier = 1,
+}) {
+  const startAt = Number(lastUpdatedAt);
+  const endAt = Number(now);
+  if (
+    !Number.isFinite(startAt) ||
+    !Number.isFinite(endAt) ||
+    endAt <= startAt
+  ) {
+    return 0;
+  }
+
+  const sourceAt = Number(sourceTimestamp);
+  const activeHoursRaw =
+    Number.isFinite(sourceAt) && sourceAt > 0
+      ? Math.max(
+          0,
+          getElapsedHoursAfterGrace(
+            sourceAt,
+            endAt,
+            graceHours,
+            MAX_DECAY_HOURS
+          ) -
+            getElapsedHoursAfterGrace(
+              sourceAt,
+              startAt,
+              graceHours,
+              MAX_DECAY_HOURS
+            )
+        )
+      : Math.max(0, (endAt - startAt) / MS_PER_HOUR);
+  return Math.min(MAX_DECAY_HOURS, activeHoursRaw) * decayMultiplier;
+}
+
 function createDecayRuleContext(state, now) {
   normalizeStatsState(state);
   ensurePersonalityState(state);
@@ -2034,6 +2107,13 @@ function createDecayRuleContext(state, now) {
     ? clamp(Number(vacation.multiplier) || 1, 0, 1)
     : 1;
   const effectiveHours = diffHours * decayMultiplier;
+  const hungerEffectiveHours = getStatDecayHoursSinceTimestamp({
+    lastUpdatedAt,
+    now,
+    sourceTimestamp: state.memory?.lastFedAt,
+    graceHours: HUNGER_FULLNESS_BUFFER_HOURS,
+    decayMultiplier,
+  });
 
   const careerHungerMultiplier =
     state.career.perks?.hungerDecayMultiplier || 1.0;
@@ -2100,6 +2180,9 @@ function createDecayRuleContext(state, now) {
       chewingUrge,
     },
     stageMultipliers: {},
+    effectiveHoursByStat: {
+      hunger: hungerEffectiveHours,
+    },
     decayByStat: {},
     energyRecoveryGain: 0,
   };
@@ -2110,11 +2193,11 @@ function computeDegradationStage(ctx) {
     if (!isValidStat(key)) return;
     const stageMultiplier = getStageMultiplier(ctx.state, key);
     ctx.stageMultipliers[key] = stageMultiplier;
+    const statHours = Number(
+      ctx.effectiveHoursByStat[key] ?? ctx.effectiveHours
+    );
     ctx.decayByStat[key] =
-      (DECAY_PER_HOUR[key] || 0) *
-      DECAY_SPEED *
-      ctx.effectiveHours *
-      stageMultiplier;
+      (DECAY_PER_HOUR[key] || 0) * DECAY_SPEED * statHours * stageMultiplier;
   });
 }
 
@@ -2184,7 +2267,8 @@ function getSevereNeglectHours(ctx) {
   );
   const hungerRatePerHour = Math.max(
     0,
-    Number(ctx?.decayByStat?.hunger || 0) / totalHours
+    Number(ctx?.decayByStat?.hunger || 0) /
+      Math.max(1e-9, Number(ctx?.effectiveHoursByStat?.hunger || totalHours))
   );
 
   const hoursUntilDirtyThreshold =
@@ -3651,6 +3735,7 @@ const dogSlice = createSlice({
         : null;
 
       ensureTrainingState(merged);
+      ensureMemoryState(merged);
       ensurePollState(merged);
       ensureAnimationState(merged);
       ensureYardState(merged);
@@ -4859,6 +4944,56 @@ const dogSlice = createSlice({
       });
     },
 
+    beginRunawayStrike(state, { payload }) {
+      const now = typeof payload?.now === "number" ? payload.now : nowMs();
+      ensureMemoryState(state);
+      if (!state.adoptedAt) return;
+
+      const existingEnd = Number(state.memory.runawayEndTimestamp || 0);
+      if (existingEnd && existingEnd > now) return;
+
+      const runawayEndTimestamp = Number(payload?.runawayEndTimestamp || 0);
+      state.memory.runawayEndTimestamp =
+        runawayEndTimestamp && runawayEndTimestamp > now
+          ? runawayEndTimestamp
+          : now + RUNAWAY_LOCKOUT_MS;
+      state.memory.lastRunawayTriggeredAt = now;
+      state.lastAction = "runaway_strike";
+
+      pushJournalEntry(state, {
+        type: "LETTER",
+        moodTag: "SPICY",
+        summary: "Dear hooman letter",
+        body:
+          "I waited. I sniffed every corner. You were gone too long, so I packed my bag. " +
+          "I am taking 24 hours to cool off before I decide whether to come back.",
+        timestamp: now,
+      });
+
+      finalizeDerivedState(state, now);
+    },
+
+    resolveRunawayStrike(state, { payload }) {
+      const now = typeof payload?.now === "number" ? payload.now : nowMs();
+      ensureMemoryState(state);
+      const endAt = Number(state.memory.runawayEndTimestamp || 0);
+      if (!endAt || now < endAt) return;
+
+      state.memory.runawayEndTimestamp = null;
+      state.lastAction = "runaway_returned";
+      state.memory.lastSeenAt = now;
+
+      pushJournalEntry(state, {
+        type: "INFO",
+        moodTag: "CURIOUS",
+        summary: "Your pup came back",
+        body: "After a full day of dramatic reflection, your pup padded back into the yard looking smug and ready to be adored again.",
+        timestamp: now,
+      });
+
+      finalizeDerivedState(state, now);
+    },
+
     grantPreRegGift(state, { payload }) {
       if (state.claimedPreReg) return;
 
@@ -5862,7 +5997,9 @@ export const {
   respondToDogPoll,
   claimDailyReward,
   rewardSocialShare,
+  beginRunawayStrike,
   grantPreRegGift,
+  resolveRunawayStrike,
   trainObedience,
   unlockSkillTreePerk,
   respecSkillTree,

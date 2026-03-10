@@ -3,7 +3,7 @@
 import {
   getRecentMemorySignals,
   scoreRecentMemoryDrives,
-} from "@/engine/DogMemoryDrives.js";
+} from "@/components/dog/DogMemoryDrives.js";
 
 function clampStat(value, fallback = 0) {
   const n = Number(value);

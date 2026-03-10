@@ -1,3 +1,5 @@
+// src/lib/weatherApi.js
+
 function isUsableOpenWeatherKey(key) {
   const k = String(key || "").trim();
   if (!k) return false;

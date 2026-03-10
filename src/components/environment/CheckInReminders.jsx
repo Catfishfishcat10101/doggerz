@@ -42,6 +42,7 @@ export default function CheckInReminders() {
 
   const lastSeenAt =
     dog?.memory?.lastSeenAt || dog?.memory?.lastSeen || dog?.lastUpdatedAt || 0;
+  const lastFedAt = dog?.memory?.lastFedAt || 0;
 
   const clearTimers = React.useCallback(() => {
     timersRef.current.forEach((id) => window.clearTimeout(id));
@@ -62,7 +63,11 @@ export default function CheckInReminders() {
     const elapsedMs = Math.max(0, now - Number(lastSeenAt || 0));
 
     const schedule = (reminder) => {
-      const timeUntil = reminder.thresholdMs - elapsedMs;
+      const reminderElapsedMs =
+        reminder.key === "checkin-hungry"
+          ? Math.max(0, now - Number(lastFedAt || lastSeenAt || 0))
+          : elapsedMs;
+      const timeUntil = reminder.thresholdMs - reminderElapsedMs;
       const fire = async () => {
         if (!settings?.dailyRemindersEnabled) return;
         if (typeof window !== "undefined" && !window.isSecureContext) return;
@@ -99,6 +104,7 @@ export default function CheckInReminders() {
       await loadReminderStateAsync();
       const scheduled = await scheduleDogNotifications({
         lastSeenAt,
+        lastFedAt,
         reminders: REMINDERS,
       });
       if (cancelled || scheduled) return;
@@ -117,7 +123,7 @@ export default function CheckInReminders() {
       cancelled = true;
       clearTimers();
     };
-  }, [clearTimers, lastSeenAt, settings?.dailyRemindersEnabled]);
+  }, [clearTimers, lastFedAt, lastSeenAt, settings?.dailyRemindersEnabled]);
 
   React.useEffect(() => {
     if (settings?.dailyRemindersEnabled) return;

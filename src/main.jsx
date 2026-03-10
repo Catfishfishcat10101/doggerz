@@ -16,12 +16,13 @@ import { ToastProvider } from "./components/system/ToastProvider.jsx";
 import ErrorBoundary from "./components/system/ErrorBoundary.jsx";
 import DogAIEngine from "./components/dog/DogAIEngine.jsx";
 import { queryClient } from "./lib/queryClient.js";
-import { selectDogRenderModel } from "./features/game/dogSelectors.js";
+import { selectDogRenderModel } from "./components/dog/redux/dogSelectors.js";
 
 import { initRuntimeLogging } from "./utils/runtimeLogging.js";
 import { PupProvider } from "./components/dog/PupContext.jsx";
 import { initFirebase } from "./firebase.js";
 import { ensureAnonSignIn } from "./lib/firebaseClient.js";
+import { ModalProvider } from "./components/ui/modals/ModalProvider.jsx";
 
 // Simple fallback UI for ErrorBoundary
 function AppCrashFallback({ error }) {
@@ -164,7 +165,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(
           <DogAIEngine />
           <ToastProvider>
             <PupProvider>
-              <AppRouter />
+              <ModalProvider>
+                <AppRouter />
+              </ModalProvider>
             </PupProvider>
           </ToastProvider>
         </ErrorBoundary>

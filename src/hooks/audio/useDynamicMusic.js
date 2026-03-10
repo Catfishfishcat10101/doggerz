@@ -1,5 +1,5 @@
 /** @format */
-// src/features/audio/useDynamicMusic.js
+// src/hooks/audio/useDynamicMusic.js
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";

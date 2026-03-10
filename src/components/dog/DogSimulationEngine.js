@@ -14,13 +14,13 @@ import {
   determineDogState,
   getDogStateDurationMs,
   resolveEmergencyDogState,
-} from "@/engine/DogAIStateMachine.js";
-import { updateDogMovement } from "@/engine/DogMovementSystem.js";
-import { chooseEnvironmentTarget } from "@/engine/DogEnvironmentTargets.js";
-import { chooseWanderTarget } from "@/engine/DogWanderBehavior.js";
-import { createMemoryEvent } from "@/engine/DogMemoryEvents.js";
-import { generateDream } from "@/engine/DogDreamEngine.js";
-import { generateMemoryFromTransition } from "@/engine/DogStateTransitionMemory.js";
+} from "@/components/dog/DogAIStateMachine.js";
+import { updateDogMovement } from "@/components/dog/DogMovementSystem.js";
+import { chooseEnvironmentTarget } from "@/components/dog/DogEnvironmentTargets.js";
+import { chooseWanderTarget } from "@/components/dog/DogWanderBehavior.js";
+import { createMemoryEvent } from "@/components/dog/DogMemoryEvents.js";
+import { generateDream } from "@/components/dog/DogDreamEngine.js";
+import { generateMemoryFromTransition } from "@/components/dog/DogStateTransitionMemory.js";
 
 let simulationRunning = false;
 let interval = null;

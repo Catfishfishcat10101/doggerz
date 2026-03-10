@@ -132,3 +132,19 @@ export function addBondExperience(experienceState, gainedXp = 0) {
     progress: getLevelProgress(next),
   };
 }
+
+/**
+ * Returns a multiplier applied to passive stat decay.
+ * Higher level => smaller multiplier => slower decay.
+ *
+ * Default curve: level 1 => 1.0, level 10 => ~0.79, level 25 => ~0.57.
+ */
+export function getLevelDecayMultiplier(level, opts = {}) {
+  const lvl = Math.max(1, toNonNegativeInt(level, 1));
+  const perLevelSlowdown = clamp(
+    Number(opts?.perLevelSlowdown ?? 0.03),
+    0,
+    0.25
+  );
+  return 1 / (1 + (lvl - 1) * perLevelSlowdown);
+}

@@ -6,7 +6,7 @@ import SpriteSheetDog from "@/components/dog/SpriteSheetDog.jsx";
 import {
   DOG_WORLD_HEIGHT,
   DOG_WORLD_WIDTH,
-} from "@/engine/DogWanderBehavior.js";
+} from "@/components/dog/DogWanderBehavior.js";
 
 function clamp(n, lo, hi) {
   const x = Number(n);

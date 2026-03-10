@@ -1,3 +1,5 @@
+// src/components/game/YardBackdrop.jsx
+
 import { useMemo } from "react";
 
 function clamp(value, min, max) {

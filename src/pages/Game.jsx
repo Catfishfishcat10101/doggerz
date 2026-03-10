@@ -2,20 +2,20 @@
 import { useMemo } from "react";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { Link } from "react-router-dom";
 
-import DailyRewardModal from "@/components/DailyRewardModal.jsx";
-import MainGame from "@/features/game/MainGame.jsx";
+import BottomTabBar from "@/components/layout/BottomTabBar.jsx";
+import MainGame from "@/components/game/MainGame.jsx";
 import GrowthCelebration from "@/components/dog/GrowthCelebration.jsx";
-import { PATHS } from "@/routes.js";
-import { getDailyRewardState } from "@/features/game/dailyRewards.js";
+import { getDailyRewardState } from "@/features/billing/dailyRewards.js";
+import usePreRegistration from "@/hooks/usePreRegistration.js";
+import useModal from "@/hooks/useModal.js";
 import {
   selectWeatherCondition,
   selectWeatherIntensity,
 } from "@/redux/weatherSlice.js";
 import { selectUserZip } from "@/redux/userSlice.js";
 import { selectSettings } from "@/redux/settingsSlice.js";
-import { useDayNightBackground } from "@/features/game/useDayNightBackground.jsx";
+import { useDayNight } from "@/hooks/useDayNight.js";
 import WeatherFXCanvas from "@/components/environment/WeatherFXCanvas.jsx";
 import { useDog } from "@/hooks/useDogState.js";
 import {
@@ -48,15 +48,24 @@ function shouldReduceEffects(perfMode) {
 }
 
 export default function GamePage() {
+  const modal = useModal();
   const dog = useDog();
   const zip = useSelector(selectUserZip);
   const weather = useSelector(selectWeatherCondition);
   const weatherIntensity = useSelector(selectWeatherIntensity);
   const settings = useSelector(selectSettings);
-  const [showDailyReward, setShowDailyReward] = useState(false);
   const [rewardNow, setRewardNow] = useState(() => Date.now());
   const lifecycleStatus = String(dog?.lifecycleStatus || "NONE").toUpperCase();
   const dogInteractive = lifecycleStatus === "ACTIVE";
+  const {
+    isEligible: isFounderBonusEligible,
+    loading: founderBonusLoading,
+    claimReward: claimFounderBonus,
+    rewardAmount: founderBonusAmount,
+    claimed: founderBonusClaimed,
+  } = usePreRegistration({
+    enabled: dogInteractive,
+  });
 
   const perfReduced = shouldReduceEffects(settings?.perfMode);
   const showBackgroundPhotos = true;
@@ -64,7 +73,7 @@ export default function GamePage() {
     isNight,
     timeOfDayBucket,
     style: dayNightStyle,
-  } = useDayNightBackground({
+  } = useDayNight({
     zip,
     enableImages: showBackgroundPhotos,
   });
@@ -137,14 +146,54 @@ export default function GamePage() {
 
   useEffect(() => {
     if (!dog?.adoptedAt) return;
-    if (dailyRewardState?.canClaim) {
-      setShowDailyReward(true);
+    if (modal.active) return;
+    if (!dailyRewardState?.canClaim) return;
+    const todayMs = Number(dailyRewardState?.todayMs || 0);
+    modal.openOnce(
+      `dailyReward:${todayMs || "unknown"}`,
+      "dailyReward",
+      { rewardState: dailyRewardState },
+      { replace: false }
+    );
+  }, [dailyRewardState, dog?.adoptedAt, modal]);
+
+  useEffect(() => {
+    if (dogInteractive) {
+      modal.closeModalById("lifecycleNotice");
+      return;
     }
-  }, [dog?.adoptedAt, dailyRewardState?.canClaim]);
+    if (!dog) return;
+    modal.openModal(
+      "lifecycleNotice",
+      {
+        lifecycleStatus,
+        dog,
+      },
+      { replace: true }
+    );
+  }, [dog, dogInteractive, lifecycleStatus, modal]);
+
+  useEffect(() => {
+    if (!dogInteractive || founderBonusLoading) return;
+    if (modal.active) return;
+    if (!isFounderBonusEligible || founderBonusClaimed) return;
+    modal.openOnce("founderBonus", "founderBonus", {
+      rewardAmount: founderBonusAmount,
+      onClaim: async () => claimFounderBonus(),
+    });
+  }, [
+    claimFounderBonus,
+    dogInteractive,
+    founderBonusAmount,
+    founderBonusClaimed,
+    founderBonusLoading,
+    isFounderBonusEligible,
+    modal,
+  ]);
 
   return (
     <div
-      className="dz-safe-area relative min-h-dvh overflow-hidden"
+      className="dz-safe-area relative min-h-dvh overflow-hidden pb-24 md:pb-0"
       style={{ ...dayNightStyle, "--weather-accent": weatherAccent }}
       data-weather={weatherKey}
     >
@@ -167,66 +216,8 @@ export default function GamePage() {
       <div className="relative z-10">
         <MainGame scene={scene} dogInteractive={dogInteractive} />
       </div>
-      {!dogInteractive ? (
-        <LifecycleNoticeOverlay lifecycleStatus={lifecycleStatus} dog={dog} />
-      ) : null}
       <GrowthCelebration />
-      <DailyRewardModal
-        open={showDailyReward}
-        rewardState={dailyRewardState}
-        onClose={() => setShowDailyReward(false)}
-      />
-    </div>
-  );
-}
-
-function LifecycleNoticeOverlay({ lifecycleStatus, dog }) {
-  const isRescued = lifecycleStatus === "RESCUED";
-  const isFarewell = lifecycleStatus === "FAREWELL";
-  const lastName =
-    dog?.legacyJourney?.previousDogs?.[0]?.name || dog?.name || "your pup";
-  const dangerScore = Number(dog?.danger?.score || 0);
-
-  return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 px-4">
-      <div className="w-full max-w-lg rounded-3xl border border-white/15 bg-zinc-950/92 p-6 text-zinc-100 shadow-[0_30px_90px_rgba(0,0,0,0.55)]">
-        <div className="text-xs uppercase tracking-[0.22em] text-zinc-400">
-          {isRescued ? "Animal Rescue Center" : "Legacy Milestone"}
-        </div>
-        <h2 className="mt-2 text-xl font-extrabold text-emerald-200">
-          {isRescued
-            ? `${lastName} has been taken into protective care`
-            : "Farewell letter received"}
-        </h2>
-        <p className="mt-3 text-sm text-zinc-300">
-          {isRescued
-            ? `Danger meter reached ${dangerScore}%. Early severe mistreatment triggered intervention.`
-            : "Your pup lived a long life. Rainbow Bridge is now available, and a ghost-dog play bow is queued for your next adoption."}
-        </p>
-
-        <div className="mt-5 flex flex-wrap gap-2">
-          {isFarewell ? (
-            <Link
-              to={PATHS.RAINBOW_BRIDGE}
-              className="rounded-2xl bg-emerald-400 px-4 py-2 text-sm font-semibold text-black hover:bg-emerald-300"
-            >
-              Open Rainbow Bridge
-            </Link>
-          ) : null}
-          <Link
-            to={PATHS.ADOPT}
-            className="rounded-2xl border border-white/20 bg-white/5 px-4 py-2 text-sm font-semibold text-zinc-100 hover:bg-white/10"
-          >
-            Adopt a new pup
-          </Link>
-          <Link
-            to={PATHS.MEMORIES}
-            className="rounded-2xl border border-white/20 bg-white/5 px-4 py-2 text-sm font-semibold text-zinc-100 hover:bg-white/10"
-          >
-            Read letters
-          </Link>
-        </div>
-      </div>
+      <BottomTabBar />
     </div>
   );
 }

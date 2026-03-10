@@ -1,6 +1,6 @@
 /** @format */
 
-// src/features/game/DreamJournal.jsx
+// src/components/dog/DreamJournal.jsx
 
 function formatWhen(ts) {
   const n = Number(ts || 0);
