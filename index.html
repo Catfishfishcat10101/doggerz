@@ -1,170 +1,191 @@
 <!doctype html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#10b981" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="application-name" content="Doggerz" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#10b981" />
-  <meta name="color-scheme" content="dark light" />
-  <meta name="application-name" content="Doggerz" />
-  <meta name="format-detection" content="telephone=no" />
-  <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <meta
+      name="description"
+      content="Doggerz is your new virtual best friend: Adopt, Train them, and level up your companion. Your dog will pay attention to you more than you know as you will notice your dog learning your routine patterns.. "
+    />
 
-  <meta name="description"
-    content="Doggerz is your new virtual best friend: Adopt, Train them, and level up your companion. Your dog will pay attention to you more than you know as you will notice your dog learning your routine patterns.. " />
+    <meta property="og:title" content="DOGGERZ" />
+    <meta property="og:subtitle" content="ADOPT. TRAIN. BOND" />
+    <meta
+      property="og:description"
+      content="Adopt a virtual pup and make choices that shape its behavior."
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="192x192"
+      href="/assets/icons/icon-192.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="512x512"
+      href="/assets/icons/icon-512.png"
+    />
+    <link rel="preload" as="image" href="/assets/icons/icon-192.png" />
 
-  <meta property="og:title" content="DOGGERZ" />
-  <meta property="og:subtitle" content="ADOPT. TRAIN. BOND" />
-  <meta property="og:description" content="Adopt a virtual pup and make choices that shape its behavior." />
-  <link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192.png" />
-  <link rel="icon" type="image/png" sizes="512x512" href="/assets/icons/icon-512.png" />
-  <link rel="preload" as="image" href="/assets/icons/icon-192.png" />
+    <title>Doggerz</title>
 
-  <title>Doggerz</title>
+    <style>
+      /* Minimal boot UI so the app feels responsive before React mounts */
+      :root {
+        --dg-bg: #090a0f;
+        --dg-fg: #e5e7eb;
+        --dg-muted: rgba(229, 231, 235, 0.65);
+        --dg-accent: #10b981;
+        --dg-accent2: #38bdf8;
+        --dg-ring: rgba(16, 185, 129, 0.55);
+        color-scheme: dark;
+      }
 
-  <style>
-    /* Minimal boot UI so the app feels responsive before React mounts */
-    :root {
-      --dg-bg: #090a0f;
-      --dg-fg: #e5e7eb;
-      --dg-muted: rgba(229, 231, 235, 0.65);
-      --dg-accent: #10b981;
-      --dg-accent2: #38bdf8;
-      --dg-ring: rgba(16, 185, 129, 0.55);
-      color-scheme: dark;
-    }
-
-    html,
-    body {
-      height: 100%;
-      margin: 0;
-      background: radial-gradient(circle at top,
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        background: radial-gradient(
+          circle at top,
           #1e293b 0,
           #020617 55%,
-          #000 100%);
-    }
+          #000 100%
+        );
+      }
 
-    /* Better default tap behavior */
-    * {
-      -webkit-tap-highlight-color: transparent;
-    }
+      /* Better default tap behavior */
+      * {
+        -webkit-tap-highlight-color: transparent;
+      }
 
-    ::selection {
-      background: rgba(14, 117, 20, 0.35);
-    }
+      ::selection {
+        background: rgba(14, 117, 20, 0.35);
+      }
 
-    .dg-boot {
-      min-height: 100vh;
-      display: grid;
-      place-items: center;
-      padding: 24px;
-      color: var(--dg-fg);
-      font-family:
-        ui-sans-serif,
-        system-ui,
-        -apple-system,
-        Segoe UI,
-        Roboto,
-        Helvetica,
-        Arial,
-        "Apple Color Emoji",
-        "Segoe UI Emoji";
-    }
+      .dg-boot {
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        color: var(--dg-fg);
+        font-family:
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          Segoe UI,
+          Roboto,
+          Helvetica,
+          Arial,
+          "Apple Color Emoji",
+          "Segoe UI Emoji";
+      }
 
-    .dg-boot__card {
-      width: 100%;
-      max-width: 560px;
-      border-radius: 28px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      background: rgba(0, 0, 0, 0.35);
-      -webkit-backdrop-filter: blur(14px);
-      backdrop-filter: blur(14px);
-      box-shadow: 0 0 70px rgba(16, 185, 129, 0.12);
-      padding: 22px 20px;
-    }
+      .dg-boot__card {
+        width: 100%;
+        max-width: 560px;
+        border-radius: 28px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(0, 0, 0, 0.35);
+        -webkit-backdrop-filter: blur(14px);
+        backdrop-filter: blur(14px);
+        box-shadow: 0 0 70px rgba(16, 185, 129, 0.12);
+        padding: 22px 20px;
+      }
 
-    .dg-boot__row {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-    }
+      .dg-boot__row {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
 
-    .dg-boot__logo {
-      width: 48px;
-      height: 48px;
-      border-radius: 14px;
-      border: 1px solid rgba(16, 185, 129, 0.35);
-      background: rgba(16, 185, 129, 0.1);
-      padding: 6px;
-      box-sizing: border-box;
-      object-fit: cover;
-    }
+      .dg-boot__logo {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        border: 1px solid rgba(16, 185, 129, 0.35);
+        background: rgba(16, 185, 129, 0.1);
+        padding: 6px;
+        box-sizing: border-box;
+        object-fit: cover;
+      }
 
-    .dg-boot__title {
-      font-weight: 900;
-      letter-spacing: 0.02em;
-      font-size: 26px;
-      line-height: 1.05;
-      margin: 0;
-      color: rgba(167, 243, 208, 0.95);
-      text-shadow: 0 0 18px rgba(16, 185, 129, 0.55);
-    }
+      .dg-boot__title {
+        font-weight: 900;
+        letter-spacing: 0.02em;
+        font-size: 26px;
+        line-height: 1.05;
+        margin: 0;
+        color: rgba(167, 243, 208, 0.95);
+        text-shadow: 0 0 18px rgba(16, 185, 129, 0.55);
+      }
 
-    .dg-boot__sub {
-      margin: 6px 0 0;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: rgba(255, 255, 255, 0.9);
-    }
+      .dg-boot__sub {
+        margin: 6px 0 0;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.9);
+      }
 
-    .dg-boot__hint {
-      margin-top: 16px;
-      font-size: 13px;
-      color: var(--dg-muted);
-    }
+      .dg-boot__hint {
+        margin-top: 16px;
+        font-size: 13px;
+        color: var(--dg-muted);
+      }
 
-    .dg-boot__bar {
-      margin-top: 14px;
-      height: 10px;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.08);
-      overflow: hidden;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
+      .dg-boot__bar {
+        margin-top: 14px;
+        height: 10px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
 
-    .dg-boot__bar>span {
-      display: block;
-      height: 100%;
-      width: 42%;
-      border-radius: 999px;
-      background: linear-gradient(90deg,
+      .dg-boot__bar > span {
+        display: block;
+        height: 100%;
+        width: 42%;
+        border-radius: 999px;
+        background: linear-gradient(
+          90deg,
           rgba(16, 185, 129, 0.25),
-          rgba(56, 189, 248, 0.3));
-      animation: dg-boot-load 1.15s ease-in-out infinite alternate;
-    }
-
-    @keyframes dg-boot-load {
-      0% {
-        transform: translateX(-40%);
+          rgba(56, 189, 248, 0.3)
+        );
+        animation: dg-boot-load 1.15s ease-in-out infinite alternate;
       }
 
-      100% {
-        transform: translateX(140%);
-      }
-    }
+      @keyframes dg-boot-load {
+        0% {
+          transform: translateX(-40%);
+        }
 
-    @media (prefers-reduced-motion: reduce) {
-      .dg-boot__bar>span {
-        animation: none;
-        width: 60%;
-        transform: translateX(0);
+        100% {
+          transform: translateX(140%);
+        }
       }
-    }
-  </style>
 
-  <script type="application/ld+json">
+      @media (prefers-reduced-motion: reduce) {
+        .dg-boot__bar > span {
+          animation: none;
+          width: 60%;
+          transform: translateX(0);
+        }
+      }
+    </style>
+
+    <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "VideoGame",
@@ -175,45 +196,51 @@
         "inLanguage": "en"
       }
     </script>
-</head>
+  </head>
 
-<body class="bg-zinc-950 text-zinc-50">
-  <noscript>
-    <div style="
+  <body class="bg-zinc-950 text-zinc-50">
+    <noscript>
+      <div
+        style="
           padding: 16px;
           color: #e5e7eb;
           background: #090a0f;
           font-family: system-ui;
-        ">
-      Doggerz needs JavaScript enabled to run.
-    </div>
-  </noscript>
+        "
+      >
+        Doggerz needs JavaScript enabled to run.
+      </div>
+    </noscript>
 
-  <div id="root">
-    <div class="dg-boot" aria-hidden="true">
-      <div class="dg-boot__card">
-        <div class="dg-boot__row">
-          <img class="dg-boot__logo" src="/assets/icons/icon-192.png" alt="" decoding="async" />
-          <div>
-            <h1 class="dg-boot__title">DOGGERZ</h1>
-            <p class="dg-boot__sub">ADOPT. TRAIN. LEVEL UP.</p>
+    <div id="root">
+      <div class="dg-boot" aria-hidden="true">
+        <div class="dg-boot__card">
+          <div class="dg-boot__row">
+            <img
+              class="dg-boot__logo"
+              src="/assets/icons/icon-192.png"
+              alt=""
+              decoding="async"
+            />
+            <div>
+              <h1 class="dg-boot__title">DOGGERZ</h1>
+              <p class="dg-boot__sub">ADOPT. TRAIN. LEVEL UP.</p>
+            </div>
           </div>
-        </div>
 
-        <div class="dg-boot__hint">Loading your yard…</div>
-        <div class="dg-boot__hint">
-          Tip: Your pup learns from your routine, so check back often!
-        </div>
+          <div class="dg-boot__hint">Loading your yard…</div>
+          <div class="dg-boot__hint">
+            Tip: Your pup learns from your routine, so check back often!
+          </div>
 
-        <div class="dg-boot__bar"><span></span></div>
+          <div class="dg-boot__bar"><span></span></div>
 
-        <div class="dg-boot__hint">
-          Pro tip: The more you interact, the stronger your bond grows!
+          <div class="dg-boot__hint">
+            Pro tip: The more you interact, the stronger your bond grows!
+          </div>
         </div>
       </div>
     </div>
-  </div>
-  <script type="module" src="/src/main.jsx"></script>
-</body>
-
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
 </html>
