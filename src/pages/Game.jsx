@@ -54,6 +54,7 @@ export default function GamePage() {
   const weatherIntensity = useSelector(selectWeatherIntensity);
   const settings = useSelector(selectSettings);
   const [showDailyReward, setShowDailyReward] = useState(false);
+  const [rewardNow, setRewardNow] = useState(() => Date.now());
   const lifecycleStatus = String(dog?.lifecycleStatus || "NONE").toUpperCase();
   const dogInteractive = lifecycleStatus === "ACTIVE";
 
@@ -90,6 +91,18 @@ export default function GamePage() {
     [weatherKey]
   );
 
+  useEffect(() => {
+    const updateNow = () => setRewardNow(Date.now());
+    const interval = setInterval(updateNow, 60 * 1000);
+    window.addEventListener("focus", updateNow);
+    document.addEventListener("visibilitychange", updateNow);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", updateNow);
+      document.removeEventListener("visibilitychange", updateNow);
+    };
+  }, []);
+
   const scene = useMemo(
     () => ({
       label:
@@ -117,9 +130,9 @@ export default function GamePage() {
       getDailyRewardState({
         lastRewardClaimedAt: dog?.lastRewardClaimedAt,
         consecutiveDays: dog?.consecutiveDays,
-        now: Date.now(),
+        now: rewardNow,
       }),
-    [dog?.lastRewardClaimedAt, dog?.consecutiveDays]
+    [dog?.lastRewardClaimedAt, dog?.consecutiveDays, rewardNow]
   );
 
   useEffect(() => {

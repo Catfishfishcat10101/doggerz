@@ -5,6 +5,7 @@ import { Capacitor } from "@capacitor/core";
 import {
   Suspense,
   lazy,
+  memo,
   useCallback,
   useEffect,
   useMemo,
@@ -275,14 +276,6 @@ function createInvestigationProps(environment = "yard") {
     ...prop,
     interactedUntil: 0,
   }));
-}
-
-function formatLiveClock(ts) {
-  return new Intl.DateTimeFormat(undefined, {
-    hour: "numeric",
-    minute: "2-digit",
-    second: "2-digit",
-  }).format(new Date(ts));
 }
 
 function toPct(value) {
@@ -1777,9 +1770,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
 
           <div className="mt-3 grid gap-2 rounded-2xl border border-doggerz-leaf/30 bg-black/40 p-3 sm:grid-cols-[1fr_auto] sm:items-center">
             <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-doggerz-paw">
-              <span className="rounded-full border border-doggerz-leaf/40 bg-doggerz-neon/15 px-2.5 py-1">
-                Local Time: {formatLiveClock(liveNow)}
-              </span>
+              <LiveClockBadge />
               <span className="rounded-full border border-doggerz-leaf/40 bg-doggerz-neon/15 px-2.5 py-1">
                 ZIP: {effectiveZip}
               </span>
@@ -1788,15 +1779,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
                   {weatherDetails.name}
                 </span>
               ) : null}
-              {weatherLastFetchedAt ? (
-                <span className="rounded-full border border-doggerz-leaf/25 bg-black/30 px-2.5 py-1 normal-case tracking-normal text-doggerz-paw/70">
-                  Updated{" "}
-                  {new Intl.DateTimeFormat(undefined, {
-                    hour: "numeric",
-                    minute: "2-digit",
-                  }).format(new Date(weatherLastFetchedAt))}
-                </span>
-              ) : null}
+              <WeatherUpdatedBadge timestamp={weatherLastFetchedAt} />
             </div>
             <form
               className="flex items-center gap-2"
@@ -2432,6 +2415,48 @@ export default function MainGame({ scene, dogInteractive = true }) {
     </div>
   );
 }
+
+const LiveClockBadge = memo(function LiveClockBadge() {
+  const [now, setNow] = useState(Date.now());
+  const formatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat(undefined, {
+        hour: "numeric",
+        minute: "2-digit",
+        second: "2-digit",
+      }),
+    []
+  );
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  return (
+    <span className="rounded-full border border-doggerz-leaf/40 bg-doggerz-neon/15 px-2.5 py-1">
+      Local Time: {formatter.format(new Date(now))}
+    </span>
+  );
+});
+
+const WeatherUpdatedBadge = memo(function WeatherUpdatedBadge({ timestamp }) {
+  const formatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat(undefined, {
+        hour: "numeric",
+        minute: "2-digit",
+      }),
+    []
+  );
+
+  if (!timestamp) return null;
+  return (
+    <span className="rounded-full border border-doggerz-leaf/25 bg-black/30 px-2.5 py-1 normal-case tracking-normal text-doggerz-paw/70">
+      Updated {formatter.format(new Date(timestamp))}
+    </span>
+  );
+});
 
 function SessionSurpriseBanner({
   event,

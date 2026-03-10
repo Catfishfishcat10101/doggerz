@@ -25,6 +25,7 @@ import { generateMemoryFromTransition } from "@/engine/DogStateTransitionMemory.
 let simulationRunning = false;
 let interval = null;
 let lastWorldTickAt = 0;
+let lastSimTickAt = 0;
 
 const WORLD_TICK_MS = 60_000;
 const DREAM_SLEEP_ROLL_CHANCE = 0.15;
@@ -150,18 +151,26 @@ export function startDogSimulation(store, options = {}) {
   simulationRunning = true;
 
   const tickMs = normalizeTickMs(options?.tickMs);
-  lastWorldTickAt = Date.now();
+  const now = Date.now();
+  lastWorldTickAt = now;
+  lastSimTickAt = now;
 
   interval = setInterval(() => {
-    if (typeof document !== "undefined" && document.hidden) return;
+    const now = Date.now();
+    if (typeof document !== "undefined" && document.hidden) {
+      lastSimTickAt = now;
+      return;
+    }
 
     const state = store?.getState?.();
     const dog = state?.dog;
 
     if (!dog?.adoptedAt) return;
 
-    const now = Date.now();
-    const result = runSimulation(dog);
+    const deltaMs = Math.max(0, now - lastSimTickAt);
+    lastSimTickAt = now;
+    const deltaSeconds = Math.max(0.001, deltaMs / 1000);
+    const result = runSimulation(dog, { now, deltaSeconds });
     const updates = result?.updates || null;
     const memories = Array.isArray(result?.memories) ? result.memories : [];
 
@@ -222,38 +231,17 @@ export function stopDogSimulation() {
   clearInterval(interval);
   interval = null;
   lastWorldTickAt = 0;
+  lastSimTickAt = 0;
 }
 
-export function runSimulation(dog) {
+export function runSimulation(
+  dog,
+  { now = Date.now(), deltaSeconds = 1 } = {}
+) {
   const stats = dog?.stats && typeof dog.stats === "object" ? dog.stats : {};
   const changes = {};
-  const statChanges = {};
   const memories = [];
-  const now = Date.now();
-
-  const hunger = Number(stats.hunger ?? 0);
-  const energy = Number(stats.energy ?? 0);
-  const happiness = Number(stats.happiness ?? 0);
-  const mentalStimulation = Number(stats.mentalStimulation ?? 0);
-
-  // In Doggerz, hunger rises with neglect.
-  if (hunger < 100) {
-    statChanges.hunger = Math.min(100, hunger + 1);
-  }
-
-  if (energy > 0) {
-    statChanges.energy = Math.max(0, energy - 0.5);
-  }
-
-  if (mentalStimulation > 0) {
-    statChanges.mentalStimulation = Math.max(0, mentalStimulation - 0.35);
-  }
-
-  if (mentalStimulation <= 15 && happiness > 0) {
-    statChanges.happiness = Math.max(0, happiness - 0.25);
-  }
-
-  const movement = updateDogMovement(dog, 1);
+  const movement = updateDogMovement(dog, deltaSeconds);
   const arrivedTarget =
     dog?.targetPosition &&
     movement &&
@@ -287,7 +275,6 @@ export function runSimulation(dog) {
     facing: changes.facing || dog?.facing,
     stats: {
       ...stats,
-      ...statChanges,
     },
   };
   let nextState = movement?.aiState || "";
@@ -375,10 +362,6 @@ export function runSimulation(dog) {
     }
   }
 
-  if (Object.keys(statChanges).length) {
-    changes.stats = statChanges;
-  }
-
   if (!Object.keys(changes).length && !memories.length) {
     return null;
   }
@@ -390,4 +373,5 @@ export function runSimulation(dog) {
   };
 }
 
-export const calculateDogChanges = (dog) => runSimulation(dog)?.updates || null;
+export const calculateDogChanges = (dog) =>
+  runSimulation(dog, { deltaSeconds: 1 })?.updates || null;

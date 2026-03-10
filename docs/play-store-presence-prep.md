@@ -1,6 +1,6 @@
 # Doggerz Play Store Presence Prep
 
-## 1) App Icon Audit
+## 1 App Icon Audit
 
 ### Current state in repo
 
@@ -32,7 +32,7 @@
 
 ---
 
-## 2) Screenshot Capture Checklist (Google Play)
+## 2 Screenshot Capture Checklist (Google Play)
 
 ### Before capture
 
@@ -89,7 +89,7 @@
 
 ---
 
-## 3) Store Listing Copy Draft (US English)
+## 3 Store Listing Copy Draft (US English)
 
 ### App name
 
@@ -130,7 +130,7 @@ Notes:
 
 ---
 
-## 4) Final Publish Pass
+## 4 Final Publish Pass
 
 1. Confirm icon and feature graphic are final in Play Console.
 2. Upload screenshot set in the same visual order as the feature flow.
