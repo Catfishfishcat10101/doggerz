@@ -319,8 +319,10 @@ export default function DogAIEngine() {
       "weather",
       zip || import.meta.env.VITE_WEATHER_DEFAULT_ZIP || "10001",
     ],
-    queryFn: ({ signal }) =>
-      fetchRealTimeWeather({ zip: zipRef.current || zip, signal }),
+    queryFn: ({ queryKey, signal }) => {
+      const [, zipKey] = queryKey || [];
+      return fetchRealTimeWeather({ zip: zipKey || zip, signal });
+    },
     refetchInterval: WEATHER_POLL_INTERVAL_MS,
     refetchIntervalInBackground: false,
     staleTime: WEATHER_POLL_INTERVAL_MS,
@@ -533,7 +535,7 @@ export default function DogAIEngine() {
 
       let parsed = null;
       try {
-        let parsed = await loadLocalSave(nextKey, null);
+        parsed = await loadLocalSave(nextKey, null);
         if (!parsed && nextKey === getDogStorageKey(null)) {
           parsed = await migrateLegacySave({
             legacyKey: DOG_STORAGE_KEY,
