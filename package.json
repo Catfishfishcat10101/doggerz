@@ -47,7 +47,9 @@
     "lint-staged:fixup": "node scripts/add-lintstaged.js",
     "check": "npm run format:check && npm run lint && npm run build",
     "assets:verify": "node scripts/verify-web-assets.js",
-    "release:bump": "node scripts/bump-version.js"
+    "release:bump": "node scripts/bump-version.js",
+    "play:upload": "node scripts/upload-play-release.js",
+    "play:upload:internal": "node scripts/upload-play-release.js --track internal --status completed"
   },
   "dependencies": {
     "@capacitor-community/admob": "^8.0.0",
@@ -97,6 +99,7 @@
     "eslint-plugin-react-refresh": "^0.4.16",
     "ffmpeg-static": "^5.2.0",
     "globals": "^15.14.0",
+    "googleapis": "^171.4.0",
     "husky": "^9.1.7",
     "identity-obj-proxy": "^3.0.0",
     "jest": "^30.2.0",
