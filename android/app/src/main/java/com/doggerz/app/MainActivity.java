@@ -33,7 +33,7 @@ public class MainActivity extends BridgeActivity {
     }
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         applyImmersiveSystemBars();
         try {
