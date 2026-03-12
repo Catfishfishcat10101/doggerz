@@ -1,7 +1,7 @@
 // src/firebase.js
 import { initializeApp, getApps } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { enableIndexedDbPersistence, getFirestore } from "firebase/firestore";
 
 const cfg = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -24,10 +24,53 @@ export const firebaseError = firebaseReady
       `Firebase env vars missing: ${firebaseMissingKeys.join(", ")}. Check .env (must start with VITE_).`
     );
 
+let firestorePersistencePromise = null;
+
+function startFirestorePersistence(db) {
+  if (!db || typeof window === "undefined") {
+    return Promise.resolve({ enabled: false, reason: "unavailable" });
+  }
+
+  if (!firestorePersistencePromise) {
+    firestorePersistencePromise = enableIndexedDbPersistence(db)
+      .then(() => ({ enabled: true, reason: null }))
+      .catch((error) => {
+        const code = String(error?.code || "unknown");
+
+        if (code === "failed-precondition") {
+          console.warn(
+            "[Doggerz] Firestore persistence unavailable because another tab already owns it."
+          );
+        } else if (code === "unimplemented") {
+          console.warn(
+            "[Doggerz] Firestore persistence is not supported in this environment."
+          );
+        } else {
+          console.warn("[Doggerz] Firestore persistence failed to start:", error);
+        }
+
+        return { enabled: false, reason: code, error };
+      });
+  }
+
+  return firestorePersistencePromise;
+}
+
 export function initFirebase() {
   if (!firebaseReady) return { app: null, auth: null, db: null };
   const app = getApps().length ? getApps()[0] : initializeApp(cfg);
-  return { app, auth: getAuth(app), db: getFirestore(app) };
+  const db = getFirestore(app);
+  void startFirestorePersistence(db);
+  return { app, auth: getAuth(app), db };
+}
+
+export function ensureFirebasePersistence() {
+  if (!firebaseReady) {
+    return Promise.resolve({ enabled: false, reason: "firebase_not_ready" });
+  }
+
+  const { db } = initFirebase();
+  return startFirestorePersistence(db);
 }
 
 export function assertFirebaseReady() {
@@ -38,3 +81,4 @@ const initialized = initFirebase();
 export const app = initialized.app;
 export const auth = initialized.auth;
 export const db = initialized.db;
+export const firebasePersistenceReady = ensureFirebasePersistence();

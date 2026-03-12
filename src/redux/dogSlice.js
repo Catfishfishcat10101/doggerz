@@ -7,8 +7,17 @@ export const selectDogAnimation = (state) =>
   state?.dog?.animation || DEFAULT_ANIMATION_STATE;
 
 import { createSlice } from "@reduxjs/toolkit";
-import { calculateDogAge } from "@/utils/lifecycle.js";
+import {
+  calculateDogAge,
+  getAgeBucketLabel,
+  getDogAgeProgress,
+  getLifeStageLabel,
+  getLifeStageProgressLabel,
+  getLifeStageUi,
+  getLifeStageTransitionCopy,
+} from "@/utils/lifecycle.js";
 import { deepMergeDefined } from "@/utils/deepMerge.js";
+import { xpRequiredForLevel } from "@/logic/ExperienceAndLeveling.js";
 import {
   CLEANLINESS_TIER_EFFECTS,
   getCleanlinessLabel,
@@ -16,10 +25,10 @@ import {
   getCleanlinessUi,
 } from "@/logic/cleanlinessEffects.js";
 import { LIFE_STAGES } from "@/logic/dogLifeStages.js";
-import { getLifeStageLabel } from "@/utils/lifecycle.js";
 import {
   OBEDIENCE_COMMANDS,
   commandRequirementsMet,
+  getObedienceActiveLearningLimit,
   getObedienceCommand,
 } from "@/logic/obedienceCommands.js";
 import {
@@ -111,20 +120,20 @@ const MOOD_TO_DESIRED_ACTION = Object.freeze({
 const deriveDesiredActionFromMood = (mood) =>
   MOOD_TO_DESIRED_ACTION[normalizeActionKey(mood)] || "idle";
 const DECAY_PER_HOUR = CORE_PET_STAT_DECAY_PER_HOUR;
-const DECAY_SPEED = 0.4;
+const DECAY_SPEED = 0.35;
 const MAX_DECAY_HOURS = 72;
-const SEVERE_NEGLECT_CLEANLINESS_THRESHOLD = 15;
-const SEVERE_NEGLECT_HUNGER_THRESHOLD = 85;
-const SEVERE_NEGLECT_GRACE_HOURS = 3 / 60;
-const OFFLINE_SEVERE_NEGLECT_HEALTH_DECAY_PER_HOUR = 3;
+const SEVERE_NEGLECT_CLEANLINESS_THRESHOLD = 8;
+const SEVERE_NEGLECT_HUNGER_THRESHOLD = 92;
+const SEVERE_NEGLECT_GRACE_HOURS = 2;
+const OFFLINE_SEVERE_NEGLECT_HEALTH_DECAY_PER_HOUR = 1.2;
 const MS_PER_HOUR = 60 * 60 * 1000;
 
 const SLEEP_RECOVERY_PER_HOUR = 45;
-const SLEEP_NEEDS_MULTIPLIER = 0.85;
-const AUTO_SLEEP_THRESHOLD = 40;
-const AUTO_WAKE_THRESHOLD = 80;
-const POTTY_FILL_PER_HOUR = 10;
-const MAX_ACCIDENTS_PER_DECAY = 3;
+const SLEEP_NEEDS_MULTIPLIER = 0.7;
+const AUTO_SLEEP_THRESHOLD = 0;
+const AUTO_WAKE_THRESHOLD = 76;
+const POTTY_FILL_PER_HOUR = 7;
+const MAX_ACCIDENTS_PER_DECAY = 1;
 const MOOD_SAMPLE_MINUTES = 60;
 const SENIOR_STAGE_START_DAY = 2556;
 const SENIOR_STIFFNESS_WINDOW_DAYS = 40;
@@ -147,7 +156,8 @@ const DANGER_RUNAWAY_LETTER_THRESHOLD = 72;
 const DANGER_RESCUE_THRESHOLD = 92;
 const DANGER_RUNAWAY_COOLDOWN_MS = 24 * 60 * 60 * 1000;
 const LONG_LIFE_FAREWELL_AGE_DAYS = 5000;
-export const LEVEL_XP_STEP = 100;
+export const LEVEL_XP_BASE_THRESHOLD = 140;
+export const LEVEL_XP_STEP = 35;
 const SKILL_LEVEL_STEP = 50;
 const LEGACY_VACATION_MULTIPLIER = 0.35;
 const SESSION_SURPRISE_COOLDOWN_MS = 3 * 60 * 60 * 1000;
@@ -163,6 +173,7 @@ const STOLENABLE_ACTION_KEYS = Object.freeze([
   "bath",
   "potty",
   "train",
+  "store",
 ]);
 const YARD_ENVIRONMENTS = Object.freeze({
   APARTMENT: "apartment",
@@ -184,26 +195,58 @@ const DOG_RULE_PIPELINE_STAGES = Object.freeze([
 ]);
 
 const nowMs = () => Date.now();
-function parseAdoptedAt(raw) {
+const UNIX_SECONDS_MAX = 10_000_000_000;
+
+function normalizeTimestampMs(raw) {
   if (raw === undefined || raw === null) return null;
-  if (typeof raw === "number" && Number.isFinite(raw)) return raw;
   if (raw instanceof Date) return raw.getTime();
+  if (typeof raw?.toMillis === "function") {
+    const ms = Number(raw.toMillis());
+    return Number.isFinite(ms) ? ms : null;
+  }
+  if (typeof raw === "object" && Number.isFinite(Number(raw?.seconds))) {
+    return Math.max(0, Math.floor(Number(raw.seconds) * 1000));
+  }
   if (typeof raw === "string") {
     const numeric = Number(raw);
-    if (!Number.isNaN(numeric)) return numeric;
+    if (!Number.isNaN(numeric)) return normalizeTimestampMs(numeric);
     const parsed = Date.parse(raw);
-    if (!Number.isNaN(parsed)) return parsed;
+    return Number.isNaN(parsed) ? null : parsed;
+  }
+  if (typeof raw === "number" && Number.isFinite(raw)) {
+    if (Math.abs(raw) < UNIX_SECONDS_MAX) {
+      return Math.floor(raw * 1000);
+    }
+    return raw;
   }
   return null;
+}
+
+function parseAdoptedAt(raw) {
+  return normalizeTimestampMs(raw);
 }
 
 function normalizeStatsState(state) {
   if (!state.stats || typeof state.stats !== "object") {
     state.stats = { ...DEFAULT_STATS };
+    state.stats.health = clampHealthForState(state, state.stats.health);
     return state.stats;
   }
   state.stats = normalizePetStats(state.stats, DEFAULT_STATS);
+  state.stats.health = clampHealthForState(state, state.stats.health);
   return state.stats;
+}
+
+function getMinimumHealthForState(state) {
+  const status = String(state?.lifecycleStatus || "").toUpperCase();
+  const activeStatus = status
+    ? status === DOG_LIFECYCLE_STATUS.ACTIVE
+    : Boolean(state?.adoptedAt);
+  return activeStatus && state?.adoptedAt ? 12 : 0;
+}
+
+function clampHealthForState(state, value) {
+  return clamp(Number(value || 0), getMinimumHealthForState(state), 100);
 }
 
 function ensureAnimationState(state) {
@@ -321,6 +364,9 @@ function ensureInventoryState(state) {
 
 function applyFeedEffect(state, payload = {}, opts = {}) {
   const now = payload?.now ?? nowMs();
+  normalizeStatsState(state);
+  ensureMemoryState(state);
+  ensureInventoryState(state);
   const skipDecay = opts?.skipDecay === true;
   if (!skipDecay) {
     applyDecay(state, now);
@@ -463,20 +509,23 @@ function applyFeedEffect(state, payload = {}, opts = {}) {
 
     // Gentle per-junk penalty: allows occasional spoiling without harsh punishment.
     state.stats.happiness = clamp(state.stats.happiness + 5, 0, 100);
-    state.stats.health = clamp(state.stats.health - 1, 0, 100);
+    state.stats.health = clampHealthForState(state, state.stats.health - 1);
 
     if (
       state.memory.junkFoodCountToday >= 3 &&
       state.memory.junkFoodBingeDayKey !== dayKey
     ) {
       state.memory.junkFoodBingeDayKey = dayKey;
-      state.stats.health = clamp(state.stats.health - 3, 0, 100);
+      state.stats.health = clampHealthForState(state, state.stats.health - 3);
       junkBingeTriggered = true;
     }
   } else if (usePremiumKibble) {
     // Premium kibble gives a larger health recovery bump.
     if (Number(state.stats.health || 0) < 100) {
-      state.stats.health = clamp(Number(state.stats.health || 0) + 5, 0, 100);
+      state.stats.health = clampHealthForState(
+        state,
+        Number(state.stats.health || 0) + 5
+      );
     }
     state.stats.energy = 100;
     inventory.premiumKibble = Math.max(
@@ -485,7 +534,10 @@ function applyFeedEffect(state, payload = {}, opts = {}) {
     );
   } else if (effectiveFoodType === "regular_kibble") {
     if (Number(state.stats.health || 0) < 100) {
-      state.stats.health = clamp(Number(state.stats.health || 0) + 2, 0, 100);
+      state.stats.health = clampHealthForState(
+        state,
+        Number(state.stats.health || 0) + 2
+      );
     }
   }
 
@@ -497,7 +549,6 @@ function applyFeedEffect(state, payload = {}, opts = {}) {
 
   if (junkBingeTriggered) {
     state.lastAction = "lethargic_lay";
-    state.isAsleep = true;
     applyFsmAction(state, "rest", now, { reason: "junk_binge" });
     pushJournalEntry(state, {
       type: "HEALTH",
@@ -1085,6 +1136,15 @@ const DEFAULT_COSMETIC_CATALOG = Object.freeze([
     currency: "coins",
   },
   {
+    id: "toy_squeaky_catfish",
+    slot: "toy",
+    category: "toys",
+    threshold: 3,
+    label: "Squeaky Catfish",
+    price: 50,
+    currency: "coins",
+  },
+  {
     id: "toy_tug_rope",
     slot: "toy",
     category: "toys",
@@ -1154,6 +1214,24 @@ const DEFAULT_COSMETIC_CATALOG = Object.freeze([
     label: "Neon Collar",
   },
   {
+    id: "collar_midnight",
+    slot: "collar",
+    category: "apparel",
+    threshold: 9,
+    label: "Midnight Collar",
+    price: 260,
+    currency: "coins",
+  },
+  {
+    id: "collar_sunflare",
+    slot: "collar",
+    category: "apparel",
+    threshold: 12,
+    label: "Sunflare Collar",
+    price: 360,
+    currency: "coins",
+  },
+  {
     id: "beta_collar_2026",
     slot: "collar",
     category: "apparel",
@@ -1167,6 +1245,24 @@ const DEFAULT_COSMETIC_CATALOG = Object.freeze([
     category: "apparel",
     threshold: 10,
     label: "Star Tag",
+  },
+  {
+    id: "tag_heart",
+    slot: "tag",
+    category: "apparel",
+    threshold: 6,
+    label: "Heart Tag",
+    price: 140,
+    currency: "coins",
+  },
+  {
+    id: "tag_bolt",
+    slot: "tag",
+    category: "apparel",
+    threshold: 11,
+    label: "Bolt Tag",
+    price: 220,
+    currency: "coins",
   },
   {
     id: "backdrop_sunset",
@@ -1241,6 +1337,13 @@ const TOY_PLAY_PROFILES = Object.freeze({
     bondBonus: 0,
     preyDriveBonus: 10,
   },
+  toy_squeaky_catfish: {
+    baseHappiness: 12,
+    boredomRelief: 18,
+    extraEnergyCost: 2,
+    bondBonus: 1,
+    preyDriveBonus: 4,
+  },
   toy_tug_rope: {
     baseHappiness: 6,
     boredomRelief: 12,
@@ -1304,10 +1407,10 @@ function createInitialTrainingState() {
 /* ------------------- root initialState ------------------- */
 
 const initialState = {
-  name: "Pup",
+  name: "Fireball",
   level: 1,
   xp: 0,
-  coins: 0,
+  coins: 100,
   gems: 0,
   adoptedAt: null,
   lifeStage: { ...DEFAULT_LIFE_STAGE },
@@ -1403,10 +1506,11 @@ const initialState = {
 /* ------------------- helpers ------------------- */
 
 function pushJournalEntry(state, entry) {
+  const journal = ensureJournalState(state);
   const ts = entry.timestamp ?? nowMs();
-  const id = `${ts}-${state.journal.entries.length + 1}`;
+  const id = `${ts}-${journal.entries.length + 1}`;
 
-  state.journal.entries.unshift({
+  journal.entries.unshift({
     id,
     timestamp: ts,
     type: entry.type || "INFO",
@@ -1415,8 +1519,8 @@ function pushJournalEntry(state, entry) {
     body: entry.body || "",
   });
 
-  if (state.journal.entries.length > 200) {
-    state.journal.entries.length = 200;
+  if (journal.entries.length > 200) {
+    journal.entries.length = 200;
   }
 }
 
@@ -1477,6 +1581,40 @@ function ensureLifecycleStatus(state) {
   }
 
   return state.lifecycleStatus;
+}
+
+function ensureJournalState(state) {
+  if (!state.journal || typeof state.journal !== "object") {
+    state.journal = { entries: [...initialJournal.entries] };
+    return state.journal;
+  }
+  if (Array.isArray(state.journal)) {
+    state.journal = { entries: [...state.journal] };
+    return state.journal;
+  }
+  if (!Array.isArray(state.journal.entries)) {
+    state.journal.entries = [];
+  }
+  return state.journal;
+}
+
+function reconcileImpossibleFarewellState(state, now = nowMs()) {
+  const status = String(state?.lifecycleStatus || "").toUpperCase();
+  if (status !== DOG_LIFECYCLE_STATUS.FAREWELL) return;
+
+  const adoptedAt = parseAdoptedAt(state?.adoptedAt);
+  if (!adoptedAt) return;
+
+  const age = calculateDogAge(adoptedAt, now);
+  if (!age || Number(age.days || 0) >= LONG_LIFE_FAREWELL_AGE_DAYS) return;
+
+  const legacy = ensureLegacyJourneyState(state);
+  state.lifecycleStatus = DOG_LIFECYCLE_STATUS.ACTIVE;
+  legacy.farewellLetterAt = null;
+  legacy.rainbowBridgeReadyAt = null;
+  legacy.ghostDogUnlocked = false;
+  legacy.ghostPlayBowPending = false;
+  legacy.ghostPlayBowAt = null;
 }
 
 function ensureMemoryState(state) {
@@ -2084,6 +2222,17 @@ function getStatDecayHoursSinceTimestamp({
   return Math.min(MAX_DECAY_HOURS, activeHoursRaw) * decayMultiplier;
 }
 
+function softenOfflineDecayHours(hours) {
+  const total = Math.max(0, Number(hours || 0));
+  if (!total) return 0;
+
+  const firstWindow = Math.min(total, 2);
+  const workdayWindow = Math.min(Math.max(total - 2, 0), 6) * 0.58;
+  const longAbsenceWindow = Math.max(total - 8, 0) * 0.82;
+
+  return firstWindow + workdayWindow + longAbsenceWindow;
+}
+
 function createDecayRuleContext(state, now) {
   normalizeStatsState(state);
   ensurePersonalityState(state);
@@ -2106,7 +2255,10 @@ function createDecayRuleContext(state, now) {
   const decayMultiplier = vacation.enabled
     ? clamp(Number(vacation.multiplier) || 1, 0, 1)
     : 1;
-  const effectiveHours = diffHours * decayMultiplier;
+  const skillMods = getSkillTreeModifiersFromDogState(state);
+  const effectiveHours =
+    softenOfflineDecayHours(diffHours * decayMultiplier) *
+    Number(skillMods.offlineDecayMultiplier || 1);
   const hungerEffectiveHours = getStatDecayHoursSinceTimestamp({
     lastUpdatedAt,
     now,
@@ -2114,10 +2266,12 @@ function createDecayRuleContext(state, now) {
     graceHours: HUNGER_FULLNESS_BUFFER_HOURS,
     decayMultiplier,
   });
+  const effectiveHungerHours =
+    softenOfflineDecayHours(hungerEffectiveHours) *
+    Number(skillMods.offlineDecayMultiplier || 1);
 
   const careerHungerMultiplier =
     state.career.perks?.hungerDecayMultiplier || 1.0;
-  const skillMods = getSkillTreeModifiersFromDogState(state);
   const profile =
     state?.personalityProfile && typeof state.personalityProfile === "object"
       ? state.personalityProfile
@@ -2166,12 +2320,18 @@ function createDecayRuleContext(state, now) {
     idleish,
     multipliers: {
       hunger: careerHungerMultiplier * (skillMods.hungerDecayMultiplier || 1),
+      thirst: skillMods.thirstDecayMultiplier || 1,
       happiness:
         (skillMods.happinessDecayMultiplier || 1) *
         (hasTemperamentTag(state, "SWEET") ? 0.85 : 1) *
         (1 + separationAnxiety * 0.008),
       cleanliness: skillMods.cleanlinessDecayMultiplier || 1,
       idleEnergy: skillMods.idleEnergyDecayMultiplier || 1,
+      potty:
+        (skillMods.pottyGainMultiplier || 1) *
+        (skillMods.offlinePottyGainMultiplier || 1),
+      severeNeglectHealth:
+        skillMods.severeNeglectHealthDecayMultiplier || 1,
     },
     instinctEngine: {
       separationAnxiety,
@@ -2181,7 +2341,7 @@ function createDecayRuleContext(state, now) {
     },
     stageMultipliers: {},
     effectiveHoursByStat: {
-      hunger: hungerEffectiveHours,
+      hunger: effectiveHungerHours,
     },
     decayByStat: {},
     energyRecoveryGain: 0,
@@ -2219,6 +2379,9 @@ function applyEnvironmentModifiersStage(ctx) {
 function applyCompoundingStage(ctx) {
   if (Number.isFinite(ctx.decayByStat.hunger)) {
     ctx.decayByStat.hunger *= ctx.multipliers.hunger;
+  }
+  if (Number.isFinite(ctx.decayByStat.thirst)) {
+    ctx.decayByStat.thirst *= ctx.multipliers.thirst;
   }
   if (Number.isFinite(ctx.decayByStat.happiness)) {
     ctx.decayByStat.happiness *= ctx.multipliers.happiness;
@@ -2337,7 +2500,11 @@ function evaluateThresholdsStage(ctx) {
     const tierMultiplier = Number(effects?.pottyGainMultiplier || 1) || 1;
     const trainingMultiplier = getPottyTrainingMultiplier(ctx.state);
     const asleepMultiplier = ctx.state.isAsleep ? 0.75 : 1;
-    const perHour = POTTY_FILL_PER_HOUR * tierMultiplier * trainingMultiplier;
+    const perHour =
+      POTTY_FILL_PER_HOUR *
+      tierMultiplier *
+      trainingMultiplier *
+      Number(ctx.multipliers.potty || 1);
     let pottyNeed =
       Number(ctx.state.pottyLevel || 0) +
       perHour * ctx.effectiveHours * asleepMultiplier;
@@ -2354,11 +2521,12 @@ function evaluateThresholdsStage(ctx) {
 
   const severeNeglectHours = getSevereNeglectHours(ctx);
   if (severeNeglectHours > 0) {
-    ctx.state.stats.health = clamp(
+    ctx.state.stats.health = clampHealthForState(
+      ctx.state,
       Number(ctx.state.stats.health || 0) -
-        severeNeglectHours * OFFLINE_SEVERE_NEGLECT_HEALTH_DECAY_PER_HOUR,
-      0,
-      100
+        severeNeglectHours *
+          OFFLINE_SEVERE_NEGLECT_HEALTH_DECAY_PER_HOUR *
+          Number(ctx.multipliers.severeNeglectHealth || 1)
     );
   }
 
@@ -2633,9 +2801,26 @@ function maybeSampleMood(state, now = nowMs(), reason = "TICK") {
   state.mood.lastSampleAt = now;
 }
 
+function getDogLevelFromXp(totalXp = 0) {
+  const xp = Math.max(0, Math.floor(Number(totalXp) || 0));
+  let level = 1;
+
+  while (
+    xp >=
+    xpRequiredForLevel(level + 1, {
+      baseThreshold: LEVEL_XP_BASE_THRESHOLD,
+      thresholdStep: LEVEL_XP_STEP,
+    })
+  ) {
+    level += 1;
+  }
+
+  return level;
+}
+
 function applyXp(state, amount = 10) {
   state.xp += amount;
-  const targetLevel = 1 + Math.floor(state.xp / LEVEL_XP_STEP);
+  const targetLevel = getDogLevelFromXp(state.xp);
   if (targetLevel > state.level) {
     state.level = targetLevel;
     pushJournalEntry(state, {
@@ -2651,7 +2836,7 @@ function applyXpDelta(state, amount = 0) {
   const delta = Number(amount) || 0;
   if (!delta) return;
   state.xp = Math.max(0, state.xp + delta);
-  const targetLevel = Math.max(1, 1 + Math.floor(state.xp / LEVEL_XP_STEP));
+  const targetLevel = getDogLevelFromXp(state.xp);
   state.level = targetLevel;
 }
 
@@ -2924,6 +3109,7 @@ function syncLifecycleState(state, now = nowMs()) {
     !milestones.pending &&
     milestones.lastCelebratedStage !== nextStage
   ) {
+    const transitionCopy = getLifeStageTransitionCopy(nextStage, previousStage);
     milestones.pending = {
       fromStage: previousStage,
       toStage: nextStage,
@@ -2935,7 +3121,9 @@ function syncLifecycleState(state, now = nowMs()) {
       type: "GROWTH",
       moodTag: "PROUD",
       summary: `Grew into a ${getLifeStageLabel(nextStage)}.`,
-      body: "Look at me now—taller, faster, and ready for new adventures together.",
+      body:
+        transitionCopy?.journalBody ||
+        "Look at me now—taller, faster, and ready for new adventures together.",
       timestamp: now,
     });
   }
@@ -3163,6 +3351,24 @@ function ensureObedienceUnlockState(state) {
   return o;
 }
 
+function getMasteredObedienceCommandIds(state) {
+  const mastered = new Set();
+  const skillState =
+    state?.skills?.obedience && typeof state.skills.obedience === "object"
+      ? state.skills.obedience
+      : {};
+
+  OBEDIENCE_COMMANDS.forEach((command) => {
+    const id = String(command?.id || "");
+    if (!id) return;
+    if (getObedienceSkillMasteryPct(skillState[id]) >= 100) {
+      mastered.add(id);
+    }
+  });
+
+  return mastered;
+}
+
 function evaluateObedienceUnlocks(state, now = nowMs()) {
   const training = ensureTrainingState(state);
   const unlocks = ensureObedienceUnlockState(state);
@@ -3172,32 +3378,70 @@ function evaluateObedienceUnlocks(state, now = nowMs()) {
   const level = Math.max(1, Number(state.level || 1));
   const bond = clamp(Number(state.bond?.value || 0), 0, 100);
   const streak = Math.max(0, Number(state.streak?.currentStreakDays || 0));
+  const stage = String(
+    state?.lifeStage?.stage || DEFAULT_LIFE_STAGE.stage
+  ).toUpperCase();
+  const masteredIds = getMasteredObedienceCommandIds(state);
+  const activeLearningLimit = getObedienceActiveLearningLimit({
+    level,
+    stage,
+    pottyComplete,
+    masteredCount: masteredIds.size,
+  });
 
   const context = { level, bond, streak, pottyComplete };
+  let reservedLearningSlots =
+    unlocks.unlockedIds.filter((id) => !masteredIds.has(id)).length;
 
-  OBEDIENCE_COMMANDS.forEach((command) => {
-    if (!command?.id) return;
+  Object.keys(unlocks.unlockableAtById).forEach((id) => {
+    if (unlocks.unlockedIds.includes(id)) {
+      delete unlocks.unlockableAtById[id];
+      return;
+    }
+    if (masteredIds.has(id)) {
+      delete unlocks.unlockableAtById[id];
+      return;
+    }
+    const command = getObedienceCommand(id);
+    if (!commandRequirementsMet(context, command)) {
+      delete unlocks.unlockableAtById[id];
+      return;
+    }
+    reservedLearningSlots += 1;
+  });
+
+  for (const command of OBEDIENCE_COMMANDS) {
+    if (!command?.id) continue;
     const id = String(command.id);
-    if (unlocks.unlockedIds.includes(id)) return;
+    const isUnlocked = unlocks.unlockedIds.includes(id);
+    const startedAt = Number(unlocks.unlockableAtById[id] || 0);
+    if (isUnlocked) {
+      if (startedAt) delete unlocks.unlockableAtById[id];
+      continue;
+    }
 
     const eligible = commandRequirementsMet(context, command);
     if (!eligible) {
-      if (unlocks.unlockableAtById[id]) {
+      if (startedAt) {
         delete unlocks.unlockableAtById[id];
+        reservedLearningSlots = Math.max(0, reservedLearningSlots - 1);
       }
-      return;
+      continue;
     }
 
     const delayMinutes = Number(command.unlockDelayMinutes || 0);
     const delayMs = Math.max(0, Math.round(delayMinutes * 60 * 1000));
-    const startedAt = Number(unlocks.unlockableAtById[id] || 0);
 
-    if (delayMs <= 0) {
+    if (!startedAt && reservedLearningSlots >= activeLearningLimit) {
+      continue;
+    }
+
+    if (!startedAt && delayMs <= 0) {
       unlocks.unlockedIds.push(id);
       unlocks.unlockedAtById[id] = now;
       unlocks.lastUnlockedId = id;
       unlocks.lastUnlockedAt = now;
-      if (unlocks.unlockableAtById[id]) delete unlocks.unlockableAtById[id];
+      reservedLearningSlots += masteredIds.has(id) ? 0 : 1;
 
       pushJournalEntry(state, {
         type: "TRAINING",
@@ -3206,12 +3450,13 @@ function evaluateObedienceUnlocks(state, now = nowMs()) {
         body: `New command ready: "${command.label}". Time to practice!`,
         timestamp: now,
       });
-      return;
+      continue;
     }
 
     if (!startedAt) {
       unlocks.unlockableAtById[id] = now;
-      return;
+      reservedLearningSlots += 1;
+      continue;
     }
 
     if (now - startedAt >= delayMs) {
@@ -3219,7 +3464,7 @@ function evaluateObedienceUnlocks(state, now = nowMs()) {
       unlocks.unlockedAtById[id] = now;
       unlocks.lastUnlockedId = id;
       unlocks.lastUnlockedAt = now;
-      if (unlocks.unlockableAtById[id]) delete unlocks.unlockableAtById[id];
+      delete unlocks.unlockableAtById[id];
 
       pushJournalEntry(state, {
         type: "TRAINING",
@@ -3229,15 +3474,18 @@ function evaluateObedienceUnlocks(state, now = nowMs()) {
         timestamp: now,
       });
     }
-  });
+  }
 }
 
 function recordPuppyPottySuccess(state, now = nowMs()) {
+  const stage = String(
+    state?.lifeStage?.stage || DEFAULT_LIFE_STAGE.stage
+  ).toUpperCase();
+  const isPuppy = stage === LIFE_STAGES.PUPPY;
+
   const training = ensureTrainingState(state);
   const potty = training.potty;
   if (!potty || potty.completedAt) return;
-  const stage = state.lifeStage?.stage || DEFAULT_LIFE_STAGE.stage;
-  if (stage !== LIFE_STAGES.PUPPY) return;
 
   potty.successCount = Math.min(potty.successCount + 1, potty.goal);
 
@@ -3247,8 +3495,10 @@ function recordPuppyPottySuccess(state, now = nowMs()) {
     pushJournalEntry(state, {
       type: "TRAINING",
       moodTag: "PROUD",
-      summary: "Potty training complete",
-      body: "Your puppy now knows how to signal when nature calls. Accidents will slow way down!",
+      summary: isPuppy ? "Potty training complete" : "House training complete",
+      body: isPuppy
+        ? "Your puppy now knows how to signal when nature calls. Accidents will slow way down!"
+        : "House training is finally locked in. Tricks are now available again.",
       timestamp: now,
     });
   }
@@ -3480,19 +3730,23 @@ function spawnDigHoleSurprise(state, now) {
   });
 }
 
-function spawnStolenButtonSurprise(state, now) {
+function spawnStolenButtonSurprise(state, now, options = {}) {
   const surprise = ensureSurpriseState(state);
   const stolenAction =
     STOLENABLE_ACTION_KEYS[
       Math.floor(Math.random() * STOLENABLE_ACTION_KEYS.length)
     ] || "train";
+  const message =
+    typeof options?.message === "string" && options.message.trim()
+      ? options.message.trim()
+      : "Your pup stole one control. Play fetch to win it back.";
 
   surprise.active = {
     id: `surprise-${now}-stolen`,
     type: SESSION_SURPRISE_TYPES.STOLEN_BUTTON,
     startedAt: now,
     title: "Button Heist",
-    message: "Your pup stole one control. Play fetch to win it back.",
+    message,
     stolenAction,
     holeId: null,
   };
@@ -3548,9 +3802,12 @@ function spawnButtonHeistSurprise(state, now = nowMs(), options = {}) {
     ] ||
     "train";
 
-  spawnStolenButtonSurprise(state, now);
+  spawnStolenButtonSurprise(state, now, options);
   if (surprise.active) {
     surprise.active.stolenAction = chosen;
+    if (typeof options?.message === "string" && options.message.trim()) {
+      surprise.active.message = options.message.trim();
+    }
   }
   return surprise.active;
 }
@@ -3577,7 +3834,7 @@ function maybeTriggerAiDreamCue(state, now = nowMs()) {
   const energy = Number(state.stats?.energy || 0);
   const cue = String(state.emotionCue || "").toLowerCase();
   const isSleepyCue = cue === "sleepy" || cue === "tired";
-  if (!isSleepyCue || energy > 5) return false;
+  if (!isSleepyCue || energy > 0) return false;
 
   const lastDreamWoofAt = Number(state.memory?.lastDreamWoofAt || 0);
   if (lastDreamWoofAt && now - lastDreamWoofAt < 60_000) return false;
@@ -3705,9 +3962,7 @@ const dogSlice = createSlice({
       const now = nowMs();
 
       const adoptedAt =
-        parseAdoptedAt(payload.adoptedAt) ||
-        parseAdoptedAt(state.adoptedAt) ||
-        now;
+        parseAdoptedAt(payload.adoptedAt) ?? parseAdoptedAt(state.adoptedAt);
 
       const merged = deepMergeDefined(initialState, state, payload);
       merged.adoptedAt = adoptedAt;
@@ -3735,6 +3990,7 @@ const dogSlice = createSlice({
         : null;
 
       ensureTrainingState(merged);
+      ensureJournalState(merged);
       ensureMemoryState(merged);
       ensurePollState(merged);
       ensureAnimationState(merged);
@@ -3751,6 +4007,15 @@ const dogSlice = createSlice({
       ensureDangerState(merged);
       ensureLegacyJourneyState(merged);
       ensureSurpriseState(merged);
+
+      const ageNow = getVacationAdjustedNow(merged, now);
+      const age = calculateDogAge(adoptedAt, ageNow);
+      merged.lifeStage = {
+        stage: age?.stage || DEFAULT_LIFE_STAGE.stage,
+        label: age?.label || DEFAULT_LIFE_STAGE.label,
+        days: Number.isFinite(Number(age?.days)) ? Number(age.days) : 0,
+      };
+      reconcileImpossibleFarewellState(merged, now);
 
       applyOfflineCatchUp(merged, now);
       normalizeStatsState(merged);
@@ -3912,6 +4177,8 @@ const dogSlice = createSlice({
 
     quickFeed(state, { payload }) {
       const now = payload?.now ?? nowMs();
+      normalizeStatsState(state);
+      ensureMemoryState(state);
       applyDecay(state, now);
       wakeForInteraction(state);
 
@@ -4177,12 +4444,11 @@ const dogSlice = createSlice({
       }
 
       if (outcome === "PET_DOZE") {
-        state.isAsleep = true;
         state.stats.energy = clamp(state.stats.energy + 10, 0, 100);
         state.stats.happiness = clamp(state.stats.happiness + 2, 0, 100);
         applyBondGain(state, 0.85 * sweetBondMultiplier, now);
         state.lastAction = resolveActionOverride(payload, "pet_doze_off");
-        applyFsmAction(state, "rest", now);
+        applyFsmAction(state, "pet", now);
         applyPersonalityShift(state, {
           now,
           source: "PET",
@@ -4454,7 +4720,10 @@ const dogSlice = createSlice({
       const perks = getPersonalityPerks(state);
 
       state.stats.cleanliness = clamp(state.stats.cleanliness + 30, 0, 100);
-      state.stats.health = clamp(Number(state.stats.health || 0) + 5, 0, 100);
+      state.stats.health = clampHealthForState(
+        state,
+        Number(state.stats.health || 0) + 5
+      );
       state.stats.happiness = clamp(
         state.stats.happiness -
           5 * Math.max(0.6, perks.bathHappinessPenaltyMultiplier),
@@ -4490,7 +4759,8 @@ const dogSlice = createSlice({
       const now = payload?.now ?? nowMs();
       applyDecay(state, now);
       wakeForInteraction(state);
-      if (Math.random() <= 0.18) {
+      const forceSuccess = payload?.forceSuccess === true;
+      if (!forceSuccess && Math.random() <= 0.18) {
         state.stats.energy = clamp(state.stats.energy - 1, 0, 100);
         state.stats.happiness = clamp(state.stats.happiness + 1, 0, 100);
         state.memory.lastSeenAt = now;
@@ -4704,7 +4974,10 @@ const dogSlice = createSlice({
         Number(state.stats.cleanliness || 100) <= 15 ||
         Number(state.stats.hunger || 0) >= 85;
       if (severeNeglect && Number(state.memory?.neglectStrikes || 0) >= 3) {
-        state.stats.health = clamp(Number(state.stats.health || 0) - 3, 0, 100);
+        state.stats.health = clampHealthForState(
+          state,
+          Number(state.stats.health || 0) - 3
+        );
       }
 
       // Apartment hard mode: bowls left on the low table get stolen fast.
@@ -4780,6 +5053,7 @@ const dogSlice = createSlice({
       const spawned = spawnButtonHeistSurprise(state, now, {
         minGapMs: 60_000,
         stolenAction: payload?.stolenAction || "play",
+        message: payload?.message || "",
       });
       if (!spawned) return;
       state.memory.lastSeenAt = now;
@@ -4885,6 +5159,12 @@ const dogSlice = createSlice({
 
     claimDailyReward(state, { payload }) {
       const now = typeof payload?.now === "number" ? payload.now : nowMs();
+      const lastClaimAt = Number(state.lastRewardClaimedAt || 0);
+      if (lastClaimAt > 0 && getIsoDate(lastClaimAt) === getIsoDate(now)) {
+        return;
+      }
+
+      normalizeStatsState(state);
       const day = Number(payload?.day ?? state.consecutiveDays ?? 0);
       state.lastRewardClaimedAt = now;
       state.consecutiveDays = Number.isFinite(day)
@@ -4892,14 +5172,17 @@ const dogSlice = createSlice({
         : 0;
 
       const reward = payload?.reward || null;
-      if (reward?.type === "ENERGY") {
+      const rewardType = String(reward?.type || "")
+        .trim()
+        .toUpperCase();
+      if (rewardType === "ENERGY") {
         state.stats.energy = clamp(
           Number(state.stats.energy || 0) + Number(reward.value || 0),
           0,
           100
         );
       }
-      if (reward?.type === "COINS") {
+      if (rewardType === "COINS") {
         state.coins = Math.max(
           0,
           Math.round(Number(state.coins || 0) + Number(reward.value || 0))
@@ -5263,7 +5546,6 @@ const dogSlice = createSlice({
       if (trainingOutcome === "DOZE_OFF") {
         const sweetBondMultiplier = hasTemperamentTag(state, "SWEET") ? 1.2 : 1;
 
-        state.isAsleep = true;
         state.stats.energy = clamp(state.stats.energy + 8, 0, 100);
         state.stats.happiness = clamp(state.stats.happiness + 1, 0, 100);
         state.stats.thirst = clamp(state.stats.thirst + 2, 0, 100);
@@ -5322,6 +5604,10 @@ const dogSlice = createSlice({
         state.skills,
         adjustedXp
       );
+      const masteryAfterTraining = Math.max(
+        commandMasteryPct,
+        Number(skillProgress?.masteryAfter || 0)
+      );
       state.memory.lastTrainedAt = now;
       state.memory.lastTrainedCommandId = commandId;
       state.memory.lastSeenAt = now;
@@ -5341,9 +5627,13 @@ const dogSlice = createSlice({
       applyFsmAction(state, "train", now);
 
       const sweetBondMultiplier = hasTemperamentTag(state, "SWEET") ? 1.2 : 1;
+      const masteryBondMultiplier = masteryAfterTraining >= 100 ? 1.12 : 1;
+      const masteryEnergyMultiplier = masteryAfterTraining >= 71 ? 0.9 : 1;
       applyBondGain(
         state,
-        (trainingOutcome === "PERFECT" ? 1.35 : 1.0) * sweetBondMultiplier,
+        (trainingOutcome === "PERFECT" ? 1.35 : 1.0) *
+          sweetBondMultiplier *
+          masteryBondMultiplier,
         now
       );
       state.stats.thirst = clamp(
@@ -5361,7 +5651,14 @@ const dogSlice = createSlice({
         100
       );
       state.stats.energy = clamp(
-        state.stats.energy - (trainingOutcome === "PERFECT" ? 7 : 5),
+        state.stats.energy -
+          Math.max(
+            1,
+            Math.round(
+              (trainingOutcome === "PERFECT" ? 7 : 5) *
+                masteryEnergyMultiplier
+            )
+          ),
         0,
         100
       );
@@ -5895,16 +6192,34 @@ export const selectDogMoodLabel = (state) => {
 
 export const selectDogAgeInfo = (state) => {
   const adoptedAt = parseAdoptedAt(state.dog?.adoptedAt);
-  const age = calculateDogAge(adoptedAt || 0);
-  return (
-    age || {
-      days: state.dog?.lifeStage?.days || 0,
-      stage: state.dog?.lifeStage?.stage || LIFE_STAGES.PUPPY,
-      label:
-        state.dog?.lifeStage?.label ||
-        getLifeStageLabel(state.dog?.lifeStage?.stage),
-    }
-  );
+  const age = getDogAgeProgress(adoptedAt || 0);
+  const fallbackStage = state.dog?.lifeStage?.stage || LIFE_STAGES.PUPPY;
+  const fallbackDays = state.dog?.lifeStage?.days || 0;
+  if (age) {
+    return {
+      ...age,
+      ageBucketLabel: getAgeBucketLabel(age.days),
+      progressLabel: getLifeStageProgressLabel(age),
+      ui: getLifeStageUi(age.stage),
+    };
+  }
+  const stageUi = getLifeStageUi(fallbackStage);
+  return {
+      days: fallbackDays,
+      ageInGameDays: fallbackDays,
+      stage: fallbackStage,
+      stageId: fallbackStage,
+      label: state.dog?.lifeStage?.label || getLifeStageLabel(fallbackStage),
+      stageLabel:
+        state.dog?.lifeStage?.label || getLifeStageLabel(fallbackStage),
+      stageProgress: 0,
+      stageProgressPct: 0,
+      daysUntilNextStage: null,
+      nextStage: null,
+      ageBucketLabel: getAgeBucketLabel(fallbackDays),
+      progressLabel: getLifeStageProgressLabel({ stage: fallbackStage }),
+      ui: stageUi,
+    };
 };
 
 export const selectDogCleanlinessMeta = (state) => {

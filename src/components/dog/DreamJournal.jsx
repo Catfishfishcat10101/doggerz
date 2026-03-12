@@ -21,19 +21,19 @@ function getKindTone(kind) {
   const k = String(kind || "").toLowerCase();
   if (k === "lucid") {
     return {
-      chip: "border-emerald-400/35 bg-emerald-500/10 text-emerald-200",
-      card: "border-emerald-400/20",
+      chip: "dz-dog-chip dz-dog-chip--emerald",
+      card: "border-emerald-400/25",
     };
   }
   if (k === "nightmare") {
     return {
-      chip: "border-fuchsia-400/35 bg-fuchsia-500/10 text-fuchsia-200",
-      card: "border-fuchsia-400/20",
+      chip: "dz-dog-chip dz-dog-chip--fuchsia",
+      card: "border-fuchsia-400/25",
     };
   }
   return {
-    chip: "border-sky-400/35 bg-sky-500/10 text-sky-200",
-    card: "border-sky-400/20",
+    chip: "dz-dog-chip dz-dog-chip--sky",
+    card: "border-sky-400/25",
   };
 }
 
@@ -69,17 +69,10 @@ export default function DreamJournal({ dreams = [] }) {
         const key = dream?.id || `${Number(dream?.timestamp || 0)}-${idx}`;
 
         return (
-          <article
-            key={key}
-            className={`rounded-2xl border bg-black/30 p-4 ${tone.card}`}
-          >
+          <article key={key} className={`dz-dog-panel p-4 ${tone.card}`}>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h3 className="text-sm font-extrabold text-zinc-100">{title}</h3>
-              <span
-                className={`rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.2em] ${tone.chip}`}
-              >
-                {kind}
-              </span>
+              <span className={tone.chip}>{kind}</span>
             </div>
 
             <p className="mt-2 text-sm text-zinc-300">{summary}</p>
@@ -87,10 +80,7 @@ export default function DreamJournal({ dreams = [] }) {
             {motifs.length ? (
               <div className="mt-3 flex flex-wrap gap-1">
                 {motifs.map((motif) => (
-                  <span
-                    key={motif}
-                    className="rounded-full border border-white/10 bg-black/25 px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] text-zinc-300"
-                  >
+                  <span key={motif} className="dz-dog-tag">
                     {motif}
                   </span>
                 ))}
@@ -100,12 +90,12 @@ export default function DreamJournal({ dreams = [] }) {
             {sourceMemory || emotion ? (
               <div className="mt-3 flex flex-wrap gap-1">
                 {sourceMemory ? (
-                  <span className="rounded-full border border-white/10 bg-black/25 px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] text-zinc-300">
+                  <span className="dz-dog-tag">
                     From {sourceMemory}
                   </span>
                 ) : null}
                 {emotion ? (
-                  <span className="rounded-full border border-white/10 bg-black/25 px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] text-zinc-300">
+                  <span className="dz-dog-tag">
                     {emotion}
                   </span>
                 ) : null}

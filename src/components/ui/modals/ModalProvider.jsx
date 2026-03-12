@@ -1,7 +1,6 @@
 import * as React from "react";
 
 import { ModalContext } from "@/components/ui/modals/ModalContext.js";
-import { renderModal } from "@/components/ui/modals/modalRegistry.jsx";
 
 export function ModalProvider({ children }) {
   const [stack, setStack] = React.useState([]);
@@ -72,7 +71,6 @@ export function ModalProvider({ children }) {
   return (
     <ModalContext.Provider value={api}>
       {children}
-      {active ? renderModal(active, { closeModal }) : null}
     </ModalContext.Provider>
   );
 }

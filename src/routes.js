@@ -43,7 +43,7 @@ export const routes = Object.freeze([
   {
     path: PATHS.MENU,
     name: "Menu",
-    meta: { title: "Menu", description: "Settings, help, and account links." },
+    meta: { title: "Menu", description: "Utilities, support, and account." },
   },
   {
     path: PATHS.SKILL_TREE,
@@ -157,19 +157,12 @@ export const MENU_DESTINATIONS = Object.freeze([
     detail: "Preferences and care tuning",
   },
   { path: PATHS.HELP, label: "Help", detail: "Support and troubleshooting" },
-  { path: PATHS.ABOUT, label: "About", detail: "What Doggerz is building" },
-  { path: PATHS.CONTACT, label: "Contact", detail: "Reach the Doggerz team" },
-  { path: PATHS.PRIVACY, label: "Privacy", detail: "How data is handled" },
-  { path: PATHS.LEGAL, label: "Legal", detail: "Terms and policies" },
-  {
-    path: PATHS.DEVELOPERS,
-    label: "Developers",
-    detail: "Dev notes and integration",
-  },
-  { path: PATHS.ADOPT, label: "Adopt", detail: "Start with a new pup" },
 ]);
 
 export const PRIMARY_NAV = PRIMARY_TABS;
+export const PRIMARY_TAB_PATH_SET = new Set(
+  PRIMARY_TABS.map((item) => item.path)
+);
 
 /** Fast lookups by path. */
 export const ROUTE_BY_PATH = Object.freeze(
@@ -181,6 +174,20 @@ export const ROUTE_BY_PATH = Object.freeze(
 
 export function getRouteMeta(pathname) {
   return ROUTE_BY_PATH[pathname]?.meta || null;
+}
+
+export function getPrimaryTabForPath(pathname) {
+  const current = String(pathname || "").trim() || PATHS.HOME;
+  return (
+    PRIMARY_TABS.find((item) => {
+      if (item.path === PATHS.GAME) return current === PATHS.GAME;
+      return current === item.path || current.startsWith(`${item.path}/`);
+    }) || null
+  );
+}
+
+export function isPrimaryTabPath(pathname) {
+  return Boolean(getPrimaryTabForPath(pathname));
 }
 
 export default routes;

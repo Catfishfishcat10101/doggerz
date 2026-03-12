@@ -1,9 +1,10 @@
 // src/lib/firebaseClient.js
 // @ts-check
 
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { getDoc, setDoc } from "firebase/firestore";
 import { auth, db, firebaseReady, assertFirebaseReady } from "@/firebase.js";
 import { signInAnonymously, onAuthStateChanged } from "firebase/auth";
+import { dogMainDoc } from "@/firebase/paths.js";
 
 /**
  * Back-compat wrapper around the canonical firebase client in src/firebase.js
@@ -24,7 +25,7 @@ export async function ensureAnonSignIn() {
     );
     return null;
   }
-  if (auth.currentUser) return auth.currentUser;
+  if (auth?.currentUser) return auth.currentUser;
 
   if (!anonSignInPromise) {
     anonSignInPromise = signInAnonymously(auth)
@@ -38,7 +39,7 @@ export async function ensureAnonSignIn() {
   }
 
   const credential = await anonSignInPromise;
-  return auth.currentUser || credential?.user || null;
+  return auth?.currentUser || credential?.user || null;
 }
 
 /**
@@ -62,7 +63,8 @@ export async function loadDogForUser(uid) {
   const targetUid = uid || user?.uid;
   if (!targetUid) return null;
 
-  const ref = doc(db, "users", targetUid, "dog", "main");
+  const ref = dogMainDoc(targetUid);
+  if (!ref) return null;
   const snap = await getDoc(ref);
   return snap.exists() ? snap.data() : null;
 }
@@ -78,6 +80,7 @@ export async function saveDogForUser(uid, dogState) {
   if (!targetUid) return;
   if (!dogState || typeof dogState !== "object") return;
 
-  const ref = doc(db, "users", targetUid, "dog", "main");
+  const ref = dogMainDoc(targetUid);
+  if (!ref) return;
   await setDoc(ref, dogState, { merge: true });
 }

@@ -4,29 +4,26 @@ import groovy.json.JsonSlurper
 
 apply plugin: 'com.android.application'
 
+// --- VERSIONING LOGIC ---
 def versionFile = file("../../version.json")
 def versionData = null
 if (versionFile.exists()) {
     versionData = new JsonSlurper().parseText(versionFile.text)
 }
-def versionNameFallback = (versionData?.versionName ?: "1.0.0").toString()
-def versionCodeFallback = (versionData?.versionCode ?: 1).toString()
+def versionNameFallback = (versionData?.versionName ?: "2.1.2").toString()
+def versionCodeFallback = (versionData?.versionCode ?: 212).toString()
 
-def versionCodeRaw =
-        System.getenv('DOGGERZ_VERSION_CODE')
-                ?: project.findProperty('DOGGERZ_VERSION_CODE')
-                ?: versionCodeFallback
+def versionCodeRaw = System.getenv('DOGGERZ_VERSION_CODE') ?: project.findProperty('DOGGERZ_VERSION_CODE') ?: versionCodeFallback
+def versionNameRaw = System.getenv('DOGGERZ_VERSION_NAME') ?: project.findProperty('DOGGERZ_VERSION_NAME') ?: versionNameFallback
 
-def versionNameRaw =
-        System.getenv('DOGGERZ_VERSION_NAME')
-                ?: project.findProperty('DOGGERZ_VERSION_NAME')
-                ?: versionNameFallback
+def parsedVersionCode = (versionCodeRaw ?: "212").toString().trim().toInteger()
 
-def parsedVersionCode = (versionCodeRaw ?: "1").toString().trim().toInteger()
-if (parsedVersionCode <= 0) {
-    throw new GradleException("DOGGERZ_VERSION_CODE must be a positive integer. Got: ${parsedVersionCode}")
+// Solo-dev safety: Only throw error if we aren't in a local dev environment
+if (parsedVersionCode <= 2 && System.getenv('CI')) {
+    throw new GradleException("DOGGERZ_VERSION_CODE must be a positive integer for Release. Got: ${parsedVersionCode}")
 }
 
+// --- KEYSTORE LOGIC ---
 def keystoreProperties = new Properties()
 def keystorePropertiesFile = rootProject.file('keystore.properties')
 if (keystorePropertiesFile.exists()) {
@@ -39,10 +36,10 @@ android {
 
     defaultConfig {
         applicationId 'com.doggerz.app'
-        minSdkVersion rootProject.ext.minSdkVersion
+        minSdkVersion 24
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode parsedVersionCode
-        versionName versionNameRaw.toString()
+        versionName versionNameRaw
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
         aaptOptions {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
@@ -51,8 +48,8 @@ android {
 
     signingConfigs {
         release {
-            if (keystorePropertiesFile.exists()) {
-                storeFile file(keystoreProperties['storeFile'])
+            if (keystorePropertiesFile.exists() && keystoreProperties['storeFile']) {
+                storeFile rootProject.file(keystoreProperties['storeFile'])
                 storePassword keystoreProperties['storePassword']
                 keyAlias keystoreProperties['keyAlias']
                 keyPassword keystoreProperties['keyPassword']
@@ -64,7 +61,7 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            if (keystorePropertiesFile.exists()) {
+            if (keystorePropertiesFile.exists() && keystoreProperties['storeFile']) {
                 signingConfig signingConfigs.release
             }
         }
@@ -73,7 +70,12 @@ android {
 
 repositories {
     flatDir {
-        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+        // DEFENSIVE: Only look for the directory if it actually exists
+        if (file('../capacitor-cordova-android-plugins/src/main/libs').exists()) {
+            dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+        } else {
+            dirs 'libs'
+        }
     }
 }
 
@@ -83,19 +85,24 @@ dependencies {
     implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
     implementation project(':capacitor-android')
+
     testImplementation "junit:junit:$junitVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
-    implementation project(':capacitor-cordova-android-plugins')
+
+    // DEFENSIVE: Only implement the project if the directory exists
+    if (findProject(':capacitor-cordova-android-plugins') != null) {
+        implementation project(':capacitor-cordova-android-plugins')
+    }
 }
 
 apply from: 'capacitor.build.gradle'
 
 try {
     def servicesJSON = file('google-services.json')
-    if (servicesJSON.text) {
+    if (servicesJSON.exists()) {
         apply plugin: 'com.google.gms.google-services'
     }
 } catch (Exception e) {
-    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+    logger.info("Firebase not initialized: google-services.json missing.")
 }

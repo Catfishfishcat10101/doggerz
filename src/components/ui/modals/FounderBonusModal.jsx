@@ -3,6 +3,8 @@
 import { useState } from "react";
 
 import ModalSurface from "@/components/ui/modals/ModalSurface.jsx";
+import { useToast } from "@/state/toastContext.js";
+import { getRuntimeContextLabel } from "@/utils/runtimeContext.js";
 
 export default function FounderBonusModal({
   open = false,
@@ -11,6 +13,8 @@ export default function FounderBonusModal({
   onClose = null,
 }) {
   const [claiming, setClaiming] = useState(false);
+  const toast = useToast();
+  const runtimeLabel = getRuntimeContextLabel();
 
   if (!open) return null;
 
@@ -20,7 +24,15 @@ export default function FounderBonusModal({
     if (claiming || typeof onClaim !== "function") return;
     setClaiming(true);
     try {
-      await onClaim();
+      const ok = await onClaim();
+      if (ok) {
+        toast.success(`Founder bonus claimed (${runtimeLabel})`);
+      } else {
+        toast.error(`Founder bonus failed (${runtimeLabel})`);
+      }
+    } catch (error) {
+      console.error("[FounderBonusModal] Failed to claim founder bonus:", error);
+      toast.error(`Founder bonus failed (${runtimeLabel})`);
     } finally {
       setClaiming(false);
     }
@@ -61,7 +73,7 @@ export default function FounderBonusModal({
           type="button"
           onClick={handleClaim}
           disabled={claiming}
-          className="rounded-2xl bg-amber-300 px-4 py-3 text-sm font-black text-black transition hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-60"
+          className="dz-touch-button rounded-2xl bg-amber-300 px-4 py-3 text-sm font-black text-black transition disabled:cursor-not-allowed disabled:opacity-60"
         >
           {claiming ? "Claiming..." : "Claim Founder Bonus"}
         </button>
@@ -70,7 +82,7 @@ export default function FounderBonusModal({
           onClick={() => {
             if (typeof onClose === "function") onClose();
           }}
-          className="rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-white/10"
+          className="dz-touch-button rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-sm font-semibold text-zinc-200 transition"
         >
           Later
         </button>

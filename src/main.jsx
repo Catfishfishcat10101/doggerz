@@ -11,18 +11,48 @@ import "./index.css";
 import AppPreferencesEffects from "./components/system/AppPreferencesEffects.jsx";
 import AppGameEffects from "./components/system/AppGameEffects.jsx";
 import AppStorageHydrator from "./components/system/AppStorageHydrator.jsx";
+import AuthBootstrap from "./components/system/AuthBootstrap.jsx";
 import CheckInReminders from "./components/environment/CheckInReminders.jsx";
 import { ToastProvider } from "./components/system/ToastProvider.jsx";
 import ErrorBoundary from "./components/system/ErrorBoundary.jsx";
-import DogAIEngine from "./components/dog/DogAIEngine.jsx";
 import { queryClient } from "./lib/queryClient.js";
 import { selectDogRenderModel } from "./components/dog/redux/dogSelectors.js";
 
-import { initRuntimeLogging } from "./utils/runtimeLogging.js";
+import {
+  getCapturedErrors,
+  initRuntimeLogging,
+} from "./utils/runtimeLogging.js";
+import {
+  debugLog,
+  isDebugLoggingEnabled,
+  setDebugLoggingEnabled,
+} from "./utils/debugLogger.js";
 import { PupProvider } from "./components/dog/PupContext.jsx";
-import { initFirebase } from "./firebase.js";
-import { ensureAnonSignIn } from "./lib/firebaseClient.js";
 import { ModalProvider } from "./components/ui/modals/ModalProvider.jsx";
+import { initializeDoggerz } from "./bootstrap/doggerzController.js";
+
+function renderFatalBootError(error) {
+  if (typeof document === "undefined") return;
+
+  const root = document.getElementById("root");
+  if (!root) return;
+
+  const message =
+    error instanceof Error ? error.message : String(error || "Unknown error");
+  const stack =
+    error instanceof Error && error.stack ? error.stack : String(message);
+
+  root.innerHTML = `
+    <div style="min-height:100vh;display:grid;place-items:center;padding:24px;background:#090a0f;color:#e5e7eb;font-family:system-ui,sans-serif">
+      <div style="width:100%;max-width:720px;border:1px solid rgba(255,255,255,0.12);border-radius:24px;background:rgba(0,0,0,0.45);padding:24px;box-sizing:border-box">
+        <div style="font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:#86efac">Doggerz boot failure</div>
+        <h1 style="margin:12px 0 0;font-size:28px;line-height:1.1;color:#ecfccb">The app failed to start</h1>
+        <p style="margin:12px 0 0;color:rgba(229,231,235,0.8)">Doggerz hit a startup error before the main UI loaded.</p>
+        <pre style="margin:16px 0 0;padding:16px;border-radius:16px;background:rgba(255,255,255,0.05);overflow:auto;white-space:pre-wrap;word-break:break-word;color:#f4f4f5">${stack}</pre>
+      </div>
+    </div>
+  `;
+}
 
 // Simple fallback UI for ErrorBoundary
 function AppCrashFallback({ error }) {
@@ -90,22 +120,42 @@ function AppCrashFallback({ error }) {
 }
 
 // Runtime logging policy + last-resort capture (DEV verbose, PROD quiet).
-if (
-  import.meta.env.DEV ||
-  String(import.meta.env.VITE_ENABLE_RUNTIME_LOGGING || "false") === "true"
-) {
-  initRuntimeLogging({ mode: import.meta.env.PROD ? "prod" : "dev" });
+try {
+  if (
+    import.meta.env.DEV ||
+    String(import.meta.env.VITE_ENABLE_RUNTIME_LOGGING || "false") === "true"
+  ) {
+    initRuntimeLogging({ mode: import.meta.env.PROD ? "prod" : "dev" });
+  }
+} catch (error) {
+  renderFatalBootError(error);
+  throw error;
 }
 
-// Ensure Firebase app/auth/db are initialized before feature components mount.
-initFirebase();
-
-// Pre-warm anonymous auth so first Firestore call has request.auth available.
-ensureAnonSignIn().catch((err) => {
-  console.warn("[Doggerz] Startup anonymous sign-in skipped/failed:", err);
-});
-
 if (typeof window !== "undefined") {
+  window.__DOGGERZ_DEBUG__ = {
+    ...(window.__DOGGERZ_DEBUG__ || {}),
+    enabled: isDebugLoggingEnabled(),
+    enable() {
+      setDebugLoggingEnabled(true);
+      debugLog("Debug", "enabled from window helper");
+    },
+    disable() {
+      debugLog("Debug", "disabled from window helper");
+      setDebugLoggingEnabled(false);
+    },
+    status() {
+      return {
+        enabled: isDebugLoggingEnabled(),
+        capturedErrors: getCapturedErrors().length,
+      };
+    },
+    errors() {
+      return getCapturedErrors();
+    },
+  };
+  debugLog("Boot", "Debug helper ready", window.__DOGGERZ_DEBUG__.status());
+
   window.render_game_to_text = () => {
     const state = store?.getState?.();
     const renderModel = selectDogRenderModel(state || {});
@@ -153,26 +203,52 @@ if (typeof window !== "undefined") {
     });
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <Provider store={store}>
-        <ErrorBoundary fallback={AppCrashFallback}>
-          <AppStorageHydrator />
-          <AppPreferencesEffects />
-          <AppGameEffects />
-          <CheckInReminders />
-          <DogAIEngine />
-          <ToastProvider>
-            <PupProvider>
-              <ModalProvider>
-                <AppRouter />
-              </ModalProvider>
-            </PupProvider>
-          </ToastProvider>
-        </ErrorBoundary>
-      </Provider>
-    </QueryClientProvider>
-  </React.StrictMode>
-);
+function mountApp() {
+  const rootElement = document.getElementById("root");
+  if (!rootElement) {
+    throw new Error('Missing root element "#root"');
+  }
+
+  ReactDOM.createRoot(rootElement).render(
+    <React.StrictMode>
+      <QueryClientProvider client={queryClient}>
+        <Provider store={store}>
+          <ErrorBoundary fallback={AppCrashFallback}>
+            <AuthBootstrap />
+            <AppStorageHydrator />
+            <AppPreferencesEffects />
+            <AppGameEffects />
+            <CheckInReminders />
+            <ToastProvider>
+              <PupProvider>
+                <ModalProvider>
+                  <AppRouter />
+                </ModalProvider>
+              </PupProvider>
+            </ToastProvider>
+          </ErrorBoundary>
+        </Provider>
+      </QueryClientProvider>
+    </React.StrictMode>
+  );
+}
+
+async function bootstrapApp() {
+  const started = await initializeDoggerz({
+    startGameLoop: () => {
+      debugLog("Boot", "Doggerz controller finished; mounting React app");
+      mountApp();
+    },
+    onCriticalError: renderFatalBootError,
+  });
+
+  if (!started) {
+    debugLog("Boot", "Doggerz startup aborted before mount");
+  }
+}
+
+bootstrapApp().catch((error) => {
+  renderFatalBootError(error);
+  throw error;
+});
 // End of src/main.jsx

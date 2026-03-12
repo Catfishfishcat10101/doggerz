@@ -11,6 +11,10 @@ export default defineConfig({
     },
   },
   build: {
+    // Capacitor Android runs inside the system WebView, which can lag behind
+    // desktop evergreen browsers. Transpile below ES2020 so parse-time
+    // features like optional chaining do not blank-screen older phones.
+    target: "es2019",
     outDir: "dist",
     assetsDir: "assets",
     emptyOutDir: true,

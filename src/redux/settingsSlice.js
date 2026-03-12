@@ -78,6 +78,7 @@ function normalizeLoadedSettings(raw) {
   next.showCritters = next.showCritters !== false;
   next.roamIntensity = clamp(Number(next.roamIntensity ?? 1), 0, 1);
   next.showWeatherFx = next.showWeatherFx !== false;
+  next.usePreciseDayNightLocation = Boolean(next.usePreciseDayNightLocation);
   next.showBackgroundPhotos = next.showBackgroundPhotos !== false;
   next.showSceneVignette = next.showSceneVignette !== false;
   next.showSceneGrain = next.showSceneGrain !== false;
@@ -285,6 +286,7 @@ const DEFAULT_SETTINGS_STATE = {
   showCritters: true,
   roamIntensity: 1,
   showWeatherFx: true,
+  usePreciseDayNightLocation: false,
   showBackgroundPhotos: true,
   showSceneVignette: true,
   showSceneGrain: true,
@@ -812,6 +814,10 @@ const settingsSlice = createSlice({
       state.showWeatherFx = Boolean(action.payload);
       saveToStorage(state);
     },
+    setUsePreciseDayNightLocation(state, action) {
+      state.usePreciseDayNightLocation = Boolean(action.payload);
+      saveToStorage(state);
+    },
     setShowBackgroundPhotos(state, action) {
       state.showBackgroundPhotos = Boolean(action.payload);
       saveToStorage(state);
@@ -1033,6 +1039,7 @@ export const {
   setShowCritters,
   setRoamIntensity,
   setShowWeatherFx,
+  setUsePreciseDayNightLocation,
   setShowBackgroundPhotos,
   setShowSceneVignette,
   setShowSceneGrain,

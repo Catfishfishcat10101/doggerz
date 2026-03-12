@@ -37,6 +37,7 @@ export function renderModal(entry, { closeModal } = {}) {
         open
         lifecycleStatus={props.lifecycleStatus}
         dog={props.dog}
+        onClose={() => closeModal?.()}
       />
     );
   }

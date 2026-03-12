@@ -63,10 +63,11 @@ function isWebPlatform() {
   }
 }
 
-function useUserGestureGate() {
+function useUserGestureGate(enabled = true) {
   const [ready, setReady] = React.useState(false);
 
   React.useEffect(() => {
+    if (!enabled) return undefined;
     if (ready) return;
     const unlock = () => setReady(true);
     window.addEventListener("pointerdown", unlock, {
@@ -83,7 +84,7 @@ function useUserGestureGate() {
       window.removeEventListener("keydown", unlock);
       window.removeEventListener("touchstart", unlock);
     };
-  }, [ready]);
+  }, [enabled, ready]);
 
   return ready;
 }
@@ -95,22 +96,24 @@ export function useDogActionSfx({
   energy,
   tier,
   audio,
+  enabled = true,
   hapticsEnabled = true,
 }) {
-  const audioEnabled = Boolean(audio?.enabled);
+  const audioEnabled = Boolean(enabled) && Boolean(audio?.enabled);
   const masterVolume = clamp01(audio?.masterVolume ?? 0.8);
   const sfxVolume = clamp01(audio?.sfxVolume ?? 0.7);
   const sleepVolume = clamp01(audio?.sleepVolume ?? 0.25);
   const sleepEnabled = audio?.sleepEnabled !== false;
   const baseVolume = clamp01(masterVolume * sfxVolume);
-  const gestureReady = useUserGestureGate();
-  const hapticsReady = Boolean(hapticsEnabled) && gestureReady;
+  const gestureReady = useUserGestureGate(enabled);
+  const hapticsReady = Boolean(enabled) && Boolean(hapticsEnabled) && gestureReady;
 
   const audioCacheRef = React.useRef(Object.create(null));
   const loopKeyRef = React.useRef(null);
   const sleepTimerRef = React.useRef(null);
   const lastFrameRef = React.useRef(null);
   const lastAnimRef = React.useRef(null);
+  const lastAnimFxKeyRef = React.useRef(null);
   const lastPlayAtRef = React.useRef(Object.create(null));
   const hapticTimerRef = React.useRef(null);
   const lastHapticAtRef = React.useRef(Object.create(null));
@@ -338,6 +341,50 @@ export function useDogActionSfx({
     playOnce,
     sleepEnabled,
     sleepVolume,
+  ]);
+
+  React.useEffect(() => {
+    const resolved = resolveSoundKey(anim);
+    if (!resolved) {
+      lastAnimFxKeyRef.current = null;
+      return;
+    }
+
+    if (resolved === lastAnimFxKeyRef.current) return;
+    lastAnimFxKeyRef.current = resolved;
+
+    const meta = jrAudio?.sounds?.[resolved] || {};
+    const shouldFallbackTrigger =
+      !meta.loop &&
+      !meta.intervalMs &&
+      !Number.isFinite(Number(meta.triggerFrame)) &&
+      resolved !== "front_flip";
+
+    const barkLike =
+      resolved === "bark" ||
+      resolved === "territorial_bark" ||
+      resolved === "speak";
+    const canAnimTriggerWithoutFrames =
+      barkLike || shouldFallbackTrigger || frameIndex == null;
+
+    if (!audioEnabled || !gestureReady || !canAnimTriggerWithoutFrames) return;
+
+    const volume = clamp01(
+      baseVolume * (Number(meta.volume ?? 1) || 1) * tierMultiplier
+    );
+
+    playOnce(resolved, {
+      volume,
+      cooldownMs: Number(meta.cooldownMs || 700),
+    });
+  }, [
+    anim,
+    audioEnabled,
+    baseVolume,
+    frameIndex,
+    gestureReady,
+    playOnce,
+    tierMultiplier,
   ]);
 
   React.useEffect(() => {

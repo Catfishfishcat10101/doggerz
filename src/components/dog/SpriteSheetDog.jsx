@@ -2,7 +2,7 @@
 // Pixi-backed grid spritesheet renderer with resilient fallback chain.
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import * as PIXI from "pixi.js";
+import { Capacitor } from "@capacitor/core";
 
 import jrManifest from "@/components/dog/jrManifest.json";
 import { DOGS } from "@/config/assets.js";
@@ -12,74 +12,20 @@ import {
   normalizeDogConditionId,
   normalizeDogStageShort,
 } from "@/utils/dogSpritePaths.js";
+import { getManifestAnimMeta } from "@/components/dog/dogAnimationEngine.js";
 
 const DEFAULT_COLUMNS = Math.max(1, Number(jrManifest?.columns || 8));
-const DEFAULT_ANIM = String(jrManifest?.defaultAnim || "idle").toLowerCase();
-const DEFAULT_FPS = Math.max(1, Number(jrManifest?.defaultFps || 8));
-const ANIM_ROWS = Array.isArray(jrManifest?.rows) ? jrManifest.rows : [];
-const ANIM_ALIASES =
-  jrManifest?.aliases && typeof jrManifest.aliases === "object"
-    ? jrManifest.aliases
-    : {};
 const DEFAULT_FRAME = jrManifest?.frame || {};
 const DEFAULT_FRAME_WIDTH = Math.max(1, Number(DEFAULT_FRAME.width || 128));
 const DEFAULT_FRAME_HEIGHT = Math.max(1, Number(DEFAULT_FRAME.height || 128));
 const SPRITE_DEFAULT_FACING = -1; // Source art faces left by default.
 const HARD_TEXTURE_FALLBACK_SRC = DOGS.staticFallback;
+let pixiModulePromise = null;
 
 function clamp(n, lo, hi) {
   const x = Number(n);
   if (!Number.isFinite(x)) return lo;
   return Math.max(lo, Math.min(hi, x));
-}
-
-function normalizeAnim(anim) {
-  const key = String(anim || DEFAULT_ANIM)
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, "_")
-    .replace(/-+/g, "_");
-
-  if (!key) return DEFAULT_ANIM;
-
-  const rowHit = ANIM_ROWS.find(
-    (row) =>
-      String(row?.anim || "")
-        .trim()
-        .toLowerCase() === key
-  );
-  if (rowHit) return key;
-
-  const alias = String(ANIM_ALIASES[key] || "")
-    .trim()
-    .toLowerCase();
-  if (!alias) return DEFAULT_ANIM;
-
-  const aliasHit = ANIM_ROWS.find(
-    (row) =>
-      String(row?.anim || "")
-        .trim()
-        .toLowerCase() === alias
-  );
-  return aliasHit ? alias : DEFAULT_ANIM;
-}
-
-function getAnimMeta(anim) {
-  const key = normalizeAnim(anim);
-  const rowIndex = Math.max(
-    0,
-    ANIM_ROWS.findIndex(
-      (row) =>
-        String(row?.anim || "")
-          .trim()
-          .toLowerCase() === key
-    )
-  );
-  const row = ANIM_ROWS[rowIndex] || null;
-  const frames = Math.max(1, Number(row?.frames || DEFAULT_COLUMNS));
-  const columns = Math.max(1, Number(row?.columns || DEFAULT_COLUMNS));
-  const fps = Math.max(1, Number(row?.fps || DEFAULT_FPS));
-  return { key, rowIndex, frames, columns, fps };
 }
 
 function getSheetCandidates(stage, condition, anim) {
@@ -133,7 +79,15 @@ function clearPixi(appRef, spriteRef) {
   }
 }
 
+async function loadPixiModule() {
+  if (!pixiModulePromise) {
+    pixiModulePromise = import("pixi.js");
+  }
+  return pixiModulePromise;
+}
+
 async function loadFirstAvailableTexture(candidates, fallbackSrc) {
+  const PIXI = await loadPixiModule();
   for (const src of candidates) {
     try {
       const texture = await PIXI.Assets.load(src);
@@ -160,6 +114,46 @@ async function loadFirstAvailableTexture(candidates, fallbackSrc) {
   return null;
 }
 
+function loadImageSource(src) {
+  return new Promise((resolve, reject) => {
+    if (typeof window === "undefined" || typeof Image === "undefined") {
+      resolve(String(src || ""));
+      return;
+    }
+
+    const img = new Image();
+    img.onload = () => resolve(String(src || ""));
+    img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
+    img.src = String(src || "");
+  });
+}
+
+async function loadFirstAvailableImageSource(candidates, fallbackSrc) {
+  for (const src of candidates) {
+    try {
+      const loadedSrc = await loadImageSource(src);
+      if (loadedSrc) return loadedSrc;
+    } catch (error) {
+      console.error("[Doggerz] Failed to load CSS sprite source:", src, error);
+    }
+  }
+
+  const fallbackPath = String(fallbackSrc || HARD_TEXTURE_FALLBACK_SRC || "");
+  if (!fallbackPath) return null;
+
+  try {
+    return await loadImageSource(fallbackPath);
+  } catch (error) {
+    console.error(
+      "[Doggerz] Failed to load CSS sprite fallback:",
+      fallbackPath,
+      error
+    );
+  }
+
+  return null;
+}
+
 export default function SpriteSheetDog({
   stage = "PUPPY",
   condition = "clean",
@@ -172,8 +166,9 @@ export default function SpriteSheetDog({
   fallbackSrc = "/assets/sprites/jr/pup_clean.png",
   className = "",
   onDebug,
+  preferCssAnimation = undefined,
 }) {
-  const animMeta = useMemo(() => getAnimMeta(anim), [anim]);
+  const animMeta = useMemo(() => getManifestAnimMeta(anim), [anim]);
   const candidates = useMemo(
     () => getSheetCandidates(stage, condition, animMeta.key),
     [animMeta.key, condition, stage]
@@ -184,6 +179,18 @@ export default function SpriteSheetDog({
   const spriteRef = useRef(null);
   const [activeSrc, setActiveSrc] = useState(null);
   const [sheetFailed, setSheetFailed] = useState(false);
+  const preferCssSprite = useMemo(() => {
+    if (typeof preferCssAnimation === "boolean") {
+      return preferCssAnimation;
+    }
+    try {
+      return typeof Capacitor?.isNativePlatform === "function"
+        ? Capacitor.isNativePlatform()
+        : Capacitor?.getPlatform?.() !== "web";
+    } catch {
+      return false;
+    }
+  }, [preferCssAnimation]);
 
   const boxSize = clamp(size, 64, 1024);
   const effectiveSpeedMultiplier = clamp(speedMultiplier, 0.2, 2);
@@ -194,11 +201,25 @@ export default function SpriteSheetDog({
 
     async function boot() {
       const host = hostRef.current;
-      if (!host) return;
+      if (!host && !preferCssSprite) return;
 
       setSheetFailed(false);
       setActiveSrc(null);
       clearPixi(appRef, spriteRef);
+
+      if (preferCssSprite) {
+        const resolvedSrc = await loadFirstAvailableImageSource(
+          candidates,
+          fallbackSrc
+        );
+        if (cancelled) return;
+        if (!resolvedSrc) {
+          setSheetFailed(true);
+          return;
+        }
+        setActiveSrc(resolvedSrc);
+        return;
+      }
 
       const loaded = await loadFirstAvailableTexture(candidates, fallbackSrc);
       if (!loaded || cancelled) {
@@ -207,6 +228,7 @@ export default function SpriteSheetDog({
       }
 
       const { src, texture } = loaded;
+      const PIXI = await loadPixiModule();
       const app = new PIXI.Application({
         width: boxSize,
         height: boxSize,
@@ -322,6 +344,7 @@ export default function SpriteSheetDog({
     effectiveFps,
     facing,
     fallbackSrc,
+    preferCssSprite,
     reduceMotion,
     smoothing,
   ]);
@@ -365,6 +388,7 @@ export default function SpriteSheetDog({
       candidateCount: candidates.length,
       sheetLoaded: Boolean(activeSrc) && !sheetFailed,
       sheetFailed,
+      renderMode: preferCssSprite || sheetFailed ? "css" : "pixi",
       reduceMotion: Boolean(reduceMotion),
     });
   }, [
@@ -380,6 +404,7 @@ export default function SpriteSheetDog({
     effectiveSpeedMultiplier,
     fallbackSrc,
     onDebug,
+    preferCssSprite,
     reduceMotion,
     sheetFailed,
     stage,
@@ -397,7 +422,7 @@ export default function SpriteSheetDog({
   const cssFacing = Number(facing) < 0 ? -1 : 1;
   const cssShouldAnimate = !reduceMotion && cssFrameCount > 1;
 
-  if (sheetFailed) {
+  if (preferCssSprite || sheetFailed) {
     return (
       <div
         className={`dog-css-container ${className}`}
@@ -407,15 +432,31 @@ export default function SpriteSheetDog({
         style={{
           width: boxSize,
           height: boxSize,
+          position: "relative",
           pointerEvents: "none",
         }}
       >
         <style>
           {`@keyframes dgPlay8Frames {
   from { background-position: 0px var(--dog-row-offset); }
-  to { background-position: calc(var(--dog-frame-width) * var(--dog-frames) * -1) var(--dog-row-offset); }
+          to { background-position: calc(var(--dog-frame-width) * var(--dog-frames) * -1) var(--dog-row-offset); }
 }`}
         </style>
+        <span
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            left: "50%",
+            top: `${Math.round(boxSize * 0.94)}px`,
+            width: `${Math.round(boxSize * 0.2)}px`,
+            height: `${Math.round(boxSize * 0.05)}px`,
+            transform: "translate(-50%, -50%)",
+            borderRadius: "999px",
+            background:
+              "radial-gradient(ellipse at center, rgba(2,6,23,0.32) 0%, rgba(2,6,23,0.08) 70%, transparent 100%)",
+            filter: "blur(1.5px)",
+          }}
+        />
         <div
           className={`dog-css-sprite state-${animMeta.key}`}
           data-dog-sprite="true"

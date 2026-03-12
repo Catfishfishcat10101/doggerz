@@ -1,13 +1,14 @@
 import { serverTimestamp, setDoc, getDoc } from "firebase/firestore";
 import { dogMainDoc } from "./paths.js";
 import { ensureAnonSignIn } from "@/lib/firebaseClient.js";
+import { db } from "@/firebase.js";
 
 function _defaultDogPayload() {
   return {
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
     stage: "PUPPY",
-    name: "New Doggo",
+    name: "Fireball",
     stats: {
       hunger: 100,
       happiness: 80,
@@ -19,16 +20,22 @@ function _defaultDogPayload() {
       pottyPercent: 0,
     },
     inventory: [],
-    coins: 500, // Including that pre-reg bonus we saw in .env!
+    coins: 100,
   };
 }
 
 export async function ensureDogMain(uid) {
+  if (!db) {
+    return { created: false, ref: null, data: null, skipped: true };
+  }
   const user = await ensureAnonSignIn();
   const targetUid = uid || user?.uid;
   if (!targetUid) throw new Error("User ID is required");
 
   const ref = dogMainDoc(targetUid);
+  if (!ref) {
+    return { created: false, ref: null, data: null, skipped: true };
+  }
 
   try {
     const snap = await getDoc(ref);

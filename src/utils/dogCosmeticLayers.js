@@ -53,6 +53,28 @@ function buildTagSvg({ fill = "#fbbf24", stroke = "#f8fafc" }) {
   `);
 }
 
+function buildHeartTagSvg({ fill = "#fb7185", stroke = "#ffe4e6" }) {
+  return toDataUrl(`
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+      <g opacity="0.97">
+        <circle cx="128" cy="150" r="10" fill="${stroke}" opacity="0.9"/>
+        <path d="M128 205l-15-14c-30-27-49-44-49-68 0-18 14-31 31-31 10 0 19 5 25 13 6-8 15-13 25-13 17 0 31 13 31 31 0 24-19 41-49 68z" fill="${fill}" stroke="${stroke}" stroke-width="4" stroke-linejoin="round"/>
+      </g>
+    </svg>
+  `);
+}
+
+function buildBoltTagSvg({ fill = "#facc15", stroke = "#fef9c3" }) {
+  return toDataUrl(`
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+      <g opacity="0.97">
+        <circle cx="128" cy="150" r="10" fill="${stroke}" opacity="0.9"/>
+        <path d="M136 86l-34 52h24l-6 34 34-52h-24z" fill="${fill}" stroke="${stroke}" stroke-width="4" stroke-linejoin="round"/>
+      </g>
+    </svg>
+  `);
+}
+
 function getCollarLayer(id) {
   const key = String(id || "")
     .trim()
@@ -94,6 +116,30 @@ function getCollarLayer(id) {
     };
   }
 
+  if (key === "collar_midnight") {
+    return {
+      slot: "collar",
+      src: buildCollarSvg({
+        strap: "#1e293b",
+        buckle: "#e2e8f0",
+        tag: "#93c5fd",
+        glow: "#60a5fa",
+      }),
+    };
+  }
+
+  if (key === "collar_sunflare") {
+    return {
+      slot: "collar",
+      src: buildCollarSvg({
+        strap: "#f97316",
+        buckle: "#fff7ed",
+        tag: "#fdba74",
+        glow: "#fb923c",
+      }),
+    };
+  }
+
   return {
     slot: "collar",
     src: buildCollarSvg({
@@ -115,6 +161,24 @@ function getTagLayer(id) {
       src: buildTagSvg({
         fill: "#fbbf24",
         stroke: "#fef3c7",
+      }),
+    };
+  }
+  if (key === "tag_heart") {
+    return {
+      slot: "tag",
+      src: buildHeartTagSvg({
+        fill: "#fb7185",
+        stroke: "#ffe4e6",
+      }),
+    };
+  }
+  if (key === "tag_bolt") {
+    return {
+      slot: "tag",
+      src: buildBoltTagSvg({
+        fill: "#facc15",
+        stroke: "#fef9c3",
       }),
     };
   }
@@ -145,9 +209,10 @@ export function getDogCosmeticLayerSpecs({
     .map((layer, index) => ({
       ...layer,
       key: `${layer.slot}-${index}`,
+      behindDog: layer.slot === "collar",
       style: {
         ...baseStyle,
-        zIndex: layer.slot === "tag" ? 3 : 2,
+        zIndex: layer.slot === "tag" ? 16 : 4,
       },
     }));
 

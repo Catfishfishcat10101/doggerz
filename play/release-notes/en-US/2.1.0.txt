@@ -1,6 +1,0 @@
-Doggerz 2.1.0 improves care timing and mobile flow:
-
-- Hunger and check-ins now track real-world time more reliably
-- Daily rewards follow local calendar days and keep streaks stable across DST changes
-- The runaway letter now shows a live return countdown and welcome-back flow
-- Navigation, sheets, and Android notification handling were tightened

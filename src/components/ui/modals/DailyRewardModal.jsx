@@ -8,6 +8,8 @@ import { showRewardedAd } from "@/features/ads/AdManager.js";
 import { getDailyRewardState } from "@/features/billing/dailyRewards.js";
 import { claimDailyReward } from "@/redux/dogSlice.js";
 import { useDog } from "@/hooks/useDogState.js";
+import { useToast } from "@/state/toastContext.js";
+import { getRuntimeContextLabel } from "@/utils/runtimeContext.js";
 
 function buildRewardWithMultiplier(reward, multiplier) {
   if (!reward || typeof reward !== "object") return null;
@@ -35,7 +37,9 @@ export default function DailyRewardModal({
 }) {
   const dispatch = useDispatch();
   const dog = useDog();
+  const toast = useToast();
   const [adBusy, setAdBusy] = useState(false);
+  const runtimeLabel = getRuntimeContextLabel();
 
   const resolvedRewardState = useMemo(
     () =>
@@ -56,15 +60,29 @@ export default function DailyRewardModal({
   const nextStreakDay = Number(resolvedRewardState?.nextStreakDay || 1);
 
   const handleClaim = (multiplier = 1) => {
-    if (!canClaim || !reward) return;
-    dispatch(
-      claimDailyReward({
-        day: nextStreakDay,
-        reward: buildRewardWithMultiplier(reward, multiplier),
-        now: Date.now(),
-      })
-    );
-    if (typeof onClose === "function") onClose();
+    if (!canClaim || !reward) {
+      toast.error(`Claim failed (${runtimeLabel})`);
+      return false;
+    }
+    try {
+      const rewardPayload = buildRewardWithMultiplier(reward, multiplier);
+      dispatch(
+        claimDailyReward({
+          day: nextStreakDay,
+          reward: rewardPayload,
+          now: Date.now(),
+        })
+      );
+      toast.success(
+        `Claimed ${rewardPayload?.label || "reward"} (${runtimeLabel})`
+      );
+      if (typeof onClose === "function") onClose();
+      return true;
+    } catch (error) {
+      console.error("[DailyRewardModal] Failed to claim daily reward:", error);
+      toast.error(`Claim failed (${runtimeLabel})`);
+      return false;
+    }
   };
 
   const handleClaimDouble = async () => {
@@ -74,7 +92,12 @@ export default function DailyRewardModal({
       const completed = await showRewardedAd();
       if (completed) {
         handleClaim(2);
+      } else {
+        toast.error(`Double claim canceled (${runtimeLabel})`);
       }
+    } catch (error) {
+      console.error("[DailyRewardModal] Rewarded ad flow failed:", error);
+      toast.error(`Double claim failed (${runtimeLabel})`);
     } finally {
       setAdBusy(false);
     }
@@ -111,7 +134,7 @@ export default function DailyRewardModal({
           type="button"
           onClick={() => handleClaim(1)}
           disabled={!canClaim || adBusy}
-          className="rounded-2xl bg-emerald-400 px-4 py-3 text-sm font-black text-black transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-60"
+          className="dz-touch-button rounded-2xl bg-emerald-400 px-4 py-3 text-sm font-black text-black transition disabled:cursor-not-allowed disabled:opacity-60"
         >
           Claim
         </button>
@@ -119,7 +142,7 @@ export default function DailyRewardModal({
           type="button"
           onClick={handleClaimDouble}
           disabled={!canClaim || adBusy}
-          className="rounded-2xl border border-amber-300/40 bg-amber-400/15 px-4 py-3 text-sm font-black text-amber-100 transition hover:bg-amber-400/20 disabled:cursor-not-allowed disabled:opacity-60"
+          className="dz-touch-button rounded-2xl border border-amber-300/40 bg-amber-400/15 px-4 py-3 text-sm font-black text-amber-100 transition disabled:cursor-not-allowed disabled:opacity-60"
         >
           {adBusy ? "Loading Ad..." : "Claim DOUBLE (Ad)"}
         </button>
@@ -128,7 +151,7 @@ export default function DailyRewardModal({
           onClick={() => {
             if (typeof onClose === "function") onClose();
           }}
-          className="rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-white/10"
+          className="dz-touch-button rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-sm font-semibold text-zinc-200 transition"
         >
           Later
         </button>

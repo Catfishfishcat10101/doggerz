@@ -68,6 +68,20 @@ const selectDogLifeModel = createSelector(
     ),
     stage: lifeStage?.stage || ageInfo?.stage || "PUPPY",
     stageLabel: lifeStage?.label || ageInfo?.label || "Puppy",
+    ageBucketLabel: ageInfo?.ageBucketLabel || "New pup",
+    stageProgressPct: Math.max(
+      0,
+      Math.min(100, Math.round(Number(ageInfo?.stageProgressPct || 0)))
+    ),
+    daysUntilNextStage: Number.isFinite(Number(ageInfo?.daysUntilNextStage))
+      ? Number(ageInfo.daysUntilNextStage)
+      : null,
+    nextStageLabel: ageInfo?.nextStage?.label || null,
+    progressLabel: ageInfo?.progressLabel || null,
+    headline: ageInfo?.ui?.headline || null,
+    summary: ageInfo?.ui?.summary || null,
+    detail: ageInfo?.ui?.detail || null,
+    tone: ageInfo?.ui?.tone || "fresh",
     cleanliness,
   })
 );

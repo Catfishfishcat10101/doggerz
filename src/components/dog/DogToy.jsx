@@ -126,14 +126,8 @@ export default function DogToy({
       onPointerCancel={(event) => finishDrag(event, "cancel")}
       data-doggerz-ignore-swipe="true"
       data-doggerz-drag-item={normalizedType}
-      className={`absolute bottom-4 left-4 z-50 flex h-12 w-12 cursor-grab items-center justify-center rounded-full border border-lime-100/80 shadow-lg transition-colors ${
-        isFoodItem
-          ? isSqueaking
-            ? "bg-[radial-gradient(circle_at_35%_35%,#fde68a_0%,#f97316_62%,#9a3412_100%)]"
-            : "bg-[radial-gradient(circle_at_35%_35%,#fef08a_0%,#f59e0b_62%,#92400e_100%)]"
-          : isSqueaking
-            ? "bg-[radial-gradient(circle_at_35%_35%,#fef9c3_0%,#eab308_62%,#ca8a04_100%)]"
-            : "bg-[radial-gradient(circle_at_35%_35%,#fef08a_0%,#84cc16_62%,#4d7c0f_100%)]"
+      className={`dz-dog-orb ${isFoodItem ? "dz-dog-orb--food" : "dz-dog-orb--toy"} ${
+        isSqueaking ? "brightness-110" : ""
       } ${className}`}
       style={{
         touchAction: "none",
@@ -150,11 +144,11 @@ export default function DogToy({
       ) : (
         <>
           <span
-            className="pointer-events-none absolute h-6 w-6 rounded-full border-2 border-white/70"
+            className="pointer-events-none absolute h-6 w-6 rounded-full border-2 border-white/80"
             style={{ transform: "translateX(-35%)" }}
           />
           <span
-            className="pointer-events-none absolute h-6 w-6 rounded-full border-2 border-white/70"
+            className="pointer-events-none absolute h-6 w-6 rounded-full border-2 border-white/80"
             style={{ transform: "translateX(35%)" }}
           />
         </>

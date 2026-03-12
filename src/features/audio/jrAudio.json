@@ -2,12 +2,35 @@
   "version": 1,
   "basePath": "/audio/",
   "sounds": {
+    "bark": {
+      "file": "bark.m4a",
+      "triggerFrame": 2,
+      "cooldownMs": 900,
+      "volume": 0.9
+    },
+    "territorial_bark": {
+      "file": "bark.m4a",
+      "triggerFrame": 2,
+      "cooldownMs": 1000,
+      "volume": 1
+    },
+    "speak": {
+      "file": "bark.m4a",
+      "triggerFrame": 2,
+      "cooldownMs": 900,
+      "volume": 0.92
+    },
     "front_flip": {
       "file": "bark.m4a",
       "cooldownMs": 1200
     }
   },
   "aliases": {
-    "flip": "front_flip"
+    "flip": "front_flip",
+    "point_position": "bark",
+    "sit": "bark",
+    "stay": "bark",
+    "trick": "bark",
+    "territorial": "territorial_bark"
   }
 }

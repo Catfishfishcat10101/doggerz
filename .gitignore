@@ -8,6 +8,7 @@ node_modules/
 
 # Build output
 dist/
+dist_bootfix/
 dist-ssr/
 web-build/
 output/
@@ -62,6 +63,7 @@ android/app/src/main/assets/public/
 android/app/src/main/assets/capacitor.config.json
 android/app/src/main/assets/capacitor.plugins.json
 android/capacitor-cordova-android-plugins/
+android/version.json
 
 # Android signing / release secrets
 android/keystore.properties
@@ -89,4 +91,5 @@ dist/stats.html
 # Doggerz generated / temp assets (do not commit)
 public/sprites/puppy/
 public/sprites/_tmp/
+tmp-phone-screen*.png
 

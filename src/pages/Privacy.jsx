@@ -11,7 +11,7 @@ export default function PrivacyPage() {
           <h1 className="text-3xl font-black tracking-tight mb-2">
             Privacy Policy
           </h1>
-          <p className="text-xs text-zinc-500">Last updated: 2026-01-02</p>
+          <p className="text-xs text-zinc-500">Last updated: 2026-03-12</p>
         </PageHeader>
         <section className="space-y-2">
           <h2 className="font-semibold text-zinc-100 text-base">
@@ -87,8 +87,10 @@ export default function PrivacyPage() {
         <section className="space-y-2">
           <h2 className="font-semibold text-zinc-100 text-base">5. Location</h2>
           <p>
-            Doggerz does not use GPS/geolocation. A user-provided ZIP code may
-            be used to improve day/night timing and weather features.
+            By default, Doggerz uses a user-provided ZIP code to improve
+            day/night timing and weather features. If you explicitly enable
+            precise day/night timing in Settings, Doggerz may request device
+            location for sunrise/sunset calculations and local weather syncing.
           </p>
         </section>
         <section className="space-y-2">

@@ -9,10 +9,17 @@ export const DOG_RENDER_MODES = Object.freeze(["sprite", "realistic"]);
 
 const DEFAULT_USER_STATE = {
   id: null,
+  authResolved: false,
   displayName: "Trainer",
   email: null,
   avatarUrl: null,
   zip: null,
+  cloudSync: {
+    status: "local", // local | syncing | saved | error
+    lastAttemptAt: null,
+    lastSuccessAt: null,
+    errorMessage: null,
+  },
 
   // Dog visuals
   dogRenderMode: "sprite", // 'sprite' | 'realistic'
@@ -56,9 +63,12 @@ function normalizeUserState(raw) {
     .trim()
     .toLowerCase();
   const renderMode = String(raw.dogRenderMode || "").toLowerCase();
+  const cloudSync =
+    raw.cloudSync && typeof raw.cloudSync === "object" ? raw.cloudSync : {};
 
   return {
     id: raw.id ?? null,
+    authResolved: Boolean(raw.authResolved),
     displayName:
       typeof raw.displayName === "string" && raw.displayName.trim()
         ? raw.displayName
@@ -66,6 +76,19 @@ function normalizeUserState(raw) {
     email: raw.email ?? null,
     avatarUrl: raw.avatarUrl ?? null,
     zip: raw.zip ?? null,
+    cloudSync: {
+      status: ["local", "syncing", "saved", "error"].includes(
+        String(cloudSync.status || "").toLowerCase()
+      )
+        ? String(cloudSync.status || "").toLowerCase()
+        : DEFAULT_USER_STATE.cloudSync.status,
+      lastAttemptAt: toMaybeTimestamp(cloudSync.lastAttemptAt),
+      lastSuccessAt: toMaybeTimestamp(cloudSync.lastSuccessAt),
+      errorMessage:
+        typeof cloudSync.errorMessage === "string" && cloudSync.errorMessage.trim()
+          ? cloudSync.errorMessage.trim()
+          : null,
+    },
     dogRenderMode: DOG_RENDER_MODES.includes(renderMode)
       ? renderMode
       : DEFAULT_USER_STATE.dogRenderMode,
@@ -103,6 +126,9 @@ function serializeUserState(state) {
       ...state.streak,
     },
   };
+
+  // authResolved must come from the live Firebase listener, not storage.
+  delete copy.authResolved;
 
   // Normalize date fields to ISO strings for portability.
   if (copy.createdAt && typeof copy.createdAt === "number") {
@@ -179,6 +205,7 @@ const userSlice = createSlice({
       state.displayName = next.displayName;
       state.avatarUrl = next.avatarUrl;
       state.zip = next.zip;
+      state.cloudSync = { ...next.cloudSync };
       state.dogRenderMode = next.dogRenderMode;
       state.dogName = next.dogName;
       state.preferredScene = next.preferredScene;
@@ -195,6 +222,7 @@ const userSlice = createSlice({
     setUser(state, action) {
       const {
         id,
+        authResolved,
         displayName,
         email,
         avatarUrl,
@@ -202,6 +230,7 @@ const userSlice = createSlice({
         streak,
         createdAt,
         zip,
+        cloudSync,
         dogName,
         preferredScene,
         reduceVfx,
@@ -211,6 +240,7 @@ const userSlice = createSlice({
       } = action.payload || {};
 
       state.id = id ?? state.id;
+      if (authResolved !== undefined) state.authResolved = Boolean(authResolved);
       state.displayName = displayName ?? state.displayName;
       state.email = email ?? state.email;
       state.avatarUrl = avatarUrl ?? state.avatarUrl;
@@ -226,6 +256,12 @@ const userSlice = createSlice({
 
       state.createdAt = createdAt ?? state.createdAt;
       if (zip !== undefined) state.zip = zip;
+      if (cloudSync && typeof cloudSync === "object") {
+        state.cloudSync = {
+          ...state.cloudSync,
+          ...normalizeUserState({ cloudSync }).cloudSync,
+        };
+      }
       if (dogName !== undefined) state.dogName = dogName || null;
       if (preferredScene !== undefined) {
         state.preferredScene = preferredScene || state.preferredScene;
@@ -241,10 +277,12 @@ const userSlice = createSlice({
 
     clearUser(state) {
       state.id = null;
+      state.authResolved = false;
       state.displayName = DEFAULT_USER_STATE.displayName;
       state.email = null;
       state.avatarUrl = null;
       state.zip = null;
+      state.cloudSync = { ...DEFAULT_USER_STATE.cloudSync };
       state.coins = 0;
       state.streak = { ...DEFAULT_USER_STATE.streak };
       state.createdAt = null;
@@ -259,6 +297,14 @@ const userSlice = createSlice({
       removeStoredValue(USER_STORAGE_KEY).catch(() => {
         // ignore
       });
+    },
+    clearUserAuth(state) {
+      state.id = null;
+      state.authResolved = true;
+      state.email = null;
+      state.avatarUrl = null;
+      state.cloudSync = { ...DEFAULT_USER_STATE.cloudSync };
+      saveUserToStorage(state);
     },
 
     addCoins(state, action) {
@@ -333,6 +379,7 @@ export const {
   hydrateUserState,
   setUser,
   clearUser,
+  clearUserAuth,
   addCoins,
   setCoins,
   updateStreak,
@@ -346,7 +393,11 @@ export const {
 } = userSlice.actions;
 
 export const selectUser = (state) => state.user;
+export const selectUserId = (state) => state.user?.id || null;
+export const selectIsAuthResolved = (state) => Boolean(state.user?.authResolved);
 export const selectUserZip = (state) => state.user?.zip || null;
+export const selectCloudSyncState = (state) =>
+  state.user?.cloudSync ?? DEFAULT_USER_STATE.cloudSync;
 
 // Authentication is considered "on" when we have an id (preferred) or an email.
 // This avoids treating the default local-only user object as authenticated.

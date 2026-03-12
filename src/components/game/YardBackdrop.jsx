@@ -2,6 +2,83 @@
 
 import { useMemo } from "react";
 
+const LAYER = Object.freeze({
+  SKY: 1,
+  FENCE: 5,
+  YARD: 9,
+  OBJECTS: 14,
+  OVERLAY: 18,
+});
+
+function svgToDataUrl(svg) {
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
+const YARD_OBJECT_SPRITES = Object.freeze({
+  fence: svgToDataUrl(`
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 220">
+      <g fill="none" stroke-linecap="round">
+        <path d="M0 112h1200" stroke="rgba(245,158,11,0.65)" stroke-width="10"/>
+        <path d="M0 144h1200" stroke="rgba(120,53,15,0.7)" stroke-width="12"/>
+        ${Array.from({ length: 32 }, (_, i) => {
+          const x = i * 38 + 8;
+          return `<rect x="${x}" y="34" width="14" height="146" rx="5" fill="rgba(146,64,14,0.82)"/>`;
+        }).join("")}
+      </g>
+    </svg>
+  `),
+  tree: svgToDataUrl(`
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 360">
+      <defs>
+        <radialGradient id="leaf" cx="48%" cy="40%" r="62%">
+          <stop offset="0%" stop-color="rgba(74,222,128,0.98)"/>
+          <stop offset="58%" stop-color="rgba(34,197,94,0.95)"/>
+          <stop offset="100%" stop-color="rgba(20,83,45,0.92)"/>
+        </radialGradient>
+        <linearGradient id="trunk" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="rgba(120,53,15,0.98)"/>
+          <stop offset="100%" stop-color="rgba(68,38,14,0.98)"/>
+        </linearGradient>
+      </defs>
+      <ellipse cx="130" cy="116" rx="104" ry="88" fill="url(#leaf)"/>
+      <ellipse cx="78" cy="142" rx="56" ry="46" fill="url(#leaf)" opacity="0.94"/>
+      <ellipse cx="182" cy="142" rx="56" ry="46" fill="url(#leaf)" opacity="0.94"/>
+      <rect x="112" y="170" width="38" height="160" rx="20" fill="url(#trunk)"/>
+    </svg>
+  `),
+  doghouse: svgToDataUrl(`
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 260">
+      <defs>
+        <linearGradient id="roof" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="rgba(194,65,12,0.98)"/>
+          <stop offset="100%" stop-color="rgba(124,45,18,0.98)"/>
+        </linearGradient>
+        <linearGradient id="body" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="rgba(180,83,9,0.98)"/>
+          <stop offset="100%" stop-color="rgba(146,64,14,0.99)"/>
+        </linearGradient>
+      </defs>
+      <path d="M30 108 160 24 290 108V116H30Z" fill="url(#roof)"/>
+      <rect x="52" y="110" width="216" height="126" rx="18" fill="url(#body)"/>
+      <rect x="122" y="148" width="76" height="88" rx="32" fill="rgba(15,23,42,0.8)"/>
+      <rect x="44" y="236" width="232" height="12" rx="6" fill="rgba(15,23,42,0.2)"/>
+    </svg>
+  `),
+  doghouseFront: svgToDataUrl(`
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 260">
+      <defs>
+        <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="rgba(251,191,36,0.38)"/>
+          <stop offset="100%" stop-color="rgba(120,53,15,0.35)"/>
+        </linearGradient>
+      </defs>
+      <rect x="112" y="136" width="96" height="110" rx="42" fill="url(#rim)"/>
+      <rect x="125" y="148" width="70" height="90" rx="30" fill="rgba(15,23,42,0.88)"/>
+      <rect x="42" y="238" width="236" height="12" rx="6" fill="rgba(15,23,42,0.34)"/>
+    </svg>
+  `),
+});
+
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
@@ -63,6 +140,7 @@ function renderProps({ props, activePropId, onPropTap }) {
           left: `${round(prop.xNorm * 100)}%`,
           top: `${round(prop.yNorm * 100)}%`,
           transform: "translate(-50%, -50%)",
+          zIndex: getDepthZIndex(prop.yNorm, 0),
         }}
       >
         <button
@@ -296,20 +374,32 @@ export default function YardBackdrop({
     <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[24px]">
       <div
         className="absolute inset-0"
-        style={{
-          background:
-            "linear-gradient(180deg, rgba(30,41,59,0.12) 0%, rgba(8,47,73,0.1) 34%, rgba(12,74,110,0.08) 100%)",
-        }}
-      />
+        style={{ zIndex: LAYER.SKY }}
+      >
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(30,41,59,0.12) 0%, rgba(8,47,73,0.1) 34%, rgba(12,74,110,0.08) 100%)",
+          }}
+        />
+      </div>
 
       <div
         className="absolute inset-y-0 -left-[22%] w-[144%]"
         style={{
+          zIndex: LAYER.FENCE,
           transform: `translate3d(${parallax.back}px, 0, 0)`,
           transition: reduceMotion ? "none" : "transform 220ms linear",
         }}
       >
         <div className="absolute inset-x-0 top-[7%] h-[26%] rounded-[50%] bg-cyan-100/10 blur-3xl" />
+        <img
+          src={YARD_OBJECT_SPRITES.fence}
+          alt=""
+          className="pointer-events-none absolute inset-x-[-4%] bottom-[27%] h-[23%] w-[108%] select-none object-fill opacity-[0.72]"
+          draggable="false"
+        />
         <div
           className="absolute inset-x-0 bottom-[28%] h-[28%]"
           style={{
@@ -324,13 +414,14 @@ export default function YardBackdrop({
       <div
         className="absolute inset-y-0 -left-[24%] w-[148%]"
         style={{
+          zIndex: LAYER.YARD,
           transform: `translate3d(${parallax.mid}px, 0, 0)`,
           transition: reduceMotion ? "none" : "transform 180ms linear",
         }}
       >
-        <div className="absolute inset-x-0 bottom-[26%] h-[18%] bg-[linear-gradient(180deg,rgba(20,83,45,0.08),rgba(20,83,45,0.24))]" />
+        <div className="absolute inset-x-0 bottom-[30%] h-[8%] bg-[linear-gradient(180deg,rgba(20,83,45,0.08),rgba(20,83,45,0.24))]" />
         <div
-          className="absolute inset-x-0 bottom-[30%] h-[10%]"
+          className="absolute inset-x-0 bottom-[24%] h-[8%]"
           style={{
             backgroundImage:
               "repeating-linear-gradient(90deg, rgba(120,53,15,0.0) 0 10px, rgba(120,53,15,0.72) 10px 14px, rgba(245,158,11,0.12) 14px 19px)",
@@ -342,6 +433,7 @@ export default function YardBackdrop({
       <div
         className="absolute inset-y-0 -left-[28%] w-[156%]"
         style={{
+          zIndex: LAYER.OBJECTS,
           transform: `translate3d(${parallax.front}px, 0, 0)`,
           transition: reduceMotion ? "none" : "transform 140ms linear",
         }}
@@ -361,19 +453,24 @@ export default function YardBackdrop({
             opacity: 0.55,
           }}
         />
-        <div className="absolute left-[70%] bottom-[25%] h-[32%] w-[16%]">
-          <div className="absolute left-[18%] top-[18%] h-[34%] w-[64%] rounded-[18px_18px_10px_10px] border border-amber-100/15 bg-[linear-gradient(180deg,#854d0e_0%,#713f12_100%)] shadow-[0_14px_24px_rgba(15,23,42,0.28)]" />
-          <div className="absolute left-[10%] top-[8%] h-[20%] w-[80%] rounded-[16px_16px_10px_10px] bg-[linear-gradient(180deg,#b45309_0%,#92400e_100%)]" />
-          <div className="absolute left-[38%] top-[38%] h-[12%] w-[14%] rounded-full bg-slate-950/35" />
-        </div>
-        <div className="absolute left-[18%] bottom-[25%] h-[40%] w-[16%]">
-          <div className="absolute left-[28%] top-[28%] h-[54%] w-[16%] rounded-full bg-[linear-gradient(180deg,#5b3b1a_0%,#3f2a16_100%)] shadow-[0_10px_14px_rgba(15,23,42,0.22)]" />
-          <div className="absolute left-[2%] top-[0%] h-[44%] w-[90%] rounded-full bg-[radial-gradient(circle_at_center,#4ade80_0%,rgba(34,197,94,0.92)_36%,rgba(22,101,52,0.95)_70%,rgba(20,83,45,0.82)_100%)] shadow-[0_18px_26px_rgba(15,23,42,0.24)]" />
-        </div>
+        <img
+          src={YARD_OBJECT_SPRITES.doghouse}
+          alt=""
+          className="pointer-events-none absolute left-[70%] bottom-[24%] h-[34%] w-[17%] select-none object-contain drop-shadow-[0_14px_24px_rgba(15,23,42,0.34)]"
+          style={{ zIndex: 12 }}
+          draggable="false"
+        />
+        <img
+          src={YARD_OBJECT_SPRITES.tree}
+          alt=""
+          className="pointer-events-none absolute left-[17%] bottom-[24%] h-[42%] w-[17%] select-none object-contain drop-shadow-[0_18px_30px_rgba(15,23,42,0.34)]"
+          draggable="false"
+        />
       </div>
 
       <div
         className={`absolute inset-0 ${sunriseOpacity > 0 ? "is-sunrise" : ""}`}
+        style={{ zIndex: LAYER.OVERLAY }}
       >
         <div
           id="bg-night"
@@ -414,32 +511,14 @@ export default function YardBackdrop({
           boxShadow: "0 -4px 12px rgba(15,23,42,0.18)",
           zOffset: 2,
         },
-        {
-          key: "yard-doghouse-front",
-          xNorm: 0.78,
-          yNorm: 0.76,
-          width: "18%",
-          height: "16%",
-          borderRadius: "24px 24px 16px 16px",
-          background:
-            "linear-gradient(180deg, rgba(180,83,9,0.97) 0%, rgba(146,64,14,0.99) 100%)",
-          border: "1px solid rgba(254,215,170,0.16)",
-          boxShadow: "0 -6px 18px rgba(15,23,42,0.24)",
-          zOffset: 2,
-        },
-        {
-          key: "yard-doghouse-door-shadow",
-          xNorm: 0.78,
-          yNorm: 0.79,
-          width: "7%",
-          height: "11%",
-          borderRadius: "999px 999px 18px 18px",
-          background:
-            "radial-gradient(circle at center top, rgba(15,23,42,0.2) 0%, rgba(15,23,42,0.72) 78%, rgba(15,23,42,0.92) 100%)",
-          opacity: 0.82,
-          zOffset: 3,
-        },
       ])}
+      <img
+        src={YARD_OBJECT_SPRITES.doghouseFront}
+        alt=""
+        className="pointer-events-none absolute left-[70%] bottom-[24%] h-[34%] w-[17%] select-none object-contain"
+        style={{ zIndex: 42 }}
+        draggable="false"
+      />
     </div>
   );
 }

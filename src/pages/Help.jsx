@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import PageShell from "@/components/layout/PageShell.jsx";
-import { SUPPORT_CONTACT_URL } from "@/config/links.js";
 import { useToast } from "@/state/toastContext.js";
 import { DOG_STORAGE_KEY } from "@/redux/dogSlice.js";
 import { SETTINGS_STORAGE_KEY } from "@/redux/settingsSlice.js";
@@ -15,6 +14,7 @@ import {
   removeStoredValuesByPrefix,
 } from "@/utils/nativeStorage.js";
 import { REMINDER_STORAGE_KEY } from "@/utils/reminders.js";
+import { APP_VERSION } from "@/utils/assetUtils.js";
 
 const SURFACE =
   "rounded-3xl border border-emerald-500/15 bg-black/35 backdrop-blur-md shadow-[0_0_60px_rgba(16,185,129,0.10)]";
@@ -479,18 +479,11 @@ export default function HelpPage() {
                     H E L P
                   </div>
                   <h1 className="mt-2 text-3xl sm:text-4xl font-extrabold text-emerald-200">
-                    FAQs, troubleshooting, and developer info
+                    Support and troubleshooting
                   </h1>
                   <p className="mt-3 text-sm text-zinc-300 max-w-2xl">
-                    This page is your “what broke and how do I fix it” hub —
-                    plus setup notes if you’re running Doggerz locally.
-                  </p>
-                  <p className="mt-3 text-sm text-zinc-300">
-                    Still stuck? Head to{" "}
-                    <Link to={SUPPORT_CONTACT_URL} className={LINK}>
-                      Contact
-                    </Link>
-                    .
+                    This is the in-app help hub for bug recovery, support
+                    steps, and quick diagnostics.
                   </p>
                 </div>
 
@@ -523,6 +516,57 @@ export default function HelpPage() {
                   {notice.text}
                 </div>
               ) : null}
+
+              <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <Section id="guidebook" title="Guidebook">
+                  <div className="space-y-4">
+                    <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                      <div className="text-sm font-extrabold text-amber-200">
+                        1. Keep Fireball active
+                      </div>
+                      <p className="mt-2 text-sm text-zinc-300">
+                        Watch Energy and Health. Feeding, play, sleep, and clean
+                        care keep your pup out of a bad mood spiral.
+                      </p>
+                    </div>
+                    <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                      <div className="text-sm font-extrabold text-amber-200">
+                        2. Expect button heists
+                      </div>
+                      <p className="mt-2 text-sm text-zinc-300">
+                        Jack Russells are chaos engines. If a control gets
+                        hijacked, resolve the event and win it back.
+                      </p>
+                    </div>
+                    <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                      <div className="text-sm font-extrabold text-amber-200">
+                        3. Real-world weather matters
+                      </div>
+                      <p className="mt-2 text-sm text-zinc-300">
+                        Time of day and local weather can shift the yard mood,
+                        ambience, and behavior cues.
+                      </p>
+                    </div>
+                  </div>
+                </Section>
+
+                <Section id="build" title="Build">
+                  <div className="rounded-2xl border border-white/10 bg-black/20 p-5 text-center">
+                    <div className="text-2xl font-black text-zinc-100">
+                      Doggerz
+                    </div>
+                    <div className="mt-1 text-sm text-zinc-400">
+                      Version {APP_VERSION} (Closed Alpha)
+                    </div>
+                    <div className="mt-4 text-sm text-zinc-200">
+                      Designed and developed solo.
+                    </div>
+                    <div className="mt-1 text-xs text-zinc-500">
+                      Built with Capacitor and Firebase.
+                    </div>
+                  </div>
+                </Section>
+              </div>
 
               <div className="mt-6 grid grid-cols-1 lg:grid-cols-1 gap-3">
                 <button
@@ -586,8 +630,8 @@ export default function HelpPage() {
 
                 <Section id="requests" title="Need something added?">
                   <p>
-                    Want more FAQs, a feature, or a UI tweak? Drop it on GitHub
-                    and we’ll ship it.
+                    Want a feature or want to report a bug? Use the repo link
+                    below with copied diagnostics.
                   </p>
                   <p>
                     Repo:{" "}
@@ -599,10 +643,6 @@ export default function HelpPage() {
                     >
                       {repoUrl}
                     </a>
-                  </p>
-                  <p className="text-sm text-zinc-400">
-                    (If you want a dedicated “Developer” page too, say the word
-                    — we can split this into Help + Dev Docs.)
                   </p>
                 </Section>
               </div>

@@ -2,8 +2,11 @@
 /** @format */
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { Capacitor } from "@capacitor/core";
+import { Geolocation } from "@capacitor/geolocation";
 import { useDispatch } from "react-redux";
 import { useDogVacation } from "@/hooks/useDogState.js";
+import { PATHS } from "@/routes.js";
 import {
   useUserActions,
   useUserSettingsView,
@@ -39,6 +42,7 @@ import {
   setShowCritters,
   setRoamIntensity,
   setShowWeatherFx,
+  setUsePreciseDayNightLocation,
   setShowBackgroundPhotos,
   setShowSceneVignette,
   setShowSceneGrain,
@@ -150,7 +154,7 @@ function formatTimestamp(ts) {
 function Switch({ id, checked, onChange, label, description }) {
   const tooltip = description || label;
   return (
-    <div className="flex items-start justify-between gap-4">
+    <div className="flex items-start justify-between gap-4 rounded-2xl border border-white/8 bg-black/15 px-3 py-3">
       <div className="min-w-0">
         <label
           htmlFor={id}
@@ -168,7 +172,7 @@ function Switch({ id, checked, onChange, label, description }) {
         <input
           id={id}
           type="checkbox"
-          className="peer sr-only"
+          className="peer sr-only dz-native-toggle-input"
           checked={!!checked}
           onChange={(e) => onChange(e.target.checked)}
           title={tooltip}
@@ -176,10 +180,10 @@ function Switch({ id, checked, onChange, label, description }) {
         <label
           htmlFor={id}
           title={tooltip}
-          className="relative inline-flex h-6 w-11 cursor-pointer items-center rounded-full border border-doggerz-mange/55 bg-doggerz-paw/20 transition peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-doggerz-leaf/80 peer-focus-visible:outline-offset-2 peer-checked:bg-doggerz-leaf/80 dark:border-doggerz-mange/55 dark:bg-black/50"
+          className="dz-native-toggle relative inline-flex h-7 w-[52px] cursor-pointer items-center rounded-full peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-doggerz-leaf/80 peer-focus-visible:outline-offset-2"
         >
           <span className="sr-only">{label}</span>
-          <span className="inline-block h-5 w-5 translate-x-0.5 rounded-full bg-white shadow transition peer-checked:translate-x-5" />
+          <span className="dz-native-toggle__thumb inline-block h-5 w-5 rounded-full bg-white shadow transition" />
         </label>
       </div>
     </div>
@@ -231,8 +235,15 @@ function SliderRow({
   rightLabel,
 }) {
   const tooltip = description || label;
+  const pct =
+    Number(max) > Number(min)
+      ? Math.max(
+          0,
+          Math.min(100, ((Number(value) - Number(min)) / (Number(max) - Number(min))) * 100)
+        )
+      : 0;
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2 rounded-2xl border border-white/8 bg-black/15 px-3 py-3">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <label
@@ -261,7 +272,10 @@ function SliderRow({
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
         title={tooltip}
-        className="w-full"
+        className="dz-native-slider w-full"
+        style={{
+          background: `linear-gradient(90deg, var(--energy-color) 0%, var(--energy-color) ${pct}%, var(--bar-bg) ${pct}%, var(--bar-bg) 100%)`,
+        }}
       />
     </div>
   );
@@ -304,6 +318,8 @@ export default function Settings() {
   }, [currentZip]);
 
   const zipIsValid = zipInput === "" || /^\d{5}$/.test(zipInput);
+  const preciseDayNightLocationEnabled =
+    settings?.usePreciseDayNightLocation === true;
 
   const [cloudUser, setCloudUser] = useState(() => auth?.currentUser ?? null);
   const [cloudBusy, setCloudBusy] = useState(false);
@@ -313,6 +329,53 @@ export default function Settings() {
     return getNotificationPermission();
   });
   const [lastReminder, setLastReminder] = useState(() => getLastReminder());
+
+  const ensureDayNightLocationAccess = async () => {
+    const current = await Geolocation.checkPermissions().catch(() => null);
+    const grantedAlready =
+      current?.coarseLocation === "granted" || current?.location === "granted";
+
+    if (!grantedAlready && Capacitor.isNativePlatform()) {
+      const requested = await Geolocation.requestPermissions({
+        permissions: ["coarseLocation"],
+      });
+      const granted =
+        requested?.coarseLocation === "granted" ||
+        requested?.location === "granted";
+      if (!granted) return false;
+    }
+
+    await Geolocation.getCurrentPosition({
+      enableHighAccuracy: false,
+      timeout: 8000,
+      maximumAge: 5 * 60 * 1000,
+    });
+
+    return true;
+  };
+
+  const handlePreciseDayNightLocationToggle = async (enabled) => {
+    if (!enabled) {
+      dispatch(setUsePreciseDayNightLocation(false));
+      toast.info("Using ZIP or local clock for day/night timing.");
+      return;
+    }
+
+    try {
+      const granted = await ensureDayNightLocationAccess();
+      if (!granted) {
+        dispatch(setUsePreciseDayNightLocation(false));
+        toast.warn("Location permission not granted. ZIP timing stays active.");
+        return;
+      }
+
+      dispatch(setUsePreciseDayNightLocation(true));
+      toast.success("Precise sunrise/sunset timing enabled.");
+    } catch {
+      dispatch(setUsePreciseDayNightLocation(false));
+      toast.warn("Location unavailable. Falling back to ZIP timing.");
+    }
+  };
 
   useEffect(() => {
     const update = () => {
@@ -568,7 +631,7 @@ export default function Settings() {
                     disabled={cloudBusy}
                     onClick={handleSignOut}
                     title="Sign out of cloud sync on this device."
-                    className="inline-flex items-center justify-center rounded-xl border border-doggerz-mange/55 bg-black/30 px-4 py-2 text-sm font-semibold text-doggerz-bone hover:border-doggerz-leaf/70 hover:text-doggerz-leaf disabled:opacity-60"
+                    className="dz-touch-button inline-flex items-center justify-center rounded-xl border border-red-400/45 bg-transparent px-4 py-2 text-sm font-semibold text-red-300 hover:border-red-300 hover:text-red-200 disabled:opacity-60"
                   >
                     Sign out
                   </button>
@@ -1576,8 +1639,16 @@ export default function Settings() {
 
           <Card
             title="Location"
-            subtitle="Used for optional sunrise/sunset timing"
+            subtitle="ZIP fallback with optional precise sunrise/sunset timing"
           >
+            <Switch
+              id="preciseDayNightLocation"
+              label="Use device location for day/night"
+              description="Optional. Uses approximate device location for more accurate dawn/dusk and night timing. ZIP remains the fallback."
+              checked={preciseDayNightLocationEnabled}
+              onChange={handlePreciseDayNightLocationToggle}
+            />
+
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div className="w-full sm:w-auto">
                 <label
@@ -1633,8 +1704,23 @@ export default function Settings() {
 
             <div className="text-xs text-doggerz-paw/65 leading-snug space-y-1">
               <p>
-                Status: <span className="text-doggerz-bone">Using ZIP</span>{" "}
-                {currentZip ? `(ZIP ${currentZip})` : "(none)"}
+                Status:{" "}
+                <span className="text-doggerz-bone">
+                  {preciseDayNightLocationEnabled
+                    ? "Precise location enabled"
+                    : "Using ZIP fallback"}
+                </span>{" "}
+                {preciseDayNightLocationEnabled
+                  ? currentZip
+                    ? `(ZIP fallback ${currentZip})`
+                    : "(no ZIP fallback saved)"
+                  : currentZip
+                    ? `(ZIP ${currentZip})`
+                    : "(none)"}
+              </p>
+              <p>
+                Weather still uses your saved ZIP. Device location only refines
+                sunrise and sunset timing when enabled.
               </p>
             </div>
           </Card>
@@ -1745,6 +1831,51 @@ export default function Settings() {
             <div className="text-sm text-doggerz-paw">
               Version: <span className="font-semibold">{APP_VERSION}</span>
             </div>
+          </Card>
+
+          <Card
+            title="Support & policies"
+            subtitle="Low-profile utility links only"
+            className="self-start"
+            bodyClassName="space-y-3"
+          >
+            <Link
+              to={PATHS.HELP}
+              className="block rounded-2xl border border-doggerz-mange/45 bg-black/25 px-4 py-3 transition hover:border-doggerz-leaf/60 hover:bg-doggerz-neon/10"
+            >
+              <div className="text-sm font-semibold text-doggerz-bone">
+                Help
+              </div>
+              <div className="mt-1 text-xs text-doggerz-paw/75">
+                Troubleshooting, support steps, and diagnostics.
+              </div>
+            </Link>
+
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-doggerz-paw/75">
+              <Link
+                to={PATHS.PRIVACY}
+                className="transition hover:text-doggerz-bone"
+              >
+                Privacy
+              </Link>
+              <Link
+                to={PATHS.LEGAL}
+                className="transition hover:text-doggerz-bone"
+              >
+                Legal
+              </Link>
+              <Link
+                to={PATHS.CONTACT}
+                className="transition hover:text-doggerz-bone"
+              >
+                Contact
+              </Link>
+            </div>
+
+            <p className="text-xs text-doggerz-paw/60">
+              These pages stay available when needed, but they are no longer
+              part of the main app flow.
+            </p>
           </Card>
         </div>
       </div>

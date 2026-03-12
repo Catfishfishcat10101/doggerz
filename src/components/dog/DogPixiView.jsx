@@ -7,6 +7,7 @@ import {
   DOG_WORLD_HEIGHT,
   DOG_WORLD_WIDTH,
 } from "@/components/dog/DogWanderBehavior.js";
+import { resolveViewportAnim } from "@/components/dog/dogAnimationEngine.js";
 
 function clamp(n, lo, hi) {
   const x = Number(n);
@@ -135,24 +136,11 @@ export default function DogPixiView({
     onPositionChange(renderPos);
   }, [onPositionChange, renderPos]);
 
-  const animLower = String(anim || "idle")
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, "_")
-    .replace(/-+/g, "_");
-  const resolveDirectionalWalk = () => {
-    if (!renderPos.moving || dogIsSleeping) return "idle";
-    // Always use the canonical walk sheet and let facing handle mirroring.
-    // Direction-specific sheets were producing a frozen-paw moonwalk look.
-    return "walk";
-  };
-
-  const autoAnim = resolveDirectionalWalk();
-  const effectiveAnim = (() => {
-    if (!animLower || animLower === "idle") return autoAnim;
-    if (animLower === "walk") return resolveDirectionalWalk();
-    return animLower;
-  })();
+  const effectiveAnim = resolveViewportAnim({
+    anim,
+    behaviorState,
+    dogIsSleeping,
+  });
   const depthRatio =
     viewportHeight > 0 ? clamp(renderPos.y / viewportHeight, 0, 1) : 0.5;
   const depthScale = clamp(0.95 + depthRatio * 0.55, 0.9, 1.5);
@@ -162,6 +150,7 @@ export default function DogPixiView({
     10,
     Math.round(size * (0.075 + depthRatio * 0.03))
   );
+  const interactionZIndex = Math.max(depthZIndex + 2, 28);
 
   const style = {
     width: Number.isFinite(Number(width)) ? Number(width) : "100%",
@@ -173,6 +162,7 @@ export default function DogPixiView({
   return (
     <div ref={containerRef} className="relative" style={style}>
       <div
+        className="dog-sprite-container"
         style={{
           position: "absolute",
           left: renderPos.x,
@@ -187,6 +177,7 @@ export default function DogPixiView({
         }}
       >
         <span
+          className="dog-sprite-shadow"
           aria-hidden="true"
           style={{
             position: "absolute",
@@ -201,7 +192,17 @@ export default function DogPixiView({
             filter: "blur(1.5px)",
           }}
         />
+        <DogCosmeticsOverlay
+          equipped={equippedCosmetics}
+          size={size}
+          stage={stage}
+          facing={renderPos.facing}
+          layerMode="behind"
+          showLabels={false}
+          showPreviewTags={false}
+        />
         <SpriteSheetDog
+          className="dog-sprite-core"
           stage={stage}
           condition={condition}
           anim={effectiveAnim}
@@ -214,6 +215,7 @@ export default function DogPixiView({
           size={size}
           stage={stage}
           facing={renderPos.facing}
+          layerMode="front"
           showLabels={false}
           showPreviewTags={false}
         />
@@ -222,6 +224,7 @@ export default function DogPixiView({
         <button
           type="button"
           aria-label="Interact with dog"
+          data-dog-hitbox="true"
           onPointerDown={(event) => {
             event.stopPropagation();
           }}
@@ -236,11 +239,11 @@ export default function DogPixiView({
             width: dogTapHitboxSize,
             height: dogTapHitboxHeight,
             transform: "translate(-50%, -50%)",
-            zIndex: depthZIndex + 1,
             border: 0,
             padding: 0,
             pointerEvents: "auto",
             touchAction: "manipulation",
+            zIndex: interactionZIndex,
           }}
         />
       ) : null}

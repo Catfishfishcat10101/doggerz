@@ -1,12 +1,15 @@
 // src/layout/AppShell.jsx
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 
 import BottomTabBar from "@/components/layout/BottomTabBar.jsx";
 import Header from "@/components/layout/Header.jsx";
-import Footer from "@/components/layout/Footer.jsx";
+import { getPrimaryTabForPath } from "@/routes.js";
 import { AppShellContext } from "./AppShellContext.js";
 
 export default function AppShell() {
+  const location = useLocation();
+  const hasPrimaryTab = Boolean(getPrimaryTabForPath(location.pathname));
+
   return (
     <AppShellContext.Provider
       value={{ withinAppShell: true, mainId: "app-main" }}
@@ -20,12 +23,15 @@ export default function AppShell() {
         </a>
         <Header />
 
-        <main id="app-main" tabIndex={-1} className="flex-1 pb-24 md:pb-0">
+        <main
+          id="app-main"
+          tabIndex={-1}
+          className={`flex-1 ${hasPrimaryTab ? "pb-24 md:pb-0" : "pb-0"}`}
+        >
           <Outlet />
         </main>
 
         <BottomTabBar />
-        <Footer />
       </div>
     </AppShellContext.Provider>
   );

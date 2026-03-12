@@ -1,5 +1,14 @@
 // src/lib/weatherApi.js
 
+import { createTimeoutSignal } from "@/utils/abortSignal.js";
+
+export const WEATHER_REQUEST_TIMEOUT_MS = 5000;
+
+function toFiniteCoordinate(value) {
+  const n = Number(value);
+  return Number.isFinite(n) ? Number(n.toFixed(5)) : null;
+}
+
 function isUsableOpenWeatherKey(key) {
   const k = String(key || "").trim();
   if (!k) return false;
@@ -121,64 +130,229 @@ function normalizeIntensityFromMeteoCode(code) {
 
 async function fetchLatLonForZip(zip, signal) {
   const url = `https://api.zippopotam.us/us/${encodeURIComponent(zip)}`;
-  const resp = await fetch(url, { signal });
-  if (!resp.ok) throw new Error(`ZIP lookup failed ${resp.status}`);
-  const data = await resp.json();
-  const place = Array.isArray(data?.places) ? data.places[0] : null;
-  const lat = Number(place?.latitude);
-  const lon = Number(place?.longitude);
-  if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
-    throw new Error("ZIP lookup missing coordinates");
+  const request = createTimeoutSignal({
+    parentSignal: signal,
+    timeoutMs: WEATHER_REQUEST_TIMEOUT_MS,
+    message: `ZIP lookup timed out after ${WEATHER_REQUEST_TIMEOUT_MS}ms`,
+  });
+  try {
+    const resp = await fetch(url, { signal: request.signal });
+    if (!resp.ok) throw new Error(`ZIP lookup failed ${resp.status}`);
+    const data = await resp.json();
+    const place = Array.isArray(data?.places) ? data.places[0] : null;
+    const lat = Number(place?.latitude);
+    const lon = Number(place?.longitude);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+      throw new Error("ZIP lookup missing coordinates");
+    }
+    return {
+      lat,
+      lon,
+      name:
+        typeof place?.["place name"] === "string" ? place["place name"] : null,
+    };
+  } finally {
+    request.cleanup();
   }
+}
+
+function buildOpenMeteoSnapshot(data, details = {}) {
+  const code = data?.current?.weather_code;
+  const condition = normalizeConditionFromMeteoCode(code);
+  const intensity = normalizeIntensityFromMeteoCode(code);
+
   return {
-    lat,
-    lon,
-    name:
-      typeof place?.["place name"] === "string" ? place["place name"] : null,
+    condition,
+    intensity,
+    fetchedAt: Date.now(),
+    source: "openmeteo",
+    details: {
+      ...details,
+      weatherCode: Number.isFinite(Number(code)) ? Number(code) : null,
+      timezone: typeof data?.timezone === "string" ? data.timezone : null,
+      timezoneOffsetSeconds: Number.isFinite(Number(data?.utc_offset_seconds))
+        ? Number(data.utc_offset_seconds)
+        : null,
+      isDay: Number(data?.current?.is_day) === 1,
+    },
   };
 }
 
-export async function fetchWeatherSnapshot({ zip, signal }) {
+function buildOpenWeatherSnapshot(data, details = {}) {
+  const condition = normalizeConditionFromOpenWeather(data);
+  const intensity = normalizeIntensityFromOpenWeather(data);
+  const cloudsPct = Number.isFinite(Number(data?.clouds?.all))
+    ? Number(data.clouds.all)
+    : null;
+  const first = Array.isArray(data?.weather) ? data.weather[0] : null;
+
+  return {
+    condition,
+    intensity,
+    fetchedAt: Date.now(),
+    source: "openweather",
+    details: {
+      ...details,
+      name: typeof data?.name === "string" ? data.name : details?.name || null,
+      weatherMain: first?.main ? String(first.main) : null,
+      weatherId: Number.isFinite(Number(first?.id)) ? Number(first.id) : null,
+      cloudsPct,
+      timezoneOffsetSeconds: Number.isFinite(Number(data?.timezone))
+        ? Number(data.timezone)
+        : null,
+      sunriseAt: Number.isFinite(Number(data?.sys?.sunrise))
+        ? Number(data.sys.sunrise) * 1000
+        : null,
+      sunsetAt: Number.isFinite(Number(data?.sys?.sunset))
+        ? Number(data.sys.sunset) * 1000
+        : null,
+    },
+  };
+}
+
+async function fetchOpenMeteoSnapshot({ lat, lon, signal, details = {} }) {
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${encodeURIComponent(
+    lat
+  )}&longitude=${encodeURIComponent(
+    lon
+  )}&current=weather_code,is_day&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=auto`;
+
+  const request = createTimeoutSignal({
+    parentSignal: signal,
+    timeoutMs: WEATHER_REQUEST_TIMEOUT_MS,
+    message: `Open-Meteo timed out after ${WEATHER_REQUEST_TIMEOUT_MS}ms`,
+  });
+
+  try {
+    const resp = await fetch(url, { signal: request.signal });
+    if (!resp.ok) throw new Error(`Open-Meteo fetch failed ${resp.status}`);
+    const data = await resp.json();
+    return buildOpenMeteoSnapshot(data, details);
+  } finally {
+    request.cleanup();
+  }
+}
+
+async function fetchOpenWeatherByCoords({ lat, lon, apiKey, signal, details = {} }) {
+  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${encodeURIComponent(
+    lat
+  )}&lon=${encodeURIComponent(lon)}&appid=${apiKey}`;
+
+  const request = createTimeoutSignal({
+    parentSignal: signal,
+    timeoutMs: WEATHER_REQUEST_TIMEOUT_MS,
+    message: `OpenWeather timed out after ${WEATHER_REQUEST_TIMEOUT_MS}ms`,
+  });
+  try {
+    const resp = await fetch(url, { signal: request.signal });
+    if (!resp.ok) {
+      throw new Error(`Weather fetch failed ${resp.status}`);
+    }
+    const data = await resp.json();
+    return buildOpenWeatherSnapshot(data, details);
+  } finally {
+    request.cleanup();
+  }
+}
+
+export async function fetchWeatherSnapshot({ zip, coords, signal }) {
   const apiKey = import.meta.env.VITE_OPENWEATHER_API_KEY;
-  const effectiveZip =
-    String(zip || "").trim() ||
-    import.meta.env.VITE_WEATHER_DEFAULT_ZIP ||
-    "10001";
+  const effectiveZip = String(zip || "").trim();
+  const lat = toFiniteCoordinate(coords?.latitude ?? coords?.lat);
+  const lon = toFiniteCoordinate(coords?.longitude ?? coords?.lon);
+  const hasCoords = Number.isFinite(lat) && Number.isFinite(lon);
+
+  if (hasCoords) {
+    const locationDetails = {
+      location: {
+        latitude: lat,
+        longitude: lon,
+      },
+      liveWeather: true,
+    };
+
+    if (!isUsableOpenWeatherKey(apiKey)) {
+      try {
+        return {
+          ...(await fetchOpenMeteoSnapshot({
+            lat,
+            lon,
+            signal,
+            details: locationDetails,
+          })),
+          zip: effectiveZip || null,
+        };
+      } catch (err) {
+        return {
+          condition: "sun",
+          intensity: "light",
+          zip: effectiveZip || null,
+          fetchedAt: Date.now(),
+          source: "fallback",
+          details: {
+            ...locationDetails,
+            reason: "openmeteo_fallback",
+          },
+          error: err?.message || "Open-Meteo failed",
+        };
+      }
+    }
+
+    return {
+      ...(await fetchOpenWeatherByCoords({
+        lat,
+        lon,
+        apiKey,
+        signal,
+        details: locationDetails,
+      })),
+      zip: effectiveZip || null,
+    };
+  }
+
+  if (!/^\d{5}$/.test(effectiveZip)) {
+    return {
+      condition: "unknown",
+      intensity: "medium",
+      zip: null,
+      fetchedAt: Date.now(),
+      source: "none",
+      details: null,
+      error: "Weather ZIP unavailable",
+    };
+  }
 
   if (!isUsableOpenWeatherKey(apiKey)) {
     try {
       const { lat, lon, name } = await fetchLatLonForZip(effectiveZip, signal);
-      const url = `https://api.open-meteo.com/v1/forecast?latitude=${encodeURIComponent(
-        lat
-      )}&longitude=${encodeURIComponent(
-        lon
-      )}&current=weather_code&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=auto`;
-
-      const resp = await fetch(url, { signal });
-      if (!resp.ok) throw new Error(`Open-Meteo fetch failed ${resp.status}`);
-      const data = await resp.json();
-      const code = data?.current?.weather_code;
-      const condition = normalizeConditionFromMeteoCode(code);
-      const intensity = normalizeIntensityFromMeteoCode(code);
       return {
-        condition,
-        intensity,
+        ...(await fetchOpenMeteoSnapshot({
+          lat,
+          lon,
+          signal,
+          details: {
+            name,
+            zip: effectiveZip,
+            liveWeather: true,
+            location: {
+              latitude: lat,
+              longitude: lon,
+            },
+          },
+        })),
         zip: effectiveZip,
-        fetchedAt: Date.now(),
-        source: "openmeteo",
-        details: {
-          name,
-          weatherCode: Number.isFinite(Number(code)) ? Number(code) : null,
-        },
       };
     } catch (err) {
       return {
-        condition: "unknown",
-        intensity: "medium",
+        condition: "sun",
+        intensity: "light",
         zip: effectiveZip,
         fetchedAt: Date.now(),
-        source: "openmeteo",
-        details: null,
+        source: "fallback",
+        details: {
+          liveWeather: false,
+          reason: "openmeteo_fallback",
+        },
         error: err?.message || "Open-Meteo failed",
       };
     }
@@ -188,30 +362,27 @@ export async function fetchWeatherSnapshot({ zip, signal }) {
     effectiveZip
   )},US&appid=${apiKey}`;
 
-  const resp = await fetch(url, { signal });
-  if (!resp.ok) {
-    throw new Error(`Weather fetch failed ${resp.status}`);
+  const request = createTimeoutSignal({
+    parentSignal: signal,
+    timeoutMs: WEATHER_REQUEST_TIMEOUT_MS,
+    message: `OpenWeather timed out after ${WEATHER_REQUEST_TIMEOUT_MS}ms`,
+  });
+  let data;
+  try {
+    const resp = await fetch(url, { signal: request.signal });
+    if (!resp.ok) {
+      throw new Error(`Weather fetch failed ${resp.status}`);
+    }
+    data = await resp.json();
+  } finally {
+    request.cleanup();
   }
-  const data = await resp.json();
 
-  const condition = normalizeConditionFromOpenWeather(data);
-  const intensity = normalizeIntensityFromOpenWeather(data);
-  const cloudsPct = Number.isFinite(Number(data?.clouds?.all))
-    ? Number(data.clouds.all)
-    : null;
-
-  const first = Array.isArray(data?.weather) ? data.weather[0] : null;
   return {
-    condition,
-    intensity,
+    ...buildOpenWeatherSnapshot(data, {
+      zip: effectiveZip,
+      liveWeather: true,
+    }),
     zip: effectiveZip,
-    fetchedAt: Date.now(),
-    source: "openweather",
-    details: {
-      name: typeof data?.name === "string" ? data.name : null,
-      weatherMain: first?.main ? String(first.main) : null,
-      weatherId: Number.isFinite(Number(first?.id)) ? Number(first.id) : null,
-      cloudsPct,
-    },
   };
 }

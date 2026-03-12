@@ -30,7 +30,8 @@ export function PupProvider({ children }) {
     () => ({
       addXP: (amount) => dispatch(addXp({ amount })),
       removeXP: (amount) => dispatch(removeXp({ amount })),
-      logPottySuccess: () => dispatch(goPotty({ now: Date.now() })),
+      logPottySuccess: () =>
+        dispatch(goPotty({ now: Date.now(), forceSuccess: true })),
       logAccident: () => dispatch(recordAccident({ now: Date.now() })),
       // Stubs for future expansion
       awardBadge: () => {},

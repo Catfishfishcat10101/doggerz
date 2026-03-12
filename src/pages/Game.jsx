@@ -2,8 +2,10 @@
 import { useMemo } from "react";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
+import { Navigate } from "react-router-dom";
 
 import BottomTabBar from "@/components/layout/BottomTabBar.jsx";
+import DogAIEngine from "@/components/dog/DogAIEngine.jsx";
 import MainGame from "@/components/game/MainGame.jsx";
 import GrowthCelebration from "@/components/dog/GrowthCelebration.jsx";
 import { getDailyRewardState } from "@/features/billing/dailyRewards.js";
@@ -13,11 +15,17 @@ import {
   selectWeatherCondition,
   selectWeatherIntensity,
 } from "@/redux/weatherSlice.js";
-import { selectUserZip } from "@/redux/userSlice.js";
+import {
+  selectCloudSyncState,
+  selectIsAuthResolved,
+  selectIsLoggedIn,
+  selectUserZip,
+} from "@/redux/userSlice.js";
 import { selectSettings } from "@/redux/settingsSlice.js";
 import { useDayNight } from "@/hooks/useDayNight.js";
 import WeatherFXCanvas from "@/components/environment/WeatherFXCanvas.jsx";
 import { useDog } from "@/hooks/useDogState.js";
+import { PATHS } from "@/routes.js";
 import {
   getWeatherAccent,
   getWeatherLabel,
@@ -51,11 +59,21 @@ export default function GamePage() {
   const modal = useModal();
   const dog = useDog();
   const zip = useSelector(selectUserZip);
+  const isAuthResolved = useSelector(selectIsAuthResolved);
+  const isLoggedIn = useSelector(selectIsLoggedIn);
+  const cloudSync = useSelector(selectCloudSyncState);
   const weather = useSelector(selectWeatherCondition);
   const weatherIntensity = useSelector(selectWeatherIntensity);
   const settings = useSelector(selectSettings);
   const [rewardNow, setRewardNow] = useState(() => Date.now());
+  const [adoptionGateReady, setAdoptionGateReady] = useState(false);
   const lifecycleStatus = String(dog?.lifecycleStatus || "NONE").toUpperCase();
+  const lifecycleNoticeKey =
+    lifecycleStatus === "FAREWELL"
+      ? `lifecycleNotice:FAREWELL:${Number(dog?.legacyJourney?.farewellLetterAt || dog?.adoptedAt || 0)}`
+      : lifecycleStatus === "RESCUED"
+        ? `lifecycleNotice:RESCUED:${Number(dog?.danger?.rescuedAt || dog?.adoptedAt || 0)}`
+        : "";
   const dogInteractive = lifecycleStatus === "ACTIVE";
   const {
     isEligible: isFounderBonusEligible,
@@ -68,14 +86,19 @@ export default function GamePage() {
   });
 
   const perfReduced = shouldReduceEffects(settings?.perfMode);
-  const showBackgroundPhotos = true;
+  const showBackgroundPhotos = settings?.showBackgroundPhotos !== false;
+  const usePreciseDayNightLocation =
+    settings?.usePreciseDayNightLocation === true;
   const {
     isNight,
+    source: dayNightSource,
+    sunriseProgress,
     timeOfDayBucket,
     style: dayNightStyle,
   } = useDayNight({
     zip,
     enableImages: showBackgroundPhotos,
+    usePreciseLocation: usePreciseDayNightLocation,
   });
 
   const reduceMotion =
@@ -87,8 +110,9 @@ export default function GamePage() {
 
   const reduceTransparency = settings?.reduceTransparency === true;
   const showWeatherFx = settings?.showWeatherFx !== false && !perfReduced;
-  const showVignette = false;
-  const showGrain = false;
+  const showVignette = settings?.showSceneVignette !== false && !perfReduced;
+  const showGrain =
+    settings?.showSceneGrain !== false && !perfReduced && !reduceTransparency;
 
   const weatherKey = useMemo(
     () => normalizeWeatherCondition(weather),
@@ -112,6 +136,24 @@ export default function GamePage() {
     };
   }, []);
 
+  useEffect(() => {
+    if (dog?.adoptedAt) {
+      setAdoptionGateReady(false);
+      return undefined;
+    }
+
+    if (!isLoggedIn) {
+      setAdoptionGateReady(true);
+      return undefined;
+    }
+
+    setAdoptionGateReady(false);
+    const timer = window.setTimeout(() => {
+      setAdoptionGateReady(true);
+    }, 1600);
+    return () => window.clearTimeout(timer);
+  }, [dog?.adoptedAt, isLoggedIn]);
+
   const scene = useMemo(
     () => ({
       label:
@@ -119,14 +161,20 @@ export default function GamePage() {
         "apartment"
           ? "Apartment"
           : "Backyard",
-      timeOfDay: isNight ? "Night" : titleCase(timeOfDayBucket || "Day"),
+      timeOfDay: titleCase(timeOfDayBucket || (isNight ? "night" : "day")),
+      timeOfDayBucket,
+      isNight,
+      sunriseProgress,
+      dayNightSource,
       weather: weatherLabel,
       weatherKey,
       weatherAccent,
     }),
     [
+      dayNightSource,
       dog?.yard?.environment,
       isNight,
+      sunriseProgress,
       timeOfDayBucket,
       weatherLabel,
       weatherKey,
@@ -158,12 +206,13 @@ export default function GamePage() {
   }, [dailyRewardState, dog?.adoptedAt, modal]);
 
   useEffect(() => {
-    if (dogInteractive) {
+    if (lifecycleStatus !== "RESCUED" && lifecycleStatus !== "FAREWELL") {
       modal.closeModalById("lifecycleNotice");
       return;
     }
     if (!dog) return;
-    modal.openModal(
+    modal.openOnce(
+      lifecycleNoticeKey,
       "lifecycleNotice",
       {
         lifecycleStatus,
@@ -171,7 +220,7 @@ export default function GamePage() {
       },
       { replace: true }
     );
-  }, [dog, dogInteractive, lifecycleStatus, modal]);
+  }, [dog, lifecycleNoticeKey, lifecycleStatus, modal]);
 
   useEffect(() => {
     if (!dogInteractive || founderBonusLoading) return;
@@ -191,12 +240,27 @@ export default function GamePage() {
     modal,
   ]);
 
+  const waitingForCloudAdoptionDecision =
+    !dog?.adoptedAt &&
+    (!isAuthResolved ||
+      (isLoggedIn &&
+        (!adoptionGateReady ||
+          (cloudSync?.status === "syncing" &&
+            !cloudSync?.lastSuccessAt))));
+
+  const shouldRedirectToAdopt =
+    !dog?.adoptedAt &&
+    isAuthResolved &&
+    adoptionGateReady &&
+    (!isLoggedIn || cloudSync?.status !== "syncing");
+
   return (
     <div
       className="dz-safe-area relative min-h-dvh overflow-hidden pb-24 md:pb-0"
       style={{ ...dayNightStyle, "--weather-accent": weatherAccent }}
       data-weather={weatherKey}
     >
+      <DogAIEngine enableAudio enableWeather />
       {/* Extra vignette + grain to sell depth behind the UI */}
       {showVignette ? (
         <div className="pointer-events-none absolute inset-0 bg-black/40" />
@@ -214,7 +278,26 @@ export default function GamePage() {
       />
 
       <div className="relative z-10">
-        <MainGame scene={scene} dogInteractive={dogInteractive} />
+        {shouldRedirectToAdopt ? (
+          <Navigate to={PATHS.ADOPT} replace />
+        ) : waitingForCloudAdoptionDecision ? (
+          <div className="flex min-h-dvh items-center justify-center px-6 text-center text-zinc-100">
+            <div className="w-full max-w-md rounded-[30px] border border-white/10 bg-black/45 p-6 shadow-[0_28px_90px_rgba(0,0,0,0.45)] backdrop-blur">
+              <div className="text-[11px] uppercase tracking-[0.24em] text-emerald-200/80">
+                Checking your pup
+              </div>
+              <h1 className="mt-2 text-2xl font-black text-emerald-100">
+                Loading your adoption status
+              </h1>
+              <p className="mt-3 text-sm text-zinc-300">
+                Doggerz is checking local and cloud save data before dropping
+                you into the yard.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <MainGame scene={scene} dogInteractive={dogInteractive} />
+        )}
       </div>
       <GrowthCelebration />
       <BottomTabBar />

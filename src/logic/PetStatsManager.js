@@ -4,14 +4,14 @@ const DEFAULT_MIN_STAT = 0;
 const DEFAULT_MAX_STAT = 100;
 
 export const CORE_PET_STAT_DECAY_PER_HOUR = Object.freeze({
-  hunger: 2,
-  thirst: 2,
-  happiness: 2,
-  energy: 2,
-  cleanliness: 1,
-  health: 1,
-  affection: 2,
-  mentalStimulation: 2,
+  hunger: 1.6,
+  thirst: 1.5,
+  happiness: 1.15,
+  energy: 1.0,
+  cleanliness: 0.65,
+  health: 0,
+  affection: 0.8,
+  mentalStimulation: 1.1,
 });
 
 export const NEEDS_THAT_RISE_WITH_NEGLECT = Object.freeze(

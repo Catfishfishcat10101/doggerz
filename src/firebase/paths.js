@@ -10,24 +10,28 @@ const _v = (id) => {
 
 export const userProfileDoc = (uid) => {
   _v(uid);
+  if (!db) return null;
   return doc(db, "users", uid);
 };
 
 // The central "Brain" of the dog - Keep stats/training/personality here!
 export const dogMainDoc = (uid) => {
   _v(uid);
+  if (!db) return null;
   return doc(db, "users", uid, "dog", "main");
 };
 
 // Journal (Keep separate as it grows indefinitely)
 export const dogJournalCol = (uid) => {
   _v(uid);
+  if (!db) return null;
   return collection(db, "users", uid, "dog", "journal");
 };
 
 // Events/History (Keep separate)
 export const dogEventsCol = (uid) => {
   _v(uid);
+  if (!db) return null;
   return collection(db, "users", uid, "dog", "events");
 };
 

@@ -4,7 +4,16 @@
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "headers": [
       {
-        "source": "**",
+        "source": "/index.html",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
+          }
+        ]
+      },
+      {
+        "source": "**/*.@(js|css|mjs|png|jpg|jpeg|gif|webp|svg|ico|woff|woff2|ttf)",
         "headers": [
           {
             "key": "Cache-Control",

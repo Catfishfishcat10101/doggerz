@@ -224,10 +224,11 @@ function resolveAmbientCandidates(weatherKey) {
   return AMBIENT_TRACKS.default;
 }
 
-function useUserGestureGate() {
+function useUserGestureGate(enabled = true) {
   const readyRef = useRef(false);
 
   useEffect(() => {
+    if (!enabled) return undefined;
     if (readyRef.current) return;
     const unlock = () => {
       readyRef.current = true;
@@ -246,12 +247,12 @@ function useUserGestureGate() {
       window.removeEventListener("keydown", unlock);
       window.removeEventListener("touchstart", unlock);
     };
-  }, []);
+  }, [enabled]);
 
-  return useCallback(() => readyRef.current, []);
+  return useCallback(() => Boolean(enabled) && readyRef.current, [enabled]);
 }
 
-export default function useDynamicMusic() {
+export default function useDynamicMusic({ enabled = true } = {}) {
   const dog = useDog();
   const settings = useSelector(selectSettings);
   const weather = useSelector(selectWeatherCondition);
@@ -275,7 +276,7 @@ export default function useDynamicMusic() {
     lastTrack: null,
   });
   const trackTokenRef = useRef(0);
-  const canPlay = useUserGestureGate();
+  const canPlay = useUserGestureGate(enabled);
   const [trackToken, setTrackToken] = useState(0);
 
   const stationKey = useMemo(() => {
@@ -300,6 +301,7 @@ export default function useDynamicMusic() {
   }, []);
 
   useEffect(() => {
+    if (!enabled) return;
     if (typeof Audio === "undefined") return;
     if (!audioRef.current) {
       const audio = new Audio();
@@ -313,7 +315,7 @@ export default function useDynamicMusic() {
       ambient.loop = true;
       ambientRef.current = ambient;
     }
-  }, []);
+  }, [enabled]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -355,7 +357,7 @@ export default function useDynamicMusic() {
     const ambient = ambientRef.current;
     if (!audio) return;
 
-    const audioEnabled = settings?.audio?.enabled !== false;
+    const audioEnabled = enabled && settings?.audio?.enabled !== false;
     const musicEnabled = settings?.audio?.musicEnabled !== false;
     const masterVolume = clamp01(settings?.audio?.masterVolume ?? 0.8);
     const musicVolume = clamp01(settings?.audio?.musicVolume ?? 0.5);
@@ -496,6 +498,7 @@ export default function useDynamicMusic() {
       audio.play().catch(() => {});
     }
   }, [
+    enabled,
     canPlay,
     settings?.audio?.enabled,
     settings?.audio?.musicEnabled,

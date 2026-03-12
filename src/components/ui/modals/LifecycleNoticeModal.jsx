@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import ModalSurface from "@/components/ui/modals/ModalSurface.jsx";
 import { PATHS } from "@/routes.js";
@@ -17,7 +17,9 @@ export default function LifecycleNoticeModal({
   open = false,
   lifecycleStatus = "NONE",
   dog = null,
+  onClose = null,
 }) {
+  const navigate = useNavigate();
   const status = String(lifecycleStatus || "NONE").toUpperCase();
   const isRescued = status === "RESCUED";
   const isFarewell = status === "FAREWELL";
@@ -40,9 +42,18 @@ export default function LifecycleNoticeModal({
 
   if (!open) return null;
 
+  const handleNavigate = (path) => {
+    if (!path) return;
+    if (typeof onClose === "function") onClose();
+    window.setTimeout(() => {
+      navigate(path);
+    }, 0);
+  };
+
   return (
     <ModalSurface
       open={open}
+      onClose={onClose}
       title={isRescued ? "Animal Rescue Center" : "Legacy Milestone"}
       zIndexClass="z-[92]"
       panelClassName="max-w-lg bg-zinc-950/92 shadow-[0_30px_90px_rgba(0,0,0,0.55)]"
@@ -78,31 +89,43 @@ export default function LifecycleNoticeModal({
 
       <div className="mt-5 flex flex-wrap gap-2">
         {isFarewell ? (
-          <Link
-            to={PATHS.RAINBOW_BRIDGE}
-            className="rounded-2xl bg-emerald-400 px-4 py-2 text-sm font-semibold text-black hover:bg-emerald-300"
+          <button
+            type="button"
+            onClick={() => handleNavigate(PATHS.RAINBOW_BRIDGE)}
+            className="dz-touch-button rounded-2xl bg-emerald-400 px-4 py-2 text-sm font-semibold text-black"
           >
             Open Rainbow Bridge
-          </Link>
+          </button>
         ) : null}
         {rescueHoldActive ? (
           <span className="cursor-not-allowed rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-zinc-500">
             Adoption locked
           </span>
         ) : (
-          <Link
-            to={PATHS.ADOPT}
-            className="rounded-2xl border border-white/20 bg-white/5 px-4 py-2 text-sm font-semibold text-zinc-100 hover:bg-white/10"
+          <button
+            type="button"
+            onClick={() => handleNavigate(PATHS.ADOPT)}
+            className="dz-touch-button rounded-2xl border border-white/20 bg-white/5 px-4 py-2 text-sm font-semibold text-zinc-100"
           >
             Adopt a new pup
-          </Link>
+          </button>
         )}
-        <Link
-          to={PATHS.MEMORIES}
-          className="rounded-2xl border border-white/20 bg-white/5 px-4 py-2 text-sm font-semibold text-zinc-100 hover:bg-white/10"
+        <button
+          type="button"
+          onClick={() => handleNavigate(PATHS.MEMORIES)}
+          className="dz-touch-button rounded-2xl border border-white/20 bg-white/5 px-4 py-2 text-sm font-semibold text-zinc-100"
         >
           Read letters
-        </Link>
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            if (typeof onClose === "function") onClose();
+          }}
+          className="dz-touch-button rounded-2xl border border-white/15 bg-black/30 px-4 py-2 text-sm font-semibold text-zinc-300"
+        >
+          Back
+        </button>
       </div>
     </ModalSurface>
   );

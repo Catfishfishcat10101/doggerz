@@ -10,19 +10,14 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "baseUrl": ".",
+    "types": [],
     "paths": {
       "@/*": ["src/*"]
-    },
-    "types": ["vite/client", "node"]
+    }
   },
   "include": [
     "src/**/*",
-    "types/**/*",
-    "capacitor.config.json*",
-    "vite.config.*",
-    "eslint.config.cjs",
-    "tailwind.config.*",
-    "postcss.config.*"
+    "types/**/*"
   ],
   "exclude": ["node_modules", "dist"]
 }

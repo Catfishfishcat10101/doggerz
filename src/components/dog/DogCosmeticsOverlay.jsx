@@ -26,6 +26,7 @@ export default function DogCosmeticsOverlay({
   size = 360,
   stage = "PUPPY",
   facing = 1,
+  layerMode = "all",
   showLabels,
   showPreviewTags,
   showEditorUi = false,
@@ -49,27 +50,36 @@ export default function DogCosmeticsOverlay({
     () => getDogCosmeticLayerSpecs({ equipped, stage, facing }),
     [equipped, facing, stage]
   );
+  const filteredRenderLayers = useMemo(() => {
+    if (layerMode === "behind") {
+      return renderLayers.filter((layer) => layer.behindDog);
+    }
+    if (layerMode === "front") {
+      return renderLayers.filter((layer) => !layer.behindDog);
+    }
+    return renderLayers;
+  }, [layerMode, renderLayers]);
   const items = [
     {
       key: "collar",
       label: collar ? `Collar: ${collar}` : "",
-      tone: "border-emerald-400/25 bg-emerald-500/10 text-emerald-100",
+      tone: "dz-dog-chip dz-dog-chip--emerald",
     },
     {
       key: "tag",
       label: tag ? `Tag: ${tag}` : "",
-      tone: "border-amber-400/25 bg-amber-500/10 text-amber-100",
+      tone: "dz-dog-chip dz-dog-chip--amber",
     },
     {
       key: "backdrop",
       label: backdrop ? `Backdrop: ${backdrop}` : "",
-      tone: "border-sky-400/25 bg-sky-500/10 text-sky-100",
+      tone: "dz-dog-chip dz-dog-chip--sky",
     },
   ].filter((item) => item.label);
 
   // No renderable layers and no requested preview UI => render nothing.
   if (
-    !renderLayers.length &&
+    !filteredRenderLayers.length &&
     !(displayLabels || displayPreviewTags || showEditorUi)
   ) {
     return null;
@@ -87,11 +97,11 @@ export default function DogCosmeticsOverlay({
   // Simple, non-asset overlay that won't break if images are missing.
   return (
     <div
-      className="absolute inset-0 pointer-events-none"
+      className={`dog-cosmetics-overlay dog-cosmetics-overlay--${layerMode} absolute inset-0 pointer-events-none`}
       style={{ width: size, height: size }}
       aria-hidden="true"
     >
-      {renderLayers.map((layer) => (
+      {filteredRenderLayers.map((layer) => (
         <img
           key={layer.key}
           src={layer.src}
@@ -107,7 +117,7 @@ export default function DogCosmeticsOverlay({
           ? items.map((item) => (
               <span
                 key={item.key}
-                className={`inline-flex rounded-full border px-2 py-1 text-[10px] font-bold uppercase tracking-[0.18em] ${item.tone}`}
+                className={item.tone}
               >
                 {item.label}
               </span>
@@ -119,7 +129,7 @@ export default function DogCosmeticsOverlay({
             {items.map((item) => (
               <span
                 key={`${item.key}-dot`}
-                className="inline-flex items-center rounded-full border border-white/10 bg-black/30 px-2 py-0.5 text-[10px] uppercase tracking-[0.2em] text-zinc-200"
+                className="dz-dog-tag"
               >
                 {item.key}
               </span>
@@ -130,10 +140,10 @@ export default function DogCosmeticsOverlay({
 
       {showEditorUi ? (
         <div className="absolute right-2 top-2 pointer-events-auto">
-          <div className="flex items-center gap-2 rounded-full border border-white/10 bg-black/50 px-2 py-1 text-[10px] uppercase tracking-[0.2em] text-zinc-200">
+          <div className="flex items-center gap-2 rounded-full border border-emerald-300/25 bg-black/60 px-2 py-1 text-[10px] uppercase tracking-[0.2em] text-zinc-200 shadow-[0_0_18px_rgba(16,185,129,0.16)]">
             <button
               type="button"
-              className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] text-zinc-200 hover:bg-white/10"
+              className="dz-dog-editor-pill"
               onClick={() =>
                 dispatch(setCosmeticsOverlayShowLabels(!displayLabels))
               }
@@ -142,7 +152,7 @@ export default function DogCosmeticsOverlay({
             </button>
             <button
               type="button"
-              className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] text-zinc-200 hover:bg-white/10"
+              className="dz-dog-editor-pill"
               onClick={() =>
                 dispatch(
                   setCosmeticsOverlayShowPreviewTags(!displayPreviewTags)
@@ -156,7 +166,7 @@ export default function DogCosmeticsOverlay({
               onChange={(e) =>
                 dispatch(setCosmeticsOverlayPosition(e.target.value))
               }
-              className="rounded-full border border-white/10 bg-black/40 px-2 py-0.5 text-[10px] text-zinc-200"
+              className="rounded-full border border-white/20 bg-black/50 px-2 py-0.5 text-[10px] text-zinc-200"
             >
               <option value="top-left">Top left</option>
               <option value="top-right">Top right</option>

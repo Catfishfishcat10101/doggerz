@@ -1,6 +1,6 @@
 // src/pages/Store.jsx
 // Store: buy + preview cosmetics (collars/tags/backdrops).
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useToast } from "@/state/toastContext.js";
@@ -11,6 +11,7 @@ import Tooltip from "@/components/ui/Tooltip.jsx";
 import { PageHeader } from "@/components/layout/PageSections.jsx";
 import { useDogStoreView } from "@/hooks/useDogState.js";
 import { getSpriteForStageAndTier } from "@/utils/lifecycle.js";
+import { resolveBackdropLayers } from "@/utils/backgroundLayers.js";
 import {
   purchaseCosmetic,
   equipCosmetic,
@@ -129,6 +130,8 @@ function cosmeticDescription(item) {
   if (category === "toys") {
     if (id === "toy_tennis_ball_basic")
       return "Free starter toy. Lower impact; works best with sustained active play.";
+    if (id === "toy_squeaky_catfish")
+      return "River-chaos favorite. Strong mood boost with a little terrier frenzy.";
     if (id === "toy_squeaky_squirrel")
       return "Strong boredom relief. High prey-drive pups get bonus happiness.";
     if (id === "toy_tug_rope")
@@ -168,11 +171,17 @@ function cosmeticDescription(item) {
       return "A fresh, leafy collar with a soft emerald glow.";
     if (id === "collar_neon")
       return "A bright neon collar for maximum main-character energy.";
+    if (id === "collar_midnight")
+      return "A dark steel collar with a cool blue edge glow.";
+    if (id === "collar_sunflare")
+      return "A hot orange collar that looks sharp against night scenes.";
     if (id === "beta_collar_2026")
       return "Exclusive founder reward with a crisp beta-blue glow.";
     return "A stylish collar for your pup.";
   }
   if (slot === "tag") {
+    if (id === "tag_heart") return "A warm heart tag for the clingy good dog era.";
+    if (id === "tag_bolt") return "A fast-looking bolt tag for chaos gremlins and sprinters.";
     if (id === "tag_star") return "A shiny star tag that catches the light.";
     return "A cute tag that shows off your pup.";
   }
@@ -349,6 +358,8 @@ export default function Store() {
   const [preview, setPreview] = useState(null); // { slot, id }
   const [focusedId, setFocusedId] = useState(null);
   const [previewLocked, setPreviewLocked] = useState(false);
+  const [purchaseFeedback, setPurchaseFeedback] = useState({});
+  const purchaseFeedbackTimersRef = useRef({});
   const previewOnHover = settings?.storeHoverPreview !== false;
   const showEquippedFirst = settings?.storeShowEquippedFirst !== false;
   const compactCards = settings?.storeCompactCards === true;
@@ -365,6 +376,36 @@ export default function Store() {
       setPreview(null);
     }
   }, [previewOnHover, previewLocked, preview?.id]);
+
+  useEffect(() => {
+    return () => {
+      Object.values(purchaseFeedbackTimersRef.current).forEach((timerId) => {
+        if (timerId) window.clearTimeout(timerId);
+      });
+      purchaseFeedbackTimersRef.current = {};
+    };
+  }, []);
+
+  const pulsePurchaseFeedback = (id, state, durationMs = 1000) => {
+    setPurchaseFeedback((prev) => {
+      if (purchaseFeedbackTimersRef.current[id]) {
+        window.clearTimeout(purchaseFeedbackTimersRef.current[id]);
+      }
+      const timerId = window.setTimeout(() => {
+        setPurchaseFeedback((current) => {
+          const next = { ...current };
+          delete next[id];
+          return next;
+        });
+        delete purchaseFeedbackTimersRef.current[id];
+      }, durationMs);
+      purchaseFeedbackTimersRef.current[id] = timerId;
+      return {
+        ...prev,
+        [id]: { state },
+      };
+    });
+  };
 
   const stageId = String(dog?.lifeStage?.stage || "PUPPY").toUpperCase();
   const fallbackSprite = useMemo(
@@ -393,18 +434,18 @@ export default function Store() {
     affordFilter !== "all" ||
     sortKey !== "recommended";
 
-  const backdropStyle = useMemo(() => {
-    if (selectedBackdrop === "backdrop_sunset") {
-      return {
-        background:
-          "radial-gradient(1000px 400px at 50% 25%, rgba(251,191,36,0.25), transparent 55%), radial-gradient(900px 380px at 30% 15%, rgba(244,63,94,0.18), transparent 60%), radial-gradient(900px 380px at 70% 15%, rgba(59,130,246,0.14), transparent 60%), linear-gradient(180deg, rgba(0,0,0,0.15), rgba(0,0,0,0.55))",
-      };
-    }
-    return {
-      background:
-        "radial-gradient(900px 380px at 50% 25%, rgba(16,185,129,0.18), transparent 55%), radial-gradient(800px 360px at 30% 12%, rgba(56,189,248,0.10), transparent 60%), linear-gradient(180deg, rgba(0,0,0,0.10), rgba(0,0,0,0.60))",
-    };
-  }, [selectedBackdrop]);
+  const backdropLayers = useMemo(
+    () =>
+      resolveBackdropLayers({
+        backdropId: selectedBackdrop || "default",
+        environment: "yard",
+        preview: true,
+        weather: "clear",
+        isNight: false,
+        sunriseProgress: 0,
+      }),
+    [selectedBackdrop]
+  );
 
   const catalogItems = useMemo(() => {
     const items = Array.isArray(catalog) ? catalog : [];
@@ -893,7 +934,13 @@ export default function Store() {
 
                   <div className="mt-4 rounded-3xl border border-white/10 bg-black/25 overflow-hidden">
                     <div className="relative h-[360px] sm:h-[420px]">
-                      <div className="absolute inset-0" style={backdropStyle} />
+                      {backdropLayers.map((layer) => (
+                        <div
+                          key={layer.key}
+                          className="absolute inset-0"
+                          style={layer.style}
+                        />
+                      ))}
                       <div className="absolute inset-0 bg-black/25" />
 
                       <div className="absolute inset-0 grid place-items-center">
@@ -1493,6 +1540,7 @@ export default function Store() {
                   const isEquipped = slot && equipped?.[slot] === id;
                   const wearable = WEARABLE_SLOTS.has(slot);
                   const rarity = rarityForThreshold(threshold);
+                  const feedbackState = purchaseFeedback[id]?.state || "";
                   const streakProgress =
                     threshold > 0 ? clamp(streakDays / threshold, 0, 1) : 0;
                   const buttonSize = compactCards ? "px-3 py-2" : "px-4 py-3";
@@ -1649,7 +1697,7 @@ export default function Store() {
                         ) : (
                           <button
                             type="button"
-                            disabled={!afford || isIapOnly}
+                            disabled={isIapOnly}
                             title={
                               isIapOnly
                                 ? `${label} is sold through in-game purchase flow.`
@@ -1658,7 +1706,15 @@ export default function Store() {
                                   : `Need ${Math.max(0, price - balance)} more ${currency}.`
                             }
                             onClick={() => {
-                              if (!afford || isIapOnly) return;
+                              if (isIapOnly) return;
+                              if (!afford) {
+                                pulsePurchaseFeedback(id, "poor", 600);
+                                toast.error(
+                                  `Need ${Math.max(0, price - balance)} more ${currency}.`,
+                                  900
+                                );
+                                return;
+                              }
                               dispatch(
                                 purchaseCosmetic({
                                   id,
@@ -1673,19 +1729,28 @@ export default function Store() {
                                 dispatch(equipCosmetic({ slot, id }));
                               }
 
+                              pulsePurchaseFeedback(id, "bought", 1000);
                               toast.success(`Purchased ${label}.`, 1600);
                             }}
                             className={`rounded-2xl text-xs font-bold transition active:scale-[0.99] ${buttonSize} ${
-                              afford && !isIapOnly
-                                ? "bg-emerald-500/20 text-emerald-100 border border-emerald-500/25 hover:bg-emerald-500/25"
-                                : "bg-white/5 text-zinc-500 cursor-not-allowed"
+                              feedbackState === "bought"
+                                ? "bg-emerald-400 text-black border border-emerald-200"
+                                : feedbackState === "poor"
+                                  ? "bg-rose-500 text-white border border-rose-300 animate-[dgShakeHorizontal_0.36s_ease-in-out]"
+                                  : afford && !isIapOnly
+                                    ? "bg-emerald-500/20 text-emerald-100 border border-emerald-500/25 hover:bg-emerald-500/25"
+                                    : "bg-white/5 text-zinc-500 cursor-not-allowed"
                             }`}
                           >
-                            {isIapOnly
-                              ? "Buy in game panel"
-                              : afford
-                                ? "Buy"
-                                : "Not enough"}
+                            {feedbackState === "bought"
+                              ? "BOUGHT!"
+                              : feedbackState === "poor"
+                                ? "Need coins"
+                                : isIapOnly
+                                  ? "Buy in game panel"
+                                  : afford
+                                    ? "Buy"
+                                    : "Not enough"}
                           </button>
                         )}
                       </div>
