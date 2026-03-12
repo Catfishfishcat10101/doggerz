@@ -31,7 +31,10 @@ export default function FounderBonusModal({
         toast.error(`Founder bonus failed (${runtimeLabel})`);
       }
     } catch (error) {
-      console.error("[FounderBonusModal] Failed to claim founder bonus:", error);
+      console.error(
+        "[FounderBonusModal] Failed to claim founder bonus:",
+        error
+      );
       toast.error(`Founder bonus failed (${runtimeLabel})`);
     } finally {
       setClaiming(false);

@@ -46,7 +46,10 @@ function startFirestorePersistence(db) {
             "[Doggerz] Firestore persistence is not supported in this environment."
           );
         } else {
-          console.warn("[Doggerz] Firestore persistence failed to start:", error);
+          console.warn(
+            "[Doggerz] Firestore persistence failed to start:",
+            error
+          );
         }
 
         return { enabled: false, reason: code, error };

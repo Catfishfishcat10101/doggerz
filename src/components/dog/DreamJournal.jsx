@@ -90,15 +90,9 @@ export default function DreamJournal({ dreams = [] }) {
             {sourceMemory || emotion ? (
               <div className="mt-3 flex flex-wrap gap-1">
                 {sourceMemory ? (
-                  <span className="dz-dog-tag">
-                    From {sourceMemory}
-                  </span>
+                  <span className="dz-dog-tag">From {sourceMemory}</span>
                 ) : null}
-                {emotion ? (
-                  <span className="dz-dog-tag">
-                    {emotion}
-                  </span>
-                ) : null}
+                {emotion ? <span className="dz-dog-tag">{emotion}</span> : null}
               </div>
             ) : null}
 

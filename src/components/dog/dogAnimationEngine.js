@@ -61,9 +61,7 @@ export function getManifestAnimMeta(anim) {
   const key = resolveManifestAnimKey(anim);
   const rowIndex = Math.max(
     0,
-    ANIM_ROWS.findIndex(
-      (row) => normalizeDogAnimKey(row?.anim || "") === key
-    )
+    ANIM_ROWS.findIndex((row) => normalizeDogAnimKey(row?.anim || "") === key)
   );
   const row = ANIM_ROWS[rowIndex] || null;
   return {
@@ -104,7 +102,11 @@ function resolveTrainedCommandAnim(commandId) {
   return canResolveAnimKey(normalized) ? normalized : null;
 }
 
-function resolveExplicitAnim(lastAction, lastTrainedCommandId, trainingReaction) {
+function resolveExplicitAnim(
+  lastAction,
+  lastTrainedCommandId,
+  trainingReaction
+) {
   const normalized = normalizeDogAnimKey(lastAction);
   if (!normalized) return null;
 
@@ -314,7 +316,9 @@ export function resolveDogAnimationState(dog = {}) {
     isSleeping,
     dog,
   });
-  const resolvedRestState = restState ? resolveManifestAnimKey(restState) : null;
+  const resolvedRestState = restState
+    ? resolveManifestAnimKey(restState)
+    : null;
   const animCategory = resolveAnimCategory({
     anim: requestedAnim,
     lastAction,

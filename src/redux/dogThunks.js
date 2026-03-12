@@ -4,7 +4,11 @@ import { getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "@/firebase.js";
 import { dogMainDoc } from "@/firebase/paths.js";
 import { ensureAnonSignIn } from "@/lib/firebaseClient.js";
-import { hydrateDog, setAdoptedAt, setDogName as setDogProfileName } from "./dogSlice.js";
+import {
+  hydrateDog,
+  setAdoptedAt,
+  setDogName as setDogProfileName,
+} from "./dogSlice.js";
 import { setDogName as setUserDogName, setUser } from "./userSlice.js";
 
 function toMs(value) {
@@ -53,10 +57,12 @@ function buildCloudSummary(state) {
   return {
     schemaVersion: 1,
     dog: {
-      name: String(dog?.name || user?.dogName || "Fireball").trim() || "Fireball",
+      name:
+        String(dog?.name || user?.dogName || "Fireball").trim() || "Fireball",
       stage:
-        String(dog?.lifeStage?.label || dog?.lifeStage?.stage || "Puppy").trim() ||
-        "Puppy",
+        String(
+          dog?.lifeStage?.label || dog?.lifeStage?.stage || "Puppy"
+        ).trim() || "Puppy",
       ageDays: Math.max(0, Math.round(Number(dog?.lifeStage?.days || 0))),
       level: Math.max(1, Math.round(Number(dog?.level || 1))),
     },
@@ -133,13 +139,17 @@ export const loadDogFromCloud = createAsyncThunk(
   async (_, { dispatch, getState, rejectWithValue }) => {
     try {
       if (!db) {
-        dispatch(setUser({ cloudSync: { status: "local", errorMessage: null } }));
+        dispatch(
+          setUser({ cloudSync: { status: "local", errorMessage: null } })
+        );
         return rejectWithValue("Cloud sync unavailable");
       }
       const user = await ensureAnonSignIn();
       const userId = user?.uid || auth?.currentUser?.uid;
       if (!userId) {
-        dispatch(setUser({ cloudSync: { status: "local", errorMessage: null } }));
+        dispatch(
+          setUser({ cloudSync: { status: "local", errorMessage: null } })
+        );
         return rejectWithValue("User not logged in");
       }
       dispatch(
@@ -219,7 +229,9 @@ export const saveDogToCloud = createAsyncThunk(
   async (_, { dispatch, getState, rejectWithValue }) => {
     try {
       if (!db) {
-        dispatch(setUser({ cloudSync: { status: "local", errorMessage: null } }));
+        dispatch(
+          setUser({ cloudSync: { status: "local", errorMessage: null } })
+        );
         return rejectWithValue("Cloud sync unavailable");
       }
       const user = await ensureAnonSignIn();

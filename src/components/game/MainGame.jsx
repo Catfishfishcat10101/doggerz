@@ -54,7 +54,10 @@ import {
   tryConsumeFoodBowl,
 } from "@/redux/dogSlice.js";
 import { PATHS } from "@/routes.js";
-import { selectWeatherCondition, selectWeatherDetails } from "@/redux/weatherSlice.js";
+import {
+  selectWeatherCondition,
+  selectWeatherDetails,
+} from "@/redux/weatherSlice.js";
 import { getRunawayStrikeState } from "@/logic/OfflineProgressCalculator.js";
 import { auth as firebaseAuth, initFirebase } from "@/firebase.js";
 import {
@@ -542,7 +545,13 @@ export default function MainGame({ scene, dogInteractive = true }) {
         sunriseProgress: sunriseBlend,
         weather: sceneWeather,
       }),
-    [equippedBackdropId, environmentMode, sceneWeather, sunriseBlend, visualNight]
+    [
+      equippedBackdropId,
+      environmentMode,
+      sceneWeather,
+      sunriseBlend,
+      visualNight,
+    ]
   );
   const sceneAnim = activeAnim;
   const effectiveAnim = uiAnimOverride || ambientAnimOverride || sceneAnim;
@@ -560,8 +569,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
     currentEnergy <= sleepyWarningCeil;
   const sleepLocationMode =
     !isApartmentEnvironment && effectiveDogSleeping
-      ? sleepLocation?.mode ||
-        (lowEnergySleep ? "yard" : null)
+      ? sleepLocation?.mode || (lowEnergySleep ? "yard" : null)
       : null;
   const sleepInDogHouse = sleepLocationMode === "doghouse";
   const sleepInYard = sleepLocationMode === "yard";
@@ -791,8 +799,9 @@ export default function MainGame({ scene, dogInteractive = true }) {
     () => new Map(trickOptions.map((command) => [command.id, command])),
     [trickOptions]
   );
-  const unlockedTrickCount = trickOptions.filter((command) => command.unlocked)
-    .length;
+  const unlockedTrickCount = trickOptions.filter(
+    (command) => command.unlocked
+  ).length;
   const activeTrickCount = trickOptions.filter(
     (command) => command.unlocked && !command.mastered
   ).length;
@@ -819,8 +828,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
       liveNow,
     ]
   );
-  const showRunawayLetter =
-    false;
+  const showRunawayLetter = false;
   const controlsDisabled = !dogInteractive;
   const sceneLocationLabel = String(weatherDetails?.name || "")
     .trim()
@@ -866,7 +874,9 @@ export default function MainGame({ scene, dogInteractive = true }) {
           .toLowerCase()
       : "";
   const triggerActionFeedback = useCallback((key) => {
-    const nextKey = String(key || "").trim().toLowerCase();
+    const nextKey = String(key || "")
+      .trim()
+      .toLowerCase();
     if (!nextKey) return;
     if (actionFeedbackTimeoutRef.current) {
       window.clearTimeout(actionFeedbackTimeoutRef.current);
@@ -880,7 +890,9 @@ export default function MainGame({ scene, dogInteractive = true }) {
     }, 240);
   }, []);
   const triggerStatPop = useCallback((key) => {
-    const statKey = String(key || "").trim().toLowerCase();
+    const statKey = String(key || "")
+      .trim()
+      .toLowerCase();
     if (!statKey) return;
     const currentTimer = statFeedbackTimeoutsRef.current[statKey];
     if (currentTimer) {
@@ -1003,9 +1015,10 @@ export default function MainGame({ scene, dogInteractive = true }) {
   }, [dog?.lastAction, dog?.memory?.lastTrainingReaction]);
   const lastMasteredCommandId = dog?.memory?.lastMasteredCommandId || null;
   const lastMasteredCommandAt = Number(dog?.memory?.lastMasteredCommandAt || 0);
-  const lastUnlockedCommandId =
-    obedienceUnlockState?.lastUnlockedId || null;
-  const lastUnlockedCommandAt = Number(obedienceUnlockState?.lastUnlockedAt || 0);
+  const lastUnlockedCommandId = obedienceUnlockState?.lastUnlockedId || null;
+  const lastUnlockedCommandAt = Number(
+    obedienceUnlockState?.lastUnlockedAt || 0
+  );
   const lastDreamWoofAt = Number(dog?.memory?.lastDreamWoofAt || 0);
   const showDreamBubble =
     lastDreamWoofAt > 0 && liveNow - lastDreamWoofAt <= 35_000;
@@ -1430,12 +1443,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
     triggerActionFeedback("tricks");
     setTrainingLogOpen(false);
     setTricksOpen(true);
-  }, [
-    isActionHijacked,
-    pottyTrainingComplete,
-    toast,
-    triggerActionFeedback,
-  ]);
+  }, [isActionHijacked, pottyTrainingComplete, toast, triggerActionFeedback]);
 
   const handleTrickTrain = useCallback(
     (commandId, input = "button") => {
@@ -2064,13 +2072,18 @@ export default function MainGame({ scene, dogInteractive = true }) {
       if (route.type === "butterfly") {
         const t = clamp(
           (now - Number(route.phaseStartedAt || now)) /
-            Math.max(1, Number(route.phaseEndsAt || now) - Number(route.phaseStartedAt || now)),
+            Math.max(
+              1,
+              Number(route.phaseEndsAt || now) -
+                Number(route.phaseStartedAt || now)
+            ),
           0,
           1
         );
         const chaseX = clamp(0.08 + t * 0.84, 0.05, 0.95);
         const chaseY = clamp(
-          Number(route.anchor?.yNorm || 0.26) + Math.sin(t * Math.PI * 6) * 0.08,
+          Number(route.anchor?.yNorm || 0.26) +
+            Math.sin(t * Math.PI * 6) * 0.08,
           0.08,
           0.8
         );
@@ -2283,7 +2296,8 @@ export default function MainGame({ scene, dogInteractive = true }) {
       ...nextSleepLocation.position,
       id: `sleep_spot_${nextSleepLocation.mode}`,
       type: "sleep_spot",
-      label: nextSleepLocation.mode === "doghouse" ? "Doghouse" : "Yard nap spot",
+      label:
+        nextSleepLocation.mode === "doghouse" ? "Doghouse" : "Yard nap spot",
       interaction: "sleep_spot",
       interactionRadius: 24,
     };
@@ -2410,7 +2424,10 @@ export default function MainGame({ scene, dogInteractive = true }) {
         triggerButtonHeist({
           now,
           silenceMs: 60_000,
-          stolenAction: String(stolenAction || "").trim().toLowerCase() || undefined,
+          stolenAction:
+            String(stolenAction || "")
+              .trim()
+              .toLowerCase() || undefined,
         })
       );
     };
@@ -2635,622 +2652,631 @@ export default function MainGame({ scene, dogInteractive = true }) {
           </div>
           <div className="mt-4 flex flex-col gap-4">
             <div className="order-3 space-y-4">
-          {(hijackedActionKey || activeAnimatedEventMeta || actionOutcomeLabel) ? (
-            <div className="game-card event-card">
-              <h3 className="m-0 text-[1.1rem] font-black uppercase tracking-[0.08em] text-[var(--text-main)]">
-                {hijackedActionKey
-                  ? "Button Heist"
-                  : activeAnimatedEventMeta?.label || "Yard Event"}
-              </h3>
-              <p className="mt-2 text-sm text-[var(--text-muted)]">
-                {hijackedActionKey
-                  ? String(activeSurprise?.message || "").trim() ||
-                    `Your pup stole "${toTitle(hijackedActionKey, "Play")}". Play fetch to get it back.`
-                  : actionOutcomeLabel ||
-                    `Watch the yard. ${activeAnimatedEventMeta?.label || "Something"} is happening right now.`}
-              </p>
-              {hijackedActionKey ? (
-                <div className="mt-4 flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      dispatch(
-                        resolveSessionSurprise({
-                          now: Date.now(),
-                          method: "fetch",
-                        })
-                      )
-                    }
-                    className="dz-touch-button rounded-xl border-0 bg-[var(--accent-gold)] px-5 py-2.5 text-sm font-black text-black"
-                  >
-                    PLAY FETCH
-                  </button>
+              {hijackedActionKey ||
+              activeAnimatedEventMeta ||
+              actionOutcomeLabel ? (
+                <div className="game-card event-card">
+                  <h3 className="m-0 text-[1.1rem] font-black uppercase tracking-[0.08em] text-[var(--text-main)]">
+                    {hijackedActionKey
+                      ? "Button Heist"
+                      : activeAnimatedEventMeta?.label || "Yard Event"}
+                  </h3>
+                  <p className="mt-2 text-sm text-[var(--text-muted)]">
+                    {hijackedActionKey
+                      ? String(activeSurprise?.message || "").trim() ||
+                        `Your pup stole "${toTitle(hijackedActionKey, "Play")}". Play fetch to get it back.`
+                      : actionOutcomeLabel ||
+                        `Watch the yard. ${activeAnimatedEventMeta?.label || "Something"} is happening right now.`}
+                  </p>
+                  {hijackedActionKey ? (
+                    <div className="mt-4 flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          dispatch(
+                            resolveSessionSurprise({
+                              now: Date.now(),
+                              method: "fetch",
+                            })
+                          )
+                        }
+                        className="dz-touch-button rounded-xl border-0 bg-[var(--accent-gold)] px-5 py-2.5 text-sm font-black text-black"
+                      >
+                        PLAY FETCH
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+              <h2 className="m-0 text-2xl font-black tracking-tight text-white">
+                Pup Stats
+              </h2>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <StatBarCard
+                  label="Energy"
+                  value={energyPct}
+                  color="var(--energy-color)"
+                  critical={energyCritical}
+                  popped={poppedStats.energy}
+                />
+                <StatBarCard
+                  label="Health"
+                  value={healthPct}
+                  color="var(--health-color)"
+                  critical={healthCritical}
+                  popped={poppedStats.health}
+                />
+              </div>
+              <div className="stats-grid">
+                <HudChip
+                  label="Level"
+                  value={`Lv ${overallLevel}`}
+                  tooltip="Overall progression level. Higher levels unlock tougher training tracks."
+                />
+                <HudChip
+                  label="Age"
+                  value={`${ageDays} Days`}
+                  tooltip="Age in days since adoption."
+                />
+                <HudChip
+                  label="Stage"
+                  value={stageLabel}
+                  tooltip="Current life stage of your pup."
+                />
+                <HudChip
+                  label="Mood"
+                  value={displayMoodLabel}
+                  tooltip="Current emotional state based on needs and events."
+                />
+              </div>
+              <div className="text-xs text-doggerz-paw/80">
+                Bond: {bondPct}% • Hunger: {hungerPct}% •{" "}
+                {scene?.label || "Backyard"}
+              </div>
+              <div
+                className={`game-card rounded-xl border px-3 py-3 ${lifecycleCardToneClass}`}
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <div className="text-[10px] font-bold uppercase tracking-[0.16em] opacity-80">
+                      {stageLabel} era
+                    </div>
+                    <div className="mt-1 text-sm font-black">
+                      {stageHeadline}
+                    </div>
+                  </div>
+                  <div className="rounded-full border border-white/15 bg-black/20 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white/85">
+                    {ageBucketLabel}
+                  </div>
+                </div>
+                <div className="mt-2 text-[11px] font-semibold text-white/85">
+                  {stageSummary}
+                </div>
+                <div className="mt-2 h-2 overflow-hidden rounded-full bg-black/35">
+                  <div
+                    className="h-full rounded-full bg-white/80 transition-[width] duration-300"
+                    style={{ width: `${stageProgressPct}%` }}
+                  />
+                </div>
+                <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-white/80">
+                  <span>{stageProgressLabel}</span>
+                  <span>
+                    {nextStageLabel && Number.isFinite(daysUntilNextStage)
+                      ? `${daysUntilNextStage}d until ${nextStageLabel}`
+                      : "Current life stage"}
+                  </span>
+                </div>
+                {stageDetail ? (
+                  <div className="mt-2 text-[11px] text-white/75">
+                    {stageDetail}
+                  </div>
+                ) : null}
+              </div>
+              {showPottyTrainingProgress ? (
+                <PottyTrainingCard
+                  successCount={pottyTrainingSuccessCount}
+                  goal={pottyTrainingGoal}
+                  progressPct={pottyTrainingPct}
+                  copy={pottyTrainingCopy}
+                />
+              ) : null}
+              {actionOutcomeLabel ? (
+                <div className="rounded-xl border border-doggerz-leaf/35 bg-doggerz-neon/10 px-3 py-2 text-xs font-semibold text-doggerz-bone">
+                  {actionOutcomeLabel}
+                </div>
+              ) : null}
+              {isApartmentEnvironment ? (
+                <div className="rounded-xl border border-amber-300/35 bg-amber-400/10 px-3 py-2 text-xs font-semibold text-amber-50">
+                  Apartment hard mode: food left on the low table can be stolen.
+                </div>
+              ) : null}
+              {activeInvestigationLabel ? (
+                <div className="rounded-xl border border-cyan-300/35 bg-cyan-300/10 px-3 py-2 text-xs font-semibold text-cyan-50">
+                  Investigating the {activeInvestigationLabel}.
+                </div>
+              ) : null}
+              {showMidnightZoomies ? (
+                <div className="rounded-xl border border-fuchsia-300/35 bg-fuchsia-300/10 px-3 py-2 text-xs font-semibold text-fuchsia-50">
+                  Midnight zoomies.
                 </div>
               ) : null}
             </div>
-          ) : null}
-          <h2 className="m-0 text-2xl font-black tracking-tight text-white">
-            Pup Stats
-          </h2>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <StatBarCard
-              label="Energy"
-              value={energyPct}
-              color="var(--energy-color)"
-              critical={energyCritical}
-              popped={poppedStats.energy}
-            />
-            <StatBarCard
-              label="Health"
-              value={healthPct}
-              color="var(--health-color)"
-              critical={healthCritical}
-              popped={poppedStats.health}
-            />
-          </div>
-          <div className="stats-grid">
-            <HudChip
-              label="Level"
-              value={`Lv ${overallLevel}`}
-              tooltip="Overall progression level. Higher levels unlock tougher training tracks."
-            />
-            <HudChip
-              label="Age"
-              value={`${ageDays} Days`}
-              tooltip="Age in days since adoption."
-            />
-            <HudChip
-              label="Stage"
-              value={stageLabel}
-              tooltip="Current life stage of your pup."
-            />
-            <HudChip
-              label="Mood"
-              value={displayMoodLabel}
-              tooltip="Current emotional state based on needs and events."
-            />
-          </div>
-          <div className="text-xs text-doggerz-paw/80">
-            Bond: {bondPct}% • Hunger: {hungerPct}% • {scene?.label || "Backyard"}
-          </div>
-          <div
-            className={`game-card rounded-xl border px-3 py-3 ${lifecycleCardToneClass}`}
-          >
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <div className="text-[10px] font-bold uppercase tracking-[0.16em] opacity-80">
-                  {stageLabel} era
-                </div>
-                <div className="mt-1 text-sm font-black">{stageHeadline}</div>
-              </div>
-              <div className="rounded-full border border-white/15 bg-black/20 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white/85">
-                {ageBucketLabel}
-              </div>
-            </div>
-            <div className="mt-2 text-[11px] font-semibold text-white/85">
-              {stageSummary}
-            </div>
-            <div className="mt-2 h-2 overflow-hidden rounded-full bg-black/35">
-              <div
-                className="h-full rounded-full bg-white/80 transition-[width] duration-300"
-                style={{ width: `${stageProgressPct}%` }}
-              />
-            </div>
-            <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-white/80">
-              <span>{stageProgressLabel}</span>
-              <span>
-                {nextStageLabel && Number.isFinite(daysUntilNextStage)
-                  ? `${daysUntilNextStage}d until ${nextStageLabel}`
-                  : "Current life stage"}
-              </span>
-            </div>
-            {stageDetail ? (
-              <div className="mt-2 text-[11px] text-white/75">{stageDetail}</div>
-            ) : null}
-          </div>
-          {showPottyTrainingProgress ? (
-            <PottyTrainingCard
-              successCount={pottyTrainingSuccessCount}
-              goal={pottyTrainingGoal}
-              progressPct={pottyTrainingPct}
-              copy={pottyTrainingCopy}
-            />
-          ) : null}
-          {actionOutcomeLabel ? (
-            <div className="rounded-xl border border-doggerz-leaf/35 bg-doggerz-neon/10 px-3 py-2 text-xs font-semibold text-doggerz-bone">
-              {actionOutcomeLabel}
-            </div>
-          ) : null}
-          {isApartmentEnvironment ? (
-            <div className="rounded-xl border border-amber-300/35 bg-amber-400/10 px-3 py-2 text-xs font-semibold text-amber-50">
-              Apartment hard mode: food left on the low table can be stolen.
-            </div>
-          ) : null}
-          {activeInvestigationLabel ? (
-            <div className="rounded-xl border border-cyan-300/35 bg-cyan-300/10 px-3 py-2 text-xs font-semibold text-cyan-50">
-              Investigating the {activeInvestigationLabel}.
-            </div>
-          ) : null}
-          {showMidnightZoomies ? (
-            <div className="rounded-xl border border-fuchsia-300/35 bg-fuchsia-300/10 px-3 py-2 text-xs font-semibold text-fuchsia-50">
-              Midnight zoomies.
-            </div>
-          ) : null}
-            </div>
 
-          <div className="order-1 rounded-3xl border border-doggerz-leaf/35 bg-black/30 px-2 py-4 sm:px-4">
-            {showRunawayLetter ? (
-              <RunawayLetterPanel
-                dogName={dog?.name || "Your pup"}
-                endTimestamp={runawayState.runawayEndTimestamp}
-                onWelcome={() =>
-                  dispatch(resolveRunawayStrike({ now: Date.now() }))
-                }
-              />
-            ) : (
-              <div
-                ref={dogViewportRef}
-                id="backyard"
-                className={`yard-viewport sprite-stage game-card !mb-0 !p-0 ${visualNight ? "yard-night" : "yard-day"} relative flex min-h-[320px] items-center justify-center overflow-hidden rounded-[24px] border border-doggerz-leaf/25 bg-black/20 sm:min-h-[420px]`}
-                onPointerDown={handleViewportPointerDown}
-                onPointerMove={handleViewportPointerMove}
-                onPointerUp={handleViewportPointerUp}
-                onPointerCancel={handleViewportPointerCancel}
-              >
-                <YardBackdrop
-                  environment={environmentMode}
-                  dogXNorm={dogPositionNorm.xNorm}
-                  isNight={visualNight}
-                  sunriseProgress={sunriseBlend}
-                  reduceMotion={reduceMotion}
-                  environmentTargets={environmentTargets}
-                  activeEnvironmentTargetId={dog?.targetPosition?.id || ""}
-                  props={investigationProps}
-                  activePropId={activeInvestigationId}
-                  onPropTap={handlePropTap}
+            <div className="order-1 rounded-3xl border border-doggerz-leaf/35 bg-black/30 px-2 py-4 sm:px-4">
+              {showRunawayLetter ? (
+                <RunawayLetterPanel
+                  dogName={dog?.name || "Your pup"}
+                  endTimestamp={runawayState.runawayEndTimestamp}
+                  onWelcome={() =>
+                    dispatch(resolveRunawayStrike({ now: Date.now() }))
+                  }
                 />
-                {backdropLayers.length ? (
-                  <div className="pointer-events-none absolute inset-0 z-[6]">
-                    {backdropLayers.map((layer) => (
-                      <div
-                        key={layer.key}
-                        className="absolute inset-0"
-                        style={layer.style}
-                      />
-                    ))}
-                  </div>
-                ) : null}
+              ) : (
                 <div
-                  id="ui-container"
-                  className="absolute left-4 top-4 z-40 flex flex-col gap-2"
+                  ref={dogViewportRef}
+                  id="backyard"
+                  className={`yard-viewport sprite-stage game-card !mb-0 !p-0 ${visualNight ? "yard-night" : "yard-day"} relative flex min-h-[320px] items-center justify-center overflow-hidden rounded-[24px] border border-doggerz-leaf/25 bg-black/20 sm:min-h-[420px]`}
+                  onPointerDown={handleViewportPointerDown}
+                  onPointerMove={handleViewportPointerMove}
+                  onPointerUp={handleViewportPointerUp}
+                  onPointerCancel={handleViewportPointerCancel}
                 >
-                  <div className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-black/55 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.14em] text-doggerz-bone shadow-[0_10px_28px_rgba(15,23,42,0.25)] backdrop-blur-sm">
-                    <span id="energy-display">Energy {energyPct}%</span>
-                    <span className="text-white/35">•</span>
-                    <span>Bond {bondPct}%</span>
-                  </div>
-                </div>
-                {isRainScene ? (
+                  <YardBackdrop
+                    environment={environmentMode}
+                    dogXNorm={dogPositionNorm.xNorm}
+                    isNight={visualNight}
+                    sunriseProgress={sunriseBlend}
+                    reduceMotion={reduceMotion}
+                    environmentTargets={environmentTargets}
+                    activeEnvironmentTargetId={dog?.targetPosition?.id || ""}
+                    props={investigationProps}
+                    activePropId={activeInvestigationId}
+                    onPropTap={handlePropTap}
+                  />
+                  {backdropLayers.length ? (
+                    <div className="pointer-events-none absolute inset-0 z-[6]">
+                      {backdropLayers.map((layer) => (
+                        <div
+                          key={layer.key}
+                          className="absolute inset-0"
+                          style={layer.style}
+                        />
+                      ))}
+                    </div>
+                  ) : null}
                   <div
-                    className="pointer-events-none absolute inset-0 z-10 overflow-hidden"
-                    style={{ opacity: 0.78 }}
+                    id="ui-container"
+                    className="absolute left-4 top-4 z-40 flex flex-col gap-2"
                   >
-                    <div
-                      className="absolute -inset-[18%]"
-                      style={{
-                        backgroundImage:
-                          "repeating-linear-gradient(106deg, rgba(191,219,254,0) 0px, rgba(191,219,254,0) 10px, rgba(191,219,254,0.82) 11px, rgba(191,219,254,0.82) 12px)",
-                        animation: reduceMotion
-                          ? "none"
-                          : "dgViewportRain 0.62s linear infinite",
-                      }}
-                    />
+                    <div className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-black/55 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.14em] text-doggerz-bone shadow-[0_10px_28px_rgba(15,23,42,0.25)] backdrop-blur-sm">
+                      <span id="energy-display">Energy {energyPct}%</span>
+                      <span className="text-white/35">•</span>
+                      <span>Bond {bondPct}%</span>
+                    </div>
                   </div>
-                ) : null}
-                {isSnowScene ? (
-                  <div className="pointer-events-none absolute inset-0 z-10 overflow-hidden opacity-80">
+                  {isRainScene ? (
                     <div
-                      className="absolute -inset-[15%]"
-                      style={{
-                        backgroundImage:
-                          "radial-gradient(circle, rgba(255,255,255,0.92) 0 1.2px, transparent 1.4px)",
-                        backgroundSize: "18px 18px",
-                        animation: reduceMotion
-                          ? "none"
-                          : "dgSnowFall 1.6s linear infinite",
-                      }}
-                    />
-                  </div>
-                ) : null}
-                {isSummerNight ? (
-                  <div className="pointer-events-none absolute inset-0 z-[14]">
-                    {fireflySeeds.map((seed) => (
-                      <span
-                        key={`firefly-${seed.id}`}
-                        className="absolute block h-2 w-2 rounded-full"
+                      className="pointer-events-none absolute inset-0 z-10 overflow-hidden"
+                      style={{ opacity: 0.78 }}
+                    >
+                      <div
+                        className="absolute -inset-[18%]"
                         style={{
-                          left: `${seed.x}%`,
-                          top: `${seed.y}%`,
-                          background:
-                            "radial-gradient(circle at center, rgba(252,211,77,0.95) 0%, rgba(250,204,21,0.18) 70%, transparent 100%)",
-                          boxShadow: "0 0 10px rgba(250,204,21,0.6)",
+                          backgroundImage:
+                            "repeating-linear-gradient(106deg, rgba(191,219,254,0) 0px, rgba(191,219,254,0) 10px, rgba(191,219,254,0.82) 11px, rgba(191,219,254,0.82) 12px)",
                           animation: reduceMotion
                             ? "none"
-                            : `dgFireflyPulse ${seed.duration}s ease-in-out ${seed.delay}s infinite, dgFireflyDrift ${Math.max(
-                                3,
-                                seed.duration + 0.8
-                              )}s ease-in-out ${seed.delay}s infinite`,
+                            : "dgViewportRain 0.62s linear infinite",
                         }}
                       />
-                    ))}
-                  </div>
-                ) : null}
-                {ambientEvent?.type === "butterfly" ? (
-                  <div className="pointer-events-none absolute inset-0 z-[16] overflow-hidden">
-                    <span
-                      className="absolute text-2xl"
-                      style={{
-                        left: "-8%",
-                        top: `${Math.round(Number(ambientEvent?.yNorm || 0.24) * 100)}%`,
-                        transform: "translateY(-50%)",
-                        animation: reduceMotion
-                          ? "none"
-                          : "dgButterflyTraverse 9s linear forwards",
-                      }}
-                    >
-                      🦋
-                    </span>
-                  </div>
-                ) : null}
-                {showButterflyNotice ? (
-                  <div
-                    className="pointer-events-none absolute z-[22]"
-                    style={{
-                      left: `${Math.round(clamp(dogPositionNorm.xNorm, 0.05, 0.95) * 100)}%`,
-                      top: `${Math.round(clamp(dogPositionNorm.yNorm - 0.19, 0.08, 0.86) * 100)}%`,
-                      transform: "translate(-50%, -50%)",
-                    }}
-                    aria-hidden="true"
-                  >
-                    <span className="grid h-8 w-8 place-items-center rounded-full border border-amber-200/55 bg-black/65 text-sm font-black text-amber-100 shadow-[0_0_20px_rgba(250,204,21,0.35)] animate-pulse">
-                      !
-                    </span>
-                  </div>
-                ) : null}
-                {ambientEvent?.type === "owl" ? (
-                  <div className="pointer-events-none absolute left-[17%] top-[30%] z-[16] text-2xl">
-                    <span
-                      style={{
-                        animation: reduceMotion
-                          ? "none"
-                          : "dgOwlPerchPulse 2.4s ease-in-out infinite",
-                      }}
-                    >
-                      🦉
-                    </span>
-                  </div>
-                ) : null}
-                {ambientEvent?.type === "comet" ? (
-                  <div className="pointer-events-none absolute inset-0 z-[17] overflow-hidden">
-                    <span className="absolute left-[-18%] top-[12%] text-2xl animate-[dgCometTraverse_4.2s_linear_forwards]">
-                      ☄️
-                    </span>
-                  </div>
-                ) : null}
-                {ambientEvent?.type === "leaf_gust" ? (
-                  <div className="pointer-events-none absolute inset-0 z-[17] overflow-hidden">
-                    {Array.from({ length: 8 }, (_, i) => (
-                      <span
-                        key={`leaf-gust-${i}`}
-                        className="absolute text-lg"
+                    </div>
+                  ) : null}
+                  {isSnowScene ? (
+                    <div className="pointer-events-none absolute inset-0 z-10 overflow-hidden opacity-80">
+                      <div
+                        className="absolute -inset-[15%]"
                         style={{
-                          left: `${-18 + i * 8}%`,
-                          top: `${54 + (i % 3) * 6}%`,
-                          opacity: 0.8,
-                          animation: `dgLeafGust ${3.8 + i * 0.18}s linear ${i * 0.12}s forwards`,
+                          backgroundImage:
+                            "radial-gradient(circle, rgba(255,255,255,0.92) 0 1.2px, transparent 1.4px)",
+                          backgroundSize: "18px 18px",
+                          animation: reduceMotion
+                            ? "none"
+                            : "dgSnowFall 1.6s linear infinite",
+                        }}
+                      />
+                    </div>
+                  ) : null}
+                  {isSummerNight ? (
+                    <div className="pointer-events-none absolute inset-0 z-[14]">
+                      {fireflySeeds.map((seed) => (
+                        <span
+                          key={`firefly-${seed.id}`}
+                          className="absolute block h-2 w-2 rounded-full"
+                          style={{
+                            left: `${seed.x}%`,
+                            top: `${seed.y}%`,
+                            background:
+                              "radial-gradient(circle at center, rgba(252,211,77,0.95) 0%, rgba(250,204,21,0.18) 70%, transparent 100%)",
+                            boxShadow: "0 0 10px rgba(250,204,21,0.6)",
+                            animation: reduceMotion
+                              ? "none"
+                              : `dgFireflyPulse ${seed.duration}s ease-in-out ${seed.delay}s infinite, dgFireflyDrift ${Math.max(
+                                  3,
+                                  seed.duration + 0.8
+                                )}s ease-in-out ${seed.delay}s infinite`,
+                          }}
+                        />
+                      ))}
+                    </div>
+                  ) : null}
+                  {ambientEvent?.type === "butterfly" ? (
+                    <div className="pointer-events-none absolute inset-0 z-[16] overflow-hidden">
+                      <span
+                        className="absolute text-2xl"
+                        style={{
+                          left: "-8%",
+                          top: `${Math.round(Number(ambientEvent?.yNorm || 0.24) * 100)}%`,
+                          transform: "translateY(-50%)",
+                          animation: reduceMotion
+                            ? "none"
+                            : "dgButterflyTraverse 9s linear forwards",
                         }}
                       >
-                        🍃
+                        🦋
                       </span>
-                    ))}
-                  </div>
-                ) : null}
-                {pawPrints.length > 0 ? (
-                  <div className="pointer-events-none absolute inset-0 z-20">
-                    {pawPrints.map((print) => (
-                      <span
-                        key={print.id}
-                        className="mud-paw-print"
-                        style={{
-                          left: `${Number(print.x || 0)}px`,
-                          top: `${Number(print.y || 0)}px`,
-                          width: `${Number(print.size || 18)}px`,
-                          height: `${Number(print.size || 18)}px`,
-                          transform: `translate(-50%, -50%) rotate(${Number(
-                            print.rot || 0
-                          )}deg)`,
-                          color: print.fill,
-                        }}
-                      >
-                        <PawPrintSvg className="h-full w-full" />
-                      </span>
-                    ))}
-                  </div>
-                ) : null}
-                <Suspense
-                  fallback={
-                    <div className="flex h-[340px] w-full items-center justify-center rounded-3xl border border-doggerz-leaf/30 bg-black/30 text-xs uppercase tracking-[0.2em] text-doggerz-paw/80">
-                      Loading Pup
                     </div>
-                  }
-                >
-                  <div
-                    className="absolute inset-0"
-                    data-night-owl={nightOwlActive ? "true" : "false"}
-                    style={{
-                      zIndex: dogRenderZIndex,
-                      filter: nightOwlActive
-                        ? "drop-shadow(0 0 10px rgba(200, 230, 255, 0.32)) saturate(0.92) brightness(1.04)"
-                        : undefined,
-                      transition: "filter 220ms ease",
-                    }}
-                  >
-                    <DogPixiView
-                      stage={renderModel?.stage}
-                      condition={renderModel?.condition}
-                      anim={effectiveAnim}
-                      behaviorState={dog?.aiState || "idle"}
-                      position={dogRenderPosition}
-                      facing={dog?.facing || "right"}
-                      equippedCosmetics={dog?.cosmetics?.equipped || null}
-                      width="100%"
-                      height="100%"
-                      scale={1.6}
-                      animSpeedMultiplier={effectiveAnimationSpeedMultiplier}
-                      bondValue={Number(dog?.bond?.value ?? 0)}
-                      dogIsSleeping={effectiveDogSleeping}
-                      onPositionChange={handleDogPositionChange}
-                      onDogTap={
-                        treasurePhase === "sniffing"
-                          ? handleTreasureHuntTap
-                          : null
-                      }
-                    />
-                  </div>
-                </Suspense>
-                {masteryCelebration ? (
-                  <div className="pointer-events-none absolute inset-0 z-[26] flex items-center justify-center">
-                    <div className="mastery-burst" aria-hidden="true" />
-                    <div className="mastery-celebration-card">
-                      <div className="mastery-celebration-card__eyebrow">
-                        {masteryCelebration.rank} Trick
-                      </div>
-                      <div className="mastery-celebration-card__title">
-                        Mastered: {masteryCelebration.label}
-                      </div>
-                      <div className="mastery-celebration-card__perk">
-                        {masteryCelebration.perk}
-                      </div>
-                    </div>
-                  </div>
-                ) : null}
-                {showTreasureMarker ? (
-                  <div
-                    className="pointer-events-none absolute z-[24]"
-                    style={{
-                      left: `${Number(treasureHunt?.xNorm || 0.5) * 100}%`,
-                      top: `${Number(treasureHunt?.yNorm || 0.75) * 100}%`,
-                      transform: "translate(-50%, -50%)",
-                    }}
-                    aria-hidden="true"
-                  >
-                    <div className="grid h-10 w-10 place-items-center rounded-full border border-amber-200/45 bg-black/55 text-xl shadow-[0_0_28px_rgba(250,204,21,0.22)]">
-                      {treasurePhase === "digging" ? "🕳️" : "❓"}
-                    </div>
-                  </div>
-                ) : null}
-                {showDreamBubble ? (
-                  <div className="pointer-events-none absolute left-1/2 top-8 z-30 -translate-x-1/2 rounded-2xl border border-white/25 bg-black/55 px-3 py-1 text-xs font-semibold text-doggerz-bone">
-                    💭 woof...
-                  </div>
-                ) : null}
-                {showTreasurePrompt ? (
-                  <div className="pointer-events-none absolute left-1/2 top-8 z-30 -translate-x-1/2 rounded-2xl border border-amber-300/45 bg-black/70 px-3 py-1 text-xs font-semibold text-amber-100 shadow-[0_10px_24px_rgba(120,53,15,0.28)]">
-                    {treasurePhase === "digging"
-                      ? `Digging up ${treasureHunt?.rewardName || "something"}...`
-                      : "Caught a scent. Tap your pup before it disappears."}
-                  </div>
-                ) : null}
-                {isSleepyState ? (
-                  <div className="pointer-events-none absolute left-1/2 top-14 z-30 -translate-x-1/2 text-xs text-doggerz-bone/80">
-                    <span className="inline-block animate-[dgZzzFloat_2.2s_ease-in-out_infinite]">
-                      zZz
-                    </span>
-                    <span className="ml-2 inline-block animate-[dgZzzFloat_2.2s_ease-in-out_infinite_0.4s]">
-                      zZz
-                    </span>
-                  </div>
-                ) : null}
-                {showGettingSleepyWarning ? (
-                  <div className="pointer-events-none absolute left-1/2 top-5 z-30 -translate-x-1/2 rounded-full border border-amber-300/55 bg-black/70 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-amber-100 shadow-[0_10px_24px_rgba(120,53,15,0.3)]">
-                    getting sleepy...
-                  </div>
-                ) : null}
-                {foodBowl ? (
-                  <div
-                    className="pointer-events-none absolute z-20"
-                    style={{
-                      left: `${foodBowl.xNorm * 100}%`,
-                      top: `${foodBowl.yNorm * 100}%`,
-                      transform: "translate(-50%, -50%)",
-                    }}
-                    aria-hidden="true"
-                  >
-                    <div className="dog-bowl grid h-10 w-12 place-items-center rounded-full border border-doggerz-bone/60 bg-doggerz-bone/25 text-lg shadow-[0_8px_20px_rgba(2,6,23,0.35)]">
-                      🥣
-                    </div>
-                    {String(foodBowl.surface || "") === "low_table" ? (
-                      <div className="mt-1 whitespace-nowrap rounded-full border border-amber-300/35 bg-black/60 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-amber-100">
-                        theft risk
-                      </div>
-                    ) : null}
-                  </div>
-                ) : null}
-                {showGuiltyPaws ? (
-                  <div className="pointer-events-none absolute bottom-12 left-5 z-30 rounded-xl border border-amber-300/45 bg-black/55 px-2 py-1 text-xs text-amber-100">
-                    🥣 spilled... sorry.
-                  </div>
-                ) : null}
-                {showFireflySnap ? (
-                  <div className="pointer-events-none absolute left-1/2 top-[58%] z-30 -translate-x-1/2 rounded-full border border-amber-200/40 bg-black/55 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-amber-100">
-                    snap!
-                  </div>
-                ) : null}
-                {sleepInDogHouse ? (
-                  <div className="pointer-events-none absolute right-14 bottom-[18%] z-40 h-24 w-28">
+                  ) : null}
+                  {showButterflyNotice ? (
                     <div
-                      className="absolute inset-x-0 bottom-10 h-12"
+                      className="pointer-events-none absolute z-[22]"
                       style={{
-                        clipPath: "polygon(50% 0%, 100% 100%, 0% 100%)",
-                        background:
-                          "linear-gradient(180deg, rgba(120,53,15,0.98) 0%, rgba(75,31,7,1) 100%)",
-                        border: "1px solid rgba(255,255,255,0.1)",
+                        left: `${Math.round(clamp(dogPositionNorm.xNorm, 0.05, 0.95) * 100)}%`,
+                        top: `${Math.round(clamp(dogPositionNorm.yNorm - 0.19, 0.08, 0.86) * 100)}%`,
+                        transform: "translate(-50%, -50%)",
                       }}
-                    />
-                  </div>
-                ) : null}
-                {sleepInYard ? (
-                  <div className="pointer-events-none absolute left-1/2 top-[60%] z-30 -translate-x-1/2 rounded-full border border-doggerz-leaf/45 bg-black/60 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-doggerz-bone">
-                    yard nap
-                  </div>
-                ) : null}
-                {placingBowl ? (
-                  <div className="pointer-events-none absolute bottom-3 left-1/2 z-30 -translate-x-1/2 rounded-full border border-white/15 bg-black/70 px-3 py-1 text-[10px] uppercase tracking-[0.18em] text-doggerz-bone">
-                    {isApartmentEnvironment
-                      ? "Tap the floor or low table"
-                      : "Tap to place bowl"}
-                  </div>
-                ) : null}
-                {!effectiveDogSleeping ? (
-                  <>
-                    <DogToy
-                      onSqueak={handleToySqueak}
-                      itemType="food"
-                      title="Drag food onto your pup to feed"
-                      className="bottom-3 right-16 left-auto top-auto z-30 h-11 w-11"
-                    />
-                    <DogToy
-                      onSqueak={handleToySqueak}
-                      itemType="toy"
-                      title="Drag toy onto your pup to play"
-                      className="bottom-3 right-3 left-auto top-auto z-30 h-11 w-11"
-                    />
-                  </>
-                ) : null}
-              </div>
-            )}
-          </div>
+                      aria-hidden="true"
+                    >
+                      <span className="grid h-8 w-8 place-items-center rounded-full border border-amber-200/55 bg-black/65 text-sm font-black text-amber-100 shadow-[0_0_20px_rgba(250,204,21,0.35)] animate-pulse">
+                        !
+                      </span>
+                    </div>
+                  ) : null}
+                  {ambientEvent?.type === "owl" ? (
+                    <div className="pointer-events-none absolute left-[17%] top-[30%] z-[16] text-2xl">
+                      <span
+                        style={{
+                          animation: reduceMotion
+                            ? "none"
+                            : "dgOwlPerchPulse 2.4s ease-in-out infinite",
+                        }}
+                      >
+                        🦉
+                      </span>
+                    </div>
+                  ) : null}
+                  {ambientEvent?.type === "comet" ? (
+                    <div className="pointer-events-none absolute inset-0 z-[17] overflow-hidden">
+                      <span className="absolute left-[-18%] top-[12%] text-2xl animate-[dgCometTraverse_4.2s_linear_forwards]">
+                        ☄️
+                      </span>
+                    </div>
+                  ) : null}
+                  {ambientEvent?.type === "leaf_gust" ? (
+                    <div className="pointer-events-none absolute inset-0 z-[17] overflow-hidden">
+                      {Array.from({ length: 8 }, (_, i) => (
+                        <span
+                          key={`leaf-gust-${i}`}
+                          className="absolute text-lg"
+                          style={{
+                            left: `${-18 + i * 8}%`,
+                            top: `${54 + (i % 3) * 6}%`,
+                            opacity: 0.8,
+                            animation: `dgLeafGust ${3.8 + i * 0.18}s linear ${i * 0.12}s forwards`,
+                          }}
+                        >
+                          🍃
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
+                  {pawPrints.length > 0 ? (
+                    <div className="pointer-events-none absolute inset-0 z-20">
+                      {pawPrints.map((print) => (
+                        <span
+                          key={print.id}
+                          className="mud-paw-print"
+                          style={{
+                            left: `${Number(print.x || 0)}px`,
+                            top: `${Number(print.y || 0)}px`,
+                            width: `${Number(print.size || 18)}px`,
+                            height: `${Number(print.size || 18)}px`,
+                            transform: `translate(-50%, -50%) rotate(${Number(
+                              print.rot || 0
+                            )}deg)`,
+                            color: print.fill,
+                          }}
+                        >
+                          <PawPrintSvg className="h-full w-full" />
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
+                  <Suspense
+                    fallback={
+                      <div className="flex h-[340px] w-full items-center justify-center rounded-3xl border border-doggerz-leaf/30 bg-black/30 text-xs uppercase tracking-[0.2em] text-doggerz-paw/80">
+                        Loading Pup
+                      </div>
+                    }
+                  >
+                    <div
+                      className="absolute inset-0"
+                      data-night-owl={nightOwlActive ? "true" : "false"}
+                      style={{
+                        zIndex: dogRenderZIndex,
+                        filter: nightOwlActive
+                          ? "drop-shadow(0 0 10px rgba(200, 230, 255, 0.32)) saturate(0.92) brightness(1.04)"
+                          : undefined,
+                        transition: "filter 220ms ease",
+                      }}
+                    >
+                      <DogPixiView
+                        stage={renderModel?.stage}
+                        condition={renderModel?.condition}
+                        anim={effectiveAnim}
+                        behaviorState={dog?.aiState || "idle"}
+                        position={dogRenderPosition}
+                        facing={dog?.facing || "right"}
+                        equippedCosmetics={dog?.cosmetics?.equipped || null}
+                        width="100%"
+                        height="100%"
+                        scale={1.6}
+                        animSpeedMultiplier={effectiveAnimationSpeedMultiplier}
+                        bondValue={Number(dog?.bond?.value ?? 0)}
+                        dogIsSleeping={effectiveDogSleeping}
+                        onPositionChange={handleDogPositionChange}
+                        onDogTap={
+                          treasurePhase === "sniffing"
+                            ? handleTreasureHuntTap
+                            : null
+                        }
+                      />
+                    </div>
+                  </Suspense>
+                  {masteryCelebration ? (
+                    <div className="pointer-events-none absolute inset-0 z-[26] flex items-center justify-center">
+                      <div className="mastery-burst" aria-hidden="true" />
+                      <div className="mastery-celebration-card">
+                        <div className="mastery-celebration-card__eyebrow">
+                          {masteryCelebration.rank} Trick
+                        </div>
+                        <div className="mastery-celebration-card__title">
+                          Mastered: {masteryCelebration.label}
+                        </div>
+                        <div className="mastery-celebration-card__perk">
+                          {masteryCelebration.perk}
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
+                  {showTreasureMarker ? (
+                    <div
+                      className="pointer-events-none absolute z-[24]"
+                      style={{
+                        left: `${Number(treasureHunt?.xNorm || 0.5) * 100}%`,
+                        top: `${Number(treasureHunt?.yNorm || 0.75) * 100}%`,
+                        transform: "translate(-50%, -50%)",
+                      }}
+                      aria-hidden="true"
+                    >
+                      <div className="grid h-10 w-10 place-items-center rounded-full border border-amber-200/45 bg-black/55 text-xl shadow-[0_0_28px_rgba(250,204,21,0.22)]">
+                        {treasurePhase === "digging" ? "🕳️" : "❓"}
+                      </div>
+                    </div>
+                  ) : null}
+                  {showDreamBubble ? (
+                    <div className="pointer-events-none absolute left-1/2 top-8 z-30 -translate-x-1/2 rounded-2xl border border-white/25 bg-black/55 px-3 py-1 text-xs font-semibold text-doggerz-bone">
+                      💭 woof...
+                    </div>
+                  ) : null}
+                  {showTreasurePrompt ? (
+                    <div className="pointer-events-none absolute left-1/2 top-8 z-30 -translate-x-1/2 rounded-2xl border border-amber-300/45 bg-black/70 px-3 py-1 text-xs font-semibold text-amber-100 shadow-[0_10px_24px_rgba(120,53,15,0.28)]">
+                      {treasurePhase === "digging"
+                        ? `Digging up ${treasureHunt?.rewardName || "something"}...`
+                        : "Caught a scent. Tap your pup before it disappears."}
+                    </div>
+                  ) : null}
+                  {isSleepyState ? (
+                    <div className="pointer-events-none absolute left-1/2 top-14 z-30 -translate-x-1/2 text-xs text-doggerz-bone/80">
+                      <span className="inline-block animate-[dgZzzFloat_2.2s_ease-in-out_infinite]">
+                        zZz
+                      </span>
+                      <span className="ml-2 inline-block animate-[dgZzzFloat_2.2s_ease-in-out_infinite_0.4s]">
+                        zZz
+                      </span>
+                    </div>
+                  ) : null}
+                  {showGettingSleepyWarning ? (
+                    <div className="pointer-events-none absolute left-1/2 top-5 z-30 -translate-x-1/2 rounded-full border border-amber-300/55 bg-black/70 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-amber-100 shadow-[0_10px_24px_rgba(120,53,15,0.3)]">
+                      getting sleepy...
+                    </div>
+                  ) : null}
+                  {foodBowl ? (
+                    <div
+                      className="pointer-events-none absolute z-20"
+                      style={{
+                        left: `${foodBowl.xNorm * 100}%`,
+                        top: `${foodBowl.yNorm * 100}%`,
+                        transform: "translate(-50%, -50%)",
+                      }}
+                      aria-hidden="true"
+                    >
+                      <div className="dog-bowl grid h-10 w-12 place-items-center rounded-full border border-doggerz-bone/60 bg-doggerz-bone/25 text-lg shadow-[0_8px_20px_rgba(2,6,23,0.35)]">
+                        🥣
+                      </div>
+                      {String(foodBowl.surface || "") === "low_table" ? (
+                        <div className="mt-1 whitespace-nowrap rounded-full border border-amber-300/35 bg-black/60 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-amber-100">
+                          theft risk
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
+                  {showGuiltyPaws ? (
+                    <div className="pointer-events-none absolute bottom-12 left-5 z-30 rounded-xl border border-amber-300/45 bg-black/55 px-2 py-1 text-xs text-amber-100">
+                      🥣 spilled... sorry.
+                    </div>
+                  ) : null}
+                  {showFireflySnap ? (
+                    <div className="pointer-events-none absolute left-1/2 top-[58%] z-30 -translate-x-1/2 rounded-full border border-amber-200/40 bg-black/55 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-amber-100">
+                      snap!
+                    </div>
+                  ) : null}
+                  {sleepInDogHouse ? (
+                    <div className="pointer-events-none absolute right-14 bottom-[18%] z-40 h-24 w-28">
+                      <div
+                        className="absolute inset-x-0 bottom-10 h-12"
+                        style={{
+                          clipPath: "polygon(50% 0%, 100% 100%, 0% 100%)",
+                          background:
+                            "linear-gradient(180deg, rgba(120,53,15,0.98) 0%, rgba(75,31,7,1) 100%)",
+                          border: "1px solid rgba(255,255,255,0.1)",
+                        }}
+                      />
+                    </div>
+                  ) : null}
+                  {sleepInYard ? (
+                    <div className="pointer-events-none absolute left-1/2 top-[60%] z-30 -translate-x-1/2 rounded-full border border-doggerz-leaf/45 bg-black/60 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-doggerz-bone">
+                      yard nap
+                    </div>
+                  ) : null}
+                  {placingBowl ? (
+                    <div className="pointer-events-none absolute bottom-3 left-1/2 z-30 -translate-x-1/2 rounded-full border border-white/15 bg-black/70 px-3 py-1 text-[10px] uppercase tracking-[0.18em] text-doggerz-bone">
+                      {isApartmentEnvironment
+                        ? "Tap the floor or low table"
+                        : "Tap to place bowl"}
+                    </div>
+                  ) : null}
+                  {!effectiveDogSleeping ? (
+                    <>
+                      <DogToy
+                        onSqueak={handleToySqueak}
+                        itemType="food"
+                        title="Drag food onto your pup to feed"
+                        className="bottom-3 right-16 left-auto top-auto z-30 h-11 w-11"
+                      />
+                      <DogToy
+                        onSqueak={handleToySqueak}
+                        itemType="toy"
+                        title="Drag toy onto your pup to play"
+                        className="bottom-3 right-3 left-auto top-auto z-30 h-11 w-11"
+                      />
+                    </>
+                  ) : null}
+                </div>
+              )}
+            </div>
 
-          {!showRunawayLetter ? (
-            <div className="order-2">
-              <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
-                <ActionButton
-                  label="Interact"
-                  feedbackActive={activeActionFeedbackKey === "interact"}
-                  disabled={controlsDisabled}
-                  onPointerEnter={handleActionHoverAnticipation}
-                  onClick={() => {
-                    triggerActionFeedback("interact");
-                    setInteractionOpen(true);
-                  }}
-                />
-                <ActionButton
-                  label="Play"
-                  feedbackActive={activeActionFeedbackKey === "play"}
-                  hijacked={isActionHijacked("play")}
-                  disabled={
-                    controlsDisabled || toysIgnored || isActionHijacked("play")
-                  }
-                  onClick={() => {
-                    if (toysIgnored) return;
-                    if (isActionHijacked("play")) return;
-                    dispatchPlayAction("button");
-                  }}
-                />
-                <ActionButton
-                  label="Pet"
-                  feedbackActive={activeActionFeedbackKey === "pet"}
-                  hijacked={isActionHijacked("pet")}
-                  disabled={controlsDisabled || isActionHijacked("pet")}
-                  onClick={() => {
-                    if (isActionHijacked("pet")) return;
-                    triggerActionFeedback("pet");
-                    dispatch(petDog({ now: Date.now() }));
-                  }}
-                />
-                <ActionButton
-                  label="Bath"
-                  feedbackActive={activeActionFeedbackKey === "bath"}
-                  hijacked={isActionHijacked("bath")}
-                  disabled={controlsDisabled || isActionHijacked("bath")}
-                  onClick={() => {
-                    if (isActionHijacked("bath")) return;
-                    triggerActionFeedback("bath");
-                    dispatch(bathe({ now: Date.now() }));
-                  }}
-                />
-                <ActionButton
-                  label="Potty"
-                  feedbackActive={activeActionFeedbackKey === "potty"}
-                  hijacked={isActionHijacked("potty")}
-                  disabled={controlsDisabled || isActionHijacked("potty")}
-                  tooltip={pottyButtonTooltip}
-                  onClick={() => {
-                    if (isActionHijacked("potty")) return;
-                    triggerActionFeedback("potty");
-                    dispatch(goPotty({ now: Date.now() }));
-                  }}
-                />
-                {pottyTrainingComplete ? (
+            {!showRunawayLetter ? (
+              <div className="order-2">
+                <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
                   <ActionButton
-                    label="Tricks"
-                    feedbackActive={activeActionFeedbackKey === "tricks"}
-                    hijacked={isActionHijacked("train")}
-                    disabled={tricksLocked}
-                    onClick={openTricksPicker}
+                    label="Interact"
+                    feedbackActive={activeActionFeedbackKey === "interact"}
+                    disabled={controlsDisabled}
+                    onPointerEnter={handleActionHoverAnticipation}
+                    onClick={() => {
+                      triggerActionFeedback("interact");
+                      setInteractionOpen(true);
+                    }}
                   />
-                ) : null}
-              </div>
-              <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
-                <button
-                  id="feed-button"
-                  type="button"
-                  onClick={handleQuickFeed}
-                  disabled={controlsDisabled}
-                  className={`dz-touch-button dz-touch-hover min-h-11 rounded-2xl border border-emerald-300/45 bg-gradient-to-b from-emerald-300 to-lime-300 px-4 py-2 text-sm font-black tracking-[0.02em] text-slate-950 shadow-[0_10px_24px_rgba(16,185,129,0.28)] transition disabled:cursor-not-allowed disabled:opacity-50 ${activeActionFeedbackKey === "quick-feed" ? "btn-feedback-pop" : ""}`}
-                >
-                  Quick Feed
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSharePup}
-                  className={`dz-touch-button dz-touch-hover min-h-11 rounded-2xl border border-cyan-300/45 bg-gradient-to-b from-cyan-300 to-sky-300 px-4 py-2 text-sm font-black tracking-[0.02em] text-slate-950 shadow-[0_10px_24px_rgba(34,211,238,0.28)] transition ${activeActionFeedbackKey === "share-pup" ? "btn-feedback-pop" : ""}`}
-                >
-                  Share Pup
-                </button>
-                {voiceInputEnabled && pottyTrainingComplete ? (
+                  <ActionButton
+                    label="Play"
+                    feedbackActive={activeActionFeedbackKey === "play"}
+                    hijacked={isActionHijacked("play")}
+                    disabled={
+                      controlsDisabled ||
+                      toysIgnored ||
+                      isActionHijacked("play")
+                    }
+                    onClick={() => {
+                      if (toysIgnored) return;
+                      if (isActionHijacked("play")) return;
+                      dispatchPlayAction("button");
+                    }}
+                  />
+                  <ActionButton
+                    label="Pet"
+                    feedbackActive={activeActionFeedbackKey === "pet"}
+                    hijacked={isActionHijacked("pet")}
+                    disabled={controlsDisabled || isActionHijacked("pet")}
+                    onClick={() => {
+                      if (isActionHijacked("pet")) return;
+                      triggerActionFeedback("pet");
+                      dispatch(petDog({ now: Date.now() }));
+                    }}
+                  />
+                  <ActionButton
+                    label="Bath"
+                    feedbackActive={activeActionFeedbackKey === "bath"}
+                    hijacked={isActionHijacked("bath")}
+                    disabled={controlsDisabled || isActionHijacked("bath")}
+                    onClick={() => {
+                      if (isActionHijacked("bath")) return;
+                      triggerActionFeedback("bath");
+                      dispatch(bathe({ now: Date.now() }));
+                    }}
+                  />
+                  <ActionButton
+                    label="Potty"
+                    feedbackActive={activeActionFeedbackKey === "potty"}
+                    hijacked={isActionHijacked("potty")}
+                    disabled={controlsDisabled || isActionHijacked("potty")}
+                    tooltip={pottyButtonTooltip}
+                    onClick={() => {
+                      if (isActionHijacked("potty")) return;
+                      triggerActionFeedback("potty");
+                      dispatch(goPotty({ now: Date.now() }));
+                    }}
+                  />
+                  {pottyTrainingComplete ? (
+                    <ActionButton
+                      label="Tricks"
+                      feedbackActive={activeActionFeedbackKey === "tricks"}
+                      hijacked={isActionHijacked("train")}
+                      disabled={tricksLocked}
+                      onClick={openTricksPicker}
+                    />
+                  ) : null}
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  <button
+                    id="feed-button"
+                    type="button"
+                    onClick={handleQuickFeed}
+                    disabled={controlsDisabled}
+                    className={`dz-touch-button dz-touch-hover min-h-11 rounded-2xl border border-emerald-300/45 bg-gradient-to-b from-emerald-300 to-lime-300 px-4 py-2 text-sm font-black tracking-[0.02em] text-slate-950 shadow-[0_10px_24px_rgba(16,185,129,0.28)] transition disabled:cursor-not-allowed disabled:opacity-50 ${activeActionFeedbackKey === "quick-feed" ? "btn-feedback-pop" : ""}`}
+                  >
+                    Quick Feed
+                  </button>
                   <button
                     type="button"
-                    onClick={handleVoiceTrainTap}
-                    disabled={controlsDisabled || !voiceSupported}
-                    className={`dz-touch-button dz-touch-hover min-h-11 rounded-2xl border border-violet-300/45 bg-gradient-to-b from-violet-300 to-fuchsia-300 px-4 py-2 text-sm font-black tracking-[0.02em] text-slate-950 shadow-[0_10px_24px_rgba(167,139,250,0.28)] transition disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-1 col-span-2 ${activeActionFeedbackKey === "voice-train" ? "btn-feedback-pop" : ""}`}
+                    onClick={handleSharePup}
+                    className={`dz-touch-button dz-touch-hover min-h-11 rounded-2xl border border-cyan-300/45 bg-gradient-to-b from-cyan-300 to-sky-300 px-4 py-2 text-sm font-black tracking-[0.02em] text-slate-950 shadow-[0_10px_24px_rgba(34,211,238,0.28)] transition ${activeActionFeedbackKey === "share-pup" ? "btn-feedback-pop" : ""}`}
                   >
-                    {voiceListening ? "Listening..." : "Voice Train"}
+                    Share Pup
                   </button>
-                ) : null}
+                  {voiceInputEnabled && pottyTrainingComplete ? (
+                    <button
+                      type="button"
+                      onClick={handleVoiceTrainTap}
+                      disabled={controlsDisabled || !voiceSupported}
+                      className={`dz-touch-button dz-touch-hover min-h-11 rounded-2xl border border-violet-300/45 bg-gradient-to-b from-violet-300 to-fuchsia-300 px-4 py-2 text-sm font-black tracking-[0.02em] text-slate-950 shadow-[0_10px_24px_rgba(167,139,250,0.28)] transition disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-1 col-span-2 ${activeActionFeedbackKey === "voice-train" ? "btn-feedback-pop" : ""}`}
+                    >
+                      {voiceListening ? "Listening..." : "Voice Train"}
+                    </button>
+                  ) : null}
+                </div>
               </div>
-            </div>
-          ) : null}
+            ) : null}
           </div>
         </div>
       </div>
@@ -3840,7 +3866,8 @@ function TricksOverlay({
               Tricks
             </div>
             <div className="mt-1 text-xs text-doggerz-bone/75">
-              Ready: {unlockedCount}. Active lessons: {activeCount}/{activeLimit}
+              Ready: {unlockedCount}. Active lessons: {activeCount}/
+              {activeLimit}
             </div>
             <div className="mt-1 text-[11px] text-doggerz-bone/60">
               {pendingCount > 0
@@ -3959,7 +3986,11 @@ function TrainingLogOverlay({
                   title={`Master of ${command.label}`}
                   aria-label={`Master of ${command.label}`}
                 >
-                  <span>{String(command.label || "").slice(0, 2).toUpperCase()}</span>
+                  <span>
+                    {String(command.label || "")
+                      .slice(0, 2)
+                      .toUpperCase()}
+                  </span>
                 </div>
               ))
             ) : (
@@ -4060,9 +4091,7 @@ function HudChip({ label, value, tooltip = "" }) {
         <div className="stat-label text-[10px] font-semibold tracking-[0.14em]">
           {label}
         </div>
-        <div className="stat-value mt-0.5 text-sm font-bold">
-          {value}
-        </div>
+        <div className="stat-value mt-0.5 text-sm font-bold">{value}</div>
       </div>
     </Tooltip>
   );

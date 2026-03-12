@@ -372,10 +372,7 @@ export default function YardBackdrop({
 
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[24px]">
-      <div
-        className="absolute inset-0"
-        style={{ zIndex: LAYER.SKY }}
-      >
+      <div className="absolute inset-0" style={{ zIndex: LAYER.SKY }}>
         <div
           className="absolute inset-0"
           style={{

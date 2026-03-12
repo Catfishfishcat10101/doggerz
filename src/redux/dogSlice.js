@@ -2330,8 +2330,7 @@ function createDecayRuleContext(state, now) {
       potty:
         (skillMods.pottyGainMultiplier || 1) *
         (skillMods.offlinePottyGainMultiplier || 1),
-      severeNeglectHealth:
-        skillMods.severeNeglectHealthDecayMultiplier || 1,
+      severeNeglectHealth: skillMods.severeNeglectHealthDecayMultiplier || 1,
     },
     instinctEngine: {
       separationAnxiety,
@@ -3390,8 +3389,9 @@ function evaluateObedienceUnlocks(state, now = nowMs()) {
   });
 
   const context = { level, bond, streak, pottyComplete };
-  let reservedLearningSlots =
-    unlocks.unlockedIds.filter((id) => !masteredIds.has(id)).length;
+  let reservedLearningSlots = unlocks.unlockedIds.filter(
+    (id) => !masteredIds.has(id)
+  ).length;
 
   Object.keys(unlocks.unlockableAtById).forEach((id) => {
     if (unlocks.unlockedIds.includes(id)) {
@@ -5655,8 +5655,7 @@ const dogSlice = createSlice({
           Math.max(
             1,
             Math.round(
-              (trainingOutcome === "PERFECT" ? 7 : 5) *
-                masteryEnergyMultiplier
+              (trainingOutcome === "PERFECT" ? 7 : 5) * masteryEnergyMultiplier
             )
           ),
         0,
@@ -6205,21 +6204,20 @@ export const selectDogAgeInfo = (state) => {
   }
   const stageUi = getLifeStageUi(fallbackStage);
   return {
-      days: fallbackDays,
-      ageInGameDays: fallbackDays,
-      stage: fallbackStage,
-      stageId: fallbackStage,
-      label: state.dog?.lifeStage?.label || getLifeStageLabel(fallbackStage),
-      stageLabel:
-        state.dog?.lifeStage?.label || getLifeStageLabel(fallbackStage),
-      stageProgress: 0,
-      stageProgressPct: 0,
-      daysUntilNextStage: null,
-      nextStage: null,
-      ageBucketLabel: getAgeBucketLabel(fallbackDays),
-      progressLabel: getLifeStageProgressLabel({ stage: fallbackStage }),
-      ui: stageUi,
-    };
+    days: fallbackDays,
+    ageInGameDays: fallbackDays,
+    stage: fallbackStage,
+    stageId: fallbackStage,
+    label: state.dog?.lifeStage?.label || getLifeStageLabel(fallbackStage),
+    stageLabel: state.dog?.lifeStage?.label || getLifeStageLabel(fallbackStage),
+    stageProgress: 0,
+    stageProgressPct: 0,
+    daysUntilNextStage: null,
+    nextStage: null,
+    ageBucketLabel: getAgeBucketLabel(fallbackDays),
+    progressLabel: getLifeStageProgressLabel({ stage: fallbackStage }),
+    ui: stageUi,
+  };
 };
 
 export const selectDogCleanlinessMeta = (state) => {

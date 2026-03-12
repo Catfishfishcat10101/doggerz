@@ -4,15 +4,9 @@ import { Link } from "react-router-dom";
 import PageShell from "@/components/layout/PageShell.jsx";
 import { PATHS } from "@/routes.js";
 import { resolveSessionSurprise } from "@/redux/dogSlice.js";
-import {
-  buildHeistMessage,
-  getHeistRouteLabel,
-} from "@/utils/heistRoutes.js";
+import { buildHeistMessage, getHeistRouteLabel } from "@/utils/heistRoutes.js";
 
-export default function HeistOverlay({
-  stolenAction = "",
-  message = "",
-}) {
+export default function HeistOverlay({ stolenAction = "", message = "" }) {
   const dispatch = useDispatch();
   const dogName = useSelector((state) => state?.dog?.name || "Fireball");
   const targetLabel = getHeistRouteLabel(stolenAction);
@@ -64,4 +58,3 @@ export default function HeistOverlay({
     </PageShell>
   );
 }
-

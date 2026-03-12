@@ -233,7 +233,13 @@ async function fetchOpenMeteoSnapshot({ lat, lon, signal, details = {} }) {
   }
 }
 
-async function fetchOpenWeatherByCoords({ lat, lon, apiKey, signal, details = {} }) {
+async function fetchOpenWeatherByCoords({
+  lat,
+  lon,
+  apiKey,
+  signal,
+  details = {},
+}) {
   const url = `https://api.openweathermap.org/data/2.5/weather?lat=${encodeURIComponent(
     lat
   )}&lon=${encodeURIComponent(lon)}&appid=${apiKey}`;

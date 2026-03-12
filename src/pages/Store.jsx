@@ -180,8 +180,10 @@ function cosmeticDescription(item) {
     return "A stylish collar for your pup.";
   }
   if (slot === "tag") {
-    if (id === "tag_heart") return "A warm heart tag for the clingy good dog era.";
-    if (id === "tag_bolt") return "A fast-looking bolt tag for chaos gremlins and sprinters.";
+    if (id === "tag_heart")
+      return "A warm heart tag for the clingy good dog era.";
+    if (id === "tag_bolt")
+      return "A fast-looking bolt tag for chaos gremlins and sprinters.";
     if (id === "tag_star") return "A shiny star tag that catches the light.";
     return "A cute tag that shows off your pup.";
   }

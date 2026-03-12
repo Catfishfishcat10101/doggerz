@@ -19,7 +19,9 @@ import { selectIsAuthResolved } from "./redux/userSlice.js";
 // Keep Landing fast; lazy-load everything else.
 import HomeGate from "./pages/HomeGate.jsx";
 
-const DogRouteShell = React.lazy(() => import("./components/dog/DogRouteShell.jsx"));
+const DogRouteShell = React.lazy(
+  () => import("./components/dog/DogRouteShell.jsx")
+);
 const GamePage = React.lazy(() => import("./pages/Game.jsx"));
 const MenuPage = React.lazy(() => import("./pages/Menu.jsx"));
 const SkillTreePage = React.lazy(() => import("./pages/SkillTree.jsx"));
@@ -292,7 +294,10 @@ const router = createBrowserRouter(
             },
 
             // Catch-all (must be last)
-            { path: "*", element: suspense(withCrashBoundary(<NotFoundPage />)) },
+            {
+              path: "*",
+              element: suspense(withCrashBoundary(<NotFoundPage />)),
+            },
           ],
         },
         {

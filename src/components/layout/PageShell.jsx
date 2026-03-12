@@ -53,9 +53,7 @@ export default function PageShell({
     enableImages: showBackgroundPhotos,
   });
 
-  const bgClass = disableBackground
-    ? ""
-    : "text-zinc-100";
+  const bgClass = disableBackground ? "" : "text-zinc-100";
   const compactSurface = withinShell && !primaryTab;
   const surfaceClass = useSurface
     ? compactSurface
@@ -92,9 +90,7 @@ export default function PageShell({
               App shell disabled
             </div>
           ) : null}
-          <div className={surfaceClass}>
-            {children}
-          </div>
+          <div className={surfaceClass}>{children}</div>
         </div>
       </div>
     </section>

@@ -18,7 +18,9 @@ export function isDebugLoggingEnabled(explicit = null) {
     typeof window !== "undefined" &&
     Boolean(window.__DOGGERZ_DEBUG__?.enabled === true);
 
-  return Boolean(import.meta.env.DEV || envEnabled || runtimeEnabled || readStorageFlag());
+  return Boolean(
+    import.meta.env.DEV || envEnabled || runtimeEnabled || readStorageFlag()
+  );
 }
 
 export function setDebugLoggingEnabled(enabled) {

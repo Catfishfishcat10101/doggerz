@@ -21,19 +21,22 @@ const LIFE_STAGE_UI = Object.freeze({
   PUPPY: Object.freeze({
     headline: "Tiny chaos era",
     summary: "Potty training and routine come first.",
-    detail: "Build house manners first. Trick work opens after potty training is done.",
+    detail:
+      "Build house manners first. Trick work opens after potty training is done.",
     tone: "fresh",
   }),
   ADULT: Object.freeze({
     headline: "Prime years",
     summary: "This is the long stretch for tricks, streaks, and bonding.",
-    detail: "Adult dogs are steady learners. Daily training and check-ins matter most here.",
+    detail:
+      "Adult dogs are steady learners. Daily training and check-ins matter most here.",
     tone: "steady",
   }),
   SENIOR: Object.freeze({
     headline: "Golden years",
     summary: "A slower pace, stronger bond, and gentler care loop.",
-    detail: "Senior dogs still play, but comfort and consistency matter more than intensity.",
+    detail:
+      "Senior dogs still play, but comfort and consistency matter more than intensity.",
     tone: "warm",
   }),
 });
@@ -153,7 +156,11 @@ export function getLifeStageProgressLabel(ageInfo) {
     Math.min(100, Math.round(Number(ageInfo?.stageProgressPct || 0)))
   );
 
-  if (Number.isFinite(daysUntilNextStage) && daysUntilNextStage > 0 && nextStageLabel) {
+  if (
+    Number.isFinite(daysUntilNextStage) &&
+    daysUntilNextStage > 0 &&
+    nextStageLabel
+  ) {
     return `${daysUntilNextStage}d to ${nextStageLabel}`;
   }
 

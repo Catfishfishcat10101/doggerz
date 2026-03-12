@@ -55,7 +55,8 @@ export const SKILL_TREE_BRANCHES = Object.freeze(
           id: "scrapbook-charm",
           name: "Scrapbook Charm",
           type: "Unlock",
-          effect: "Unlocks the Star Tag and makes offline mood loss much gentler.",
+          effect:
+            "Unlocks the Star Tag and makes offline mood loss much gentler.",
           unlocks: "Star Tag",
           cost: 1,
           minDogLevel: 2,
@@ -68,7 +69,8 @@ export const SKILL_TREE_BRANCHES = Object.freeze(
           id: "heart-sync",
           name: "Heart Sync",
           type: "Passive",
-          effect: "Cuts passive energy drain when your pup is just hanging out.",
+          effect:
+            "Cuts passive energy drain when your pup is just hanging out.",
           cost: 2,
           minDogLevel: 4,
           modifiers: { idleEnergyDecayMultiplier: 0.8 },
@@ -77,7 +79,8 @@ export const SKILL_TREE_BRANCHES = Object.freeze(
           id: "calm-presence",
           name: "Calm Presence",
           type: "Passive",
-          effect: "Reduces stress grime and softens routine wear over long shifts.",
+          effect:
+            "Reduces stress grime and softens routine wear over long shifts.",
           cost: 2,
           minDogLevel: 6,
           modifiers: {
@@ -89,7 +92,8 @@ export const SKILL_TREE_BRANCHES = Object.freeze(
           id: "comfort-routine",
           name: "Comfort Routine",
           type: "Passive",
-          effect: "Improves rest recovery and lowers the chance that a rough day spirals.",
+          effect:
+            "Improves rest recovery and lowers the chance that a rough day spirals.",
           cost: 3,
           minDogLevel: 8,
           modifiers: {
@@ -117,7 +121,8 @@ export const SKILL_TREE_BRANCHES = Object.freeze(
           id: "cozy-fort",
           name: "Cozy Fort",
           type: "Unlock",
-          effect: "Unlocks the Leaf Collar and gives your pup a steadier offline routine.",
+          effect:
+            "Unlocks the Leaf Collar and gives your pup a steadier offline routine.",
           unlocks: "Leaf Collar",
           cost: 1,
           minDogLevel: 2,
@@ -142,7 +147,8 @@ export const SKILL_TREE_BRANCHES = Object.freeze(
           id: "accident-shield",
           name: "Accident Shield",
           type: "Passive",
-          effect: "Makes a normal workday far less likely to end in an accident.",
+          effect:
+            "Makes a normal workday far less likely to end in an accident.",
           cost: 2,
           minDogLevel: 6,
           modifiers: {
@@ -154,7 +160,8 @@ export const SKILL_TREE_BRANCHES = Object.freeze(
           id: "cleanup-drill",
           name: "Cleanup Drill",
           type: "Passive",
-          effect: "Further reduces routine decay and cushions severe neglect penalties.",
+          effect:
+            "Further reduces routine decay and cushions severe neglect penalties.",
           cost: 3,
           minDogLevel: 8,
           modifiers: {
@@ -185,7 +192,8 @@ export const SKILL_TREE_BRANCHES = Object.freeze(
           id: "agility-path",
           name: "Agility Path",
           type: "Unlock",
-          effect: "Unlocks the Neon Collar and gives a real XP bump to training.",
+          effect:
+            "Unlocks the Neon Collar and gives a real XP bump to training.",
           unlocks: "Neon Collar",
           cost: 1,
           minDogLevel: 2,
@@ -219,7 +227,8 @@ export const SKILL_TREE_BRANCHES = Object.freeze(
           id: "trick-cascade",
           name: "Trick Cascade",
           type: "Passive",
-          effect: "Major training XP boost plus better long-session resilience.",
+          effect:
+            "Major training XP boost plus better long-session resilience.",
           cost: 3,
           minDogLevel: 8,
           modifiers: {

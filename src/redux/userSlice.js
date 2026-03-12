@@ -85,7 +85,8 @@ function normalizeUserState(raw) {
       lastAttemptAt: toMaybeTimestamp(cloudSync.lastAttemptAt),
       lastSuccessAt: toMaybeTimestamp(cloudSync.lastSuccessAt),
       errorMessage:
-        typeof cloudSync.errorMessage === "string" && cloudSync.errorMessage.trim()
+        typeof cloudSync.errorMessage === "string" &&
+        cloudSync.errorMessage.trim()
           ? cloudSync.errorMessage.trim()
           : null,
     },
@@ -240,7 +241,8 @@ const userSlice = createSlice({
       } = action.payload || {};
 
       state.id = id ?? state.id;
-      if (authResolved !== undefined) state.authResolved = Boolean(authResolved);
+      if (authResolved !== undefined)
+        state.authResolved = Boolean(authResolved);
       state.displayName = displayName ?? state.displayName;
       state.email = email ?? state.email;
       state.avatarUrl = avatarUrl ?? state.avatarUrl;
@@ -394,7 +396,8 @@ export const {
 
 export const selectUser = (state) => state.user;
 export const selectUserId = (state) => state.user?.id || null;
-export const selectIsAuthResolved = (state) => Boolean(state.user?.authResolved);
+export const selectIsAuthResolved = (state) =>
+  Boolean(state.user?.authResolved);
 export const selectUserZip = (state) => state.user?.zip || null;
 export const selectCloudSyncState = (state) =>
   state.user?.cloudSync ?? DEFAULT_USER_STATE.cloudSync;

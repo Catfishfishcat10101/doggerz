@@ -6,7 +6,9 @@ import { resolveHeistRoute } from "@/utils/heistRoutes.js";
 
 export default function ProtectedRoute({ children }) {
   const location = useLocation();
-  const activeHeist = useSelector((state) => state?.dog?.surprise?.active || null);
+  const activeHeist = useSelector(
+    (state) => state?.dog?.surprise?.active || null
+  );
 
   const isButtonHeist =
     String(activeHeist?.type || "").toUpperCase() === "STOLEN_BUTTON";
@@ -23,4 +25,3 @@ export default function ProtectedRoute({ children }) {
 
   return children;
 }
-

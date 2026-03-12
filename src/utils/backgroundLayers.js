@@ -76,7 +76,9 @@ function buildFallbackLayers({ preview = false } = {}) {
 }
 
 export function resolveBackdropLayers(options = {}) {
-  const backdropId = String(options?.backdropId || "").trim().toLowerCase();
+  const backdropId = String(options?.backdropId || "")
+    .trim()
+    .toLowerCase();
   const environment = String(options?.environment || "yard")
     .trim()
     .toLowerCase();

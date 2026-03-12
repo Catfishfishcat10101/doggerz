@@ -106,7 +106,8 @@ export function useDogActionSfx({
   const sleepEnabled = audio?.sleepEnabled !== false;
   const baseVolume = clamp01(masterVolume * sfxVolume);
   const gestureReady = useUserGestureGate(enabled);
-  const hapticsReady = Boolean(enabled) && Boolean(hapticsEnabled) && gestureReady;
+  const hapticsReady =
+    Boolean(enabled) && Boolean(hapticsEnabled) && gestureReady;
 
   const audioCacheRef = React.useRef(Object.create(null));
   const loopKeyRef = React.useRef(null);

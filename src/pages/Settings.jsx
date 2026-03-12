@@ -239,7 +239,10 @@ function SliderRow({
     Number(max) > Number(min)
       ? Math.max(
           0,
-          Math.min(100, ((Number(value) - Number(min)) / (Number(max) - Number(min))) * 100)
+          Math.min(
+            100,
+            ((Number(value) - Number(min)) / (Number(max) - Number(min))) * 100
+          )
         )
       : 0;
   return (

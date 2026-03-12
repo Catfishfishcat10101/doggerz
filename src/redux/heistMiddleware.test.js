@@ -7,15 +7,13 @@ describe("heistMiddleware", () => {
   });
 
   it("dispatches a route heist on eligible simulation ticks", async () => {
-    const { heistMiddleware } = await import("@/redux/middleware/heistMiddleware.js");
-    const { simulationTick, triggerButtonHeist } = await import(
-      "@/redux/dogSlice.js"
-    );
+    const { heistMiddleware } =
+      await import("@/redux/middleware/heistMiddleware.js");
+    const { simulationTick, triggerButtonHeist } =
+      await import("@/redux/dogSlice.js");
 
     vi.spyOn(Date, "now").mockReturnValue(120_000);
-    vi.spyOn(Math, "random")
-      .mockReturnValueOnce(0.05)
-      .mockReturnValueOnce(0);
+    vi.spyOn(Math, "random").mockReturnValueOnce(0.05).mockReturnValueOnce(0);
 
     const dispatched = [];
     const action = simulationTick({ now: 120_000 });

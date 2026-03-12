@@ -25,7 +25,12 @@ const HIDE_ON_PATHS = new Set([
 function AppBarIcon({ kind = "menu" }) {
   if (kind === "back") {
     return (
-      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
+      <svg
+        viewBox="0 0 24 24"
+        className="h-5 w-5"
+        fill="none"
+        aria-hidden="true"
+      >
         <path
           d="M15 5 8 12l7 7"
           stroke="currentColor"
@@ -85,7 +90,8 @@ export default function Header() {
     (navigationType !== "POP" ||
       (typeof window !== "undefined" && window.history.length > 1));
 
-  const backTarget = topLevelTab?.path || (isLoggedIn ? PATHS.GAME : PATHS.MENU);
+  const backTarget =
+    topLevelTab?.path || (isLoggedIn ? PATHS.GAME : PATHS.MENU);
 
   return (
     <header className="sticky top-0 z-[90] border-b border-white/8 bg-zinc-950/88 backdrop-blur-xl">

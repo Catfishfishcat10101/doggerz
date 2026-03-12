@@ -333,13 +333,21 @@ html[data-skill-pulse="1"] .dz-perk-card[data-state="unlocked"] {
   }
 
   .dz-dog-orb--toy {
-    background:
-      radial-gradient(circle at 32% 30%, rgba(253, 224, 71, 0.95) 0%, rgba(132, 204, 22, 0.95) 58%, rgba(22, 101, 52, 1) 100%);
+    background: radial-gradient(
+      circle at 32% 30%,
+      rgba(253, 224, 71, 0.95) 0%,
+      rgba(132, 204, 22, 0.95) 58%,
+      rgba(22, 101, 52, 1) 100%
+    );
   }
 
   .dz-dog-orb--food {
-    background:
-      radial-gradient(circle at 32% 30%, rgba(254, 240, 138, 0.98) 0%, rgba(249, 115, 22, 0.95) 60%, rgba(124, 45, 18, 1) 100%);
+    background: radial-gradient(
+      circle at 32% 30%,
+      rgba(254, 240, 138, 0.98) 0%,
+      rgba(249, 115, 22, 0.95) 60%,
+      rgba(124, 45, 18, 1) 100%
+    );
   }
 
   .dz-dog-celebrate-card {
@@ -363,8 +371,11 @@ html[data-skill-pulse="1"] .dz-perk-card[data-state="unlocked"] {
   }
 
   .pup-card {
-    background:
-      linear-gradient(180deg, rgba(30, 41, 59, 0.92), rgba(30, 41, 59, 0.86));
+    background: linear-gradient(
+      180deg,
+      rgba(30, 41, 59, 0.92),
+      rgba(30, 41, 59, 0.86)
+    );
     border-radius: 16px;
     padding: 16px;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
@@ -445,8 +456,11 @@ html[data-skill-pulse="1"] .dz-perk-card[data-state="unlocked"] {
   }
 
   .sprite-stage {
-    background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.08),
+      rgba(255, 255, 255, 0.02)
+    );
     border: 2px dashed rgba(255, 255, 255, 0.18);
     border-radius: 16px;
   }

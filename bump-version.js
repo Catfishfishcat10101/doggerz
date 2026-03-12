@@ -4,9 +4,13 @@ const path = require("node:path");
 
 const scriptPath = path.join(__dirname, "scripts", "bump-version.js");
 
-const result = spawnSync(process.execPath, [scriptPath, ...process.argv.slice(2)], {
-  stdio: "inherit",
-});
+const result = spawnSync(
+  process.execPath,
+  [scriptPath, ...process.argv.slice(2)],
+  {
+    stdio: "inherit",
+  }
+);
 
 if (result.error) {
   console.error("[bump-version] Failed to run scripts/bump-version.js");

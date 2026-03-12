@@ -64,15 +64,19 @@ export function buildStartupAssetList(state) {
   const stage = renderModel?.stage || "PUPPY";
   const anim = renderModel?.anim || "idle";
 
-  return [...new Set([
-    DOGS.staticFallback,
-    renderModel?.staticSpriteUrl,
-    getDogAnimSpriteUrl(stage, anim),
-    getDogAnimSpriteUrl(stage, "idle"),
-    renderModel?.pixiSheetUrl,
-    renderModel?.pixiSheetFallbackUrl,
-    getDogPixiSheetUrl(stage, "clean"),
-  ].filter(Boolean))];
+  return [
+    ...new Set(
+      [
+        DOGS.staticFallback,
+        renderModel?.staticSpriteUrl,
+        getDogAnimSpriteUrl(stage, anim),
+        getDogAnimSpriteUrl(stage, "idle"),
+        renderModel?.pixiSheetUrl,
+        renderModel?.pixiSheetFallbackUrl,
+        getDogPixiSheetUrl(stage, "clean"),
+      ].filter(Boolean)
+    ),
+  ];
 }
 
 function preloadImage(src, timeoutMs = STARTUP_ASSET_TIMEOUT_MS) {
@@ -99,7 +103,10 @@ function preloadImage(src, timeoutMs = STARTUP_ASSET_TIMEOUT_MS) {
 
     img.onload = () => {
       if (typeof img.decode === "function") {
-        img.decode().catch(() => {}).finally(() => finish(true));
+        img
+          .decode()
+          .catch(() => {})
+          .finally(() => finish(true));
         return;
       }
       finish(true);
@@ -176,7 +183,9 @@ const Doggerz = {
     async sync() {
       const services = initFirebase();
       if (!firebaseReady || !services?.db) {
-        console.warn("[Doggerz] Firebase unavailable at startup; using local cache.");
+        console.warn(
+          "[Doggerz] Firebase unavailable at startup; using local cache."
+        );
         return { mode: "local", user: store.getState()?.user || null };
       }
 
@@ -186,7 +195,10 @@ const Doggerz = {
         const user = await ensureAnonSignIn();
         return { mode: "firebase", user };
       } catch (error) {
-        console.warn("[Doggerz] Firebase offline during startup; using local cache.", error);
+        console.warn(
+          "[Doggerz] Firebase offline during startup; using local cache.",
+          error
+        );
         return { mode: "local", user: store.getState()?.user || null, error };
       }
     },
@@ -215,7 +227,9 @@ const Doggerz = {
       }
 
       if (!zip && !coords) {
-        return this.apply(buildFallbackWeatherSnapshot(null, "Weather ZIP unavailable"));
+        return this.apply(
+          buildFallbackWeatherSnapshot(null, "Weather ZIP unavailable")
+        );
       }
 
       try {
@@ -225,8 +239,13 @@ const Doggerz = {
         }
         return this.apply(snapshot);
       } catch (error) {
-        console.warn("[Doggerz] Reality sync failed. Defaulting to sunny/day.", error);
-        return this.apply(buildFallbackWeatherSnapshot(zip, error?.message || error));
+        console.warn(
+          "[Doggerz] Reality sync failed. Defaulting to sunny/day.",
+          error
+        );
+        return this.apply(
+          buildFallbackWeatherSnapshot(zip, error?.message || error)
+        );
       }
     },
   },
@@ -237,7 +256,9 @@ const Doggerz = {
       Doggerz.registry.assets = [];
       assets.forEach((asset) => Doggerz.registerAsset(asset));
 
-      const results = await Promise.all(assets.map((asset) => preloadImage(asset)));
+      const results = await Promise.all(
+        assets.map((asset) => preloadImage(asset))
+      );
       const loadedCount = results.filter((result) => result.loaded).length;
       console.info("[Doggerz] Renderer preload complete", {
         requested: assets.length,

@@ -85,4 +85,3 @@
 - Favor bounded randomness over chaotic, hard-to-debug behavior.
 - Keep features solo-dev maintainable.
 - Prefer incremental improvements over rewrites unless a rewrite is explicitly requested.
-

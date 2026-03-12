@@ -40,7 +40,10 @@ function isFresh(snapshot, ttlMs) {
 }
 
 export async function loadCachedWeatherSnapshot({ zip, coords } = {}) {
-  const snapshot = await loadLocalSave(getWeatherCacheKey({ zip, coords }), null);
+  const snapshot = await loadLocalSave(
+    getWeatherCacheKey({ zip, coords }),
+    null
+  );
   if (snapshot) {
     debugLog("Weather", "loaded cached snapshot", {
       zip: normalizeZip(zip),
@@ -51,7 +54,10 @@ export async function loadCachedWeatherSnapshot({ zip, coords } = {}) {
   return snapshot;
 }
 
-export async function saveCachedWeatherSnapshot({ zip, coords } = {}, snapshot) {
+export async function saveCachedWeatherSnapshot(
+  { zip, coords } = {},
+  snapshot
+) {
   if (!snapshot || typeof snapshot !== "object") return false;
   return saveLocalSave(getWeatherCacheKey({ zip, coords }), snapshot);
 }
@@ -122,11 +128,15 @@ export async function fetchRealTimeWeather({
       coords: effectiveCoords,
     });
     if (cached) {
-      debugWarn("Weather", "network fetch failed, falling back to stale cache", {
-        zip: effectiveZip,
-        coords: effectiveCoords,
-        error: error?.message || "Weather fetch failed",
-      });
+      debugWarn(
+        "Weather",
+        "network fetch failed, falling back to stale cache",
+        {
+          zip: effectiveZip,
+          coords: effectiveCoords,
+          error: error?.message || "Weather fetch failed",
+        }
+      );
       return {
         ...cached,
         fromCache: true,

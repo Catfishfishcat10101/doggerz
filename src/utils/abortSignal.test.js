@@ -13,7 +13,10 @@ describe("abortSignal", () => {
   it("aborts after the configured timeout", () => {
     vi.useFakeTimers();
 
-    const timeout = createTimeoutSignal({ timeoutMs: 500, message: "Weather timeout" });
+    const timeout = createTimeoutSignal({
+      timeoutMs: 500,
+      message: "Weather timeout",
+    });
     expect(timeout.signal.aborted).toBe(false);
 
     vi.advanceTimersByTime(500);
@@ -28,7 +31,10 @@ describe("abortSignal", () => {
 
   it("mirrors parent abort signals", () => {
     const parent = new AbortController();
-    const timeout = createTimeoutSignal({ parentSignal: parent.signal, timeoutMs: 5000 });
+    const timeout = createTimeoutSignal({
+      parentSignal: parent.signal,
+      timeoutMs: 5000,
+    });
 
     parent.abort(createAbortError("Parent cancelled"));
 

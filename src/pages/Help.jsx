@@ -482,8 +482,8 @@ export default function HelpPage() {
                     Support and troubleshooting
                   </h1>
                   <p className="mt-3 text-sm text-zinc-300 max-w-2xl">
-                    This is the in-app help hub for bug recovery, support
-                    steps, and quick diagnostics.
+                    This is the in-app help hub for bug recovery, support steps,
+                    and quick diagnostics.
                   </p>
                 </div>
 

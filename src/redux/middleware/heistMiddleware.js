@@ -17,7 +17,11 @@ let lastHeistRollAt = 0;
 function isDogSleeping(dog) {
   if (!dog || typeof dog !== "object") return false;
   if (dog.isAsleep) return true;
-  return String(dog.aiState || "").trim().toLowerCase() === "sleep";
+  return (
+    String(dog.aiState || "")
+      .trim()
+      .toLowerCase() === "sleep"
+  );
 }
 
 export const heistMiddleware = (storeApi) => (next) => (action) => {

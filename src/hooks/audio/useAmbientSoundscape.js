@@ -22,7 +22,9 @@ function normalizeWeatherKey(value) {
 }
 
 function normalizeIntensity(value) {
-  const raw = String(value || "").trim().toLowerCase();
+  const raw = String(value || "")
+    .trim()
+    .toLowerCase();
   if (raw === "light" || raw === "drizzle") return 0.45;
   if (raw === "heavy" || raw === "storm" || raw === "thunder") return 1;
   if (raw === "medium" || raw === "normal") return 0.7;
@@ -37,7 +39,11 @@ function isDaytime() {
 }
 
 function createNoiseBuffer(context) {
-  const buffer = context.createBuffer(1, context.sampleRate * 2, context.sampleRate);
+  const buffer = context.createBuffer(
+    1,
+    context.sampleRate * 2,
+    context.sampleRate
+  );
   const channel = buffer.getChannelData(0);
   for (let i = 0; i < channel.length; i += 1) {
     channel[i] = Math.random() * 2 - 1;
@@ -154,7 +160,10 @@ export default function useAmbientSoundscape({ enabled = true } = {}) {
     if (!enabled) return;
     if (!unlockedRef.current) return;
     if (typeof window === "undefined") return;
-    if (contextRef.current || !(window.AudioContext || window.webkitAudioContext))
+    if (
+      contextRef.current ||
+      !(window.AudioContext || window.webkitAudioContext)
+    )
       return;
 
     const context = new (window.AudioContext || window.webkitAudioContext)();

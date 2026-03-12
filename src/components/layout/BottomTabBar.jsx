@@ -101,12 +101,16 @@ function TabIcon({ name, active }) {
 
 export default function BottomTabBar() {
   const location = useLocation();
-  const activeSurprise = useSelector((state) => state?.dog?.surprise?.active || null);
+  const activeSurprise = useSelector(
+    (state) => state?.dog?.surprise?.active || null
+  );
   const pathname = location.pathname;
   const activeTab = getPrimaryTabForPath(pathname);
   const stolenTabKey =
     String(activeSurprise?.type || "").toUpperCase() === "STOLEN_BUTTON"
-      ? String(activeSurprise?.stolenAction || "").trim().toLowerCase()
+      ? String(activeSurprise?.stolenAction || "")
+          .trim()
+          .toLowerCase()
       : "";
   const stolenRoute = resolveHeistRoute(stolenTabKey);
 
@@ -133,31 +137,29 @@ export default function BottomTabBar() {
                   isActive
                     ? "bg-[color:var(--dz-accent-soft)] text-[color:var(--dz-accent)] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
                     : "text-zinc-400",
-                  stolen
-                    ? "pointer-events-none opacity-35 grayscale"
-                    : "",
+                  stolen ? "pointer-events-none opacity-35 grayscale" : "",
                 ].join(" ")
               }
             >
               {({ isActive }) => (
-              <>
-                <span
-                  className={`mb-1 h-1 w-7 rounded-full transition ${
-                    isActive ? "bg-current opacity-100" : "opacity-0"
-                  }`}
-                  aria-hidden="true"
-                />
-                {stolen ? (
+                <>
                   <span
-                    className="absolute right-2 top-1 text-sm"
+                    className={`mb-1 h-1 w-7 rounded-full transition ${
+                      isActive ? "bg-current opacity-100" : "opacity-0"
+                    }`}
                     aria-hidden="true"
-                  >
-                    🐾
-                  </span>
-                ) : null}
-                <TabIcon name={tab.icon} active={isActive} />
-                <span className="mt-1">{tab.label}</span>
-              </>
+                  />
+                  {stolen ? (
+                    <span
+                      className="absolute right-2 top-1 text-sm"
+                      aria-hidden="true"
+                    >
+                      🐾
+                    </span>
+                  ) : null}
+                  <TabIcon name={tab.icon} active={isActive} />
+                  <span className="mt-1">{tab.label}</span>
+                </>
               )}
             </NavLink>
           );

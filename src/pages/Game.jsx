@@ -245,8 +245,7 @@ export default function GamePage() {
     (!isAuthResolved ||
       (isLoggedIn &&
         (!adoptionGateReady ||
-          (cloudSync?.status === "syncing" &&
-            !cloudSync?.lastSuccessAt))));
+          (cloudSync?.status === "syncing" && !cloudSync?.lastSuccessAt))));
 
   const shouldRedirectToAdopt =
     !dog?.adoptedAt &&

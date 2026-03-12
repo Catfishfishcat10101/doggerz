@@ -68,9 +68,5 @@ export function ModalProvider({ children }) {
     [active, closeModal, closeModalById, isOpen, openModal, openOnce, stack]
   );
 
-  return (
-    <ModalContext.Provider value={api}>
-      {children}
-    </ModalContext.Provider>
-  );
+  return <ModalContext.Provider value={api}>{children}</ModalContext.Provider>;
 }

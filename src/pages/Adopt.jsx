@@ -143,16 +143,18 @@ export default function AdoptPage() {
       dispatch(resetWorkflow({ id: WORKFLOW_ID }));
       navigate(PATHS.GAME, { replace: true });
     } catch (err) {
-      setError(
-        err?.message || "Adoption hit a problem. Try again."
-      );
+      setError(err?.message || "Adoption hit a problem. Try again.");
     } finally {
       setAdopting(false);
     }
   };
 
   const primaryLabel =
-    stepIndex === 2 ? "Adopt & play" : stepIndex === 1 ? "Next" : "Open the box";
+    stepIndex === 2
+      ? "Adopt & play"
+      : stepIndex === 1
+        ? "Next"
+        : "Open the box";
 
   const slideTitle =
     stepIndex === 2

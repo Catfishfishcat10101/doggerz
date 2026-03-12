@@ -24,7 +24,9 @@ function clamp01(value) {
 }
 
 function normalizeZip(value) {
-  const digits = String(value || "").replace(/\D+/g, "").slice(0, 5);
+  const digits = String(value || "")
+    .replace(/\D+/g, "")
+    .slice(0, 5);
   return /^\d{5}$/.test(digits) ? digits : null;
 }
 
@@ -70,9 +72,7 @@ function deriveSunWindowModel({
     if (nowMs <= sunrise) {
       sunriseProgress = clamp01((nowMs - dawnStart) / TWILIGHT_WINDOW_MS);
     } else {
-      sunriseProgress = clamp01(
-        1 - (nowMs - sunrise) / TWILIGHT_WINDOW_MS
-      );
+      sunriseProgress = clamp01(1 - (nowMs - sunrise) / TWILIGHT_WINDOW_MS);
     }
   } else if (nowMs >= duskStart) {
     timeOfDayBucket = "dusk";
@@ -130,7 +130,8 @@ export function useDayNightBackground(options = {}) {
   } = options;
   const apiKey = import.meta.env.VITE_OPENWEATHER_API_KEY;
   const effectiveZip = normalizeZip(zip);
-  const weatherApiEnabled = isUsableOpenWeatherKey(apiKey) && Boolean(effectiveZip);
+  const weatherApiEnabled =
+    isUsableOpenWeatherKey(apiKey) && Boolean(effectiveZip);
 
   const [localTickAt, setLocalTickAt] = useState(Date.now());
   const [imageMode, setImageMode] = useState("unknown"); // "single" | "composite" | "none"
@@ -253,8 +254,8 @@ export function useDayNightBackground(options = {}) {
     locationQuery.data && locationQuery.dataUpdatedAt
       ? locationQuery.dataUpdatedAt
       : weatherApiEnabled && weatherQuery.dataUpdatedAt
-      ? weatherQuery.dataUpdatedAt
-      : localTickAt;
+        ? weatherQuery.dataUpdatedAt
+        : localTickAt;
   const error =
     (usePreciseLocation && locationQuery.error?.message) ||
     weatherQuery.error?.message ||

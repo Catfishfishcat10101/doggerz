@@ -115,10 +115,7 @@ export default function DogCosmeticsOverlay({
       <div className={`absolute flex flex-col gap-1 ${posClass}`}>
         {displayLabels
           ? items.map((item) => (
-              <span
-                key={item.key}
-                className={item.tone}
-              >
+              <span key={item.key} className={item.tone}>
                 {item.label}
               </span>
             ))
@@ -127,10 +124,7 @@ export default function DogCosmeticsOverlay({
         {displayPreviewTags ? (
           <div className="mt-1 flex flex-wrap gap-1">
             {items.map((item) => (
-              <span
-                key={`${item.key}-dot`}
-                className="dz-dog-tag"
-              >
+              <span key={`${item.key}-dot`} className="dz-dog-tag">
                 {item.key}
               </span>
             ))}

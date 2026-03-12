@@ -231,10 +231,7 @@ export default function WeatherFXCanvas({
             0,
             `rgba(226, 244, 255, ${Math.max(0.02, p.alpha * 0.08)})`
           );
-          gradient.addColorStop(
-            0.45,
-            `rgba(198, 232, 255, ${p.alpha})`
-          );
+          gradient.addColorStop(0.45, `rgba(198, 232, 255, ${p.alpha})`);
           gradient.addColorStop(
             1,
             `rgba(150, 210, 255, ${Math.max(0.02, p.alpha * 0.22)})`
