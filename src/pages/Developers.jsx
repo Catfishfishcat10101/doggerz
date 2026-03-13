@@ -1,8 +1,36 @@
 // src/pages/Developers.jsx
 import React from "react";
 import { Link } from "react-router-dom";
+import { useSelector } from "react-redux";
 import { SOCIAL_LINKS } from "@/config/links.js";
+import DogAIEngine from "@/components/dog/DogAIEngine.jsx";
+import Fireball from "@/components/dog/Fireball.jsx";
+import { OBEDIENCE_COMMANDS } from "@/logic/obedienceCommands.js";
 import PageShell from "@/components/layout/PageShell.jsx";
+import {
+  useDog,
+  useDogActions,
+  useDogLife,
+  useDogVitals,
+} from "@/hooks/useDogState.js";
+import { selectSettings } from "@/redux/settingsSlice.js";
+
+function shouldReduceEffects(perfMode) {
+  const mode = String(perfMode || "auto").toLowerCase();
+  if (mode === "on") return true;
+  if (mode === "off") return false;
+  if (typeof window === "undefined") return false;
+  try {
+    if (navigator?.connection?.saveData) return true;
+    const mem = Number(navigator?.deviceMemory || 0);
+    if (mem && mem <= 4) return true;
+    const cores = Number(navigator?.hardwareConcurrency || 0);
+    if (cores && cores <= 4) return true;
+  } catch {
+    // ignore capability probes
+  }
+  return false;
+}
 
 function asGithubRepoBase(url) {
   if (!url) return null;
@@ -40,6 +68,56 @@ function Badge({ children }) {
       {children}
     </span>
   );
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function getAgeLabel(life) {
+  if (life?.ageBucketLabel) return life.ageBucketLabel;
+  const days = Math.max(0, Math.floor(Number(life?.ageDays || 0)));
+  return `${days}d`;
+}
+
+function getTrainingHudModel(dog) {
+  const potty =
+    dog?.training?.potty && typeof dog.training.potty === "object"
+      ? dog.training.potty
+      : null;
+  const obedience =
+    dog?.training?.obedience && typeof dog.training.obedience === "object"
+      ? dog.training.obedience
+      : null;
+  const pottyGoal = Math.max(1, Number(potty?.goal || 1));
+  const pottySuccessCount = clamp(
+    Math.floor(Number(potty?.successCount || 0)),
+    0,
+    pottyGoal
+  );
+  const pottyComplete = Boolean(potty?.completedAt);
+  const pottyPct = Math.round((pottySuccessCount / pottyGoal) * 100);
+  const unlockedIds = Array.isArray(obedience?.unlockedIds)
+    ? obedience.unlockedIds.map((id) => String(id || "")).filter(Boolean)
+    : [];
+  const totalCommands = Math.max(1, OBEDIENCE_COMMANDS.length);
+  const obediencePct = Math.round((unlockedIds.length / totalCommands) * 60);
+  const pottyWeight = pottyComplete ? 40 : Math.round(pottyPct * 0.4);
+  const score = clamp(pottyWeight + obediencePct, 0, 100);
+  const focusCommandId = unlockedIds[0] || "sit";
+  const focusCommandLabel =
+    OBEDIENCE_COMMANDS.find((command) => command.id === focusCommandId)
+      ?.label || "Sit";
+
+  return {
+    score,
+    pottyComplete,
+    focusCommandId,
+    focusCommandLabel,
+    detail: pottyComplete
+      ? `${unlockedIds.length}/${totalCommands} obedience commands unlocked`
+      : `${pottySuccessCount}/${pottyGoal} potty wins before tricks unlock`,
+  };
 }
 
 async function copyToClipboard(text) {
@@ -116,15 +194,49 @@ function CopyCodeBlock({ title, code }) {
 }
 
 export default function DevelopersPage() {
+  const settings = useSelector(selectSettings);
+  const stageRef = React.useRef(null);
+  const dog = useDog();
+  const vitals = useDogVitals();
+  const life = useDogLife();
+  const { petDog, quickFeed, trainObedience } = useDogActions();
   const repoBase = asGithubRepoBase(SOCIAL_LINKS.github);
   const issuesUrl = repoBase ? `${repoBase}/issues` : null;
   const pullsUrl = repoBase ? `${repoBase}/pulls` : null;
   const securityUrl = repoBase ? `${repoBase}/blob/main/SECURITY.md` : null;
   const readmeUrl = repoBase ? `${repoBase}#readme` : null;
   const contributingUrl = repoBase ? `${repoBase}/blob/main/README.md` : null;
+  const perfReduced = shouldReduceEffects(settings?.perfMode);
+  const reduceMotion =
+    settings?.reduceMotion === "on" ||
+    (settings?.reduceMotion !== "off" &&
+      typeof window !== "undefined" &&
+      window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  const pauseFireball = perfReduced || settings?.batterySaver === true;
+  const hud = React.useMemo(() => getTrainingHudModel(dog), [dog]);
+  const ageLabel = getAgeLabel(life);
+
+  const handlePetDog = React.useCallback(() => {
+    petDog({ now: Date.now(), source: "developers_fireball_demo" });
+  }, [petDog]);
+
+  const handleQuickFeed = React.useCallback(() => {
+    quickFeed({ now: Date.now(), source: "developers_fireball_demo" });
+  }, [quickFeed]);
+
+  const handlePracticeCommand = React.useCallback(() => {
+    trainObedience({
+      now: Date.now(),
+      source: "developers_fireball_demo",
+      input: "button",
+      commandId: hud.focusCommandId,
+    });
+  }, [hud.focusCommandId, trainObedience]);
 
   return (
     <PageShell mainClassName="px-6 py-10" containerClassName="w-full max-w-5xl">
+      <DogAIEngine enableAudio={false} enableWeather={false} />
       <div className="w-full space-y-10">
         {/* Hero */}
         <section className="rounded-3xl border border-zinc-800 bg-gradient-to-br from-zinc-950 via-zinc-950 to-emerald-950/30 p-8 md:p-10">
@@ -325,6 +437,198 @@ npm run build`}
                 </span>
                 . If keys are missing, the app stays playable locally.
               </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-zinc-800 bg-zinc-950/40 p-6">
+          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div>
+              <h2 className="text-lg font-bold">Fireball DOM FSM demo</h2>
+              <p className="mt-1 max-w-3xl text-sm text-zinc-400">
+                This sandbox keeps the lightweight DOM FSM for motion, but the
+                sprite playback is now manifest-driven so each JR sheet uses its
+                real frame count instead of a brittle one-size-fits-none strip.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-2 text-[11px] uppercase tracking-[0.18em] text-zinc-300">
+              <Badge>useRef brain</Badge>
+              <Badge>translate3d</Badge>
+              <Badge>manifest-driven</Badge>
+            </div>
+          </div>
+
+          <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1.25fr)_minmax(280px,0.75fr)]">
+            <div
+              ref={stageRef}
+              className="relative min-h-[360px] overflow-hidden rounded-[28px] border border-emerald-500/20 bg-[radial-gradient(circle_at_50%_20%,rgba(255,255,255,0.09),transparent_30%),linear-gradient(180deg,#7fb069_0%,#5f8b52_58%,#42673d_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_18px_48px_rgba(0,0,0,0.3)]"
+            >
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-sky-200/20 to-transparent" />
+              <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/20 to-transparent" />
+
+              <div className="absolute left-5 top-5 z-10 rounded-full border border-white/15 bg-black/25 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-100 backdrop-blur-sm">
+                Live yard sandbox
+              </div>
+
+              <div className="absolute left-5 top-16 z-20 w-[min(300px,calc(100%-2.5rem))] rounded-2xl border border-white/10 bg-black/55 p-4 text-zinc-100 shadow-[0_20px_48px_rgba(0,0,0,0.28)] backdrop-blur-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="text-[11px] uppercase tracking-[0.2em] text-emerald-200/85">
+                      Fireball&apos;s HUD
+                    </div>
+                    <h3 className="mt-1 text-lg font-black">Redux test yard</h3>
+                  </div>
+                  <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-200">
+                    Age {ageLabel}
+                  </div>
+                </div>
+
+                {!vitals ? (
+                  <div className="mt-4 text-sm text-zinc-300">
+                    Loading dog state…
+                  </div>
+                ) : (
+                  <>
+                    <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                      <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2">
+                        <div className="text-[11px] uppercase tracking-[0.16em] text-zinc-400">
+                          Bond
+                        </div>
+                        <div className="mt-1 text-xl font-black text-emerald-200">
+                          {vitals.bondValue}/100
+                        </div>
+                      </div>
+                      <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2">
+                        <div className="text-[11px] uppercase tracking-[0.16em] text-zinc-400">
+                          Training
+                        </div>
+                        <div className="mt-1 text-xl font-black text-sky-200">
+                          {hud.score}/100
+                        </div>
+                      </div>
+                      <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2">
+                        <div className="text-[11px] uppercase tracking-[0.16em] text-zinc-400">
+                          Hunger need
+                        </div>
+                        <div className="mt-1 text-xl font-black text-amber-200">
+                          {vitals.hunger}/100
+                        </div>
+                      </div>
+                      <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2">
+                        <div className="text-[11px] uppercase tracking-[0.16em] text-zinc-400">
+                          Energy
+                        </div>
+                        <div className="mt-1 text-xl font-black text-fuchsia-200">
+                          {vitals.energy}/100
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-zinc-300">
+                      {hud.detail}
+                    </div>
+
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={handleQuickFeed}
+                        className="rounded-xl border border-amber-300/30 bg-amber-500/15 px-3 py-2 text-xs font-semibold text-amber-100 hover:bg-amber-500/25"
+                      >
+                        Quick feed
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handlePracticeCommand}
+                        disabled={!dog?.adoptedAt}
+                        className="rounded-xl border border-sky-300/30 bg-sky-500/15 px-3 py-2 text-xs font-semibold text-sky-100 hover:bg-sky-500/25"
+                      >
+                        Practice {hud.focusCommandLabel}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <Fireball
+                boundsRef={stageRef}
+                lifeStage={life?.stage}
+                reduceMotion={reduceMotion}
+                paused={pauseFireball}
+                renderSize={96}
+                speed={2}
+                padding={56}
+                onInteract={handlePetDog}
+              />
+
+              <div className="absolute bottom-4 left-4 right-4 z-10 rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-xs text-zinc-200 backdrop-blur-sm">
+                {pauseFireball
+                  ? "Battery saver or perf reduction is active, so Fireball is politely parked to protect mobile smoothness."
+                  : reduceMotion
+                    ? "Reduced motion is enabled, so Fireball keeps the lightweight DOM layer but pauses roaming."
+                    : "Tap Fireball to stop the wander loop, play the interact sheet, and dispatch the real Redux pet action into the dog engine."}
+              </div>
+            </div>
+
+            <div className="space-y-4 rounded-2xl border border-zinc-800/70 bg-zinc-950/30 p-5">
+              <h3 className="font-semibold">Guardrails enforced</h3>
+              <ul className="space-y-2 text-sm text-zinc-300">
+                <li>
+                  <span className="font-semibold text-zinc-100">
+                    No coordinate re-render trap:
+                  </span>{" "}
+                  X/Y, target coordinates, timers, and RAF ids live in a ref.
+                </li>
+                <li>
+                  <span className="font-semibold text-zinc-100">
+                    GPU movement only:
+                  </span>{" "}
+                  movement writes directly to
+                  <code className="px-1 text-zinc-100">
+                    transform: translate3d()
+                  </code>
+                  instead of mutating{" "}
+                  <code className="px-1 text-zinc-100">left</code>
+                  or <code className="px-1 text-zinc-100">top</code> every
+                  frame.
+                </li>
+                <li>
+                  <span className="font-semibold text-zinc-100">
+                    Transform collision avoided:
+                  </span>{" "}
+                  the parent element owns movement while the child sprite owns
+                  flip and sheet playback.
+                </li>
+                <li>
+                  <span className="font-semibold text-zinc-100">
+                    Real frame metadata:
+                  </span>{" "}
+                  the DOM renderer reads adult and pup sheet dimensions,
+                  columns, and frame counts from a shared JR manifest before it
+                  animates.
+                </li>
+                <li>
+                  <span className="font-semibold text-zinc-100">
+                    Mobile-safe cleanup:
+                  </span>{" "}
+                  idle timers and animation frames are canceled on unmount.
+                </li>
+                <li>
+                  <span className="font-semibold text-zinc-100">
+                    Redux-backed dog logic:
+                  </span>{" "}
+                  petting, feeding, energy, bond, age, and training state all
+                  come from the existing engine selectors and reducers.
+                </li>
+              </ul>
+
+              <div className="rounded-xl border border-zinc-800 bg-black/30 p-4 text-xs leading-relaxed text-zinc-400">
+                Asset note: this demo now resolves JR sprite URLs, frame counts,
+                and grid dimensions from a shared manifest. Changing the dog to
+                pup or adult swaps the whole sprite family automatically, no
+                magic <code className="px-1 text-zinc-200">steps(16)</code>
+                incantations required.
+              </div>
             </div>
           </div>
         </section>

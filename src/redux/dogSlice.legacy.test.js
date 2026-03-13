@@ -6,9 +6,10 @@ describe("dogSlice legacy lifecycle safety", () => {
   it("normalizes seconds-based adoptedAt values and clears impossible farewell hydrate state", () => {
     const now = Date.now();
     const adoptedAtSeconds = Math.floor((now - 3 * 24 * 60 * 60 * 1000) / 1000);
+    const baseState = dogReducer(undefined, { type: "@@INIT" });
 
     const next = dogReducer(
-      dogReducer(undefined, { type: "@@INIT" }),
+      baseState,
       hydrateDog({
         adoptedAt: adoptedAtSeconds,
         lifecycleStatus: "FAREWELL",
@@ -35,9 +36,10 @@ describe("dogSlice legacy lifecycle safety", () => {
   it("handles Firestore-style adoptedAt timestamps during hydrate", () => {
     const now = Date.now();
     const adoptedAtMs = now - 2 * 24 * 60 * 60 * 1000;
+    const baseState = dogReducer(undefined, { type: "@@INIT" });
 
     const next = dogReducer(
-      dogReducer(undefined, { type: "@@INIT" }),
+      baseState,
       hydrateDog({
         adoptedAt: { seconds: Math.floor(adoptedAtMs / 1000), nanoseconds: 0 },
         lifecycleStatus: "ACTIVE",
@@ -67,7 +69,7 @@ describe("dogSlice legacy lifecycle safety", () => {
             outcome: "LONG_LIFE",
             bond: 92,
             favoriteToyId: null,
-            ageDays: 5001,
+            ageDays: 179,
             recordedAt: now - 1000,
           },
         ],

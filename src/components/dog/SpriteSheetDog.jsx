@@ -7,12 +7,18 @@ import { Capacitor } from "@capacitor/core";
 import jrManifest from "@/components/dog/jrManifest.json";
 import { DOGS } from "@/config/assets.js";
 import {
+  findJrSpriteSheetBySrc,
+  getJrSpriteFramePosition,
+  normalizeJrLifeStage,
+} from "@/components/dog/jrManifest.js";
+import {
   getDogAnimSpriteUrl,
   getDogPixiSheetUrl,
   normalizeDogConditionId,
   normalizeDogStageShort,
 } from "@/utils/dogSpritePaths.js";
 import { getManifestAnimMeta } from "@/components/dog/dogAnimationEngine.js";
+import "./SpriteSheetDog.css";
 
 const DEFAULT_COLUMNS = Math.max(1, Number(jrManifest?.columns || 8));
 const DEFAULT_FRAME = jrManifest?.frame || {};
@@ -177,6 +183,11 @@ export default function SpriteSheetDog({
   const hostRef = useRef(null);
   const appRef = useRef(null);
   const spriteRef = useRef(null);
+  const cssAnimationRef = useRef({
+    frameIndex: 0,
+    lastTick: 0,
+    rafId: 0,
+  });
   const [activeSrc, setActiveSrc] = useState(null);
   const [sheetFailed, setSheetFailed] = useState(false);
   const preferCssSprite = useMemo(() => {
@@ -195,6 +206,14 @@ export default function SpriteSheetDog({
   const boxSize = clamp(size, 64, 1024);
   const effectiveSpeedMultiplier = clamp(speedMultiplier, 0.2, 2);
   const effectiveFps = Math.max(1, animMeta.fps * effectiveSpeedMultiplier);
+  const defaultFrameWidth = Math.max(
+    1,
+    Number(animMeta.frameWidth || DEFAULT_FRAME_WIDTH)
+  );
+  const defaultFrameHeight = Math.max(
+    1,
+    Number(animMeta.frameHeight || DEFAULT_FRAME_HEIGHT)
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -228,6 +247,23 @@ export default function SpriteSheetDog({
       }
 
       const { src, texture } = loaded;
+      const loadedEntry = findJrSpriteSheetBySrc(
+        src,
+        normalizeJrLifeStage(stage, "pup"),
+        animMeta.key
+      );
+      const frameWidth = Math.max(
+        1,
+        Number(loadedEntry?.frameWidth || defaultFrameWidth)
+      );
+      const frameHeight = Math.max(
+        1,
+        Number(loadedEntry?.frameHeight || defaultFrameHeight)
+      );
+      const entryFrames = Math.max(
+        1,
+        Number(loadedEntry?.frames || animMeta.frames)
+      );
       const PIXI = await loadPixiModule();
       const app = new PIXI.Application({
         width: boxSize,
@@ -255,20 +291,18 @@ export default function SpriteSheetDog({
 
       const sheetColumns = Math.max(
         1,
-        Math.floor((texture.width || DEFAULT_FRAME_WIDTH) / DEFAULT_FRAME_WIDTH)
+        Math.floor((texture.width || frameWidth) / frameWidth)
       );
       const sheetRows = Math.max(
         1,
-        Math.floor(
-          (texture.height || DEFAULT_FRAME_HEIGHT) / DEFAULT_FRAME_HEIGHT
-        )
+        Math.floor((texture.height || frameHeight) / frameHeight)
       );
       const sheetCapacity = Math.max(1, sheetColumns * sheetRows);
       const atlasStartFrame = Math.max(0, animMeta.rowIndex * DEFAULT_COLUMNS);
       const canUseAtlasOffset =
-        sheetCapacity >= atlasStartFrame + Math.max(1, animMeta.frames);
+        sheetCapacity >= atlasStartFrame + Math.max(1, entryFrames);
       const startFrame = canUseAtlasOffset ? atlasStartFrame : 0;
-      const requestedFrames = Math.max(1, Number(animMeta.frames || 1));
+      const requestedFrames = Math.max(1, Number(entryFrames || 1));
       const safeFrames = Math.max(
         1,
         Math.min(requestedFrames, sheetCapacity - startFrame)
@@ -277,14 +311,9 @@ export default function SpriteSheetDog({
       const textures = [];
       for (let i = 0; i < safeFrames; i += 1) {
         const frameIndex = startFrame + i;
-        const x = (frameIndex % sheetColumns) * DEFAULT_FRAME_WIDTH;
-        const y = Math.floor(frameIndex / sheetColumns) * DEFAULT_FRAME_HEIGHT;
-        const frame = new PIXI.Rectangle(
-          x,
-          y,
-          DEFAULT_FRAME_WIDTH,
-          DEFAULT_FRAME_HEIGHT
-        );
+        const x = (frameIndex % sheetColumns) * frameWidth;
+        const y = Math.floor(frameIndex / sheetColumns) * frameHeight;
+        const frame = new PIXI.Rectangle(x, y, frameWidth, frameHeight);
         textures.push(new PIXI.Texture(baseTexture, frame));
       }
 
@@ -299,7 +328,7 @@ export default function SpriteSheetDog({
       dog.x = boxSize / 2;
       dog.y = boxSize * 0.93;
 
-      const displayScale = boxSize / DEFAULT_FRAME_HEIGHT;
+      const displayScale = boxSize / frameHeight;
       const facingSign = Number(facing) < 0 ? 1 : -1;
       dog.scale.set(
         displayScale * facingSign * SPRITE_DEFAULT_FACING,
@@ -338,15 +367,19 @@ export default function SpriteSheetDog({
   }, [
     animMeta.columns,
     animMeta.frames,
+    animMeta.key,
     animMeta.rowIndex,
     boxSize,
     candidates,
+    defaultFrameHeight,
+    defaultFrameWidth,
     effectiveFps,
     facing,
     fallbackSrc,
     preferCssSprite,
     reduceMotion,
     smoothing,
+    stage,
   ]);
 
   useEffect(() => {
@@ -411,21 +444,72 @@ export default function SpriteSheetDog({
   ]);
 
   const cssSheetSrc = String(activeSrc || candidates[0] || fallbackSrc || "");
-  const cssFrameCount = Math.max(1, Number(animMeta.frames || 1));
-  const cssDurationSeconds = Math.max(
-    0.35,
-    cssFrameCount / Math.max(1, effectiveFps)
+  const cssStage = normalizeJrLifeStage(stage, "pup");
+  const cssEntry = useMemo(
+    () => findJrSpriteSheetBySrc(cssSheetSrc, cssStage, animMeta.key),
+    [animMeta.key, cssSheetSrc, cssStage]
   );
-  const cssRowOffset =
-    Math.max(0, Number(animMeta.rowIndex || 0)) * DEFAULT_FRAME_HEIGHT;
-  const cssScale = boxSize / DEFAULT_FRAME_HEIGHT;
+  const cssScale = boxSize / cssEntry.frameHeight;
   const cssFacing = Number(facing) < 0 ? -1 : 1;
-  const cssShouldAnimate = !reduceMotion && cssFrameCount > 1;
+  const cssShouldAnimate = !reduceMotion && cssEntry.frames > 1;
+
+  useEffect(() => {
+    if (!preferCssSprite && !sheetFailed) return undefined;
+
+    const node = spriteRef.current;
+    const animState = cssAnimationRef.current;
+    animState.frameIndex = 0;
+    animState.lastTick = 0;
+
+    const applyFrame = (frameIndex) => {
+      if (!node) return;
+      const position = getJrSpriteFramePosition(cssEntry, frameIndex);
+      node.style.backgroundPosition = `${position.x}px ${position.y}px`;
+    };
+
+    applyFrame(0);
+
+    if (!cssShouldAnimate) {
+      return () => {
+        if (animState.rafId) {
+          window.cancelAnimationFrame(animState.rafId);
+          animState.rafId = 0;
+        }
+      };
+    }
+
+    const msPerFrame = 1000 / Math.max(1, effectiveFps);
+
+    const tick = (timestamp) => {
+      if (!animState.lastTick) {
+        animState.lastTick = timestamp;
+      }
+
+      if (timestamp - animState.lastTick >= msPerFrame) {
+        animState.frameIndex = (animState.frameIndex + 1) % cssEntry.frames;
+        animState.lastTick = timestamp;
+        applyFrame(animState.frameIndex);
+      }
+
+      animState.rafId = window.requestAnimationFrame(tick);
+    };
+
+    animState.rafId = window.requestAnimationFrame(tick);
+
+    return () => {
+      if (animState.rafId) {
+        window.cancelAnimationFrame(animState.rafId);
+        animState.rafId = 0;
+      }
+      animState.lastTick = 0;
+      animState.frameIndex = 0;
+    };
+  }, [cssEntry, cssShouldAnimate, effectiveFps, preferCssSprite, sheetFailed]);
 
   if (preferCssSprite || sheetFailed) {
     return (
       <div
-        className={`dog-css-container ${className}`}
+        className={`dog-sprite-shell ${className}`}
         data-dog-container="true"
         role="img"
         aria-label="Dog"
@@ -436,12 +520,6 @@ export default function SpriteSheetDog({
           pointerEvents: "none",
         }}
       >
-        <style>
-          {`@keyframes dgPlay8Frames {
-  from { background-position: 0px var(--dog-row-offset); }
-          to { background-position: calc(var(--dog-frame-width) * var(--dog-frames) * -1) var(--dog-row-offset); }
-}`}
-        </style>
         <span
           aria-hidden="true"
           style={{
@@ -458,27 +536,18 @@ export default function SpriteSheetDog({
           }}
         />
         <div
-          className={`dog-css-sprite state-${animMeta.key}`}
+          ref={spriteRef}
+          className="dog-sprite-layer"
           data-dog-sprite="true"
           style={{
-            width: `${DEFAULT_FRAME_WIDTH}px`,
-            height: `${DEFAULT_FRAME_HEIGHT}px`,
-            position: "absolute",
-            left: "50%",
-            top: "100%",
-            transform: `translate(-50%, -100%) scaleX(${cssFacing}) scale(${cssScale})`,
-            transformOrigin: "50% 100%",
-            backgroundImage: `url('${cssSheetSrc}')`,
-            backgroundRepeat: "no-repeat",
-            backgroundPosition: `0px -${cssRowOffset}px`,
-            imageRendering: smoothing ? "auto" : "pixelated",
-            transition: "transform 0.1s ease-in-out",
-            animation: cssShouldAnimate
-              ? `dgPlay8Frames ${cssDurationSeconds.toFixed(3)}s steps(${cssFrameCount}) infinite`
-              : "none",
-            "--dog-frame-width": `${DEFAULT_FRAME_WIDTH}px`,
-            "--dog-frames": String(cssFrameCount),
-            "--dog-row-offset": `-${cssRowOffset}px`,
+            "--dog-frame-width": `${cssEntry.frameWidth}px`,
+            "--dog-frame-height": `${cssEntry.frameHeight}px`,
+            "--dog-sheet-width": `${cssEntry.sheetWidth}px`,
+            "--dog-sheet-height": `${cssEntry.sheetHeight}px`,
+            "--dog-sprite-url": `url('${cssEntry.url}')`,
+            "--dog-facing": String(cssFacing),
+            "--dog-scale": String(cssScale),
+            "--dog-image-rendering": smoothing ? "auto" : "pixelated",
           }}
         />
       </div>

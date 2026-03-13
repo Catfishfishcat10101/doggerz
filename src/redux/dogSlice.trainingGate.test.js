@@ -53,13 +53,13 @@ describe("dogSlice potty gate for tricks", () => {
       );
     }
 
-    expect(state.lifeStage.stage).toBe("ADULT");
     expect(state.training.potty.completedAt).toBeTruthy();
     expect(state.training.obedience.unlockedIds).toContain("sit");
-    expect(state.training.obedience.unlockedIds).not.toContain("down");
+    expect(state.training.obedience.unlockedIds).toContain("speak");
+    expect(state.training.obedience.unlockedIds).not.toContain("shake");
     expect(
       Object.keys(state.training.obedience.unlockableAtById || {})
-    ).toEqual(["stay"]);
+    ).toEqual([]);
 
     const trained = dogReducer(
       state,
@@ -98,10 +98,10 @@ describe("dogSlice potty gate for tricks", () => {
       );
     }
 
-    expect(state.training.obedience.unlockedIds).toEqual(["sit"]);
+    expect(state.training.obedience.unlockedIds).toEqual(["sit", "speak"]);
     expect(
       Object.keys(state.training.obedience.unlockableAtById || {})
-    ).toEqual(["stay"]);
+    ).toEqual([]);
   });
 
   it("opens the next trick after the current lesson is mastered", () => {
@@ -150,9 +150,7 @@ describe("dogSlice potty gate for tricks", () => {
       })
     );
 
-    expect(
-      Object.keys(state.training.obedience.unlockableAtById || {})
-    ).toEqual(["stay", "down"]);
-    expect(state.training.obedience.unlockedIds).not.toContain("come");
+    expect(state.training.obedience.unlockedIds).not.toContain("shake");
+    expect(state.training.obedience.unlockedIds).not.toContain("sitPretty");
   });
 });

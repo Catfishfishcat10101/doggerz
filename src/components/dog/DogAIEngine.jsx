@@ -3,6 +3,7 @@
 
 import { useCallback, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { Capacitor } from "@capacitor/core";
 import { onSnapshot, setDoc } from "firebase/firestore";
@@ -29,6 +30,10 @@ import {
   setUser,
 } from "@/redux/userSlice.js";
 import { selectSettings } from "@/redux/settingsSlice.js";
+import {
+  startDogTickEngine,
+  stopDogTickEngine,
+} from "@/redux/middleware/dogTick.js";
 import { useDogActionSfx } from "@/hooks/audio/useDogActionSfx.js";
 import useDynamicMusic from "@/hooks/audio/useDynamicMusic.js";
 import useAmbientSoundscape from "@/hooks/audio/useAmbientSoundscape.js";
@@ -42,6 +47,7 @@ import {
 } from "@/logic/LocalSaveManager.js";
 import { fetchRealTimeWeather } from "@/logic/RealTimeWeatherFetcher.js";
 import { debugError, debugLog, debugWarn } from "@/utils/debugLogger.js";
+import { PATHS } from "@/routes.js";
 
 const CLOUD_SAVE_DEBOUNCE = 3_000; // 3 seconds
 const WEATHER_POLL_INTERVAL_MS = 12 * 60_000; // 12 minutes (gentle on API limits)
@@ -112,6 +118,7 @@ export default function DogAIEngine({
   enableWeather = true,
 } = {}) {
   const dispatch = useDispatch();
+  const location = useLocation();
   const { dog: dogState, renderModel } = useDogEngineState();
   const zip = useSelector(selectUserZip);
   const settings = useSelector(selectSettings);
@@ -121,6 +128,7 @@ export default function DogAIEngine({
   const userId = authResolved ? storedUserId : null;
   const liveAuthUserId =
     authResolved && auth?.currentUser?.uid === userId ? userId : null;
+  const shouldRunReduxHeartbeat = location?.pathname !== PATHS.GAME;
 
   const hasHydratedRef = useRef(false);
   const cloudSaveTimeoutRef = useRef(
@@ -143,6 +151,37 @@ export default function DogAIEngine({
       zip,
     });
   }, [zip]);
+
+  useEffect(() => {
+    if (!shouldRunReduxHeartbeat) return undefined;
+    dispatch(startDogTickEngine());
+
+    return () => {
+      dispatch(stopDogTickEngine());
+    };
+  }, [dispatch, shouldRunReduxHeartbeat]);
+
+  useEffect(() => {
+    if (!shouldRunReduxHeartbeat || typeof document === "undefined") {
+      return undefined;
+    }
+
+    const handleVisibility = () => {
+      dispatch(document.hidden ? stopDogTickEngine() : startDogTickEngine());
+    };
+
+    const handlePageHide = () => {
+      dispatch(stopDogTickEngine());
+    };
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("pagehide", handlePageHide);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("pagehide", handlePageHide);
+    };
+  }, [dispatch, shouldRunReduxHeartbeat]);
 
   useEffect(() => {
     debugLog("DogAI", "firebase runtime config", {
@@ -454,7 +493,12 @@ export default function DogAIEngine({
             }
 
             if (!isActive) {
+              if (shouldRunReduxHeartbeat) {
+                dispatch(stopDogTickEngine());
+              }
               flushLocalSave();
+            } else if (shouldRunReduxHeartbeat) {
+              dispatch(startDogTickEngine());
             }
           }
         );
@@ -473,7 +517,7 @@ export default function DogAIEngine({
         // ignore
       }
     };
-  }, [flushLocalSave]);
+  }, [dispatch, flushLocalSave, shouldRunReduxHeartbeat]);
 
   useEffect(() => {
     dogRef.current = dogState;

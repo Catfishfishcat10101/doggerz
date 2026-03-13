@@ -38,15 +38,12 @@ function pickWeighted(items, rng = Math.random) {
 
 const SHOWOFF_ACTIONS = Object.freeze([
   "spin",
-  "jump",
-  "bow",
-  "wave",
   "shake",
-  "highFive",
   "rollOver",
+  "sitPretty",
+  "crawl",
   "playDead",
-  "fetch",
-  "dance",
+  "backflip",
   "speak",
 ]);
 
@@ -65,8 +62,12 @@ function pickDistractionAction({
   cleanliness = 100,
   frustration = 0,
   confidence = 50,
+  archetypeId = "",
   rng = Math.random,
 } = {}) {
+  const archetype = String(archetypeId || "")
+    .trim()
+    .toUpperCase();
   const options = [
     {
       id: "sniff",
@@ -87,6 +88,21 @@ function pickDistractionAction({
       weight: 1 + Math.max(0, 60 - confidence) * 0.08,
     },
   ];
+
+  if (archetype === "MISCHIEVOUS") {
+    options.push(
+      {
+        id: "dig",
+        action: "dig",
+        weight: 1.6 + Math.max(0, frustration - 35) * 0.08,
+      },
+      {
+        id: "ghost_bark",
+        action: "bark",
+        weight: 1.2 + Math.max(0, 70 - confidence) * 0.05,
+      }
+    );
+  }
 
   return pickWeighted(options, rng) || options[0];
 }
@@ -118,6 +134,7 @@ export function resolveJrtTrainingReaction({
   stats = {},
   bond = 0,
   profile = null,
+  archetypeId = "",
   isSpicy = false,
   rng = Math.random,
 } = {}) {
@@ -154,6 +171,9 @@ export function resolveJrtTrainingReaction({
     0,
     100
   );
+  const archetype = String(archetypeId || "")
+    .trim()
+    .toUpperCase();
 
   const showoffAction = pickShowoffAction({ commandId, unlockedIds, rng });
 
@@ -162,6 +182,7 @@ export function resolveJrtTrainingReaction({
       Math.max(0, energyCeiling - 60) * 0.16 +
       Math.max(0, happiness - 65) * 0.08 +
       Math.max(0, confidence - 55) * 0.06 +
+      (archetype === "ATHLETE" ? 4 : 0) +
       (isSpicy ? 6 : 0) -
       Math.max(0, hunger - 60) * 0.08,
     0,
@@ -174,6 +195,8 @@ export function resolveJrtTrainingReaction({
       Math.max(0, hunger - 45) * 0.22 +
       frustration * 0.18 +
       inquisitiveness * 0.12 +
+      (archetype === "MISCHIEVOUS" ? 7 : 0) +
+      (archetype === "INDEPENDENT" ? 5 : 0) +
       (isSpicy ? 5 : 0) -
       skillMastery * 0.15,
     0,
@@ -187,6 +210,7 @@ export function resolveJrtTrainingReaction({
           Math.max(0, extroversion - 55) * 0.08 +
           Math.max(0, energy - 60) * 0.08 +
           skillMastery * 0.05 +
+          (archetype === "SHADOW" ? 2 : 0) +
           (isSpicy ? 3 : 0) -
           frustration * 0.08,
         0,
@@ -217,6 +241,7 @@ export function resolveJrtTrainingReaction({
       cleanliness,
       frustration,
       confidence,
+      archetypeId: archetype,
       rng,
     });
 

@@ -1,0 +1,21 @@
+.dog-sprite-shell {
+  position: relative;
+  pointer-events: none;
+}
+
+.dog-sprite-layer {
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  width: var(--dog-frame-width, 256px);
+  height: var(--dog-frame-height, 256px);
+  background-image: var(--dog-sprite-url);
+  background-repeat: no-repeat;
+  background-size: var(--dog-sheet-width, 256px) var(--dog-sheet-height, 256px);
+  background-position: 0 0;
+  transform: translate(-50%, -100%) scaleX(var(--dog-facing, 1))
+    scale(var(--dog-scale, 1));
+  transform-origin: 50% 100%;
+  image-rendering: var(--dog-image-rendering, auto);
+  will-change: transform, background-position;
+}

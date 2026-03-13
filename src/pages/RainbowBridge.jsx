@@ -52,8 +52,9 @@ export default function RainbowBridge() {
               A quiet place to remember
             </h1>
             <p className="mt-3 text-sm text-zinc-200/90 max-w-prose">
-              This scene is here as a gentle, cozy space in the world — a place
-              for gratitude, reflection, and the bond you built.
+              This scene marks the hard-earned six-month ending. If your pup
+              survived all 180 real days, this is where their story turns into
+              legacy, gratitude, and the next generation&apos;s tiny bonus.
             </p>
             <div className="mt-4 flex flex-wrap items-center gap-2 text-[11px] text-zinc-300">
               <span className="rounded-full border border-emerald-400/30 bg-emerald-500/10 px-3 py-1">
@@ -102,7 +103,8 @@ export default function RainbowBridge() {
                 ) : null}
                 {!isSenior ? (
                   <div className="rounded-2xl border border-white/10 bg-black/25 p-3">
-                    This moment unlocks once your pup reaches the senior stage.
+                    This moment unlocks after your pup completes the full
+                    180-day journey.
                   </div>
                 ) : memorialCompleted ? (
                   <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-emerald-100">
@@ -134,7 +136,7 @@ export default function RainbowBridge() {
                 >
                   {memorialActive
                     ? "Complete the memorial"
-                    : "Begin the memorial"}
+                    : "Begin the Rainbow Bridge memorial"}
                 </button>
               ) : null}
               {!isSenior ? (

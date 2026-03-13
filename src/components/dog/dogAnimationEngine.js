@@ -10,7 +10,13 @@ import {
 const DEFAULT_COLUMNS = Math.max(1, Number(jrManifest?.columns || 8));
 const DEFAULT_ANIM = String(jrManifest?.defaultAnim || "idle").toLowerCase();
 const DEFAULT_FPS = Math.max(1, Number(jrManifest?.defaultFps || 8));
-const ANIM_ROWS = Array.isArray(jrManifest?.rows) ? jrManifest.rows : [];
+const ANIM_ROWS = [
+  ...(Array.isArray(jrManifest?.rows) ? jrManifest.rows : []),
+  ...(Array.isArray(jrManifest?.customRows) ? jrManifest.customRows : []),
+];
+const DEFAULT_FRAME = jrManifest?.frame || {};
+const DEFAULT_FRAME_WIDTH = Math.max(1, Number(DEFAULT_FRAME.width || 256));
+const DEFAULT_FRAME_HEIGHT = Math.max(1, Number(DEFAULT_FRAME.height || 256));
 const ANIM_ALIASES =
   jrManifest?.aliases && typeof jrManifest.aliases === "object"
     ? jrManifest.aliases
@@ -39,6 +45,12 @@ const TRICK_ACTIONS = new Set([
   "fetch",
   "dance",
 ]);
+
+function clamp(value, min, max) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return min;
+  return Math.max(min, Math.min(max, numeric));
+}
 
 export function normalizeDogAnimKey(value) {
   return String(value || "")
@@ -70,6 +82,8 @@ export function getManifestAnimMeta(anim) {
     frames: Math.max(1, Number(row?.frames || DEFAULT_COLUMNS)),
     columns: Math.max(1, Number(row?.columns || DEFAULT_COLUMNS)),
     fps: Math.max(1, Number(row?.fps || DEFAULT_FPS)),
+    frameWidth: Math.max(1, Number(row?.frameWidth || DEFAULT_FRAME_WIDTH)),
+    frameHeight: Math.max(1, Number(row?.frameHeight || DEFAULT_FRAME_HEIGHT)),
   };
 }
 
@@ -157,6 +171,53 @@ function resolveAnimCategory({ anim, lastAction, restState }) {
   }
   if (restState) return DOG_ANIMATION_CATEGORIES.REST;
   return getDogAnimationCategory(anim);
+}
+
+function resolvePersonalityIdleAnim(dog, fallbackAnim = "idle") {
+  const safeFallback = normalizeDogAnimKey(fallbackAnim || "idle") || "idle";
+  const archetype = String(dog?.temperament?.archetype || "")
+    .trim()
+    .toUpperCase();
+  const profile =
+    dog?.personalityProfile && typeof dog.personalityProfile === "object"
+      ? dog.personalityProfile
+      : null;
+  const trustFocus = String(profile?.trust?.focusMode || "")
+    .trim()
+    .toLowerCase();
+  const confidence = clamp(
+    Number(profile?.dynamicStates?.confidence || 50),
+    0,
+    100
+  );
+  const frustration = clamp(
+    Number(profile?.dynamicStates?.frustration || 0),
+    0,
+    100
+  );
+  const energy = clamp(Number(dog?.stats?.energy ?? 0), 0, 100);
+
+  if (archetype === "SHADOW") {
+    return confidence < 48 || energy < 42 ? "idle_resting" : "idle";
+  }
+
+  if (archetype === "ATHLETE") {
+    return energy >= 58 && frustration < 62 ? "wag" : safeFallback;
+  }
+
+  if (archetype === "MISCHIEVOUS") {
+    return frustration >= 70 ? "idle_resting" : "sniff";
+  }
+
+  if (archetype === "INDEPENDENT") {
+    return trustFocus === "self_focused" ? "sniff" : safeFallback;
+  }
+
+  if (trustFocus === "self_focused" && confidence < 45) {
+    return "idle_resting";
+  }
+
+  return safeFallback;
 }
 
 function applyJointStiffnessAnimationLimit(anim, dog, stage) {
@@ -307,6 +368,10 @@ export function resolveDogAnimationState(dog = {}) {
               : isWalking
                 ? "walk"
                 : "idle";
+  }
+
+  if (!explicitAnim && !isSleeping && anim === "idle") {
+    anim = resolvePersonalityIdleAnim(dog, anim);
   }
 
   const requestedAnim = applyJointStiffnessAnimationLimit(anim, dog, stage);

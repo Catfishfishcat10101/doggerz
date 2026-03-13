@@ -8,18 +8,29 @@ export default function TemperamentReveal() {
   const temperament = dog?.temperament || {};
   const primary = temperament.primary || "Unknown";
   const secondary = temperament.secondary || null;
+  const archetype = temperament.archetype || null;
   const traits = temperament.traits || [];
+  const archetypeCopy = {
+    ATHLETE:
+      "Play-heavy care created an Athlete: high drive, fast reactions, and a body that wants a job.",
+    SHADOW:
+      "Frequent check-ins shaped a Shadow: attentive, clingy, and strongly keyed to your presence.",
+    INDEPENDENT:
+      "Longer gaps in attention created an Independent streak: self-directed, observant, and less needy moment to moment.",
+    MISCHIEVOUS:
+      "A clever chaos goblin has emerged: curious, distractible, and highly capable of inventing the wrong activity on purpose.",
+  };
 
   return (
     <PageShell>
       <div className="mx-auto w-full max-w-3xl space-y-6">
         <PageHeader>
           <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
-            Temperament Reveal
+            72-Hour Archetype Reveal
           </h1>
           <p className="text-sm text-zinc-700 dark:text-zinc-300">
-            Based on how you&apos;ve been treating your pup so far, this is
-            their emerging personality profile.
+            Based on your first three days together, this is the personality
+            pattern your pup is settling into.
           </p>
         </PageHeader>
 
@@ -51,6 +62,19 @@ export default function TemperamentReveal() {
               </div>
             )}
 
+            {archetype && (
+              <div>
+                <p className="text-xs text-zinc-400">Archetype</p>
+                <p className="text-lg font-semibold text-amber-300">
+                  {archetype}
+                </p>
+                <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+                  {archetypeCopy[archetype] ||
+                    "Your pup is still settling into a distinct personality lane."}
+                </p>
+              </div>
+            )}
+
             {traits.length > 0 && (
               <div>
                 <p className="text-xs text-zinc-400 mb-1">Trait breakdown</p>
@@ -63,9 +87,9 @@ export default function TemperamentReveal() {
             )}
 
             <p className="text-xs text-zinc-600 dark:text-zinc-500">
-              Temperament can shift slowly over time as your care patterns
-              change. Check back after big routine changes to see how your pup
-              evolves.
+              Core temperament stays recognizable, but archetype signals can
+              drift as your routine changes. A Jack Russell always remembers a
+              pattern — especially the chaotic ones.
             </p>
           </section>
         )}

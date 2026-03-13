@@ -5,6 +5,7 @@
 import { configureStore } from "@reduxjs/toolkit";
 
 import dogReducer from "@/redux/dogSlice.js";
+import { dogTickMiddleware } from "@/redux/middleware/dogTick.js";
 import { heistMiddleware } from "@/redux/middleware/heistMiddleware.js";
 import userReducer from "@/redux/userSlice.js";
 import settingsReducer from "@/redux/settingsSlice.js";
@@ -63,7 +64,11 @@ export const store = configureStore({
         warnAfter: 64,
       },
       immutableCheck: !isProd,
-    }).concat(heistMiddleware, createDebugLoggingMiddleware()),
+    }).concat(
+      dogTickMiddleware,
+      heistMiddleware,
+      createDebugLoggingMiddleware()
+    ),
   devTools: !isProd,
 });
 

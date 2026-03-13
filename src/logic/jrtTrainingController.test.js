@@ -30,6 +30,7 @@ describe("jrtTrainingController", () => {
         cleanliness: 90,
       },
       bond: 28,
+      archetypeId: "ATHLETE",
       isSpicy: true,
       profile: {
         dynamicStates: { frustration: 24, confidence: 66 },
@@ -49,8 +50,8 @@ describe("jrtTrainingController", () => {
 
   it("can ignore a cue when trust is low and need pressure is high", () => {
     const reaction = resolveJrtTrainingReaction({
-      commandId: "stay",
-      unlockedIds: ["stay", "spin"],
+      commandId: "shake",
+      unlockedIds: ["sit", "speak", "shake", "spin"],
       skillNode: { xp: 0, level: 0 },
       stats: {
         energy: 62,
@@ -59,6 +60,7 @@ describe("jrtTrainingController", () => {
         cleanliness: 92,
       },
       bond: 12,
+      archetypeId: "MISCHIEVOUS",
       isSpicy: true,
       profile: {
         dynamicStates: { frustration: 68, confidence: 28 },
@@ -73,13 +75,15 @@ describe("jrtTrainingController", () => {
     });
 
     expect(reaction.kind).toBe("ignore");
-    expect(["sniff", "scratch", "idle"]).toContain(reaction.performedActionId);
+    expect(["sniff", "scratch", "idle", "dig", "bark"]).toContain(
+      reaction.performedActionId
+    );
   });
 
   it("can reinterpret a cue into a different show-off trick", () => {
     const reaction = resolveJrtTrainingReaction({
       commandId: "sit",
-      unlockedIds: ["sit", "spin", "bow"],
+      unlockedIds: ["sit", "spin", "sitPretty"],
       skillNode: { xp: 280, level: 5 },
       stats: {
         energy: 84,
@@ -88,6 +92,7 @@ describe("jrtTrainingController", () => {
         cleanliness: 88,
       },
       bond: 84,
+      archetypeId: "SHADOW",
       isSpicy: false,
       profile: {
         dynamicStates: { frustration: 14, confidence: 92 },
@@ -102,7 +107,7 @@ describe("jrtTrainingController", () => {
     });
 
     expect(reaction.kind).toBe("reinterpret");
-    expect(["spin", "bow"]).toContain(reaction.performedActionId);
+    expect(["spin", "sitPretty"]).toContain(reaction.performedActionId);
     expect(reaction.performedActionId).not.toBe("sit");
   });
 });

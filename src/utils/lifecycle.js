@@ -4,17 +4,16 @@
 
 import { withBaseUrl } from "@/utils/assetUtils.js";
 
-// How many in-game "dog days" pass per real day.
-// Tuning: higher => faster aging. Keep this high enough for visible progress,
-// but not so high that stages churn too quickly.
-export const GAME_DAYS_PER_REAL_DAY = 2;
+// Lifecycle runs on real elapsed days from the adoption timestamp.
+// This keeps aging honest even when the app is closed.
+export const GAME_DAYS_PER_REAL_DAY = 1;
 export const MS_PER_GAME_DAY = (24 * 60 * 60 * 1000) / GAME_DAYS_PER_REAL_DAY;
 
-// Lifecycle / age stages (in-game days)
+// Lifecycle / age stages (real elapsed days)
 export const LIFE_STAGES = {
   PUPPY: { min: 0, max: 29, label: "Puppy" },
-  ADULT: { min: 30, max: 2555, label: "Adult" },
-  SENIOR: { min: 2556, max: 5475, label: "Senior" },
+  ADULT: { min: 30, max: 149, label: "Adult" },
+  SENIOR: { min: 150, max: Number.POSITIVE_INFINITY, label: "Senior" },
 };
 
 const LIFE_STAGE_UI = Object.freeze({
@@ -242,9 +241,8 @@ export function getSpriteForStageAndTier(_stageOrObj, _cleanlinessTier) {
 export function getAgeBucketLabel(days) {
   if (!Number.isFinite(days)) return "Unknown";
   if (days < 30) return "New pup";
-  if (days < 120) return "Growing";
-  if (days < 360) return "Young";
-  if (days < 1200) return "Adult";
-  if (days < 2500) return "Mature";
+  if (days < 60) return "Growing";
+  if (days < 150) return "Adult";
+  if (days < 180) return "Senior";
   return "Golden";
 }

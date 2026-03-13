@@ -35,3 +35,12 @@
 - Toasts: canonical provider/hooks are `src/components/ToastProvider.jsx` (`useToast()`). `src/components/toast/ToastProvider.jsx` is a **deprecated shim**.
 - “Reduce decision fatigue” patterns: use `src/components/EmptySlate.jsx` for empty states (one next step) and `src/components/BackPill.jsx` for consistent back navigation.
 - Some large files opt out of JS checking with `// @ts-nocheck`; don’t remove without fixing underlying issues.
+
+## Sprite, lifecycle, and JRT art constraints
+
+- Dog lifecycle is **exactly 180 days** and the final-stretch immunity window begins at **day 175**.
+- For sprite and animation work, use **JavaScript/CSS animation solutions only** and keep implementations **Capacitor-friendly**.
+- Do **not** introduce microservices, backend animation services, or non-web runtime animation systems.
+- Default sprite-frame spec for new art/manifests is **64x64 per frame** unless the user explicitly overrides it.
+- The Jack Russell must keep consistent signature markings across all stages/actions: **brown mask over the eyes** and **one side spot**.
+- For file-specific guidance on sprite/lifecycle implementations, see `.github/instructions/doggerz-jrt-lifecycle.instructions.md`.

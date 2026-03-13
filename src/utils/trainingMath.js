@@ -25,6 +25,7 @@ export function computeTrainingSuccessChance({
   trust = 50,
   stress = 30,
   distraction = 25,
+  archetypeId = "",
   trainingStreak = 0,
   lastTrainingSuccess = true,
   environment = "yard",
@@ -34,6 +35,9 @@ export function computeTrainingSuccessChance({
   const voice = String(input || "").toLowerCase() === "voice";
   const env = String(environment || "yard").toLowerCase();
   const diff = String(difficulty || "normal").toLowerCase();
+  const archetype = String(archetypeId || "")
+    .trim()
+    .toUpperCase();
 
   let chance = voice ? 0.62 : 0.78;
 
@@ -50,6 +54,11 @@ export function computeTrainingSuccessChance({
 
   if (isSpicy) chance -= 0.05;
   if (foodMotivated >= 55 && fedRecently) chance += 0.08;
+
+  if (archetype === "ATHLETE") chance += 0.04;
+  if (archetype === "SHADOW" && voice) chance += 0.03;
+  if (archetype === "INDEPENDENT") chance -= 0.03;
+  if (archetype === "MISCHIEVOUS") chance -= 0.05;
 
   const focusFactor = softCurve(clampPct(focus) / 100);
   const trustFactor = softCurve(clampPct(trust) / 100);

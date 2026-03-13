@@ -443,6 +443,8 @@ export default function MainGame({ scene, dogInteractive = true }) {
   const dogPositionNormRef = useRef({ xNorm: 0.5, yNorm: 0.74 });
   const voiceCommandDispatchRef = useRef(() => false);
   const actionFeedbackTimeoutRef = useRef(0);
+  const uiAnimResetTimeoutRef = useRef(0);
+  const trickAnimationTokenRef = useRef(0);
   const statFeedbackTimeoutsRef = useRef({});
   const previousVitalSnapshotRef = useRef({ energy: null, health: null });
   const [, setAttentionTarget] = useState(null);
@@ -458,6 +460,8 @@ export default function MainGame({ scene, dogInteractive = true }) {
   const [ambientSpeedBoost, setAmbientSpeedBoost] = useState(1);
   const [uiAnimOverride, setUiAnimOverride] = useState("");
   const [uiSpeedBoost, setUiSpeedBoost] = useState(1);
+  const [activeHudAnimationId, setActiveHudAnimationId] = useState("");
+  const [trickAnimationBusy, setTrickAnimationBusy] = useState(false);
   const [fireflySnapAt, setFireflySnapAt] = useState(0);
   const [dogDepthNorm, setDogDepthNorm] = useState(0.5);
   const [dogPositionNorm, setDogPositionNorm] = useState({
@@ -616,6 +620,61 @@ export default function MainGame({ scene, dogInteractive = true }) {
   const daysUntilNextStage = Number.isFinite(Number(life?.daysUntilNextStage))
     ? Number(life.daysUntilNextStage)
     : null;
+  const goldenYearsActive =
+    dogInteractive && Boolean(life?.isFinalStretchImmune);
+  const renderStageForSprites = goldenYearsActive
+    ? "SENIOR"
+    : renderModel?.stage;
+  const curatedSpriteAnim = useMemo(() => {
+    const stageKey = String(renderStageForSprites || life?.stage || "PUPPY")
+      .trim()
+      .toUpperCase();
+    const animKey = String(effectiveAnim || "idle")
+      .trim()
+      .toLowerCase();
+    const lastActionKey = String(dog?.lastAction || "")
+      .trim()
+      .toLowerCase();
+
+    if (goldenYearsActive) {
+      if (effectiveDogSleeping) return "golden_years_sleeping";
+      if (["idle", "idle_resting", "wag"].includes(animKey)) {
+        return "golden_years_idle";
+      }
+    }
+
+    if (stageKey === "PUPPY") {
+      if (effectiveDogSleeping) return "puppy_sleeping_pack";
+      if (lastActionKey === "potty") return "puppy_potty_success";
+      if (
+        ["train_ignore", "trainfailed", "trainblocked"].includes(lastActionKey)
+      ) {
+        return "puppy_confused";
+      }
+      if (["idle", "idle_resting", "wag"].includes(animKey)) {
+        return "puppy_idle_pack";
+      }
+    }
+
+    if (stageKey === "ADULT") {
+      if (animKey === "spin") return "tornado";
+      if (animKey === "jump") return "backflip";
+      if (animKey === "crawl") return "army_crawl";
+      if (["paw", "highfive", "high_five"].includes(animKey)) {
+        return "handstand";
+      }
+    }
+
+    return effectiveAnim;
+  }, [
+    dog?.lastAction,
+    effectiveAnim,
+    effectiveDogSleeping,
+    goldenYearsActive,
+    life?.stage,
+    renderStageForSprites,
+  ]);
+  const syncedSpriteAnim = activeHudAnimationId || curatedSpriteAnim;
   const lifecycleTone = String(life?.tone || "fresh").toLowerCase();
   const lifecycleCardToneClass =
     lifecycleTone === "warm"
@@ -799,6 +858,17 @@ export default function MainGame({ scene, dogInteractive = true }) {
     () => new Map(trickOptions.map((command) => [command.id, command])),
     [trickOptions]
   );
+  const upcomingTrickId = useMemo(
+    () => trickOptions.find((command) => !command.unlocked)?.id || null,
+    [trickOptions]
+  );
+  const visibleTrickOptions = useMemo(
+    () =>
+      trickOptions.filter(
+        (command) => command.unlocked || command.id === upcomingTrickId
+      ),
+    [trickOptions, upcomingTrickId]
+  );
   const unlockedTrickCount = trickOptions.filter(
     (command) => command.unlocked
   ).length;
@@ -829,7 +899,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
     ]
   );
   const showRunawayLetter = false;
-  const controlsDisabled = !dogInteractive;
+  const controlsDisabled = !dogInteractive || trickAnimationBusy;
   const sceneLocationLabel = String(weatherDetails?.name || "")
     .trim()
     .replace(/\s{2,}/g, " ");
@@ -914,11 +984,67 @@ export default function MainGame({ scene, dogInteractive = true }) {
   );
   const tricksLocked =
     controlsDisabled || isActionHijacked("train") || !pottyTrainingComplete;
+  const lastTrainingReaction =
+    dog?.memory?.lastTrainingReaction &&
+    typeof dog.memory.lastTrainingReaction === "object"
+      ? dog.memory.lastTrainingReaction
+      : null;
+
+  const playHudAnimation = useCallback(
+    (
+      animId,
+      { duration = 1400, speedBoost = 1.2, lockControls = false } = {}
+    ) => {
+      const normalizedAnimId = String(animId || "")
+        .trim()
+        .toLowerCase();
+      if (uiAnimResetTimeoutRef.current) {
+        window.clearTimeout(uiAnimResetTimeoutRef.current);
+      }
+
+      trickAnimationTokenRef.current += 1;
+      const token = trickAnimationTokenRef.current;
+      setActiveHudAnimationId(normalizedAnimId);
+      setUiAnimOverride(normalizedAnimId);
+      setUiSpeedBoost(speedBoost);
+      setTrickAnimationBusy(lockControls);
+
+      uiAnimResetTimeoutRef.current = window.setTimeout(() => {
+        if (trickAnimationTokenRef.current !== token) return;
+        setActiveHudAnimationId("");
+        setUiAnimOverride("");
+        setUiSpeedBoost(1);
+        setTrickAnimationBusy(false);
+        uiAnimResetTimeoutRef.current = 0;
+      }, duration);
+    },
+    []
+  );
 
   useEffect(() => {
     if (dogInteractive && pottyTrainingComplete) return;
     setTricksOpen(false);
   }, [dogInteractive, pottyTrainingComplete]);
+
+  useEffect(() => {
+    const reaction = lastTrainingReaction;
+    if (!reaction?.createdAt) return;
+
+    const performedAnim = String(
+      reaction.kind === "zoomies"
+        ? "walk"
+        : reaction.performedActionId || reaction.requestedCommandId || ""
+    )
+      .trim()
+      .toLowerCase();
+    if (!performedAnim) return;
+
+    playHudAnimation(performedAnim, {
+      duration: reaction.kind === "zoomies" ? 1650 : 1400,
+      speedBoost: reaction.kind === "zoomies" ? 1.3 : 1.2,
+      lockControls: true,
+    });
+  }, [lastTrainingReaction, playHudAnimation]);
 
   useEffect(() => {
     if (!dogInteractive) {
@@ -986,6 +1112,12 @@ export default function MainGame({ scene, dogInteractive = true }) {
       }
       if (reason === "scratch") {
         return `Training outcome: "${requestedLabel}" lost to an urgent scratch break.`;
+      }
+      if (reason === "dig") {
+        return `Training outcome: "${requestedLabel}" was ignored in favor of surprise excavation.`;
+      }
+      if (reason === "ghost_bark") {
+        return `Training outcome: "${requestedLabel}" was interrupted by barking at invisible nonsense.`;
       }
       return `Training outcome: stared at you, declined "${requestedLabel}".`;
     }
@@ -1066,6 +1198,37 @@ export default function MainGame({ scene, dogInteractive = true }) {
     const secondary = String(
       dog?.temperament?.secondary || "CHILL"
     ).toUpperCase();
+    const archetype = String(dog?.temperament?.archetype || "").toUpperCase();
+    const archetypeCopy = {
+      ATHLETE: {
+        title: "72-Hour Archetype Read Ready",
+        summary:
+          "Your pup is reading as an Athlete: play-hungry, fast-learning, and always one bounce from motion.",
+        detail:
+          "High play frequency is shaping a body-first, action-first personality.",
+      },
+      SHADOW: {
+        title: "72-Hour Archetype Read Ready",
+        summary:
+          "Your pup is reading as a Shadow: tuned into you, sticky with attention, and extra responsive to your presence.",
+        detail:
+          "Frequent check-ins and steady affection are building a people-focused companion.",
+      },
+      INDEPENDENT: {
+        title: "72-Hour Archetype Read Ready",
+        summary:
+          "Your pup is reading as Independent: self-directed, routine-aware, and less interested in constant supervision.",
+        detail:
+          "Long gaps between check-ins are shaping a terrier that solves problems solo.",
+      },
+      MISCHIEVOUS: {
+        title: "72-Hour Archetype Read Ready",
+        summary:
+          "Your pup is reading as Mischievous: clever, distracting, and very committed to doing one weird extra thing first.",
+        detail:
+          "Expect fake-outs, freestyle choices, and the occasional dramatically incorrect response.",
+      },
+    };
     const byPrimary = {
       SWEET:
         "Your care pattern built a trusting, people-first pup that seeks connection.",
@@ -1079,23 +1242,33 @@ export default function MainGame({ scene, dogInteractive = true }) {
       CHILL: "Stable mood and good self-regulation.",
       SPICY: "Higher reactivity, stronger autonomy, and selective obedience.",
     };
+    const resolved = archetypeCopy[archetype];
     return {
-      title: "2-Week Temperament Card Ready",
-      summary: byPrimary[primary] || byPrimary.CHILL,
-      detail: bySecondary[secondary] || bySecondary.CHILL,
+      title: resolved?.title || "72-Hour Archetype Read Ready",
+      summary: resolved?.summary || byPrimary[primary] || byPrimary.CHILL,
+      detail: resolved?.detail || bySecondary[secondary] || bySecondary.CHILL,
       primary,
       secondary,
+      archetype,
     };
-  }, [dog?.temperament?.primary, dog?.temperament?.secondary]);
+  }, [
+    dog?.temperament?.archetype,
+    dog?.temperament?.primary,
+    dog?.temperament?.secondary,
+  ]);
 
   useEffect(() => {
     return () => {
       if (actionFeedbackTimeoutRef.current) {
         window.clearTimeout(actionFeedbackTimeoutRef.current);
       }
+      if (uiAnimResetTimeoutRef.current) {
+        window.clearTimeout(uiAnimResetTimeoutRef.current);
+      }
       Object.values(statFeedbackTimeoutsRef.current).forEach((timerId) => {
         window.clearTimeout(timerId);
       });
+      setTrickAnimationBusy(false);
       statFeedbackTimeoutsRef.current = {};
     };
   }, []);
@@ -1459,6 +1632,11 @@ export default function MainGame({ scene, dogInteractive = true }) {
         );
         return;
       }
+      playHudAnimation(trickOption.animationKey || commandId, {
+        duration: 1400,
+        speedBoost: 1.2,
+        lockControls: true,
+      });
       dispatch(
         trainObedience({
           now: Date.now(),
@@ -1468,7 +1646,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
       );
       setTricksOpen(false);
     },
-    [dispatch, pottyTrainingComplete, toast, trickOptionsById]
+    [dispatch, playHudAnimation, pottyTrainingComplete, toast, trickOptionsById]
   );
 
   const triggerPropHaptic = useCallback(
@@ -2771,6 +2949,12 @@ export default function MainGame({ scene, dogInteractive = true }) {
                     {stageDetail}
                   </div>
                 ) : null}
+                {goldenYearsActive ? (
+                  <div className="mt-2 rounded-xl border border-amber-300/35 bg-amber-400/10 px-3 py-2 text-[11px] font-semibold text-amber-50">
+                    Golden Years active — rescue checks are suspended for the
+                    final stretch to Rainbow Bridge.
+                  </div>
+                ) : null}
               </div>
               {showPottyTrainingProgress ? (
                 <PottyTrainingCard
@@ -2853,6 +3037,11 @@ export default function MainGame({ scene, dogInteractive = true }) {
                       <span className="text-white/35">•</span>
                       <span>Bond {bondPct}%</span>
                     </div>
+                    {goldenYearsActive ? (
+                      <div className="inline-flex items-center gap-2 rounded-2xl border border-amber-300/45 bg-amber-400/15 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.14em] text-amber-50 shadow-[0_10px_28px_rgba(120,53,15,0.25)] backdrop-blur-sm">
+                        ✨ Golden Years • Safe to day 180
+                      </div>
+                    ) : null}
                   </div>
                   {isRainScene ? (
                     <div
@@ -3013,16 +3202,18 @@ export default function MainGame({ scene, dogInteractive = true }) {
                       data-night-owl={nightOwlActive ? "true" : "false"}
                       style={{
                         zIndex: dogRenderZIndex,
-                        filter: nightOwlActive
-                          ? "drop-shadow(0 0 10px rgba(200, 230, 255, 0.32)) saturate(0.92) brightness(1.04)"
-                          : undefined,
+                        filter: goldenYearsActive
+                          ? "drop-shadow(0 0 14px rgba(255, 215, 64, 0.55)) drop-shadow(0 0 22px rgba(251, 191, 36, 0.28)) saturate(1.04) brightness(1.05)"
+                          : nightOwlActive
+                            ? "drop-shadow(0 0 10px rgba(200, 230, 255, 0.32)) saturate(0.92) brightness(1.04)"
+                            : undefined,
                         transition: "filter 220ms ease",
                       }}
                     >
                       <DogPixiView
-                        stage={renderModel?.stage}
+                        stage={renderStageForSprites}
                         condition={renderModel?.condition}
-                        anim={effectiveAnim}
+                        anim={syncedSpriteAnim}
                         behaviorState={dog?.aiState || "idle"}
                         position={dogRenderPosition}
                         facing={dog?.facing || "right"}
@@ -3369,7 +3560,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
       ) : null}
       {tricksOpen ? (
         <TricksOverlay
-          commands={trickOptions}
+          commands={visibleTrickOptions}
           unlockedCount={unlockedTrickCount}
           activeCount={activeTrickCount}
           activeLimit={activeTrickLearningLimit}

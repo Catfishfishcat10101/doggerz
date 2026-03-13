@@ -1,0 +1,43 @@
+.fireball-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--fireball-render-size, 96px);
+  height: var(--fireball-render-size, 96px);
+  will-change: transform;
+  pointer-events: auto;
+  touch-action: manipulation;
+  z-index: var(--fireball-z-index, 30);
+}
+
+.fireball-sprite {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--fireball-frame-width, 128px);
+  height: var(--fireball-frame-height, 128px);
+  background-image: var(--fireball-sprite-src);
+  background-repeat: no-repeat;
+  background-size: var(--fireball-sheet-width, 128px)
+    var(--fireball-sheet-height, 128px);
+  background-position: 0 0;
+  transform: translate(-50%, -50%) scale(var(--fireball-scale, 0.75));
+  transform-origin: center;
+  image-rendering: auto;
+  will-change: transform, background-position;
+  pointer-events: auto;
+}
+
+.fireball-flip {
+  transform: translate(-50%, -50%) scaleX(-1) scale(var(--fireball-scale, 0.75));
+}
+
+.fireball-paused {
+  opacity: 1;
+}
+
+html[data-reduce-motion="1"] .fireball-idle,
+html[data-reduce-motion="1"] .fireball-walk {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+}

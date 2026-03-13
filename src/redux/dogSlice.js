@@ -26,6 +26,7 @@ import {
 } from "@/logic/cleanlinessEffects.js";
 import { LIFE_STAGES } from "@/logic/dogLifeStages.js";
 import {
+  MASTER_TRICKS,
   OBEDIENCE_COMMANDS,
   commandRequirementsMet,
   getObedienceActiveLearningLimit,
@@ -126,6 +127,8 @@ const SEVERE_NEGLECT_CLEANLINESS_THRESHOLD = 8;
 const SEVERE_NEGLECT_HUNGER_THRESHOLD = 92;
 const SEVERE_NEGLECT_GRACE_HOURS = 2;
 const OFFLINE_SEVERE_NEGLECT_HEALTH_DECAY_PER_HOUR = 1.2;
+const STARVATION_HEALTH_GRACE_HOURS = 24;
+const OFFLINE_STARVATION_HEALTH_DECAY_PER_HOUR = 2;
 const MS_PER_HOUR = 60 * 60 * 1000;
 
 const SLEEP_RECOVERY_PER_HOUR = 45;
@@ -135,7 +138,7 @@ const AUTO_WAKE_THRESHOLD = 76;
 const POTTY_FILL_PER_HOUR = 7;
 const MAX_ACCIDENTS_PER_DECAY = 1;
 const MOOD_SAMPLE_MINUTES = 60;
-const SENIOR_STAGE_START_DAY = 2556;
+const SENIOR_STAGE_START_DAY = 150;
 const SENIOR_STIFFNESS_WINDOW_DAYS = 40;
 const DENTAL_HARD_FOOD_REJECT_AT = 35;
 const CHEWING_URGE_DESTRUCTIVE_THRESHOLD = 88;
@@ -155,7 +158,17 @@ const DANGER_TIER = Object.freeze({
 const DANGER_RUNAWAY_LETTER_THRESHOLD = 72;
 const DANGER_RESCUE_THRESHOLD = 92;
 const DANGER_RUNAWAY_COOLDOWN_MS = 24 * 60 * 60 * 1000;
-const LONG_LIFE_FAREWELL_AGE_DAYS = 5000;
+const FINAL_STRETCH_NEGLECT_IMMUNITY_AGE_DAYS = 175;
+const FINAL_STRETCH_NEGLECT_IMMUNITY_HEALTH_FLOOR = 1;
+const LONG_LIFE_FAREWELL_AGE_DAYS = 180;
+const TEMPERAMENT_ARCHETYPE = Object.freeze({
+  ATHLETE: "ATHLETE",
+  INDEPENDENT: "INDEPENDENT",
+  SHADOW: "SHADOW",
+  MISCHIEVOUS: "MISCHIEVOUS",
+});
+const ARCHETYPE_REVEAL_WINDOW_HOURS = 72;
+const POTTY_GATE_INSTANT_UNLOCK_IDS = Object.freeze(["sit", "speak"]);
 export const LEVEL_XP_BASE_THRESHOLD = 140;
 export const LEVEL_XP_STEP = 35;
 const SKILL_LEVEL_STEP = 50;
@@ -242,7 +255,7 @@ function getMinimumHealthForState(state) {
   const activeStatus = status
     ? status === DOG_LIFECYCLE_STATUS.ACTIVE
     : Boolean(state?.adoptedAt);
-  return activeStatus && state?.adoptedAt ? 12 : 0;
+  return activeStatus && state?.adoptedAt ? 0 : 0;
 }
 
 function clampHealthForState(state, value) {
@@ -272,6 +285,121 @@ function ensureAnimationState(state) {
   };
 
   return state.animation;
+}
+
+function ensureTemperamentState(state) {
+  if (!state.temperament || typeof state.temperament !== "object") {
+    state.temperament = { ...initialTemperament };
+  }
+
+  Object.keys(initialTemperament).forEach((key) => {
+    if (!(key in state.temperament)) {
+      state.temperament[key] = initialTemperament[key];
+    }
+  });
+
+  if (!Array.isArray(state.temperament.traits)) {
+    state.temperament.traits = [...initialTemperament.traits];
+  }
+
+  const metrics =
+    state.temperament.metrics && typeof state.temperament.metrics === "object"
+      ? state.temperament.metrics
+      : {};
+
+  state.temperament.metrics = {
+    totalTaps: Math.max(0, Math.round(Number(metrics.totalTaps || 0))),
+    neglectMinutes: Math.max(
+      0,
+      Math.round(Number(metrics.neglectMinutes || 0))
+    ),
+    playSessions: Math.max(0, Math.round(Number(metrics.playSessions || 0))),
+  };
+
+  const archetype = String(state.temperament.archetype || "")
+    .trim()
+    .toUpperCase();
+  state.temperament.archetype = Object.values(TEMPERAMENT_ARCHETYPE).includes(
+    archetype
+  )
+    ? archetype
+    : null;
+  if (typeof state.temperament.archetypeDeterminedAt !== "number") {
+    state.temperament.archetypeDeterminedAt = null;
+  }
+
+  return state.temperament;
+}
+
+function isArchetypeTrackingWindowOpen(state, now = nowMs()) {
+  const temperament = ensureTemperamentState(state);
+  const adoptedAt = Number(temperament.adoptedAt || state.adoptedAt || 0);
+  if (!adoptedAt) return false;
+  if (temperament.archetypeDeterminedAt || temperament.archetype) return false;
+  return now - adoptedAt < ARCHETYPE_REVEAL_WINDOW_HOURS * 60 * 60 * 1000;
+}
+
+function trackTemperamentMetric(state, key, amount = 1, now = nowMs()) {
+  if (!isArchetypeTrackingWindowOpen(state, now)) return;
+  const temperament = ensureTemperamentState(state);
+  const delta = Math.max(0, Number(amount || 0));
+  if (!delta) return;
+  temperament.metrics[key] = Math.max(
+    0,
+    Math.round(Number(temperament.metrics[key] || 0) + delta)
+  );
+}
+
+function determineTemperamentArchetype(state, now = nowMs()) {
+  const temperament = ensureTemperamentState(state);
+  if (temperament.archetype) return temperament.archetype;
+
+  const { totalTaps, neglectMinutes, playSessions } = temperament.metrics;
+  let archetype = TEMPERAMENT_ARCHETYPE.MISCHIEVOUS;
+
+  if (playSessions >= 10 && totalTaps >= 24) {
+    archetype = TEMPERAMENT_ARCHETYPE.ATHLETE;
+  } else if (neglectMinutes >= 180) {
+    archetype = TEMPERAMENT_ARCHETYPE.INDEPENDENT;
+  } else if (totalTaps >= 36 && neglectMinutes < 90) {
+    archetype = TEMPERAMENT_ARCHETYPE.SHADOW;
+  }
+
+  temperament.archetype = archetype;
+  temperament.archetypeDeterminedAt = now;
+  return archetype;
+}
+
+function unlockObedienceCommand(state, commandId, now = nowMs(), opts = {}) {
+  const id = String(commandId || "").trim();
+  if (!id) return false;
+
+  const unlocks = ensureObedienceUnlockState(state);
+  const command = getObedienceCommand(id);
+  if (!command) return false;
+
+  if (!unlocks.unlockedIds.includes(id)) {
+    unlocks.unlockedIds.push(id);
+  }
+  unlocks.unlockedAtById[id] = now;
+  unlocks.lastUnlockedId = id;
+  unlocks.lastUnlockedAt = now;
+  if (unlocks.unlockableAtById[id]) {
+    delete unlocks.unlockableAtById[id];
+  }
+
+  if (opts.log !== false) {
+    pushJournalEntry(state, {
+      type: "TRAINING",
+      moodTag: "PROUD",
+      summary: `Unlocked ${command.label}.`,
+      body:
+        opts.body || `New command ready: "${command.label}". Time to practice!`,
+      timestamp: now,
+    });
+  }
+
+  return true;
 }
 
 function ensureYardState(state) {
@@ -686,7 +814,12 @@ function hasTemperamentTag(state, tag) {
     .trim()
     .toUpperCase();
   if (!target) return false;
-  return getTemperamentTags(state).has(target);
+  if (getTemperamentTags(state).has(target)) return true;
+  return (
+    String(state?.temperament?.archetype || "")
+      .trim()
+      .toUpperCase() === target
+  );
 }
 function getTemperamentTraitIntensity(state, traitId) {
   const key = String(traitId || "").trim();
@@ -803,7 +936,7 @@ const getDaysBetween = (fromMs, toMs) => {
   if (!fromMs) return Infinity;
   return (toMs - fromMs) / (1000 * 60 * 60 * 24);
 };
-const POTTY_TRAINING_GOAL = 8;
+const POTTY_TRAINING_GOAL = 10;
 const REAL_DAY_MS = 24 * 60 * 60 * 1000;
 const RUNAWAY_LOCKOUT_MS = RUNAWAY_LOCKOUT_HOURS * 60 * 60 * 1000;
 const POTTY_TRAINED_POTTY_GAIN_MULTIPLIER = 0.65;
@@ -913,6 +1046,13 @@ const initialTemperament = {
   revealReady: false,
   adoptedAt: null,
   lastEvaluatedAt: null,
+  archetype: null,
+  archetypeDeterminedAt: null,
+  metrics: {
+    totalTaps: 0,
+    neglectMinutes: 0,
+    playSessions: 0,
+  },
 };
 const initialPersonality = {
   traits: {
@@ -958,6 +1098,7 @@ const initialMemory = {
   lastTreasureFoundId: null,
   runawayEndTimestamp: null,
   lastRunawayTriggeredAt: null,
+  commandBuffer: [],
 };
 
 const TREASURE_REWARD_CATALOG = Object.freeze({
@@ -1010,21 +1151,14 @@ const initialCareer = {
 const initialSkills = {
   obedience: {
     sit: { level: 0, xp: 0 },
-    stay: { level: 0, xp: 0 },
-    down: { level: 0, xp: 0 },
-    come: { level: 0, xp: 0 },
-    heel: { level: 0, xp: 0 },
+    sitPretty: { level: 0, xp: 0 },
     rollOver: { level: 0, xp: 0 },
     speak: { level: 0, xp: 0 },
     shake: { level: 0, xp: 0 },
-    highFive: { level: 0, xp: 0 },
-    wave: { level: 0, xp: 0 },
     spin: { level: 0, xp: 0 },
-    jump: { level: 0, xp: 0 },
-    bow: { level: 0, xp: 0 },
+    crawl: { level: 0, xp: 0 },
     playDead: { level: 0, xp: 0 },
-    fetch: { level: 0, xp: 0 },
-    dance: { level: 0, xp: 0 },
+    backflip: { level: 0, xp: 0 },
   },
 };
 
@@ -1478,6 +1612,7 @@ const initialState = {
   consecutiveDays: 0,
   claimedPreReg: false,
   claimedPreRegAt: null,
+  masterTricks: MASTER_TRICKS.map((trick) => ({ ...trick })),
   training: createInitialTrainingState(),
   lifecycleStatus: DOG_LIFECYCLE_STATUS.NONE,
   danger: { ...initialDanger },
@@ -1639,7 +1774,86 @@ function ensureMemoryState(state) {
     ? lastRunawayTriggeredAt
     : null;
 
+  state.memory.commandBuffer = Array.isArray(state.memory.commandBuffer)
+    ? state.memory.commandBuffer
+        .map((entry) => ({
+          commandId: entry?.commandId ? String(entry.commandId).trim() : null,
+          kind: entry?.kind ? String(entry.kind).trim().toLowerCase() : null,
+          createdAt: Number.isFinite(Number(entry?.createdAt))
+            ? Number(entry.createdAt)
+            : null,
+        }))
+        .filter((entry) => entry.commandId && entry.kind && entry.createdAt)
+        .slice(0, 8)
+    : [];
+
   return state.memory;
+}
+
+function getLifecycleWindowFlags(ageDays = 0) {
+  const normalizedAgeDays = Math.max(0, Math.floor(Number(ageDays || 0)));
+  const isFarewellReady = normalizedAgeDays >= LONG_LIFE_FAREWELL_AGE_DAYS;
+  const isFinalStretchImmune =
+    normalizedAgeDays >= FINAL_STRETCH_NEGLECT_IMMUNITY_AGE_DAYS &&
+    normalizedAgeDays < LONG_LIFE_FAREWELL_AGE_DAYS;
+
+  return {
+    ageDays: normalizedAgeDays,
+    isFinalStretchImmune,
+    isFarewellReady,
+    daysUntilFarewell: isFarewellReady
+      ? 0
+      : LONG_LIFE_FAREWELL_AGE_DAYS - normalizedAgeDays,
+  };
+}
+
+function getDerivedDogAgeProgress(dogState, now = nowMs()) {
+  const adoptedAt = parseAdoptedAt(dogState?.adoptedAt);
+  if (!adoptedAt) return null;
+  const adjustedNow = getVacationAdjustedNow(dogState || {}, now);
+  return getDogAgeProgress(adoptedAt, adjustedNow);
+}
+
+function normalizeForcedTrainingReaction(reaction, commandId) {
+  if (!reaction || typeof reaction !== "object") return null;
+
+  const kind = String(reaction.kind || "")
+    .trim()
+    .toLowerCase();
+  if (!["obey", "ignore", "reinterpret", "zoomies"].includes(kind)) {
+    return null;
+  }
+
+  const normalizedCommandId = String(commandId || "").trim();
+  if (!normalizedCommandId) return null;
+
+  const performedActionId = reaction.performedActionId
+    ? String(reaction.performedActionId).trim()
+    : kind === "zoomies"
+      ? "zoomies"
+      : normalizedCommandId;
+  const performedCommandId = reaction.performedCommandId
+    ? String(reaction.performedCommandId).trim()
+    : kind === "reinterpret"
+      ? null
+      : normalizedCommandId;
+  const reasonId = reaction.reasonId
+    ? String(reaction.reasonId).trim().toLowerCase()
+    : kind === "zoomies"
+      ? "zoomies"
+      : kind === "ignore"
+        ? "blank_stare"
+        : kind === "reinterpret"
+          ? "showoff"
+          : "focused";
+
+  return {
+    kind,
+    requestedCommandId: normalizedCommandId,
+    performedActionId,
+    performedCommandId,
+    reasonId,
+  };
 }
 
 function ensureDangerState(state) {
@@ -1860,8 +2074,11 @@ function syncSpiritMimicState(state, now) {
 function triggerAnimalRescueCenter(state, now, score) {
   if (ensureLifecycleStatus(state) !== DOG_LIFECYCLE_STATUS.ACTIVE) return;
   const danger = ensureDangerState(state);
-  const reason =
-    "Major mistreatment risk detected (critical neglect and unsafe conditions).";
+  const health = Number(state?.stats?.health || 0);
+  const criticalStarvation = health <= 0;
+  const reason = criticalStarvation
+    ? "Critical starvation and neglect triggered emergency protective intervention."
+    : "Major mistreatment risk detected (critical neglect and unsafe conditions).";
 
   recordPreviousDog(state, "RESCUED", now);
 
@@ -1876,9 +2093,10 @@ function triggerAnimalRescueCenter(state, now, score) {
     type: "RESCUE",
     moodTag: "URGENT",
     summary: "Animal Rescue Center intervened",
-    body:
-      "Animal Rescue Center has taken your dog into protective care. " +
-      `Danger meter reached ${score}%. Improve care before your next adoption.`,
+    body: criticalStarvation
+      ? "Animal Rescue Center intervened after your pup's health collapsed from sustained neglect. Feed and check in daily to keep the next one safe."
+      : "Animal Rescue Center has taken your dog into protective care. " +
+        `Danger meter reached ${score}%. Improve care before your next adoption.`,
     timestamp: now,
   });
 }
@@ -1905,8 +2123,8 @@ function triggerLongLifeFarewell(state, now) {
     moodTag: "CALM",
     summary: "Farewell letter",
     body:
-      "Dear hooman,\n\nWe had a full, happy life. Thank you for every walk, toy, and nap together. " +
-      "I’ll meet you at Rainbow Bridge.\n\nAlways your pup.",
+      "Dear hooman,\n\nWe made it through 180 real days together. Thank you for every walk, toy, nap, and silly little rescue from my own chaos. " +
+      "When you're ready, I'll meet you at Rainbow Bridge.\n\nAlways your pup.",
     timestamp: now,
   });
 }
@@ -1919,6 +2137,30 @@ function evaluateDangerAndLifecycleEvents(state, now) {
     return;
   }
 
+  const ageNow = getVacationAdjustedNow(state, now);
+  const derivedAge = calculateDogAge(state.adoptedAt, ageNow);
+  const ageDays = Number(
+    Number.isFinite(Number(derivedAge?.days))
+      ? derivedAge.days
+      : state.lifeStage?.days || 0
+  );
+  // Protective ordering: farewell must always win before any starvation or
+  // rescue path, even if stale derived state briefly says the dog is still 179.
+  if (ageDays >= LONG_LIFE_FAREWELL_AGE_DAYS) {
+    triggerLongLifeFarewell(state, now);
+    return;
+  }
+
+  const finalStretchImmune =
+    ageDays >= FINAL_STRETCH_NEGLECT_IMMUNITY_AGE_DAYS &&
+    ageDays < LONG_LIFE_FAREWELL_AGE_DAYS;
+  if (finalStretchImmune && Number(state?.stats?.health || 0) <= 0) {
+    state.stats.health = Math.max(
+      FINAL_STRETCH_NEGLECT_IMMUNITY_HEALTH_FLOOR,
+      Number(state.stats.health || 0)
+    );
+  }
+
   const score = computeDangerScore(state);
   danger.score = score;
   danger.tier = getDangerTier(score);
@@ -1928,18 +2170,15 @@ function evaluateDangerAndLifecycleEvents(state, now) {
   }
 
   const neglect = Number(state.memory?.neglectStrikes || 0);
-  const majorMistreatment = score >= DANGER_RESCUE_THRESHOLD || neglect >= 8;
+  const criticalHealthFailure = Number(state?.stats?.health || 0) <= 0;
+  const majorMistreatment =
+    criticalHealthFailure || score >= DANGER_RESCUE_THRESHOLD || neglect >= 8;
+  if (finalStretchImmune) {
+    return;
+  }
   if (majorMistreatment) {
     triggerAnimalRescueCenter(state, now, score);
     return;
-  }
-
-  const isSenior =
-    String(state.lifeStage?.stage || "").toUpperCase() === "SENIOR";
-  const ageDays = Number(state.lifeStage?.days || 0);
-  const bond = Number(state.bond?.value || 0);
-  if (isSenior && ageDays >= LONG_LIFE_FAREWELL_AGE_DAYS && bond >= 60) {
-    triggerLongLifeFarewell(state, now);
   }
 }
 
@@ -2269,6 +2508,13 @@ function createDecayRuleContext(state, now) {
   const effectiveHungerHours =
     softenOfflineDecayHours(hungerEffectiveHours) *
     Number(skillMods.offlineDecayMultiplier || 1);
+  const starvationPenaltyHours = getStatDecayHoursSinceTimestamp({
+    lastUpdatedAt,
+    now,
+    sourceTimestamp: state.memory?.lastFedAt,
+    graceHours: STARVATION_HEALTH_GRACE_HOURS,
+    decayMultiplier,
+  });
 
   const careerHungerMultiplier =
     state.career.perks?.hungerDecayMultiplier || 1.0;
@@ -2341,6 +2587,7 @@ function createDecayRuleContext(state, now) {
     stageMultipliers: {},
     effectiveHoursByStat: {
       hunger: effectiveHungerHours,
+      starvationHealth: starvationPenaltyHours,
     },
     decayByStat: {},
     energyRecoveryGain: 0,
@@ -2529,6 +2776,18 @@ function evaluateThresholdsStage(ctx) {
     );
   }
 
+  const starvationPenaltyHours = Math.max(
+    0,
+    Number(ctx?.effectiveHoursByStat?.starvationHealth || 0)
+  );
+  if (starvationPenaltyHours > 0) {
+    ctx.state.stats.health = clampHealthForState(
+      ctx.state,
+      Number(ctx.state.stats.health || 0) -
+        starvationPenaltyHours * OFFLINE_STARVATION_HEALTH_DECAY_PER_HOUR
+    );
+  }
+
   updateHealthAndIllnessSilo(ctx);
   maybeTriggerDestructiveChewing(ctx);
 }
@@ -2689,6 +2948,23 @@ function maybeTriggerDestructiveChewing(ctx) {
 }
 
 function runLegacyEventsStage(ctx) {
+  if (isArchetypeTrackingWindowOpen(ctx.state, ctx.now)) {
+    const pressureCount = [
+      Number(ctx.state.stats?.hunger || 0) >= 70,
+      Number(ctx.state.stats?.thirst || 0) >= 70,
+      Number(ctx.state.stats?.energy || 100) <= 30,
+      Number(ctx.state.pottyLevel || 0) >= 70,
+    ].filter(Boolean).length;
+    if (pressureCount > 0) {
+      trackTemperamentMetric(
+        ctx.state,
+        "neglectMinutes",
+        Math.round(Number(ctx.diffHours || 0) * 60 * pressureCount),
+        ctx.now
+      );
+    }
+  }
+
   evaluateDangerAndLifecycleEvents(ctx.state, ctx.now);
   if (ensureLifecycleStatus(ctx.state) !== DOG_LIFECYCLE_STATUS.ACTIVE) return;
 
@@ -2732,6 +3008,8 @@ function applyDecay(state, now = nowMs()) {
     state.lastUpdatedAt = now;
     return;
   }
+
+  syncLifecycleState(state, now);
 
   const ctx = createDecayRuleContext(state, now);
   if (!ctx) return;
@@ -2798,6 +3076,67 @@ function maybeSampleMood(state, now = nowMs(), reason = "TICK") {
   }
 
   state.mood.lastSampleAt = now;
+}
+
+function applyWorldTick(state, payload) {
+  const now = payload?.now ?? nowMs();
+  if (
+    ensureLifecycleStatus(state) !== DOG_LIFECYCLE_STATUS.ACTIVE ||
+    !state.adoptedAt
+  ) {
+    state.lastUpdatedAt = now;
+    return;
+  }
+  applyOfflineCatchUp(state, now);
+  advanceDogFsm(state, now, { allowAutonomy: true });
+  const tier = finalizeDerivedState(state, now);
+  applyCleanlinessPenalties(state, tier);
+
+  const severeNeglect =
+    Number(state.stats.cleanliness || 100) <= 15 ||
+    Number(state.stats.hunger || 0) >= 85;
+  if (severeNeglect && Number(state.memory?.neglectStrikes || 0) >= 3) {
+    state.stats.health = clampHealthForState(
+      state,
+      Number(state.stats.health || 0) - 3
+    );
+  }
+
+  const tableTheftTriggered = maybeStealApartmentTableFood(state, now);
+  if (!tableTheftTriggered) {
+    maybeConsumeFoodBowl(state, now);
+  }
+
+  if (
+    !state.isAsleep &&
+    (tier === "DIRTY" || tier === "FLEAS" || tier === "MANGE")
+  ) {
+    const last = String(state.lastAction || "").toLowerCase();
+    const protectedActions = [
+      "feed",
+      "water",
+      "play",
+      "train",
+      "bathe",
+      "potty",
+      "scoop",
+      "pet",
+    ];
+    const canOverride = !protectedActions.some((a) => last.startsWith(a));
+    const chance = tier === "MANGE" ? 0.35 : tier === "FLEAS" ? 0.25 : 0.12;
+    if (canOverride && Math.random() < chance) {
+      state.lastAction = "scratch";
+    }
+  }
+
+  const didZoomies = maybeTriggerZoomiesBurst(state, now);
+  if (!didZoomies) {
+    maybeTriggerAiDreamCue(state, now);
+  }
+
+  maybeSampleMood(state, now, "TICK");
+  updateTemperamentReveal(state, now);
+  evaluateTemperament(state, now);
 }
 
 function getDogLevelFromXp(totalXp = 0) {
@@ -2899,6 +3238,7 @@ function applySkillXp(skillBranch, skillId, skillState, amount = 5) {
 }
 
 function setLastTrainingReaction(state, reaction, now) {
+  const memory = ensureMemoryState(state);
   state.memory.lastTrainingReaction =
     reaction && typeof reaction === "object"
       ? {
@@ -2921,6 +3261,20 @@ function setLastTrainingReaction(state, reaction, now) {
           createdAt: typeof now === "number" ? now : nowMs(),
         }
       : null;
+
+  const commandId = state.memory?.lastTrainingReaction?.requestedCommandId;
+  const kind = state.memory?.lastTrainingReaction?.kind;
+  const createdAt = state.memory?.lastTrainingReaction?.createdAt;
+  if (commandId && kind && createdAt) {
+    memory.commandBuffer.unshift({
+      commandId,
+      kind,
+      createdAt,
+    });
+    if (memory.commandBuffer.length > 8) {
+      memory.commandBuffer.length = 8;
+    }
+  }
 }
 
 function updateStreak(streakState, isoDate) {
@@ -2958,18 +3312,20 @@ function updateStreak(streakState, isoDate) {
 }
 
 function updateTemperamentReveal(state, now = nowMs()) {
-  const adoptedAt = state.temperament.adoptedAt;
+  const temperament = ensureTemperamentState(state);
+  const adoptedAt = temperament.adoptedAt;
   if (!adoptedAt) return;
-  if (state.temperament.revealedAt) return;
+  if (temperament.revealedAt) return;
 
-  const days = getDaysBetween(adoptedAt, now);
-  if (days >= 14) {
-    state.temperament.revealReady = true;
+  const hoursSinceAdoption = Math.max(0, (now - adoptedAt) / MS_PER_HOUR);
+  if (hoursSinceAdoption >= ARCHETYPE_REVEAL_WINDOW_HOURS) {
+    determineTemperamentArchetype(state, now);
+    temperament.revealReady = true;
   }
 }
 
 function evaluateTemperament(state, now = nowMs()) {
-  const t = state.temperament;
+  const t = ensureTemperamentState(state);
 
   const lastEval = t.lastEvaluatedAt || t.adoptedAt || 0;
   const days = getDaysBetween(lastEval, now);
@@ -3492,13 +3848,20 @@ function recordPuppyPottySuccess(state, now = nowMs()) {
   if (potty.successCount >= potty.goal) {
     potty.completedAt = now;
     state.stats.happiness = clamp(state.stats.happiness + 5, 0, 100);
+    POTTY_GATE_INSTANT_UNLOCK_IDS.forEach((id) => {
+      unlockObedienceCommand(state, id, now, {
+        body: `Potty training unlocked "${
+          getObedienceCommand(id)?.label || id
+        }" immediately.`,
+      });
+    });
     pushJournalEntry(state, {
       type: "TRAINING",
       moodTag: "PROUD",
       summary: isPuppy ? "Potty training complete" : "House training complete",
       body: isPuppy
-        ? "Your puppy now knows how to signal when nature calls. Accidents will slow way down!"
-        : "House training is finally locked in. Tricks are now available again.",
+        ? "Your puppy now knows how to signal when nature calls. Sit and Speak unlocked immediately."
+        : "House training is finally locked in. Sit and Speak are ready immediately.",
       timestamp: now,
     });
   }
@@ -3973,6 +4336,7 @@ const dogSlice = createSlice({
       if (!merged.temperament || typeof merged.temperament !== "object") {
         merged.temperament = { ...initialTemperament };
       }
+      ensureTemperamentState(merged);
       merged.temperament.adoptedAt = adoptedAt;
 
       const lastReward = Number(merged.lastRewardClaimedAt);
@@ -4008,6 +4372,21 @@ const dogSlice = createSlice({
       ensureLegacyJourneyState(merged);
       ensureSurpriseState(merged);
 
+      const missingCareRuntimeState =
+        adoptedAt &&
+        !payload?.stats &&
+        !payload?.memory &&
+        !Number.isFinite(Number(payload?.lastUpdatedAt));
+      if (missingCareRuntimeState) {
+        merged.stats = { ...DEFAULT_STATS };
+        merged.cleanlinessTier = "FRESH";
+        merged.memory = {
+          ...initialMemory,
+          favoriteToyId: merged.memory?.favoriteToyId || null,
+          lastSeenAt: now,
+        };
+      }
+
       const ageNow = getVacationAdjustedNow(merged, now);
       const age = calculateDogAge(adoptedAt, ageNow);
       merged.lifeStage = {
@@ -4017,9 +4396,27 @@ const dogSlice = createSlice({
       };
       reconcileImpossibleFarewellState(merged, now);
 
+      if (!Number.isFinite(Number(merged.lastUpdatedAt))) {
+        merged.lastUpdatedAt = now;
+      }
+
       applyOfflineCatchUp(merged, now);
       normalizeStatsState(merged);
       finalizeDerivedState(merged, now);
+
+      if (missingCareRuntimeState && adoptedAt) {
+        const legacy = ensureLegacyJourneyState(merged);
+        const danger = ensureDangerState(merged);
+        merged.lifecycleStatus = DOG_LIFECYCLE_STATUS.ACTIVE;
+        merged.adoptedAt = adoptedAt;
+        merged.lastAction = null;
+        legacy.farewellLetterAt = null;
+        legacy.rainbowBridgeReadyAt = null;
+        danger.rescuedAt = null;
+        danger.rescueReason = null;
+        syncLifecycleState(merged, now);
+      }
+
       return merged;
     },
 
@@ -4074,9 +4471,12 @@ const dogSlice = createSlice({
       }
 
       state.lifecycleStatus = DOG_LIFECYCLE_STATUS.ACTIVE;
+      ensureTemperamentState(state);
       state.temperament.adoptedAt = adoptedAt;
       state.adoptedAt = adoptedAt;
       state.lastUpdatedAt = adoptedAt;
+      state.memory.lastFedAt = adoptedAt;
+      state.memory.lastSeenAt = adoptedAt;
       applyLegacyAdoptionBonuses(state, adoptedAt);
 
       if (legacy.ghostPlayBowPending) {
@@ -4129,6 +4529,16 @@ const dogSlice = createSlice({
     markTemperamentRevealed(state) {
       state.temperament.revealedAt = nowMs();
       state.temperament.revealReady = false;
+    },
+
+    unlockTrick(state, { payload }) {
+      const now = payload?.now ?? nowMs();
+      const trickId = payload?.trickId
+        ? String(payload.trickId).trim()
+        : String(payload || "").trim();
+      if (!trickId) return;
+      unlockObedienceCommand(state, trickId, now);
+      finalizeDerivedState(state, now);
     },
 
     updateFavoriteToy(state, { payload }) {
@@ -4342,6 +4752,7 @@ const dogSlice = createSlice({
         payload,
         toyProfile.overrideAction || "play"
       );
+      trackTemperamentMetric(state, "playSessions", 1, now);
       applyFsmAction(state, "play", now);
 
       const legacy = ensureLegacyJourneyState(state);
@@ -4426,6 +4837,7 @@ const dogSlice = createSlice({
       const zoomiesChance = happiness >= 75 ? 0.24 : 0.14;
       const sassChance = isSpicy ? 0.16 : 0.09;
       const roll = Math.random();
+      trackTemperamentMetric(state, "totalTaps", 1, now);
 
       let outcome = "PET_CUDDLE";
       let threshold = dozeChance;
@@ -4957,68 +5369,7 @@ const dogSlice = createSlice({
     /* ------------- time / login ------------- */
 
     tickDog(state, { payload }) {
-      const now = payload?.now ?? nowMs();
-      if (
-        ensureLifecycleStatus(state) !== DOG_LIFECYCLE_STATUS.ACTIVE ||
-        !state.adoptedAt
-      ) {
-        state.lastUpdatedAt = now;
-        return;
-      }
-      applyOfflineCatchUp(state, now);
-      advanceDogFsm(state, now, { allowAutonomy: true });
-      const tier = finalizeDerivedState(state, now);
-      applyCleanlinessPenalties(state, tier);
-
-      const severeNeglect =
-        Number(state.stats.cleanliness || 100) <= 15 ||
-        Number(state.stats.hunger || 0) >= 85;
-      if (severeNeglect && Number(state.memory?.neglectStrikes || 0) >= 3) {
-        state.stats.health = clampHealthForState(
-          state,
-          Number(state.stats.health || 0) - 3
-        );
-      }
-
-      // Apartment hard mode: bowls left on the low table get stolen fast.
-      const tableTheftTriggered = maybeStealApartmentTableFood(state, now);
-
-      // Auto-consume any placed floor bowl once the dog is "close enough".
-      if (!tableTheftTriggered) {
-        maybeConsumeFoodBowl(state, now);
-      }
-
-      // Ambient behavior: dirty/itchy dogs will scratch sometimes.
-      if (
-        !state.isAsleep &&
-        (tier === "DIRTY" || tier === "FLEAS" || tier === "MANGE")
-      ) {
-        const last = String(state.lastAction || "").toLowerCase();
-        const protectedActions = [
-          "feed",
-          "water",
-          "play",
-          "train",
-          "bathe",
-          "potty",
-          "scoop",
-          "pet",
-        ];
-        const canOverride = !protectedActions.some((a) => last.startsWith(a));
-        const chance = tier === "MANGE" ? 0.35 : tier === "FLEAS" ? 0.25 : 0.12;
-        if (canOverride && Math.random() < chance) {
-          state.lastAction = "scratch";
-        }
-      }
-
-      const didZoomies = maybeTriggerZoomiesBurst(state, now);
-      if (!didZoomies) {
-        maybeTriggerAiDreamCue(state, now);
-      }
-
-      maybeSampleMood(state, now, "TICK");
-      updateTemperamentReveal(state, now);
-      evaluateTemperament(state, now);
+      applyWorldTick(state, payload);
     },
 
     registerSessionStart(state, { payload }) {
@@ -5333,6 +5684,9 @@ const dogSlice = createSlice({
       const perks = getPersonalityPerks(state);
       const skillMods = getSkillTreeModifiersFromDogState(state);
       const isSpicy = hasTemperamentTag(state, "SPICY");
+      const archetypeId = String(state?.temperament?.archetype || "")
+        .trim()
+        .toUpperCase();
       const energy = Number(state.stats?.energy || 0);
       const hunger = Number(state.stats?.hunger || 0);
       const thirst = Number(state.stats?.thirst || 0);
@@ -5379,6 +5733,7 @@ const dogSlice = createSlice({
         trust: profile?.trust?.score ?? bondValue,
         stress: profile?.dynamicStates?.frustration ?? 30,
         distraction: profile?.coreTemperament?.inquisitiveness ?? 25,
+        archetypeId,
         trainingStreak: Number(state.training?.adult?.streak || 0),
         lastTrainingSuccess:
           lastTrainingKind !== "fail" &&
@@ -5391,16 +5746,23 @@ const dogSlice = createSlice({
           trainabilitySpeed
       );
 
-      const jrtReaction = resolveJrtTrainingReaction({
-        commandId,
-        unlockedIds: unlocks.unlockedIds,
-        skillNode: commandSkillNode,
-        stats: state.stats,
-        bond: bondValue,
-        profile,
-        isSpicy,
-        rng: Math.random,
-      });
+      const forcedTrainingReaction = normalizeForcedTrainingReaction(
+        payload?.forcedReaction,
+        commandId
+      );
+      const jrtReaction =
+        forcedTrainingReaction ||
+        resolveJrtTrainingReaction({
+          commandId,
+          unlockedIds: unlocks.unlockedIds,
+          skillNode: commandSkillNode,
+          stats: state.stats,
+          bond: bondValue,
+          profile,
+          archetypeId,
+          isSpicy,
+          rng: Math.random,
+        });
       const commandLabel = command?.label || commandId;
 
       if (jrtReaction.kind === "zoomies") {
@@ -5446,6 +5808,8 @@ const dogSlice = createSlice({
           sniff: `You asked for "${commandLabel}". Your pup heard you, then followed a smell instead.`,
           scratch: `You asked for "${commandLabel}", but an itchy distraction won the argument.`,
           blank_stare: `You asked for "${commandLabel}". Your pup made eye contact, then committed to doing absolutely nothing.`,
+          dig: `You asked for "${commandLabel}", and your mischievous terrier instantly chose digging instead.`,
+          ghost_bark: `You asked for "${commandLabel}", and your pup barked at a ghost only they could see.`,
         };
 
         pushJournalEntry(state, {
@@ -6140,6 +6504,14 @@ const dogSlice = createSlice({
       return initialState;
     },
   },
+  extraReducers: (builder) => {
+    builder.addMatcher(
+      (action) => action?.type === "engine/TICK",
+      (state, action) => {
+        applyWorldTick(state, action.payload);
+      }
+    );
+  },
 });
 
 /* ---------------------- selectors ---------------------- */
@@ -6190,19 +6562,21 @@ export const selectDogMoodLabel = (state) => {
 };
 
 export const selectDogAgeInfo = (state) => {
-  const adoptedAt = parseAdoptedAt(state.dog?.adoptedAt);
-  const age = getDogAgeProgress(adoptedAt || 0);
+  const age = getDerivedDogAgeProgress(state.dog, Date.now());
   const fallbackStage = state.dog?.lifeStage?.stage || LIFE_STAGES.PUPPY;
   const fallbackDays = state.dog?.lifeStage?.days || 0;
   if (age) {
+    const lifecycleWindow = getLifecycleWindowFlags(age.days);
     return {
       ...age,
+      ...lifecycleWindow,
       ageBucketLabel: getAgeBucketLabel(age.days),
       progressLabel: getLifeStageProgressLabel(age),
       ui: getLifeStageUi(age.stage),
     };
   }
   const stageUi = getLifeStageUi(fallbackStage);
+  const lifecycleWindow = getLifecycleWindowFlags(fallbackDays);
   return {
     days: fallbackDays,
     ageInGameDays: fallbackDays,
@@ -6214,9 +6588,20 @@ export const selectDogAgeInfo = (state) => {
     stageProgressPct: 0,
     daysUntilNextStage: null,
     nextStage: null,
+    ...lifecycleWindow,
     ageBucketLabel: getAgeBucketLabel(fallbackDays),
     progressLabel: getLifeStageProgressLabel({ stage: fallbackStage }),
     ui: stageUi,
+  };
+};
+
+export const selectDogLifecycleWindow = (state) => {
+  const ageInfo = selectDogAgeInfo(state);
+  return {
+    ageDays: Number(ageInfo?.ageDays ?? ageInfo?.days ?? 0),
+    isFinalStretchImmune: Boolean(ageInfo?.isFinalStretchImmune),
+    isFarewellReady: Boolean(ageInfo?.isFarewellReady),
+    daysUntilFarewell: Number(ageInfo?.daysUntilFarewell ?? 0),
   };
 };
 
@@ -6276,6 +6661,7 @@ export const {
   acknowledgeGrowthMilestone,
   ackTemperamentReveal,
   markTemperamentRevealed,
+  unlockTrick,
   updateFavoriteToy,
   setActiveToy,
   feed,

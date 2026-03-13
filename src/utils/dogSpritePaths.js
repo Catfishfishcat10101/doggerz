@@ -16,7 +16,7 @@ export const DOG_CONDITION_IDS = Object.freeze([
 
 const DEFAULT_SPRITE_DIR = "/assets/sprites";
 const DEFAULT_ATLAS_DIR = "/assets/atlas";
-const DOG_SPRITE_REV = "2026-02-25b";
+const DOG_SPRITE_REV = "2026-03-13-fireball-tricks";
 const DOG_SPRITE_FILE_ALIASES = Object.freeze({
   bark: "bark",
   beg: "bow",

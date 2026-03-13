@@ -78,6 +78,11 @@ const selectDogLifeModel = createSelector(
       : null,
     nextStageLabel: ageInfo?.nextStage?.label || null,
     progressLabel: ageInfo?.progressLabel || null,
+    isFinalStretchImmune: Boolean(ageInfo?.isFinalStretchImmune),
+    isFarewellReady: Boolean(ageInfo?.isFarewellReady),
+    daysUntilFarewell: Number.isFinite(Number(ageInfo?.daysUntilFarewell))
+      ? Number(ageInfo.daysUntilFarewell)
+      : null,
     headline: ageInfo?.ui?.headline || null,
     summary: ageInfo?.ui?.summary || null,
     detail: ageInfo?.ui?.detail || null,
