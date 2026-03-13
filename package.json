@@ -1,6 +1,6 @@
 {
   "name": "doggerz",
-  "version": "2.1.0",
+  "version": "2.1.7",
   "main": "src/main.jsx",
   "private": true,
   "engines": {

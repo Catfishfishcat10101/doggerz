@@ -1,6 +1,6 @@
+import groovy.json.JsonSlurper
 import java.io.FileInputStream
 import java.util.Properties
-import groovy.json.JsonSlurper
 
 apply plugin: 'com.android.application'
 
