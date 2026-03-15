@@ -4,9 +4,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import PageShell from "@/components/layout/PageShell.jsx";
 import { useToast } from "@/state/toastContext.js";
-import { DOG_STORAGE_KEY } from "@/redux/dogSlice.js";
-import { SETTINGS_STORAGE_KEY } from "@/redux/settingsSlice.js";
-import { USER_STORAGE_KEY } from "@/redux/userSlice.js";
+import { DOG_STORAGE_KEY } from "@/store/dogSlice.js";
+import { SETTINGS_STORAGE_KEY } from "@/store/settingsSlice.js";
+import { USER_STORAGE_KEY } from "@/store/userSlice.js";
 import {
   getStoredValue,
   listStoredKeys,

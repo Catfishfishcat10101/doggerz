@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import ModalSurface from "@/components/ui/modals/ModalSurface.jsx";
-import { PATHS } from "@/routes.js";
+import { PATHS } from "@/app/routes.js";
 
 const RESCUE_HOLD_MS = 24 * 60 * 60 * 1000;
 

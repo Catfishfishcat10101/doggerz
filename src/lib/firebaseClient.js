@@ -2,9 +2,14 @@
 // @ts-check
 
 import { getDoc, setDoc } from "firebase/firestore";
-import { auth, db, firebaseReady, assertFirebaseReady } from "@/firebase.js";
+import {
+  auth,
+  db,
+  firebaseReady,
+  assertFirebaseReady,
+} from "@/lib/firebase/index.js";
 import { signInAnonymously, onAuthStateChanged } from "firebase/auth";
-import { dogMainDoc } from "@/firebase/paths.js";
+import { dogMainDoc } from "@/lib/firebase/paths.js";
 
 /**
  * Back-compat wrapper around the canonical firebase client in src/firebase.js

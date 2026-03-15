@@ -1,7 +1,7 @@
-import jrManifest from "@/components/dog/jrManifest.json";
+import jrManifest from "@/components/dog/manifests/jrManifest.json";
 import { DOG_ANIMATIONS } from "@/animation/dogAnimationMap.js";
-import { getObedienceCommand } from "@/logic/obedienceCommands.js";
-import { LIFE_STAGES } from "@/logic/dogLifeStages.js";
+import { getObedienceCommand } from "@/features/training/obedienceCommands.js";
+import { LIFE_STAGES } from "@/features/dog/dogLifeStages.js";
 import {
   DOG_ANIMATION_CATEGORIES,
   getDogAnimationCategory,

@@ -4,13 +4,13 @@
 import * as React from "react";
 import { useSelector } from "react-redux";
 
-import { selectSettings } from "@/redux/settingsSlice.js";
+import { selectSettings } from "@/store/settingsSlice.js";
 import {
   DEFAULT_DOGGERZ_REMINDERS,
   cancelDogNotifications,
   scheduleDogNotifications,
   sendDogNotification,
-} from "@/logic/NotificationScheduler.js";
+} from "@/lib/notifications/NotificationScheduler.js";
 import { useDog } from "@/hooks/useDogState.js";
 import {
   buildReminder,

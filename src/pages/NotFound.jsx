@@ -1,7 +1,7 @@
 // src/pages/NotFound.jsx
 
 import { useNavigate } from "react-router-dom";
-import { PATHS } from "@/routes.js";
+import { PATHS } from "@/app/routes.js";
 import PageShell from "@/components/layout/PageShell.jsx";
 
 export default function NotFound() {

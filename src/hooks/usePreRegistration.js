@@ -5,8 +5,8 @@ import {
   PRE_REG_GIFT_COINS,
 } from "@/features/billing/preRegistrationReward.js";
 import { useDog } from "@/hooks/useDogState.js";
-import { useAppDispatch } from "@/redux/hooks.js";
-import { grantPreRegGift } from "@/redux/dogSlice.js";
+import { useAppDispatch } from "@/store/hooks.js";
+import { grantPreRegGift } from "@/store/dogSlice.js";
 
 /**
  * Resolves the player's pre-registration entitlement and exposes a one-time

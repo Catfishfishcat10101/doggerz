@@ -3,7 +3,7 @@
 
 import PageShell from "@/components/layout/PageShell.jsx";
 import { PageHeader } from "@/components/layout/PageSections.jsx";
-import { SUPPORT_EMAIL_FEEDBACK_URL } from "@/config/links.js";
+import { SUPPORT_EMAIL_FEEDBACK_URL } from "@/app/config/links.js";
 
 export default function Contact() {
   return (

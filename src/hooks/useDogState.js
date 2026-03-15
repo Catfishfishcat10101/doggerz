@@ -2,7 +2,7 @@
 
 import { createSelector } from "@reduxjs/toolkit";
 import { shallowEqual } from "react-redux";
-import { useAppDispatch, useAppSelector } from "@/redux/hooks.js";
+import { useAppDispatch, useAppSelector } from "@/store/hooks.js";
 import {
   bathe,
   feed,
@@ -33,7 +33,7 @@ import {
   selectDogVacation,
   selectNextStreakReward,
   trainObedience,
-} from "@/redux/dogSlice.js";
+} from "@/store/dogSlice.js";
 import { selectDogRenderModel } from "@/components/dog/redux/dogSelectors.js";
 import { scoreRecentMemoryDrives } from "@/components/dog/DogMemoryDrives.js";
 

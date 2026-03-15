@@ -1,11 +1,7 @@
-export function createAbortError(message = "Request aborted") {
-  try {
-    return new DOMException(String(message || "Request aborted"), "AbortError");
-  } catch {
-    const error = new Error(String(message || "Request aborted"));
-    error.name = "AbortError";
-    return error;
-  }
+export function createAbortError(message = "The operation was aborted") {
+  const error = new Error(String(message || "The operation was aborted"));
+  error.name = "AbortError";
+  return error;
 }
 
 export function createTimeoutSignal({

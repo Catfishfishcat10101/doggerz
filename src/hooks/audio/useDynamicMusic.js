@@ -4,8 +4,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { useDog } from "@/hooks/useDogState.js";
-import { selectSettings } from "@/redux/settingsSlice.js";
-import { selectWeatherCondition } from "@/redux/weatherSlice.js";
+import { selectSettings } from "@/store/settingsSlice.js";
+import { selectWeatherCondition } from "@/store/weatherSlice.js";
 
 const BASE_PATH = "/audio/";
 

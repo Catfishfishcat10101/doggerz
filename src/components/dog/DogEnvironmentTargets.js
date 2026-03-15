@@ -3,7 +3,7 @@
 import {
   DOG_WORLD_HEIGHT,
   DOG_WORLD_WIDTH,
-} from "@/components/dog/DogWanderBehavior.js";
+} from "@/components/dog/simulation/DogWanderBehavior.js";
 
 function clamp(n, lo, hi) {
   const value = Number(n);

@@ -2,11 +2,11 @@ import { useMemo } from "react";
 import { Link } from "react-router-dom";
 
 import { useDogDreamState } from "@/hooks/useDogState.js";
-import { PATHS } from "@/routes.js";
+import { PATHS } from "@/app/routes.js";
 
 import PageShell from "@/components/layout/PageShell.jsx";
 
-import DreamJournal from "@/components/dog/DreamJournal.jsx";
+import DreamJournal from "@/components/dog/components/DreamJournal.jsx";
 
 export default function Dreams() {
   const { name, dreamsState, memoryDrives } = useDogDreamState();

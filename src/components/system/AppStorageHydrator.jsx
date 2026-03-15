@@ -6,13 +6,13 @@ import { getStoredValue } from "@/utils/nativeStorage.js";
 import {
   hydrateSettings,
   SETTINGS_STORAGE_KEY,
-} from "@/redux/settingsSlice.js";
-import { hydrateUserState, USER_STORAGE_KEY } from "@/redux/userSlice.js";
+} from "@/store/settingsSlice.js";
+import { hydrateUserState, USER_STORAGE_KEY } from "@/store/userSlice.js";
 import {
   DOG_STORAGE_KEY,
   getDogStorageKey,
   hydrateDog,
-} from "@/redux/dogSlice.js";
+} from "@/store/dogSlice.js";
 
 function parseStoredJson(raw, label) {
   if (!raw) return null;

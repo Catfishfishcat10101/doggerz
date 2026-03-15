@@ -1,4 +1,4 @@
-import { PATHS } from "@/routes.js";
+import { PATHS } from "@/app/routes.js";
 
 export const HEIST_ROUTE_BY_ACTION = Object.freeze({
   store: PATHS.STORE,

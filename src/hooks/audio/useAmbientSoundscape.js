@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useSelector } from "react-redux";
 
-import { selectSettings } from "@/redux/settingsSlice.js";
+import { selectSettings } from "@/store/settingsSlice.js";
 import {
   selectWeatherCondition,
   selectWeatherIntensity,
-} from "@/redux/weatherSlice.js";
+} from "@/store/weatherSlice.js";
 
 const clamp01 = (value) => Math.max(0, Math.min(1, Number(value) || 0));
 

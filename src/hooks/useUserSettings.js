@@ -2,7 +2,7 @@
 
 import { createSelector } from "@reduxjs/toolkit";
 import { shallowEqual } from "react-redux";
-import { useAppDispatch, useAppSelector } from "@/redux/hooks.js";
+import { useAppDispatch, useAppSelector } from "@/store/hooks.js";
 import {
   selectDogRenderMode,
   selectPreferredScene,
@@ -22,8 +22,8 @@ import {
   setReduceVfx,
   setUiDensity,
   setZip,
-} from "@/redux/userSlice.js";
-import { selectSettings } from "@/redux/settingsSlice.js";
+} from "@/store/userSlice.js";
+import { selectSettings } from "@/store/settingsSlice.js";
 
 const selectUserProfileModel = createSelector(
   [

@@ -6,16 +6,16 @@ import {
   applyPetStatDecay,
   CORE_PET_STAT_DECAY_PER_HOUR,
   normalizePetStats,
-} from "@/logic/PetStatsManager.js";
+} from "@/features/dog/PetStatsManager.js";
 import {
   addBondExperience,
   createExperienceState,
   getLevelProgress,
-} from "@/logic/ExperienceAndLeveling.js";
+} from "@/features/dog/ExperienceAndLeveling.js";
 import {
   getElapsedHoursAfterGrace,
   HUNGER_FULLNESS_BUFFER_HOURS,
-} from "@/logic/OfflineProgressCalculator.js";
+} from "@/features/dog/OfflineProgressCalculator.js";
 
 const MS_PER_HOUR = 60 * 60 * 1000;
 

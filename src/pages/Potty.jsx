@@ -1,21 +1,21 @@
 // src/pages/Potty.jsx
 import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { PATHS } from "@/routes.js";
+import { PATHS } from "@/app/routes.js";
 import { useToast } from "@/state/toastContext.js";
-import { usePup } from "@/components/dog/PupContext.jsx";
+import { usePup } from "@/components/dog/context/PupContext.jsx";
 import PageShell from "@/components/layout/PageShell.jsx";
 import { PageFooter, PageHeader } from "@/components/layout/PageSections.jsx";
 import EmptySlate from "@/components/ui/EmptySlate.jsx";
 import { useSelector, useDispatch, useStore } from "react-redux";
-import { simulationTick } from "@/redux/dogSlice.js";
+import { simulationTick } from "@/store/dogSlice.js";
 import {
   selectSettings,
   setPottyAutoReturn,
   setPottyConfirmAccidents,
   setPottyShowXpTools,
   setPottyTipsExpanded,
-} from "@/redux/settingsSlice.js";
+} from "@/store/settingsSlice.js";
 
 function describePottyTraining(training) {
   const t = Math.round(Number(training ?? 0));

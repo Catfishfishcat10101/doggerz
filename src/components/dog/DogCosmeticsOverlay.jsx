@@ -11,7 +11,7 @@ import {
   setCosmeticsOverlayPosition,
   setCosmeticsOverlayShowLabels,
   setCosmeticsOverlayShowPreviewTags,
-} from "@/redux/settingsSlice.js";
+} from "@/store/settingsSlice.js";
 import { getDogCosmeticLayerSpecs } from "@/utils/dogCosmeticLayers.js";
 
 function labelFor(id) {

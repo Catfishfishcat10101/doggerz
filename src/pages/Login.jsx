@@ -7,8 +7,8 @@ import {
   sendPasswordResetEmail,
 } from "firebase/auth";
 
-import { auth, firebaseReady } from "@/firebase.js";
-import { selectIsLoggedIn } from "@/redux/userSlice.js";
+import { auth, firebaseReady } from "@/lib/firebase/index.js";
+import { selectIsLoggedIn } from "@/store/userSlice.js";
 import {
   getStoredValue,
   removeStoredValues,

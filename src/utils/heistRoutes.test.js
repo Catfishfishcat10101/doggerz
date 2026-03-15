@@ -6,7 +6,7 @@ import {
   normalizeHeistActionKey,
   resolveHeistRoute,
 } from "@/utils/heistRoutes.js";
-import { PATHS } from "@/routes.js";
+import { PATHS } from "@/app/routes.js";
 
 describe("heist route helpers", () => {
   it("maps supported heist actions to real app routes", () => {

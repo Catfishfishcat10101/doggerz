@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useSelector } from "react-redux";
 import { useDogAppEffectsState } from "@/hooks/useDogState.js";
-import { selectSettings } from "@/redux/settingsSlice.js";
+import { selectSettings } from "@/store/settingsSlice.js";
 
 /**
  * Writes tiny app-wide data-attributes used for dynamic CSS.

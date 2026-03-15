@@ -6,8 +6,8 @@ import { useNavigate } from "react-router-dom";
 
 import PageShell from "@/components/layout/PageShell.jsx";
 import { withBaseUrl } from "@/utils/assetUtils.js";
-import { PATHS } from "@/routes.js";
-import { adoptPup } from "@/redux/dogThunks.js";
+import { PATHS } from "@/app/routes.js";
+import { adoptPup } from "@/store/dogThunks.js";
 import {
   cancelWorkflow,
   goToStep,
@@ -17,7 +17,7 @@ import {
   selectWorkflowById,
   setWorkflowData,
   startWorkflow,
-} from "@/redux/workflowSlice.js";
+} from "@/store/workflowSlice.js";
 import { useDog } from "@/hooks/useDogState.js";
 
 const WORKFLOW_ID = "adopt";

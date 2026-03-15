@@ -7,13 +7,13 @@ import {
 } from "react-router-dom";
 import { useSelector } from "react-redux";
 
-import { selectIsLoggedIn } from "@/redux/userSlice.js";
+import { selectIsLoggedIn } from "@/store/userSlice.js";
 import {
   getPrimaryTabForPath,
   getRouteMeta,
   PATHS,
   PRIMARY_TABS,
-} from "@/routes.js";
+} from "@/app/routes.js";
 
 const HIDE_ON_PATHS = new Set([
   PATHS.HOME,

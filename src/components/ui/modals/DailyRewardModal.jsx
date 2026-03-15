@@ -6,7 +6,7 @@ import { useDispatch } from "react-redux";
 import ModalSurface from "@/components/ui/modals/ModalSurface.jsx";
 import { showRewardedAd } from "@/features/ads/AdManager.js";
 import { getDailyRewardState } from "@/features/billing/dailyRewards.js";
-import { claimDailyReward } from "@/redux/dogSlice.js";
+import { claimDailyReward } from "@/store/dogSlice.js";
 import { useDog } from "@/hooks/useDogState.js";
 import { useToast } from "@/state/toastContext.js";
 import { getRuntimeContextLabel } from "@/utils/runtimeContext.js";

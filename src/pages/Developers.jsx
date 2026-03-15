@@ -2,10 +2,10 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { SOCIAL_LINKS } from "@/config/links.js";
+import { SOCIAL_LINKS } from "@/app/config/links.js";
 import DogAIEngine from "@/components/dog/DogAIEngine.jsx";
-import Fireball from "@/components/dog/Fireball.jsx";
-import { OBEDIENCE_COMMANDS } from "@/logic/obedienceCommands.js";
+import Fireball from "@/components/dog/renderers/Fireball.jsx";
+import { OBEDIENCE_COMMANDS } from "@/features/training/obedienceCommands.js";
 import PageShell from "@/components/layout/PageShell.jsx";
 import {
   useDog,
@@ -13,7 +13,7 @@ import {
   useDogLife,
   useDogVitals,
 } from "@/hooks/useDogState.js";
-import { selectSettings } from "@/redux/settingsSlice.js";
+import { selectSettings } from "@/store/settingsSlice.js";
 
 function shouldReduceEffects(perfMode) {
   const mode = String(perfMode || "auto").toLowerCase();

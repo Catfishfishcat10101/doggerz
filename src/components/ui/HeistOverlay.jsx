@@ -2,8 +2,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 
 import PageShell from "@/components/layout/PageShell.jsx";
-import { PATHS } from "@/routes.js";
-import { resolveSessionSurprise } from "@/redux/dogSlice.js";
+import { PATHS } from "@/app/routes.js";
+import { resolveSessionSurprise } from "@/store/dogSlice.js";
 import { buildHeistMessage, getHeistRouteLabel } from "@/utils/heistRoutes.js";
 
 export default function HeistOverlay({ stolenAction = "", message = "" }) {

@@ -7,25 +7,25 @@ import { Navigate } from "react-router-dom";
 import BottomTabBar from "@/components/layout/BottomTabBar.jsx";
 import DogAIEngine from "@/components/dog/DogAIEngine.jsx";
 import MainGame from "@/components/game/MainGame.jsx";
-import GrowthCelebration from "@/components/dog/GrowthCelebration.jsx";
+import GrowthCelebration from "@/components/dog/components/GrowthCelebration.jsx";
 import { getDailyRewardState } from "@/features/billing/dailyRewards.js";
 import usePreRegistration from "@/hooks/usePreRegistration.js";
 import useModal from "@/hooks/useModal.js";
 import {
   selectWeatherCondition,
   selectWeatherIntensity,
-} from "@/redux/weatherSlice.js";
+} from "@/store/weatherSlice.js";
 import {
   selectCloudSyncState,
   selectIsAuthResolved,
   selectIsLoggedIn,
   selectUserZip,
-} from "@/redux/userSlice.js";
-import { selectSettings } from "@/redux/settingsSlice.js";
+} from "@/store/userSlice.js";
+import { selectSettings } from "@/store/settingsSlice.js";
 import { useDayNight } from "@/hooks/useDayNight.js";
 import WeatherFXCanvas from "@/components/environment/WeatherFXCanvas.jsx";
 import { useDog } from "@/hooks/useDogState.js";
-import { PATHS } from "@/routes.js";
+import { PATHS } from "@/app/routes.js";
 import {
   getWeatherAccent,
   getWeatherLabel,

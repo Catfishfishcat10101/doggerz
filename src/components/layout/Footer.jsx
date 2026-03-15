@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { SOCIAL_LINKS } from "@/config/links.js";
+import { SOCIAL_LINKS } from "@/app/config/links.js";
 
 export default function Footer() {
   const year = new Date().getFullYear();

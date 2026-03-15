@@ -12,7 +12,7 @@ import {
   useState,
 } from "react";
 import { useDispatch, useSelector, useStore } from "react-redux";
-import DogToy from "@/components/dog/DogToy.jsx";
+import DogToy from "@/components/dog/components/DogToy.jsx";
 import EnvironmentScene from "@/components/game/EnvironmentScene.jsx";
 import YardBackdrop from "@/components/game/YardBackdrop.jsx";
 import {
@@ -24,14 +24,14 @@ import {
 } from "@/components/game/animatedEvents.js";
 import Tooltip from "@/components/ui/Tooltip.jsx";
 import { useToast } from "@/state/toastContext.js";
-import { selectSettings } from "@/redux/settingsSlice.js";
+import { selectSettings } from "@/store/settingsSlice.js";
 import useCountdown from "@/hooks/useCountdown.js";
 import {
   selectCloudSyncState,
   selectIsLoggedIn,
   selectUserIsFounder,
   selectUser,
-} from "@/redux/userSlice.js";
+} from "@/store/userSlice.js";
 import {
   bathe,
   beginRunawayStrike,
@@ -52,37 +52,39 @@ import {
   triggerButtonHeist,
   trainObedience,
   tryConsumeFoodBowl,
-} from "@/redux/dogSlice.js";
-import { PATHS } from "@/routes.js";
+} from "@/store/dogSlice.js";
+import { PATHS } from "@/app/routes.js";
 import {
   selectWeatherCondition,
   selectWeatherDetails,
-} from "@/redux/weatherSlice.js";
-import { getRunawayStrikeState } from "@/logic/OfflineProgressCalculator.js";
-import { auth as firebaseAuth, initFirebase } from "@/firebase.js";
+} from "@/store/weatherSlice.js";
+import { getRunawayStrikeState } from "@/features/dog/OfflineProgressCalculator.js";
+import { auth as firebaseAuth, initFirebase } from "@/lib/firebase/index.js";
 import {
   OBEDIENCE_COMMANDS,
   getObedienceActiveLearningLimit,
   getObedienceCommand,
-} from "@/logic/obedienceCommands.js";
-import { getObedienceSkillMasteryPct } from "@/logic/jrtTrainingController.js";
-import { createSwipeGestureRecognizer } from "@/logic/SwipeGestureRecognizer.js";
-import { createDragAndDropManager } from "@/logic/DragAndDropManager.js";
-import { createVoiceCommandHandler } from "@/logic/VoiceCommandHandler.js";
+} from "@/features/training/obedienceCommands.js";
+import { getObedienceSkillMasteryPct } from "@/features/training/jrtTrainingController.js";
+import { createSwipeGestureRecognizer } from "@/utils/SwipeGestureRecognizer.js";
+import { createDragAndDropManager } from "@/features/inventory/DragAndDropManager.js";
+import { createVoiceCommandHandler } from "@/features/training/VoiceCommandHandler.js";
 import { useDogGameView } from "@/hooks/useDogState.js";
 import {
   startDogSimulation,
   stopDogSimulation,
-} from "@/components/dog/DogSimulationEngine.js";
+} from "@/components/dog/simulation/DogSimulationEngine.js";
 import {
   DOG_WORLD_HEIGHT,
   DOG_WORLD_WIDTH,
-} from "@/components/dog/DogWanderBehavior.js";
+} from "@/components/dog/simulation/DogWanderBehavior.js";
 import { getDogEnvironmentTargets } from "@/components/dog/DogEnvironmentTargets.js";
 import { withBaseUrl } from "@/utils/assetUtils.js";
 import { resolveBackdropLayers } from "@/utils/backgroundLayers.js";
 
-const DogPixiView = lazy(() => import("@/components/dog/DogPixiView.jsx"));
+const DogPixiView = lazy(
+  () => import("@/components/dog/renderers/DogPixiView.jsx")
+);
 const SHARE_REWARD_COOLDOWN_MS = 12 * 60 * 60 * 1000;
 const DEFAULT_OWNER_AVATAR =
   "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='bg' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23334155'/%3E%3Cstop offset='100%25' stop-color='%231e293b'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='32' fill='url(%23bg)'/%3E%3Ccircle cx='32' cy='25' r='12' fill='%2394a3b8'/%3E%3Cpath d='M16 53c3-10 12-16 16-16s13 6 16 16' fill='%2394a3b8'/%3E%3C/svg%3E";

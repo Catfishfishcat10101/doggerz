@@ -4,11 +4,11 @@ import { useNavigate } from "react-router-dom";
 import { deleteUser } from "firebase/auth";
 import { deleteDoc, doc } from "firebase/firestore";
 
-import { auth, db, firebaseReady } from "@/firebase.js";
-import { dogMainDoc, userProfileDoc } from "@/firebase/paths.js";
-import { getDogStorageKey, resetDogState } from "@/redux/dogSlice.js";
-import { clearUser, USER_STORAGE_KEY } from "@/redux/userSlice.js";
-import { PATHS } from "@/routes.js";
+import { auth, db, firebaseReady } from "@/lib/firebase/index.js";
+import { dogMainDoc, userProfileDoc } from "@/lib/firebase/paths.js";
+import { getDogStorageKey, resetDogState } from "@/store/dogSlice.js";
+import { clearUser, USER_STORAGE_KEY } from "@/store/userSlice.js";
+import { PATHS } from "@/app/routes.js";
 import { useToast } from "@/state/toastContext.js";
 import { removeStoredValue } from "@/utils/nativeStorage.js";
 

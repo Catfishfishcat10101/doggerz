@@ -4,9 +4,9 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 
-import { auth, firebaseReady } from "@/firebase.js";
+import { auth, firebaseReady } from "@/lib/firebase/index.js";
 import PageShell from "@/components/layout/PageShell.jsx";
-import { PATHS } from "@/routes.js";
+import { PATHS } from "@/app/routes.js";
 
 export default function Signup() {
   const navigate = useNavigate();

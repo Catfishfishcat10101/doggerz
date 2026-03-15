@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 
 import PageShell from "@/components/layout/PageShell.jsx";
-import { MENU_DESTINATIONS } from "@/routes.js";
+import { MENU_DESTINATIONS } from "@/app/routes.js";
 
 export default function MenuPage() {
   return (

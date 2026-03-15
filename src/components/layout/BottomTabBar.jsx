@@ -1,7 +1,7 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 
-import { getPrimaryTabForPath, PATHS, PRIMARY_TABS } from "@/routes.js";
+import { getPrimaryTabForPath, PATHS, PRIMARY_TABS } from "@/app/routes.js";
 import { resolveHeistRoute } from "@/utils/heistRoutes.js";
 
 const HIDDEN_PATHS = new Set([

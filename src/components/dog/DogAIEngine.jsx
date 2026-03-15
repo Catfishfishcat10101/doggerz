@@ -7,7 +7,7 @@ import { useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { Capacitor } from "@capacitor/core";
 import { onSnapshot, setDoc } from "firebase/firestore";
-import { auth, db, firebaseReady } from "@/firebase.js";
+import { auth, db, firebaseReady } from "@/lib/firebase/index.js";
 import {
   grantFounderReward,
   hydrateDog,
@@ -15,43 +15,43 @@ import {
   registerSessionStart,
   DOG_STORAGE_KEY,
   getDogStorageKey,
-} from "@/redux/dogSlice.js";
+} from "@/store/dogSlice.js";
 import {
   setWeatherError,
   setWeatherLoading,
   setWeatherSnapshot,
-} from "@/redux/weatherSlice.js";
-import { loadDogFromCloud, saveDogToCloud } from "@/redux/dogThunks.js";
+} from "@/store/weatherSlice.js";
+import { loadDogFromCloud, saveDogToCloud } from "@/store/dogThunks.js";
 import {
   selectIsAuthResolved,
   selectUserIsFounder,
   selectUserId,
   selectUserZip,
   setUser,
-} from "@/redux/userSlice.js";
-import { selectSettings } from "@/redux/settingsSlice.js";
+} from "@/store/userSlice.js";
+import { selectSettings } from "@/store/settingsSlice.js";
 import {
   startDogTickEngine,
   stopDogTickEngine,
-} from "@/redux/middleware/dogTick.js";
+} from "@/store/middleware/dogTick.js";
 import { useDogActionSfx } from "@/hooks/audio/useDogActionSfx.js";
 import useDynamicMusic from "@/hooks/audio/useDynamicMusic.js";
 import useAmbientSoundscape from "@/hooks/audio/useAmbientSoundscape.js";
 import { useDogEngineState } from "@/hooks/useDogState.js";
-import { ensureDogMain } from "@/firebase/ensureDog.js";
-import { userProfileDoc } from "@/firebase/paths.js";
+import { ensureDogMain } from "@/lib/firebase/ensureDog.js";
+import { userProfileDoc } from "@/lib/firebase/paths.js";
 import {
   loadLocalSave,
   migrateLegacySave,
   saveLocalSave,
-} from "@/logic/LocalSaveManager.js";
+} from "@/lib/storage/LocalSaveManager.js";
 import {
   isAnonymousFirebaseUser,
   isFirestorePermissionError,
 } from "@/lib/firebaseClient.js";
-import { fetchRealTimeWeather } from "@/logic/RealTimeWeatherFetcher.js";
+import { fetchRealTimeWeather } from "@/features/weather/RealTimeWeatherFetcher.js";
 import { debugError, debugLog, debugWarn } from "@/utils/debugLogger.js";
-import { PATHS } from "@/routes.js";
+import { PATHS } from "@/app/routes.js";
 
 const CLOUD_SAVE_DEBOUNCE = 3_000; // 3 seconds
 const WEATHER_POLL_INTERVAL_MS = 12 * 60_000; // 12 minutes (gentle on API limits)
@@ -734,10 +734,11 @@ export default function DogAIEngine({
       try {
         parsed = await loadLocalSave(nextKey, null);
         if (!parsed && nextKey === getDogStorageKey(null)) {
-          parsed = await migrateLegacySave({
+          const migration = await migrateLegacySave({
             legacyKey: DOG_STORAGE_KEY,
             activeKey: nextKey,
           });
+          parsed = migration?.data || null;
         }
         if (parsed) parsed = reviveDogDates(parsed);
       } catch (err) {
@@ -785,10 +786,11 @@ export default function DogAIEngine({
           let parsed = await loadLocalSave(activeKey, null);
 
           if (!parsed && activeKey === getDogStorageKey(null)) {
-            parsed = await migrateLegacySave({
+            const migration = await migrateLegacySave({
               legacyKey: DOG_STORAGE_KEY,
               activeKey,
             });
+            parsed = migration?.data || null;
           }
 
           if (!cancelled && parsed) {

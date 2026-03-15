@@ -5,25 +5,25 @@ import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import PageShell from "@/components/layout/PageShell.jsx";
 import { useDogSkillTreeState } from "@/hooks/useDogState.js";
-import { PATHS } from "@/routes.js";
+import { PATHS } from "@/app/routes.js";
 import {
   respecSkillTree,
   respecSkillTreeBranch,
   unlockSkillTreePerk,
-} from "@/redux/dogSlice.js";
+} from "@/store/dogSlice.js";
 import {
   selectSettings,
   setSkillTreeBranch,
   setSkillTreeShowUnlockedOnly,
   setSkillTreeCompactCards,
-} from "@/redux/settingsSlice.js";
+} from "@/store/settingsSlice.js";
 import {
   SKILL_TREE_BRANCHES,
   getSkillTreeBranchIdForPerk,
   getSkillTreePerkCost,
   getSkillTreeRequiredPerkIds,
   getSkillTreeUnlockCheck,
-} from "@/logic/skillTree.js";
+} from "@/features/training/skillTree.js";
 
 const BRANCH_STYLES = {
   companion: {

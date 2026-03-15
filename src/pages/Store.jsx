@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useToast } from "@/state/toastContext.js";
 import BackPill from "@/components/layout/BackPill.jsx";
-import SpriteSheetDog from "@/components/dog/SpriteSheetDog.jsx";
+import SpriteSheetDog from "@/components/dog/renderers/SpriteSheetDog.jsx";
 import DogCosmeticsOverlay from "@/components/dog/DogCosmeticsOverlay.jsx";
 import Tooltip from "@/components/ui/Tooltip.jsx";
 import { PageHeader } from "@/components/layout/PageSections.jsx";
@@ -16,15 +16,15 @@ import {
   purchaseCosmetic,
   equipCosmetic,
   setActiveToy,
-} from "@/redux/dogSlice.js";
-import { selectUserCoins, selectUserIsFounder } from "@/redux/userSlice.js";
+} from "@/store/dogSlice.js";
+import { selectUserCoins, selectUserIsFounder } from "@/store/userSlice.js";
 import {
   selectSettings,
   setStoreHoverPreview,
   setStoreShowEquippedFirst,
   setStoreCompactCards,
   setStoreSortKey,
-} from "@/redux/settingsSlice.js";
+} from "@/store/settingsSlice.js";
 
 const EMPTY_EQUIPPED = Object.freeze({
   collar: null,

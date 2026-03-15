@@ -4,7 +4,7 @@
 import { Link } from "react-router-dom";
 
 import PageShell from "@/components/layout/PageShell.jsx";
-import { PATHS } from "@/routes.js";
+import { PATHS } from "@/app/routes.js";
 import { withBaseUrl } from "@/utils/assetUtils.js";
 
 export default function Landing() {

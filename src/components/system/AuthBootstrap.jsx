@@ -2,14 +2,14 @@ import { useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { onAuthStateChanged } from "firebase/auth";
 
-import { auth, firebaseReady } from "@/firebase.js";
+import { auth, firebaseReady } from "@/lib/firebase/index.js";
 import { ensureAnonSignIn } from "@/lib/firebaseClient.js";
 import {
   clearUserAuth,
   selectIsAuthResolved,
   selectUserId,
   setUser,
-} from "@/redux/userSlice.js";
+} from "@/store/userSlice.js";
 import { debugError, debugLog } from "@/utils/debugLogger.js";
 
 export default function AuthBootstrap() {

@@ -5,7 +5,7 @@ import { useDispatch } from "react-redux";
 
 import PageShell from "@/components/layout/PageShell.jsx";
 import { useDogLegacyView } from "@/hooks/useDogState.js";
-import { startRainbowBridge, completeRainbowBridge } from "@/redux/dogSlice.js";
+import { startRainbowBridge, completeRainbowBridge } from "@/store/dogSlice.js";
 
 export default function RainbowBridge() {
   const dispatch = useDispatch();

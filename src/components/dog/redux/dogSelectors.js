@@ -6,8 +6,8 @@ import {
   getDogStageLabel,
   getDogStaticSpriteUrl,
 } from "@/utils/dogSpritePaths.js";
-import { derivePersonalityAnimationHint } from "@/logic/dogEngine.js";
-import { derivePersonalityProfile } from "@/logic/personalityProfile.js";
+import { derivePersonalityAnimationHint } from "@/features/dog/dogEngine.js";
+import { derivePersonalityProfile } from "@/features/dog/personalityProfile.js";
 import {
   getHealthAnimationState,
   resolveDogAnimationState,

@@ -3,10 +3,10 @@
 import * as React from "react";
 import { useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { AppShellContext } from "@/layout/AppShellContext.js";
-import { selectSettings } from "@/redux/settingsSlice.js";
-import { getPrimaryTabForPath } from "@/routes.js";
-import { selectUserZip } from "@/redux/userSlice.js";
+import { AppShellContext } from "@/components/layout/AppShellContext.js";
+import { selectSettings } from "@/store/settingsSlice.js";
+import { getPrimaryTabForPath } from "@/app/routes.js";
+import { selectUserZip } from "@/store/userSlice.js";
 import { useDayNight } from "@/hooks/useDayNight.js";
 
 function shouldReduceEffects(perfMode) {

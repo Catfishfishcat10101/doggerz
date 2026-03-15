@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 import PageShell from "@/components/layout/PageShell.jsx";
 import { PageFooter, PageHeader } from "@/components/layout/PageSections.jsx";
-import { selectSettings, setFaqCompactView } from "@/redux/settingsSlice.js";
+import { selectSettings, setFaqCompactView } from "@/store/settingsSlice.js";
 
 function nodeToText(node) {
   if (node == null || node === false) return "";

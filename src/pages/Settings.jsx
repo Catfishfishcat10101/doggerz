@@ -6,7 +6,7 @@ import { Capacitor } from "@capacitor/core";
 import { Geolocation } from "@capacitor/geolocation";
 import { useDispatch } from "react-redux";
 import { useDogVacation } from "@/hooks/useDogState.js";
-import { PATHS } from "@/routes.js";
+import { PATHS } from "@/app/routes.js";
 import {
   useUserActions,
   useUserSettingsView,
@@ -15,9 +15,9 @@ import {
   resetDogState,
   getDogStorageKey,
   setVacationMode,
-} from "../redux/dogSlice.js";
-import { USER_STORAGE_KEY } from "../redux/userSlice.js";
-import { auth, firebaseReady } from "../firebase.js";
+} from "../store/dogSlice.js";
+import { USER_STORAGE_KEY } from "../store/userSlice.js";
+import { auth, firebaseReady } from "../lib/firebase/index.js";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import {
   hydrateSettings,
@@ -113,7 +113,7 @@ import {
   setTrainingShowDetails,
   setTrainingSortKey,
   SETTINGS_STORAGE_KEY,
-} from "../redux/settingsSlice.js";
+} from "../store/settingsSlice.js";
 import PageShell from "../components/layout/PageShell.jsx";
 import { PageHeader } from "@/components/layout/PageSections.jsx";
 import { APP_VERSION } from "../utils/assetUtils.js";
