@@ -4453,18 +4453,6 @@ function StatusPill({ label, value, detail = "" }) {
   );
 }
 
-function EnvCard({ label, value, detail = "" }) {
-  return (
-    <div className="env-card">
-      <span className="env-label">{label}</span>
-      <span className="env-value">{value}</span>
-      {detail ? (
-        <div className="mt-1 text-xs text-[var(--text-muted)]">{detail}</div>
-      ) : null}
-    </div>
-  );
-}
-
 function CloudSyncChip({ label, detail = "", tone = "muted" }) {
   const toneClass =
     tone === "ok"
