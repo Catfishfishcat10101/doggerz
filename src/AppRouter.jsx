@@ -4,7 +4,12 @@
 // Central router for Doggerz (layout-safe)
 
 import * as React from "react";
-import { createBrowserRouter, Outlet, RouterProvider } from "react-router-dom";
+import {
+  Navigate,
+  createBrowserRouter,
+  Outlet,
+  RouterProvider,
+} from "react-router-dom";
 import { useSelector } from "react-redux";
 
 import { PATHS } from "./routes.js";
@@ -29,10 +34,8 @@ const AdoptPage = React.lazy(() => import("./pages/Adopt.jsx"));
 const LoginPage = React.lazy(() => import("./pages/Login.jsx"));
 const SignupPage = React.lazy(() => import("./pages/Signup.jsx"));
 const AboutPage = React.lazy(() => import("./pages/About.jsx"));
-const FaqPage = React.lazy(() => import("./pages/Faq.jsx"));
 const ContactPage = React.lazy(() => import("./pages/Contact.jsx"));
 const HelpPage = React.lazy(() => import("./pages/Help.jsx"));
-const DevelopersPage = React.lazy(() => import("./pages/Developers.jsx"));
 const SettingsPage = React.lazy(() => import("./pages/Settings.jsx"));
 const StorePage = React.lazy(() => import("./pages/Store.jsx"));
 const MemoryReelPage = React.lazy(() => import("./pages/MemoryReel.jsx"));
@@ -103,13 +106,17 @@ const utilityRoutes = Object.freeze([
   { path: PATHS.LOGIN, node: <LoginPage />, label: "Loading login…" },
   { path: PATHS.SIGNUP, node: <SignupPage />, label: "Loading sign up…" },
   { path: PATHS.ABOUT, node: <AboutPage />, label: "Loading about…" },
-  { path: PATHS.FAQ, node: <FaqPage />, label: "Loading FAQ…" },
+  {
+    path: PATHS.FAQ,
+    node: <Navigate to={PATHS.HELP} replace />,
+    label: "Redirecting to help…",
+  },
   { path: PATHS.CONTACT, node: <ContactPage />, label: "Loading contact…" },
   { path: PATHS.HELP, node: <HelpPage />, label: "Loading help…" },
   {
     path: PATHS.DEVELOPERS,
-    node: <DevelopersPage />,
-    label: "Loading developers…",
+    node: <Navigate to={PATHS.MENU} replace />,
+    label: "Redirecting to menu…",
   },
   {
     path: PATHS.SETTINGS,
@@ -264,6 +271,34 @@ const router = createBrowserRouter(
           element: <AppShell />,
           children: [
             { index: true, element: <HomeGate /> },
+            {
+              path: "landing",
+              element: <Navigate to={PATHS.HOME} replace />,
+            },
+            {
+              path: "homegate",
+              element: <Navigate to={PATHS.HOME} replace />,
+            },
+            {
+              path: "memoryreel",
+              element: <Navigate to={PATHS.MEMORIES} replace />,
+            },
+            {
+              path: "skilltree",
+              element: <Navigate to={PATHS.SKILL_TREE} replace />,
+            },
+            {
+              path: "temperamentreveal",
+              element: <Navigate to={PATHS.TEMPERAMENT_REVEAL} replace />,
+            },
+            {
+              path: "rainbowbridge",
+              element: <Navigate to={PATHS.RAINBOW_BRIDGE} replace />,
+            },
+            {
+              path: "notfound",
+              element: <Navigate to={PATHS.NOT_FOUND} replace />,
+            },
             ...utilityRoutes.map((route) => ({
               path: stripLeadingSlash(route.path),
               element: suspenseWithLabel(

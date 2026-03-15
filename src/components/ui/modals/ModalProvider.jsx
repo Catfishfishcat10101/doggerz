@@ -52,7 +52,10 @@ export function ModalProvider({ children }) {
   const closeModalById = React.useCallback((id) => {
     const key = String(id || "").trim();
     if (!key) return;
-    setStack((curr) => curr.filter((entry) => String(entry?.id || "") !== key));
+    setStack((curr) => {
+      const next = curr.filter((entry) => String(entry?.id || "") !== key);
+      return next.length === curr.length ? curr : next;
+    });
   }, []);
 
   const api = React.useMemo(

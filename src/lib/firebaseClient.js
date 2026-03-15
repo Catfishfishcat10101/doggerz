@@ -14,6 +14,24 @@ export { auth, db };
 
 let anonSignInPromise = null;
 
+export function isAnonymousFirebaseUser(user) {
+  return Boolean(user?.isAnonymous);
+}
+
+export function isFirestorePermissionError(error) {
+  const code = String(error?.code || "")
+    .trim()
+    .toLowerCase();
+  const message = String(error?.message || "")
+    .trim()
+    .toLowerCase();
+
+  return (
+    code.includes("permission-denied") ||
+    message.includes("missing or insufficient permissions")
+  );
+}
+
 /**
  * Ensure there is an authenticated user (anonymous if needed).
  * Returns the current user (or null if Firebase is not available).

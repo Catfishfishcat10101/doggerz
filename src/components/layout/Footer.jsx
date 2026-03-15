@@ -30,11 +30,8 @@ export default function Footer() {
                 Product
               </div>
               <nav className="mt-2 flex flex-col gap-1">
-                <Link to="/faq" className="hover:text-emerald-200">
-                  FAQs
-                </Link>
-                <Link to="/developers" className="hover:text-emerald-200">
-                  Developers
+                <Link to="/help" className="hover:text-emerald-200">
+                  Help
                 </Link>
                 <Link to="/settings" className="hover:text-emerald-200">
                   Settings

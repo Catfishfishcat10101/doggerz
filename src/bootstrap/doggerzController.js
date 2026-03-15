@@ -1,3 +1,4 @@
+// src/bootstrap/doggerzController.js
 import store from "@/redux/store.js";
 import {
   DOG_STORAGE_KEY,
@@ -30,6 +31,7 @@ import {
   getDogAnimSpriteUrl,
   getDogPixiSheetUrl,
 } from "@/utils/dogSpritePaths.js";
+// This module orchestrates the startup sequence of the Doggerz application, handling local data hydration, asset preloading, Firebase synchronization, and weather reality matching. It includes robust error handling to ensure a smooth user experience even when certain services are unavailable.
 
 const STARTUP_ASSET_TIMEOUT_MS = 5000;
 
@@ -42,6 +44,7 @@ function parseStoredJson(raw, label) {
     return null;
   }
 }
+// Builds a fallback weather snapshot for startup, using sunny/day defaults and including any relevant error information.
 
 export function buildFallbackWeatherSnapshot(zip, error) {
   return {
@@ -58,6 +61,7 @@ export function buildFallbackWeatherSnapshot(zip, error) {
     error: error ? String(error) : null,
   };
 }
+// Constructs a prioritized list of assets to preload at startup, based on the current dog render model and static fallbacks.
 
 export function buildStartupAssetList(state) {
   const renderModel = selectDogRenderModel(state || {});
@@ -78,14 +82,14 @@ export function buildStartupAssetList(state) {
     ),
   ];
 }
-
+// Preloads an image asset with a timeout, returning a result object indicating success or failure.
 function preloadImage(src, timeoutMs = STARTUP_ASSET_TIMEOUT_MS) {
   return new Promise((resolve) => {
     if (typeof window === "undefined" || typeof Image === "undefined") {
       resolve({ src, loaded: false, reason: "image_unavailable" });
       return;
     }
-
+    //
     const img = new Image();
     let settled = false;
     const timeoutId = setTimeout(() => {
@@ -115,6 +119,7 @@ function preloadImage(src, timeoutMs = STARTUP_ASSET_TIMEOUT_MS) {
     img.src = String(src || "");
   });
 }
+// Loads local fallback data for user, settings, and dog state from storage, and hydrates the Redux store accordingly. This allows the app to have a functional baseline state even if Firebase is unavailable at startup.
 
 async function loadLocalFallbacks() {
   const [userRaw, settingsRaw, dogRaw, dogLegacyRaw] = await Promise.all([
@@ -143,7 +148,7 @@ async function loadLocalFallbacks() {
 
   return store.getState();
 }
-
+// The main Doggerz controller object, providing methods for module registration, local fallback loading, Firebase synchronization, weather reality matching, and application initialization. It also includes a simple UI error message renderer for critical startup failures.
 const Doggerz = {
   registry: {
     modules: ["Firebase", "Weather", "Renderer", "Voice"],

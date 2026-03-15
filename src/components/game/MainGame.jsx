@@ -470,7 +470,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
     moving: false,
   });
   const [investigationProps, setInvestigationProps] = useState(() =>
-    createInvestigationProps(dog?.yard?.environment || "apartment")
+    createInvestigationProps(dog?.yard?.environment || "yard")
   );
   const [activeInvestigationId, setActiveInvestigationId] = useState("");
   const [treasureHunt, setTreasureHunt] = useState(null);
@@ -500,7 +500,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
   const pawPrintsEnabled = ["DIRTY", "FLEAS", "MANGE"].includes(
     cleanlinessTier
   );
-  const environmentMode = String(dog?.yard?.environment || "apartment")
+  const environmentMode = String(dog?.yard?.environment || "yard")
     .trim()
     .toLowerCase();
   const equippedBackdropId = String(dog?.cosmetics?.equipped?.backdrop || "")
@@ -2712,6 +2712,12 @@ export default function MainGame({ scene, dogInteractive = true }) {
     triggerActionFeedback,
   ]);
 
+  const handleGiveWater = useCallback(() => {
+    if (controlsDisabled) return;
+    triggerActionFeedback("water");
+    dispatch(giveWater({ now: Date.now() }));
+  }, [controlsDisabled, dispatch, triggerActionFeedback]);
+
   const handleSharePup = useCallback(async () => {
     triggerActionFeedback("share-pup");
     const pupName = dog?.name || "my Doggerz pup";
@@ -2793,40 +2799,71 @@ export default function MainGame({ scene, dogInteractive = true }) {
         reduceMotion={reduceMotion}
         reduceTransparency={reduceTransparency}
         holes={holes}
-        onButterflySpotted={() => {
-          runButterflyNoticeChase();
-        }}
+        onButterflySpotted={runButterflyNoticeChase}
       />
 
       <div className="main-scroll-container relative z-20 mx-auto w-full max-w-6xl">
         <div className="pup-card rounded-[28px] sm:p-6">
-          <OwnerBadge name={ownerName} avatarUrl={ownerAvatarUrl} />
-          <div className="mt-3 flex items-center gap-2 text-2xl font-black tracking-tight text-doggerz-bone sm:text-3xl">
-            <span>{dog?.name || "Your pup"}</span>
-            {isFounder ? (
-              <span className="inline-flex items-center rounded-full border border-sky-300/35 bg-sky-400/12 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.18em] text-sky-100 shadow-[0_0_20px_rgba(96,165,250,0.18)]">
-                Founder
-              </span>
-            ) : null}
-          </div>
-          <div className="env-grid mt-4">
-            <EnvCard
-              label="Time of Day"
-              value={displayTimeOfDay}
-              detail={scene?.label || "Backyard"}
-            />
-            <EnvCard
-              label="Weather"
-              value={scene?.weather || "Clear"}
-              detail={sceneLocationLabel || scene?.label || "Local"}
-            />
-          </div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <CloudSyncChip
-              label={cloudSyncUi.label}
-              detail={cloudSyncUi.detail}
-              tone={cloudSyncUi.tone}
-            />
+          <div className="rounded-[24px] border border-doggerz-leaf/25 bg-black/25 px-4 py-4 shadow-[0_14px_38px_rgba(2,6,23,0.22)]">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex items-center gap-3">
+                <OwnerBadge name={ownerName} avatarUrl={ownerAvatarUrl} />
+                <div>
+                  <div className="flex items-center gap-2 text-2xl font-black tracking-tight text-doggerz-bone sm:text-3xl">
+                    <span>{dog?.name || "Your pup"}</span>
+                    {isFounder ? (
+                      <span className="inline-flex items-center rounded-full border border-sky-300/35 bg-sky-400/12 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.18em] text-sky-100 shadow-[0_0_20px_rgba(96,165,250,0.18)]">
+                        Founder
+                      </span>
+                    ) : null}
+                  </div>
+                  <div className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-doggerz-paw/75">
+                    {scene?.label || "Backyard"} routine
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:min-w-[440px]">
+                <HudChip
+                  label="Level"
+                  value={`Lv ${overallLevel}`}
+                  tooltip="Overall progression level. Higher levels unlock tougher training tracks."
+                />
+                <HudChip
+                  label="Age"
+                  value={`${ageDays} Days`}
+                  tooltip="Age in days since adoption."
+                />
+                <HudChip
+                  label="Condition"
+                  value={displayMoodLabel}
+                  tooltip="Current emotional state based on needs and events."
+                />
+                <HudChip
+                  label="Stage"
+                  value={stageLabel}
+                  tooltip="Current life stage of your pup."
+                />
+              </div>
+            </div>
+
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <StatusPill
+                label="Time"
+                value={displayTimeOfDay}
+                detail={scene?.label || "Backyard"}
+              />
+              <StatusPill
+                label="Weather"
+                value={scene?.weather || "Clear"}
+                detail={sceneLocationLabel || "Local"}
+              />
+              <CloudSyncChip
+                label={cloudSyncUi.label}
+                detail={cloudSyncUi.detail}
+                tone={cloudSyncUi.tone}
+              />
+            </div>
           </div>
           <div className="mt-4 flex flex-col gap-4">
             <div className="order-3 space-y-4">
@@ -2902,7 +2939,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
                   tooltip="Current life stage of your pup."
                 />
                 <HudChip
-                  label="Mood"
+                  label="Condition"
                   value={displayMoodLabel}
                   tooltip="Current emotional state based on needs and events."
                 />
@@ -3348,6 +3385,89 @@ export default function MainGame({ scene, dogInteractive = true }) {
                   ) : null}
                   {!effectiveDogSleeping ? (
                     <>
+                      <div className="absolute inset-x-3 bottom-16 z-30">
+                        <div className="pointer-events-auto flex gap-2 overflow-x-auto rounded-2xl border border-white/10 bg-black/65 px-2 py-2 shadow-[0_14px_28px_rgba(2,6,23,0.35)] backdrop-blur-sm">
+                          <ViewportActionPill
+                            label="Feed"
+                            icon="🍖"
+                            active={activeActionFeedbackKey === "quick-feed"}
+                            disabled={controlsDisabled}
+                            onClick={handleQuickFeed}
+                          />
+                          <ViewportActionPill
+                            label="Water"
+                            icon="💧"
+                            active={activeActionFeedbackKey === "water"}
+                            disabled={controlsDisabled}
+                            onClick={handleGiveWater}
+                          />
+                          <ViewportActionPill
+                            label="Play"
+                            icon={isActionHijacked("play") ? "🕵️" : "🎾"}
+                            active={activeActionFeedbackKey === "play"}
+                            disabled={
+                              controlsDisabled ||
+                              toysIgnored ||
+                              isActionHijacked("play")
+                            }
+                            onClick={() => {
+                              if (toysIgnored || isActionHijacked("play")) {
+                                return;
+                              }
+                              dispatchPlayAction("viewport");
+                            }}
+                          />
+                          <ViewportActionPill
+                            label="Pet"
+                            icon={isActionHijacked("pet") ? "🕵️" : "🖐️"}
+                            active={activeActionFeedbackKey === "pet"}
+                            disabled={
+                              controlsDisabled || isActionHijacked("pet")
+                            }
+                            onClick={() => {
+                              if (isActionHijacked("pet")) return;
+                              triggerActionFeedback("pet");
+                              dispatch(petDog({ now: Date.now() }));
+                            }}
+                          />
+                          <ViewportActionPill
+                            label="Bath"
+                            icon={isActionHijacked("bath") ? "🕵️" : "🧼"}
+                            active={activeActionFeedbackKey === "bath"}
+                            disabled={
+                              controlsDisabled || isActionHijacked("bath")
+                            }
+                            onClick={() => {
+                              if (isActionHijacked("bath")) return;
+                              triggerActionFeedback("bath");
+                              dispatch(bathe({ now: Date.now() }));
+                            }}
+                          />
+                          <ViewportActionPill
+                            label="Potty"
+                            icon={isActionHijacked("potty") ? "🕵️" : "🌿"}
+                            active={activeActionFeedbackKey === "potty"}
+                            disabled={
+                              controlsDisabled || isActionHijacked("potty")
+                            }
+                            onClick={() => {
+                              if (isActionHijacked("potty")) return;
+                              triggerActionFeedback("potty");
+                              dispatch(goPotty({ now: Date.now() }));
+                            }}
+                          />
+                          <ViewportActionPill
+                            label="More"
+                            icon="✨"
+                            active={activeActionFeedbackKey === "interact"}
+                            disabled={controlsDisabled}
+                            onClick={() => {
+                              triggerActionFeedback("interact");
+                              setInteractionOpen(true);
+                            }}
+                          />
+                        </div>
+                      </div>
                       <DogToy
                         onSqueak={handleToySqueak}
                         itemType="food"
@@ -3872,6 +3992,37 @@ function ActionButton({
   );
 }
 
+function ViewportActionPill({
+  label,
+  icon,
+  onClick,
+  disabled = false,
+  active = false,
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`dz-touch-button dz-touch-hover flex min-w-[82px] shrink-0 items-center gap-2 rounded-2xl border border-doggerz-leaf/30 bg-black/50 px-3 py-2 text-left text-doggerz-bone transition disabled:cursor-not-allowed disabled:opacity-45 ${
+        active
+          ? "btn-feedback-pop border-doggerz-neon/50 bg-doggerz-neon/15"
+          : ""
+      }`}
+    >
+      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl border border-white/15 bg-white/5 text-base">
+        {icon}
+      </span>
+      <span className="leading-tight">
+        <span className="block text-sm font-bold">{label}</span>
+        <span className="block text-[10px] uppercase tracking-[0.12em] text-doggerz-paw/75">
+          Care
+        </span>
+      </span>
+    </button>
+  );
+}
+
 function InteractionSheet({
   onClose,
   onDropBowl,
@@ -4285,6 +4436,20 @@ function HudChip({ label, value, tooltip = "" }) {
         <div className="stat-value mt-0.5 text-sm font-bold">{value}</div>
       </div>
     </Tooltip>
+  );
+}
+
+function StatusPill({ label, value, detail = "" }) {
+  return (
+    <div className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-black/35 px-3 py-1.5 text-[11px] text-doggerz-bone shadow-[0_8px_18px_rgba(2,6,23,0.18)]">
+      <span className="uppercase tracking-[0.14em] text-doggerz-paw/80">
+        {label}
+      </span>
+      <span className="font-bold text-white">{value}</span>
+      {detail ? (
+        <span className="text-[10px] text-doggerz-paw/75">{detail}</span>
+      ) : null}
+    </div>
   );
 }
 

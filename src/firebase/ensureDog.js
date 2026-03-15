@@ -1,6 +1,10 @@
 import { serverTimestamp, setDoc, getDoc } from "firebase/firestore";
 import { dogMainDoc } from "./paths.js";
-import { ensureAnonSignIn } from "@/lib/firebaseClient.js";
+import {
+  ensureAnonSignIn,
+  isAnonymousFirebaseUser,
+  isFirestorePermissionError,
+} from "@/lib/firebaseClient.js";
 import { db } from "@/firebase.js";
 
 function _defaultDogPayload() {
@@ -31,6 +35,15 @@ export async function ensureDogMain(uid) {
   const user = await ensureAnonSignIn();
   const targetUid = uid || user?.uid;
   if (!targetUid) throw new Error("User ID is required");
+  if (isAnonymousFirebaseUser(user)) {
+    return {
+      created: false,
+      ref: null,
+      data: null,
+      skipped: true,
+      reason: "anonymous_session",
+    };
+  }
 
   const ref = dogMainDoc(targetUid);
   if (!ref) {
@@ -55,6 +68,15 @@ export async function ensureDogMain(uid) {
       data: { ...payload, createdAt: Date.now() }, // Local estimate of the timestamp
     };
   } catch (err) {
+    if (isFirestorePermissionError(err)) {
+      return {
+        created: false,
+        ref,
+        data: null,
+        skipped: true,
+        reason: "permission_denied",
+      };
+    }
     console.error("[Doggerz] Database check failed:", err);
     throw err;
   }

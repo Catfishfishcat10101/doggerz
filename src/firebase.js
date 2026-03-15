@@ -1,7 +1,12 @@
 // src/firebase.js
 import { initializeApp, getApps } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { enableIndexedDbPersistence, getFirestore } from "firebase/firestore";
+import {
+  getFirestore,
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+} from "firebase/firestore";
 
 const cfg = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -24,46 +29,51 @@ export const firebaseError = firebaseReady
       `Firebase env vars missing: ${firebaseMissingKeys.join(", ")}. Check .env (must start with VITE_).`
     );
 
+let firestoreInstance = null;
 let firestorePersistencePromise = null;
 
-function startFirestorePersistence(db) {
-  if (!db || typeof window === "undefined") {
-    return Promise.resolve({ enabled: false, reason: "unavailable" });
+function initFirestoreDb(app) {
+  if (firestoreInstance) return firestoreInstance;
+
+  if (typeof window === "undefined") {
+    firestoreInstance = getFirestore(app);
+    firestorePersistencePromise = Promise.resolve({
+      enabled: false,
+      reason: "unavailable",
+    });
+    return firestoreInstance;
   }
 
-  if (!firestorePersistencePromise) {
-    firestorePersistencePromise = enableIndexedDbPersistence(db)
-      .then(() => ({ enabled: true, reason: null }))
-      .catch((error) => {
-        const code = String(error?.code || "unknown");
-
-        if (code === "failed-precondition") {
-          console.warn(
-            "[Doggerz] Firestore persistence unavailable because another tab already owns it."
-          );
-        } else if (code === "unimplemented") {
-          console.warn(
-            "[Doggerz] Firestore persistence is not supported in this environment."
-          );
-        } else {
-          console.warn(
-            "[Doggerz] Firestore persistence failed to start:",
-            error
-          );
-        }
-
-        return { enabled: false, reason: code, error };
-      });
+  try {
+    firestoreInstance = initializeFirestore(app, {
+      localCache: persistentLocalCache({
+        tabManager: persistentMultipleTabManager(),
+      }),
+    });
+    firestorePersistencePromise = Promise.resolve({
+      enabled: true,
+      reason: null,
+    });
+  } catch (error) {
+    console.warn(
+      "[Doggerz] Firestore persistent cache failed to initialize; falling back to default cache.",
+      error
+    );
+    firestoreInstance = getFirestore(app);
+    firestorePersistencePromise = Promise.resolve({
+      enabled: false,
+      reason: "fallback",
+      error,
+    });
   }
 
-  return firestorePersistencePromise;
+  return firestoreInstance;
 }
 
 export function initFirebase() {
   if (!firebaseReady) return { app: null, auth: null, db: null };
   const app = getApps().length ? getApps()[0] : initializeApp(cfg);
-  const db = getFirestore(app);
-  void startFirestorePersistence(db);
+  const db = initFirestoreDb(app);
   return { app, auth: getAuth(app), db };
 }
 
@@ -73,7 +83,9 @@ export function ensureFirebasePersistence() {
   }
 
   const { db } = initFirebase();
-  return startFirestorePersistence(db);
+  return (
+    firestorePersistencePromise || Promise.resolve({ enabled: Boolean(db) })
+  );
 }
 
 export function assertFirebaseReady() {

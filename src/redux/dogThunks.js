@@ -3,7 +3,11 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import { getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "@/firebase.js";
 import { dogMainDoc } from "@/firebase/paths.js";
-import { ensureAnonSignIn } from "@/lib/firebaseClient.js";
+import {
+  ensureAnonSignIn,
+  isAnonymousFirebaseUser,
+  isFirestorePermissionError,
+} from "@/lib/firebaseClient.js";
 import {
   hydrateDog,
   setAdoptedAt,
@@ -146,6 +150,12 @@ export const loadDogFromCloud = createAsyncThunk(
       }
       const user = await ensureAnonSignIn();
       const userId = user?.uid || auth?.currentUser?.uid;
+      if (isAnonymousFirebaseUser(user)) {
+        dispatch(
+          setUser({ cloudSync: { status: "local", errorMessage: null } })
+        );
+        return rejectWithValue("Cloud sync disabled for anonymous session");
+      }
       if (!userId) {
         dispatch(
           setUser({ cloudSync: { status: "local", errorMessage: null } })
@@ -207,12 +217,15 @@ export const loadDogFromCloud = createAsyncThunk(
       dispatch(saveDogToCloud());
       return { hydrated: false, reason: "local_is_newer" };
     } catch (err) {
+      const permissionDenied = isFirestorePermissionError(err);
       dispatch(
         setUser({
           cloudSync: {
-            status: "error",
+            status: permissionDenied ? "local" : "error",
             lastAttemptAt: Date.now(),
-            errorMessage: err?.message || "Cloud load failed",
+            errorMessage: permissionDenied
+              ? null
+              : err?.message || "Cloud load failed",
           },
         })
       );
@@ -238,6 +251,12 @@ export const saveDogToCloud = createAsyncThunk(
       const userId = user?.uid || auth?.currentUser?.uid;
       const state = getState();
       const dogState = state.dog;
+      if (isAnonymousFirebaseUser(user)) {
+        dispatch(
+          setUser({ cloudSync: { status: "local", errorMessage: null } })
+        );
+        return rejectWithValue("Cloud sync disabled for anonymous session");
+      }
 
       if (!userId || !dogState?.adoptedAt)
         return rejectWithValue("No dog to sync");
@@ -269,12 +288,15 @@ export const saveDogToCloud = createAsyncThunk(
       );
       return { success: true };
     } catch (err) {
+      const permissionDenied = isFirestorePermissionError(err);
       dispatch(
         setUser({
           cloudSync: {
-            status: "error",
+            status: permissionDenied ? "local" : "error",
             lastAttemptAt: Date.now(),
-            errorMessage: err?.message || "Cloud save failed",
+            errorMessage: permissionDenied
+              ? null
+              : err?.message || "Cloud save failed",
           },
         })
       );

@@ -57,6 +57,7 @@
     "@capacitor-community/admob": "^8.0.0",
     "@capacitor/android": "8.0.2",
     "@capacitor/app": "^8.0.1",
+    "@capacitor/assets": "^3.0.5",
     "@capacitor/core": "8.0.2",
     "@capacitor/filesystem": "^8.1.2",
     "@capacitor/geolocation": "^8.1.0",

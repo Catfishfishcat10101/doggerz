@@ -1,6 +1,6 @@
 // src/components/game/EnvironmentScene.jsx
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 const LEAF_LAYOUT = Object.freeze([
   { left: 8, top: 8, size: 8, duration: 13, delay: -2.3, dx: 44, rot: 230 },
@@ -360,6 +360,11 @@ export default function EnvironmentScene({
 
   const [butterfly, setButterfly] = useState(null);
   const [owlVisible, setOwlVisible] = useState(false);
+  const onButterflySpottedRef = useRef(onButterflySpotted);
+
+  useEffect(() => {
+    onButterflySpottedRef.current = onButterflySpotted;
+  }, [onButterflySpotted]);
 
   const activeLeaves = useMemo(() => {
     if (resolvedSeason === "winter") return [];
@@ -424,12 +429,12 @@ export default function EnvironmentScene({
         setButterfly({ key: entryKey, flightMs, topPct, scale });
 
         if (
-          typeof onButterflySpotted === "function" &&
+          typeof onButterflySpottedRef.current === "function" &&
           !dogSleeping &&
           energyLevel > 20
         ) {
           setSafeTimeout(() => {
-            if (!cancelled) onButterflySpotted();
+            if (!cancelled) onButterflySpottedRef.current?.();
           }, flightMs * 0.44);
         }
 
@@ -458,7 +463,6 @@ export default function EnvironmentScene({
     dogSleeping,
     energyLevel,
     isNight,
-    onButterflySpotted,
     profileConfig.butterflySpawnChance,
     timeSegment,
   ]);

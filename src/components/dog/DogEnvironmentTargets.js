@@ -119,9 +119,9 @@ const APARTMENT_TARGETS = Object.freeze([
 ]);
 
 function getStaticTargets(environment) {
-  return String(environment || "").toLowerCase() === "yard"
-    ? YARD_TARGETS
-    : APARTMENT_TARGETS;
+  return String(environment || "yard").toLowerCase() === "apartment"
+    ? APARTMENT_TARGETS
+    : YARD_TARGETS;
 }
 
 function createFoodBowlTarget(dog) {
@@ -143,7 +143,7 @@ function createFoodBowlTarget(dog) {
 }
 
 export function getDogEnvironmentTargets(dog) {
-  const environment = dog?.yard?.environment || "apartment";
+  const environment = dog?.yard?.environment || "yard";
   const staticTargets = getStaticTargets(environment).map(toWorldTarget);
   const dynamicTargets = [];
   const bowlTarget = createFoodBowlTarget(dog);

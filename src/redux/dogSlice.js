@@ -6,7 +6,7 @@ export const selectDogGrowthMilestone = (state) =>
 export const selectDogAnimation = (state) =>
   state?.dog?.animation || DEFAULT_ANIMATION_STATE;
 
-import { createSlice } from "@reduxjs/toolkit";
+import { createSelector, createSlice } from "@reduxjs/toolkit";
 import {
   calculateDogAge,
   getAgeBucketLabel,
@@ -188,10 +188,7 @@ const STOLENABLE_ACTION_KEYS = Object.freeze([
   "train",
   "store",
 ]);
-const YARD_ENVIRONMENTS = Object.freeze({
-  APARTMENT: "apartment",
-  YARD: "yard",
-});
+const YARD_ENVIRONMENT = "yard";
 const DEFAULT_VACATION_STATE = Object.freeze({
   enabled: false,
   multiplier: 0,
@@ -405,24 +402,15 @@ function unlockObedienceCommand(state, commandId, now = nowMs(), opts = {}) {
 function ensureYardState(state) {
   if (!state.yard || typeof state.yard !== "object") {
     state.yard = {
-      environment: YARD_ENVIRONMENTS.APARTMENT,
+      environment: YARD_ENVIRONMENT,
       holes: [],
       foodBowl: null,
       chewBoneAvailable: false,
-      lastTableTheftAt: null,
     };
     return state.yard;
   }
 
-  const environment = String(
-    state.yard.environment || YARD_ENVIRONMENTS.APARTMENT
-  )
-    .trim()
-    .toLowerCase();
-  state.yard.environment =
-    environment === YARD_ENVIRONMENTS.YARD
-      ? YARD_ENVIRONMENTS.YARD
-      : YARD_ENVIRONMENTS.APARTMENT;
+  state.yard.environment = YARD_ENVIRONMENT;
 
   if (!Array.isArray(state.yard.holes)) {
     state.yard.holes = [];
@@ -434,26 +422,8 @@ function ensureYardState(state) {
   if (typeof state.yard.chewBoneAvailable !== "boolean") {
     state.yard.chewBoneAvailable = false;
   }
-  const lastTableTheftAt = Number(state.yard.lastTableTheftAt);
-  state.yard.lastTableTheftAt = Number.isFinite(lastTableTheftAt)
-    ? lastTableTheftAt
-    : null;
 
   return state.yard;
-}
-
-function getYardEnvironment(state) {
-  return ensureYardState(state).environment || YARD_ENVIRONMENTS.APARTMENT;
-}
-
-function isApartmentEnvironment(state) {
-  return getYardEnvironment(state) === YARD_ENVIRONMENTS.APARTMENT;
-}
-
-function isApartmentLowTableZone(xNorm, yNorm) {
-  const x = clamp(Number(xNorm || 0), 0, 1);
-  const y = clamp(Number(yNorm || 0), 0, 1);
-  return x >= 0.56 && x <= 0.82 && y >= 0.42 && y <= 0.62;
 }
 
 function ensureInventoryState(state) {
@@ -749,51 +719,6 @@ function maybeConsumeFoodBowl(state, now, opts = {}) {
     { skipDecay: true }
   );
   yard.foodBowl = null;
-  return true;
-}
-
-function maybeStealApartmentTableFood(state, now) {
-  const yard = ensureYardState(state);
-  const bowl = yard.foodBowl;
-  if (!isApartmentEnvironment(state) || !bowl) return false;
-  if (String(bowl.surface || "") !== "low_table") return false;
-
-  const stealReadyAt = Number(
-    bowl.stealReadyAt || bowl.readyAt || bowl.placedAt || 0
-  );
-  if (stealReadyAt && now < stealReadyAt) return false;
-
-  const lastTableTheftAt = Number(yard.lastTableTheftAt || 0);
-  if (lastTableTheftAt && now - lastTableTheftAt < 12_000) return false;
-
-  const hunger = Number(state.stats?.hunger ?? 0);
-  const spicyBoost = hasTemperamentTag(state, "SPICY") ? 10 : 0;
-  const threshold = Math.max(18, 26 - spicyBoost);
-  if (hunger < threshold) return false;
-
-  const consumed = maybeConsumeFoodBowl(state, now, {
-    hungerThreshold: threshold,
-    action: "table_theft",
-  });
-  if (!consumed) return false;
-
-  yard.lastTableTheftAt = now;
-  state.stats.happiness = clamp(Number(state.stats.happiness || 0) + 2, 0, 100);
-  state.stats.mentalStimulation = clamp(
-    Number(state.stats.mentalStimulation || 0) + 4,
-    0,
-    100
-  );
-  state.lastAction = "table_theft";
-
-  pushJournalEntry(state, {
-    type: "SURPRISE",
-    moodTag: "SASSY",
-    summary: "Low-table snack stolen",
-    body: "You left food on the apartment table and your pup swiped it the second you looked away.",
-    timestamp: now,
-  });
-
   return true;
 }
 function getTemperamentTags(state) {
@@ -1584,11 +1509,10 @@ const initialState = {
   // Used by UI renderers/selectors to derive simple animation hints
   lastAction: null,
   yard: {
-    environment: YARD_ENVIRONMENTS.APARTMENT,
+    environment: YARD_ENVIRONMENT,
     holes: [],
     foodBowl: null,
     chewBoneAvailable: false,
-    lastTableTheftAt: null,
   },
   animation: { ...DEFAULT_ANIMATION_STATE },
   fsm: { ...DOG_FSM_DEFAULT },
@@ -3102,10 +3026,7 @@ function applyWorldTick(state, payload) {
     );
   }
 
-  const tableTheftTriggered = maybeStealApartmentTableFood(state, now);
-  if (!tableTheftTriggered) {
-    maybeConsumeFoodBowl(state, now);
-  }
+  maybeConsumeFoodBowl(state, now);
 
   if (
     !state.isAsleep &&
@@ -3554,40 +3475,46 @@ function finalizeDerivedState(state, now = nowMs()) {
 }
 
 function ensureVacationState(state) {
-  if (!state.vacation || typeof state.vacation !== "object") {
-    state.vacation = { ...DEFAULT_VACATION_STATE };
-    return state.vacation;
+  return ensureVacationStateInternal(state, true);
+}
+
+function normalizeVacationState(vacation) {
+  if (!vacation || typeof vacation !== "object") {
+    return { ...DEFAULT_VACATION_STATE };
   }
 
-  state.vacation.enabled = Boolean(state.vacation.enabled);
-
-  const mult = Number(state.vacation.multiplier);
+  const mult = Number(vacation.multiplier);
   const normalized = Number.isFinite(mult)
     ? clamp(mult, 0, 1)
     : DEFAULT_VACATION_STATE.multiplier;
-  state.vacation.multiplier =
-    normalized === LEGACY_VACATION_MULTIPLIER
-      ? DEFAULT_VACATION_STATE.multiplier
-      : normalized;
+  const skipped = Number(vacation.skippedMs);
 
-  if (typeof state.vacation.startedAt !== "number") {
-    state.vacation.startedAt = null;
+  return {
+    enabled: Boolean(vacation.enabled),
+    multiplier:
+      normalized === LEGACY_VACATION_MULTIPLIER
+        ? DEFAULT_VACATION_STATE.multiplier
+        : normalized,
+    startedAt:
+      typeof vacation.startedAt === "number" ? vacation.startedAt : null,
+    skippedMs: Number.isFinite(skipped) ? Math.max(0, skipped) : 0,
+  };
+}
+
+function ensureVacationStateInternal(state, mutate) {
+  const normalized = normalizeVacationState(state?.vacation);
+  if (mutate && state && state.vacation !== normalized) {
+    state.vacation = normalized;
   }
-
-  const skipped = Number(state.vacation.skippedMs);
-  state.vacation.skippedMs = Number.isFinite(skipped)
-    ? Math.max(0, skipped)
-    : 0;
-
-  return state.vacation;
+  return normalized;
 }
 
 function getVacationAdjustedNow(state, now = nowMs()) {
-  const v = ensureVacationState(state);
+  const v = ensureVacationStateInternal(state, false);
   const baseSkipped = Number(v.skippedMs) || 0;
 
   if (v.enabled && typeof v.startedAt !== "number") {
-    v.startedAt = now;
+    return Math.max(0, now - baseSkipped);
   }
 
   if (!v.enabled || typeof v.startedAt !== "number") {
@@ -4636,8 +4563,6 @@ const dogSlice = createSlice({
       const readyDelayMs = Number(payload?.readyDelayMs ?? 900);
       const placedAt = now;
       const readyAt = placedAt + Math.max(0, readyDelayMs);
-      const lowTablePlacement =
-        isApartmentEnvironment(state) && isApartmentLowTableZone(xNorm, yNorm);
 
       yard.foodBowl = {
         id: `${placedAt}-${Math.random().toString(36).slice(2, 8)}`,
@@ -4645,8 +4570,6 @@ const dogSlice = createSlice({
         yNorm,
         placedAt,
         readyAt,
-        surface: lowTablePlacement ? "low_table" : "floor",
-        stealReadyAt: lowTablePlacement ? readyAt + 2400 : null,
       };
     },
 
@@ -6561,10 +6484,10 @@ export const selectDogMoodLabel = (state) => {
   return "Content";
 };
 
-export const selectDogAgeInfo = (state) => {
-  const age = getDerivedDogAgeProgress(state.dog, Date.now());
-  const fallbackStage = state.dog?.lifeStage?.stage || LIFE_STAGES.PUPPY;
-  const fallbackDays = state.dog?.lifeStage?.days || 0;
+export const selectDogAgeInfo = createSelector([selectDog], (dog) => {
+  const age = getDerivedDogAgeProgress(dog, Date.now());
+  const fallbackStage = dog?.lifeStage?.stage || LIFE_STAGES.PUPPY;
+  const fallbackDays = dog?.lifeStage?.days || 0;
   if (age) {
     const lifecycleWindow = getLifecycleWindowFlags(age.days);
     return {
@@ -6582,8 +6505,8 @@ export const selectDogAgeInfo = (state) => {
     ageInGameDays: fallbackDays,
     stage: fallbackStage,
     stageId: fallbackStage,
-    label: state.dog?.lifeStage?.label || getLifeStageLabel(fallbackStage),
-    stageLabel: state.dog?.lifeStage?.label || getLifeStageLabel(fallbackStage),
+    label: dog?.lifeStage?.label || getLifeStageLabel(fallbackStage),
+    stageLabel: dog?.lifeStage?.label || getLifeStageLabel(fallbackStage),
     stageProgress: 0,
     stageProgressPct: 0,
     daysUntilNextStage: null,
@@ -6593,43 +6516,46 @@ export const selectDogAgeInfo = (state) => {
     progressLabel: getLifeStageProgressLabel({ stage: fallbackStage }),
     ui: stageUi,
   };
-};
+});
 
-export const selectDogLifecycleWindow = (state) => {
-  const ageInfo = selectDogAgeInfo(state);
-  return {
+export const selectDogLifecycleWindow = createSelector(
+  [selectDogAgeInfo],
+  (ageInfo) => ({
     ageDays: Number(ageInfo?.ageDays ?? ageInfo?.days ?? 0),
     isFinalStretchImmune: Boolean(ageInfo?.isFinalStretchImmune),
     isFarewellReady: Boolean(ageInfo?.isFarewellReady),
     daysUntilFarewell: Number(ageInfo?.daysUntilFarewell ?? 0),
-  };
-};
+  })
+);
 
-export const selectDogCleanlinessMeta = (state) => {
-  const tier = state.dog?.cleanlinessTier || "FRESH";
-  return {
-    tier,
-    label: getCleanlinessLabel(tier),
-    severity: getCleanlinessSeverity(tier),
-    ui: getCleanlinessUi(tier),
-    penalties:
-      CLEANLINESS_TIER_EFFECTS[String(tier).toUpperCase()]?.penalties || null,
-  };
-};
+export const selectDogCleanlinessMeta = createSelector(
+  [selectDogCleanlinessTier],
+  (cleanlinessTier) => {
+    const tier = cleanlinessTier || "FRESH";
+    return {
+      tier,
+      label: getCleanlinessLabel(tier),
+      severity: getCleanlinessSeverity(tier),
+      ui: getCleanlinessUi(tier),
+      penalties:
+        CLEANLINESS_TIER_EFFECTS[String(tier).toUpperCase()]?.penalties || null,
+    };
+  }
+);
 
-export const selectDogNeedsNormalized = (state) => {
-  const stats = state.dog?.stats || {};
-  return {
+export const selectDogNeedsNormalized = createSelector(
+  [selectDogStats, selectDogBond, (state) => state.dog?.pottyLevel || 0],
+  (stats, bond, pottyLevel) => ({
     food: clamp01(1 - Number(stats.hunger || 0) / 100),
     water: clamp01(1 - Number(stats.thirst || 0) / 100),
     energy: clamp01(Number(stats.energy || 0) / 100),
     happiness: clamp01(Number(stats.happiness || 0) / 100),
     health: clamp01(Number(stats.health || 0) / 100),
-    potty: clamp01(1 - Number(state.dog?.pottyLevel || 0) / 100),
+    potty: clamp01(1 - Number(pottyLevel || 0) / 100),
     cleanliness: clamp01(Number(stats.cleanliness || 0) / 100),
-    bond: clamp01(Number(state.dog?.bond?.value || 0) / 100),
-  };
-};
+    bond: clamp01(Number(bond?.value || 0) / 100),
+  })
+);
 
 export const selectNextStreakReward = (state) => {
   const dog = state.dog;

@@ -45,6 +45,10 @@ import {
   migrateLegacySave,
   saveLocalSave,
 } from "@/logic/LocalSaveManager.js";
+import {
+  isAnonymousFirebaseUser,
+  isFirestorePermissionError,
+} from "@/lib/firebaseClient.js";
 import { fetchRealTimeWeather } from "@/logic/RealTimeWeatherFetcher.js";
 import { debugError, debugLog, debugWarn } from "@/utils/debugLogger.js";
 import { PATHS } from "@/routes.js";
@@ -128,6 +132,10 @@ export default function DogAIEngine({
   const userId = authResolved ? storedUserId : null;
   const liveAuthUserId =
     authResolved && auth?.currentUser?.uid === userId ? userId : null;
+  const cloudAuthUserId =
+    liveAuthUserId && !isAnonymousFirebaseUser(auth?.currentUser)
+      ? liveAuthUserId
+      : null;
   const shouldRunReduxHeartbeat = location?.pathname !== PATHS.GAME;
 
   const hasHydratedRef = useRef(false);
@@ -559,17 +567,23 @@ export default function DogAIEngine({
   }, [userId]);
 
   useEffect(() => {
-    if (!firebaseReady || !liveAuthUserId) return;
+    if (!authResolved) return;
+    if (cloudAuthUserId) return;
+    dispatch(setUser({ cloudSync: { status: "local", errorMessage: null } }));
+  }, [authResolved, cloudAuthUserId, dispatch]);
 
-    ensureDogMain(liveAuthUserId).catch((err) => {
+  useEffect(() => {
+    if (!firebaseReady || !cloudAuthUserId) return;
+
+    ensureDogMain(cloudAuthUserId).catch((err) => {
       debugError("DogAI", "ensure cloud document failed", err);
       console.error("[Doggerz] Failed to ensure cloud document:", err);
     });
-  }, [liveAuthUserId]);
+  }, [cloudAuthUserId]);
 
   useEffect(() => {
-    if (!firebaseReady || !db || !liveAuthUserId) return undefined;
-    const profileRef = userProfileDoc(liveAuthUserId);
+    if (!firebaseReady || !db || !cloudAuthUserId) return undefined;
+    const profileRef = userProfileDoc(cloudAuthUserId);
     if (!profileRef) return undefined;
 
     const unsub = onSnapshot(
@@ -615,6 +629,16 @@ export default function DogAIEngine({
         );
       },
       (err) => {
+        if (isFirestorePermissionError(err)) {
+          dispatch(
+            setUser({ cloudSync: { status: "local", errorMessage: null } })
+          );
+          debugLog("DogAI", "user profile watch disabled", {
+            userId: cloudAuthUserId,
+            reason: "permission_denied",
+          });
+          return;
+        }
         debugError("DogAI", "user profile watch failed", err);
         console.error("[Doggerz] Failed to watch user profile:", err);
       }
@@ -627,11 +651,11 @@ export default function DogAIEngine({
         // ignore
       }
     };
-  }, [dispatch, liveAuthUserId]);
+  }, [cloudAuthUserId, dispatch]);
 
   useEffect(() => {
-    if (!firebaseReady || !db || !liveAuthUserId) return undefined;
-    const profileRef = userProfileDoc(liveAuthUserId);
+    if (!firebaseReady || !db || !cloudAuthUserId) return undefined;
+    const profileRef = userProfileDoc(cloudAuthUserId);
     if (!profileRef) return undefined;
 
     const normalizedZip = normalizeZipCode(zip);
@@ -656,10 +680,17 @@ export default function DogAIEngine({
         );
         lastSyncedZipRef.current = normalizedZip;
         debugLog("DogAI", "user profile zip synced", {
-          userId: liveAuthUserId,
+          userId: cloudAuthUserId,
           zip: normalizedZip,
         });
       } catch (err) {
+        if (isFirestorePermissionError(err)) {
+          dispatch(
+            setUser({ cloudSync: { status: "local", errorMessage: null } })
+          );
+          pendingZipSyncRef.current = null;
+          return;
+        }
         debugError("DogAI", "user profile zip sync failed", err);
         pendingZipSyncRef.current = null;
       } finally {
@@ -673,7 +704,7 @@ export default function DogAIEngine({
         profileSyncTimeoutRef.current = null;
       }
     };
-  }, [liveAuthUserId, zip]);
+  }, [cloudAuthUserId, dispatch, zip]);
 
   useEffect(() => {
     if (!isFounder) return;
@@ -787,12 +818,12 @@ export default function DogAIEngine({
       if (cancelled) return;
 
       // Cloud hydrate if logged in at mount time
-      if (liveAuthUserId) {
-        lastHydratedUserIdRef.current = liveAuthUserId;
-        lastHydratedCloudUserId = liveAuthUserId;
+      if (cloudAuthUserId) {
+        lastHydratedUserIdRef.current = cloudAuthUserId;
+        lastHydratedCloudUserId = cloudAuthUserId;
         const thunkPromise = dispatch(loadDogFromCloud());
         debugLog("DogAI", "cloud hydrate requested", {
-          userId: liveAuthUserId,
+          userId: cloudAuthUserId,
         });
 
         // RTK's unwrap if available; fall back to raw promise
@@ -825,20 +856,20 @@ export default function DogAIEngine({
     return () => {
       cancelled = true;
     };
-  }, [dispatch, dogState?.adoptedAt, liveAuthUserId]);
+  }, [cloudAuthUserId, dispatch, dogState?.adoptedAt]);
 
   // 1b. If user logs in *after* mount, pull from cloud once
   useEffect(() => {
-    if (!liveAuthUserId) return;
+    if (!cloudAuthUserId) return;
     if (!hasHydratedRef.current) return; // let the first effect run first
-    if (lastHydratedUserIdRef.current === liveAuthUserId) return;
-    if (lastHydratedCloudUserId === liveAuthUserId) return;
+    if (lastHydratedUserIdRef.current === cloudAuthUserId) return;
+    if (lastHydratedCloudUserId === cloudAuthUserId) return;
 
     const thunkPromise = dispatch(loadDogFromCloud());
-    lastHydratedUserIdRef.current = liveAuthUserId;
-    lastHydratedCloudUserId = liveAuthUserId;
+    lastHydratedUserIdRef.current = cloudAuthUserId;
+    lastHydratedCloudUserId = cloudAuthUserId;
     debugLog("DogAI", "late cloud hydrate requested", {
-      userId: liveAuthUserId,
+      userId: cloudAuthUserId,
     });
 
     if (thunkPromise && typeof thunkPromise.unwrap === "function") {
@@ -871,7 +902,7 @@ export default function DogAIEngine({
           console.error("[Doggerz] Late cloud load failed", err);
         });
     }
-  }, [dispatch, liveAuthUserId]);
+  }, [cloudAuthUserId, dispatch]);
 
   // Daily reward availability check (runs after hydration and whenever claim changes).
   useEffect(() => {
@@ -929,7 +960,7 @@ export default function DogAIEngine({
   // 3. Debounced cloud save whenever dogState changes while logged in
   useEffect(() => {
     if (!dogState || !dogState.adoptedAt) return;
-    if (!liveAuthUserId || !auth) return;
+    if (!cloudAuthUserId || !auth) return;
 
     // Clear existing timeout if any
     if (cloudSaveTimeoutRef.current) {
@@ -938,9 +969,10 @@ export default function DogAIEngine({
 
     // Schedule new debounced save
     cloudSaveTimeoutRef.current = setTimeout(() => {
-      if (!auth?.currentUser || auth.currentUser.uid !== liveAuthUserId) return;
+      if (!auth?.currentUser || auth.currentUser.uid !== cloudAuthUserId)
+        return;
       debugLog("DogAI", "debounced cloud save dispatched", {
-        userId: liveAuthUserId,
+        userId: cloudAuthUserId,
         lastAction: dogState?.lastAction || null,
       });
       dispatch(saveDogToCloud());
@@ -952,7 +984,7 @@ export default function DogAIEngine({
         clearTimeout(cloudSaveTimeoutRef.current);
       }
     };
-  }, [dispatch, dogState, liveAuthUserId]);
+  }, [cloudAuthUserId, dispatch, dogState]);
 
   useEffect(() => {
     return () => {

@@ -56,7 +56,7 @@ function shouldReduceEffects(perfMode) {
 }
 
 export default function GamePage() {
-  const modal = useModal();
+  const { active: activeModal, openOnce, closeModalById } = useModal();
   const dog = useDog();
   const zip = useSelector(selectUserZip);
   const isAuthResolved = useSelector(selectIsAuthResolved);
@@ -67,6 +67,7 @@ export default function GamePage() {
   const settings = useSelector(selectSettings);
   const [rewardNow, setRewardNow] = useState(() => Date.now());
   const [adoptionGateReady, setAdoptionGateReady] = useState(false);
+  const activeModalId = String(activeModal?.id || "").trim();
   const lifecycleStatus = String(dog?.lifecycleStatus || "NONE").toUpperCase();
   const lifecycleNoticeKey =
     lifecycleStatus === "FAREWELL"
@@ -157,8 +158,7 @@ export default function GamePage() {
   const scene = useMemo(
     () => ({
       label:
-        String(dog?.yard?.environment || "apartment").toLowerCase() ===
-        "apartment"
+        String(dog?.yard?.environment || "yard").toLowerCase() === "apartment"
           ? "Apartment"
           : "Backyard",
       timeOfDay: titleCase(timeOfDayBucket || (isNight ? "night" : "day")),
@@ -194,24 +194,26 @@ export default function GamePage() {
 
   useEffect(() => {
     if (!dog?.adoptedAt) return;
-    if (modal.active) return;
+    if (activeModal) return;
     if (!dailyRewardState?.canClaim) return;
     const todayMs = Number(dailyRewardState?.todayMs || 0);
-    modal.openOnce(
+    openOnce(
       `dailyReward:${todayMs || "unknown"}`,
       "dailyReward",
       { rewardState: dailyRewardState },
       { replace: false }
     );
-  }, [dailyRewardState, dog?.adoptedAt, modal]);
+  }, [activeModal, dailyRewardState, dog?.adoptedAt, openOnce]);
 
   useEffect(() => {
     if (lifecycleStatus !== "RESCUED" && lifecycleStatus !== "FAREWELL") {
-      modal.closeModalById("lifecycleNotice");
+      if (activeModalId === "lifecycleNotice") {
+        closeModalById("lifecycleNotice");
+      }
       return;
     }
     if (!dog) return;
-    modal.openOnce(
+    openOnce(
       lifecycleNoticeKey,
       "lifecycleNotice",
       {
@@ -220,24 +222,32 @@ export default function GamePage() {
       },
       { replace: true }
     );
-  }, [dog, lifecycleNoticeKey, lifecycleStatus, modal]);
+  }, [
+    activeModalId,
+    closeModalById,
+    dog,
+    lifecycleNoticeKey,
+    lifecycleStatus,
+    openOnce,
+  ]);
 
   useEffect(() => {
     if (!dogInteractive || founderBonusLoading) return;
-    if (modal.active) return;
+    if (activeModal) return;
     if (!isFounderBonusEligible || founderBonusClaimed) return;
-    modal.openOnce("founderBonus", "founderBonus", {
+    openOnce("founderBonus", "founderBonus", {
       rewardAmount: founderBonusAmount,
       onClaim: async () => claimFounderBonus(),
     });
   }, [
+    activeModal,
     claimFounderBonus,
     dogInteractive,
     founderBonusAmount,
     founderBonusClaimed,
     founderBonusLoading,
     isFounderBonusEligible,
-    modal,
+    openOnce,
   ]);
 
   const waitingForCloudAdoptionDecision =

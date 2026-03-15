@@ -1,3 +1,4 @@
+//src/features/ads/AdManager.js
 import { Capacitor } from "@capacitor/core";
 import { AdMob } from "@capacitor-community/admob";
 
