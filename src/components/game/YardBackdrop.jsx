@@ -377,7 +377,23 @@ export default function YardBackdrop({
           className="absolute inset-0"
           style={{
             background:
-              "linear-gradient(180deg, rgba(30,41,59,0.12) 0%, rgba(8,47,73,0.1) 34%, rgba(12,74,110,0.08) 100%)",
+              "linear-gradient(180deg, rgba(15,23,42,0.16) 0%, rgba(14,116,144,0.12) 26%, rgba(8,47,73,0.08) 52%, rgba(12,74,110,0.06) 100%)",
+          }}
+        />
+        <div
+          className="absolute inset-x-[-12%] top-[18%] h-[24%] rounded-[50%] blur-3xl"
+          style={{
+            background:
+              "radial-gradient(circle at center, rgba(186,230,253,0.14) 0%, rgba(103,232,249,0.08) 42%, transparent 78%)",
+            opacity: isNight ? 0.42 : 0.78,
+          }}
+        />
+        <div
+          className="absolute inset-x-0 bottom-[34%] h-[14%]"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(250,204,21,0.08) 0%, rgba(134,239,172,0.1) 44%, rgba(20,83,45,0) 100%)",
+            opacity: isNight ? 0.14 : 0.52,
           }}
         />
       </div>
@@ -416,13 +432,36 @@ export default function YardBackdrop({
           transition: reduceMotion ? "none" : "transform 180ms linear",
         }}
       >
-        <div className="absolute inset-x-0 bottom-[30%] h-[8%] bg-[linear-gradient(180deg,rgba(20,83,45,0.08),rgba(20,83,45,0.24))]" />
+        <div
+          className="absolute inset-x-0 bottom-[30%] h-[10%]"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(20,83,45,0.04) 0%, rgba(20,83,45,0.2) 55%, rgba(15,23,42,0.16) 100%)",
+          }}
+        />
+        <div
+          className="absolute inset-x-[-6%] bottom-[24%] h-[14%]"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(34,197,94,0.12) 0%, rgba(21,128,61,0.08) 36%, rgba(20,83,45,0) 100%)",
+            opacity: isNight ? 0.34 : 0.62,
+          }}
+        />
         <div
           className="absolute inset-x-0 bottom-[24%] h-[8%]"
           style={{
             backgroundImage:
               "repeating-linear-gradient(90deg, rgba(120,53,15,0.0) 0 10px, rgba(120,53,15,0.72) 10px 14px, rgba(245,158,11,0.12) 14px 19px)",
             opacity: isNight ? 0.5 : 0.66,
+          }}
+        />
+        <div
+          className="absolute left-[18%] right-[18%] bottom-[17%] h-[10%] rounded-[50%]"
+          style={{
+            background:
+              "radial-gradient(ellipse at center, rgba(250,250,249,0.08) 0%, rgba(34,197,94,0.1) 36%, rgba(20,83,45,0.08) 58%, transparent 100%)",
+            filter: "blur(12px)",
+            opacity: isNight ? 0.38 : 0.72,
           }}
         />
       </div>
@@ -436,10 +475,19 @@ export default function YardBackdrop({
         }}
       >
         <div
-          className="absolute inset-x-0 bottom-0 h-[24%]"
+          className="absolute inset-x-0 bottom-0 h-[30%]"
           style={{
             background:
-              "linear-gradient(180deg, rgba(34,197,94,0.08) 0%, rgba(22,101,52,0.24) 45%, rgba(20,83,45,0.4) 100%)",
+              "linear-gradient(180deg, rgba(74,222,128,0.08) 0%, rgba(34,197,94,0.14) 14%, rgba(22,101,52,0.34) 52%, rgba(20,83,45,0.6) 100%)",
+          }}
+        />
+        <div
+          className="absolute inset-x-[8%] bottom-[10%] h-[16%] rounded-[50%]"
+          style={{
+            background:
+              "radial-gradient(ellipse at center, rgba(187,247,208,0.08) 0%, rgba(74,222,128,0.12) 22%, rgba(20,83,45,0.16) 52%, transparent 100%)",
+            filter: "blur(8px)",
+            opacity: isNight ? 0.4 : 0.9,
           }}
         />
         <div
@@ -448,6 +496,15 @@ export default function YardBackdrop({
             background:
               "repeating-radial-gradient(circle at 8px 18px, rgba(134,239,172,0.18) 0 6px, transparent 7px 18px)",
             opacity: 0.55,
+          }}
+        />
+        <div
+          className="absolute inset-x-[16%] bottom-[8%] h-[10%] rounded-[50%]"
+          style={{
+            background:
+              "radial-gradient(ellipse at center, rgba(15,23,42,0.16) 0%, rgba(15,23,42,0.1) 34%, transparent 72%)",
+            filter: "blur(10px)",
+            opacity: isNight ? 0.5 : 0.34,
           }}
         />
         <img

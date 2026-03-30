@@ -143,13 +143,15 @@ export default function DogPixiView({
   });
   const depthRatio =
     viewportHeight > 0 ? clamp(renderPos.y / viewportHeight, 0, 1) : 0.5;
-  const depthScale = clamp(0.95 + depthRatio * 0.55, 0.9, 1.5);
-  const depthZIndex = Math.max(6, Math.round(8 + depthRatio * 24));
-  const shadowWidth = Math.round(size * (0.34 + depthRatio * 0.14));
-  const shadowHeight = Math.max(
-    10,
-    Math.round(size * (0.075 + depthRatio * 0.03))
-  );
+  const groundedDepth = clamp((depthRatio - 0.54) / 0.38, 0, 1);
+  const depthScale = clamp(0.78 + depthRatio * 0.74, 0.8, 1.52);
+  const depthZIndex = Math.max(8, Math.round(10 + depthRatio * 28));
+  const shadowWidth = Math.round(size * (0.28 + groundedDepth * 0.28));
+  const shadowHeight = Math.max(12, Math.round(size * (0.055 + groundedDepth * 0.055)));
+  const shadowTop = Math.round(size * (dogIsSleeping ? 0.81 : 0.88));
+  const shadowOpacity = clamp(0.2 + groundedDepth * 0.2, 0.22, 0.44);
+  const contactShadowOpacity = clamp(0.26 + groundedDepth * 0.28, 0.28, 0.56);
+  const shadowBlur = roundPx(2 + groundedDepth * 4);
   const interactionZIndex = Math.max(depthZIndex + 2, 28);
 
   const style = {
@@ -167,7 +169,7 @@ export default function DogPixiView({
           position: "absolute",
           left: renderPos.x,
           top: renderPos.y,
-          transform: `translate(-50%, ${dogIsSleeping ? "-68%" : "-76%"}) scale(${depthScale})`,
+          transform: `translate(-50%, ${dogIsSleeping ? "-64%" : "-73%"}) scale(${depthScale})`,
           transformOrigin: "50% 100%",
           transition: renderPos.moving
             ? "left 0.92s linear, top 0.92s linear, transform 0.2s ease"
@@ -182,14 +184,29 @@ export default function DogPixiView({
           style={{
             position: "absolute",
             left: "50%",
-            top: `${Math.round(size * 0.82)}px`,
+            top: `${shadowTop}px`,
             width: `${shadowWidth}px`,
             height: `${shadowHeight}px`,
             transform: "translate(-50%, -50%)",
             borderRadius: "999px",
             background:
-              "radial-gradient(ellipse at center, rgba(2,6,23,0.42) 0%, rgba(2,6,23,0.08) 70%, transparent 100%)",
-            filter: "blur(1.5px)",
+              `radial-gradient(ellipse at center, rgba(2,6,23,${contactShadowOpacity}) 0%, rgba(2,6,23,${shadowOpacity}) 58%, transparent 100%)`,
+            filter: `blur(${shadowBlur}px)`,
+          }}
+        />
+        <span
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            left: "50%",
+            top: `${shadowTop + Math.round(size * 0.01)}px`,
+            width: `${Math.round(shadowWidth * 1.5)}px`,
+            height: `${Math.round(shadowHeight * 1.8)}px`,
+            transform: "translate(-50%, -50%)",
+            borderRadius: "999px",
+            background:
+              "radial-gradient(ellipse at center, rgba(15,23,42,0.16) 0%, rgba(15,23,42,0.08) 42%, transparent 100%)",
+            filter: `blur(${roundPx(shadowBlur + 5)}px)`,
           }}
         />
         <DogCosmeticsOverlay
@@ -249,4 +266,8 @@ export default function DogPixiView({
       ) : null}
     </div>
   );
+}
+
+function roundPx(value) {
+  return Number(Number(value || 0).toFixed(2));
 }

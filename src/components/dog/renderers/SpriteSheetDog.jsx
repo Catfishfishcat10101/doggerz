@@ -34,6 +34,15 @@ function clamp(n, lo, hi) {
   return Math.max(lo, Math.min(hi, x));
 }
 
+function isPixiAnimatedSprite(node) {
+  return Boolean(
+    node &&
+      typeof node === "object" &&
+      typeof node.scale?.set === "function" &&
+      typeof node.gotoAndStop === "function"
+  );
+}
+
 function getSheetCandidates(stage, condition, anim) {
   const s = normalizeDogStageShort(stage);
   const c = normalizeDogConditionId(condition);
@@ -384,7 +393,7 @@ export default function SpriteSheetDog({
 
   useEffect(() => {
     const dog = spriteRef.current;
-    if (!dog) return;
+    if (!isPixiAnimatedSprite(dog)) return;
     const displayScale = boxSize / DEFAULT_FRAME_HEIGHT;
     const facingSign = Number(facing) < 0 ? 1 : -1;
     dog.scale.set(
@@ -395,7 +404,7 @@ export default function SpriteSheetDog({
 
   useEffect(() => {
     const dog = spriteRef.current;
-    if (!dog) return;
+    if (!isPixiAnimatedSprite(dog)) return;
     dog.animationSpeed = Math.max(0.01, effectiveFps / 60);
     if (reduceMotion) {
       dog.gotoAndStop(0);
