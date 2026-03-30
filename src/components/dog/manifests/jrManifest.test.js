@@ -18,7 +18,7 @@ const spriteRoot = path.resolve(
 );
 
 describe("jrManifest", () => {
-  it("maps adult interact to the bark sheet with correct metadata", () => {
+  it("maps adult interact to the bark action while falling back to the puppy bark sheet", () => {
     const entry = getJrSpriteSheet("ADULT", "interact");
 
     expect(entry.stage).toBe("adult");
@@ -26,14 +26,15 @@ describe("jrManifest", () => {
     expect(entry.frames).toBe(6);
     expect(entry.columns).toBe(6);
     expect(entry.sheetWidth).toBe(1536);
-    expect(entry.url).toContain("/assets/sprites/jr/adult_bark.png");
+    expect(entry.url).toContain("/assets/sprites/jr/pup_bark.png");
   });
 
-  it("falls senior stage back to adult sheets", () => {
+  it("keeps senior stage metadata while falling back to the authored puppy sheet set", () => {
     const entry = getJrSpriteSheet("SENIOR", "sleep");
 
     expect(entry.stage).toBe("senior");
-    expect(entry.action).toBe("idle");
+    expect(entry.action).toBe("sleep");
+    expect(entry.url).toContain("/assets/sprites/jr/pup_sleep.png");
     expect(entry.rows).toBeGreaterThanOrEqual(1);
   });
 
@@ -61,21 +62,18 @@ describe("jrManifest", () => {
     expect(frame8).toMatchObject({ col: 0, row: 1, x: 0, y: -256 });
   });
 
-  it("has puppy and adult sprite strips for every master trick", () => {
+  it("resolves every master trick to an existing current sprite sheet", () => {
     for (const trick of MASTER_TRICKS) {
       const animKey = String(trick?.animationKey || "").trim();
       expect(animKey).not.toBe("");
 
-      const puppyStrip = path.join(spriteRoot, `pup_${animKey}.png`);
-      const adultStrip = path.join(spriteRoot, `adult_${animKey}.png`);
+      const entry = getJrSpriteSheet("adult", animKey);
+      const resolvedStrip = path.join(spriteRoot, entry.fileName);
 
+      expect(entry.fileName.startsWith("pup_")).toBe(true);
       expect(
-        fs.existsSync(puppyStrip),
-        `Missing ${path.basename(puppyStrip)}`
-      ).toBe(true);
-      expect(
-        fs.existsSync(adultStrip),
-        `Missing ${path.basename(adultStrip)}`
+        fs.existsSync(resolvedStrip),
+        `Missing ${path.basename(resolvedStrip)} for ${trick.id}`
       ).toBe(true);
     }
   });

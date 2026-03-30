@@ -31,7 +31,7 @@ const REMINDERS = DEFAULT_DOGGERZ_REMINDERS.map((item) => ({
         : 12 * 60 * 60 * 1000,
   icon:
     item.key === "checkin-stray"
-      ? "/assets/sprites/jr/pup_clean.png"
+      ? "/assets/sprites/jr/pup_idle.png"
       : "/assets/icons/icon-192.png",
 }));
 

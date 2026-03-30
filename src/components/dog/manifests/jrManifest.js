@@ -10,134 +10,94 @@ const DEFAULT_FRAME = baseManifest?.frame || {};
 const DEFAULT_FRAME_WIDTH = Math.max(1, Number(DEFAULT_FRAME.width || 256));
 const DEFAULT_FRAME_HEIGHT = Math.max(1, Number(DEFAULT_FRAME.height || 256));
 const DEFAULT_FPS = Math.max(1, Number(baseManifest?.defaultFps || 8));
-const MASTER_TRICK_ACTIONS = new Set([
-  "sit",
-  "speak",
-  "shake",
-  "sit_pretty",
-  "roll_over",
-  "spin",
-  "crawl",
-  "play_dead",
-  "backflip",
-]);
+const PUPPY_ACTION_FILE_MAP = Object.freeze({
+  idle: "pup_idle.png",
+  walk: "pup_walk.png",
+  walk_left: "pup_walk_left.png",
+  walk_right: "pup_walk_right.png",
+  turn_walk_left: "pup_turn_walk_left.png",
+  turn_walk_right: "pup_turn_walk_right.png",
+  bark: "pup_bark.png",
+  sit: "pup_sit.png",
+  shake: "pup_shake.png",
+  wag: "pup_wag.png",
+  eat: "pup_eat.png",
+  sleep: "pup_sleep.png",
+  dance: "pup_dance.png",
+  idle_resting: "pup_idle_resting.png",
+  beg: "pup_beg.png",
+  fetch: "pup_fetch.png",
+  deep_rem_sleep: "pup_deep_rem_sleep.png",
+  drink: "pup_drink.png",
+  jump: "pup_jump.png",
+  lay_down: "pup_lay_down.png",
+  gate_watch: "pup_gate_watch.png",
+  lethargic_lay: "pup_lethargic_lay.png",
+  light_sleep: "pup_light_sleep.png",
+  paw: "pup_paw.png",
+  scratch: "pup_scratch.png",
+  sniff: "pup_sniff.png",
+  highfive: "pup_highfive.png",
+});
 
-const STAGE_FILE_MAP = Object.freeze({
-  adult: Object.freeze({
-    idle: "adult_idle.png",
-    walk: "adult_walk.png",
-    walk_left: "adult_walk_left.png",
-    walk_right: "adult_walk_right.png",
-    turn_walk_left: "adult_turn_walk_left.png",
-    turn_walk_right: "adult_turn_walk_right.png",
-    bark: "adult_bark.png",
-    speak: "adult_speak.png",
-    bow: "adult_bow.png",
-    sit: "adult_sit.png",
-    shake: "adult_shake.png",
-    sit_pretty: "adult_sit_pretty.png",
-    roll_over: "adult_roll_over.png",
-    spin: "adult_spin.png",
-    crawl: "adult_crawl.png",
-    play_dead: "adult_play_dead.png",
-    wag: "adult_wag.png",
-    fetch: "adult_fetch.png",
-    deep_rem_sleep: "adult_deep_rem_sleep.png",
-    drink: "adult_drink.png",
-    dance: "adult_dance.png",
-    idle_resting: "adult_idle_resting.png",
-    tornado: "adult_tornado.png",
-    backflip: "adult_backflip.png",
-    handstand: "adult_handstand.png",
-    army_crawl: "adult_army_crawl.png",
-    clean: "adult_clean.png",
-  }),
-  pup: Object.freeze({
-    idle: "pup_idle.png",
-    walk: "pup_walk.png",
-    walk_left: "pup_walk_left.png",
-    walk_right: "pup_walk_right.png",
-    turn_walk_left: "pup_turn_walk_left.png",
-    turn_walk_right: "pup_turn_walk_right.png",
-    bark: "pup_bark.png",
-    speak: "pup_speak.png",
-    bow: "pup_bow.png",
-    sit: "pup_sit.png",
-    shake: "pup_shake.png",
-    sit_pretty: "pup_sit_pretty.png",
-    roll_over: "pup_roll_over.png",
-    spin: "pup_spin.png",
-    crawl: "pup_crawl.png",
-    play_dead: "pup_play_dead.png",
-    backflip: "pup_backflip.png",
-    wag: "pup_wag.png",
-    fetch: "pup_fetch.png",
-    deep_rem_sleep: "pup_deep_rem_sleep.png",
-    drink: "pup_drink.png",
-    dance: "pup_dance.png",
-    idle_resting: "pup_idle_resting.png",
-    puppy_idle_pack: "pup_puppy_idle_pack.png",
-    puppy_sleeping_pack: "pup_puppy_sleeping_pack.png",
-    puppy_potty_success: "pup_puppy_potty_success.png",
-    puppy_confused: "pup_puppy_confused.png",
-    clean: "pup_clean.png",
-  }),
-  senior: Object.freeze({
-    golden_years_idle: "senior_golden_years_idle.png",
-    golden_years_sleeping: "senior_golden_years_sleeping.png",
-  }),
+const STAGE_STATIC_FILE_MAP = Object.freeze({
+  adult: "adult_clean.png",
+  pup: "pup_clean.png",
+  senior: "senior_clean.png",
 });
 
 const ACTION_FILE_ALIASES = Object.freeze({
   interact: "bark",
   bark: "bark",
-  speak: "speak",
-  sit_pretty: "sit_pretty",
-  backflip: "backflip",
-  eat: "drink",
-  feed: "drink",
+  speak: "bark",
+  bow: "beg",
+  sit_pretty: "beg",
+  backflip: "jump",
+  eat: "eat",
+  feed: "eat",
   drink: "drink",
-  sleep: "deep_rem_sleep",
-  sleeping: "deep_rem_sleep",
+  sleep: "sleep",
+  sleeping: "sleep",
   deep_sleep: "deep_rem_sleep",
   dream: "deep_rem_sleep",
-  tornado: "tornado",
-  handstand: "handstand",
-  army_crawl: "army_crawl",
-  puppy_idle_pack: "puppy_idle_pack",
-  puppy_sleeping_pack: "puppy_sleeping_pack",
-  puppy_potty_success: "puppy_potty_success",
-  puppy_confused: "puppy_confused",
-  golden_years_idle: "golden_years_idle",
-  golden_years_sleeping: "golden_years_sleeping",
   rest: "idle_resting",
-  scratch: "wag",
-  sniff: "wag",
+  scratch: "scratch",
+  sniff: "sniff",
   sit: "sit",
-  trick: "bow",
-  jump: "backflip",
-  spin: "spin",
-  point_position: "bark",
+  trick: "sit",
+  jump: "jump",
+  spin: "dance",
+  roll_over: "lay_down",
+  play_dead: "lay_down",
+  crawl: "walk",
+  point_position: "gate_watch",
   territorial_bark: "bark",
-  gate_watch: "idle_resting",
+  gate_watch: "gate_watch",
   limping: "walk",
   shivering: "idle",
-  lethargic_lay: "idle_resting",
-  light_sleep: "deep_rem_sleep",
+  lethargic_lay: "lethargic_lay",
+  light_sleep: "light_sleep",
   thrashing: "dance",
   run: "walk",
+  clean: "clean",
 });
 
 const FILE_LOOKUP = Object.freeze(
-  Object.entries(STAGE_FILE_MAP).reduce((acc, [stage, files]) => {
-    Object.entries(files).forEach(([action, fileName]) => {
-      acc[fileName.toLowerCase()] = { stage, action };
-    });
-    return acc;
-  }, {})
+  Object.entries(PUPPY_ACTION_FILE_MAP).reduce(
+    (acc, [action, fileName]) => {
+      acc[fileName.toLowerCase()] = { stage: "pup", action };
+      return acc;
+    },
+    {
+      "adult_clean.png": { stage: "adult", action: "clean" },
+      "pup_clean.png": { stage: "pup", action: "clean" },
+      "puppy_clean.png": { stage: "pup", action: "clean" },
+      "senior_clean.png": { stage: "senior", action: "clean" },
+    }
+  )
 );
 
-export function normalizeJrLifeStage(value, fallback = "adult") {
+export function normalizeJrLifeStage(value, fallback = "pup") {
   const key = String(value || "")
     .trim()
     .toLowerCase();
@@ -155,20 +115,9 @@ export function resolveJrAction(value, fallback = "idle") {
   const aliased = normalizeDogAnimKey(
     ACTION_FILE_ALIASES[resolved] || ACTION_FILE_ALIASES[normalized] || resolved
   );
-  return aliased || fallback;
-}
-
-function getStageFiles(stageLike) {
-  const stage = normalizeJrLifeStage(stageLike, "adult");
-  return STAGE_FILE_MAP[stage] || STAGE_FILE_MAP.adult;
-}
-
-function getFileAction(stageLike, actionLike) {
-  const stageFiles = getStageFiles(stageLike);
-  const requested = resolveJrAction(actionLike, "idle");
-  if (stageFiles[requested]) return requested;
-  if (stageFiles.idle_resting && requested === "idle") return "idle_resting";
-  return "idle";
+  if (!aliased) return fallback;
+  if (aliased === "clean") return "clean";
+  return PUPPY_ACTION_FILE_MAP[aliased] ? aliased : fallback;
 }
 
 function buildFramePositions(entry) {
@@ -225,8 +174,8 @@ export function getJrSpriteFramePosition(entry, frameIndex = 0) {
 }
 
 function buildStaticEntry(stageLike) {
-  const stage = normalizeJrLifeStage(stageLike, "adult");
-  const fileName = getStageFiles(stage).clean;
+  const stage = normalizeJrLifeStage(stageLike, "pup");
+  const fileName = STAGE_STATIC_FILE_MAP[stage] || STAGE_STATIC_FILE_MAP.pup;
   return {
     id: `${stage}:clean`,
     stage,
@@ -247,20 +196,15 @@ function buildStaticEntry(stageLike) {
   };
 }
 
-export function getJrSpriteSheet(stageLike = "adult", actionLike = "idle") {
-  const stage = normalizeJrLifeStage(stageLike, "adult");
+export function getJrSpriteSheet(stageLike = "pup", actionLike = "idle") {
+  const stage = normalizeJrLifeStage(stageLike, "pup");
   const requestedAction = normalizeDogAnimKey(actionLike || "idle") || "idle";
-  const action = getFileAction(stage, requestedAction);
-  const stageFiles = getStageFiles(stage);
-  const fallbackFiles =
-    stage === "senior" ? STAGE_FILE_MAP.adult : STAGE_FILE_MAP.pup;
-  const fileName =
-    stageFiles[action] ||
-    fallbackFiles[action] ||
-    stageFiles.idle ||
-    fallbackFiles.idle ||
-    stageFiles.clean ||
-    fallbackFiles.clean;
+  const action = resolveJrAction(requestedAction, "idle");
+  if (action === "clean") {
+    return buildStaticEntry(stage);
+  }
+
+  const fileName = PUPPY_ACTION_FILE_MAP[action] || PUPPY_ACTION_FILE_MAP.idle;
   const animMeta = getManifestAnimMeta(action);
   const frames = Math.max(1, Number(animMeta?.frames || 1));
   const columns = Math.max(
@@ -296,31 +240,15 @@ export function getJrSpriteSheet(stageLike = "adult", actionLike = "idle") {
       Math.max(1, Number(animMeta?.frameHeight || DEFAULT_FRAME_HEIGHT)) * rows,
   };
 
-  const stageFrameSize =
-    MASTER_TRICK_ACTIONS.has(action) ||
-    MASTER_TRICK_ACTIONS.has(requestedAction)
-      ? stage === "pup"
-        ? 32
-        : 64
-      : null;
-
-  const resolvedEntry = {
-    ...entry,
-    frameWidth: stageFrameSize || entry.frameWidth,
-    frameHeight: stageFrameSize || entry.frameHeight,
-    sheetWidth: (stageFrameSize || entry.frameWidth) * columns,
-    sheetHeight: (stageFrameSize || entry.frameHeight) * rows,
-  };
-
   return {
-    ...resolvedEntry,
-    framePositions: buildFramePositions(resolvedEntry),
+    ...entry,
+    framePositions: buildFramePositions(entry),
   };
 }
 
 export function findJrSpriteSheetBySrc(
   src,
-  fallbackStage = "adult",
+  fallbackStage = "pup",
   fallbackAction = "idle"
 ) {
   const raw = String(src || "").trim();
@@ -334,6 +262,9 @@ export function findJrSpriteSheetBySrc(
 
   if (FILE_LOOKUP[fileName]) {
     const match = FILE_LOOKUP[fileName];
+    if (match.action === "clean") {
+      return buildStaticEntry(match.stage);
+    }
     return getJrSpriteSheet(match.stage, match.action);
   }
 
@@ -378,6 +309,17 @@ export const jrManifest = Object.freeze({
       sleep: getJrSpriteSheet("pup", "sleep"),
       dance: getJrSpriteSheet("pup", "dance"),
       bow: getJrSpriteSheet("pup", "bow"),
+    }),
+    senior: Object.freeze({
+      idle: getJrSpriteSheet("senior", "idle"),
+      walk: getJrSpriteSheet("senior", "walk"),
+      interact: getJrSpriteSheet("senior", "interact"),
+      bark: getJrSpriteSheet("senior", "bark"),
+      wag: getJrSpriteSheet("senior", "wag"),
+      eat: getJrSpriteSheet("senior", "eat"),
+      sleep: getJrSpriteSheet("senior", "sleep"),
+      dance: getJrSpriteSheet("senior", "dance"),
+      bow: getJrSpriteSheet("senior", "bow"),
     }),
   }),
 });

@@ -1,23 +1,32 @@
-/** @format */
+
 // src/pages/Landing.jsx
 
 import { Link } from "react-router-dom";
+import { useSelector } from "react-redux";
 
 import PageShell from "@/components/layout/PageShell.jsx";
 import { PATHS } from "@/app/routes.js";
 import { withBaseUrl } from "@/utils/assetUtils.js";
 
 export default function Landing() {
+  const { reduceMotion, batterySaver } = useSelector((state) => state.settings || {});
+
+  const showBlurDecor = !reduceMotion && !batterySaver;
+
   return (
     <PageShell useSurface={false}>
       <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-md flex-col overflow-hidden border-x border-white/10 bg-black shadow-2xl">
-        <div className="pointer-events-none absolute -left-20 -top-20 h-72 w-72 rounded-full bg-doggerz-leaf/25 blur-[100px]" />
-        <div className="pointer-events-none absolute -bottom-20 -right-20 h-72 w-72 rounded-full bg-doggerz-sky/20 blur-[100px]" />
+        {showBlurDecor && (
+          <>
+            <div className="pointer-events-none absolute -left-20 -top-20 h-72 w-72 rounded-full bg-doggerz-leaf/25 blur-[100px]" />
+            <div className="pointer-events-none absolute -bottom-20 -right-20 h-72 w-72 rounded-full bg-doggerz-sky/20 blur-[100px]" />
+          </>
+        )}
 
         <div className="z-10 mt-10 flex flex-1 flex-col items-center justify-center p-8 text-center">
           <div className="mb-8 h-48 w-48 overflow-hidden rounded-full border border-doggerz-leaf/35 bg-black/35 p-1 shadow-[0_0_60px_rgba(34,197,94,0.2)]">
             <img
-              src={withBaseUrl("/assets/sprites/jr/adult_clean.png")}
+              src={withBaseUrl("/assets/sprites/jr/pup_idle.png")}
               alt="Doggerz hero dog"
               className="h-full w-full rounded-full object-cover object-[74%_38%]"
             />

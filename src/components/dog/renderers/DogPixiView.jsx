@@ -19,8 +19,8 @@ function getRoamBounds(bounds, size) {
   const width = Math.max(0, Number(bounds?.width || 0));
   const height = Math.max(0, Number(bounds?.height || 0));
   const sidePadding = Math.max(24, size * 0.18);
-  const topFloor = Math.max(18, height * 0.56);
-  const bottomPadding = Math.max(20, size * 0.08);
+  const topFloor = Math.max(18, height * 0.68);
+  const bottomPadding = Math.max(20, height * 0.08);
 
   return {
     minX: sidePadding,
@@ -44,7 +44,9 @@ export default function DogPixiView({
   width,
   height,
   scale = 2.25,
+  baseScale = 0.6,
   dogIsSleeping = false,
+  insideShelter = false,
   animSpeedMultiplier = 1,
   onPositionChange = null,
   onDogTap = null,
@@ -62,14 +64,21 @@ export default function DogPixiView({
     const scaleFactor = Number.isFinite(scale)
       ? clamp(scale / 2.25, 0.6, 2)
       : 1;
-    return clamp(Math.round(base * 0.7 * scaleFactor), 96, 512);
-  }, [bounds.height, bounds.width, height, scale, width]);
+    const lifeScale = clamp(baseScale, 0.4, 0.8);
+    return clamp(
+      Math.round(base * 0.52 * scaleFactor * (0.74 + lifeScale * 0.42)),
+      72,
+      420
+    );
+  }, [baseScale, bounds.height, bounds.width, height, scale, width]);
 
   const renderPos = useMemo(() => {
     if (!viewportWidth || !viewportHeight) {
       return {
         x: 0,
         y: 0,
+        xPct: 0,
+        yPct: 0,
         facing: facing === "left" ? -1 : 1,
         moving: false,
       };
@@ -90,17 +99,22 @@ export default function DogPixiView({
       DOG_WORLD_HEIGHT
     );
 
+    const xPx = clamp(
+      (worldX / DOG_WORLD_WIDTH) * viewportWidth,
+      roamBounds.minX,
+      roamBounds.maxX
+    );
+    const yPx = clamp(
+      (worldY / DOG_WORLD_HEIGHT) * viewportHeight,
+      roamBounds.minY,
+      roamBounds.maxY
+    );
+
     return {
-      x: clamp(
-        (worldX / DOG_WORLD_WIDTH) * viewportWidth,
-        roamBounds.minX,
-        roamBounds.maxX
-      ),
-      y: clamp(
-        (worldY / DOG_WORLD_HEIGHT) * viewportHeight,
-        roamBounds.minY,
-        roamBounds.maxY
-      ),
+      x: xPx,
+      y: yPx,
+      xPct: viewportWidth > 0 ? xPx / viewportWidth : 0,
+      yPct: viewportHeight > 0 ? yPx / viewportHeight : 0,
       facing: facing === "left" ? -1 : 1,
       moving:
         String(behaviorState || "idle")
@@ -142,17 +156,55 @@ export default function DogPixiView({
     dogIsSleeping,
   });
   const depthRatio =
-    viewportHeight > 0 ? clamp(renderPos.y / viewportHeight, 0, 1) : 0.5;
+    viewportHeight > 0 ? clamp(renderPos.yPct, 0, 1) : 0.5;
   const groundedDepth = clamp((depthRatio - 0.54) / 0.38, 0, 1);
-  const depthScale = clamp(0.78 + depthRatio * 0.74, 0.8, 1.52);
+  const perspectiveScale = 0.68 + Math.pow(depthRatio, 1.52) * 1.22;
+  const baseDepthScale = clamp(perspectiveScale, 0.74, 1.7);
+  const lifeScale = clamp(baseScale, 0.4, 0.8);
+  const depthScale = clamp(
+    baseDepthScale * (0.72 + lifeScale * 0.72) * (insideShelter ? 0.74 : 1),
+    0.56,
+    1.6
+  );
   const depthZIndex = Math.max(8, Math.round(10 + depthRatio * 28));
-  const shadowWidth = Math.round(size * (0.28 + groundedDepth * 0.28));
-  const shadowHeight = Math.max(12, Math.round(size * (0.055 + groundedDepth * 0.055)));
-  const shadowTop = Math.round(size * (dogIsSleeping ? 0.81 : 0.88));
-  const shadowOpacity = clamp(0.2 + groundedDepth * 0.2, 0.22, 0.44);
-  const contactShadowOpacity = clamp(0.26 + groundedDepth * 0.28, 0.28, 0.56);
+  const shelterShadowMultiplier = insideShelter ? 0.55 : 1;
+  const shadowWidth = Math.round(
+    size * (0.28 + groundedDepth * 0.28) * shelterShadowMultiplier
+  );
+  const shadowHeight = Math.max(
+    10,
+    Math.round(
+      size * (0.055 + groundedDepth * 0.055) * shelterShadowMultiplier
+    )
+  );
+  const shadowTop = Math.round(
+    size * (insideShelter ? 0.84 : dogIsSleeping ? 0.81 : 0.88)
+  );
+  const shadowOpacity = clamp(
+    (0.2 + groundedDepth * 0.2) * (insideShelter ? 0.6 : 1),
+    0.12,
+    0.44
+  );
+  const contactShadowOpacity = clamp(
+    (0.26 + groundedDepth * 0.28) * (insideShelter ? 0.52 : 1),
+    0.14,
+    0.56
+  );
   const shadowBlur = roundPx(2 + groundedDepth * 4);
+  const shadowOffsetX = Math.round(size * (insideShelter ? 0.008 : 0.016));
+  const shadowSqueeze = clamp(1 - groundedDepth * 0.08, 0.9, 1);
+  const lawnShadowOpacity = clamp(
+    (0.08 + groundedDepth * 0.08) * (insideShelter ? 0.46 : 1),
+    0.04,
+    0.18
+  );
   const interactionZIndex = Math.max(depthZIndex + 2, 28);
+  const shelteredOpacity = insideShelter ? 0.58 : 1;
+  const dogTranslateY = insideShelter
+    ? "-49%"
+    : dogIsSleeping
+      ? "-64%"
+      : "-73%";
 
   const style = {
     width: Number.isFinite(Number(width)) ? Number(width) : "100%",
@@ -162,20 +214,27 @@ export default function DogPixiView({
   const dogTapHitboxHeight = Math.max(88, Math.round(size * 0.82));
 
   return (
-    <div ref={containerRef} className="relative" style={style}>
+    <div
+      ref={containerRef}
+      className="relative overflow-visible"
+      style={style}
+    >
       <div
         className="dog-sprite-container"
         style={{
           position: "absolute",
-          left: renderPos.x,
-          top: renderPos.y,
-          transform: `translate(-50%, ${dogIsSleeping ? "-64%" : "-73%"}) scale(${depthScale})`,
+          left: `${renderPos.xPct * 100}%`,
+          top: `${renderPos.yPct * 100}%`,
+          transform: `translate(-50%, ${dogTranslateY}) scale(${depthScale})`,
           transformOrigin: "50% 100%",
           transition: renderPos.moving
             ? "left 0.92s linear, top 0.92s linear, transform 0.2s ease"
             : "transform 0.2s ease",
           zIndex: depthZIndex,
           pointerEvents: "none",
+          willChange: "left, top, transform",
+          opacity: shelteredOpacity,
+          filter: insideShelter ? "saturate(0.88) brightness(0.9)" : undefined,
         }}
       >
         <span
@@ -183,30 +242,36 @@ export default function DogPixiView({
           aria-hidden="true"
           style={{
             position: "absolute",
-            left: "50%",
+            left: `calc(50% + ${shadowOffsetX}px)`,
             top: `${shadowTop}px`,
             width: `${shadowWidth}px`,
             height: `${shadowHeight}px`,
-            transform: "translate(-50%, -50%)",
+            transform: `translate(-50%, -50%) scaleX(${shadowSqueeze})`,
             borderRadius: "999px",
             background:
-              `radial-gradient(ellipse at center, rgba(2,6,23,${contactShadowOpacity}) 0%, rgba(2,6,23,${shadowOpacity}) 58%, transparent 100%)`,
-            filter: `blur(${shadowBlur}px)`,
+              `radial-gradient(ellipse at center, rgba(2,6,23,${contactShadowOpacity}) 0%, rgba(2,6,23,${shadowOpacity}) 56%, rgba(20,83,45,${lawnShadowOpacity}) 82%, transparent 100%)`,
+            filter: `blur(${roundPx(shadowBlur + 1) }px)`,
           }}
         />
         <span
           aria-hidden="true"
           style={{
             position: "absolute",
-            left: "50%",
+            left: `calc(50% + ${Math.round(shadowOffsetX * 1.4)}px)`,
             top: `${shadowTop + Math.round(size * 0.01)}px`,
             width: `${Math.round(shadowWidth * 1.5)}px`,
             height: `${Math.round(shadowHeight * 1.8)}px`,
-            transform: "translate(-50%, -50%)",
+            transform: `translate(-50%, -50%) scaleX(${clamp(
+              shadowSqueeze * 1.04,
+              0.92,
+              1.08
+            )})`,
             borderRadius: "999px",
             background:
-              "radial-gradient(ellipse at center, rgba(15,23,42,0.16) 0%, rgba(15,23,42,0.08) 42%, transparent 100%)",
-            filter: `blur(${roundPx(shadowBlur + 5)}px)`,
+              `radial-gradient(ellipse at center, rgba(15,23,42,0.12) 0%, rgba(22,101,52,${roundPx(
+                lawnShadowOpacity * 0.9
+              )}) 34%, rgba(15,23,42,0.04) 56%, transparent 100%)`,
+            filter: `blur(${roundPx(shadowBlur + 7)}px)`,
           }}
         />
         <DogCosmeticsOverlay
@@ -251,8 +316,8 @@ export default function DogPixiView({
           }}
           className="absolute rounded-full bg-transparent"
           style={{
-            left: renderPos.x,
-            top: renderPos.y - Math.round(size * 0.16),
+            left: `${renderPos.xPct * 100}%`,
+            top: `calc(${renderPos.yPct * 100}% - ${Math.round(size * 0.16)}px)`,
             width: dogTapHitboxSize,
             height: dogTapHitboxHeight,
             transform: "translate(-50%, -50%)",

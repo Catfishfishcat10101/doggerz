@@ -16,7 +16,7 @@ export const BACKGROUNDS = Object.freeze({
 });
 
 export const DOGS = Object.freeze({
-  staticFallback: withBaseUrl("/assets/sprites/jr/pup_clean.png"),
+  staticFallback: withBaseUrl("/assets/sprites/jr/pup_idle.png"),
   walkLeft: withBaseUrl("/assets/sprites/jr/pup_walk_left.png"),
   walkLeftAlt: withBaseUrl("/assets/sprites/jr/pup_walk_right.png"),
 });

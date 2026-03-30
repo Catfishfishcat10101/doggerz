@@ -16,33 +16,33 @@ export const DOG_CONDITION_IDS = Object.freeze([
 
 const DEFAULT_SPRITE_DIR = "/assets/sprites";
 const DEFAULT_ATLAS_DIR = "/assets/atlas";
-const DOG_SPRITE_REV = "2026-03-13-fireball-tricks";
+const DOG_SPRITE_REV = "2026-03-30-jrt-puppy-round-3";
 const DOG_SPRITE_FILE_ALIASES = Object.freeze({
   bark: "bark",
-  beg: "bow",
+  beg: "beg",
   bow: "bow",
   crawl: "walk",
   dance: "dance",
-  eat: "bow",
+  eat: "eat",
   fetch: "fetch",
-  gate_watch: "idle_resting",
-  highfive: "bow",
+  gate_watch: "gate_watch",
+  highfive: "highfive",
   idle_resting: "idle_resting",
-  jump: "fetch",
-  lay_down: "bow",
-  lethargic_lay: "idle_resting",
-  light_sleep: "deep_rem_sleep",
+  jump: "jump",
+  lay_down: "lay_down",
+  lethargic_lay: "lethargic_lay",
+  light_sleep: "light_sleep",
   limping: "walk",
-  paw: "bow",
+  paw: "paw",
   play_dead: "deep_rem_sleep",
   point_position: "bark",
   roll_over: "fetch",
-  scratch: "clean",
-  shake: "clean",
+  scratch: "scratch",
+  shake: "shake",
   shivering: "idle",
-  sit: "bark",
-  sleep: "deep_rem_sleep",
-  sniff: "wag",
+  sit: "sit",
+  sleep: "sleep",
+  sniff: "sniff",
   spin: "dance",
   stay: "bark",
   territorial_bark: "bark",
@@ -112,10 +112,9 @@ export function getDogStageLabel(stageLike) {
  * Static fallback sprite used while strips load (or if strips fail).
  */
 export function getDogStaticSpriteUrl(_stageLike) {
-  const stage = normalizeDogStageShort(_stageLike);
-  return withBaseUrl(
-    `${DEFAULT_SPRITE_DIR}/jr/${stage}_clean.png?v=${DOG_SPRITE_REV}`
-  );
+  // Until the full staged sprite set is regenerated, use the authored puppy
+  // idle sheet as the single stable static fallback across the app.
+  return withBaseUrl(`${DEFAULT_SPRITE_DIR}/jr/pup_idle.png?v=${DOG_SPRITE_REV}`);
 }
 
 /**

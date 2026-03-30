@@ -6,8 +6,8 @@ import { useNavigate } from "react-router-dom";
 
 import PageShell from "@/components/layout/PageShell.jsx";
 import { withBaseUrl } from "@/utils/assetUtils.js";
-import { PATHS } from "@/app/routes.js";
-import { adoptPup } from "@/store/dogThunks.js";
+import { PATHS } from "@/routes.js";
+import { adoptPup } from "@/redux/dogThunks.js";
 import {
   cancelWorkflow,
   goToStep,
@@ -17,12 +17,12 @@ import {
   selectWorkflowById,
   setWorkflowData,
   startWorkflow,
-} from "@/store/workflowSlice.js";
+} from "@/redux/workflowSlice.js";
 import { useDog } from "@/hooks/useDogState.js";
 
 const WORKFLOW_ID = "adopt";
 const ADOPT_STEPS = ["Box", "Name", "Play"];
-const HERO_DOG_SRC = withBaseUrl("/assets/sprites/jr/puppy_clean.png");
+const HERO_DOG_SRC = withBaseUrl("/assets/sprites/jr/pup_idle.png");
 
 function StepDot({ active = false, done = false }) {
   return (
@@ -80,9 +80,9 @@ export default function AdoptPage() {
   }, [alreadyAdopted, dispatch, dog?.name, workflow]);
 
   useEffect(() => {
-    if (error) setError(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [name, stepIndex]);
+    if (!error) return;
+    setError(null);
+  }, [error, name, stepIndex]);
 
   useEffect(() => {
     if (stepIndex !== 1) return;
@@ -332,9 +332,8 @@ export default function AdoptPage() {
                   <div className="rounded-2xl border border-white/10 bg-white/6 p-4">
                     <div className="font-bold text-white">What to expect</div>
                     <ul className="mt-2 space-y-2 text-sm text-zinc-300">
-                      <li>Real time, weather, and yard mood shift together.</li>
+                      <li>Real-time weather and day/night cycles.</li>
                       <li>Potty training comes first, tricks later.</li>
-                      <li>Play fetch when the dog steals something.</li>
                     </ul>
                   </div>
                 </div>
@@ -374,8 +373,7 @@ export default function AdoptPage() {
           </div>
 
           <div className="mt-3 text-center text-xs text-zinc-400">
-            Your pup lives locally first and can sync to the cloud when you use
-            login.
+            Your pup lives in the yard, not on a server. Adoption is just the start.
           </div>
         </div>
       </div>

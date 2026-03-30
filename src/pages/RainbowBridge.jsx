@@ -26,7 +26,7 @@ export default function RainbowBridge() {
     : null;
 
   const bondTone =
-    bondValue >= 80 ? "deep" : bondValue >= 45 ? "steady" : "growing";
+    bondValue >= 95 ? "deep" : bondValue >= 50 ? "steady" : "growing";
 
   React.useEffect(() => {
     if (!showConfirm) return;
@@ -49,7 +49,7 @@ export default function RainbowBridge() {
               Rainbow Bridge
             </div>
             <h1 className="mt-2 text-2xl sm:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-200 via-sky-200 to-violet-200">
-              A quiet place to remember
+              At the Rainbow Bridge
             </h1>
             <p className="mt-3 text-sm text-zinc-200/90 max-w-prose">
               This scene marks the hard-earned six-month ending. If your pup

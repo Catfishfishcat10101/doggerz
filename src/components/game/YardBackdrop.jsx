@@ -1,6 +1,6 @@
 // src/components/game/YardBackdrop.jsx
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const LAYER = Object.freeze({
   SKY: 1,
@@ -87,12 +87,60 @@ function round(value) {
   return Number(Number(value || 0).toFixed(2));
 }
 
+function mix(from, to, amount) {
+  return Number(from) + (Number(to) - Number(from)) * clamp(amount, 0, 1);
+}
+
+function hsla(h, s, l, a = 1) {
+  return `hsla(${round(h)}, ${round(s)}%, ${round(l)}%, ${round(a)})`;
+}
+
+function getLiveSkyState(nowValue = Date.now()) {
+  const now = new Date(nowValue);
+  const hourFloat =
+    Number(now.getHours() || 0) + Number(now.getMinutes() || 0) / 60;
+  const daylight = clamp(
+    Math.sin(((hourFloat - 6) / 12) * Math.PI),
+    0,
+    1
+  );
+  const dawnGlow = clamp(1 - Math.abs(hourFloat - 6.5) / 2.5, 0, 1);
+  const duskGlow = clamp(1 - Math.abs(hourFloat - 18.5) / 2.5, 0, 1);
+  const warmth = Math.max(dawnGlow, duskGlow);
+  const nightDepth = clamp(1 - daylight * 0.92, 0.08, 1);
+
+  return {
+    daylight,
+    warmth,
+    nightDepth,
+  };
+}
+
 function getDepthZIndex(yNorm, offset = 0) {
   return Math.max(
     4,
     Math.round(15 + clamp(Number(yNorm || 0.5), 0, 1) * 20) + offset
   );
 }
+
+const BACKDROP_MOTION_STYLES = `
+  @keyframes dgTreeWindPulse {
+    0%, 100% { transform: translate(-50%, -100%) scale(1); opacity: 0.98; }
+    50% { transform: translate(-50%, -100%) scale(1.015); opacity: 1; }
+  }
+  @keyframes dgTreeWindBounce {
+    0%, 100% { margin-top: 0; }
+    50% { margin-top: -0.45%; }
+  }
+  @keyframes dgGrassWindPulse {
+    0%, 100% { opacity: 0.54; transform: translateY(0) scaleY(1); }
+    50% { opacity: 0.68; transform: translateY(-0.35%) scaleY(1.02); }
+  }
+  @keyframes dgGrassWindBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-0.6%); }
+  }
+`;
 
 function renderFrontOccluders(occluders = []) {
   return occluders.map((occluder) => (
@@ -266,12 +314,24 @@ export default function YardBackdrop({
   isNight = false,
   sunriseProgress = 0,
   reduceMotion = false,
+  dogSleepingInDoghouse = false,
   environmentTargets = [],
   activeEnvironmentTargetId = "",
   props = [],
   activePropId = "",
   onPropTap = null,
 }) {
+  const [clockTick, setClockTick] = useState(() => Date.now());
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setClockTick(Date.now());
+    }, 60_000);
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, []);
+
   const parallax = useMemo(() => {
     const x = clamp(Number(dogXNorm || 0.5), 0, 1) - 0.5;
     return {
@@ -284,6 +344,75 @@ export default function YardBackdrop({
   const nightOpacity = isNight ? round(0.74 * (1 - sunriseProgress)) : 0;
   const sunriseOpacity = round(clamp(sunriseProgress, 0, 1));
   const environmentKey = String(environment || "yard").toLowerCase();
+  const liveSky = useMemo(() => getLiveSkyState(clockTick), [clockTick]);
+  const liveNightOpacity = clamp(
+    Math.max(nightOpacity, liveSky.nightDepth * 0.76),
+    0.08,
+    0.84
+  );
+  const skyTop = hsla(
+    mix(224, 202, liveSky.daylight) - liveSky.warmth * 10,
+    mix(42, 82, liveSky.daylight),
+    mix(12, 74, liveSky.daylight) + liveSky.warmth * 2
+  );
+  const skyMid = hsla(
+    mix(216, 194, liveSky.daylight) - liveSky.warmth * 9,
+    mix(46, 78, liveSky.daylight),
+    mix(16, 67, liveSky.daylight) + liveSky.warmth * 4
+  );
+  const skyHorizon = hsla(
+    mix(209, 176, liveSky.daylight) - liveSky.warmth * 6,
+    mix(48, 72, liveSky.daylight),
+    mix(22, 58, liveSky.daylight) + liveSky.warmth * 10
+  );
+  const skyFloor = hsla(
+    mix(205, 160, liveSky.daylight) + liveSky.warmth * 8,
+    mix(46, 66, liveSky.daylight),
+    mix(16, 44, liveSky.daylight) + liveSky.warmth * 6
+  );
+  const skyGlowOpacity = round(mix(0.26, 0.84, liveSky.daylight));
+  const horizonGlowOpacity = round(mix(0.14, 0.58, liveSky.daylight) + liveSky.warmth * 0.08);
+  const midGroundOpacity = round(mix(0.26, 0.68, liveSky.daylight));
+  const grassStripeOpacity = round(mix(0.42, 0.72, liveSky.daylight));
+  const horizonLineOpacity = round(
+    mix(0.18, 0.46, liveSky.daylight) + liveSky.warmth * 0.06
+  );
+  const groundPlaneOpacity = round(mix(0.54, 0.88, liveSky.daylight));
+  const groundVignetteOpacity = round(mix(0.24, 0.42, liveSky.nightDepth));
+  const topLightOpacity = round(mix(0.18, 0.82, liveSky.daylight) + liveSky.warmth * 0.06);
+  const topLightCore = hsla(
+    44 + liveSky.warmth * 6,
+    mix(70, 94, liveSky.daylight),
+    mix(66, 82, liveSky.daylight),
+    0.16 + liveSky.daylight * 0.12 + liveSky.warmth * 0.08
+  );
+  const topLightMid = hsla(
+    192 - liveSky.warmth * 10,
+    mix(38, 76, liveSky.daylight),
+    mix(50, 72, liveSky.daylight),
+    0.1 + liveSky.daylight * 0.08
+  );
+  const lawnBase = `linear-gradient(180deg, ${hsla(
+    mix(144, 137, liveSky.daylight),
+    mix(48, 62, liveSky.daylight),
+    mix(20, 40, liveSky.daylight)
+  )} 0%, ${hsla(
+    mix(134, 126, liveSky.daylight),
+    mix(52, 70, liveSky.daylight),
+    mix(18, 33, liveSky.daylight)
+  )} 18%, ${hsla(
+    mix(128, 120, liveSky.daylight),
+    mix(56, 64, liveSky.daylight),
+    mix(16, 24, liveSky.daylight)
+  )} 52%, ${hsla(
+    mix(124, 118, liveSky.daylight),
+    mix(52, 58, liveSky.daylight),
+    mix(14, 19, liveSky.daylight)
+  )} 100%)`;
+  const treeBaseZIndex = getDepthZIndex(0.58, -1);
+  const doghouseBaseZIndex = getDepthZIndex(0.65, -3);
+  const doghouseFrontZIndex = getDepthZIndex(0.65, -2);
+  const doghouseEntranceZIndex = getDepthZIndex(0.65, -1);
 
   if (environmentKey === "apartment") {
     const windowGlow = isNight
@@ -292,6 +421,7 @@ export default function YardBackdrop({
 
     return (
       <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[24px]">
+        <style>{BACKDROP_MOTION_STYLES}</style>
         <div className="absolute inset-0 bg-[linear-gradient(180deg,#1f2937_0%,#111827_45%,#0b1120_100%)]" />
         <div className="absolute inset-x-0 top-0 h-[64%] bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))]" />
         <div className="absolute inset-x-0 bottom-0 h-[36%] bg-[linear-gradient(180deg,#3f2a1d_0%,#2b1b12_100%)]" />
@@ -372,28 +502,53 @@ export default function YardBackdrop({
 
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[24px]">
+      <style>{BACKDROP_MOTION_STYLES}</style>
       <div className="absolute inset-0" style={{ zIndex: LAYER.SKY }}>
         <div
           className="absolute inset-0"
           style={{
-            background:
-              "linear-gradient(180deg, rgba(15,23,42,0.16) 0%, rgba(14,116,144,0.12) 26%, rgba(8,47,73,0.08) 52%, rgba(12,74,110,0.06) 100%)",
+            background: `linear-gradient(180deg, ${skyTop} 0%, ${skyMid} 28%, ${skyHorizon} 66%, ${skyFloor} 100%)`,
+          }}
+        />
+        <div
+          className="absolute left-1/2 top-[-6%] h-[38%] w-[72%] -translate-x-1/2 rounded-[50%] blur-3xl"
+          style={{
+            background: `radial-gradient(ellipse at center, ${topLightCore} 0%, ${topLightMid} 36%, rgba(255,255,255,0) 72%)`,
+            opacity: topLightOpacity,
           }}
         />
         <div
           className="absolute inset-x-[-12%] top-[18%] h-[24%] rounded-[50%] blur-3xl"
           style={{
-            background:
-              "radial-gradient(circle at center, rgba(186,230,253,0.14) 0%, rgba(103,232,249,0.08) 42%, transparent 78%)",
-            opacity: isNight ? 0.42 : 0.78,
+            background: `radial-gradient(circle at center, ${hsla(
+              mix(206, 186, liveSky.daylight),
+              mix(44, 78, liveSky.daylight),
+              mix(58, 82, liveSky.daylight),
+              0.18 + liveSky.daylight * 0.12
+            )} 0%, ${hsla(
+              mix(194, 176, liveSky.daylight),
+              mix(38, 70, liveSky.daylight),
+              mix(42, 70, liveSky.daylight),
+              0.08 + liveSky.daylight * 0.12
+            )} 42%, transparent 78%)`,
+            opacity: skyGlowOpacity,
           }}
         />
         <div
           className="absolute inset-x-0 bottom-[34%] h-[14%]"
           style={{
-            background:
-              "linear-gradient(180deg, rgba(250,204,21,0.08) 0%, rgba(134,239,172,0.1) 44%, rgba(20,83,45,0) 100%)",
-            opacity: isNight ? 0.14 : 0.52,
+            background: `linear-gradient(180deg, ${hsla(
+              42 + liveSky.warmth * 8,
+              92,
+              72,
+              0.08 + liveSky.warmth * 0.16
+            )} 0%, ${hsla(
+              138,
+              66,
+              74,
+              0.08 + liveSky.daylight * 0.12
+            )} 44%, rgba(20,83,45,0) 100%)`,
+            opacity: horizonGlowOpacity,
           }}
         />
       </div>
@@ -433,18 +588,80 @@ export default function YardBackdrop({
         }}
       >
         <div
-          className="absolute inset-x-0 bottom-[30%] h-[10%]"
+          className="absolute inset-x-[-10%] bottom-[30%] h-[28%]"
+          style={{
+            background: `linear-gradient(180deg, ${hsla(
+              144,
+              mix(22, 40, liveSky.daylight),
+              mix(24, 42, liveSky.daylight),
+              0.04
+            )} 0%, ${hsla(
+              134,
+              mix(34, 58, liveSky.daylight),
+              mix(16, 30, liveSky.daylight),
+              0.22
+            )} 44%, ${hsla(
+              126,
+              mix(40, 62, liveSky.daylight),
+              mix(12, 20, liveSky.daylight),
+              0.42
+            )} 100%)`,
+            opacity: groundPlaneOpacity,
+          }}
+        />
+        <div
+          className="absolute inset-x-[-8%] bottom-[31%] h-[7%]"
+          style={{
+            background: `linear-gradient(180deg, rgba(255,255,255,0) 0%, ${hsla(
+              46 + liveSky.warmth * 10,
+              88,
+              72,
+              0.08 + liveSky.daylight * 0.16
+            )} 54%, rgba(255,255,255,0) 100%)`,
+            opacity: horizonLineOpacity,
+            filter: "blur(2px)",
+          }}
+        />
+        <div
+          className="absolute inset-x-[-6%] bottom-[28%] h-[16%]"
           style={{
             background:
-              "linear-gradient(180deg, rgba(20,83,45,0.04) 0%, rgba(20,83,45,0.2) 55%, rgba(15,23,42,0.16) 100%)",
+              "linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 34%, rgba(15,23,42,0) 100%)",
+            opacity: horizonLineOpacity,
+            filter: "blur(18px)",
+          }}
+        />
+        <div
+          className="absolute inset-x-0 bottom-[30%] h-[10%]"
+          style={{
+            background: `linear-gradient(180deg, ${hsla(
+              135,
+              62,
+              mix(14, 24, liveSky.daylight),
+              0.06
+            )} 0%, ${hsla(
+              134,
+              54,
+              mix(18, 28, liveSky.daylight),
+              0.2
+            )} 55%, rgba(15,23,42,0.16) 100%)`,
           }}
         />
         <div
           className="absolute inset-x-[-6%] bottom-[24%] h-[14%]"
           style={{
-            background:
-              "linear-gradient(180deg, rgba(34,197,94,0.12) 0%, rgba(21,128,61,0.08) 36%, rgba(20,83,45,0) 100%)",
-            opacity: isNight ? 0.34 : 0.62,
+            background: `linear-gradient(180deg, ${hsla(
+              139,
+              72,
+              mix(26, 48, liveSky.daylight),
+              0.12
+            )} 0%, ${hsla(
+              132,
+              62,
+              mix(18, 34, liveSky.daylight),
+              0.1
+            )} 36%, rgba(20,83,45,0) 100%)`,
+            opacity: midGroundOpacity,
           }}
         />
         <div
@@ -452,7 +669,7 @@ export default function YardBackdrop({
           style={{
             backgroundImage:
               "repeating-linear-gradient(90deg, rgba(120,53,15,0.0) 0 10px, rgba(120,53,15,0.72) 10px 14px, rgba(245,158,11,0.12) 14px 19px)",
-            opacity: isNight ? 0.5 : 0.66,
+            opacity: grassStripeOpacity,
           }}
         />
         <div
@@ -462,6 +679,15 @@ export default function YardBackdrop({
               "radial-gradient(ellipse at center, rgba(250,250,249,0.08) 0%, rgba(34,197,94,0.1) 36%, rgba(20,83,45,0.08) 58%, transparent 100%)",
             filter: "blur(12px)",
             opacity: isNight ? 0.38 : 0.72,
+          }}
+        />
+        <div
+          className="absolute inset-x-[-4%] bottom-[-2%] h-[34%]"
+          style={{
+            background:
+              "radial-gradient(ellipse at center, rgba(2,6,23,0) 0%, rgba(2,6,23,0.08) 34%, rgba(2,6,23,0.24) 72%, rgba(2,6,23,0.42) 100%)",
+            opacity: groundVignetteOpacity,
+            filter: "blur(18px)",
           }}
         />
       </div>
@@ -477,8 +703,7 @@ export default function YardBackdrop({
         <div
           className="absolute inset-x-0 bottom-0 h-[30%]"
           style={{
-            background:
-              "linear-gradient(180deg, rgba(74,222,128,0.08) 0%, rgba(34,197,94,0.14) 14%, rgba(22,101,52,0.34) 52%, rgba(20,83,45,0.6) 100%)",
+            background: lawnBase,
           }}
         />
         <div
@@ -496,6 +721,10 @@ export default function YardBackdrop({
             background:
               "repeating-radial-gradient(circle at 8px 18px, rgba(134,239,172,0.18) 0 6px, transparent 7px 18px)",
             opacity: 0.55,
+            animation: reduceMotion
+              ? "none"
+              : "dgGrassWindPulse 7.2s ease-in-out infinite, dgGrassWindBounce 9.6s ease-in-out infinite",
+            transformOrigin: "50% 100%",
           }}
         />
         <div
@@ -505,19 +734,64 @@ export default function YardBackdrop({
               "radial-gradient(ellipse at center, rgba(15,23,42,0.16) 0%, rgba(15,23,42,0.1) 34%, transparent 72%)",
             filter: "blur(10px)",
             opacity: isNight ? 0.5 : 0.34,
+            animation: reduceMotion
+              ? "none"
+              : "dgGrassWindBounce 8.4s ease-in-out infinite",
           }}
         />
         <img
           src={YARD_OBJECT_SPRITES.doghouse}
           alt=""
           className="pointer-events-none absolute left-[70%] bottom-[24%] h-[34%] w-[17%] select-none object-contain drop-shadow-[0_14px_24px_rgba(15,23,42,0.34)]"
-          style={{ zIndex: 12 }}
+          style={{ zIndex: doghouseBaseZIndex }}
           draggable="false"
+        />
+        <div
+          className="absolute left-[78.5%] top-[72.2%] h-[14%] w-[7.4%] -translate-x-1/2 -translate-y-1/2"
+          style={{
+            zIndex: doghouseEntranceZIndex,
+            borderRadius: "46% 46% 30% 30% / 40% 40% 18% 18%",
+            background: dogSleepingInDoghouse
+              ? "radial-gradient(circle at 50% 30%, rgba(15,23,42,0.22) 0%, rgba(15,23,42,0.7) 46%, rgba(2,6,23,0.92) 100%)"
+              : "radial-gradient(circle at 50% 30%, rgba(15,23,42,0.12) 0%, rgba(15,23,42,0.55) 42%, rgba(2,6,23,0.88) 100%)",
+            boxShadow: dogSleepingInDoghouse
+              ? "inset 0 8px 18px rgba(2,6,23,0.78), 0 6px 16px rgba(2,6,23,0.24)"
+              : "inset 0 8px 18px rgba(2,6,23,0.62), 0 6px 16px rgba(2,6,23,0.18)",
+            filter: "blur(0.4px)",
+          }}
+        />
+        <div
+          className="absolute left-[25.5%] top-[60.5%] h-[7%] w-[16%] -translate-x-1/2 -translate-y-1/2 rounded-[50%]"
+          style={{
+            zIndex: getDepthZIndex(0.61, -5),
+            background:
+              "radial-gradient(ellipse at center, rgba(15,23,42,0.34) 0%, rgba(15,23,42,0.18) 42%, transparent 100%)",
+            filter: "blur(8px)",
+            opacity: isNight ? 0.72 : 0.54,
+          }}
+        />
+        <div
+          className="absolute left-[25.5%] top-[61.5%] h-[10%] w-[24%] -translate-x-1/2 -translate-y-1/2 rounded-[50%]"
+          style={{
+            zIndex: getDepthZIndex(0.62, -6),
+            background:
+              "radial-gradient(ellipse at center, rgba(2,6,23,0.18) 0%, rgba(15,23,42,0.08) 48%, transparent 100%)",
+            filter: "blur(16px)",
+            opacity: isNight ? 0.68 : 0.42,
+          }}
         />
         <img
           src={YARD_OBJECT_SPRITES.tree}
           alt=""
-          className="pointer-events-none absolute left-[17%] bottom-[24%] h-[42%] w-[17%] select-none object-contain drop-shadow-[0_18px_30px_rgba(15,23,42,0.34)]"
+          className="pointer-events-none absolute left-[25.5%] top-[58%] h-[42%] w-[17%] -translate-x-1/2 -translate-y-full select-none object-contain drop-shadow-[0_20px_34px_rgba(15,23,42,0.3)]"
+          style={{
+            zIndex: treeBaseZIndex,
+            animation: reduceMotion
+              ? "none"
+              : "dgTreeWindPulse 8.8s ease-in-out infinite, dgTreeWindBounce 10.8s ease-in-out infinite",
+            transformOrigin: "50% 100%",
+            filter: "drop-shadow(0 16px 26px rgba(15,23,42,0.22)) blur(0.15px)",
+          }}
           draggable="false"
         />
       </div>
@@ -532,7 +806,7 @@ export default function YardBackdrop({
           style={{
             background:
               "linear-gradient(180deg, rgba(15,23,42,0.42) 0%, rgba(30,41,59,0.18) 42%, rgba(2,6,23,0.52) 100%)",
-            opacity: nightOpacity,
+            opacity: liveNightOpacity,
           }}
         />
         <div
@@ -556,21 +830,22 @@ export default function YardBackdrop({
         {
           key: "yard-tree-trunk-front",
           xNorm: 0.245,
-          yNorm: 0.73,
+          yNorm: 0.64,
           width: "4.6%",
-          height: "22%",
+          height: "18%",
           borderRadius: "999px",
           background:
             "linear-gradient(180deg, rgba(101,67,33,0.96) 0%, rgba(69,39,18,0.98) 100%)",
           boxShadow: "0 -4px 12px rgba(15,23,42,0.18)",
-          zOffset: 2,
+          filter: "blur(0.3px)",
+          zOffset: 10,
         },
       ])}
-      <img
-        src={YARD_OBJECT_SPRITES.doghouseFront}
-        alt=""
-        className="pointer-events-none absolute left-[70%] bottom-[24%] h-[34%] w-[17%] select-none object-contain"
-        style={{ zIndex: 42 }}
+        <img
+          src={YARD_OBJECT_SPRITES.doghouseFront}
+          alt=""
+          className="pointer-events-none absolute left-[70%] bottom-[24%] h-[34%] w-[17%] select-none object-contain"
+          style={{ zIndex: doghouseFrontZIndex }}
         draggable="false"
       />
     </div>

@@ -22,7 +22,10 @@ import {
   ensureFirebasePersistence,
   firebaseReady,
 } from "@/lib/firebase/index.js";
-import { ensureAnonSignIn } from "@/lib/firebaseClient.js";
+import {
+  ensureAnonSignIn,
+  isAnonymousFirebaseUser,
+} from "@/lib/firebaseClient.js";
 import { getGrantedLocationSnapshot } from "@/lib/locationReality.js";
 import { fetchRealTimeWeather } from "@/features/weather/RealTimeWeatherFetcher.js";
 import { DOGS } from "@/app/config/assets.js";
@@ -198,6 +201,9 @@ const Doggerz = {
 
       try {
         const user = await ensureAnonSignIn();
+        if (!user || isAnonymousFirebaseUser(user)) {
+          return { mode: "local", user: null };
+        }
         return { mode: "firebase", user };
       } catch (error) {
         console.warn(

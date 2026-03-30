@@ -1,22 +1,17 @@
 import { useEffect, useRef } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { onAuthStateChanged } from "firebase/auth";
+import { useDispatch } from "react-redux";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 
 import { auth, firebaseReady } from "@/lib/firebase/index.js";
-import { ensureAnonSignIn } from "@/lib/firebaseClient.js";
 import {
   clearUserAuth,
-  selectIsAuthResolved,
-  selectUserId,
   setUser,
 } from "@/store/userSlice.js";
 import { debugError, debugLog } from "@/utils/debugLogger.js";
 
 export default function AuthBootstrap() {
   const dispatch = useDispatch();
-  const authResolved = useSelector(selectIsAuthResolved);
-  const userId = useSelector(selectUserId);
-  const anonBootstrapRequestedRef = useRef(false);
+  const clearingAnonSessionRef = useRef(false);
 
   useEffect(() => {
     console.info("[Doggerz] Firebase runtime config", {
@@ -36,6 +31,25 @@ export default function AuthBootstrap() {
     let cancelled = false;
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (user) {
+        if (user.isAnonymous) {
+          if (!clearingAnonSessionRef.current) {
+            clearingAnonSessionRef.current = true;
+            try {
+              await signOut(auth);
+            } catch (err) {
+              debugError("Auth", "anonymous session cleanup failed", err);
+            }
+          }
+          if (cancelled) return;
+          dispatch(clearUserAuth());
+          debugLog("Auth", "auth state changed", { userId: null });
+          console.info("[Doggerz] Auth resolved", {
+            uid: null,
+            anonymous: false,
+          });
+          return;
+        }
+
         try {
           await user.getIdToken();
         } catch (err) {
@@ -67,6 +81,7 @@ export default function AuthBootstrap() {
         return;
       }
 
+      clearingAnonSessionRef.current = false;
       dispatch(clearUserAuth());
       debugLog("Auth", "auth state changed", { userId: null });
       console.info("[Doggerz] Auth resolved", { uid: null, anonymous: false });
@@ -81,25 +96,6 @@ export default function AuthBootstrap() {
       }
     };
   }, [dispatch]);
-
-  useEffect(() => {
-    if (!firebaseReady || !authResolved) return;
-    if (userId || auth?.currentUser) return;
-    if (anonBootstrapRequestedRef.current) return;
-
-    anonBootstrapRequestedRef.current = true;
-    debugLog("Auth", "anonymous auth bootstrap requested");
-    console.info("[Doggerz] Anonymous auth bootstrap requested");
-
-    ensureAnonSignIn()
-      .catch((err) => {
-        debugError("Auth", "anonymous auth bootstrap failed", err);
-        console.error("[Doggerz] Anonymous auth bootstrap failed", err);
-      })
-      .finally(() => {
-        anonBootstrapRequestedRef.current = false;
-      });
-  }, [authResolved, userId]);
 
   return null;
 }

@@ -1,5 +1,8 @@
 import jrManifest from "@/components/dog/manifests/jrManifest.json";
-import { DOG_ANIMATIONS } from "@/animation/dogAnimationMap.js";
+import {
+  isKnownDogAnimation,
+  resolveDogAnimation,
+} from "@/animation/dogAnimationMap.js";
 import { getObedienceCommand } from "@/features/training/obedienceCommands.js";
 import { LIFE_STAGES } from "@/features/dog/dogLifeStages.js";
 import {
@@ -21,29 +24,36 @@ const ANIM_ALIASES =
   jrManifest?.aliases && typeof jrManifest.aliases === "object"
     ? jrManifest.aliases
     : {};
+
 const MANIFEST_ANIMS = new Set(
   ANIM_ROWS.map((row) => normalizeDogAnimKey(row?.anim || "")).filter(Boolean)
 );
 
-const TRICK_ACTIONS = new Set([
-  "sit",
-  "stay",
-  "roll",
-  "rollover",
-  "roll_over",
-  "spin",
-  "jump",
-  "paw",
-  "bow",
-  "beg",
-  "play_dead",
-  "playdead",
-  "highfive",
-  "wave",
-  "shake",
-  "crawl",
-  "fetch",
-  "dance",
+const LEGACY_COMMAND_ANIM_FALLBACKS = Object.freeze({
+  stay: "sit",
+  roll: "lay_down",
+  rollover: "lay_down",
+  roll_over: "lay_down",
+  spin: "walk",
+  play_dead: "lay_down",
+  playdead: "lay_down",
+  wave: "paw",
+  crawl: "walk",
+  high_five: "highfive",
+  sit_pretty: "beg",
+  sitpretty: "beg",
+  speak: "bark",
+  backflip: "jump",
+  bow: "beg",
+  trick: "sit",
+});
+
+const WALK_OVERRIDE_IDLE_ANIMS = new Set([
+  "idle",
+  "idle_resting",
+  "wag",
+  "puppy_idle_pack",
+  "golden_years_idle",
 ]);
 
 function clamp(value, min, max) {
@@ -64,9 +74,20 @@ function canResolveAnimKey(value) {
   const key = normalizeDogAnimKey(value);
   if (!key) return false;
   if (MANIFEST_ANIMS.has(key)) return true;
-
   const alias = normalizeDogAnimKey(ANIM_ALIASES[key] || "");
   return Boolean(alias && MANIFEST_ANIMS.has(alias));
+}
+
+function resolveSupportedAnimOrNull(value) {
+  const normalized = normalizeDogAnimKey(value);
+  if (!normalized || !isKnownDogAnimation(normalized)) {
+    return null;
+  }
+  const mapped = normalizeDogAnimKey(resolveDogAnimation(normalized));
+  if (mapped && canResolveAnimKey(mapped)) {
+    return mapped;
+  }
+  return null;
 }
 
 export function getManifestAnimMeta(anim) {
@@ -108,12 +129,20 @@ export function resolveManifestAnimKey(anim) {
 function resolveTrainedCommandAnim(commandId) {
   const normalized = normalizeDogAnimKey(commandId);
   if (!normalized) return null;
+
   const command = getObedienceCommand(normalized);
-  const animationKey = normalizeDogAnimKey(command?.animationKey || "");
-  if (animationKey && canResolveAnimKey(animationKey)) {
-    return animationKey;
+  const commandAnimationKey = normalizeDogAnimKey(command?.animationKey || "");
+  const fromCommand = resolveSupportedAnimOrNull(commandAnimationKey);
+  if (fromCommand) return fromCommand;
+
+  const direct = resolveSupportedAnimOrNull(normalized);
+  if (direct) return direct;
+
+  const legacyFallback = LEGACY_COMMAND_ANIM_FALLBACKS[normalized];
+  if (legacyFallback) {
+    return resolveSupportedAnimOrNull(legacyFallback);
   }
-  return canResolveAnimKey(normalized) ? normalized : null;
+  return null;
 }
 
 function resolveExplicitAnim(
@@ -132,10 +161,6 @@ function resolveExplicitAnim(
     if (reactionAnim) return reactionAnim;
   }
 
-  if (normalized === "train_zoomies") {
-    return "walk";
-  }
-
   if (
     (normalized === "train" || normalized === "train_perfect") &&
     lastTrainedCommandId
@@ -144,10 +169,14 @@ function resolveExplicitAnim(
     if (trainedAnim) return trainedAnim;
   }
 
-  const mapped = normalizeDogAnimKey(DOG_ANIMATIONS[normalized] || "");
-  if (mapped && canResolveAnimKey(mapped)) return mapped;
+  const direct = resolveSupportedAnimOrNull(normalized);
+  if (direct) return direct;
 
-  if (canResolveAnimKey(normalized)) return normalized;
+  const legacyFallback = LEGACY_COMMAND_ANIM_FALLBACKS[normalized];
+  if (legacyFallback) {
+    return resolveSupportedAnimOrNull(legacyFallback);
+  }
+
   return null;
 }
 
@@ -223,19 +252,21 @@ function resolvePersonalityIdleAnim(dog, fallbackAnim = "idle") {
 function applyJointStiffnessAnimationLimit(anim, dog, stage) {
   const key = normalizeDogAnimKey(anim);
   const stiffness = Number(dog?.healthSilo?.jointStiffness || 0);
-  if (stage !== "senior" || stiffness < 55) return key;
+  if (stage !== "senior" || stiffness < 55) {
+    return key;
+  }
 
   if (
     key === "jump" ||
-    key === "spin" ||
     key === "fetch" ||
-    key === "trick" ||
-    key === "turn_walk_right" ||
+    key === "walk_left" ||
     key === "walk_right" ||
-    key === "walk_left"
+    key === "turn_walk_left" ||
+    key === "turn_walk_right"
   ) {
     return "walk";
   }
+
   return key;
 }
 
@@ -269,15 +300,23 @@ export function resolveViewportAnim({
 } = {}) {
   const requested = normalizeDogAnimKey(anim);
   const behavior = normalizeDogAnimKey(behaviorState);
+
   if (dogIsSleeping) {
-    return resolveManifestAnimKey(requested || "deep_rem_sleep");
+    return resolveManifestAnimKey("deep_rem_sleep");
   }
+
   if (behavior === "walk") {
-    if (!requested || requested === "idle" || requested === "walk") {
+    if (
+      !requested ||
+      requested === "walk" ||
+      WALK_OVERRIDE_IDLE_ANIMS.has(requested)
+    ) {
       return "walk";
     }
   }
-  return resolveManifestAnimKey(requested || "idle");
+
+  const supported = resolveSupportedAnimOrNull(requested);
+  return resolveManifestAnimKey(supported || "idle");
 }
 
 export function resolveDogAnimationState(dog = {}) {
@@ -326,21 +365,16 @@ export function resolveDogAnimationState(dog = {}) {
     trainingReaction
   );
 
-  let anim = explicitAnim;
-  if (!anim) {
-    anim = normalizeDogAnimKey(DOG_ANIMATIONS[aiState] || "");
-  }
+  let anim = explicitAnim || resolveSupportedAnimOrNull(aiState);
   if (!anim) {
     const happiness = Number(dog?.stats?.happiness ?? 0);
     const isBarking =
       lastAction.includes("bark") ||
       lastAction.includes("howl") ||
-      lastAction === "speak" ||
-      (lastAction === "train" && lastTrainedCommandId === "speak");
+      lastAction === "speak";
     const isWalking =
       lastAction === "walk" ||
       lastAction === "walking" ||
-      lastAction === "zoomies" ||
       lastAction.includes("run") ||
       lastAction === "play" ||
       lastAction === "fetch";
@@ -348,12 +382,29 @@ export function resolveDogAnimationState(dog = {}) {
       lastAction.includes("scratch") ||
       lastAction.includes("itch") ||
       lastAction.includes("dig");
-    const isTrick =
-      TRICK_ACTIONS.has(lastAction) ||
-      (lastAction === "train" && Boolean(lastTrainedCommandId));
+    const isEating =
+      lastAction === "eat" ||
+      lastAction === "feed" ||
+      lastAction.startsWith("feed_");
+    const isDrinking = lastAction === "drink" || lastAction === "water";
+    const isSniffing =
+      lastAction === "sniff" ||
+      lastAction === "potty" ||
+      lastAction === "potty_fakeout";
+    const trainedAnim =
+      (lastAction === "train" || lastAction === "train_perfect") &&
+      lastTrainedCommandId
+        ? resolveTrainedCommandAnim(lastTrainedCommandId)
+        : null;
     const isWag =
       lastAction.includes("wag") ||
-      (!isWalking && !isTrick && !isScratch && happiness >= 80);
+      (!isWalking &&
+        !isScratch &&
+        !isEating &&
+        !isDrinking &&
+        !isSniffing &&
+        !trainedAnim &&
+        happiness >= 80);
 
     anim = isSleeping
       ? "idle"
@@ -361,13 +412,19 @@ export function resolveDogAnimationState(dog = {}) {
         ? "bark"
         : isScratch
           ? "scratch"
-          : isTrick
-            ? "trick"
-            : isWag
-              ? "wag"
-              : isWalking
-                ? "walk"
-                : "idle";
+          : isEating
+            ? "eat"
+            : isDrinking
+              ? "drink"
+              : isSniffing
+                ? "sniff"
+                : trainedAnim || null
+                  ? trainedAnim
+                  : isWag
+                    ? "wag"
+                    : isWalking
+                      ? "walk"
+                      : "idle";
   }
 
   if (!explicitAnim && !isSleeping && anim === "idle") {

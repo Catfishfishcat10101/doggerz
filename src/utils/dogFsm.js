@@ -65,15 +65,15 @@ const STATE_DURATIONS_MS = Object.freeze({
 
 const STATE_ANIMS = Object.freeze({
   [DOG_FSM_STATES.EATING]: "eat",
-  [DOG_FSM_STATES.DRINKING]: "wag",
+  [DOG_FSM_STATES.DRINKING]: "drink",
   [DOG_FSM_STATES.PLAYING]: "walk",
   [DOG_FSM_STATES.BATHING]: "shake",
-  [DOG_FSM_STATES.POTTY]: "walk",
-  [DOG_FSM_STATES.SCOOPING]: "wag",
+  [DOG_FSM_STATES.POTTY]: "sniff",
+  [DOG_FSM_STATES.SCOOPING]: "idle",
   [DOG_FSM_STATES.SLEEPING]: "sleep",
   [DOG_FSM_STATES.ZOOMIES]: "walk",
   [DOG_FSM_STATES.DIGGING]: "scratch",
-  [DOG_FSM_STATES.TRAINING]: "trick",
+  [DOG_FSM_STATES.TRAINING]: "sit",
 });
 
 const LOCKED_STATES = new Set([DOG_FSM_STATES.ZOOMIES]);

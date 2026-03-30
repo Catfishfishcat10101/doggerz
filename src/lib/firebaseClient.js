@@ -8,7 +8,7 @@ import {
   firebaseReady,
   assertFirebaseReady,
 } from "@/lib/firebase/index.js";
-import { signInAnonymously, onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
 import { dogMainDoc } from "@/lib/firebase/paths.js";
 
 /**
@@ -16,8 +16,6 @@ import { dogMainDoc } from "@/lib/firebase/paths.js";
  * Keeps older imports working while preventing double initialization.
  */
 export { auth, db };
-
-let anonSignInPromise = null;
 
 export function isAnonymousFirebaseUser(user) {
   return Boolean(user?.isAnonymous);
@@ -38,8 +36,9 @@ export function isFirestorePermissionError(error) {
 }
 
 /**
- * Ensure there is an authenticated user (anonymous if needed).
- * Returns the current user (or null if Firebase is not available).
+ * Legacy compatibility helper.
+ * Returns the existing authenticated user if present, but never creates an
+ * anonymous session implicitly.
  */
 export async function ensureAnonSignIn() {
   if (!firebaseReady || !auth) {
@@ -48,21 +47,7 @@ export async function ensureAnonSignIn() {
     );
     return null;
   }
-  if (auth?.currentUser) return auth.currentUser;
-
-  if (!anonSignInPromise) {
-    anonSignInPromise = signInAnonymously(auth)
-      .catch((err) => {
-        console.error("[Doggerz] Anonymous sign-in failed:", err);
-        throw err;
-      })
-      .finally(() => {
-        anonSignInPromise = null;
-      });
-  }
-
-  const credential = await anonSignInPromise;
-  return auth?.currentUser || credential?.user || null;
+  return auth?.currentUser || null;
 }
 
 /**

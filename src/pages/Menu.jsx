@@ -14,12 +14,7 @@ export default function MenuPage() {
           <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-zinc-100">
             Keep this tight.
           </h1>
-          <p className="mt-3 text-sm text-zinc-400">
-            Settings, help, and contact stay here. Everything else belongs in
-            the main loop or inside Settings so this reads like an app drawer,
-            not a website map.
-          </p>
-        </div>
+          </div>
 
         <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {MENU_DESTINATIONS.map((item) => (
@@ -45,6 +40,15 @@ export default function MenuPage() {
             Settings
           </Link>
           .
+        </div>
+
+        <div className="mt-8">
+          <Link
+            to="/settings"
+            className="inline-block rounded-3xl border border-emerald-400/35 bg-emerald-500/10 px-6 py-3 font-semibold text-emerald-200 transition hover:bg-emerald-500/20 hover:text-emerald-100"
+          >
+            Settings
+          </Link>
         </div>
       </div>
     </PageShell>

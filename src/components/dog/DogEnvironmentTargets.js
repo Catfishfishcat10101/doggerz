@@ -68,7 +68,7 @@ const YARD_TARGETS = Object.freeze([
     type: "tree",
     label: "tree shade",
     xNorm: 0.24,
-    yNorm: 0.74,
+    yNorm: 0.64,
     interaction: "tree_pause",
   },
   {
@@ -76,7 +76,7 @@ const YARD_TARGETS = Object.freeze([
     type: "doghouse",
     label: "doghouse",
     xNorm: 0.78,
-    yNorm: 0.75,
+    yNorm: 0.65,
     interaction: "rest",
   },
 ]);

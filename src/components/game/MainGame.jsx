@@ -89,50 +89,12 @@ const SHARE_REWARD_COOLDOWN_MS = 12 * 60 * 60 * 1000;
 const DEFAULT_OWNER_AVATAR =
   "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='bg' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23334155'/%3E%3Cstop offset='100%25' stop-color='%231e293b'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='32' fill='url(%23bg)'/%3E%3Ccircle cx='32' cy='25' r='12' fill='%2394a3b8'/%3E%3Cpath d='M16 53c3-10 12-16 16-16s13 6 16 16' fill='%2394a3b8'/%3E%3C/svg%3E";
 
-const ACTION_META = Object.freeze({
-  Feed: {
-    icon: "🍖",
-    hint: "Refill hunger",
-    card: "from-doggerz-leaf/35 to-doggerz-treat/20",
-    edge: "border-doggerz-leaf/45",
-  },
-  Play: {
-    icon: "🎾",
-    hint: "Boost happiness",
-    card: "from-doggerz-leaf/30 to-doggerz-sky/20",
-    edge: "border-doggerz-sky/45",
-  },
-  Pet: {
-    icon: "🖐️",
-    hint: "Build affection",
-    card: "from-doggerz-leaf/30 to-doggerz-neonSoft/20",
-    edge: "border-doggerz-leaf/45",
-  },
-  Bath: {
-    icon: "🧼",
-    hint: "Clean up dirt",
-    card: "from-doggerz-paw/30 to-doggerz-sky/20",
-    edge: "border-doggerz-paw/45",
-  },
-  Potty: {
-    icon: "🌿",
-    hint: "Prevent accidents",
-    card: "from-doggerz-leaf/35 to-doggerz-neon/20",
-    edge: "border-doggerz-leaf/45",
-  },
-  Tricks: {
-    icon: "🎯",
-    hint: "Train commands",
-    card: "from-doggerz-neonSoft/30 to-doggerz-leaf/25",
-    edge: "border-doggerz-leaf/45",
-  },
-  Interact: {
-    icon: "✨",
-    hint: "Open interaction sheet",
-    card: "from-doggerz-bone/20 to-doggerz-neon/15",
-    edge: "border-doggerz-neon/40",
-  },
-});
+const BOTTOM_MENU_TABS = Object.freeze([
+  { id: "interact", label: "Interact", icon: "✨" },
+  { id: "train", label: "Train", icon: "🎯" },
+  { id: "journey", label: "Journey", icon: "🐾" },
+  { id: "settings", label: "Settings", icon: "⚙️" },
+]);
 
 const PAW_PRINT_TTL_MS = 8000;
 const PAW_PRINT_COLORS = Object.freeze({
@@ -211,13 +173,65 @@ const TREASURE_REWARDS = Object.freeze([
   { id: "old_bone", name: "Fossilized Bone", icon: "🦴", weight: 0.4 },
   { id: "tennis_ball", name: "Muddy Tennis Ball", icon: "🎾", weight: 0.5 },
 ]);
-const LOW_ENERGY_SLEEP_THRESHOLD = 0;
-const LOW_ENERGY_AUTO_SLEEP_TRIGGER = 0;
+const LOW_ENERGY_SLEEP_THRESHOLD = 15;
+const LOW_ENERGY_AUTO_SLEEP_TRIGGER = 15;
 const LOW_ENERGY_AUTO_SLEEP_COOLDOWN_MS = 45_000;
-const LOW_ENERGY_WARNING_MIN_OFFSET = 5;
+const LOW_ENERGY_WARNING_MIN_OFFSET = 1;
 const LOW_ENERGY_WARNING_MAX_OFFSET = 10;
 const SLEEP_SPOT_ARRIVAL_DISTANCE = 28;
 const SLEEP_SPOT_WALK_TIMEOUT_MS = 12_000;
+const DOGHOUSE_SLEEP_X_NORM = 0.78;
+const DOGHOUSE_SLEEP_Y_NORM = 0.65;
+const YARD_TAP_MIN_Y_NORM = 0.68;
+const YARD_TAP_MAX_Y_NORM = 0.92;
+
+function formatDogAgePill(ageDays) {
+  const totalDays = Math.max(0, Math.floor(Number(ageDays || 0)));
+  const DAYS_PER_WEEK = 7;
+  const DAYS_PER_YEAR = 365;
+
+  if (totalDays < DAYS_PER_YEAR) {
+    const weeks = Math.floor(totalDays / DAYS_PER_WEEK);
+    const days = totalDays % DAYS_PER_WEEK;
+    if (!weeks) {
+      return `${days}d`;
+    }
+    if (!days) {
+      return `${weeks}w`;
+    }
+    return `${weeks}w ${days}d`;
+  }
+
+  const years = Math.floor(totalDays / DAYS_PER_YEAR);
+  const remainderDays = totalDays % DAYS_PER_YEAR;
+  const weeks = Math.floor(remainderDays / DAYS_PER_WEEK);
+  if (!weeks) {
+    return `${years}y`;
+  }
+  return `${years}y ${weeks}w`;
+}
+
+function formatDogAgeTooltip(ageDays) {
+  const totalDays = Math.max(0, Math.floor(Number(ageDays || 0)));
+  if (totalDays < 365) {
+    return "Age since adoption, shown as weeks and days for puppies.";
+  }
+  return "Age since adoption, shown as years and weeks once your pup turns one.";
+}
+
+function formatStageCountdown(daysUntilNextStage, nextStageLabel) {
+  if (!nextStageLabel || !Number.isFinite(Number(daysUntilNextStage))) {
+    return "Current life stage";
+  }
+
+  const days = Math.max(0, Math.floor(Number(daysUntilNextStage || 0)));
+  if (days < 7) {
+    return `${days}d until ${nextStageLabel}`;
+  }
+
+  const weeks = Math.max(1, Math.floor(days / 7));
+  return `${weeks}w until ${nextStageLabel}`;
+}
 const SLEEP_SPOT_RETARGET_COOLDOWN_MS = 1400;
 
 function rollTreasureReward() {
@@ -339,6 +353,30 @@ function toWorldPosition(xNorm = 0.5, yNorm = 0.74) {
   return {
     x: clamp(Number(xNorm || 0.5) * DOG_WORLD_WIDTH, 0, DOG_WORLD_WIDTH),
     y: clamp(Number(yNorm || 0.74) * DOG_WORLD_HEIGHT, 0, DOG_WORLD_HEIGHT),
+  };
+}
+
+function clampYardTapYNorm(value) {
+  return clamp(Number(value || 0.74), YARD_TAP_MIN_Y_NORM, YARD_TAP_MAX_Y_NORM);
+}
+
+function getTimeOfDayLighting(now = Date.now()) {
+  const date = new Date(now);
+  const hourFloat =
+    Number(date.getHours() || 0) + Number(date.getMinutes() || 0) / 60;
+  const daylight = clamp(
+    Math.sin(((hourFloat - 6) / 12) * Math.PI),
+    0,
+    1
+  );
+  const dawnGlow = clamp(1 - Math.abs(hourFloat - 6.5) / 2.5, 0, 1);
+  const duskGlow = clamp(1 - Math.abs(hourFloat - 18.5) / 2.5, 0, 1);
+  const warmth = Math.max(dawnGlow, duskGlow);
+
+  return {
+    daylight,
+    warmth,
+    nightDepth: clamp(1 - daylight * 0.9, 0.08, 1),
   };
 }
 
@@ -483,6 +521,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
   const [voiceSupported, setVoiceSupported] = useState(false);
   const [sleepLocation, setSleepLocation] = useState(null);
   const [pendingSleepWalk, setPendingSleepWalk] = useState(null);
+  const [bottomMenuCategory, setBottomMenuCategory] = useState("interact");
   const [tricksOpen, setTricksOpen] = useState(false);
   const [trainingLogOpen, setTrainingLogOpen] = useState(false);
   const [masteryCelebration, setMasteryCelebration] = useState(null);
@@ -520,10 +559,6 @@ export default function MainGame({ scene, dogInteractive = true }) {
   )
     .trim()
     .toLowerCase();
-  const displayTimeOfDay = toTitle(
-    resolvedTimeBucket,
-    String(scene?.timeOfDay || "Day")
-  );
   const sceneWeather = String(
     scene?.weatherKey || scene?.weather || ""
   ).toLowerCase();
@@ -575,7 +610,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
     currentEnergy <= sleepyWarningCeil;
   const sleepLocationMode =
     !isApartmentEnvironment && effectiveDogSleeping
-      ? sleepLocation?.mode || (lowEnergySleep ? "yard" : null)
+      ? sleepLocation?.mode || (lowEnergySleep ? "doghouse" : null)
       : null;
   const sleepInDogHouse = sleepLocationMode === "doghouse";
   const sleepInYard = sleepLocationMode === "yard";
@@ -612,7 +647,10 @@ export default function MainGame({ scene, dogInteractive = true }) {
     life?.stageLabel || renderModel?.stageLabel || "Puppy"
   );
   const ageDays = Math.max(0, Math.floor(Number(life?.ageDays || 0)));
+  const agePillValue = formatDogAgePill(ageDays);
+  const agePillTooltip = formatDogAgeTooltip(ageDays);
   const ageBucketLabel = String(life?.ageBucketLabel || "New pup");
+  const dogBaseScale = 0.4 + clamp(ageDays / 365, 0, 1) * 0.4;
   const stageHeadline = String(life?.headline || "Tiny chaos era");
   const stageSummary = String(life?.summary || "Routine matters.");
   const stageDetail = String(life?.detail || "");
@@ -622,6 +660,10 @@ export default function MainGame({ scene, dogInteractive = true }) {
   const daysUntilNextStage = Number.isFinite(Number(life?.daysUntilNextStage))
     ? Number(life.daysUntilNextStage)
     : null;
+  const nextStageCountdown = formatStageCountdown(
+    daysUntilNextStage,
+    nextStageLabel
+  );
   const goldenYearsActive =
     dogInteractive && Boolean(life?.isFinalStretchImmune);
   const renderStageForSprites = goldenYearsActive
@@ -688,12 +730,50 @@ export default function MainGame({ scene, dogInteractive = true }) {
   const displayMoodLabel = ambientEvent?.type === "owl" ? "Curious" : moodLabel;
   const bondPct = toPct(vitals?.bondValue);
   const hungerPct = toPct(vitals?.hunger);
+  const thirstPct = toPct(dog?.stats?.thirst);
   const energyPct = toPct(vitals?.energy);
+  const cleanlinessPct = toPct(dog?.stats?.cleanliness);
+  const mentalStimulationPct = toPct(dog?.stats?.mentalStimulation);
   const rawHealthPct = toPct(vitals?.health);
   const healthPct =
     dogInteractive && dog?.adoptedAt ? Math.max(1, rawHealthPct) : rawHealthPct;
   const energyCritical = energyPct < 20;
   const healthCritical = healthPct < 20;
+  const dockNeedMetrics = useMemo(
+    () => ({
+      hunger: clamp(hungerPct, 0, 100),
+      thirst: clamp(thirstPct, 0, 100),
+      play: clamp(100 - mentalStimulationPct, 0, 100),
+      affection: clamp(100 - bondPct, 0, 100),
+      hygiene: clamp(100 - cleanlinessPct, 0, 100),
+      potty: clamp(Math.max(hungerPct * 0.42, thirstPct * 0.76), 0, 100),
+      training: clamp(100 - mentalStimulationPct * 0.78, 0, 100),
+    }),
+    [
+      bondPct,
+      cleanlinessPct,
+      hungerPct,
+      mentalStimulationPct,
+      thirstPct,
+    ]
+  );
+  const timeLighting = useMemo(() => getTimeOfDayLighting(liveNow), [liveNow]);
+  const dogSceneFilter = useMemo(() => {
+    const warmth = Number(timeLighting.warmth || 0);
+    const daylight = Number(timeLighting.daylight || 0);
+    const nightDepth = Number(timeLighting.nightDepth || 0);
+    const brightness = clamp(0.84 + daylight * 0.22 + warmth * 0.06, 0.78, 1.18);
+    const saturate = clamp(0.82 + daylight * 0.26 + warmth * 0.12, 0.76, 1.18);
+    const sepia = clamp(warmth * 0.18, 0, 0.18);
+    const hue = Number(((warmth - nightDepth * 0.18) * 4).toFixed(2));
+    return `brightness(${brightness}) saturate(${saturate}) sepia(${sepia}) hue-rotate(${hue}deg)`;
+  }, [timeLighting]);
+  const theme = useMemo(
+    () => ({
+      dogTint: dogSceneFilter,
+    }),
+    [dogSceneFilter]
+  );
   const cloudSyncUi = useMemo(
     () => formatCloudSyncLabel(cloudSync, isLoggedIn, liveNow),
     [cloudSync, isLoggedIn, liveNow]
@@ -723,12 +803,12 @@ export default function MainGame({ scene, dogInteractive = true }) {
     0,
     pottyTrainingGoal
   );
-  const pottyTrainingComplete = Boolean(pottyTrainingState?.completedAt);
   const pottyTrainingPct = Math.round(
     (pottyTrainingSuccessCount / pottyTrainingGoal) * 100
   );
+  const pottyMasteryComplete = pottyTrainingPct >= 100;
   const showPottyTrainingProgress =
-    Boolean(dog?.adoptedAt) && !pottyTrainingComplete;
+    Boolean(dog?.adoptedAt) && !pottyMasteryComplete;
   const pottyTrainingCopy =
     String(life?.stage || "").toUpperCase() === "PUPPY"
       ? "Finish puppy potty training before tricks unlock."
@@ -769,7 +849,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
     return mastered;
   }, [dog?.skills?.obedience]);
   const activeTrickLearningLimit = getObedienceActiveLearningLimit({
-    pottyComplete: pottyTrainingComplete,
+    pottyComplete: pottyMasteryComplete,
     level: overallLevel,
     stage: life?.stage,
     masteredCount: masteredTrickIds.size,
@@ -811,7 +891,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
             minutesUntilReady > 0
               ? `Almost ready. Check back in about ${minutesUntilReady} minute${minutesUntilReady === 1 ? "" : "s"}.`
               : "Almost ready. Check back in a moment.";
-        } else if (!pottyTrainingComplete) {
+        } else if (!pottyMasteryComplete) {
           requirementLabel = "Potty first";
           helperText = "Finish potty training before trick lessons begin.";
         } else if (!meetsLevel) {
@@ -852,7 +932,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
       masteredTrickIds,
       overallLevel,
       pendingUnlockStartsById,
-      pottyTrainingComplete,
+      pottyMasteryComplete,
       unlockedTrickIds,
     ]
   );
@@ -880,7 +960,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
   const pendingTrickCount = trickOptions.filter(
     (command) => command.pendingUnlock
   ).length;
-  const pottyButtonTooltip = pottyTrainingComplete
+  const pottyButtonTooltip = pottyMasteryComplete
     ? "Potty routine helps avoid accidents."
     : `Potty train first: ${pottyTrainingSuccessCount}/${pottyTrainingGoal} complete.`;
   const lastCheckInAt =
@@ -908,12 +988,18 @@ export default function MainGame({ scene, dogInteractive = true }) {
 
   const resolveSleepLocation = useCallback(() => {
     if (isApartmentEnvironment) return null;
+    if (lowEnergySleep) {
+      return {
+        mode: "doghouse",
+        position: toWorldPosition(DOGHOUSE_SLEEP_X_NORM, DOGHOUSE_SLEEP_Y_NORM),
+      };
+    }
     const chooseDoghouse =
       Math.random() < (isNightScene || isRainScene ? 0.72 : 0.48);
     if (chooseDoghouse) {
       return {
         mode: "doghouse",
-        position: toWorldPosition(0.78, 0.79),
+        position: toWorldPosition(DOGHOUSE_SLEEP_X_NORM, DOGHOUSE_SLEEP_Y_NORM),
       };
     }
     const xNorm = clamp(0.16 + Math.random() * 0.7, 0.12, 0.9);
@@ -922,14 +1008,14 @@ export default function MainGame({ scene, dogInteractive = true }) {
       mode: "yard",
       position: toWorldPosition(xNorm, yNorm),
     };
-  }, [isApartmentEnvironment, isNightScene, isRainScene]);
+  }, [isApartmentEnvironment, isNightScene, isRainScene, lowEnergySleep]);
   const trainingInputMode = String(settings?.trainingInputMode || "both")
     .trim()
     .toLowerCase();
   const voiceInputEnabled =
     trainingInputMode === "voice" || trainingInputMode === "both";
   const dogRenderZIndex = sleepInDogHouse
-    ? 18
+    ? 25
     : Math.max(14, Math.round(15 + dogDepthNorm * 20));
   const temperamentReady = Boolean(
     dog?.temperament?.revealReady && !dog?.temperament?.revealedAt
@@ -985,7 +1071,20 @@ export default function MainGame({ scene, dogInteractive = true }) {
     [hijackedActionKey]
   );
   const tricksLocked =
-    controlsDisabled || isActionHijacked("train") || !pottyTrainingComplete;
+    controlsDisabled || isActionHijacked("train") || !pottyMasteryComplete;
+  const bottomMenuTabs = useMemo(
+    () =>
+      BOTTOM_MENU_TABS.map((tab) =>
+        tab.id === "train"
+          ? {
+              ...tab,
+              label: pottyMasteryComplete ? "Tricks" : "Train",
+              icon: pottyMasteryComplete ? "🎩" : tab.icon,
+            }
+          : tab
+      ),
+    [pottyMasteryComplete]
+  );
   const lastTrainingReaction =
     dog?.memory?.lastTrainingReaction &&
     typeof dog.memory.lastTrainingReaction === "object"
@@ -1024,9 +1123,16 @@ export default function MainGame({ scene, dogInteractive = true }) {
   );
 
   useEffect(() => {
-    if (dogInteractive && pottyTrainingComplete) return;
+    if (dogInteractive && pottyMasteryComplete) return;
     setTricksOpen(false);
-  }, [dogInteractive, pottyTrainingComplete]);
+  }, [dogInteractive, pottyMasteryComplete]);
+
+  useEffect(() => {
+    if (!pottyMasteryComplete && bottomMenuCategory === "train") return;
+    if (pottyMasteryComplete && bottomMenuCategory === "train") {
+      setBottomMenuCategory("");
+    }
+  }, [bottomMenuCategory, pottyMasteryComplete]);
 
   useEffect(() => {
     const reaction = lastTrainingReaction;
@@ -1258,7 +1364,9 @@ export default function MainGame({ scene, dogInteractive = true }) {
     dog?.temperament?.primary,
     dog?.temperament?.secondary,
   ]);
-
+  const temperamentPageAvailable = Boolean(
+    dog?.temperament?.revealReady || dog?.temperament?.revealedAt
+  );
   useEffect(() => {
     return () => {
       if (actionFeedbackTimeoutRef.current) {
@@ -1428,7 +1536,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
       const rawY = Number(event?.clientY);
       if (rect && Number.isFinite(rawX) && Number.isFinite(rawY)) {
         const xNorm = clamp((rawX - rect.left) / rect.width, 0, 1);
-        const yNorm = clamp((rawY - rect.top) / rect.height, 0, 1);
+        const yNorm = clampYardTapYNorm((rawY - rect.top) / rect.height);
         setAttentionTarget({ xNorm, yNorm, at: now });
       }
       dispatch(petDog({ now, source: "swipe_pet" }));
@@ -1449,7 +1557,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
       shouldIgnoreTarget: (target) =>
         Boolean(
           target?.closest?.(
-            "#ui-container, [data-doggerz-ignore-swipe='true'], button, input, textarea, select, a, [role='button']"
+            "#ui-container, .ui-layer, [data-doggerz-ignore-swipe='true'], button, input, textarea, select, a, [role='button']"
           )
         ),
     });
@@ -1496,7 +1604,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
       if (!voiceInputEnabled) return false;
       if (controlsDisabled) return false;
       if (isActionHijacked("train")) return false;
-      if (!pottyTrainingComplete) {
+      if (!pottyMasteryComplete) {
         toast.error("Finish potty training before teaching tricks.");
         return false;
       }
@@ -1533,7 +1641,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
     controlsDisabled,
     dispatch,
     isActionHijacked,
-    pottyTrainingComplete,
+    pottyMasteryComplete,
     toast,
     trickOptionsById,
     voiceInputEnabled,
@@ -1581,7 +1689,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
       toast.error("Enable voice input in Settings > Game > Training input.");
       return;
     }
-    if (!pottyTrainingComplete) {
+    if (!pottyMasteryComplete) {
       toast.error("Finish potty training before using voice tricks.");
       return;
     }
@@ -1602,7 +1710,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
     }
     triggerActionFeedback("voice-train");
   }, [
-    pottyTrainingComplete,
+    pottyMasteryComplete,
     toast,
     triggerActionFeedback,
     voiceInputEnabled,
@@ -1610,7 +1718,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
   ]);
 
   const openTricksPicker = useCallback(() => {
-    if (!pottyTrainingComplete) {
+    if (!pottyMasteryComplete) {
       toast.error("Finish potty training before teaching tricks.");
       return;
     }
@@ -1618,11 +1726,11 @@ export default function MainGame({ scene, dogInteractive = true }) {
     triggerActionFeedback("tricks");
     setTrainingLogOpen(false);
     setTricksOpen(true);
-  }, [isActionHijacked, pottyTrainingComplete, toast, triggerActionFeedback]);
+  }, [isActionHijacked, pottyMasteryComplete, toast, triggerActionFeedback]);
 
   const handleTrickTrain = useCallback(
     (commandId, input = "button") => {
-      if (!pottyTrainingComplete) {
+      if (!pottyMasteryComplete) {
         toast.error("Finish potty training before teaching tricks.");
         return;
       }
@@ -1648,7 +1756,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
       );
       setTricksOpen(false);
     },
-    [dispatch, playHudAnimation, pottyTrainingComplete, toast, trickOptionsById]
+    [dispatch, playHudAnimation, pottyMasteryComplete, toast, trickOptionsById]
   );
 
   const triggerPropHaptic = useCallback(
@@ -1819,6 +1927,433 @@ export default function MainGame({ scene, dogInteractive = true }) {
     treasurePhase,
     triggerPropHaptic,
   ]);
+
+  const handleDogPetTap = useCallback(() => {
+    if (controlsDisabled) return;
+    if (placingBowl) return;
+    if (effectiveDogSleeping) return;
+    if (movementLocked) return;
+    if (isActionHijacked("pet")) return;
+
+    const now = Date.now();
+    const pos = dogPositionNormRef.current || dogPositionNorm;
+    setAttentionTarget({
+      xNorm: clamp(Number(pos?.xNorm || 0.5), 0, 1),
+      yNorm: clampYardTapYNorm(Number(pos?.yNorm || 0.74) - 0.05),
+      at: now,
+    });
+    triggerActionFeedback("pet");
+    dispatch(petDog({ now, source: "tap_pet" }));
+  }, [
+    controlsDisabled,
+    dispatch,
+    dogPositionNorm,
+    effectiveDogSleeping,
+    isActionHijacked,
+    movementLocked,
+    placingBowl,
+    triggerActionFeedback,
+  ]);
+
+  const handleBathAction = useCallback(() => {
+    if (controlsDisabled) return;
+    if (isActionHijacked("bath")) return;
+    triggerActionFeedback("bath");
+    dispatch(bathe({ now: Date.now() }));
+  }, [controlsDisabled, dispatch, isActionHijacked, triggerActionFeedback]);
+
+  const handlePottyAction = useCallback(() => {
+    if (controlsDisabled) return;
+    if (isActionHijacked("potty")) return;
+    triggerActionFeedback("potty");
+    dispatch(goPotty({ now: Date.now() }));
+  }, [controlsDisabled, dispatch, isActionHijacked, triggerActionFeedback]);
+
+  const handlePlayAction = useCallback(
+    (source = "dock") => {
+      if (controlsDisabled) return;
+      if (toysIgnored) return;
+      if (isActionHijacked("play")) return;
+      dispatchPlayAction(source);
+    },
+    [controlsDisabled, dispatchPlayAction, isActionHijacked, toysIgnored]
+  );
+
+  const handleOpenInteractionMenu = useCallback(() => {
+    if (controlsDisabled) return;
+    triggerActionFeedback("interact");
+    setInteractionOpen(true);
+  }, [controlsDisabled, triggerActionFeedback]);
+
+  const handleOpenRoute = useCallback(
+    (path) => {
+      if (!path) return;
+      navigate(path);
+    },
+    [navigate]
+  );
+
+  const triggerDockFeedback = useCallback(
+    async ({
+      message = "",
+      type = "info",
+      hapticMode = "impact",
+      key = "",
+      cooldownMs = 900,
+    } = {}) => {
+      await triggerPropHaptic(hapticMode);
+      const feedbackMessage = String(message || "").trim();
+      if (!feedbackMessage) return;
+      if (key) {
+        toast.once(
+          `dock:${key}`,
+          { type, message: feedbackMessage, durationMs: 1200 },
+          cooldownMs
+        );
+        return;
+      }
+      toast.show({ type, message: feedbackMessage, durationMs: 1200 });
+    },
+    [toast, triggerPropHaptic]
+  );
+
+  const handleBottomMenuItemPress = useCallback(
+    async (item) => {
+      if (!item || item.disabled) return;
+      await triggerDockFeedback({
+        key: item.key,
+        message:
+          item.feedbackMessage ||
+          (item.route
+            ? `Opening ${item.label}.`
+            : `${item.label} triggered.`),
+        type: item.feedbackType || "info",
+        hapticMode: item.feedbackHaptic || "impact",
+      });
+      item.onClick?.();
+    },
+    [triggerDockFeedback]
+  );
+
+  const bottomMenuSections = useMemo(
+    () => ({
+      interact: {
+        title: "Interactions",
+        subtitle: "Daily care and fast-touch actions.",
+        items: [
+          {
+            key: "feed",
+            label: "Quick Feed",
+            detail: "Top off hunger fast",
+            icon: "🍖",
+            progress: dockNeedMetrics.hunger,
+            progressTone: "amber",
+            onClick: handleQuickFeed,
+            feedbackMessage: "Quick feed queued.",
+            disabled: controlsDisabled,
+            active: activeActionFeedbackKey === "quick-feed",
+          },
+          {
+            key: "water",
+            label: "Water",
+            detail: "Hydrate and recover",
+            icon: "💧",
+            progress: dockNeedMetrics.thirst,
+            progressTone: "sky",
+            onClick: handleGiveWater,
+            feedbackMessage: "Water ready.",
+            disabled: controlsDisabled,
+            active: activeActionFeedbackKey === "water",
+          },
+          {
+            key: "play",
+            label: isActionHijacked("play") ? "Play Stolen" : "Play",
+            detail: toysIgnored ? "Toys ignored right now" : "Boost happiness",
+            icon: isActionHijacked("play") ? "🕵️" : "🎾",
+            progress: dockNeedMetrics.play,
+            progressTone: "emerald",
+            onClick: () => handlePlayAction("dock"),
+            feedbackMessage: toysIgnored
+              ? "Toys ignored right now."
+              : "Play session starting.",
+            disabled:
+              controlsDisabled || toysIgnored || isActionHijacked("play"),
+            active: activeActionFeedbackKey === "play",
+          },
+          {
+            key: "pet",
+            label: isActionHijacked("pet") ? "Pet Stolen" : "Pet",
+            detail: "Tap-time affection",
+            icon: isActionHijacked("pet") ? "🕵️" : "🖐️",
+            progress: dockNeedMetrics.affection,
+            progressTone: "rose",
+            onClick: handleDogPetTap,
+            feedbackMessage: "Petting your pup.",
+            disabled: controlsDisabled || isActionHijacked("pet"),
+            active: activeActionFeedbackKey === "pet",
+          },
+          {
+            key: "bath",
+            label: isActionHijacked("bath") ? "Bath Stolen" : "Bath",
+            detail: "Clean up grime",
+            icon: isActionHijacked("bath") ? "🕵️" : "🧼",
+            progress: dockNeedMetrics.hygiene,
+            progressTone: "violet",
+            onClick: handleBathAction,
+            feedbackMessage: "Bath routine started.",
+            disabled: controlsDisabled || isActionHijacked("bath"),
+            active: activeActionFeedbackKey === "bath",
+          },
+          {
+            key: "potty",
+            label: isActionHijacked("potty") ? "Potty Stolen" : "Potty",
+            detail: pottyButtonTooltip,
+            icon: isActionHijacked("potty") ? "🕵️" : "🌿",
+            progress: dockNeedMetrics.potty,
+            progressTone: "lime",
+            onClick: handlePottyAction,
+            feedbackMessage: "Potty break queued.",
+            disabled: controlsDisabled || isActionHijacked("potty"),
+            active: activeActionFeedbackKey === "potty",
+          },
+          {
+            key: "care-sheet",
+            label: "Care Menu",
+            detail: "Open full interaction sheet",
+            icon: "✨",
+            progress: Math.max(
+              dockNeedMetrics.hunger,
+              dockNeedMetrics.thirst,
+              dockNeedMetrics.affection
+            ),
+            progressTone: "gold",
+            onClick: handleOpenInteractionMenu,
+            feedbackMessage: "Opening interactions.",
+            disabled: controlsDisabled,
+            active: activeActionFeedbackKey === "interact",
+          },
+        ],
+      },
+      train: {
+        title: "Training",
+        subtitle: "Commands, routines, and growth systems.",
+        items: [
+          {
+            key: "tricks",
+            label: "Tricks",
+            detail: pottyMasteryComplete
+              ? "Open command practice"
+              : "Potty training first",
+            icon: isActionHijacked("train") ? "🕵️" : "🎯",
+            progress: dockNeedMetrics.training,
+            progressTone: "gold",
+            onClick: openTricksPicker,
+            feedbackMessage: pottyMasteryComplete
+              ? "Training menu ready."
+              : "Potty training required first.",
+            feedbackType: pottyMasteryComplete ? "info" : "warn",
+            disabled: tricksLocked,
+            active: activeActionFeedbackKey === "tricks",
+          },
+          {
+            key: "voice",
+            label: voiceListening ? "Listening..." : "Voice Train",
+            detail: voiceSupported
+              ? "Speech-based training"
+              : "Voice unavailable",
+            icon: "🎙️",
+            progress: dockNeedMetrics.training,
+            progressTone: "sky",
+            onClick: handleVoiceTrainTap,
+            feedbackMessage: voiceListening
+              ? "Voice training live."
+              : "Starting voice training.",
+            disabled:
+              controlsDisabled ||
+              !voiceInputEnabled ||
+              !pottyMasteryComplete ||
+              !voiceSupported,
+            active: activeActionFeedbackKey === "voice-train",
+          },
+          {
+            key: "skill-tree",
+            label: "Skill Tree",
+            detail: "Perks and permanent growth",
+            icon: "🌟",
+            onClick: () => handleOpenRoute(PATHS.SKILL_TREE),
+            feedbackMessage: "Opening skill tree.",
+            route: PATHS.SKILL_TREE,
+          },
+          {
+            key: "potty-guide",
+            label: "Potty Guide",
+            detail: "Routines and progress log",
+            icon: "🪴",
+            onClick: () => handleOpenRoute(PATHS.POTTY),
+            feedbackMessage: "Opening potty guide.",
+            route: PATHS.POTTY,
+          },
+        ],
+      },
+      journey: {
+        title: "Journey",
+        subtitle: "Progress pages, story, and social loop.",
+        items: [
+          {
+            key: "store",
+            label: "Store",
+            detail: "Cosmetics and rewards",
+            icon: "🛍️",
+            onClick: () => handleOpenRoute(PATHS.STORE),
+            feedbackMessage: "Opening store.",
+            route: PATHS.STORE,
+          },
+          {
+            key: "memories",
+            label: "Memories",
+            detail: "Milestones and moments",
+            icon: "📖",
+            onClick: () => handleOpenRoute(PATHS.MEMORIES),
+            feedbackMessage: "Opening memories.",
+            route: PATHS.MEMORIES,
+          },
+          {
+            key: "dreams",
+            label: "Dreams",
+            detail: "Sleep journal and motifs",
+            icon: "🌙",
+            onClick: () => handleOpenRoute(PATHS.DREAMS),
+            feedbackMessage: "Opening dreams.",
+            route: PATHS.DREAMS,
+          },
+          {
+            key: "temperament",
+            label: "Temperament",
+            detail: temperamentPageAvailable
+              ? "Open archetype card"
+              : "Unlocks after more play",
+            icon: "🧬",
+            onClick: () => handleOpenRoute(PATHS.TEMPERAMENT_REVEAL),
+            feedbackMessage: temperamentPageAvailable
+              ? "Opening temperament."
+              : "Temperament unlock is not ready yet.",
+            feedbackType: temperamentPageAvailable ? "info" : "warn",
+            route: PATHS.TEMPERAMENT_REVEAL,
+            disabled: !temperamentPageAvailable,
+          },
+          {
+            key: "share",
+            label: "Share Pup",
+            detail: "Rewarded social share",
+            icon: "📤",
+            onClick: handleSharePup,
+            feedbackMessage: "Preparing share card.",
+            feedbackHaptic: "success",
+            active: activeActionFeedbackKey === "share-pup",
+          },
+          {
+            key: "menu",
+            label: "Menu",
+            detail: "Utilities and app links",
+            icon: "☰",
+            onClick: () => handleOpenRoute(PATHS.MENU),
+            feedbackMessage: "Opening menu.",
+            route: PATHS.MENU,
+          },
+        ],
+      },
+      settings: {
+        title: "Settings",
+        subtitle: "Preferences, support, and app controls.",
+        items: [
+          {
+            key: "settings",
+            label: "Settings",
+            detail: "Audio, gameplay, storage",
+            icon: "⚙️",
+            onClick: () => handleOpenRoute(PATHS.SETTINGS),
+            feedbackMessage: "Opening settings.",
+            route: PATHS.SETTINGS,
+          },
+          {
+            key: "help",
+            label: "Help",
+            detail: "Support and troubleshooting",
+            icon: "❓",
+            onClick: () => handleOpenRoute(PATHS.HELP),
+            feedbackMessage: "Opening help.",
+            route: PATHS.HELP,
+          },
+          {
+            key: "about",
+            label: "About",
+            detail: "What Doggerz is",
+            icon: "ℹ️",
+            onClick: () => handleOpenRoute(PATHS.ABOUT),
+            feedbackMessage: "Opening about page.",
+            route: PATHS.ABOUT,
+          },
+        ],
+      },
+    }),
+    [
+      activeActionFeedbackKey,
+      controlsDisabled,
+      dockNeedMetrics,
+      handleBathAction,
+      handleDogPetTap,
+      handleGiveWater,
+      handleOpenInteractionMenu,
+      handleOpenRoute,
+      handlePlayAction,
+      handlePottyAction,
+      handleQuickFeed,
+      handleSharePup,
+      handleVoiceTrainTap,
+      isActionHijacked,
+      openTricksPicker,
+      pottyButtonTooltip,
+      pottyMasteryComplete,
+      temperamentPageAvailable,
+      toysIgnored,
+      tricksLocked,
+      voiceInputEnabled,
+      voiceListening,
+      voiceSupported,
+    ]
+  );
+
+  const handleBottomMenuSelect = useCallback(
+    async (tabId) => {
+      const normalizedTabId = String(tabId || "").trim().toLowerCase();
+      if (normalizedTabId === "train" && pottyMasteryComplete) {
+        await triggerDockFeedback({
+          key: "tricks-tab",
+          message: "Tricks menu ready.",
+        });
+        openTricksPicker();
+        return;
+      }
+      const tabCopy = bottomMenuSections?.[normalizedTabId];
+      const closing = bottomMenuCategory === normalizedTabId;
+      await triggerDockFeedback({
+        key: normalizedTabId || "dock",
+        message: closing
+          ? "Dock collapsed."
+          : `${tabCopy?.title || "Menu"} ready.`,
+      });
+      setBottomMenuCategory((current) =>
+        current === normalizedTabId ? "" : normalizedTabId
+      );
+    },
+    [
+      bottomMenuCategory,
+      bottomMenuSections,
+      openTricksPicker,
+      pottyMasteryComplete,
+      triggerDockFeedback,
+    ]
+  );
 
   const startPropInvestigation = useCallback(
     (prop) => {
@@ -2000,7 +2535,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
       const rawY = Number(point?.y);
       if (rect && Number.isFinite(rawX) && Number.isFinite(rawY)) {
         const xNorm = Math.max(0, Math.min(1, (rawX - rect.left) / rect.width));
-        const yNorm = Math.max(0, Math.min(1, (rawY - rect.top) / rect.height));
+        const yNorm = clampYardTapYNorm((rawY - rect.top) / rect.height);
         setAttentionTarget({ xNorm, yNorm, at: now });
       }
 
@@ -2053,7 +2588,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
       if (controlsDisabled) return;
       const ignoredTarget = Boolean(
         event?.target?.closest?.(
-          "#ui-container, [data-doggerz-ignore-swipe='true']"
+          "#ui-container, .ui-layer, [data-doggerz-ignore-swipe='true']"
         )
       );
       if (ignoredTarget) return;
@@ -2068,7 +2603,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
       const x = event.clientX - rect.left;
       const y = event.clientY - rect.top;
       const xNorm = Math.max(0, Math.min(1, x / rect.width));
-      const yNorm = Math.max(0, Math.min(1, y / rect.height));
+      const yNorm = clampYardTapYNorm(y / rect.height);
       const now = Date.now();
 
       dispatch(
@@ -2792,7 +3327,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
   ]);
 
   return (
-    <div className="relative min-h-dvh">
+    <div className="relative flex min-h-dvh flex-col overflow-hidden">
       <EnvironmentScene
         environment={environmentMode}
         season={seasonMode}
@@ -2804,14 +3339,14 @@ export default function MainGame({ scene, dogInteractive = true }) {
         onButterflySpotted={runButterflyNoticeChase}
       />
 
-      <div className="main-scroll-container relative z-20 mx-auto w-full max-w-6xl">
-        <div className="pup-card rounded-[28px] sm:p-6">
-          <div className="rounded-[24px] border border-doggerz-leaf/25 bg-black/25 px-4 py-4 shadow-[0_14px_38px_rgba(2,6,23,0.22)]">
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex items-center gap-3">
+      <div className="main-scroll-container relative z-20 mx-auto flex min-h-dvh w-full max-w-6xl flex-1 flex-col pb-[calc(env(safe-area-inset-bottom,0px)+124px)]">
+        <div className="pup-card flex min-h-0 flex-1 flex-col rounded-[28px] sm:p-6">
+          <div className="rounded-[24px] border border-doggerz-leaf/25 bg-[linear-gradient(180deg,rgba(2,6,23,0.68),rgba(2,6,23,0.5))] px-4 py-4 shadow-[0_14px_38px_rgba(2,6,23,0.22)] sm:px-5 sm:py-5">
+            <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+              <div className="flex items-start gap-3">
                 <OwnerBadge name={ownerName} avatarUrl={ownerAvatarUrl} />
-                <div>
-                  <div className="flex items-center gap-2 text-2xl font-black tracking-tight text-doggerz-bone sm:text-3xl">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 text-2xl font-black tracking-tight text-doggerz-bone sm:text-3xl">
                     <span>{dog?.name || "Your pup"}</span>
                     {isFounder ? (
                       <span className="inline-flex items-center rounded-full border border-sky-300/35 bg-sky-400/12 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.18em] text-sky-100 shadow-[0_0_20px_rgba(96,165,250,0.18)]">
@@ -2819,13 +3354,17 @@ export default function MainGame({ scene, dogInteractive = true }) {
                       </span>
                     ) : null}
                   </div>
-                  <div className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-doggerz-paw/75">
-                    {scene?.label || "Backyard"} routine
+                  <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-doggerz-paw/75">
+                    <span>{stageLabel}</span>
+                    <span className="text-white/25">•</span>
+                    <span>{ageBucketLabel}</span>
+                    <span className="text-white/25">•</span>
+                    <span>{scene?.label || "Backyard"}</span>
                   </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:min-w-[440px]">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:min-w-[460px]">
                 <HudChip
                   label="Level"
                   value={`Lv ${overallLevel}`}
@@ -2833,8 +3372,8 @@ export default function MainGame({ scene, dogInteractive = true }) {
                 />
                 <HudChip
                   label="Age"
-                  value={`${ageDays} Days`}
-                  tooltip="Age in days since adoption."
+                  value={agePillValue}
+                  tooltip={agePillTooltip}
                 />
                 <HudChip
                   label="Condition"
@@ -2849,25 +3388,8 @@ export default function MainGame({ scene, dogInteractive = true }) {
               </div>
             </div>
 
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <StatusPill
-                label="Time"
-                value={displayTimeOfDay}
-                detail={scene?.label || "Backyard"}
-              />
-              <StatusPill
-                label="Weather"
-                value={scene?.weather || "Clear"}
-                detail={sceneLocationLabel || "Local"}
-              />
-              <CloudSyncChip
-                label={cloudSyncUi.label}
-                detail={cloudSyncUi.detail}
-                tone={cloudSyncUi.tone}
-              />
-            </div>
           </div>
-          <div className="mt-4 flex flex-col gap-4">
+          <div className="mt-4 flex min-h-0 flex-1 flex-col gap-4">
             <div className="order-3 space-y-4">
               {hijackedActionKey ||
               activeAnimatedEventMeta ||
@@ -2924,72 +3446,55 @@ export default function MainGame({ scene, dogInteractive = true }) {
                   popped={poppedStats.health}
                 />
               </div>
-              <div className="stats-grid">
-                <HudChip
-                  label="Level"
-                  value={`Lv ${overallLevel}`}
-                  tooltip="Overall progression level. Higher levels unlock tougher training tracks."
-                />
-                <HudChip
-                  label="Age"
-                  value={`${ageDays} Days`}
-                  tooltip="Age in days since adoption."
-                />
-                <HudChip
-                  label="Stage"
-                  value={stageLabel}
-                  tooltip="Current life stage of your pup."
-                />
-                <HudChip
-                  label="Condition"
-                  value={displayMoodLabel}
-                  tooltip="Current emotional state based on needs and events."
-                />
-              </div>
               <div className="text-xs text-doggerz-paw/80">
-                Bond: {bondPct}% • Hunger: {hungerPct}% •{" "}
-                {scene?.label || "Backyard"}
+                Bond: {bondPct}% • Hunger: {hungerPct}% • Age: {agePillValue}
               </div>
               <div
-                className={`game-card rounded-xl border px-3 py-3 ${lifecycleCardToneClass}`}
+                className={`game-card rounded-2xl border px-4 py-4 ${lifecycleCardToneClass}`}
               >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <div className="text-[10px] font-bold uppercase tracking-[0.16em] opacity-80">
-                      {stageLabel} era
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-[10px] font-bold uppercase tracking-[0.18em] opacity-80">
+                      Growth
                     </div>
-                    <div className="mt-1 text-sm font-black">
-                      {stageHeadline}
+                    <div className="mt-1 text-base font-black">
+                      {stageLabel} • {stageHeadline}
+                    </div>
+                    <div className="mt-1 text-[11px] font-semibold opacity-90">
+                      {stageSummary}
                     </div>
                   </div>
-                  <div className="rounded-full border border-white/15 bg-black/20 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white/85">
+                  <div className="rounded-full border border-white/15 bg-black/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white/85">
                     {ageBucketLabel}
                   </div>
                 </div>
-                <div className="mt-2 text-[11px] font-semibold text-white/85">
-                  {stageSummary}
-                </div>
-                <div className="mt-2 h-2 overflow-hidden rounded-full bg-black/35">
+                <div className="mt-3 h-2 overflow-hidden rounded-full bg-black/35">
                   <div
                     className="h-full rounded-full bg-white/80 transition-[width] duration-300"
                     style={{ width: `${stageProgressPct}%` }}
                   />
                 </div>
-                <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-white/80">
-                  <span>{stageProgressLabel}</span>
-                  <span>
-                    {nextStageLabel && Number.isFinite(daysUntilNextStage)
-                      ? `${daysUntilNextStage}d until ${nextStageLabel}`
-                      : "Current life stage"}
-                  </span>
+                <div className="mt-3 grid grid-cols-1 gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-white/80 sm:grid-cols-2">
+                  <div className="rounded-xl border border-white/10 bg-black/15 px-3 py-2">
+                    <div className="text-[9px] text-white/60">Stage Progress</div>
+                    <div className="mt-1 text-[11px] text-white">
+                      {stageProgressLabel}
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-black/15 px-3 py-2">
+                    <div className="text-[9px] text-white/60">Next Milestone</div>
+                    <div className="mt-1 text-[11px] text-white">
+                      {nextStageCountdown}
+                    </div>
+                  </div>
                 </div>
                 {stageDetail ? (
-                  <div className="mt-2 text-[11px] text-white/75">
+                  <div className="mt-3 text-[11px] text-white/75">
                     {stageDetail}
                   </div>
                 ) : null}
                 {goldenYearsActive ? (
-                  <div className="mt-2 rounded-xl border border-amber-300/35 bg-amber-400/10 px-3 py-2 text-[11px] font-semibold text-amber-50">
+                  <div className="mt-3 rounded-xl border border-amber-300/35 bg-amber-400/10 px-3 py-2 text-[11px] font-semibold text-amber-50">
                     Golden Years active — rescue checks are suspended for the
                     final stretch to Rainbow Bridge.
                   </div>
@@ -3025,7 +3530,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
               ) : null}
             </div>
 
-            <div className="order-1 rounded-3xl border border-doggerz-leaf/35 bg-black/30 px-2 py-4 sm:px-4">
+            <div className="order-1 flex min-h-[360px] flex-1 flex-col rounded-3xl border border-doggerz-leaf/35 bg-black/30 px-2 py-4 sm:min-h-[440px] sm:px-4">
               {showRunawayLetter ? (
                 <RunawayLetterPanel
                   dogName={dog?.name || "Your pup"}
@@ -3038,18 +3543,44 @@ export default function MainGame({ scene, dogInteractive = true }) {
                 <div
                   ref={dogViewportRef}
                   id="backyard"
-                  className={`yard-viewport sprite-stage game-card !mb-0 !p-0 ${visualNight ? "yard-night" : "yard-day"} relative flex min-h-[320px] items-center justify-center overflow-hidden rounded-[24px] border border-doggerz-leaf/25 bg-black/20 sm:min-h-[420px]`}
+                  className={`yard-viewport sprite-stage game-card !mb-0 !p-0 ${visualNight ? "yard-night" : "yard-day"} relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-[24px] border border-doggerz-leaf/25 bg-black/20`}
                   onPointerDown={handleViewportPointerDown}
                   onPointerMove={handleViewportPointerMove}
                   onPointerUp={handleViewportPointerUp}
                   onPointerCancel={handleViewportPointerCancel}
                 >
+                  <div className="pointer-events-none absolute inset-x-3 top-3 z-[31] flex items-start justify-between gap-3 sm:inset-x-4 sm:top-4">
+                    <div className="max-w-[62%] pointer-events-auto">
+                      <DogStatusBubble
+                        name={dog?.name || "Your pup"}
+                        stageLabel={stageLabel}
+                        ageValue={agePillValue}
+                        moodLabel={displayMoodLabel}
+                        energyPct={energyPct}
+                      />
+                    </div>
+                    <div className="flex max-w-[46%] flex-col items-end gap-2 pointer-events-auto">
+                      <ModernStatusPill
+                        label="Weather"
+                        value={scene?.weather || "Clear"}
+                        detail={sceneLocationLabel || "Local"}
+                        tone="sky"
+                      />
+                      <ModernStatusPill
+                        label={cloudSyncUi.label}
+                        value={cloudSyncUi.detail || "Ready"}
+                        detail={isLoggedIn ? "Cloud save" : "Local save"}
+                        tone={cloudSyncUi.tone}
+                      />
+                    </div>
+                  </div>
                   <YardBackdrop
                     environment={environmentMode}
                     dogXNorm={dogPositionNorm.xNorm}
                     isNight={visualNight}
                     sunriseProgress={sunriseBlend}
                     reduceMotion={reduceMotion}
+                    dogSleepingInDoghouse={sleepInDogHouse && effectiveDogSleeping}
                     environmentTargets={environmentTargets}
                     activeEnvironmentTargetId={dog?.targetPosition?.id || ""}
                     props={investigationProps}
@@ -3241,11 +3772,16 @@ export default function MainGame({ scene, dogInteractive = true }) {
                       data-night-owl={nightOwlActive ? "true" : "false"}
                       style={{
                         zIndex: dogRenderZIndex,
-                        filter: goldenYearsActive
-                          ? "drop-shadow(0 0 14px rgba(255, 215, 64, 0.55)) drop-shadow(0 0 22px rgba(251, 191, 36, 0.28)) saturate(1.04) brightness(1.05)"
-                          : nightOwlActive
-                            ? "drop-shadow(0 0 10px rgba(200, 230, 255, 0.32)) saturate(0.92) brightness(1.04)"
-                            : undefined,
+                        filter: [
+                          goldenYearsActive
+                            ? "drop-shadow(0 0 14px rgba(255, 215, 64, 0.55)) drop-shadow(0 0 22px rgba(251, 191, 36, 0.28))"
+                            : nightOwlActive
+                              ? "drop-shadow(0 0 10px rgba(200, 230, 255, 0.32))"
+                              : "",
+                          theme.dogTint,
+                        ]
+                          .filter(Boolean)
+                          .join(" "),
                         transition: "filter 220ms ease",
                       }}
                     >
@@ -3260,14 +3796,16 @@ export default function MainGame({ scene, dogInteractive = true }) {
                         width="100%"
                         height="100%"
                         scale={1.6}
+                        baseScale={dogBaseScale}
                         animSpeedMultiplier={effectiveAnimationSpeedMultiplier}
                         bondValue={Number(dog?.bond?.value ?? 0)}
                         dogIsSleeping={effectiveDogSleeping}
+                        insideShelter={sleepInDogHouse && effectiveDogSleeping}
                         onPositionChange={handleDogPositionChange}
                         onDogTap={
                           treasurePhase === "sniffing"
                             ? handleTreasureHuntTap
-                            : null
+                            : handleDogPetTap
                         }
                       />
                     </div>
@@ -3361,16 +3899,8 @@ export default function MainGame({ scene, dogInteractive = true }) {
                     </div>
                   ) : null}
                   {sleepInDogHouse ? (
-                    <div className="pointer-events-none absolute right-14 bottom-[18%] z-40 h-24 w-28">
-                      <div
-                        className="absolute inset-x-0 bottom-10 h-12"
-                        style={{
-                          clipPath: "polygon(50% 0%, 100% 100%, 0% 100%)",
-                          background:
-                            "linear-gradient(180deg, rgba(120,53,15,0.98) 0%, rgba(75,31,7,1) 100%)",
-                          border: "1px solid rgba(255,255,255,0.1)",
-                        }}
-                      />
+                    <div className="pointer-events-none absolute right-[12%] top-[57%] z-[27] -translate-y-full rounded-full border border-doggerz-leaf/35 bg-black/60 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-doggerz-bone shadow-[0_10px_24px_rgba(2,6,23,0.28)]">
+                      napping inside
                     </div>
                   ) : null}
                   {sleepInYard ? (
@@ -3387,89 +3917,6 @@ export default function MainGame({ scene, dogInteractive = true }) {
                   ) : null}
                   {!effectiveDogSleeping ? (
                     <>
-                      <div className="absolute inset-x-3 bottom-16 z-30">
-                        <div className="pointer-events-auto flex gap-2 overflow-x-auto rounded-2xl border border-white/10 bg-black/65 px-2 py-2 shadow-[0_14px_28px_rgba(2,6,23,0.35)] backdrop-blur-sm">
-                          <ViewportActionPill
-                            label="Feed"
-                            icon="🍖"
-                            active={activeActionFeedbackKey === "quick-feed"}
-                            disabled={controlsDisabled}
-                            onClick={handleQuickFeed}
-                          />
-                          <ViewportActionPill
-                            label="Water"
-                            icon="💧"
-                            active={activeActionFeedbackKey === "water"}
-                            disabled={controlsDisabled}
-                            onClick={handleGiveWater}
-                          />
-                          <ViewportActionPill
-                            label="Play"
-                            icon={isActionHijacked("play") ? "🕵️" : "🎾"}
-                            active={activeActionFeedbackKey === "play"}
-                            disabled={
-                              controlsDisabled ||
-                              toysIgnored ||
-                              isActionHijacked("play")
-                            }
-                            onClick={() => {
-                              if (toysIgnored || isActionHijacked("play")) {
-                                return;
-                              }
-                              dispatchPlayAction("viewport");
-                            }}
-                          />
-                          <ViewportActionPill
-                            label="Pet"
-                            icon={isActionHijacked("pet") ? "🕵️" : "🖐️"}
-                            active={activeActionFeedbackKey === "pet"}
-                            disabled={
-                              controlsDisabled || isActionHijacked("pet")
-                            }
-                            onClick={() => {
-                              if (isActionHijacked("pet")) return;
-                              triggerActionFeedback("pet");
-                              dispatch(petDog({ now: Date.now() }));
-                            }}
-                          />
-                          <ViewportActionPill
-                            label="Bath"
-                            icon={isActionHijacked("bath") ? "🕵️" : "🧼"}
-                            active={activeActionFeedbackKey === "bath"}
-                            disabled={
-                              controlsDisabled || isActionHijacked("bath")
-                            }
-                            onClick={() => {
-                              if (isActionHijacked("bath")) return;
-                              triggerActionFeedback("bath");
-                              dispatch(bathe({ now: Date.now() }));
-                            }}
-                          />
-                          <ViewportActionPill
-                            label="Potty"
-                            icon={isActionHijacked("potty") ? "🕵️" : "🌿"}
-                            active={activeActionFeedbackKey === "potty"}
-                            disabled={
-                              controlsDisabled || isActionHijacked("potty")
-                            }
-                            onClick={() => {
-                              if (isActionHijacked("potty")) return;
-                              triggerActionFeedback("potty");
-                              dispatch(goPotty({ now: Date.now() }));
-                            }}
-                          />
-                          <ViewportActionPill
-                            label="More"
-                            icon="✨"
-                            active={activeActionFeedbackKey === "interact"}
-                            disabled={controlsDisabled}
-                            onClick={() => {
-                              triggerActionFeedback("interact");
-                              setInteractionOpen(true);
-                            }}
-                          />
-                        </div>
-                      </div>
                       <DogToy
                         onSqueak={handleToySqueak}
                         itemType="food"
@@ -3489,104 +3936,31 @@ export default function MainGame({ scene, dogInteractive = true }) {
             </div>
 
             {!showRunawayLetter ? (
-              <div className="order-2">
-                <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
-                  <ActionButton
-                    label="Interact"
-                    feedbackActive={activeActionFeedbackKey === "interact"}
-                    disabled={controlsDisabled}
+              <div
+                data-doggerz-ignore-swipe="true"
+                className="ui-layer fixed inset-x-0 bottom-0 z-[56] flex justify-center px-3 pt-6 pb-[calc(env(safe-area-inset-bottom,0px)+12px)]"
+                onPointerDownCapture={(event) => {
+                  event.stopPropagation();
+                }}
+                onPointerMoveCapture={(event) => {
+                  event.stopPropagation();
+                }}
+                onPointerUpCapture={(event) => {
+                  event.stopPropagation();
+                }}
+                onClickCapture={(event) => {
+                  event.stopPropagation();
+                }}
+              >
+                <div className="w-full max-w-3xl">
+                  <BottomMenuDock
+                    activeCategory={bottomMenuCategory}
+                    onSelectCategory={handleBottomMenuSelect}
+                    onSelectItem={handleBottomMenuItemPress}
+                    sections={bottomMenuSections}
+                    tabs={bottomMenuTabs}
                     onPointerEnter={handleActionHoverAnticipation}
-                    onClick={() => {
-                      triggerActionFeedback("interact");
-                      setInteractionOpen(true);
-                    }}
                   />
-                  <ActionButton
-                    label="Play"
-                    feedbackActive={activeActionFeedbackKey === "play"}
-                    hijacked={isActionHijacked("play")}
-                    disabled={
-                      controlsDisabled ||
-                      toysIgnored ||
-                      isActionHijacked("play")
-                    }
-                    onClick={() => {
-                      if (toysIgnored) return;
-                      if (isActionHijacked("play")) return;
-                      dispatchPlayAction("button");
-                    }}
-                  />
-                  <ActionButton
-                    label="Pet"
-                    feedbackActive={activeActionFeedbackKey === "pet"}
-                    hijacked={isActionHijacked("pet")}
-                    disabled={controlsDisabled || isActionHijacked("pet")}
-                    onClick={() => {
-                      if (isActionHijacked("pet")) return;
-                      triggerActionFeedback("pet");
-                      dispatch(petDog({ now: Date.now() }));
-                    }}
-                  />
-                  <ActionButton
-                    label="Bath"
-                    feedbackActive={activeActionFeedbackKey === "bath"}
-                    hijacked={isActionHijacked("bath")}
-                    disabled={controlsDisabled || isActionHijacked("bath")}
-                    onClick={() => {
-                      if (isActionHijacked("bath")) return;
-                      triggerActionFeedback("bath");
-                      dispatch(bathe({ now: Date.now() }));
-                    }}
-                  />
-                  <ActionButton
-                    label="Potty"
-                    feedbackActive={activeActionFeedbackKey === "potty"}
-                    hijacked={isActionHijacked("potty")}
-                    disabled={controlsDisabled || isActionHijacked("potty")}
-                    tooltip={pottyButtonTooltip}
-                    onClick={() => {
-                      if (isActionHijacked("potty")) return;
-                      triggerActionFeedback("potty");
-                      dispatch(goPotty({ now: Date.now() }));
-                    }}
-                  />
-                  {pottyTrainingComplete ? (
-                    <ActionButton
-                      label="Tricks"
-                      feedbackActive={activeActionFeedbackKey === "tricks"}
-                      hijacked={isActionHijacked("train")}
-                      disabled={tricksLocked}
-                      onClick={openTricksPicker}
-                    />
-                  ) : null}
-                </div>
-                <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
-                  <button
-                    id="feed-button"
-                    type="button"
-                    onClick={handleQuickFeed}
-                    disabled={controlsDisabled}
-                    className={`dz-touch-button dz-touch-hover min-h-11 rounded-2xl border border-emerald-300/45 bg-gradient-to-b from-emerald-300 to-lime-300 px-4 py-2 text-sm font-black tracking-[0.02em] text-slate-950 shadow-[0_10px_24px_rgba(16,185,129,0.28)] transition disabled:cursor-not-allowed disabled:opacity-50 ${activeActionFeedbackKey === "quick-feed" ? "btn-feedback-pop" : ""}`}
-                  >
-                    Quick Feed
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleSharePup}
-                    className={`dz-touch-button dz-touch-hover min-h-11 rounded-2xl border border-cyan-300/45 bg-gradient-to-b from-cyan-300 to-sky-300 px-4 py-2 text-sm font-black tracking-[0.02em] text-slate-950 shadow-[0_10px_24px_rgba(34,211,238,0.28)] transition ${activeActionFeedbackKey === "share-pup" ? "btn-feedback-pop" : ""}`}
-                  >
-                    Share Pup
-                  </button>
-                  {voiceInputEnabled && pottyTrainingComplete ? (
-                    <button
-                      type="button"
-                      onClick={handleVoiceTrainTap}
-                      disabled={controlsDisabled || !voiceSupported}
-                      className={`dz-touch-button dz-touch-hover min-h-11 rounded-2xl border border-violet-300/45 bg-gradient-to-b from-violet-300 to-fuchsia-300 px-4 py-2 text-sm font-black tracking-[0.02em] text-slate-950 shadow-[0_10px_24px_rgba(167,139,250,0.28)] transition disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-1 col-span-2 ${activeActionFeedbackKey === "voice-train" ? "btn-feedback-pop" : ""}`}
-                    >
-                      {voiceListening ? "Listening..." : "Voice Train"}
-                    </button>
-                  ) : null}
                 </div>
               </div>
             ) : null}
@@ -3671,7 +4045,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
             setInteractionOpen(false);
             openTricksPicker();
           }}
-          showTricksButton={pottyTrainingComplete}
+          showTricksButton={pottyMasteryComplete}
           playHijacked={isActionHijacked("play")}
           petHijacked={isActionHijacked("pet")}
           bathHijacked={isActionHijacked("bath")}
@@ -3763,6 +4137,11 @@ export default function MainGame({ scene, dogInteractive = true }) {
   50% { filter: brightness(1.45); }
   100% { filter: brightness(1); }
 }
+@keyframes dgDockPressPop {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(0, 2px, 0) scale(0.965); }
+  100% { transform: translate3d(0, 0, 0) scale(1); }
+}
 .yard-viewport.yard-day {
   box-shadow: inset 0 -36px 55px rgba(16, 185, 129, 0.14);
 }
@@ -3832,6 +4211,20 @@ export default function MainGame({ scene, dogInteractive = true }) {
 }
 .pulse-gold {
   animation: dgGoldShine 1.8s ease-in-out infinite;
+}
+.dock-glass-button {
+  position: relative;
+  isolation: isolate;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.08),
+    0 14px 28px rgba(2,6,23,0.24);
+}
+.dock-pressable {
+  transform-origin: 50% 50%;
+}
+.dock-pressable:active {
+  animation: dgDockPressPop 160ms ease-out;
+  transform: translate3d(0, 2px, 0) scale(0.95);
 }
 .badge-sit { background-position: 0px 0px; }
 .badge-stay { background-position: -50px 0px; }
@@ -3944,84 +4337,156 @@ function TemperamentRevealCard({ copy, onLater, onReveal }) {
   );
 }
 
-function ActionButton({
+function BottomMenuDock({
+  tabs = [],
+  activeCategory = "",
+  sections = {},
+  onSelectCategory,
+  onSelectItem,
+  onPointerEnter,
+}) {
+  const activeSection = sections?.[activeCategory] || null;
+
+  return (
+    <div className="relative mt-5 overflow-hidden rounded-[32px] border border-amber-200/18 bg-[linear-gradient(180deg,rgba(11,17,32,0.82),rgba(2,6,23,0.94))] p-3 shadow-[0_24px_60px_rgba(2,6,23,0.58),0_36px_90px_rgba(2,6,23,0.38),inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-3xl">
+      <div className="pointer-events-none absolute inset-x-[8%] top-0 h-14 rounded-full bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.24),rgba(255,255,255,0)_72%)] blur-2xl" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-[linear-gradient(180deg,rgba(251,191,36,0),rgba(251,191,36,0.08))]" />
+      <div className="pointer-events-none absolute inset-0 rounded-[32px] border border-white/8 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)]" />
+      {activeSection ? (
+        <div className="relative rounded-[24px] border border-amber-200/14 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] p-3 shadow-[0_18px_36px_rgba(2,6,23,0.3),inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-3xl">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="text-[11px] font-black uppercase tracking-[0.18em] text-amber-100/90">
+                {activeSection.title}
+              </div>
+              <div className="mt-1 text-xs text-doggerz-bone/70">
+                {activeSection.subtitle}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => onSelectCategory?.(activeCategory)}
+              className="dock-glass-button dock-pressable rounded-full border border-white/14 bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-doggerz-bone/80"
+            >
+              Hide
+            </button>
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-2 lg:grid-cols-3">
+            {activeSection.items.map((item) => (
+              <BottomMenuCardButton
+                key={item.key}
+                item={item}
+                label={item.label}
+                detail={item.detail}
+                icon={item.icon}
+                onClick={onSelectItem}
+                onPointerEnter={onPointerEnter}
+                disabled={item.disabled}
+                active={item.active}
+              />
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      <div className={`${activeSection ? "mt-3" : ""} grid grid-cols-4 gap-2`}>
+        {tabs.map((tab) => {
+          const active = tab.id === activeCategory;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => onSelectCategory?.(tab.id)}
+              onPointerEnter={onPointerEnter}
+              className={`dock-glass-button dock-pressable dz-touch-button dz-touch-hover relative rounded-[22px] border px-3 py-3 text-center transition ${
+                active
+                  ? "border-amber-200/35 bg-[linear-gradient(180deg,rgba(251,191,36,0.22),rgba(251,191,36,0.08))] text-doggerz-bone shadow-[0_16px_32px_rgba(251,191,36,0.16)]"
+                  : "border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] text-doggerz-bone/82 hover:bg-white/10"
+              }`}
+            >
+              <span className="dz-touch-glow pointer-events-none absolute inset-0 rounded-[22px] bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.18),rgba(255,255,255,0)_64%)]" />
+              <span className="block text-lg">{tab.icon}</span>
+              <span className="mt-1 block text-[11px] font-bold uppercase tracking-[0.14em]">
+                {tab.label}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function BottomMenuCardButton({
+  item = null,
   label,
+  detail,
+  icon,
   onClick,
   onPointerEnter,
   disabled = false,
-  hijacked = false,
-  feedbackActive = false,
-  tooltip = "",
+  active = false,
 }) {
-  const meta = ACTION_META[label] || ACTION_META.Play;
-  const tooltipText =
-    tooltip ||
-    (hijacked
-      ? "This action is stolen. Resolve the surprise to recover it."
-      : meta.hint);
+  const progress = clamp(Number(item?.progress || 0), 0, 100);
+  const ringTone =
+    String(item?.progressTone || "gold")
+      .trim()
+      .toLowerCase();
+  const ringColor =
+    ringTone === "amber"
+      ? "rgba(251,191,36,0.95)"
+      : ringTone === "sky"
+        ? "rgba(56,189,248,0.95)"
+        : ringTone === "emerald"
+          ? "rgba(52,211,153,0.95)"
+          : ringTone === "rose"
+            ? "rgba(251,113,133,0.95)"
+            : ringTone === "violet"
+              ? "rgba(167,139,250,0.95)"
+              : ringTone === "lime"
+                ? "rgba(163,230,53,0.95)"
+                : "rgba(250,204,21,0.95)";
+  const ringTrack = "rgba(255,255,255,0.08)";
+  const ringBackground = `conic-gradient(${ringColor} 0 ${progress}%, ${ringTrack} ${progress}% 100%)`;
 
   return (
-    <Tooltip content={tooltipText} className="w-full">
+    <Tooltip content={detail || label} className="w-full">
       <button
         type="button"
-        disabled={disabled}
-        onClick={onClick}
+        onClick={() => onClick?.(item)}
         onPointerEnter={onPointerEnter}
-        className={`dz-touch-button dz-touch-hover group relative w-full overflow-hidden rounded-2xl border px-3 py-3 text-left transition active:translate-y-[1px] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-45 ${
-          hijacked
-            ? "border-amber-300/65 bg-amber-500/15"
-            : `${meta.edge} bg-gradient-to-b ${meta.card}`
-        } shadow-[0_10px_22px_rgba(2,6,23,0.25)] ${
-          feedbackActive ? "btn-feedback-pop" : ""
+        disabled={disabled}
+        className={`dock-glass-button dock-pressable dz-touch-button dz-touch-hover group relative w-full overflow-hidden rounded-[22px] border px-3 py-3 text-left transition disabled:cursor-not-allowed disabled:opacity-45 ${
+          active
+            ? "btn-feedback-pop border-doggerz-neon/45 bg-[linear-gradient(180deg,rgba(45,212,191,0.18),rgba(45,212,191,0.08))]"
+            : "border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.1),rgba(255,255,255,0.04))] hover:bg-white/10"
         }`}
       >
-        <div className="dz-touch-glow absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.3),transparent_55%)]" />
-        <div className="relative flex items-center gap-2">
-          <span className="grid h-8 w-8 place-items-center rounded-xl border border-white/20 bg-black/25 text-base">
-            {hijacked ? "🕵️" : meta.icon}
+        <span className="dz-touch-glow pointer-events-none absolute inset-0 rounded-[22px] bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.16),rgba(255,255,255,0)_62%)]" />
+        <div className="flex items-start gap-3">
+          <span
+            className="relative grid h-11 w-11 shrink-0 place-items-center rounded-[18px] text-lg"
+            style={{
+              background: ringBackground,
+              boxShadow:
+                "0 14px 24px rgba(2,6,23,0.18), inset 0 1px 0 rgba(255,255,255,0.06)",
+            }}
+          >
+            <span className="absolute inset-[2px] rounded-[16px] bg-[linear-gradient(180deg,rgba(15,23,42,0.95),rgba(2,6,23,0.9))]" />
+            <span className="absolute inset-[6px] rounded-[14px] bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.12),rgba(255,255,255,0)_60%),linear-gradient(180deg,rgba(12,18,32,0.92),rgba(2,6,23,0.86))]" />
+            <span className="relative z-[1]">{icon}</span>
           </span>
-          <span>
+          <span className="min-w-0">
             <span className="block text-sm font-bold text-doggerz-bone">
               {label}
             </span>
-            <span className="block text-[10px] uppercase tracking-[0.14em] text-doggerz-paw/75">
-              {hijacked ? "Stolen - play fetch" : meta.hint}
+            <span className="mt-1 block text-[11px] leading-4 text-doggerz-paw/75">
+              {detail}
             </span>
           </span>
         </div>
       </button>
     </Tooltip>
-  );
-}
-
-function ViewportActionPill({
-  label,
-  icon,
-  onClick,
-  disabled = false,
-  active = false,
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className={`dz-touch-button dz-touch-hover flex min-w-[82px] shrink-0 items-center gap-2 rounded-2xl border border-doggerz-leaf/30 bg-black/50 px-3 py-2 text-left text-doggerz-bone transition disabled:cursor-not-allowed disabled:opacity-45 ${
-        active
-          ? "btn-feedback-pop border-doggerz-neon/50 bg-doggerz-neon/15"
-          : ""
-      }`}
-    >
-      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl border border-white/15 bg-white/5 text-base">
-        {icon}
-      </span>
-      <span className="leading-tight">
-        <span className="block text-sm font-bold">{label}</span>
-        <span className="block text-[10px] uppercase tracking-[0.12em] text-doggerz-paw/75">
-          Care
-        </span>
-      </span>
-    </button>
   );
 }
 
@@ -4196,14 +4661,31 @@ function TricksOverlay({
   onOpenLog,
   onTrainCommand,
 }) {
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const rafId = window.requestAnimationFrame(() => {
+      setIsVisible(true);
+    });
+    return () => {
+      window.cancelAnimationFrame(rafId);
+    };
+  }, []);
+
   return (
     <div
-      className="fixed inset-0 z-40 flex items-end justify-center bg-black/50 p-4 sm:items-center"
+      className="fixed inset-0 z-40 flex items-end justify-center bg-[linear-gradient(180deg,rgba(2,6,23,0.12),rgba(2,6,23,0.72))] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+16px)] pt-6"
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <div className="w-full max-w-xl rounded-[28px] border border-doggerz-leaf/30 bg-black/90 p-4 text-doggerz-bone shadow-[0_18px_48px_rgba(2,6,23,0.65)] backdrop-blur-md">
+      <div
+        className={`w-full max-w-xl rounded-[28px] border border-doggerz-leaf/30 bg-[linear-gradient(180deg,rgba(2,6,23,0.96),rgba(15,23,42,0.94))] p-4 text-doggerz-bone shadow-[0_24px_64px_rgba(2,6,23,0.7)] backdrop-blur-3xl transition duration-300 ease-out ${
+          isVisible
+            ? "translate-y-0 opacity-100"
+            : "translate-y-10 opacity-0"
+        }`}
+      >
         <div className="flex items-start justify-between gap-3">
           <div>
             <div className="text-sm font-semibold uppercase tracking-[0.2em] text-doggerz-paw">
@@ -4435,42 +4917,88 @@ function HudChip({ label, value, tooltip = "" }) {
         <div className="stat-label text-[10px] font-semibold tracking-[0.14em]">
           {label}
         </div>
-        <div className="stat-value mt-0.5 text-sm font-bold">{value}</div>
+        <div className="stat-value mt-0.5 text-sm font-bold sm:text-[15px]">
+          {value}
+        </div>
       </div>
     </Tooltip>
   );
 }
 
-function StatusPill({ label, value, detail = "" }) {
+function DogStatusBubble({
+  name = "Your pup",
+  stageLabel = "Puppy",
+  ageValue = "0w",
+  moodLabel = "Calm",
+  energyPct = 100,
+}) {
   return (
-    <div className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-black/35 px-3 py-1.5 text-[11px] text-doggerz-bone shadow-[0_8px_18px_rgba(2,6,23,0.18)]">
-      <span className="uppercase tracking-[0.14em] text-doggerz-paw/80">
-        {label}
-      </span>
-      <span className="font-bold text-white">{value}</span>
-      {detail ? (
-        <span className="text-[10px] text-doggerz-paw/75">{detail}</span>
-      ) : null}
-    </div>
+    <Tooltip
+      content={`${name} • ${stageLabel} • ${ageValue} • ${moodLabel} • ${Math.round(
+        Number(energyPct || 0)
+      )}% energy`}
+      className="w-full"
+    >
+      <div className="inline-flex min-w-0 max-w-full items-center gap-3 rounded-[24px] border border-white/16 bg-[linear-gradient(180deg,rgba(15,23,42,0.74),rgba(2,6,23,0.62))] px-3 py-2 text-doggerz-bone shadow-[0_16px_40px_rgba(2,6,23,0.32)] backdrop-blur-2xl sm:px-4 sm:py-3">
+        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-[18px] border border-emerald-300/20 bg-[radial-gradient(circle_at_30%_30%,rgba(45,212,191,0.22),rgba(45,212,191,0.04)_64%)] text-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+          🐶
+        </div>
+        <div className="min-w-0">
+          <div className="truncate text-sm font-black tracking-tight text-white sm:text-[15px]">
+            {name}
+          </div>
+          <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-doggerz-paw/80">
+            <span>{stageLabel}</span>
+            <span className="text-white/25">•</span>
+            <span>{ageValue}</span>
+            <span className="text-white/25">•</span>
+            <span>{moodLabel}</span>
+          </div>
+          <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+            <div
+              className="h-full rounded-full bg-[linear-gradient(90deg,rgba(45,212,191,0.88),rgba(110,231,183,0.98))]"
+              style={{ width: `${clamp(Number(energyPct || 0), 0, 100)}%` }}
+            />
+          </div>
+        </div>
+      </div>
+    </Tooltip>
   );
 }
 
-function CloudSyncChip({ label, detail = "", tone = "muted" }) {
+function ModernStatusPill({
+  label,
+  value,
+  detail = "",
+  tone = "muted",
+}) {
   const toneClass =
     tone === "ok"
-      ? "border-emerald-300/35 bg-emerald-400/10 text-emerald-50"
+      ? "border-emerald-300/28 bg-[linear-gradient(180deg,rgba(16,185,129,0.22),rgba(16,185,129,0.08))] text-emerald-50"
       : tone === "error"
-        ? "border-rose-300/35 bg-rose-400/10 text-rose-50"
+        ? "border-rose-300/28 bg-[linear-gradient(180deg,rgba(244,63,94,0.22),rgba(244,63,94,0.08))] text-rose-50"
         : tone === "pending"
-          ? "border-amber-300/35 bg-amber-400/10 text-amber-50"
-          : "border-white/15 bg-white/5 text-white/80";
+          ? "border-amber-300/28 bg-[linear-gradient(180deg,rgba(251,191,36,0.22),rgba(251,191,36,0.08))] text-amber-50"
+          : tone === "sky"
+            ? "border-sky-300/28 bg-[linear-gradient(180deg,rgba(56,189,248,0.22),rgba(56,189,248,0.08))] text-sky-50"
+            : "border-white/14 bg-[linear-gradient(180deg,rgba(255,255,255,0.1),rgba(255,255,255,0.04))] text-white/85";
+
   return (
-    <div
-      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold ${toneClass}`}
+    <Tooltip
+      content={detail ? `${label}: ${value} • ${detail}` : `${label}: ${value}`}
+      className="w-full"
     >
-      <span className="uppercase tracking-[0.14em]">{label}</span>
-      {detail ? <span className="text-[10px] opacity-80">{detail}</span> : null}
-    </div>
+      <div
+        className={`inline-flex min-w-0 max-w-full items-center gap-2 rounded-full border px-3 py-2 text-right shadow-[0_16px_34px_rgba(2,6,23,0.28)] backdrop-blur-2xl ${toneClass}`}
+      >
+        <span className="shrink-0 text-[10px] font-black uppercase tracking-[0.16em] opacity-80">
+          {label}
+        </span>
+        <span className="min-w-0 truncate text-[11px] font-bold sm:text-xs">
+          {value}
+        </span>
+      </div>
+    </Tooltip>
   );
 }
 

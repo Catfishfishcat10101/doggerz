@@ -1198,10 +1198,10 @@ html[data-reduce-motion="1"] .dog-bowl {
 .owner-badge {
   display: inline-flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   width: fit-content;
-  margin-bottom: 16px;
-  padding: 8px 16px;
+  margin-bottom: 0;
+  padding: 8px 12px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 999px;
   background: var(--card-bg);
@@ -1221,6 +1221,7 @@ html[data-reduce-motion="1"] .dog-bowl {
 .owner-badge__meta {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .owner-badge__label {
@@ -1234,6 +1235,10 @@ html[data-reduce-motion="1"] .dog-bowl {
   font-size: 1rem;
   font-weight: 700;
   color: var(--text-main);
+  max-width: 10rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .dz-native-toggle {
@@ -1376,7 +1381,7 @@ html[data-reduce-motion="1"] .dog-bowl {
 
 .btn-squish:active,
 .dz-touch-button:active {
-  transform: scale(0.92);
+  transform: scale(0.9);
 }
 
 .onboard-slide {
