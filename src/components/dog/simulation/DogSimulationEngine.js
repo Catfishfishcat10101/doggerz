@@ -11,16 +11,18 @@ import {
   tryConsumeFoodBowl,
 } from "@/store/dogSlice.js";
 import {
-  determineDogState,
   getDogStateDurationMs,
   resolveEmergencyDogState,
 } from "@/components/dog/DogAIStateMachine.js";
 import { updateDogMovement } from "@/components/dog/DogMovementSystem.js";
-import { chooseEnvironmentTarget } from "@/components/dog/DogEnvironmentTargets.js";
-import { chooseWanderTarget } from "@/components/dog/simulation/DogWanderBehavior.js";
 import { createMemoryEvent } from "@/components/dog/DogMemoryEvents.js";
 import { generateDream } from "@/components/dog/DogDreamEngine.js";
 import { generateMemoryFromTransition } from "@/components/dog/memory/DogStateTransitionMemory.js";
+import {
+  buildDogBrainState,
+  evaluateDogBrain,
+} from "@/features/dog/brain/DogBrain.js";
+import { applyBrainDecision } from "@/features/dog/brain/applyBrainDecision.js";
 
 let simulationRunning = false;
 let interval = null;
@@ -79,6 +81,12 @@ function handleEnvironmentInteraction(store, interaction, now) {
       rest({
         now,
         action: "rest",
+        napSpotId:
+          interaction.id === "apartment-bed"
+            ? "indoors"
+            : interaction.type === "doghouse"
+              ? "doghouse"
+              : "yard",
       })
     );
     return;
@@ -281,10 +289,47 @@ export function runSimulation(
   let interaction = null;
   const emergencyState = resolveEmergencyDogState(dogAfterNeeds);
   if (!nextState) {
-    nextState =
-      holdUntil > now && currentAiState && !emergencyState
-        ? currentAiState
-        : emergencyState || determineDogState(dogAfterNeeds);
+    const brainDecision = evaluateDogBrain(buildDogBrainState(dogAfterNeeds), {
+      now,
+    });
+    const brainResult = applyBrainDecision({
+      dog: dogAfterNeeds,
+      decision: brainDecision,
+      now,
+      currentAiState,
+      holdUntil,
+      currentTarget: resolvedTargetPosition,
+      emergencyState,
+    });
+
+    if (Object.hasOwn(brainResult || {}, "targetPosition")) {
+      changes.targetPosition = brainResult?.targetPosition || null;
+    }
+    if (brainResult?.action) {
+      changes.action = brainResult.action;
+    }
+    if (brainResult?.mood) {
+      changes.mood = brainResult.mood;
+    }
+    if (brainResult?.startedWalk && brainResult?.targetPosition) {
+      const targetPosition = brainResult.targetPosition;
+      memories.push(
+        createMemoryEvent("wandered", {
+          category: "MEMORY",
+          moodTag: "CURIOUS",
+          summary: targetPosition.label
+            ? `Headed toward the ${targetPosition.label}.`
+            : "Set off for a calm stroll.",
+          body: targetPosition.label
+            ? `Your pup calmly wandered toward the ${targetPosition.label}.`
+            : "Your pup picked a nearby spot and started a gentle yard stroll.",
+          position: targetPosition,
+          happiness: 1,
+        })
+      );
+    }
+
+    nextState = brainResult?.aiState || "idle";
   } else if (emergencyState && emergencyState !== nextState) {
     nextState = emergencyState;
   }
@@ -303,26 +348,6 @@ export function runSimulation(
       toyId: arrivedTarget.toyId || null,
     };
     nextState = "idle";
-  }
-
-  if (!resolvedTargetPosition && !arrivedTarget && nextState === "walk") {
-    const environmentTarget = chooseEnvironmentTarget(dogAfterNeeds, now);
-    const targetPosition = environmentTarget || chooseWanderTarget();
-    changes.targetPosition = targetPosition;
-    memories.push(
-      createMemoryEvent("wandered", {
-        category: "MEMORY",
-        moodTag: "CURIOUS",
-        summary: environmentTarget
-          ? `Headed toward the ${environmentTarget.label}.`
-          : "Set off to explore.",
-        body: environmentTarget
-          ? `Your pup noticed the ${environmentTarget.label} and wandered over to investigate.`
-          : "Your pup picked a new spot in the yard and started wandering over.",
-        position: targetPosition,
-        happiness: 1,
-      })
-    );
   }
 
   if (nextState !== currentAiState) {
@@ -346,7 +371,7 @@ export function runSimulation(
     changes.mood = "restless";
   }
 
-  if (!dog?.isAsleep) {
+  if (!dog?.isAsleep && !changes.action) {
     if (nextState === "bark") {
       changes.action = "bark";
     } else if (nextState === "walk") {

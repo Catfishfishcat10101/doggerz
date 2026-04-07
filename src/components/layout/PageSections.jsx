@@ -1,3 +1,4 @@
+// src/components/layout/PageSections.jsx
 export function PageHeader({
   children,
   className = "",

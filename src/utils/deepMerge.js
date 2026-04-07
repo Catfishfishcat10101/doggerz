@@ -1,3 +1,5 @@
+//src/utils/deepMerge.js
+
 function isPlainObject(value) {
   if (!value || typeof value !== "object") return false;
   const proto = Object.getPrototypeOf(value);
@@ -37,7 +39,7 @@ function mergeInto(target, source) {
 
     if (isPlainObject(value)) {
       const current = isPlainObject(target[key]) ? target[key] : {};
-      target[key] = mergeInto({ ...current }, value);
+      target[key] = mergeInto(cloneValue(current), value);
       continue;
     }
 

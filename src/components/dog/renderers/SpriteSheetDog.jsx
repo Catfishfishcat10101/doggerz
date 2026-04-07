@@ -1,10 +1,13 @@
 // src/components/dog/renderers/SpriteSheetDog.jsx
 // Direct CSS sprite renderer using a fixed 4x4 grid.
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 
 import { DOGS } from "@/app/config/assets.js";
-import { getDogAnimSpriteUrl, normalizeDogStageShort } from "@/utils/dogSpritePaths.js";
+import {
+  getDogAnimSpriteUrl,
+  normalizeDogStageShort,
+} from "@/utils/dogSpritePaths.js";
 import { getManifestAnimMeta } from "@/components/dog/dogAnimationEngine.js";
 import "./SpriteSheetDog.css";
 
@@ -299,8 +302,8 @@ function getFramePosition(frameIndex) {
   const safeIndex = Math.max(0, Math.min(TOTAL_FRAMES - 1, frameIndex));
   const col = safeIndex % GRID_COLUMNS;
   const row = Math.floor(safeIndex / GRID_COLUMNS);
-  const x = GRID_COLUMNS === 1 ? 0 : (col / (GRID_COLUMNS - 1)) * 100;
-  const y = GRID_ROWS === 1 ? 0 : (row / (GRID_ROWS - 1)) * 100;
+  const x = GRID_COLUMNS === 1 ? 0 : (col / GRID_COLUMNS) * 100;
+  const y = GRID_ROWS === 1 ? 0 : (row / GRID_ROWS) * 100;
 
   return {
     col,
@@ -310,9 +313,9 @@ function getFramePosition(frameIndex) {
   };
 }
 
-export default function SpriteSheetDog({
+function SpriteSheetDog({
   stage = "PUPPY",
-  condition = "clean",
+
   anim = "idle",
   facing = 1,
   size = 320,
@@ -328,13 +331,11 @@ export default function SpriteSheetDog({
     () => resolveSpriteSheetAction(animMeta.key),
     [animMeta.key]
   );
-  const actionMeta = SPRITE_ACTION_META[spriteAction] || SPRITE_ACTION_META.idle;
+  const actionMeta =
+    SPRITE_ACTION_META[spriteAction] || SPRITE_ACTION_META.idle;
   const sequence = useMemo(
     () =>
-      buildFrameSequence(
-        actionMeta.currentFrameOffset,
-        actionMeta.frameCount
-      ),
+      buildFrameSequence(actionMeta.currentFrameOffset, actionMeta.frameCount),
     [actionMeta.currentFrameOffset, actionMeta.frameCount]
   );
   const candidates = useMemo(
@@ -356,7 +357,7 @@ export default function SpriteSheetDog({
     1,
     Math.round(Number(actionMeta.fps || 5) * effectiveSpeedMultiplier)
   );
-  const displayScale = 1;
+
   const spriteScale = boxSize / 256;
   const cssFacing = Number(facing) < 0 ? -1 : 1;
 
@@ -366,7 +367,10 @@ export default function SpriteSheetDog({
     async function load() {
       setSheetFailed(false);
       setActiveSrc(null);
-      const resolvedSrc = await loadFirstAvailableImageSource(candidates, fallbackSrc);
+      const resolvedSrc = await loadFirstAvailableImageSource(
+        candidates,
+        fallbackSrc
+      );
       if (cancelled) return;
       if (!resolvedSrc) {
         setSheetFailed(true);
@@ -441,7 +445,6 @@ export default function SpriteSheetDog({
     if (!onDebug) return;
     onDebug({
       stage,
-      condition,
       anim,
       resolvedAnim: animMeta.key,
       spriteAction,
@@ -465,7 +468,6 @@ export default function SpriteSheetDog({
     actionMeta.currentFrameOffset,
     actionMeta.sheetAnim,
     candidates.length,
-    condition,
     effectiveFps,
     effectiveSpeedMultiplier,
     fallbackSrc,
@@ -477,7 +479,9 @@ export default function SpriteSheetDog({
     stage,
   ]);
 
-  const spriteUrl = String(activeSrc || fallbackSrc || HARD_TEXTURE_FALLBACK_SRC || "");
+  const spriteUrl = String(
+    activeSrc || fallbackSrc || HARD_TEXTURE_FALLBACK_SRC || ""
+  );
   const backgroundImageValue = spriteUrl
     ? `url("${String(spriteUrl).replace(/"/g, '\\"')}")`
     : "none";
@@ -503,7 +507,7 @@ export default function SpriteSheetDog({
           "--dog-grid-columns": String(GRID_COLUMNS),
           "--dog-grid-rows": String(GRID_ROWS),
           "--dog-facing": String(cssFacing * SPRITE_DEFAULT_FACING),
-          "--dog-scale": String(displayScale * spriteScale),
+          "--dog-scale": String(spriteScale),
           "--dog-image-rendering": smoothing ? "auto" : "pixelated",
           backgroundImage: backgroundImageValue,
         }}
@@ -511,3 +515,20 @@ export default function SpriteSheetDog({
     </div>
   );
 }
+
+function arePropsEqual(prev, next) {
+  return (
+    prev.stage === next.stage &&
+    prev.anim === next.anim &&
+    prev.facing === next.facing &&
+    prev.size === next.size &&
+    prev.reduceMotion === next.reduceMotion &&
+    prev.speedMultiplier === next.speedMultiplier &&
+    prev.smoothing === next.smoothing &&
+    prev.fallbackSrc === next.fallbackSrc &&
+    prev.className === next.className &&
+    prev.onDebug === next.onDebug
+  );
+}
+
+export default memo(SpriteSheetDog, arePropsEqual);

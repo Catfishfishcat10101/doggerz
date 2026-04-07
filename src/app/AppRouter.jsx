@@ -22,7 +22,7 @@ import ModalHost from "@/components/ui/modals/ModalHost.jsx";
 import { selectIsAuthResolved } from "@/store/userSlice.js";
 
 // Keep Landing fast; lazy-load everything else.
-import HomeGate from "@/pages/HomeGate.jsx";
+import Landing from "@/pages/Landing.jsx";
 
 const DogRouteShell = React.lazy(
   () => import("@/components/dog/shells/DogRouteShell.jsx")
@@ -34,6 +34,7 @@ const AdoptPage = React.lazy(() => import("@/pages/Adopt.jsx"));
 const LoginPage = React.lazy(() => import("@/pages/Login.jsx"));
 const SignupPage = React.lazy(() => import("@/pages/Signup.jsx"));
 const AboutPage = React.lazy(() => import("@/pages/About.jsx"));
+const FaqPage = React.lazy(() => import("@/pages/Faq.jsx"));
 const ContactPage = React.lazy(() => import("@/pages/Contact.jsx"));
 const HelpPage = React.lazy(() => import("@/pages/Help.jsx"));
 const SettingsPage = React.lazy(() => import("@/pages/Settings.jsx"));
@@ -47,6 +48,7 @@ const TemperamentRevealPage = React.lazy(
   () => import("@/pages/TemperamentReveal.jsx")
 );
 const RainbowBridgePage = React.lazy(() => import("@/pages/RainbowBridge.jsx"));
+const DevelopersPage = React.lazy(() => import("@/pages/Developers.jsx"));
 const NotFoundPage = React.lazy(() => import("@/pages/NotFound.jsx"));
 
 const stripLeadingSlash = (path) => String(path || "").replace(/^\//, "");
@@ -108,15 +110,15 @@ const utilityRoutes = Object.freeze([
   { path: PATHS.ABOUT, node: <AboutPage />, label: "Loading about…" },
   {
     path: PATHS.FAQ,
-    node: <Navigate to={PATHS.HELP} replace />,
-    label: "Redirecting to help…",
+    node: <FaqPage />,
+    label: "Loading FAQs…",
   },
   { path: PATHS.CONTACT, node: <ContactPage />, label: "Loading contact…" },
   { path: PATHS.HELP, node: <HelpPage />, label: "Loading help…" },
   {
     path: PATHS.DEVELOPERS,
-    node: <Navigate to={PATHS.MENU} replace />,
-    label: "Redirecting to menu…",
+    node: <DevelopersPage />,
+    label: "Loading developers…",
   },
   {
     path: PATHS.SETTINGS,
@@ -270,7 +272,7 @@ const router = createBrowserRouter(
           path: PATHS.HOME,
           element: <AppShell />,
           children: [
-            { index: true, element: <HomeGate /> },
+            { index: true, element: <Landing /> },
             {
               path: "landing",
               element: <Navigate to={PATHS.HOME} replace />,

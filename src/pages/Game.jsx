@@ -1,12 +1,12 @@
 //src/pages/Game.jsx
-import { useMemo, useEffect, useState } from "react";
+import { useMemo, useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
 
-import BottomTabBar from "@/components/layout/BottomTabBar.jsx";
 import DogAIEngine from "@/components/dog/DogAIEngine.jsx";
 import MainGame from "@/components/game/MainGame.jsx";
 import GrowthCelebration from "@/components/dog/components/GrowthCelebration.jsx";
+import { preloadJackRussellSheets } from "@/components/dog/assets/jrAtlasAssets.js";
 import { getDailyRewardState } from "@/features/billing/dailyRewards.js";
 import usePreRegistration from "@/hooks/usePreRegistration.js";
 import useModal from "@/hooks/useModal.js";
@@ -30,6 +30,10 @@ import {
   getWeatherLabel,
   normalizeWeatherCondition,
 } from "@/utils/weather.js";
+import {
+  trackEnterGame,
+  trackSessionDuration,
+} from "@/lib/analytics/gameAnalytics.js";
 
 function titleCase(s) {
   const str = String(s || "").trim();
@@ -123,6 +127,67 @@ export default function GamePage() {
     () => getWeatherAccent(weatherKey),
     [weatherKey]
   );
+  const gameSessionStartedAtRef = useRef(Date.now());
+  const gameSessionLoggedRef = useRef(false);
+  const gameSessionMetaRef = useRef({
+    hasDog: Boolean(dog?.adoptedAt),
+    lifecycleStatus: String(dog?.lifecycleStatus || "NONE").toLowerCase(),
+  });
+
+  useEffect(() => {
+    gameSessionMetaRef.current = {
+      hasDog: Boolean(dog?.adoptedAt),
+      lifecycleStatus: String(dog?.lifecycleStatus || "NONE").toLowerCase(),
+    };
+  }, [dog?.adoptedAt, dog?.lifecycleStatus]);
+
+  useEffect(() => {
+    preloadJackRussellSheets().catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    gameSessionStartedAtRef.current = Date.now();
+    gameSessionLoggedRef.current = false;
+
+    const sessionMeta = gameSessionMetaRef.current;
+    trackEnterGame({
+      hasDog: sessionMeta.hasDog,
+      lifecycleStatus: sessionMeta.lifecycleStatus,
+    });
+
+    const flushSessionDuration = () => {
+      if (gameSessionLoggedRef.current) return;
+      const durationMs = Math.max(
+        0,
+        Date.now() - gameSessionStartedAtRef.current
+      );
+      const durationSeconds = Math.round(durationMs / 1000);
+
+      gameSessionLoggedRef.current = true;
+      const latestMeta = gameSessionMetaRef.current;
+      trackSessionDuration({
+        durationSeconds,
+        hasDog: latestMeta.hasDog,
+        lifecycleStatus: latestMeta.lifecycleStatus,
+        sessionStartedAt: gameSessionStartedAtRef.current,
+      });
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        flushSessionDuration();
+      }
+    };
+
+    window.addEventListener("pagehide", flushSessionDuration);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener("pagehide", flushSessionDuration);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      flushSessionDuration();
+    };
+  }, []);
 
   useEffect(() => {
     const updateNow = () => setRewardNow(Date.now());
@@ -308,7 +373,6 @@ export default function GamePage() {
         )}
       </div>
       <GrowthCelebration />
-      <BottomTabBar />
     </div>
   );
 }

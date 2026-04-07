@@ -1,0 +1,118 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#7bc0f7"/>
+      <stop offset="42%" stop-color="#9ed8ff"/>
+      <stop offset="100%" stop-color="#eaf7ff"/>
+    </linearGradient>
+    <linearGradient id="sunsetCloud" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#fff7da"/>
+      <stop offset="100%" stop-color="#ffd89d"/>
+    </linearGradient>
+    <linearGradient id="farTrees" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#5f9a68"/>
+      <stop offset="100%" stop-color="#355a35"/>
+    </linearGradient>
+    <linearGradient id="fencePost" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#e0b070"/>
+      <stop offset="100%" stop-color="#9a6635"/>
+    </linearGradient>
+    <linearGradient id="lawn" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#5ca859"/>
+      <stop offset="100%" stop-color="#274d25"/>
+    </linearGradient>
+    <linearGradient id="path" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#c5a26a"/>
+      <stop offset="100%" stop-color="#8f6a41"/>
+    </linearGradient>
+    <radialGradient id="sunGlow" cx="48%" cy="34%" r="42%">
+      <stop offset="0%" stop-color="#fffce4" stop-opacity="0.92"/>
+      <stop offset="54%" stop-color="#fff0ba" stop-opacity="0.42"/>
+      <stop offset="100%" stop-color="#fff0ba" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="treeLeaf" cx="50%" cy="40%" r="62%">
+      <stop offset="0%" stop-color="#85db7f"/>
+      <stop offset="68%" stop-color="#3d8e49"/>
+      <stop offset="100%" stop-color="#245632"/>
+    </radialGradient>
+    <linearGradient id="trunk" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#875632"/>
+      <stop offset="100%" stop-color="#563117"/>
+    </linearGradient>
+    <linearGradient id="doghouseRoof" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#d46a39"/>
+      <stop offset="100%" stop-color="#9b4322"/>
+    </linearGradient>
+    <linearGradient id="doghouseBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#b77945"/>
+      <stop offset="100%" stop-color="#7e4d2b"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#sky)"/>
+  <ellipse cx="820" cy="160" rx="360" ry="170" fill="url(#sunGlow)"/>
+  <g opacity="0.9">
+    <ellipse cx="340" cy="168" rx="154" ry="54" fill="url(#sunsetCloud)"/>
+    <ellipse cx="468" cy="158" rx="114" ry="40" fill="url(#sunsetCloud)"/>
+    <ellipse cx="1218" cy="138" rx="168" ry="56" fill="#ffffff" fill-opacity="0.82"/>
+    <ellipse cx="1344" cy="150" rx="116" ry="42" fill="#ffffff" fill-opacity="0.76"/>
+  </g>
+  <path d="M0 420c94-56 220-64 340-20 74 28 134 34 214 12 96-28 178-30 264 10 70 32 142 38 228 14 82-22 176-20 302 28v126H0Z" fill="url(#farTrees)" opacity="0.95"/>
+  <rect y="454" width="1600" height="30" fill="#9bbf8d" opacity="0.55"/>
+  <g transform="translate(0 0)" opacity="0.95">
+    <rect y="392" width="1600" height="18" fill="#e7c08d"/>
+    <rect y="446" width="1600" height="16" fill="#a36f3c"/>
+    <g fill="url(#fencePost)">
+      <rect x="18" y="336" width="24" height="154" rx="8"/>
+      <rect x="82" y="330" width="24" height="160" rx="8"/>
+      <rect x="146" y="334" width="24" height="156" rx="8"/>
+      <rect x="210" y="328" width="24" height="162" rx="8"/>
+      <rect x="274" y="332" width="24" height="158" rx="8"/>
+      <rect x="338" y="329" width="24" height="161" rx="8"/>
+      <rect x="402" y="333" width="24" height="157" rx="8"/>
+      <rect x="466" y="330" width="24" height="160" rx="8"/>
+      <rect x="530" y="334" width="24" height="156" rx="8"/>
+      <rect x="594" y="328" width="24" height="162" rx="8"/>
+      <rect x="658" y="332" width="24" height="158" rx="8"/>
+      <rect x="722" y="329" width="24" height="161" rx="8"/>
+      <rect x="786" y="333" width="24" height="157" rx="8"/>
+      <rect x="850" y="330" width="24" height="160" rx="8"/>
+      <rect x="914" y="334" width="24" height="156" rx="8"/>
+      <rect x="978" y="328" width="24" height="162" rx="8"/>
+      <rect x="1042" y="332" width="24" height="158" rx="8"/>
+      <rect x="1106" y="329" width="24" height="161" rx="8"/>
+      <rect x="1170" y="333" width="24" height="157" rx="8"/>
+      <rect x="1234" y="330" width="24" height="160" rx="8"/>
+      <rect x="1298" y="334" width="24" height="156" rx="8"/>
+      <rect x="1362" y="328" width="24" height="162" rx="8"/>
+      <rect x="1426" y="332" width="24" height="158" rx="8"/>
+      <rect x="1490" y="329" width="24" height="161" rx="8"/>
+      <rect x="1554" y="333" width="24" height="157" rx="8"/>
+    </g>
+  </g>
+  <g>
+    <ellipse cx="258" cy="530" rx="138" ry="34" fill="#17381d" fill-opacity="0.22"/>
+    <rect x="234" y="270" width="46" height="252" rx="22" fill="url(#trunk)"/>
+    <ellipse cx="260" cy="174" rx="136" ry="108" fill="url(#treeLeaf)"/>
+    <ellipse cx="182" cy="218" rx="82" ry="68" fill="url(#treeLeaf)"/>
+    <ellipse cx="340" cy="222" rx="90" ry="72" fill="url(#treeLeaf)"/>
+  </g>
+  <rect y="500" width="1600" height="400" fill="url(#lawn)"/>
+  <path d="M0 612c176-26 324-8 492 18 176 28 308 26 452-10 170-42 316-38 656 24v256H0Z" fill="#3d7f3d"/>
+  <path d="M0 690c174-22 330 4 500 26 186 26 352 24 520-14 182-40 346-36 580 18v180H0Z" fill="#2b5c2f"/>
+  <path d="M692 552c90 0 154 28 198 64 48 38 78 98 100 196H610c34-166 104-260 282-260Z" fill="url(#path)" opacity="0.94"/>
+  <path d="M730 560c72 6 132 32 170 68 40 38 66 90 82 164H648c28-132 88-206 214-232Z" fill="#d6b987" opacity="0.48"/>
+  <g opacity="0.16" fill="#f4ffd5">
+    <ellipse cx="178" cy="678" rx="150" ry="32"/>
+    <ellipse cx="610" cy="628" rx="190" ry="28"/>
+    <ellipse cx="1170" cy="666" rx="220" ry="34"/>
+  </g>
+  <g>
+    <ellipse cx="1232" cy="618" rx="126" ry="28" fill="#102518" fill-opacity="0.3"/>
+    <path d="M1084 518 1238 424 1392 518v18h-308Z" fill="url(#doghouseRoof)"/>
+    <rect x="1118" y="532" width="240" height="142" rx="24" fill="url(#doghouseBody)"/>
+    <rect x="1189" y="566" width="98" height="108" rx="46" fill="#1e2530"/>
+    <rect x="1142" y="560" width="30" height="96" rx="12" fill="#cf995e" fill-opacity="0.55"/>
+    <rect x="1304" y="560" width="30" height="96" rx="12" fill="#cf995e" fill-opacity="0.55"/>
+  </g>
+  <path d="M0 820c220-24 466 20 740 30 332 12 570-10 860-44v94H0Z" fill="#204428" opacity="0.92"/>
+</svg>

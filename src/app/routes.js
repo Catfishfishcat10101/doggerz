@@ -156,7 +156,45 @@ export const MENU_DESTINATIONS = Object.freeze([
     label: "Settings",
     detail: "Preferences and care tuning",
   },
-  { path: PATHS.HELP, label: "Help", detail: "Support and troubleshooting" },
+]);
+
+export const MENU_CATEGORIES = Object.freeze([
+  {
+    key: "support-info",
+    title: "Support & Info",
+    items: [
+      {
+        path: PATHS.HELP,
+        label: "Help",
+        detail: "Support and troubleshooting",
+      },
+      {
+        path: PATHS.FAQ,
+        label: "FAQs",
+        detail: "Quick answers to common questions",
+      },
+      {
+        path: PATHS.ABOUT,
+        label: "About",
+        detail: "How Doggerz works",
+      },
+      {
+        path: PATHS.PRIVACY,
+        label: "Privacy",
+        detail: "How data is handled",
+      },
+      {
+        path: PATHS.DEVELOPERS,
+        label: "Developers",
+        detail: "Docs and integration notes",
+      },
+    ],
+  },
+  {
+    key: "app",
+    title: "App",
+    items: MENU_DESTINATIONS,
+  },
 ]);
 
 export const PRIMARY_NAV = PRIMARY_TABS;

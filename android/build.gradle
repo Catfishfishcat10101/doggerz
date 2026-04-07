@@ -28,7 +28,8 @@ subprojects { subproj ->
                     subproj.android.buildTypes.release.proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
                 }
 
-                // Force Java 17 compatibility across all plugins
+                // Force Java 21 compatibility across all plugins so local
+                // Android Studio JBR and plugin bytecode targets stay aligned.
                 def compileSdkVal = rootProject.ext.compileSdkVersion
                 if (subproj.android?.hasProperty('compileSdk') && !subproj.android.compileSdk) {
                     subproj.android.compileSdk = compileSdkVal
@@ -38,28 +39,28 @@ subprojects { subproj ->
 
                 if (subproj.android?.hasProperty('compileOptions')) {
                     subproj.android.compileOptions {
-                        sourceCompatibility = JavaVersion.VERSION_17
-                        targetCompatibility = JavaVersion.VERSION_17
+                        sourceCompatibility = JavaVersion.VERSION_21
+                        targetCompatibility = JavaVersion.VERSION_21
                     }
                 }
             }
         }
 
-        // Ensure Kotlin toolchain matches Java 17
+        // Ensure Kotlin toolchain matches Java 21
         def kotlinExt = subproj.extensions.findByName('kotlin')
         if (kotlinExt != null) {
             try {
-                kotlinExt.jvmToolchain(17)
+                kotlinExt.jvmToolchain(21)
             } catch (Throwable ignored) {}
         }
     }
 
-    // Force Kotlin compilation to match JVM 17
+    // Force Kotlin compilation to match JVM 21
     subproj.plugins.withId('org.jetbrains.kotlin.android') {
         try {
             subproj.tasks.matching { it.name.toLowerCase().contains('kotlin') }.configureEach {
                 if (it.hasProperty('kotlinOptions')) {
-                    it.kotlinOptions.jvmTarget = '17'
+                    it.kotlinOptions.jvmTarget = '21'
                 }
             }
         } catch (Throwable ignored) {}

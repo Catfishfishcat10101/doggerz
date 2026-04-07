@@ -1,4 +1,5 @@
-/** @format */
+//src/store/dogThunks.js
+
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase/index.js";

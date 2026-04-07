@@ -1,15 +1,19 @@
-
 // src/pages/Landing.jsx
 
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 
 import PageShell from "@/components/layout/PageShell.jsx";
 import { PATHS } from "@/app/routes.js";
 import { withBaseUrl } from "@/utils/assetUtils.js";
+import { selectIsLoggedIn } from "@/store/userSlice.js";
 
 export default function Landing() {
-  const { reduceMotion, batterySaver } = useSelector((state) => state.settings || {});
+  const isLoggedIn = useSelector(selectIsLoggedIn);
+  const { reduceMotion, batterySaver } = useSelector(
+    (state) => state.settings || {}
+  );
+  if (isLoggedIn) return <Navigate to={PATHS.GAME} replace />;
 
   const showBlurDecor = !reduceMotion && !batterySaver;
 

@@ -17,15 +17,21 @@ import {
   selectDogCleanlinessMeta,
   selectCosmeticCatalog,
   selectDogDreams,
+  selectDogDailyFlavor,
   selectDogGrowthMilestone,
+  selectDogIdentityContent,
+  selectDogIdentityProfile,
   selectDogJournal,
   selectDogLegacyJourney,
   selectDogLifeStage,
+  selectDogMilestoneCardQueue,
   selectDogMemories,
   selectDogMemorial,
   selectDogMoodLabel,
   selectDogNeedsNormalized,
   selectDogPolls,
+  selectDogPreferences,
+  selectDogPrimaryFavoriteSummary,
   selectDogSkillTree,
   selectDogSkillTreePoints,
   selectDogSkillTreeUnlockedIds,
@@ -37,12 +43,48 @@ import {
 import { selectDogRenderModel } from "@/components/dog/redux/dogSelectors.js";
 import { scoreRecentMemoryDrives } from "@/components/dog/DogMemoryDrives.js";
 
-const selectDogIdentityModel = createSelector([selectDog], (dog) => ({
-  name: dog?.name || "Pup",
-  level: Math.max(1, Math.floor(Number(dog?.level || 1))),
-  xp: Math.max(0, Math.floor(Number(dog?.xp || 0))),
-  coins: Math.max(0, Math.floor(Number(dog?.coins || 0))),
-}));
+const selectDogIdentityModel = createSelector(
+  [
+    selectDog,
+    selectDogIdentityProfile,
+    selectDogPrimaryFavoriteSummary,
+    selectDogDailyFlavor,
+  ],
+  (dog, identityProfile, favoriteSummary, dailyFlavor) => ({
+    profileId: String(identityProfile?.profileId || "").trim() || null,
+    visualIdentity:
+      String(identityProfile?.visualIdentity || "").trim() || "jr_canonical_v1",
+    name: String(dog?.name || identityProfile?.name || "Pup").trim() || "Pup",
+    level: Math.max(1, Math.floor(Number(dog?.level || 1))),
+    xp: Math.max(0, Math.floor(Number(dog?.xp || 0))),
+    coins: Math.max(0, Math.floor(Number(dog?.coins || 0))),
+    favoriteSummary,
+    dailyFlavor,
+  })
+);
+
+const selectDogIdentityContentModel = createSelector(
+  [
+    selectDogIdentityContent,
+    selectDogPreferences,
+    selectDogDailyFlavor,
+    selectDogMilestoneCardQueue,
+    selectDogPrimaryFavoriteSummary,
+  ],
+  (
+    identityContent,
+    preferences,
+    dailyFlavor,
+    milestoneCardQueue,
+    favoriteSummary
+  ) => ({
+    identityContent,
+    preferences,
+    dailyFlavor,
+    milestoneCardQueue,
+    favoriteSummary,
+  })
+);
 
 const selectDogVitalsModel = createSelector(
   [selectDogStats, selectDogBond, selectDogMoodLabel, selectDogNeedsNormalized],
@@ -64,11 +106,11 @@ const selectDogLifeModel = createSelector(
   (ageInfo, lifeStage, cleanliness) => ({
     ageDays: Math.max(
       0,
-      Math.floor(Number(ageInfo?.days ?? lifeStage?.days ?? 0))
+      Math.floor(Number(ageInfo?.ageInGameDays ?? lifeStage?.days ?? 0))
     ),
-    stage: lifeStage?.stage || ageInfo?.stage || "PUPPY",
-    stageLabel: lifeStage?.label || ageInfo?.label || "Puppy",
-    ageBucketLabel: ageInfo?.ageBucketLabel || "New pup",
+    stage: lifeStage?.stage || ageInfo?.stageId || "PUPPY",
+    stageLabel: lifeStage?.label || ageInfo?.stageLabel || "Puppy",
+    ageBucketLabel: ageInfo?.ageBucketLabel || "Puppy",
     stageProgressPct: Math.max(
       0,
       Math.min(100, Math.round(Number(ageInfo?.stageProgressPct || 0)))
@@ -190,6 +232,18 @@ export function useDog() {
 
 export function useDogIdentity() {
   return useDogState(selectDogIdentityModel, shallowEqual);
+}
+
+export function useDogIdentityContent() {
+  return useDogState(selectDogIdentityContentModel, shallowEqual);
+}
+
+export function useDogPreferences() {
+  return useDogState(selectDogPreferences, shallowEqual);
+}
+
+export function useDogDailyFlavor() {
+  return useDogState(selectDogDailyFlavor, shallowEqual);
 }
 
 export function useDogVitals() {

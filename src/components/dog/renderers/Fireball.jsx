@@ -261,7 +261,7 @@ export default function Fireball({
       }
     };
 
-    const centerFireball = () => {
+    const centerSprite = () => {
       const { width, height } = readBounds(boundsRef);
       const centered = clampPointToBounds(width / 2, height / 2);
       brainState.x = centered.x;
@@ -334,7 +334,7 @@ export default function Fireball({
       brainState.frameId = window.requestAnimationFrame(gameLoop);
     };
 
-    centerFireball();
+    centerSprite();
     syncSpriteFrame(0);
     changeState("idle");
     brainState.lastFrameTime = 0;
@@ -363,6 +363,8 @@ export default function Fireball({
     currentEntry,
     reduceMotion,
     speed,
+    animState,
+    isFlipped,
   ]);
 
   return (
@@ -370,7 +372,7 @@ export default function Fireball({
       ref={containerRef}
       className={`fireball-container ${className}`.trim()}
       style={spriteStyle}
-      aria-label="Fireball"
+      aria-label="Interactive dog sprite"
       role="button"
       tabIndex={0}
     >

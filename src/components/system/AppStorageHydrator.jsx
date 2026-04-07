@@ -37,6 +37,7 @@ export default function AppStorageHydrator() {
         getStoredValue(getDogStorageKey(null)),
         getStoredValue(DOG_STORAGE_KEY),
       ]);
+
       if (cancelled) return;
 
       const userParsed = parseStoredJson(userRaw, USER_STORAGE_KEY);

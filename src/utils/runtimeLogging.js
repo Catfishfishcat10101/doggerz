@@ -1,5 +1,3 @@
-/** @format */
-
 // src/utils/runtimeLogging.js
 
 /**
@@ -12,7 +10,6 @@
  */
 
 /** @type {ErrorEntry[]} */
-// @ts-ignore - extending Window for runtime error bucket
 const MAX_CAPTURED_ERRORS = 25;
 
 function getBucket() {
@@ -23,17 +20,41 @@ function getBucket() {
   return window.__DOGGERZ_ERROR_BUCKET__;
 }
 
+function normalizeError(err, context = {}) {
+  if (err instanceof Error) {
+    return {
+      at: new Date().toISOString(),
+      message: err.message || "Unknown error",
+      name: err.name || "Error",
+      stack: err.stack || null,
+      context,
+    };
+  }
+
+  if (typeof err === "string") {
+    return {
+      at: new Date().toISOString(),
+      message: err,
+      name: "Error",
+      stack: null,
+      context,
+    };
+  }
+
+  return {
+    at: new Date().toISOString(),
+    message: "Unknown runtime error",
+    name: "Error",
+    stack: null,
+    context: { ...context, raw: err },
+  };
+}
+
 export function captureRuntimeError(err, context = {}) {
   const bucket = getBucket();
   if (!bucket) return;
 
-  const entry = {
-    at: new Date().toISOString(),
-    message: err?.message || String(err),
-    name: err?.name || "Error",
-    stack: err?.stack || null,
-    context,
-  };
+  const entry = normalizeError(err, context);
 
   bucket.unshift(entry);
   if (bucket.length > MAX_CAPTURED_ERRORS) bucket.length = MAX_CAPTURED_ERRORS;
@@ -44,25 +65,32 @@ export function getCapturedErrors() {
   return Array.isArray(bucket) ? [...bucket] : [];
 }
 
-export function initRuntimeLogging({ mode } = {}) {
-  if (typeof window === "undefined") return;
+function hasRuntimeLoggingInit() {
+  return (
+    typeof window !== "undefined" &&
+    window.__DOGGERZ_RUNTIME_LOGGING_INIT__ === true
+  );
+}
 
-  const isProd = mode === "prod";
-  const allowProdWarn = (() => {
-    try {
-      const v =
-        typeof import.meta !== "undefined" && import.meta.env
-          ? import.meta.env.VITE_ENABLE_PROD_WARNINGS
-          : undefined;
-      return String(v || "false") === "true";
-    } catch {
-      return false;
-    }
-  })();
+function markRuntimeLoggingInit() {
+  if (typeof window !== "undefined") {
+    window.__DOGGERZ_RUNTIME_LOGGING_INIT__ = true;
+  }
+}
+
+export function initRuntimeLogging() {
+  if (typeof window === "undefined") return;
+  if (hasRuntimeLoggingInit()) return;
+  markRuntimeLoggingInit();
 
   // Capture unhandled errors for support.
   window.addEventListener("error", (e) => {
-    captureRuntimeError(e?.error || e, { source: "window.error" });
+    captureRuntimeError(e?.error || e, {
+      source: "window.error",
+      filename: e?.filename || null,
+      lineno: e?.lineno || null,
+      colno: e?.colno || null,
+    });
   });
 
   window.addEventListener("unhandledrejection", (e) => {
@@ -70,18 +98,4 @@ export function initRuntimeLogging({ mode } = {}) {
       source: "window.unhandledrejection",
     });
   });
-
-  // Logging policy: keep warn/error, suppress noisy logs in prod.
-  if (isProd) {
-    try {
-      console.log = () => {};
-      console.info = () => {};
-      console.debug = () => {};
-
-      // Warnings can be very spammy in production; keep them behind a flag.
-      if (!allowProdWarn) console.warn = () => {};
-    } catch {
-      // ignore
-    }
-  }
 }

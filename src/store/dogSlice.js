@@ -9,13 +9,19 @@ export const selectDogAnimation = (state) =>
 import { createSelector, createSlice } from "@reduxjs/toolkit";
 import {
   calculateDogAge,
-  getAgeBucketLabel,
   getDogAgeProgress,
   getLifeStageLabel,
   getLifeStageProgressLabel,
-  getLifeStageUi,
-  getLifeStageTransitionCopy,
 } from "@/utils/lifecycle.js";
+import {
+  getLifeStageTransitionCopy,
+  getLifeStageUi,
+} from "@/features/dog/lifecycleContent.js";
+import {
+  getDailyIdentityFlavor,
+  getIdentityFavoriteFoodLabel,
+  getIdentityNapSpotLabel,
+} from "@/features/dog/identityFlavorContent.js";
 import { deepMergeDefined } from "@/utils/deepMerge.js";
 import { xpRequiredForLevel } from "@/features/dog/ExperienceAndLeveling.js";
 import {
@@ -195,6 +201,25 @@ const DEFAULT_VACATION_STATE = Object.freeze({
   startedAt: null,
   skippedMs: 0,
 });
+const DEFAULT_DOG_IDENTITY = Object.freeze({
+  profileId: null,
+  visualIdentity: "jr_canonical_v1",
+  breed: "jack_russell",
+  name: "Fireball",
+  createdAt: null,
+});
+const DEFAULT_DAILY_IDENTITY_FLAVOR = Object.freeze({
+  dayKey: null,
+  title: null,
+  body: null,
+  tone: "calm",
+  generatedAt: null,
+});
+const FAVORITE_PREFERENCE_THRESHOLDS = Object.freeze({
+  toy: 3,
+  food: 3,
+  nap: 2,
+});
 
 const DOG_RULE_PIPELINE_STAGES = Object.freeze([
   "computeDegradation",
@@ -234,6 +259,364 @@ function normalizeTimestampMs(raw) {
 
 function parseAdoptedAt(raw) {
   return normalizeTimestampMs(raw);
+}
+
+function sanitizeDogName(value, fallback = "Pup") {
+  const trimmed = String(value || "")
+    .trim()
+    .replace(/\s+/g, " ");
+  return trimmed || fallback;
+}
+
+function deriveDogIdentityId(adoptedAt) {
+  const parsed = parseAdoptedAt(adoptedAt);
+  if (parsed) return `dog-${parsed}`;
+  return null;
+}
+
+function ensureDogIdentityState(state, { adoptedAtFallback = null } = {}) {
+  if (!state || typeof state !== "object") return null;
+  if (!state.identity || typeof state.identity !== "object") {
+    state.identity = { ...DEFAULT_DOG_IDENTITY };
+  }
+
+  const identity = state.identity;
+  const adoptedAt = parseAdoptedAt(state.adoptedAt ?? adoptedAtFallback);
+
+  if (!identity.profileId && adoptedAt) {
+    identity.profileId = deriveDogIdentityId(adoptedAt);
+  }
+  if (!identity.visualIdentity) {
+    identity.visualIdentity = DEFAULT_DOG_IDENTITY.visualIdentity;
+  }
+  if (!identity.breed) {
+    identity.breed = DEFAULT_DOG_IDENTITY.breed;
+  }
+
+  const resolvedName = sanitizeDogName(state.name, identity.name || "Pup");
+  identity.name = sanitizeDogName(identity.name, resolvedName);
+  state.name = resolvedName;
+
+  if (!Number.isFinite(Number(identity.createdAt))) {
+    identity.createdAt =
+      adoptedAt || parseAdoptedAt(state.lastUpdatedAt) || nowMs();
+  }
+
+  return identity;
+}
+
+function ensureIdentityContentState(state) {
+  if (!state || typeof state !== "object") return null;
+  if (!state.identityContent || typeof state.identityContent !== "object") {
+    state.identityContent = createInitialIdentityContentState();
+  }
+
+  const identityContent = state.identityContent;
+  if (
+    !identityContent.dailyFlavor ||
+    typeof identityContent.dailyFlavor !== "object"
+  ) {
+    identityContent.dailyFlavor = { ...DEFAULT_DAILY_IDENTITY_FLAVOR };
+  } else {
+    identityContent.dailyFlavor = {
+      dayKey: identityContent.dailyFlavor.dayKey || null,
+      title: identityContent.dailyFlavor.title || null,
+      body: identityContent.dailyFlavor.body || null,
+      tone: identityContent.dailyFlavor.tone || "calm",
+      generatedAt: Number.isFinite(
+        Number(identityContent.dailyFlavor.generatedAt)
+      )
+        ? Number(identityContent.dailyFlavor.generatedAt)
+        : null,
+    };
+  }
+
+  if (
+    !identityContent.preferences ||
+    typeof identityContent.preferences !== "object"
+  ) {
+    identityContent.preferences = {
+      ...createInitialIdentityContentState().preferences,
+    };
+  }
+  identityContent.preferences.favoriteToyId = identityContent.preferences
+    .favoriteToyId
+    ? String(identityContent.preferences.favoriteToyId)
+    : state.memory?.favoriteToyId
+      ? String(state.memory.favoriteToyId)
+      : null;
+  identityContent.preferences.favoriteFoodType = identityContent.preferences
+    .favoriteFoodType
+    ? String(identityContent.preferences.favoriteFoodType)
+    : null;
+  identityContent.preferences.favoriteNapSpotId = identityContent.preferences
+    .favoriteNapSpotId
+    ? String(identityContent.preferences.favoriteNapSpotId)
+    : null;
+  identityContent.preferences.discoveredAtByKey =
+    identityContent.preferences.discoveredAtByKey &&
+    typeof identityContent.preferences.discoveredAtByKey === "object"
+      ? identityContent.preferences.discoveredAtByKey
+      : {};
+  identityContent.preferences.countsByKey =
+    identityContent.preferences.countsByKey &&
+    typeof identityContent.preferences.countsByKey === "object"
+      ? identityContent.preferences.countsByKey
+      : {};
+  identityContent.preferences.countsByKey.toy =
+    identityContent.preferences.countsByKey.toy &&
+    typeof identityContent.preferences.countsByKey.toy === "object"
+      ? identityContent.preferences.countsByKey.toy
+      : {};
+  identityContent.preferences.countsByKey.food =
+    identityContent.preferences.countsByKey.food &&
+    typeof identityContent.preferences.countsByKey.food === "object"
+      ? identityContent.preferences.countsByKey.food
+      : {};
+  identityContent.preferences.countsByKey.nap =
+    identityContent.preferences.countsByKey.nap &&
+    typeof identityContent.preferences.countsByKey.nap === "object"
+      ? identityContent.preferences.countsByKey.nap
+      : {};
+
+  if (
+    !identityContent.milestoneCards ||
+    typeof identityContent.milestoneCards !== "object"
+  ) {
+    identityContent.milestoneCards = {
+      ...createInitialIdentityContentState().milestoneCards,
+    };
+  }
+  identityContent.milestoneCards.lastShownId = identityContent.milestoneCards
+    .lastShownId
+    ? String(identityContent.milestoneCards.lastShownId)
+    : null;
+  identityContent.milestoneCards.queue = Array.isArray(
+    identityContent.milestoneCards.queue
+  )
+    ? identityContent.milestoneCards.queue
+    : [];
+  identityContent.milestoneCards.seenIds = Array.isArray(
+    identityContent.milestoneCards.seenIds
+  )
+    ? identityContent.milestoneCards.seenIds.map((id) => String(id || ""))
+    : [];
+
+  if (
+    !identityContent.preferences.favoriteToyId &&
+    state.memory?.favoriteToyId
+  ) {
+    identityContent.preferences.favoriteToyId = String(
+      state.memory.favoriteToyId
+    );
+  }
+
+  return identityContent;
+}
+
+function normalizePreferenceKey(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_")
+    .replace(/-+/g, "_");
+}
+
+function incrementPreferenceSignal(state, bucket, rawValue) {
+  const key = normalizePreferenceKey(rawValue);
+  if (!key) return 0;
+  const identityContent = ensureIdentityContentState(state);
+  const counts =
+    identityContent?.preferences?.countsByKey?.[bucket] &&
+    typeof identityContent.preferences.countsByKey[bucket] === "object"
+      ? identityContent.preferences.countsByKey[bucket]
+      : null;
+  if (!counts) return 0;
+  counts[key] = Math.max(0, Math.floor(Number(counts[key] || 0))) + 1;
+  return counts[key];
+}
+
+function getPreferenceSignalCount(state, bucket, rawValue) {
+  const key = normalizePreferenceKey(rawValue);
+  if (!key) return 0;
+  const counts =
+    ensureIdentityContentState(state)?.preferences?.countsByKey?.[bucket];
+  return Math.max(0, Math.floor(Number(counts?.[key] || 0)));
+}
+
+function notePreferenceDiscovery(state, { key, summary, body, now = nowMs() }) {
+  const identityContent = ensureIdentityContentState(state);
+  if (!identityContent) return false;
+  const discoveredAtByKey = identityContent.preferences.discoveredAtByKey;
+  const discoveryKey = String(key || "").trim();
+  if (!discoveryKey || discoveredAtByKey[discoveryKey]) return false;
+
+  discoveredAtByKey[discoveryKey] = now;
+  pushStructuredMemory(state, {
+    type: "identity_preference",
+    category: "MEMORY",
+    moodTag: "PROUD",
+    summary,
+    body,
+    timestamp: now,
+    happiness: 2,
+  });
+  if (!discoveredAtByKey.first_favorite_item) {
+    discoveredAtByKey.first_favorite_item = now;
+  }
+  return true;
+}
+
+function updateFavoriteToyPreference(state, toyId, now = nowMs()) {
+  const key = normalizePreferenceKey(toyId);
+  if (!key) return false;
+
+  const nextCount = incrementPreferenceSignal(state, "toy", key);
+  const identityContent = ensureIdentityContentState(state);
+  const currentFavorite = normalizePreferenceKey(
+    identityContent?.preferences?.favoriteToyId || state?.memory?.favoriteToyId
+  );
+  const currentFavoriteCount = getPreferenceSignalCount(
+    state,
+    "toy",
+    currentFavorite
+  );
+  const shouldAdoptFavorite =
+    (!currentFavorite && nextCount >= FAVORITE_PREFERENCE_THRESHOLDS.toy) ||
+    (currentFavorite &&
+      key !== currentFavorite &&
+      nextCount >= Math.max(5, currentFavoriteCount + 3));
+
+  if (!shouldAdoptFavorite && currentFavorite !== key) return false;
+
+  identityContent.preferences.favoriteToyId = key;
+  state.memory.favoriteToyId = key;
+
+  const toyLabel = getCatalogItemById(key)?.label || key;
+  notePreferenceDiscovery(state, {
+    key: `favorite_toy:${key}`,
+    now,
+    summary: `Favorite toy discovered: ${toyLabel}.`,
+    body: `Your pup keeps gravitating back to ${toyLabel}. This is starting to look like a real favorite.`,
+  });
+  return true;
+}
+
+function updateFavoriteFoodPreference(state, foodType, now = nowMs()) {
+  const key = normalizePreferenceKey(foodType);
+  if (!key) return false;
+
+  const nextCount = incrementPreferenceSignal(state, "food", key);
+  const identityContent = ensureIdentityContentState(state);
+  const currentFavorite = normalizePreferenceKey(
+    identityContent?.preferences?.favoriteFoodType
+  );
+  const currentFavoriteCount = getPreferenceSignalCount(
+    state,
+    "food",
+    currentFavorite
+  );
+  const shouldAdoptFavorite =
+    (!currentFavorite && nextCount >= FAVORITE_PREFERENCE_THRESHOLDS.food) ||
+    (currentFavorite &&
+      key !== currentFavorite &&
+      nextCount >= Math.max(4, currentFavoriteCount + 2));
+
+  if (!shouldAdoptFavorite && currentFavorite !== key) return false;
+
+  identityContent.preferences.favoriteFoodType = key;
+  const foodLabel = getIdentityFavoriteFoodLabel(key) || key;
+  notePreferenceDiscovery(state, {
+    key: `favorite_food:${key}`,
+    now,
+    summary: `Favorite food discovered: ${foodLabel}.`,
+    body: `Your pup has started reacting especially well to ${foodLabel}. That preference feels consistent now.`,
+  });
+  return true;
+}
+
+function updateFavoriteNapSpotPreference(state, napSpotId, now = nowMs()) {
+  const key = normalizePreferenceKey(napSpotId);
+  if (!key) return false;
+
+  const nextCount = incrementPreferenceSignal(state, "nap", key);
+  const identityContent = ensureIdentityContentState(state);
+  const currentFavorite = normalizePreferenceKey(
+    identityContent?.preferences?.favoriteNapSpotId
+  );
+  const currentFavoriteCount = getPreferenceSignalCount(
+    state,
+    "nap",
+    currentFavorite
+  );
+  const shouldAdoptFavorite =
+    (!currentFavorite && nextCount >= FAVORITE_PREFERENCE_THRESHOLDS.nap) ||
+    (currentFavorite &&
+      key !== currentFavorite &&
+      nextCount >= Math.max(4, currentFavoriteCount + 2));
+
+  if (!shouldAdoptFavorite && currentFavorite !== key) return false;
+
+  identityContent.preferences.favoriteNapSpotId = key;
+  const napSpotLabel = getIdentityNapSpotLabel(key) || "favorite nap spot";
+  notePreferenceDiscovery(state, {
+    key: `favorite_nap:${key}`,
+    now,
+    summary: `Favorite nap spot discovered: ${napSpotLabel}.`,
+    body: `Your pup keeps settling in the same place to rest. ${napSpotLabel} looks like the preferred nap spot.`,
+  });
+  return true;
+}
+
+function refreshDailyIdentityFlavor(state, now = nowMs()) {
+  const identityContent = ensureIdentityContentState(state);
+  const adoptedAt = parseAdoptedAt(state?.adoptedAt);
+  if (!identityContent || !adoptedAt) {
+    return identityContent?.dailyFlavor || { ...DEFAULT_DAILY_IDENTITY_FLAVOR };
+  }
+
+  const dayKey = getIsoDate(now);
+  if (
+    identityContent.dailyFlavor?.dayKey === dayKey &&
+    identityContent.dailyFlavor?.title &&
+    identityContent.dailyFlavor?.body
+  ) {
+    return identityContent.dailyFlavor;
+  }
+
+  const favoriteToyId =
+    identityContent.preferences?.favoriteToyId ||
+    state?.memory?.favoriteToyId ||
+    null;
+  const favoriteToyLabel = favoriteToyId
+    ? getCatalogItemById(favoriteToyId)?.label || null
+    : null;
+  const favoriteFoodLabel = getIdentityFavoriteFoodLabel(
+    identityContent.preferences?.favoriteFoodType
+  );
+  const favoriteNapSpotLabel = getIdentityNapSpotLabel(
+    identityContent.preferences?.favoriteNapSpotId
+  );
+  const nextFlavor = getDailyIdentityFlavor({
+    stage: state?.lifeStage?.stage || "PUPPY",
+    profileId: state?.identity?.profileId || null,
+    moodLabel: state?.emotionCue || null,
+    primaryTemperament: state?.temperament?.primary || null,
+    favoriteToyLabel,
+    favoriteFoodLabel,
+    favoriteNapSpotLabel,
+    dayKey,
+  });
+
+  identityContent.dailyFlavor = {
+    dayKey,
+    title: nextFlavor?.title || DEFAULT_DAILY_IDENTITY_FLAVOR.title,
+    body: nextFlavor?.body || DEFAULT_DAILY_IDENTITY_FLAVOR.body,
+    tone: nextFlavor?.tone || "calm",
+    generatedAt: now,
+  };
+
+  return identityContent.dailyFlavor;
 }
 
 function normalizeStatsState(state) {
@@ -642,6 +1025,7 @@ function applyFeedEffect(state, payload = {}, opts = {}) {
   state.memory.lastFedAt = now;
   state.memory.lastFedFoodType = effectiveFoodType;
   state.memory.lastSeenAt = now;
+  updateFavoriteFoodPreference(state, effectiveFoodType, now);
   state.lastAction = resolveActionOverride(payload, "feed");
   applyFsmAction(state, "feed", now);
 
@@ -1168,6 +1552,48 @@ const initialSkillTree = {
   lastBranchId: null,
 };
 
+const initialIdentityContent = {
+  dailyFlavor: { ...DEFAULT_DAILY_IDENTITY_FLAVOR },
+  preferences: {
+    favoriteToyId: null,
+    favoriteFoodType: null,
+    favoriteNapSpotId: null,
+    discoveredAtByKey: {},
+    countsByKey: {
+      toy: {},
+      food: {},
+      nap: {},
+    },
+  },
+  milestoneCards: {
+    lastShownId: null,
+    queue: [],
+    seenIds: [],
+  },
+};
+
+function createInitialIdentityContentState() {
+  return {
+    dailyFlavor: { ...DEFAULT_DAILY_IDENTITY_FLAVOR },
+    preferences: {
+      favoriteToyId: null,
+      favoriteFoodType: null,
+      favoriteNapSpotId: null,
+      discoveredAtByKey: {},
+      countsByKey: {
+        toy: {},
+        food: {},
+        nap: {},
+      },
+    },
+    milestoneCards: {
+      lastShownId: null,
+      queue: [],
+      seenIds: [],
+    },
+  };
+}
+
 const initialMilestones = {
   pending: null,
   lastCelebratedStage: null,
@@ -1291,6 +1717,25 @@ const DEFAULT_COSMETIC_CATALOG = Object.freeze([
     currency: "coins",
   },
   {
+    id: "collar_mosswood",
+    slot: "collar",
+    category: "apparel",
+    threshold: 8,
+    label: "Mosswood Collar",
+    price: 230,
+    currency: "coins",
+  },
+  {
+    id: "collar_winter_frost",
+    slot: "collar",
+    category: "apparel",
+    threshold: 16,
+    label: "Winter Frost Collar",
+    price: 410,
+    currency: "coins",
+    seasonal: "winter",
+  },
+  {
     id: "beta_collar_2026",
     slot: "collar",
     category: "apparel",
@@ -1324,11 +1769,40 @@ const DEFAULT_COSMETIC_CATALOG = Object.freeze([
     currency: "coins",
   },
   {
+    id: "tag_harvest_leaf",
+    slot: "tag",
+    category: "apparel",
+    threshold: 13,
+    label: "Harvest Leaf Tag",
+    price: 260,
+    currency: "coins",
+    seasonal: "autumn",
+  },
+  {
     id: "backdrop_sunset",
     slot: "backdrop",
     category: "apparel",
     threshold: 14,
     label: "Sunset Backdrop",
+  },
+  {
+    id: "backdrop_meadow_morning",
+    slot: "backdrop",
+    category: "apparel",
+    threshold: 9,
+    label: "Meadow Morning Theme",
+    price: 260,
+    currency: "coins",
+  },
+  {
+    id: "backdrop_moonlit_garden",
+    slot: "backdrop",
+    category: "apparel",
+    threshold: 17,
+    label: "Moonlit Garden Theme",
+    price: 440,
+    currency: "coins",
+    seasonal: "night",
   },
   {
     id: "care_oatmeal_shampoo",
@@ -1379,6 +1853,25 @@ const DEFAULT_COSMETIC_CATALOG = Object.freeze([
     threshold: 15,
     label: "Fancy Doghouse",
     price: 420,
+  },
+  {
+    id: "yard_doghouse_cottage",
+    slot: "yard_upgrade",
+    category: "yard",
+    threshold: 10,
+    label: "Cottage Doghouse Style",
+    price: 280,
+    currency: "coins",
+  },
+  {
+    id: "yard_doghouse_winter_lodge",
+    slot: "yard_upgrade",
+    category: "yard",
+    threshold: 18,
+    label: "Winter Lodge Doghouse",
+    price: 520,
+    currency: "coins",
+    seasonal: "winter",
   },
 ]);
 
@@ -1541,6 +2034,8 @@ const initialState = {
   lifecycleStatus: DOG_LIFECYCLE_STATUS.NONE,
   danger: { ...initialDanger },
   legacyJourney: { ...initialLegacyJourney },
+  identity: { ...DEFAULT_DOG_IDENTITY },
+  identityContent: createInitialIdentityContentState(),
 
   // Relationship / collectibles (used by Store + Rainbow Bridge pages)
   bond: initialBond,
@@ -1665,7 +2160,8 @@ function reconcileImpossibleFarewellState(state, now = nowMs()) {
   if (!adoptedAt) return;
 
   const age = calculateDogAge(adoptedAt, now);
-  if (!age || Number(age.days || 0) >= LONG_LIFE_FAREWELL_AGE_DAYS) return;
+  if (!age || Number(age.ageInGameDays || 0) >= LONG_LIFE_FAREWELL_AGE_DAYS)
+    return;
 
   const legacy = ensureLegacyJourneyState(state);
   state.lifecycleStatus = DOG_LIFECYCLE_STATUS.ACTIVE;
@@ -2064,8 +2560,8 @@ function evaluateDangerAndLifecycleEvents(state, now) {
   const ageNow = getVacationAdjustedNow(state, now);
   const derivedAge = calculateDogAge(state.adoptedAt, ageNow);
   const ageDays = Number(
-    Number.isFinite(Number(derivedAge?.days))
-      ? derivedAge.days
+    Number.isFinite(Number(derivedAge?.ageInGameDays))
+      ? derivedAge.ageInGameDays
       : state.lifeStage?.days || 0
   );
   // Protective ordering: farewell must always win before any starvation or
@@ -3370,11 +3866,11 @@ function syncLifecycleState(state, now = nowMs()) {
   const adoptedAt = state.adoptedAt || state.temperament?.adoptedAt || now;
   const ageNow = getVacationAdjustedNow(state, now);
   const age = calculateDogAge(adoptedAt, ageNow);
-  const nextStage = age.stage || DEFAULT_LIFE_STAGE.stage;
+  const nextStage = age.stageId || DEFAULT_LIFE_STAGE.stage;
   state.lifeStage = {
     stage: nextStage,
-    label: age.label || DEFAULT_LIFE_STAGE.label,
-    days: age.days,
+    label: age.stageLabel || DEFAULT_LIFE_STAGE.label,
+    days: age.ageInGameDays,
   };
 
   const milestones = ensureMilestonesState(state);
@@ -3390,7 +3886,7 @@ function syncLifecycleState(state, now = nowMs()) {
       fromStage: previousStage,
       toStage: nextStage,
       triggeredAt: now,
-      ageDays: Number.isFinite(age.days) ? age.days : null,
+      ageDays: Number.isFinite(age.ageInGameDays) ? age.ageInGameDays : null,
     };
 
     pushJournalEntry(state, {
@@ -4259,6 +4755,7 @@ const dogSlice = createSlice({
       merged.lastAction =
         payload.lastAction ?? state.lastAction ?? initialState.lastAction;
       merged.cleanlinessTier = merged.cleanlinessTier || "FRESH";
+      ensureDogIdentityState(merged, { adoptedAtFallback: adoptedAt });
 
       if (!merged.temperament || typeof merged.temperament !== "object") {
         merged.temperament = { ...initialTemperament };
@@ -4294,6 +4791,7 @@ const dogSlice = createSlice({
       ensureDogFsmState(merged);
       ensureSkillTreeState(merged);
       ensureMilestonesState(merged);
+      ensureIdentityContentState(merged);
       ensureLifecycleStatus(merged);
       ensureDangerState(merged);
       ensureLegacyJourneyState(merged);
@@ -4317,9 +4815,11 @@ const dogSlice = createSlice({
       const ageNow = getVacationAdjustedNow(merged, now);
       const age = calculateDogAge(adoptedAt, ageNow);
       merged.lifeStage = {
-        stage: age?.stage || DEFAULT_LIFE_STAGE.stage,
-        label: age?.label || DEFAULT_LIFE_STAGE.label,
-        days: Number.isFinite(Number(age?.days)) ? Number(age.days) : 0,
+        stage: age?.stageId || DEFAULT_LIFE_STAGE.stage,
+        label: age?.stageLabel || DEFAULT_LIFE_STAGE.label,
+        days: Number.isFinite(Number(age?.ageInGameDays))
+          ? Number(age.ageInGameDays)
+          : 0,
       };
       reconcileImpossibleFarewellState(merged, now);
 
@@ -4344,24 +4844,27 @@ const dogSlice = createSlice({
         syncLifecycleState(merged, now);
       }
 
+      refreshDailyIdentityFlavor(merged, now);
+
       return merged;
     },
 
     setDogName(state, { payload }) {
-      state.name = payload || "Pup";
+      state.name = sanitizeDogName(payload, state.name || "Pup");
+      ensureDogIdentityState(state);
     },
 
     setAdoptedAt(state, { payload }) {
       const adoptedAt = parseAdoptedAt(payload) ?? nowMs();
       const legacy = ensureLegacyJourneyState(state);
       const priorStatus = ensureLifecycleStatus(state);
-
-      // Starting a fresh pup after rescue/farewell resets care-sensitive runtime fields.
-      if (
+      const resetForNewAdoption =
         priorStatus === DOG_LIFECYCLE_STATUS.RESCUED ||
         priorStatus === DOG_LIFECYCLE_STATUS.FAREWELL ||
-        priorStatus === DOG_LIFECYCLE_STATUS.NONE
-      ) {
+        priorStatus === DOG_LIFECYCLE_STATUS.NONE;
+
+      // Starting a fresh pup after rescue/farewell resets care-sensitive runtime fields.
+      if (resetForNewAdoption) {
         const obedienceReset = Object.fromEntries(
           Object.keys(initialSkills.obedience || {}).map((id) => [
             id,
@@ -4395,6 +4898,8 @@ const dogSlice = createSlice({
         state.personality = { ...initialPersonality };
         state.healthSilo = { ...initialHealthSilo };
         state.surprise = { ...initialSurprise };
+        state.identity = { ...DEFAULT_DOG_IDENTITY };
+        state.identityContent = createInitialIdentityContentState();
       }
 
       state.lifecycleStatus = DOG_LIFECYCLE_STATUS.ACTIVE;
@@ -4404,6 +4909,8 @@ const dogSlice = createSlice({
       state.lastUpdatedAt = adoptedAt;
       state.memory.lastFedAt = adoptedAt;
       state.memory.lastSeenAt = adoptedAt;
+      ensureDogIdentityState(state, { adoptedAtFallback: adoptedAt });
+      ensureIdentityContentState(state);
       applyLegacyAdoptionBonuses(state, adoptedAt);
 
       if (legacy.ghostPlayBowPending) {
@@ -4420,6 +4927,7 @@ const dogSlice = createSlice({
 
       ensurePersonalityState(state);
       finalizeDerivedState(state, adoptedAt);
+      refreshDailyIdentityFlavor(state, adoptedAt);
     },
 
     setCareerLifestyle(state, { payload }) {
@@ -4469,7 +4977,10 @@ const dogSlice = createSlice({
     },
 
     updateFavoriteToy(state, { payload }) {
-      state.memory.favoriteToyId = payload || null;
+      const favoriteToyId = payload ? String(payload) : null;
+      state.memory.favoriteToyId = favoriteToyId;
+      ensureIdentityContentState(state).preferences.favoriteToyId =
+        favoriteToyId;
     },
 
     setActiveToy(state, { payload }) {
@@ -4483,7 +4994,6 @@ const dogSlice = createSlice({
       if (!unlocked.has(toyId)) return;
       const inventory = ensureInventoryState(state);
       inventory.activeToyId = toyId;
-      state.memory.favoriteToyId = toyId;
       state.lastAction = "equip_toy";
     },
 
@@ -4534,6 +5044,7 @@ const dogSlice = createSlice({
       state.memory.lastFedAt = now;
       state.memory.lastFedFoodType = "quick_feed";
       state.memory.lastSeenAt = now;
+      updateFavoriteFoodPreference(state, "regular_kibble", now);
       state.lastAction = resolveActionOverride(payload, "feed_quick");
       applyFsmAction(state, "feed", now);
 
@@ -4626,6 +5137,7 @@ const dogSlice = createSlice({
         activeToyId = "toy_tennis_ball_basic";
       }
       inventory.activeToyId = activeToyId;
+      updateFavoriteToyPreference(state, activeToyId, now);
       const toyProfile =
         TOY_PLAY_PROFILES[activeToyId] ||
         TOY_PLAY_PROFILES.toy_tennis_ball_basic;
@@ -4896,6 +5408,7 @@ const dogSlice = createSlice({
       state.stats.happiness = clamp(state.stats.happiness + 3, 0, 100);
 
       state.memory.lastSeenAt = now;
+      updateFavoriteNapSpotPreference(state, payload?.napSpotId || "yard", now);
       state.lastAction = resolveActionOverride(payload, "rest");
       applyFsmAction(state, "rest", now);
 
@@ -5318,6 +5831,7 @@ const dogSlice = createSlice({
       applyAdultTrainingMissPenalty(state, now);
       maybeSpawnSessionSurprise(state, now);
       finalizeDerivedState(state, now);
+      refreshDailyIdentityFlavor(state, now);
     },
 
     triggerButtonHeist(state, { payload }) {
@@ -6473,6 +6987,71 @@ export const selectDogVacation = (state) => state.dog.vacation;
 export const selectDogLifecycleStatus = (state) => state.dog.lifecycleStatus;
 export const selectDogDanger = (state) => state.dog.danger;
 export const selectDogLegacyJourney = (state) => state.dog.legacyJourney;
+export const selectDogIdentityProfile = (state) =>
+  state?.dog?.identity && typeof state.dog.identity === "object"
+    ? state.dog.identity
+    : DEFAULT_DOG_IDENTITY;
+export const selectDogIdentityContent = (state) =>
+  state?.dog?.identityContent && typeof state.dog.identityContent === "object"
+    ? state.dog.identityContent
+    : initialIdentityContent;
+export const selectDogPreferences = createSelector(
+  [selectDogIdentityContent, selectDog],
+  (identityContent, dog) => ({
+    favoriteToyId:
+      identityContent?.preferences?.favoriteToyId ||
+      dog?.memory?.favoriteToyId ||
+      null,
+    favoriteFoodType: identityContent?.preferences?.favoriteFoodType || null,
+    favoriteNapSpotId: identityContent?.preferences?.favoriteNapSpotId || null,
+    discoveredAtByKey:
+      identityContent?.preferences?.discoveredAtByKey &&
+      typeof identityContent.preferences.discoveredAtByKey === "object"
+        ? identityContent.preferences.discoveredAtByKey
+        : {},
+  })
+);
+export const selectDogDailyFlavor = createSelector(
+  [selectDogIdentityContent],
+  (identityContent) => ({
+    dayKey: identityContent?.dailyFlavor?.dayKey || null,
+    title: identityContent?.dailyFlavor?.title || null,
+    body: identityContent?.dailyFlavor?.body || null,
+    tone: identityContent?.dailyFlavor?.tone || "calm",
+    generatedAt: Number.isFinite(
+      Number(identityContent?.dailyFlavor?.generatedAt)
+    )
+      ? Number(identityContent.dailyFlavor.generatedAt)
+      : null,
+  })
+);
+export const selectDogMilestoneCardQueue = createSelector(
+  [selectDogIdentityContent],
+  (identityContent) =>
+    Array.isArray(identityContent?.milestoneCards?.queue)
+      ? identityContent.milestoneCards.queue
+      : []
+);
+export const selectDogPrimaryFavoriteSummary = createSelector(
+  [selectDogPreferences],
+  (preferences) => {
+    const favoriteToyId = preferences?.favoriteToyId || null;
+    const favoriteToyItem = favoriteToyId
+      ? getCatalogItemById(favoriteToyId)
+      : null;
+    const favoriteFoodType = preferences?.favoriteFoodType || null;
+    const favoriteNapSpotId = preferences?.favoriteNapSpotId || null;
+
+    return {
+      favoriteToyId,
+      favoriteToyLabel: favoriteToyItem?.label || null,
+      favoriteFoodType,
+      favoriteFoodLabel: getIdentityFavoriteFoodLabel(favoriteFoodType),
+      favoriteNapSpotId,
+      favoriteNapSpotLabel: getIdentityNapSpotLabel(favoriteNapSpotId),
+    };
+  }
+);
 
 export const selectCosmeticCatalog = () => DEFAULT_COSMETIC_CATALOG;
 
@@ -6489,13 +7068,13 @@ export const selectDogAgeInfo = createSelector([selectDog], (dog) => {
   const fallbackStage = dog?.lifeStage?.stage || LIFE_STAGES.PUPPY;
   const fallbackDays = dog?.lifeStage?.days || 0;
   if (age) {
-    const lifecycleWindow = getLifecycleWindowFlags(age.days);
+    const lifecycleWindow = getLifecycleWindowFlags(age.ageInGameDays);
     return {
       ...age,
       ...lifecycleWindow,
-      ageBucketLabel: getAgeBucketLabel(age.days),
+      ageBucketLabel: getLifeStageLabel(age.stageId),
       progressLabel: getLifeStageProgressLabel(age),
-      ui: getLifeStageUi(age.stage),
+      ui: getLifeStageUi(age.stageId),
     };
   }
   const stageUi = getLifeStageUi(fallbackStage);
@@ -6512,8 +7091,8 @@ export const selectDogAgeInfo = createSelector([selectDog], (dog) => {
     daysUntilNextStage: null,
     nextStage: null,
     ...lifecycleWindow,
-    ageBucketLabel: getAgeBucketLabel(fallbackDays),
-    progressLabel: getLifeStageProgressLabel({ stage: fallbackStage }),
+    ageBucketLabel: getLifeStageLabel(fallbackStage),
+    progressLabel: getLifeStageProgressLabel({ stageId: fallbackStage }),
     ui: stageUi,
   };
 });
@@ -6521,7 +7100,7 @@ export const selectDogAgeInfo = createSelector([selectDog], (dog) => {
 export const selectDogLifecycleWindow = createSelector(
   [selectDogAgeInfo],
   (ageInfo) => ({
-    ageDays: Number(ageInfo?.ageDays ?? ageInfo?.days ?? 0),
+    ageDays: Number(ageInfo?.ageDays ?? ageInfo?.ageInGameDays ?? 0),
     isFinalStretchImmune: Boolean(ageInfo?.isFinalStretchImmune),
     isFarewellReady: Boolean(ageInfo?.isFarewellReady),
     daysUntilFarewell: Number(ageInfo?.daysUntilFarewell ?? 0),
@@ -6557,8 +7136,7 @@ export const selectDogNeedsNormalized = createSelector(
   })
 );
 
-export const selectNextStreakReward = (state) => {
-  const dog = state.dog;
+export const selectNextStreakReward = createSelector([selectDog], (dog) => {
   const streakDays = Math.max(
     0,
     Math.floor(Number(dog?.streak?.currentStreakDays) || 0)
@@ -6575,7 +7153,7 @@ export const selectNextStreakReward = (state) => {
       .find((it) => (Number(it.threshold) || 0) > streakDays) || null;
 
   return { streakDays, next };
-};
+});
 
 /* ----------------------- actions / reducer ----------------------- */
 

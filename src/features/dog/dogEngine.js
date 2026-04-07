@@ -1,3 +1,5 @@
+import { getLifeStageForAge } from "@/utils/lifecycle.js";
+
 const clamp = (n, lo = 0, hi = 100) =>
   Math.max(lo, Math.min(hi, Number.isFinite(n) ? n : 0));
 
@@ -336,10 +338,13 @@ function getLifeStageKey(dog) {
   if (stage.startsWith("adult")) return "adult";
   if (stage.startsWith("senior")) return "senior";
 
-  const ageDays = Number(dog?.ageDays ?? 0);
-  if (ageDays < 30) return "puppy";
-  if (ageDays < 365 * 7) return "adult";
-  return "senior";
+  const ageDays = Number(dog?.ageDays ?? dog?.lifeStage?.days);
+  const stageInfo = getLifeStageForAge(ageDays);
+  const stageId = String(stageInfo?.id || "PUPPY").toUpperCase();
+
+  if (stageId === "ADULT") return "adult";
+  if (stageId === "SENIOR") return "senior";
+  return "puppy";
 }
 
 function maybeTriggerAccident(

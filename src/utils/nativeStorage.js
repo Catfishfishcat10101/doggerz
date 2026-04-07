@@ -1,4 +1,3 @@
-/** @format */
 // src/utils/nativeStorage.js
 
 import { Capacitor } from "@capacitor/core";

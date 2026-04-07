@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 
 import PageShell from "@/components/layout/PageShell.jsx";
-import { MENU_DESTINATIONS } from "@/app/routes.js";
+import { MENU_CATEGORIES } from "@/app/routes.js";
 
 export default function MenuPage() {
   return (
@@ -14,25 +14,35 @@ export default function MenuPage() {
           <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-zinc-100">
             Keep this tight.
           </h1>
-          </div>
+        </div>
 
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {MENU_DESTINATIONS.map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              className="group rounded-3xl border border-white/10 bg-black/25 p-5 transition hover:border-emerald-400/35 hover:bg-emerald-500/5"
-            >
-              <div className="text-lg font-extrabold text-zinc-100 transition group-hover:text-emerald-100">
-                {item.label}
+        <div className="mt-8 space-y-8">
+          {MENU_CATEGORIES.map((category) => (
+            <section key={category.key}>
+              <h2 className="mb-3 text-sm font-bold uppercase tracking-[0.24em] text-emerald-300/75">
+                {category.title}
+              </h2>
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {category.items.map((item) => (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className="group rounded-3xl border border-white/10 bg-black/25 p-5 transition hover:border-emerald-400/35 hover:bg-emerald-500/5"
+                  >
+                    <div className="text-lg font-extrabold text-zinc-100 transition group-hover:text-emerald-100">
+                      {item.label}
+                    </div>
+                    <p className="mt-2 text-sm text-zinc-400">{item.detail}</p>
+                  </Link>
+                ))}
               </div>
-              <p className="mt-2 text-sm text-zinc-400">{item.detail}</p>
-            </Link>
+            </section>
           ))}
         </div>
 
         <div className="mt-8 rounded-3xl border border-white/10 bg-black/20 px-5 py-4 text-sm text-zinc-400">
-          Policies, privacy, and build info now live under{" "}
+          Core support and policy pages are grouped above under Support &amp;
+          Info. App tuning still lives in{" "}
           <Link
             to="/settings"
             className="font-semibold text-emerald-200 hover:text-emerald-100"

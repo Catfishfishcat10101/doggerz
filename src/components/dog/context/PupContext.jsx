@@ -1,5 +1,5 @@
-/** @format */
 /* eslint-disable react-refresh/only-export-components */
+// src/components/dog/context/PupContext.jsx
 import * as React from "react";
 import { useDispatch } from "react-redux";
 import { addXp, goPotty, recordAccident, removeXp } from "@/store/dogSlice.js";
@@ -16,16 +16,13 @@ export const usePup = () => {
 export function PupProvider({ children }) {
   const dispatch = useDispatch();
   const dog = useDog();
-
-  // --- Optimized Selectors ---
-  // We only re-calculate these when specific dog data changes to save battery
+  // Recalculate only when potty data changes.
   const pottyTrainingPct = React.useMemo(() => {
     const goal = dog.training?.potty?.goal || 0;
     const successes = dog.training?.potty?.successCount || 0;
     return goal ? Math.round((successes / goal) * 100) : 0;
   }, [dog.training?.potty]);
 
-  // --- Simplified Actions ---
   const actions = React.useMemo(
     () => ({
       addXP: (amount) => dispatch(addXp({ amount })),

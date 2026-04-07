@@ -37,21 +37,36 @@ export const JR_ATLAS_SPECS = Object.freeze({
 });
 
 export const JR_ANIMATIONS = Object.freeze([
+  "bark",
+  "beg",
+  "dance",
+  "deep_rem_sleep",
+  "drink",
+  "eat",
+  "fetch",
+  "gate_watch",
+  "highfive",
   "idle",
+  "idle_resting",
+  "jump",
+  "lay_down",
+  "lethargic_lay",
+  "light_sleep",
+  "paw",
+  "scratch",
+  "shake",
+  "sit",
+  "sleep",
+  "sniff",
+  "turn_walk_left",
+  "turn_walk_right",
+  "wag",
   "walk",
   "walk_left",
   "walk_right",
-  "turn_walk_right",
-  "bark",
-  "scratch",
-  "sleep",
-  "sit",
-  "wag",
-  "jump",
-  "front_flip",
-  "trick",
-  "eat",
 ]);
+
+const ENABLED_ATLAS_SPEC_IDS = Object.freeze(new Set());
 
 function unique(list) {
   return [...new Set(list.filter(Boolean))];
@@ -71,13 +86,19 @@ function buildAtlasFrameUrls(spec) {
 }
 
 export const JR_GROWTH_FRAME_URLS = Object.freeze(
-  buildAtlasFrameUrls(JR_ATLAS_SPECS.growth)
+  ENABLED_ATLAS_SPEC_IDS.has(JR_ATLAS_SPECS.growth.id)
+    ? buildAtlasFrameUrls(JR_ATLAS_SPECS.growth)
+    : []
 );
 export const JR_ACTION_FRAME_URLS = Object.freeze(
-  buildAtlasFrameUrls(JR_ATLAS_SPECS.action)
+  ENABLED_ATLAS_SPEC_IDS.has(JR_ATLAS_SPECS.action.id)
+    ? buildAtlasFrameUrls(JR_ATLAS_SPECS.action)
+    : []
 );
 export const JR_BREED_FEATURES_FRAME_URLS = Object.freeze(
-  buildAtlasFrameUrls(JR_ATLAS_SPECS.breedFeatures)
+  ENABLED_ATLAS_SPEC_IDS.has(JR_ATLAS_SPECS.breedFeatures.id)
+    ? buildAtlasFrameUrls(JR_ATLAS_SPECS.breedFeatures)
+    : []
 );
 
 function buildSheetSources() {
@@ -95,9 +116,15 @@ function buildSheetSources() {
     });
   });
 
-  urls.push(JR_ATLAS_SPECS.growth.url);
-  urls.push(JR_ATLAS_SPECS.action.url);
-  urls.push(JR_ATLAS_SPECS.breedFeatures.url);
+  if (ENABLED_ATLAS_SPEC_IDS.has(JR_ATLAS_SPECS.growth.id)) {
+    urls.push(JR_ATLAS_SPECS.growth.url);
+  }
+  if (ENABLED_ATLAS_SPEC_IDS.has(JR_ATLAS_SPECS.action.id)) {
+    urls.push(JR_ATLAS_SPECS.action.url);
+  }
+  if (ENABLED_ATLAS_SPEC_IDS.has(JR_ATLAS_SPECS.breedFeatures.id)) {
+    urls.push(JR_ATLAS_SPECS.breedFeatures.url);
+  }
 
   return unique(urls);
 }
@@ -150,6 +177,18 @@ function preloadImage(url) {
 export function preloadJackRussellSheets() {
   if (preloadPromise) return preloadPromise;
   const sources = JR_ALL_SPRITE_SHEET_URLS;
-  preloadPromise = Promise.all(sources.map((url) => preloadImage(url)));
+  preloadPromise = Promise.all(sources.map((url) => preloadImage(url))).then(
+    (results) => {
+      const failed = results.filter((result) => !result.ok);
+      if (failed.length > 0) {
+        // Log failed preloads so callers and tooling can react or debug.
+        console.warn(
+          "[JR preload] One or more Jack Russell sprite sheets failed to preload",
+          { failed }
+        );
+      }
+      return results;
+    }
+  );
   return preloadPromise;
 }

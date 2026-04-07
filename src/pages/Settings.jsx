@@ -1854,6 +1854,19 @@ export default function Settings() {
               </div>
             </Link>
 
+            <Link
+              to={PATHS.ABOUT}
+              className="block rounded-2xl border border-doggerz-mange/45 bg-black/25 px-4 py-3 transition hover:border-doggerz-leaf/60 hover:bg-doggerz-neon/10"
+            >
+              <div className="text-sm font-semibold text-doggerz-bone">
+                About
+              </div>
+              <div className="mt-1 text-xs text-doggerz-paw/75">
+                How Doggerz works, what keeps ticking, and where to find
+                developer notes.
+              </div>
+            </Link>
+
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-doggerz-paw/75">
               <Link
                 to={PATHS.PRIVACY}

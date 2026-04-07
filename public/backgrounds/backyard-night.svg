@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="skyNight" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0e1630"/>
+      <stop offset="48%" stop-color="#1b2b54"/>
+      <stop offset="100%" stop-color="#08101a"/>
+    </linearGradient>
+    <radialGradient id="moonGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fff5d4" stop-opacity="0.88"/>
+      <stop offset="58%" stop-color="#c8d8ff" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="#c8d8ff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="farTreesNight" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#395f46"/>
+      <stop offset="100%" stop-color="#1a2f21"/>
+    </linearGradient>
+    <linearGradient id="fenceNight" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#a77a49"/>
+      <stop offset="100%" stop-color="#5b3618"/>
+    </linearGradient>
+    <linearGradient id="lawnNight" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#285736"/>
+      <stop offset="100%" stop-color="#112819"/>
+    </linearGradient>
+    <linearGradient id="pathNight" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#8f7653"/>
+      <stop offset="100%" stop-color="#57432d"/>
+    </linearGradient>
+    <radialGradient id="treeLeafNight" cx="50%" cy="40%" r="62%">
+      <stop offset="0%" stop-color="#4c8e5d"/>
+      <stop offset="68%" stop-color="#224e33"/>
+      <stop offset="100%" stop-color="#142a1d"/>
+    </radialGradient>
+    <linearGradient id="trunkNight" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#6a4125"/>
+      <stop offset="100%" stop-color="#3f2413"/>
+    </linearGradient>
+    <linearGradient id="doghouseRoofNight" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#9f4a28"/>
+      <stop offset="100%" stop-color="#6c2917"/>
+    </linearGradient>
+    <linearGradient id="doghouseBodyNight" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#8b5b38"/>
+      <stop offset="100%" stop-color="#5d381f"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#skyNight)"/>
+  <circle cx="1248" cy="150" r="62" fill="#fff5d4"/>
+  <ellipse cx="1248" cy="150" rx="208" ry="128" fill="url(#moonGlow)"/>
+  <g fill="#f6fbff" opacity="0.78">
+    <circle cx="122" cy="102" r="2.2"/>
+    <circle cx="218" cy="148" r="1.8"/>
+    <circle cx="356" cy="96" r="2.1"/>
+    <circle cx="482" cy="168" r="1.7"/>
+    <circle cx="604" cy="116" r="2.3"/>
+    <circle cx="762" cy="86" r="1.9"/>
+    <circle cx="902" cy="142" r="2.1"/>
+    <circle cx="1052" cy="106" r="1.9"/>
+    <circle cx="1426" cy="92" r="2.2"/>
+    <circle cx="1510" cy="146" r="1.8"/>
+  </g>
+  <path d="M0 426c98-58 224-68 342-24 76 28 138 34 222 12 100-28 184-30 268 12 72 34 144 40 230 14 88-24 176-20 308 30v126H0Z" fill="url(#farTreesNight)" opacity="0.92"/>
+  <rect y="454" width="1600" height="30" fill="#547067" opacity="0.42"/>
+  <g opacity="0.88">
+    <rect y="392" width="1600" height="18" fill="#b38757"/>
+    <rect y="446" width="1600" height="16" fill="#6e4221"/>
+    <g fill="url(#fenceNight)">
+      <rect x="18" y="336" width="24" height="154" rx="8"/>
+      <rect x="82" y="330" width="24" height="160" rx="8"/>
+      <rect x="146" y="334" width="24" height="156" rx="8"/>
+      <rect x="210" y="328" width="24" height="162" rx="8"/>
+      <rect x="274" y="332" width="24" height="158" rx="8"/>
+      <rect x="338" y="329" width="24" height="161" rx="8"/>
+      <rect x="402" y="333" width="24" height="157" rx="8"/>
+      <rect x="466" y="330" width="24" height="160" rx="8"/>
+      <rect x="530" y="334" width="24" height="156" rx="8"/>
+      <rect x="594" y="328" width="24" height="162" rx="8"/>
+      <rect x="658" y="332" width="24" height="158" rx="8"/>
+      <rect x="722" y="329" width="24" height="161" rx="8"/>
+      <rect x="786" y="333" width="24" height="157" rx="8"/>
+      <rect x="850" y="330" width="24" height="160" rx="8"/>
+      <rect x="914" y="334" width="24" height="156" rx="8"/>
+      <rect x="978" y="328" width="24" height="162" rx="8"/>
+      <rect x="1042" y="332" width="24" height="158" rx="8"/>
+      <rect x="1106" y="329" width="24" height="161" rx="8"/>
+      <rect x="1170" y="333" width="24" height="157" rx="8"/>
+      <rect x="1234" y="330" width="24" height="160" rx="8"/>
+      <rect x="1298" y="334" width="24" height="156" rx="8"/>
+      <rect x="1362" y="328" width="24" height="162" rx="8"/>
+      <rect x="1426" y="332" width="24" height="158" rx="8"/>
+      <rect x="1490" y="329" width="24" height="161" rx="8"/>
+      <rect x="1554" y="333" width="24" height="157" rx="8"/>
+    </g>
+  </g>
+  <g>
+    <ellipse cx="258" cy="534" rx="142" ry="36" fill="#07150d" fill-opacity="0.42"/>
+    <rect x="234" y="270" width="46" height="252" rx="22" fill="url(#trunkNight)"/>
+    <ellipse cx="260" cy="174" rx="136" ry="108" fill="url(#treeLeafNight)"/>
+    <ellipse cx="182" cy="218" rx="82" ry="68" fill="url(#treeLeafNight)"/>
+    <ellipse cx="340" cy="222" rx="90" ry="72" fill="url(#treeLeafNight)"/>
+  </g>
+  <rect y="500" width="1600" height="400" fill="url(#lawnNight)"/>
+  <path d="M0 612c176-26 324-8 492 18 176 28 308 26 452-10 170-42 316-38 656 24v256H0Z" fill="#254f2f"/>
+  <path d="M0 690c174-22 330 4 500 26 186 26 352 24 520-14 182-40 346-36 580 18v180H0Z" fill="#19371f"/>
+  <path d="M692 552c90 0 154 28 198 64 48 38 78 98 100 196H610c34-166 104-260 282-260Z" fill="url(#pathNight)" opacity="0.82"/>
+  <path d="M730 560c72 6 132 32 170 68 40 38 66 90 82 164H648c28-132 88-206 214-232Z" fill="#b29f7f" opacity="0.18"/>
+  <g opacity="0.12" fill="#effbd5">
+    <ellipse cx="178" cy="678" rx="150" ry="32"/>
+    <ellipse cx="610" cy="628" rx="190" ry="28"/>
+    <ellipse cx="1170" cy="666" rx="220" ry="34"/>
+  </g>
+  <g>
+    <ellipse cx="1232" cy="618" rx="126" ry="28" fill="#07140d" fill-opacity="0.48"/>
+    <path d="M1084 518 1238 424 1392 518v18h-308Z" fill="url(#doghouseRoofNight)"/>
+    <rect x="1118" y="532" width="240" height="142" rx="24" fill="url(#doghouseBodyNight)"/>
+    <rect x="1189" y="566" width="98" height="108" rx="46" fill="#101722"/>
+    <rect x="1142" y="560" width="30" height="96" rx="12" fill="#b58c66" fill-opacity="0.28"/>
+    <rect x="1304" y="560" width="30" height="96" rx="12" fill="#b58c66" fill-opacity="0.28"/>
+  </g>
+  <path d="M0 820c220-24 466 20 740 30 332 12 570-10 860-44v94H0Z" fill="#12281a" opacity="0.96"/>
+</svg>

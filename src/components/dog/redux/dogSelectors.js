@@ -72,8 +72,13 @@ function buildDogRenderModel(stateOrDog) {
   const staticSpriteUrl = getDogStaticSpriteUrl(stage);
   const pixiSheetUrl = getDogPixiSheetUrl(stage, condition);
   const pixiSheetFallbackUrl = getDogPixiSheetUrl(stage, "clean");
+  const identityProfile =
+    dog?.identity && typeof dog.identity === "object" ? dog.identity : null;
 
   return {
+    dogIdentityId: String(identityProfile?.profileId || "").trim() || null,
+    visualIdentity:
+      String(identityProfile?.visualIdentity || "").trim() || "jr_canonical_v1",
     stage,
     stageLabel,
     condition,
@@ -125,7 +130,12 @@ export function selectDogSpriteHint(stateOrDog) {
   const dog = resolveDog(stateOrDog);
   const { stage, condition } = selectDogRenderParams(dog);
 
-  const breedRaw = dog.breed || dog.species || dog.type || "jack_russell";
+  const breedRaw =
+    dog?.identity?.breed ||
+    dog.breed ||
+    dog.species ||
+    dog.type ||
+    "jack_russell";
   const breed = String(breedRaw)
     .toLowerCase()
     .replace(/\s+/g, "_")

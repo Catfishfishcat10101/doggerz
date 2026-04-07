@@ -1,4 +1,4 @@
-/** @format */
+// src/components/dog/DogMovementSystem.js
 
 import {
   DOG_WORLD_HEIGHT,

@@ -1,5 +1,8 @@
 // src/pages/About.jsx
 
+import { Link } from "react-router-dom";
+
+import { PATHS } from "@/app/routes.js";
 import PageShell from "@/components/layout/PageShell.jsx";
 import { PageHeader } from "@/components/layout/PageSections.jsx";
 import { withBaseUrl } from "@/utils/assetUtils.js";
@@ -216,6 +219,25 @@ export default function AboutPage() {
                 <li>Temperament evolves with consistency.</li>
                 <li>Life stage transitions unlock new animations.</li>
               </ul>
+            </section>
+
+            <section className="rounded-2xl border border-emerald-400/20 bg-emerald-500/5 p-5">
+              <div className="text-xs uppercase tracking-[0.24em] text-emerald-300/80">
+                Need the technical side?
+              </div>
+              <h3 className="mt-2 text-base font-bold text-zinc-100">
+                Developer notes
+              </h3>
+              <p className="mt-2 text-sm text-zinc-300">
+                Integration details, render experiments, and engine-facing notes
+                live on the Developers page.
+              </p>
+              <Link
+                to={PATHS.DEVELOPERS}
+                className="mt-4 inline-flex items-center rounded-2xl border border-emerald-400/35 bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-100 transition hover:bg-emerald-500/15"
+              >
+                Open Developers
+              </Link>
             </section>
           </div>
         </div>

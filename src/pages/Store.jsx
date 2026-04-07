@@ -1,16 +1,17 @@
 // src/pages/Store.jsx
-// Store: buy + preview cosmetics (collars/tags/backdrops).
+// Store: buy + preview cosmetics, themes, and doghouse styles.
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useToast } from "@/state/toastContext.js";
 import BackPill from "@/components/layout/BackPill.jsx";
+import { preloadJackRussellSheets } from "@/components/dog/assets/jrAtlasAssets.js";
 import SpriteSheetDog from "@/components/dog/renderers/SpriteSheetDog.jsx";
 import DogCosmeticsOverlay from "@/components/dog/DogCosmeticsOverlay.jsx";
 import Tooltip from "@/components/ui/Tooltip.jsx";
 import { PageHeader } from "@/components/layout/PageSections.jsx";
 import { useDogStoreView } from "@/hooks/useDogState.js";
-import { getSpriteForStageAndTier } from "@/utils/lifecycle.js";
+import { getSpriteForLifeStage } from "@/utils/lifecycle.js";
 import { resolveBackdropLayers } from "@/utils/backgroundLayers.js";
 import {
   purchaseCosmetic,
@@ -53,6 +54,29 @@ const STORE_CATEGORY_META = Object.freeze({
   },
 });
 
+const COSMETIC_COLLECTION_META = Object.freeze({
+  collars: {
+    label: "Collars",
+    blurb: "Core identity pieces your pup wears every day.",
+  },
+  doghouses: {
+    label: "Themed Doghouses",
+    blurb: "Home-style upgrades that make the yard feel personal.",
+  },
+  yard_themes: {
+    label: "Yard Themes",
+    blurb: "Backdrop looks that define your yard atmosphere.",
+  },
+  seasonal: {
+    label: "Seasonal",
+    blurb: "Limited and rotating looks tied to seasonal drops.",
+  },
+  other: {
+    label: "Other",
+    blurb: "Toys, care items, and non-cosmetic support content.",
+  },
+});
+
 const TREASURE_DISPLAY_META = Object.freeze({
   rusty_key: {
     id: "rusty_key",
@@ -88,6 +112,24 @@ function getStoreCategory(item) {
   if (slot === "consumable") return "care";
   if (slot === "yard_upgrade") return "yard";
   return "apparel";
+}
+
+function getCosmeticCollection(item) {
+  const slot = String(item?.slot || "")
+    .trim()
+    .toLowerCase();
+  const id = String(item?.id || "")
+    .trim()
+    .toLowerCase();
+  const seasonal = String(item?.seasonal || "")
+    .trim()
+    .toLowerCase();
+
+  if (seasonal) return "seasonal";
+  if (slot === "collar") return "collars";
+  if (slot === "backdrop") return "yard_themes";
+  if (slot === "yard_upgrade" && id.includes("doghouse")) return "doghouses";
+  return "other";
 }
 
 function getCurrencyForItem(item) {
@@ -162,6 +204,10 @@ function cosmeticDescription(item) {
       return "Redirects digging and lowers destructive outlets.";
     if (id === "yard_fancy_doghouse")
       return "Long-term comfort boost for rest and stress recovery.";
+    if (id === "yard_doghouse_cottage")
+      return "A cozy cottage-style home look for your doghouse corner.";
+    if (id === "yard_doghouse_winter_lodge")
+      return "Seasonal winter lodge styling with a premium comfort vibe.";
     return "Permanent yard upgrade that improves passive routine.";
   }
   if (slot === "collar") {
@@ -175,6 +221,10 @@ function cosmeticDescription(item) {
       return "A dark steel collar with a cool blue edge glow.";
     if (id === "collar_sunflare")
       return "A hot orange collar that looks sharp against night scenes.";
+    if (id === "collar_mosswood")
+      return "Earthy green collar with a calm, premium finish.";
+    if (id === "collar_winter_frost")
+      return "Seasonal icy-blue collar with a crisp winter tone.";
     if (id === "beta_collar_2026")
       return "Exclusive founder reward with a crisp beta-blue glow.";
     return "A stylish collar for your pup.";
@@ -184,11 +234,17 @@ function cosmeticDescription(item) {
       return "A warm heart tag for the clingy good dog era.";
     if (id === "tag_bolt")
       return "A fast-looking bolt tag for chaos gremlins and sprinters.";
+    if (id === "tag_harvest_leaf")
+      return "Autumn seasonal tag with a warm leaf crest.";
     if (id === "tag_star") return "A shiny star tag that catches the light.";
     return "A cute tag that shows off your pup.";
   }
   if (slot === "backdrop") {
     if (id === "backdrop_sunset") return "Warm sunset vibes behind your yard.";
+    if (id === "backdrop_meadow_morning")
+      return "Bright meadow atmosphere for a fresh daytime yard.";
+    if (id === "backdrop_moonlit_garden")
+      return "Moody night garden theme with calm moonlit depth.";
     return "A backdrop to change the mood of the yard.";
   }
   return "A cosmetic item.";
@@ -285,6 +341,83 @@ function CategoryPill({ category }) {
   );
 }
 
+function CollectionPill({ collection }) {
+  const key = String(collection || "other").toLowerCase();
+  const label = COSMETIC_COLLECTION_META[key]?.label || "Other";
+  const toneClass =
+    key === "collars"
+      ? "border-emerald-400/30 bg-emerald-500/12 text-emerald-100"
+      : key === "doghouses"
+        ? "border-orange-400/30 bg-orange-500/12 text-orange-100"
+        : key === "yard_themes"
+          ? "border-sky-400/30 bg-sky-500/12 text-sky-100"
+          : key === "seasonal"
+            ? "border-violet-400/30 bg-violet-500/12 text-violet-100"
+            : "border-white/15 bg-white/5 text-zinc-200";
+
+  return (
+    <span
+      className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] ${toneClass}`}
+    >
+      {label}
+    </span>
+  );
+}
+
+function getItemStateMeta({
+  owned = false,
+  isEquipped = false,
+  canAfford = false,
+  isIapOnly = false,
+  threshold = 0,
+  streakDays = 0,
+}) {
+  if (isEquipped) {
+    return {
+      id: "equipped",
+      label: "Equipped",
+      className: "border-emerald-400/35 bg-emerald-500/18 text-emerald-100",
+    };
+  }
+  if (owned) {
+    return {
+      id: "owned",
+      label: "Owned",
+      className: "border-sky-400/30 bg-sky-500/14 text-sky-100",
+    };
+  }
+  if (isIapOnly || Number(threshold) > Number(streakDays)) {
+    return {
+      id: "locked",
+      label: "Locked",
+      className: "border-zinc-400/30 bg-zinc-500/14 text-zinc-200",
+    };
+  }
+  if (canAfford) {
+    return {
+      id: "available",
+      label: "Available",
+      className: "border-amber-300/35 bg-amber-400/14 text-amber-100",
+    };
+  }
+  return {
+    id: "locked",
+    label: "Locked",
+    className: "border-zinc-400/30 bg-zinc-500/14 text-zinc-200",
+  };
+}
+
+function ItemStatePill({ state }) {
+  if (!state) return null;
+  return (
+    <span
+      className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] ${state.className}`}
+    >
+      {state.label}
+    </span>
+  );
+}
+
 function ToggleChip({ active, onClick, children, tooltip = "" }) {
   return (
     <Tooltip content={tooltip || String(children)} side="top">
@@ -351,6 +484,7 @@ export default function Store() {
   );
 
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [collectionFilter, setCollectionFilter] = useState("all");
   const [query, setQuery] = useState("");
   const [ownedFilter, setOwnedFilter] = useState("all"); // all | owned | unowned
   const [affordFilter, setAffordFilter] = useState("all"); // all | affordable
@@ -368,6 +502,10 @@ export default function Store() {
 
   // Dev-only: helps diagnose "dog not rendering" by exposing sprite loading state.
   const [spriteDebug, setSpriteDebug] = useState(null);
+
+  useEffect(() => {
+    preloadJackRussellSheets().catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!preview?.id && previewLocked) {
@@ -411,8 +549,8 @@ export default function Store() {
 
   const stageId = String(dog?.lifeStage?.stage || "PUPPY").toUpperCase();
   const fallbackSprite = useMemo(
-    () => getSpriteForStageAndTier(stageId, dog?.cleanlinessTier),
-    [dog?.cleanlinessTier, stageId]
+    () => getSpriteForLifeStage(stageId),
+    [stageId]
   );
 
   const previewEquipped = useMemo(() => {
@@ -426,15 +564,36 @@ export default function Store() {
   }, [equipped, preview?.id, preview?.slot]);
 
   const selectedBackdrop = previewEquipped?.backdrop || equipped?.backdrop;
+  const previewDisplayEquipped = preview?.id ? previewEquipped : equipped;
 
   const totalCatalogCount = Array.isArray(catalog) ? catalog.length : 0;
   const trimmedQuery = String(query || "").trim();
   const hasActiveFilters =
     trimmedQuery.length > 0 ||
     categoryFilter !== "all" ||
+    collectionFilter !== "all" ||
     ownedFilter !== "all" ||
     affordFilter !== "all" ||
     sortKey !== "recommended";
+
+  const equippedCount = useMemo(() => {
+    const slots = [equipped?.collar, equipped?.tag, equipped?.backdrop];
+    return slots.filter((value) => String(value || "").trim().length > 0)
+      .length;
+  }, [equipped?.backdrop, equipped?.collar, equipped?.tag]);
+
+  const collectionCounts = useMemo(() => {
+    const items = Array.isArray(catalog) ? catalog : [];
+    return items.reduce(
+      (acc, item) => {
+        const collection = getCosmeticCollection(item);
+        if (!acc[collection]) acc[collection] = 0;
+        acc[collection] += 1;
+        return acc;
+      },
+      { collars: 0, doghouses: 0, yard_themes: 0, seasonal: 0, other: 0 }
+    );
+  }, [catalog]);
 
   const backdropLayers = useMemo(
     () =>
@@ -469,6 +628,10 @@ export default function Store() {
         const category = getStoreCategory(it);
         if (categoryFilter !== "all" && category !== categoryFilter)
           return false;
+        const collection = getCosmeticCollection(it);
+        if (collectionFilter !== "all" && collection !== collectionFilter) {
+          return false;
+        }
 
         const owned = unlocked.has(id);
         if (ownedFilter === "owned" && !owned) return false;
@@ -484,11 +647,13 @@ export default function Store() {
           const label = String(it.label || id).toLowerCase();
           const slotText = String(it.slot || "").toLowerCase();
           const categoryText = getStoreCategory(it);
+          const collectionText = getCosmeticCollection(it);
           if (
             !label.includes(q) &&
             !id.toLowerCase().includes(q) &&
             !slotText.includes(q) &&
-            !categoryText.includes(q)
+            !categoryText.includes(q) &&
+            !collectionText.includes(q)
           )
             return false;
         }
@@ -571,6 +736,7 @@ export default function Store() {
     ownedFilter,
     showEquippedFirst,
     categoryFilter,
+    collectionFilter,
     sortKey,
     trimmedQuery,
     unlocked,
@@ -654,12 +820,12 @@ export default function Store() {
                 Doggerz Store
               </div>
               <div className="mt-1 text-2xl sm:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-200 via-sky-200 to-violet-200">
-                Dress your pup. Flex your streak.
+                Build your pup&apos;s signature look.
               </div>
               <div className="mt-2 text-sm text-zinc-300 leading-relaxed max-w-2xl">
-                Try cosmetics before buying, unlock freebies by keeping your
-                streak alive, and swap your look instantly. (No buyer’s
-                remorse—your pup can’t judge you. Probably.)
+                Collect collars, themed doghouses, yard themes, and seasonal
+                drops. Try-on stays instant, and equipped status is always clear
+                before you buy.
               </div>
             </div>
 
@@ -673,8 +839,8 @@ export default function Store() {
                 <span className="text-zinc-300">Free unlocks</span>
               </span>
               <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/25 px-3 py-1 text-[11px] font-semibold text-zinc-100">
-                <span className="text-emerald-200">Badges</span>
-                <span className="text-zinc-300">Show off in-game</span>
+                <span className="text-emerald-200">Collections</span>
+                <span className="text-zinc-300">Owned vs equipped</span>
               </span>
             </div>
           </div>
@@ -709,13 +875,54 @@ export default function Store() {
                 Coming soon
               </div>
               <div className="mt-1 text-sm font-extrabold text-zinc-100">
-                More cosmetics
+                Rotating seasonal drops
               </div>
               <div className="mt-2 text-sm text-zinc-300">
-                New collars, tags, and animated rewards are on the way. Your
-                streak will matter.
+                Seasonal items appear with clear labels and keep your look
+                feeling fresh without changing gameplay balance.
               </div>
             </div>
+          </div>
+        </section>
+
+        <section className="mb-8 rounded-3xl border border-white/10 bg-black/25 p-5 sm:p-6">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <div className="text-xs uppercase tracking-[0.22em] text-zinc-400">
+                Cosmetic collections
+              </div>
+              <div className="mt-1 text-lg font-extrabold text-zinc-100">
+                Curated for one-dog identity
+              </div>
+            </div>
+            <div className="text-xs text-zinc-400">
+              Owned cosmetics:{" "}
+              <span className="font-semibold text-zinc-100">
+                {unlocked.size}
+              </span>{" "}
+              · Equipped now:{" "}
+              <span className="font-semibold text-emerald-200">
+                {equippedCount}/3
+              </span>
+            </div>
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            {Object.entries(COSMETIC_COLLECTION_META).map(([id, meta]) => (
+              <div
+                key={id}
+                className="rounded-2xl border border-white/10 bg-black/20 p-4"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <CollectionPill collection={id} />
+                  <span className="text-[11px] font-semibold tabular-nums text-zinc-300">
+                    {collectionCounts[id] || 0}
+                  </span>
+                </div>
+                <div className="mt-2 text-xs text-zinc-300 leading-relaxed">
+                  {meta.blurb}
+                </div>
+              </div>
+            ))}
           </div>
         </section>
 
@@ -977,31 +1184,45 @@ export default function Store() {
                       <div className="pointer-events-none absolute inset-x-0 bottom-0 p-4">
                         <div className="rounded-2xl border border-white/10 bg-black/45 backdrop-blur px-4 py-3">
                           <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-                            <div className="text-zinc-200">
-                              Equipped:
-                              <span className="ml-2 text-emerald-200 font-semibold">
-                                Collar
-                              </span>
-                              <span className="ml-1 text-zinc-100">
-                                {equipped?.collar
+                            <div className="flex flex-wrap items-center gap-2">
+                              {preview?.id ? (
+                                <span className="inline-flex items-center rounded-full border border-violet-400/25 bg-violet-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-violet-100">
+                                  Try-on active
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center rounded-full border border-emerald-400/25 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-100">
+                                  Equipped set
+                                </span>
+                              )}
+                              <span className="inline-flex items-center rounded-full border border-emerald-400/25 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-100">
+                                Collar:{" "}
+                                {previewDisplayEquipped?.collar
                                   ? titleCase(
-                                      String(equipped.collar).replace(
-                                        /^collar_/,
-                                        ""
-                                      )
+                                      String(
+                                        previewDisplayEquipped.collar
+                                      ).replace(/^collar_/, "")
                                     )
                                   : "None"}
                               </span>
-                              <span className="mx-2 text-zinc-600">•</span>
-                              <span className="text-emerald-200 font-semibold">
-                                Tag
-                              </span>
-                              <span className="ml-1 text-zinc-100">
-                                {equipped?.tag
+                              <span className="inline-flex items-center rounded-full border border-amber-400/25 bg-amber-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-amber-100">
+                                Tag:{" "}
+                                {previewDisplayEquipped?.tag
                                   ? titleCase(
-                                      String(equipped.tag).replace(/^tag_/, "")
+                                      String(
+                                        previewDisplayEquipped.tag
+                                      ).replace(/^tag_/, "")
                                     )
                                   : "None"}
+                              </span>
+                              <span className="inline-flex items-center rounded-full border border-sky-400/25 bg-sky-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-sky-100">
+                                Backdrop:{" "}
+                                {previewDisplayEquipped?.backdrop
+                                  ? titleCase(
+                                      String(
+                                        previewDisplayEquipped.backdrop
+                                      ).replace(/^backdrop_/, "")
+                                    )
+                                  : "Default"}
                               </span>
                             </div>
                             <div className="text-zinc-300">
@@ -1052,6 +1273,7 @@ export default function Store() {
                           focusedItem?.slot || "cosmetic"
                         ).toLowerCase();
                         const category = getStoreCategory(focusedItem);
+                        const collection = getCosmeticCollection(focusedItem);
                         const label = String(focusedItem?.label || id);
                         const threshold = clamp(
                           Number(focusedItem?.threshold || 0),
@@ -1068,6 +1290,14 @@ export default function Store() {
                         const isEquipped = slot && equipped?.[slot] === id;
                         const wearable = WEARABLE_SLOTS.has(slot);
                         const rarity = rarityForThreshold(threshold);
+                        const itemState = getItemStateMeta({
+                          owned,
+                          isEquipped: wearable && isEquipped,
+                          canAfford: afford,
+                          isIapOnly,
+                          threshold,
+                          streakDays,
+                        });
 
                         const progress =
                           threshold > 0
@@ -1085,6 +1315,8 @@ export default function Store() {
                                 <div className="flex flex-wrap items-center gap-2">
                                   <SlotPill slot={slot} />
                                   <CategoryPill category={category} />
+                                  <CollectionPill collection={collection} />
+                                  <ItemStatePill state={itemState} />
                                   <span
                                     className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] ${rarity.className}`}
                                   >
@@ -1386,11 +1618,25 @@ export default function Store() {
                     Catalog
                   </div>
                   <div className="mt-1 text-lg font-extrabold text-zinc-100">
-                    Toys, apparel, care, and yard upgrades
+                    Cosmetics and collections
                   </div>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
+                  <select
+                    className="rounded-2xl border border-white/15 bg-black/25 px-3 py-2 text-xs font-semibold text-zinc-100"
+                    value={collectionFilter}
+                    onChange={(e) => setCollectionFilter(e.target.value)}
+                    title="Filter by cosmetic collections."
+                  >
+                    <option value="all">All collections</option>
+                    <option value="collars">Collars</option>
+                    <option value="doghouses">Themed Doghouses</option>
+                    <option value="yard_themes">Yard Themes</option>
+                    <option value="seasonal">Seasonal</option>
+                    <option value="other">Other</option>
+                  </select>
+
                   <select
                     className="rounded-2xl border border-white/15 bg-black/25 px-3 py-2 text-xs font-semibold text-zinc-100"
                     value={categoryFilter}
@@ -1444,7 +1690,7 @@ export default function Store() {
                   <input
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Search toys, apparel, care, yard upgrades…"
+                    placeholder="Search collars, doghouses, yard themes, seasonal drops…"
                     className="w-full rounded-2xl border border-white/15 bg-black/25 px-4 py-3 pr-12 text-sm text-zinc-100 placeholder:text-zinc-500 outline-none focus:border-emerald-500/40"
                     title="Search by item name, slot, category, or id."
                   />
@@ -1496,6 +1742,7 @@ export default function Store() {
                     <button
                       type="button"
                       onClick={() => {
+                        setCollectionFilter("all");
                         setCategoryFilter("all");
                         setOwnedFilter("all");
                         setAffordFilter("all");
@@ -1525,6 +1772,7 @@ export default function Store() {
 
                   const slot = String(item?.slot || "cosmetic").toLowerCase();
                   const category = getStoreCategory(item);
+                  const collection = getCosmeticCollection(item);
                   const label = String(item?.label || id);
                   const threshold = clamp(
                     Number(item?.threshold || 0),
@@ -1542,6 +1790,23 @@ export default function Store() {
                   const isEquipped = slot && equipped?.[slot] === id;
                   const wearable = WEARABLE_SLOTS.has(slot);
                   const rarity = rarityForThreshold(threshold);
+                  const ownershipLabel = wearable
+                    ? isEquipped
+                      ? "Equipped"
+                      : owned
+                        ? "Owned"
+                        : "Not owned"
+                    : owned
+                      ? "Owned"
+                      : "Not owned";
+                  const itemState = getItemStateMeta({
+                    owned,
+                    isEquipped: wearable && isEquipped,
+                    canAfford: afford,
+                    isIapOnly,
+                    threshold,
+                    streakDays,
+                  });
                   const feedbackState = purchaseFeedback[id]?.state || "";
                   const streakProgress =
                     threshold > 0 ? clamp(streakDays / threshold, 0, 1) : 0;
@@ -1571,6 +1836,8 @@ export default function Store() {
                           <div className="flex flex-wrap items-center gap-2">
                             <SlotPill slot={slot} />
                             <CategoryPill category={category} />
+                            <CollectionPill collection={collection} />
+                            <ItemStatePill state={itemState} />
                             <span
                               className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] ${rarity.className}`}
                             >
@@ -1758,7 +2025,9 @@ export default function Store() {
                       </div>
 
                       <div className="mt-3 flex items-center justify-between text-[11px] text-zinc-500">
-                        <span>{owned ? "Owned" : "Not owned"}</span>
+                        <span className="font-semibold text-zinc-300">
+                          {ownershipLabel}
+                        </span>
                         <span className="tabular-nums">
                           Balance after:{" "}
                           {owned
@@ -1783,6 +2052,7 @@ export default function Store() {
                     <button
                       type="button"
                       onClick={() => {
+                        setCollectionFilter("all");
                         setCategoryFilter("all");
                         setOwnedFilter("all");
                         setAffordFilter("all");

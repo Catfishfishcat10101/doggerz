@@ -1,4 +1,5 @@
-// src/layout/AppShellContext.js
+// src/components/layout/AppShellContext.js
+
 import * as React from "react";
 
 export const AppShellContext = React.createContext({

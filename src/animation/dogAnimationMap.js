@@ -106,7 +106,6 @@ export const DOG_ANIMATION_ALIASES = Object.freeze({
   zoomies: DOG_ANIMATIONS.walk,
   pet_zoomies: DOG_ANIMATIONS.walk,
 
-  button_heist: DOG_ANIMATIONS.fetch,
   surprise_cleanup: DOG_ANIMATIONS.sit,
   surprise_fetch_cleanup: DOG_ANIMATIONS.fetch,
   surprise_fetch_recover: DOG_ANIMATIONS.fetch,

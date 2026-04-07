@@ -1,3 +1,4 @@
+//src/utils/weather.js
 function normalizeInput(value) {
   return String(value || "")
     .trim()

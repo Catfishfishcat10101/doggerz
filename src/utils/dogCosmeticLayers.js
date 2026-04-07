@@ -140,6 +140,30 @@ function getCollarLayer(id) {
     };
   }
 
+  if (key === "collar_mosswood") {
+    return {
+      slot: "collar",
+      src: buildCollarSvg({
+        strap: "#15803d",
+        buckle: "#dcfce7",
+        tag: "#86efac",
+        glow: "#4ade80",
+      }),
+    };
+  }
+
+  if (key === "collar_winter_frost") {
+    return {
+      slot: "collar",
+      src: buildCollarSvg({
+        strap: "#60a5fa",
+        buckle: "#eff6ff",
+        tag: "#dbeafe",
+        glow: "#93c5fd",
+      }),
+    };
+  }
+
   return {
     slot: "collar",
     src: buildCollarSvg({
@@ -179,6 +203,15 @@ function getTagLayer(id) {
       src: buildBoltTagSvg({
         fill: "#facc15",
         stroke: "#fef9c3",
+      }),
+    };
+  }
+  if (key === "tag_harvest_leaf") {
+    return {
+      slot: "tag",
+      src: buildTagSvg({
+        fill: "#f59e0b",
+        stroke: "#fffbeb",
       }),
     };
   }

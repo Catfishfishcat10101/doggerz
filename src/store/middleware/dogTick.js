@@ -8,7 +8,7 @@ export const DOG_ENGINE_TICK_INTERVAL_MS = 60_000;
 export const startDogTickEngine = () => ({ type: DOG_ENGINE_START });
 export const stopDogTickEngine = () => ({ type: DOG_ENGINE_STOP });
 
-function canTickNow() {
+export function canTickNow() {
   if (typeof document === "undefined") return true;
   return !document.hidden;
 }
@@ -37,6 +37,7 @@ export const dogTickMiddleware = (storeApi) => {
 
   return (next) => (action) => {
     if (action?.type === DOG_ENGINE_START && !tickInterval) {
+      runTick();
       tickInterval = setInterval(runTick, DOG_ENGINE_TICK_INTERVAL_MS);
     }
 

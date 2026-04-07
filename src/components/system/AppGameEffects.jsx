@@ -1,16 +1,10 @@
-// src/components/AppGameEffects.jsx
+// src/components/system/AppGameEffects.jsx
 
 import * as React from "react";
 import { useSelector } from "react-redux";
 import { useDogAppEffectsState } from "@/hooks/useDogState.js";
 import { selectSettings } from "@/store/settingsSlice.js";
 
-/**
- * Writes tiny app-wide data-attributes used for dynamic CSS.
- *
- * Kept separate from AppPreferencesEffects so gameplay visuals stay independent
- * from user preferences.
- */
 export default function AppGameEffects() {
   const { skillTree, polls } = useDogAppEffectsState();
   const settings = useSelector(selectSettings);
@@ -32,15 +26,12 @@ export default function AppGameEffects() {
 
   React.useEffect(() => {
     const root = document.documentElement;
-
-    // Branch accent (used by global CSS variables; safe to omit when unset).
     if (showBranchAccent && lastBranchId) {
       root.dataset.skillBranch = String(lastBranchId);
     } else {
       delete root.dataset.skillBranch;
     }
 
-    // Micro-story / poll moment active.
     if (showStoryGlow && storyActive) root.dataset.storyActive = "1";
     else delete root.dataset.storyActive;
 

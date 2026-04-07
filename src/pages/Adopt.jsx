@@ -6,8 +6,8 @@ import { useNavigate } from "react-router-dom";
 
 import PageShell from "@/components/layout/PageShell.jsx";
 import { withBaseUrl } from "@/utils/assetUtils.js";
-import { PATHS } from "@/routes.js";
-import { adoptPup } from "@/redux/dogThunks.js";
+import { PATHS } from "@/app/routes.js";
+import { adoptPup } from "@/store/dogThunks.js";
 import {
   cancelWorkflow,
   goToStep,
@@ -17,7 +17,7 @@ import {
   selectWorkflowById,
   setWorkflowData,
   startWorkflow,
-} from "@/redux/workflowSlice.js";
+} from "@/store/workflowSlice.js";
 import { useDog } from "@/hooks/useDogState.js";
 
 const WORKFLOW_ID = "adopt";
@@ -275,8 +275,8 @@ export default function AdoptPage() {
                   What are you calling this troublemaker?
                 </h2>
                 <p className="mt-4 text-sm leading-7 text-zinc-300">
-                  Pick a name you will not regret seeing during button heists,
-                  accidents, and 2 a.m. zoomies.
+                  Pick a name you will not regret seeing during accidents and 2
+                  a.m. zoomies.
                 </p>
                 <div className="mt-6 w-full max-w-sm">
                   <input
@@ -317,8 +317,8 @@ export default function AdoptPage() {
                   {trimmedName || "Fireball"} is ready.
                 </h2>
                 <p className="mt-4 text-sm leading-7 text-zinc-300">
-                  Keep energy up, watch health, resolve button heists, and do
-                  not assume this dog will behave just because you asked nicely.
+                  Keep energy up, watch health, and do not assume this dog will
+                  behave just because you asked nicely.
                 </p>
                 <div className="mt-6 grid w-full gap-3 text-left text-sm text-zinc-200">
                   <div className="rounded-2xl border border-white/10 bg-white/6 p-4">
@@ -373,7 +373,8 @@ export default function AdoptPage() {
           </div>
 
           <div className="mt-3 text-center text-xs text-zinc-400">
-            Your pup lives in the yard, not on a server. Adoption is just the start.
+            Your pup lives in the yard, not on a server. Adoption is just the
+            start.
           </div>
         </div>
       </div>

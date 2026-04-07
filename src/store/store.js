@@ -1,12 +1,12 @@
 /** @format */
 
-// src/redux/store.js
+// src/store/store.js
 
 import { configureStore } from "@reduxjs/toolkit";
 
 import dogReducer from "@/store/dogSlice.js";
 import { dogTickMiddleware } from "@/store/middleware/dogTick.js";
-import { heistMiddleware } from "@/store/middleware/heistMiddleware.js";
+import { trainingReactionMiddleware } from "@/store/middleware/trainingReactionMiddleware.js";
 import userReducer from "@/store/userSlice.js";
 import settingsReducer from "@/store/settingsSlice.js";
 import weatherReducer from "@/store/weatherSlice.js";
@@ -66,7 +66,7 @@ export const store = configureStore({
       immutableCheck: !isProd,
     }).concat(
       dogTickMiddleware,
-      heistMiddleware,
+      trainingReactionMiddleware,
       createDebugLoggingMiddleware()
     ),
   devTools: !isProd,

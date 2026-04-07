@@ -1,5 +1,6 @@
-/** @format */
 import { useEffect, useRef, useState } from "react";
+
+const DRAG_START_THRESHOLD_PX = 10;
 
 export default function DogToy({
   onSqueak,
@@ -22,26 +23,46 @@ export default function DogToy({
     startClientY: 0,
     startX: 0,
     startY: 0,
+    moved: false,
   });
 
   useEffect(() => {
     return () => {
       if (squeakResetRef.current) {
-        clearTimeout(squeakResetRef.current);
+        window.clearTimeout(squeakResetRef.current);
       }
     };
   }, []);
 
-  const triggerSqueak = (payload) => {
+  const pulseSqueak = () => {
     setIsSqueaking(true);
-    if (onSqueak) {
-      onSqueak({ ...payload, itemType });
+    if (squeakResetRef.current) {
+      window.clearTimeout(squeakResetRef.current);
     }
-    if (squeakResetRef.current) clearTimeout(squeakResetRef.current);
-    squeakResetRef.current = setTimeout(() => setIsSqueaking(false), 200);
+    squeakResetRef.current = window.setTimeout(() => {
+      setIsSqueaking(false);
+      squeakResetRef.current = null;
+    }, 180);
   };
 
-  const finishDrag = (event, source = "drop") => {
+  const emitInteraction = (payload) => {
+    if (typeof onSqueak !== "function") return false;
+    return onSqueak({ ...payload, itemType });
+  };
+
+  const resetDrag = () => {
+    setDragState({ x: 0, y: 0, dragging: false });
+    pointerRef.current = {
+      id: null,
+      startClientX: 0,
+      startClientY: 0,
+      startX: 0,
+      startY: 0,
+      moved: false,
+    };
+  };
+
+  const finishPointer = (event, source = "drop") => {
     const pointerId = Number(event?.pointerId);
     if (
       pointerRef.current.id !== null &&
@@ -50,19 +71,38 @@ export default function DogToy({
     ) {
       return;
     }
+
     try {
-      toyRef.current?.releasePointerCapture?.(pointerRef.current.id);
+      if (pointerRef.current.id !== null) {
+        toyRef.current?.releasePointerCapture?.(pointerRef.current.id);
+      }
     } catch {
       // Ignore pointer capture release issues.
     }
-    pointerRef.current.id = null;
-    setDragState((prev) => ({ ...prev, dragging: false }));
-    if (!onSqueak) return;
-    onSqueak({
-      x: Number(event?.clientX || 0),
-      y: Number(event?.clientY || 0),
-      source,
-      itemType,
+
+    const wasDragging = pointerRef.current.moved;
+    const clientX = Number(event?.clientX || 0);
+    const clientY = Number(event?.clientY || 0);
+
+    resetDrag();
+
+    if (source === "cancel") {
+      return;
+    }
+
+    if (wasDragging) {
+      emitInteraction({
+        x: clientX,
+        y: clientY,
+        source,
+      });
+      return;
+    }
+
+    emitInteraction({
+      x: clientX,
+      y: clientY,
+      source: "tap",
     });
   };
 
@@ -74,7 +114,9 @@ export default function DogToy({
       startClientY: Number(event?.clientY || 0),
       startX: dragState.x,
       startY: dragState.y,
+      moved: false,
     };
+
     try {
       if (pointerRef.current.id !== null) {
         toyRef.current?.setPointerCapture?.(pointerRef.current.id);
@@ -82,12 +124,8 @@ export default function DogToy({
     } catch {
       // Ignore pointer capture issues.
     }
-    setDragState((prev) => ({ ...prev, dragging: true }));
-    triggerSqueak({
-      x: Number(event?.clientX || 0),
-      y: Number(event?.clientY || 0),
-      source: "tap",
-    });
+
+    pulseSqueak();
   };
 
   const handlePointerMove = (event) => {
@@ -99,15 +137,19 @@ export default function DogToy({
     ) {
       return;
     }
-    setDragState((prev) => ({
-      ...prev,
-      x:
-        pointerRef.current.startX +
-        (Number(event?.clientX || 0) - pointerRef.current.startClientX),
-      y:
-        pointerRef.current.startY +
-        (Number(event?.clientY || 0) - pointerRef.current.startClientY),
-    }));
+
+    const dx = Number(event?.clientX || 0) - pointerRef.current.startClientX;
+    const dy = Number(event?.clientY || 0) - pointerRef.current.startClientY;
+    const distance = Math.hypot(dx, dy);
+    const moved = distance >= DRAG_START_THRESHOLD_PX;
+
+    pointerRef.current.moved = pointerRef.current.moved || moved;
+
+    setDragState({
+      x: pointerRef.current.startX + dx,
+      y: pointerRef.current.startY + dy,
+      dragging: pointerRef.current.moved,
+    });
   };
 
   const normalizedType = String(itemType || "toy").toLowerCase();
@@ -122,8 +164,8 @@ export default function DogToy({
       ref={toyRef}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
-      onPointerUp={(event) => finishDrag(event, "drop")}
-      onPointerCancel={(event) => finishDrag(event, "cancel")}
+      onPointerUp={(event) => finishPointer(event, "drop")}
+      onPointerCancel={(event) => finishPointer(event, "cancel")}
       data-doggerz-ignore-swipe="true"
       data-doggerz-drag-item={normalizedType}
       className={`dz-dog-orb ${isFoodItem ? "dz-dog-orb--food" : "dz-dog-orb--toy"} ${
@@ -131,10 +173,8 @@ export default function DogToy({
       } ${className}`}
       style={{
         touchAction: "none",
-        transform: `translate3d(${dragState.x}px, ${dragState.y}px, 0) scale(${
-          dragState.dragging ? 1.08 : isSqueaking ? 0.92 : 1
-        })`,
-        transition: dragState.dragging ? "none" : "transform 120ms ease-out",
+        transform: `translate3d(${dragState.x}px, ${dragState.y}px, 0) scale(${dragState.dragging ? 1.08 : isSqueaking ? 0.92 : 1})`,
+        transition: dragState.dragging ? "none" : "transform 140ms ease-out",
         ...style,
       }}
       title={dragTitle}

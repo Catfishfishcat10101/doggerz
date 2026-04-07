@@ -77,4 +77,29 @@ describe("jrManifest", () => {
       ).toBe(true);
     }
   });
+
+  it("maps every authored puppy sprite strip to renderable manifest metadata", () => {
+    const puppyFiles = fs
+      .readdirSync(spriteRoot)
+      .filter((fileName) => /^pup_.*\.png$/i.test(fileName))
+      .sort();
+
+    expect(puppyFiles.length).toBeGreaterThan(0);
+
+    for (const fileName of puppyFiles) {
+      const entry = findJrSpriteSheetBySrc(
+        `https://doggerz.test/assets/sprites/jr/${fileName}`,
+        "pup",
+        "idle"
+      );
+
+      expect(entry.fileName, `Unmapped puppy strip: ${fileName}`).toBe(
+        fileName
+      );
+      expect(entry.url).toContain(`/assets/sprites/jr/${fileName}`);
+      expect(entry.frames).toBeGreaterThan(0);
+      expect(entry.frameWidth).toBeGreaterThan(0);
+      expect(entry.frameHeight).toBeGreaterThan(0);
+    }
+  });
 });

@@ -1,5 +1,4 @@
-/** @format */
-
+// src/components/dog/simulation/DogWanderBehavior.js
 export const DOG_WORLD_WIDTH = 800;
 export const DOG_WORLD_HEIGHT = 500;
 

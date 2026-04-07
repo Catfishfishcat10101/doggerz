@@ -1,3 +1,5 @@
+// src/components/ui/modals/modalRegistry.jsx
+
 import DailyRewardModal from "@/components/ui/modals/DailyRewardModal.jsx";
 import FounderBonusModal from "@/components/ui/modals/FounderBonusModal.jsx";
 import LifecycleNoticeModal from "@/components/ui/modals/LifecycleNoticeModal.jsx";

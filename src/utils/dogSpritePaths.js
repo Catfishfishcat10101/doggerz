@@ -14,6 +14,48 @@ export const DOG_CONDITION_IDS = Object.freeze([
   "mange",
 ]);
 
+const AVAILABLE_STAGE_CONDITION_FILES = Object.freeze({
+  adult: Object.freeze(new Set(["clean"])),
+  pup: Object.freeze(new Set(["clean"])),
+  senior: Object.freeze(new Set(["clean"])),
+});
+
+const AVAILABLE_STAGE_ANIMATION_FILES = Object.freeze({
+  adult: Object.freeze(new Set()),
+  pup: Object.freeze(
+    new Set([
+      "bark",
+      "beg",
+      "dance",
+      "deep_rem_sleep",
+      "drink",
+      "eat",
+      "fetch",
+      "gate_watch",
+      "highfive",
+      "idle",
+      "idle_resting",
+      "jump",
+      "lay_down",
+      "lethargic_lay",
+      "light_sleep",
+      "paw",
+      "scratch",
+      "shake",
+      "sit",
+      "sleep",
+      "sniff",
+      "turn_walk_left",
+      "turn_walk_right",
+      "wag",
+      "walk",
+      "walk_left",
+      "walk_right",
+    ])
+  ),
+  senior: Object.freeze(new Set()),
+});
+
 const DEFAULT_SPRITE_DIR = "/assets/sprites";
 const DEFAULT_ATLAS_DIR = "/assets/atlas";
 const DOG_SPRITE_REV = "2026-03-30-jrt-puppy-round-3";
@@ -114,7 +156,9 @@ export function getDogStageLabel(stageLike) {
 export function getDogStaticSpriteUrl(_stageLike) {
   // Until the full staged sprite set is regenerated, use the authored puppy
   // idle sheet as the single stable static fallback across the app.
-  return withBaseUrl(`${DEFAULT_SPRITE_DIR}/jr/pup_idle.png?v=${DOG_SPRITE_REV}`);
+  return withBaseUrl(
+    `${DEFAULT_SPRITE_DIR}/jr/pup_idle.png?v=${DOG_SPRITE_REV}`
+  );
 }
 
 /**
@@ -123,8 +167,13 @@ export function getDogStaticSpriteUrl(_stageLike) {
 export function getDogPixiSheetUrl(_stageLike, _conditionLike) {
   const stage = normalizeDogStageShort(_stageLike);
   const condition = normalizeDogConditionId(_conditionLike);
+  const stageConditions = AVAILABLE_STAGE_CONDITION_FILES[stage];
+  const routedCondition =
+    stageConditions?.has(condition) || !stageConditions?.has("clean")
+      ? condition
+      : "clean";
   return withBaseUrl(
-    `${DEFAULT_SPRITE_DIR}/jr/${stage}_${condition}.png?v=${DOG_SPRITE_REV}`
+    `${DEFAULT_SPRITE_DIR}/jr/${stage}_${routedCondition}.png?v=${DOG_SPRITE_REV}`
   );
 }
 
@@ -140,8 +189,13 @@ export function getDogAnimSpriteUrl(_stageLike, _animLike) {
     .replace(/\s+/g, "_")
     .replace(/-+/g, "_");
   const assetAnim = DOG_SPRITE_FILE_ALIASES[anim] || anim;
+  const routedStage = AVAILABLE_STAGE_ANIMATION_FILES[stage]?.has(assetAnim)
+    ? stage
+    : AVAILABLE_STAGE_ANIMATION_FILES.pup.has(assetAnim)
+      ? "pup"
+      : stage;
   return withBaseUrl(
-    `${DEFAULT_SPRITE_DIR}/jr/${stage}_${assetAnim}.png?v=${DOG_SPRITE_REV}`
+    `${DEFAULT_SPRITE_DIR}/jr/${routedStage}_${assetAnim}.png?v=${DOG_SPRITE_REV}`
   );
 }
 

@@ -63,6 +63,16 @@ export const ANIMATED_EVENT_PHASES = Object.freeze({
     { id: "streak", durationMs: 3600 },
     { id: "settle", durationMs: 500 },
   ]),
+  firefly_snap: Object.freeze([
+    { id: "glow", durationMs: 900 },
+    { id: "snap", durationMs: 450 },
+    { id: "settle", durationMs: 400 },
+  ]),
+  midnight_zoomies: Object.freeze([
+    { id: "burst", durationMs: 1800 },
+    { id: "loop", durationMs: 2200 },
+    { id: "settle", durationMs: 600 },
+  ]),
 });
 
 export const ANIMATED_EVENT_DISTANCE_THRESHOLD = Object.freeze({

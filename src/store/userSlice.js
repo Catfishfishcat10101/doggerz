@@ -1,4 +1,4 @@
-// src/redux/userSlice.js
+// src/store/userSlice.js
 
 import { createSlice } from "@reduxjs/toolkit";
 import { removeStoredValue, setStoredValue } from "@/utils/nativeStorage.js";

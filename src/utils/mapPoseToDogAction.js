@@ -1,4 +1,3 @@
-/** @format */
 // src/utils/mapPoseToDogAction.js
 
 import {
@@ -23,10 +22,10 @@ const POSE_ALIASES = Object.freeze({
   alerting: "alert",
   sitpretty: "sit_pretty",
   "sit-pretty": "sit_pretty",
-  rollover: "roll_over",
-  "roll-over": "roll_over",
-  playdead: "play_dead",
-  "play-dead": "play_dead",
+  rollover: "roll",
+  "roll-over": "roll",
+  playdead: "roll",
+  "play-dead": "roll",
 });
 
 const POSE_TO_ACTION = Object.freeze({
@@ -40,19 +39,23 @@ const POSE_TO_ACTION = Object.freeze({
   bow: DOG_ANIMATIONS.beg,
   sit_pretty: DOG_ANIMATIONS.beg,
   roll: DOG_ANIMATIONS.lay_down,
-  roll_over: DOG_ANIMATIONS.lay_down,
-  play_dead: DOG_ANIMATIONS.lay_down,
   speak: DOG_ANIMATIONS.bark,
 });
 
-const MAINTENANCE_ACTIONS = new Set([
+function normalizeActionSet(actions) {
+  return new Set(
+    Array.from(actions).map((value) => normalizeDogActionKey(value))
+  );
+}
+
+const MAINTENANCE_ACTIONS = normalizeActionSet([
   DOG_ANIMATIONS.eat,
   DOG_ANIMATIONS.drink,
   DOG_ANIMATIONS.scratch,
   DOG_ANIMATIONS.sniff,
 ]);
 
-const REST_ACTIONS = new Set([
+const REST_ACTIONS = normalizeActionSet([
   DOG_ANIMATIONS.idle,
   DOG_ANIMATIONS.idle_resting,
   DOG_ANIMATIONS.sleep,
@@ -62,23 +65,19 @@ const REST_ACTIONS = new Set([
   DOG_ANIMATIONS.lethargic_lay,
 ]);
 
-const HIGH_ALERT_ACTIONS = new Set([
+const HIGH_ALERT_ACTIONS = normalizeActionSet([
   DOG_ANIMATIONS.gate_watch,
   DOG_ANIMATIONS.bark,
 ]);
 
-const PATHOLOGICAL_ACTIONS = new Set([DOG_ANIMATIONS.lethargic_lay]);
+const PATHOLOGICAL_ACTIONS = normalizeActionSet([DOG_ANIMATIONS.lethargic_lay]);
 
 export const KNOWN_DOG_ACTIONS = Object.freeze(
   Array.from(
     new Set([
       ...Object.values(DOG_ANIMATIONS),
       ...Object.values(POSE_TO_ACTION),
-      ...MAINTENANCE_ACTIONS,
-      ...REST_ACTIONS,
-      ...HIGH_ALERT_ACTIONS,
-      ...PATHOLOGICAL_ACTIONS,
-    ])
+    ]).values()
   )
 );
 
@@ -106,12 +105,17 @@ export function mapPoseToDogAction(pose, options = {}) {
   const resolvedKey = resolvePoseKey(pose);
   const direct = POSE_TO_ACTION[resolvedKey];
   const action = direct || resolveDogAnimation(resolvedKey);
+  const normalizedAction = normalizeDogActionKey(action);
+  const availableSet =
+    availableActions instanceof Set
+      ? new Set(Array.from(availableActions).map(normalizeDogActionKey))
+      : new Set((availableActions || []).map(normalizeDogActionKey));
 
-  if (strict && !direct) {
+  if (strict && !direct && !isKnownDogAnimation(resolvedKey)) {
     return fallback;
   }
 
-  if (!availableActions.includes(action)) {
+  if (!availableSet.has(normalizedAction)) {
     if (allowUnknown && isKnownDogAnimation(resolvedKey)) {
       return action || fallback;
     }

@@ -1,4 +1,4 @@
-// src/logic/ExperienceAndLeveling.js
+// src/features/dog/ExperienceAndLeveling.js
 function clamp(value, min, max) {
   const n = Number(value);
   if (!Number.isFinite(n)) return min;

@@ -1,54 +1,56 @@
-import groovy.json.JsonSlurper
+
 import java.io.FileInputStream
 import java.util.Properties
+import groovy.json.JsonSlurper
 
-apply plugin: 'com.android.application'
-
-// --- VERSIONING LOGIC ---
-def versionFile = file("../../version.json")
-def versionData = null
-if (versionFile.exists()) {
-    versionData = new JsonSlurper().parseText(versionFile.text)
-}
-def versionNameFallback = (versionData?.versionName ?: "2.1.2").toString()
-def versionCodeFallback = (versionData?.versionCode ?: 212).toString()
-
-def versionCodeRaw = System.getenv('DOGGERZ_VERSION_CODE') ?: project.findProperty('DOGGERZ_VERSION_CODE') ?: versionCodeFallback
-def versionNameRaw = System.getenv('DOGGERZ_VERSION_NAME') ?: project.findProperty('DOGGERZ_VERSION_NAME') ?: versionNameFallback
-
-def parsedVersionCode = (versionCodeRaw ?: "212").toString().trim().toInteger()
-
-// Solo-dev safety: Only throw error if we aren't in a local dev environment
-if (parsedVersionCode <= 2 && System.getenv('CI')) {
-    throw new GradleException("DOGGERZ_VERSION_CODE must be a positive integer for Release. Got: ${parsedVersionCode}")
+plugins {
+    id 'com.android.application'
 }
 
-// --- KEYSTORE LOGIC ---
-def keystoreProperties = new Properties()
-def keystorePropertiesFile = rootProject.file('keystore.properties')
-if (keystorePropertiesFile.exists()) {
-    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+def versionFile = rootProject.file("../version.json")
+if (!versionFile.exists()) {
+    throw new GradleException("Missing version.json at ${versionFile.absolutePath}")
 }
+
+def versionJson = new JsonSlurper().parse(versionFile)
+def versionNameRaw = versionJson?.versionName?.toString()?.trim()
+def versionCodeRaw = versionJson?.versionCode
+
+if (!(versionNameRaw ==~ /\d+\.\d+\.\d+/)) {
+    throw new GradleException("Invalid versionName in version.json: ${versionNameRaw}")
+}
+
+if (!(versionCodeRaw instanceof Number) || versionCodeRaw.intValue() < 1) {
+    throw new GradleException("Invalid versionCode in version.json: ${versionCodeRaw}")
+}
+
+def parsedVersionCode = versionCodeRaw.intValue()
+def parsedVersionName = versionNameRaw
 
 android {
-    namespace = 'com.doggerz.app'
-    compileSdk = rootProject.ext.compileSdkVersion
+    namespace "com.doggerz.app"
+    compileSdk rootProject.ext.compileSdkVersion
 
     defaultConfig {
-        applicationId 'com.doggerz.app'
-        minSdkVersion 24
+        applicationId "com.doggerz.app"
+        minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode parsedVersionCode
-        versionName versionNameRaw
-        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
-        aaptOptions {
-            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        versionName parsedVersionName
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        vectorDrawables {
+            useSupportLibrary true
         }
     }
 
     signingConfigs {
         release {
-            if (keystorePropertiesFile.exists() && keystoreProperties['storeFile']) {
+            def keystorePropertiesFile = rootProject.file("keystore.properties")
+            if (keystorePropertiesFile.exists()) {
+                def keystoreProperties = new Properties()
+                keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+
                 storeFile rootProject.file(keystoreProperties['storeFile'])
                 storePassword keystoreProperties['storePassword']
                 keyAlias keystoreProperties['keyAlias']
@@ -58,51 +60,74 @@ android {
     }
 
     buildTypes {
+        debug {
+            minifyEnabled false
+            shrinkResources false
+        }
         release {
             minifyEnabled false
+            shrinkResources false
+            signingConfig signingConfigs.release
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            if (keystorePropertiesFile.exists() && keystoreProperties['storeFile']) {
-                signingConfig signingConfigs.release
-            }
+        }
+    }
+
+    buildFeatures {
+        buildConfig true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
+    }
+
+    packagingOptions {
+        resources {
+            excludes += [
+                    'META-INF/DEPENDENCIES',
+                    'META-INF/LICENSE',
+                    'META-INF/LICENSE.txt',
+                    'META-INF/NOTICE',
+                    'META-INF/NOTICE.txt',
+                    'META-INF/AL2.0',
+                    'META-INF/LGPL2.1'
+            ]
         }
     }
 }
 
 repositories {
     flatDir {
-        // DEFENSIVE: Only look for the directory if it actually exists
-        if (file('../capacitor-cordova-android-plugins/src/main/libs').exists()) {
-            dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
-        } else {
-            dirs 'libs'
-        }
+        dirs '../capacitor-cordova-android-plugins/libs', 'libs'
     }
 }
 
 dependencies {
-    implementation fileTree(include: ['*.jar'], dir: 'libs')
-    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
-    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
-    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation project(':capacitor-android')
+    implementation project(':capacitor-cordova-android-plugins')
+    implementation project(':capacitor-app')
+    implementation project(':capacitor-filesystem')
+    implementation project(':capacitor-geolocation')
+    implementation project(':capacitor-haptics')
+    implementation project(':capacitor-keyboard')
+    implementation project(':capacitor-local-notifications')
+    implementation project(':capacitor-preferences')
+    implementation project(':capacitor-push-notifications')
+    implementation project(':capacitor-share')
+    implementation project(':capacitor-splash-screen')
+    implementation project(':capacitor-status-bar')
+    implementation project(':capacitor-community-admob')
+    implementation project(':revenuecat-purchases-capacitor')
 
-    testImplementation "junit:junit:$junitVersion"
-    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
-    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
-
-    // DEFENSIVE: Only implement the project if the directory exists
-    if (findProject(':capacitor-cordova-android-plugins') != null) {
-        implementation project(':capacitor-cordova-android-plugins')
-    }
+    implementation "androidx.core:core-ktx:1.13.1"
+    implementation "androidx.appcompat:appcompat:1.7.0"
+    implementation "com.google.android.material:material:1.12.0"
 }
 
 apply from: 'capacitor.build.gradle'
 
-try {
-    def servicesJSON = file('google-services.json')
-    if (servicesJSON.exists()) {
-        apply plugin: 'com.google.gms.google-services'
-    }
-} catch (Exception e) {
-    logger.info("Firebase not initialized: google-services.json missing.")
+def googleServicesFile = file('google-services.json')
+if (googleServicesFile.exists()) {
+    apply plugin: 'com.google.gms.google-services'
 }

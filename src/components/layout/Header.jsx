@@ -1,3 +1,4 @@
+// src/components/layout/Header.jsx
 import * as React from "react";
 import {
   Link,
@@ -20,6 +21,7 @@ const HIDE_ON_PATHS = new Set([
   PATHS.ADOPT,
   PATHS.LOGIN,
   PATHS.SIGNUP,
+  PATHS.GAME,
 ]);
 
 function AppBarIcon({ kind = "menu" }) {

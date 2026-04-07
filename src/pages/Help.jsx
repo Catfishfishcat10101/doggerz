@@ -531,11 +531,12 @@ export default function HelpPage() {
                     </div>
                     <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
                       <div className="text-sm font-extrabold text-amber-200">
-                        2. Expect button heists
+                        2. Expect terrier chaos
                       </div>
                       <p className="mt-2 text-sm text-zinc-300">
-                        Jack Russells are chaos engines. If a control gets
-                        hijacked, resolve the event and win it back.
+                        Jack Russells are chaos engines. Expect messy moods,
+                        surprise bursts of energy, and a dog that does not
+                        always cooperate on command.
                       </p>
                     </div>
                     <div className="rounded-2xl border border-white/10 bg-black/20 p-4">

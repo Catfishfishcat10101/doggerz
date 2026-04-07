@@ -1,4 +1,4 @@
-// src/logic/cleanlinessEffects.js
+// src/features/dog/cleanlinessEffects.js
 
 export const CLEANLINESS_TIER_EFFECTS = Object.freeze({
   FRESH: {

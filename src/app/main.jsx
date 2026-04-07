@@ -30,6 +30,8 @@ import {
 import { PupProvider } from "@/components/dog/context/PupContext.jsx";
 import { ModalProvider } from "@/components/ui/modals/ModalProvider.jsx";
 import { initializeDoggerz } from "./bootstrap/doggerzController.js";
+import { initRemoteConfig } from "@/lib/firebase/remoteConfig.js";
+import { trackAppOpen } from "@/lib/analytics/gameAnalytics.js";
 
 function renderFatalBootError(error) {
   if (typeof document === "undefined") return;
@@ -125,7 +127,7 @@ try {
     import.meta.env.DEV ||
     String(import.meta.env.VITE_ENABLE_RUNTIME_LOGGING || "false") === "true"
   ) {
-    initRuntimeLogging({ mode: import.meta.env.PROD ? "prod" : "dev" });
+    initRuntimeLogging();
   }
 } catch (error) {
   renderFatalBootError(error);
@@ -133,6 +135,17 @@ try {
 }
 
 if (typeof window !== "undefined") {
+  initRemoteConfig().catch(() => {});
+
+  trackAppOpen({
+    platform:
+      typeof navigator !== "undefined"
+        ? String(
+            navigator.userAgentData?.platform || navigator.platform || "web"
+          )
+        : "web",
+  });
+
   window.__DOGGERZ_DEBUG__ = {
     ...(window.__DOGGERZ_DEBUG__ || {}),
     enabled: isDebugLoggingEnabled(),

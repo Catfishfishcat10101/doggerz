@@ -96,3 +96,12 @@ export function summarizeDogState(state) {
     },
   };
 }
+
+export default {
+  isDebugLoggingEnabled,
+  setDebugLoggingEnabled,
+  debugLog,
+  debugWarn,
+  debugError,
+  summarizeDogState,
+};

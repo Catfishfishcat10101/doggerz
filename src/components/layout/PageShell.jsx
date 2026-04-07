@@ -1,4 +1,4 @@
-// src/components/PageShell.jsx
+// src/components/layout/PageShell.jsx
 
 import * as React from "react";
 import { useLocation } from "react-router-dom";
