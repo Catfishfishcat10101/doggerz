@@ -2,19 +2,24 @@
 import { onAuthStateChanged } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { Capacitor } from "@capacitor/core";
-import {
-  Suspense,
-  lazy,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector, useStore } from "react-redux";
+import {
+  BottomMenuDock,
+  InteractionSheet,
+  PottyTrainingCard,
+  RunawayLetterPanel,
+  StatBarCard,
+  TemperamentRevealCard,
+  TrainingLogOverlay,
+  TricksOverlay,
+} from "@/components/game/MainGamePanels.jsx";
 import DogToy from "@/components/dog/components/DogToy.jsx";
-import EnvironmentScene from "@/components/game/EnvironmentScene.jsx";
-import YardBackdrop from "@/components/game/YardBackdrop.jsx";
+import GameTopBar from "@/components/layout/GameTopBar.jsx";
+import DogStage from "@/features/game/DogStage.jsx";
+import MoodBadge from "@/components/game/MoodBadge.jsx";
+import MemoryMomentToast from "@/components/game/MemoryMomentToast.jsx";
+import ShareMomentCard from "@/components/game/ShareMomentCard.jsx";
 import {
   createAnimatedEventRoute,
   getAnimatedEventMeta,
@@ -22,16 +27,9 @@ import {
   shouldResolveEventByDistance,
   stepAnimatedEventRoute,
 } from "@/components/game/animatedEvents.js";
-import Tooltip from "@/components/ui/Tooltip.jsx";
 import { useToast } from "@/state/toastContext.js";
 import { selectSettings } from "@/store/settingsSlice.js";
-import useCountdown from "@/hooks/useCountdown.js";
-import {
-  selectCloudSyncState,
-  selectIsLoggedIn,
-  selectUserIsFounder,
-  selectUser,
-} from "@/store/userSlice.js";
+import { selectCloudSyncState, selectIsLoggedIn } from "@/store/userSlice.js";
 import {
   bathe,
   beginRunawayStrike,
@@ -44,12 +42,10 @@ import {
   ackTemperamentReveal,
   petDog,
   rewardSocialShare,
-  resolveSessionSurprise,
   resolveRunawayStrike,
   play,
   rest,
   simulationTick,
-  triggerButtonHeist,
   trainObedience,
   tryConsumeFoodBowl,
 } from "@/store/dogSlice.js";
@@ -69,7 +65,7 @@ import { getObedienceSkillMasteryPct } from "@/features/training/jrtTrainingCont
 import { createSwipeGestureRecognizer } from "@/utils/SwipeGestureRecognizer.js";
 import { createDragAndDropManager } from "@/features/inventory/DragAndDropManager.js";
 import { createVoiceCommandHandler } from "@/features/training/VoiceCommandHandler.js";
-import { useDogGameView } from "@/hooks/useDogState.js";
+import { useDogGameView, useDogIdentity } from "@/hooks/useDogState.js";
 import {
   startDogSimulation,
   stopDogSimulation,
@@ -81,14 +77,34 @@ import {
 import { getDogEnvironmentTargets } from "@/components/dog/DogEnvironmentTargets.js";
 import { withBaseUrl } from "@/utils/assetUtils.js";
 import { resolveBackdropLayers } from "@/utils/backgroundLayers.js";
+import { getMoodPresentation } from "@/features/dog/mood/getMoodPresentation.js";
+import {
+  buildDoghouseSleepMomentKey,
+  createMemoryMomentEvent,
+  MEMORY_MOMENT_TYPES,
+} from "@/features/dog/memory/memoryEvents.js";
+import { formatMemoryMoment } from "@/features/dog/memory/memoryFormatter.js";
+import { getLevelProgress } from "@/features/dog/ExperienceAndLeveling.js";
+import {
+  trackFeedDog,
+  trackGiveWater,
+  trackLevelUp,
+  trackPlayWithDog,
+  trackTrainTrick,
+} from "@/lib/analytics/gameAnalytics.js";
+import { getRetentionCadenceModel } from "@/features/dog/cadence/retentionCadence.js";
+import {
+  getDefaultGameExperimentConfig,
+  resolveGameExperimentConfig,
+} from "@/features/experiments/gameExperimentConfig.js";
+import {
+  buildGenericPupShareCard,
+  buildShareMomentCard,
+  isShareableMemoryMoment,
+  shareDoggerzMoment,
+} from "@/features/social/shareMomentCards.js";
 
-const DogPixiView = lazy(
-  () => import("@/components/dog/renderers/DogPixiView.jsx")
-);
 const SHARE_REWARD_COOLDOWN_MS = 12 * 60 * 60 * 1000;
-const DEFAULT_OWNER_AVATAR =
-  "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='bg' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23334155'/%3E%3Cstop offset='100%25' stop-color='%231e293b'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='32' fill='url(%23bg)'/%3E%3Ccircle cx='32' cy='25' r='12' fill='%2394a3b8'/%3E%3Cpath d='M16 53c3-10 12-16 16-16s13 6 16 16' fill='%2394a3b8'/%3E%3C/svg%3E";
-
 const BOTTOM_MENU_TABS = Object.freeze([
   { id: "interact", label: "Interact", icon: "✨" },
   { id: "train", label: "Train", icon: "🎯" },
@@ -169,7 +185,6 @@ const TREASURE_HUNT_TRIGGER_CHANCE_CEILING = 0.32;
 const TREASURE_HUNT_RESPONSE_MS = 10_000;
 const TREASURE_HUNT_DIG_REVEAL_MS = 1800;
 const TREASURE_REWARDS = Object.freeze([
-  { id: "rusty_key", name: "Rusty Key", icon: "🔑", weight: 0.1 },
   { id: "old_bone", name: "Fossilized Bone", icon: "🦴", weight: 0.4 },
   { id: "tennis_ball", name: "Muddy Tennis Ball", icon: "🎾", weight: 0.5 },
 ]);
@@ -184,6 +199,17 @@ const DOGHOUSE_SLEEP_X_NORM = 0.78;
 const DOGHOUSE_SLEEP_Y_NORM = 0.65;
 const YARD_TAP_MIN_Y_NORM = 0.68;
 const YARD_TAP_MAX_Y_NORM = 0.92;
+const AUTO_WANDER_MIN_INTERVAL_MS = 20_000;
+const AUTO_WANDER_INTERVAL_JITTER_MS = 16_000;
+const AUTO_WANDER_STEP_MIN_PX = 42;
+const AUTO_WANDER_STEP_MAX_PX = 110;
+const AUTO_WANDER_Y_DRIFT_PX = 22;
+const AUTO_WANDER_X_MARGIN = 90;
+const AUTO_WANDER_Y_MIN = 280;
+const AUTO_WANDER_Y_MAX = DOG_WORLD_HEIGHT - 40;
+const AUTO_WANDER_ATTENTIVE_MS = 1500;
+const AUTO_WANDER_WALK_WINDOW_MS = 8000;
+const SIMULATION_OWNS_AMBIENT_WANDER = true;
 
 function formatDogAgePill(ageDays) {
   const totalDays = Math.max(0, Math.floor(Number(ageDays || 0)));
@@ -211,14 +237,6 @@ function formatDogAgePill(ageDays) {
   return `${years}y ${weeks}w`;
 }
 
-function formatDogAgeTooltip(ageDays) {
-  const totalDays = Math.max(0, Math.floor(Number(ageDays || 0)));
-  if (totalDays < 365) {
-    return "Age since adoption, shown as weeks and days for puppies.";
-  }
-  return "Age since adoption, shown as years and weeks once your pup turns one.";
-}
-
 function formatStageCountdown(daysUntilNextStage, nextStageLabel) {
   if (!nextStageLabel || !Number.isFinite(Number(daysUntilNextStage))) {
     return "Current life stage";
@@ -232,6 +250,29 @@ function formatStageCountdown(daysUntilNextStage, nextStageLabel) {
   const weeks = Math.max(1, Math.floor(days / 7));
   return `${weeks}w until ${nextStageLabel}`;
 }
+
+function getIdentityFlavorToneClass(tone) {
+  const key = String(tone || "calm")
+    .trim()
+    .toLowerCase();
+  if (key === "bright") return "border-sky-300/35 bg-sky-400/10 text-sky-50";
+  if (key === "warm")
+    return "border-amber-300/35 bg-amber-400/10 text-amber-50";
+  if (key === "steady") return "border-cyan-300/35 bg-cyan-300/10 text-cyan-50";
+  return "border-emerald-300/30 bg-emerald-400/10 text-emerald-50";
+}
+
+function getCadenceToneClass(tone) {
+  const key = String(tone || "emerald")
+    .trim()
+    .toLowerCase();
+  if (key === "amber")
+    return "border-amber-300/35 bg-amber-400/10 text-amber-50";
+  if (key === "sky") return "border-sky-300/35 bg-sky-400/10 text-sky-50";
+  if (key === "rose") return "border-rose-300/35 bg-rose-400/10 text-rose-50";
+  return "border-emerald-300/30 bg-emerald-400/10 text-emerald-50";
+}
+
 const SLEEP_SPOT_RETARGET_COOLDOWN_MS = 1400;
 
 function rollTreasureReward() {
@@ -279,8 +320,9 @@ function formatCloudSyncLabel(cloudSync, isLoggedIn, now = Date.now()) {
   if (!isLoggedIn) {
     return {
       tone: "muted",
-      label: "Local only",
-      detail: "Cloud sync off",
+      label: "Local save",
+      detail: "Saved on this device",
+      reassurance: "Progress is being stored locally on this device.",
     };
   }
 
@@ -289,15 +331,17 @@ function formatCloudSyncLabel(cloudSync, isLoggedIn, now = Date.now()) {
   if (status === "syncing") {
     return {
       tone: "pending",
-      label: "Cloud saving",
-      detail: "Sync in progress",
+      label: "Saving",
+      detail: "Syncing to cloud",
+      reassurance: "Changes are queued and will finish syncing automatically.",
     };
   }
   if (status === "error") {
     return {
-      tone: "error",
-      label: "Cloud issue",
-      detail: String(cloudSync?.errorMessage || "Save failed"),
+      tone: "warning",
+      label: "Cloud retry",
+      detail: "Using local save",
+      reassurance: "Your local progress is safe. Cloud backup will retry.",
     };
   }
   if (lastSuccessAt > 0) {
@@ -310,14 +354,18 @@ function formatCloudSyncLabel(cloudSync, isLoggedIn, now = Date.now()) {
           : `${Math.round(ageSeconds / 3600)}h ago`;
     return {
       tone: "ok",
-      label: "Cloud saved",
-      detail,
+      label: "Cloud backed up",
+      detail:
+        detail === "Just now" ? "Backed up just now" : `Backed up ${detail}`,
+      reassurance: "Local and cloud copies are both active.",
     };
   }
   return {
     tone: "pending",
-    label: "Cloud ready",
-    detail: "Waiting for first sync",
+    label: "Cloud linked",
+    detail: "First backup pending",
+    reassurance:
+      "Local progress is safe while the first cloud backup completes.",
   };
 }
 
@@ -360,23 +408,27 @@ function clampYardTapYNorm(value) {
   return clamp(Number(value || 0.74), YARD_TAP_MIN_Y_NORM, YARD_TAP_MAX_Y_NORM);
 }
 
-function getTimeOfDayLighting(now = Date.now()) {
-  const date = new Date(now);
-  const hourFloat =
-    Number(date.getHours() || 0) + Number(date.getMinutes() || 0) / 60;
-  const daylight = clamp(
-    Math.sin(((hourFloat - 6) / 12) * Math.PI),
-    0,
-    1
-  );
-  const dawnGlow = clamp(1 - Math.abs(hourFloat - 6.5) / 2.5, 0, 1);
-  const duskGlow = clamp(1 - Math.abs(hourFloat - 18.5) / 2.5, 0, 1);
-  const warmth = Math.max(dawnGlow, duskGlow);
+function createGentleWanderTarget(
+  origin = { x: DOG_WORLD_WIDTH * 0.5, y: 370 }
+) {
+  const baseX = Number.isFinite(Number(origin?.x))
+    ? Number(origin.x)
+    : DOG_WORLD_WIDTH * 0.5;
+  const baseY = Number.isFinite(Number(origin?.y)) ? Number(origin.y) : 370;
+  const distance =
+    AUTO_WANDER_STEP_MIN_PX +
+    Math.random() * (AUTO_WANDER_STEP_MAX_PX - AUTO_WANDER_STEP_MIN_PX);
+  const direction = Math.random() < 0.5 ? -1 : 1;
+  const driftY =
+    Math.random() * AUTO_WANDER_Y_DRIFT_PX * 2 - AUTO_WANDER_Y_DRIFT_PX;
 
   return {
-    daylight,
-    warmth,
-    nightDepth: clamp(1 - daylight * 0.9, 0.08, 1),
+    x: clamp(
+      baseX + direction * distance,
+      AUTO_WANDER_X_MARGIN,
+      DOG_WORLD_WIDTH - AUTO_WANDER_X_MARGIN
+    ),
+    y: clamp(baseY + driftY, AUTO_WANDER_Y_MIN, AUTO_WANDER_Y_MAX),
   };
 }
 
@@ -430,7 +482,26 @@ function getMasteryRankMeta(masteryPct = 0) {
   };
 }
 
-function PawPrintSvg({ className = "" }) {
+function formatTreasureName(rewardId, fallback = "Hidden treasure") {
+  const match = TREASURE_REWARDS.find(
+    (item) =>
+      String(item?.id || "")
+        .trim()
+        .toLowerCase() ===
+      String(rewardId || "")
+        .trim()
+        .toLowerCase()
+  );
+  if (match?.name) return String(match.name);
+  const raw = String(rewardId || "").trim();
+  if (!raw) return fallback;
+  return raw
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function _PawPrintSvg({ className = "" }) {
   return (
     <svg
       viewBox="0 0 64 64"
@@ -455,11 +526,10 @@ export default function MainGame({ scene, dogInteractive = true }) {
   const navigate = useNavigate();
   const toast = useToast();
   const { dog, life, renderModel, vitals } = useDogGameView();
+  const identity = useDogIdentity();
   const settings = useSelector(selectSettings);
-  const user = useSelector(selectUser);
   const cloudSync = useSelector(selectCloudSyncState);
   const isLoggedIn = useSelector(selectIsLoggedIn);
-  const isFounder = useSelector(selectUserIsFounder);
   const weatherCondition = useSelector(selectWeatherCondition);
   const weatherDetails = useSelector(selectWeatherDetails);
   const lastToySqueakAtRef = useRef(0);
@@ -476,6 +546,9 @@ export default function MainGame({ scene, dogInteractive = true }) {
   const propGateRef = useRef({});
   const lowEnergyAutoSleepAtRef = useRef(0);
   const sleepWalkRetargetAtRef = useRef(0);
+  const nextAutoWanderAtRef = useRef(0);
+  const pendingAutoWanderTargetRef = useRef(null);
+  const autoWanderLookTimeoutRef = useRef(0);
   const dogViewportRef = useRef(null);
   const swipeRecognizerRef = useRef(null);
   const dragDropManagerRef = useRef(null);
@@ -487,6 +560,15 @@ export default function MainGame({ scene, dogInteractive = true }) {
   const trickAnimationTokenRef = useRef(0);
   const statFeedbackTimeoutsRef = useRef({});
   const previousVitalSnapshotRef = useRef({ energy: null, health: null });
+  const trackedLevelRef = useRef(null);
+  const memoryMomentLevelRef = useRef(null);
+  const memoryMomentShownAtRef = useRef(new Map());
+  const memoryMomentQueueRef = useRef([]);
+  const memoryMomentDismissRef = useRef(0);
+  const lastMidnightZoomiesMomentRef = useRef(0);
+  const lastTreasureMomentRef = useRef(0);
+  const lastMasteredMomentRef = useRef("");
+  const doghouseSleepActiveRef = useRef(false);
   const [, setAttentionTarget] = useState(null);
   const [interactionOpen, setInteractionOpen] = useState(false);
   const [placingBowl, setPlacingBowl] = useState(false);
@@ -521,22 +603,45 @@ export default function MainGame({ scene, dogInteractive = true }) {
   const [voiceSupported, setVoiceSupported] = useState(false);
   const [sleepLocation, setSleepLocation] = useState(null);
   const [pendingSleepWalk, setPendingSleepWalk] = useState(null);
-  const [bottomMenuCategory, setBottomMenuCategory] = useState("interact");
+  const [bottomMenuCategory, setBottomMenuCategory] = useState("");
   const [tricksOpen, setTricksOpen] = useState(false);
   const [trainingLogOpen, setTrainingLogOpen] = useState(false);
   const [masteryCelebration, setMasteryCelebration] = useState(null);
+  const [memoryMoment, setMemoryMoment] = useState(null);
+  const [shareMomentCard, setShareMomentCard] = useState(null);
   const [activeActionFeedbackKey, setActiveActionFeedbackKey] = useState("");
   const [poppedStats, setPoppedStats] = useState({
     energy: false,
     health: false,
   });
+  const [gameExperimentConfig, setGameExperimentConfig] = useState(() =>
+    getDefaultGameExperimentConfig()
+  );
   const wasSleepingRef = useRef(false);
   const masteryCelebrationTimeoutRef = useRef(0);
   const [butterflyNoticeAt, setButterflyNoticeAt] = useState(0);
 
-  const seasonMode = settings?.seasonMode || "auto";
+  const _seasonMode = settings?.seasonMode || "auto";
   const reduceMotion = settings?.reduceMotion === "on";
-  const reduceTransparency = settings?.reduceTransparency === true;
+  const _reduceTransparency = settings?.reduceTransparency === true;
+
+  useEffect(() => {
+    let active = true;
+    resolveGameExperimentConfig()
+      .then((nextConfig) => {
+        if (!active || !nextConfig) return;
+        setGameExperimentConfig(nextConfig);
+      })
+      .catch(() => {
+        if (!active) return;
+        setGameExperimentConfig(getDefaultGameExperimentConfig());
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const cleanlinessTier = String(dog?.cleanlinessTier || "").toUpperCase();
   const pawPrintsEnabled = ["DIRTY", "FLEAS", "MANGE"].includes(
     cleanlinessTier
@@ -548,7 +653,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
     .trim()
     .toLowerCase();
   const isApartmentEnvironment = environmentMode === "apartment";
-  const environmentTargets = useMemo(
+  const _environmentTargets = useMemo(
     () => getDogEnvironmentTargets(dog || {}),
     [dog]
   );
@@ -572,12 +677,12 @@ export default function MainGame({ scene, dogInteractive = true }) {
   const isRainScene =
     !isApartmentEnvironment &&
     (weatherKey.includes("rain") || weatherKey.includes("storm"));
-  const isSnowScene =
+  const _isSnowScene =
     !isApartmentEnvironment &&
     (weatherKey.includes("snow") || weatherKey.includes("sleet"));
   const isSummerNight =
     !isApartmentEnvironment && isNightScene && isSummerMonth(liveNow);
-  const backdropLayers = useMemo(
+  const _backdropLayers = useMemo(
     () =>
       resolveBackdropLayers({
         backdropId: equippedBackdropId,
@@ -597,14 +702,14 @@ export default function MainGame({ scene, dogInteractive = true }) {
   const sceneAnim = activeAnim;
   const effectiveAnim = uiAnimOverride || ambientAnimOverride || sceneAnim;
   const effectiveDogSleeping = Boolean(renderModel?.isSleeping);
-  const nightOwlActive = visualNight && !effectiveDogSleeping;
+  const _nightOwlActive = visualNight && !effectiveDogSleeping;
   const currentEnergy = Number(dog?.stats?.energy || 0);
   const lowEnergySleep = currentEnergy <= LOW_ENERGY_SLEEP_THRESHOLD;
   const sleepyWarningFloor =
     LOW_ENERGY_AUTO_SLEEP_TRIGGER + LOW_ENERGY_WARNING_MIN_OFFSET;
   const sleepyWarningCeil =
     LOW_ENERGY_AUTO_SLEEP_TRIGGER + LOW_ENERGY_WARNING_MAX_OFFSET;
-  const showGettingSleepyWarning =
+  const _showGettingSleepyWarning =
     !effectiveDogSleeping &&
     currentEnergy >= sleepyWarningFloor &&
     currentEnergy <= sleepyWarningCeil;
@@ -613,16 +718,22 @@ export default function MainGame({ scene, dogInteractive = true }) {
       ? sleepLocation?.mode || (lowEnergySleep ? "doghouse" : null)
       : null;
   const sleepInDogHouse = sleepLocationMode === "doghouse";
-  const sleepInYard = sleepLocationMode === "yard";
+  const _sleepInYard = sleepLocationMode === "yard";
   const sleepPositionOverride =
     effectiveDogSleeping && sleepLocation?.position
       ? sleepLocation.position
       : null;
-  const dogRenderPosition = sleepPositionOverride || dog?.position || null;
+  const aiStateKey = String(dog?.aiState || "")
+    .trim()
+    .toLowerCase();
+  const isDogMoving = Boolean(
+    dog?.targetPosition || dog?.moving === true || aiStateKey === "walk"
+  );
+  const _dogRenderPosition = sleepPositionOverride || dog?.position || null;
   const animationSpeedMultiplier = Number(
     renderModel?.animationSpeedMultiplier || 1
   );
-  const effectiveAnimationSpeedMultiplier = Math.max(
+  const _effectiveAnimationSpeedMultiplier = Math.max(
     0.2,
     Math.min(
       2.8,
@@ -633,7 +744,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
     )
   );
   const toysIgnored = Boolean(renderModel?.ignoreToys);
-  const holes = Array.isArray(dog?.yard?.holes) ? dog.yard.holes : [];
+  const _holes = Array.isArray(dog?.yard?.holes) ? dog.yard.holes : [];
   const foodBowl = dog?.yard?.foodBowl || null;
   const premiumKibbleCount = Math.max(
     0,
@@ -648,9 +759,88 @@ export default function MainGame({ scene, dogInteractive = true }) {
   );
   const ageDays = Math.max(0, Math.floor(Number(life?.ageDays || 0)));
   const agePillValue = formatDogAgePill(ageDays);
-  const agePillTooltip = formatDogAgeTooltip(ageDays);
   const ageBucketLabel = String(life?.ageBucketLabel || "New pup");
-  const dogBaseScale = 0.4 + clamp(ageDays / 365, 0, 1) * 0.4;
+  const dailyFlavor = identity?.dailyFlavor || null;
+  const favoriteSummary = identity?.favoriteSummary || null;
+  const identityDogName =
+    String(identity?.name || dog?.name || "Your pup").trim() || "Your pup";
+  const dailyFlavorTitle = String(
+    dailyFlavor?.title || "Today your dog is settling into the day."
+  );
+  const dailyFlavorBody = String(
+    dailyFlavor?.body ||
+      "A steady routine and a little attention will go a long way."
+  );
+  const identityFlavorToneClass = getIdentityFlavorToneClass(dailyFlavor?.tone);
+  const favoriteReadouts = useMemo(
+    () =>
+      [
+        favoriteSummary?.favoriteToyLabel
+          ? { id: "toy", label: "Toy", value: favoriteSummary.favoriteToyLabel }
+          : null,
+        favoriteSummary?.favoriteFoodLabel
+          ? {
+              id: "food",
+              label: "Food",
+              value: favoriteSummary.favoriteFoodLabel,
+            }
+          : null,
+        favoriteSummary?.favoriteNapSpotLabel
+          ? {
+              id: "nap",
+              label: "Nap Spot",
+              value: favoriteSummary.favoriteNapSpotLabel,
+            }
+          : null,
+      ].filter(Boolean),
+    [
+      favoriteSummary?.favoriteFoodLabel,
+      favoriteSummary?.favoriteNapSpotLabel,
+      favoriteSummary?.favoriteToyLabel,
+    ]
+  );
+  const cadenceModel = useMemo(
+    () =>
+      getRetentionCadenceModel({
+        dog,
+        now: liveNow,
+        isNight: visualNight,
+        environment: environmentMode,
+      }),
+    [dog, environmentMode, liveNow, visualNight]
+  );
+  const cadenceToneClass = getCadenceToneClass(cadenceModel?.microMoment?.tone);
+  const cadenceSurpriseDetail = cadenceModel?.surprise?.ready
+    ? `${cadenceModel?.surprise?.hint || cadenceModel?.surprise?.label || "A small surprise may appear later."}`
+    : `${Math.max(0, Number(cadenceModel?.surprise?.readinessPct || 0))}% warmed`;
+  const gameUiLayoutVariant = String(
+    gameExperimentConfig?.uiLayoutVariant || "default"
+  )
+    .trim()
+    .toLowerCase();
+  const compactHudLayout = gameUiLayoutVariant === "compact_hud";
+  const expandedYardLayout = gameUiLayoutVariant === "expanded_yard";
+  const experimentalDogScaleBias = clamp(
+    Number(gameExperimentConfig?.dogScaleBias || 0.95),
+    0.82,
+    1.12
+  );
+  const idleAnimationIntensity = String(
+    gameExperimentConfig?.idleAnimationIntensity || "calm"
+  )
+    .trim()
+    .toLowerCase();
+  const statsStackClassName = compactHudLayout
+    ? "order-3 space-y-3"
+    : "order-3 space-y-4";
+  const yardRegionClassName = `order-1 relative -mx-3 sm:-mx-6 w-full overflow-hidden ${
+    expandedYardLayout
+      ? "h-[62vh] min-h-[438px] max-h-[760px]"
+      : compactHudLayout
+        ? "h-[60vh] min-h-[428px] max-h-[740px]"
+        : "h-[58vh] min-h-[420px] max-h-[720px]"
+  }`;
+  const _dogBaseScale = 0.4 + clamp(ageDays / 365, 0, 1) * 0.4;
   const stageHeadline = String(life?.headline || "Tiny chaos era");
   const stageSummary = String(life?.summary || "Routine matters.");
   const stageDetail = String(life?.detail || "");
@@ -718,7 +908,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
     life?.stage,
     renderStageForSprites,
   ]);
-  const syncedSpriteAnim = activeHudAnimationId || curatedSpriteAnim;
+  const _syncedSpriteAnim = activeHudAnimationId || curatedSpriteAnim;
   const lifecycleTone = String(life?.tone || "fresh").toLowerCase();
   const lifecycleCardToneClass =
     lifecycleTone === "warm"
@@ -726,13 +916,36 @@ export default function MainGame({ scene, dogInteractive = true }) {
       : lifecycleTone === "steady"
         ? "border-sky-300/35 bg-sky-400/10 text-sky-50"
         : "border-emerald-300/35 bg-emerald-400/10 text-emerald-50";
-  const moodLabel = toTitle(vitals?.moodLabel || "ok");
-  const displayMoodLabel = ambientEvent?.type === "owl" ? "Curious" : moodLabel;
   const bondPct = toPct(vitals?.bondValue);
   const hungerPct = toPct(vitals?.hunger);
   const thirstPct = toPct(dog?.stats?.thirst);
   const energyPct = toPct(vitals?.energy);
   const cleanlinessPct = toPct(dog?.stats?.cleanliness);
+  const moodPresentation = useMemo(
+    () =>
+      getMoodPresentation({
+        moodLabel: vitals?.moodLabel,
+        hungerPct,
+        thirstPct,
+        energyPct,
+        cleanlinessPct,
+        happinessPct: toPct(vitals?.happiness),
+        ambientType: ambientEvent?.type || "",
+      }),
+    [
+      ambientEvent?.type,
+      cleanlinessPct,
+      energyPct,
+      hungerPct,
+      thirstPct,
+      vitals?.moodLabel,
+    ]
+  );
+  const displayMoodLabel =
+    moodPresentation?.label || toTitle(vitals?.moodLabel || "calm");
+  const displayMoodTone = moodPresentation?.tone || "emerald";
+  const displayMoodHint = moodPresentation?.hint || "";
+  const displayMoodAccent = moodPresentation?.accent || "Easygoing";
   const mentalStimulationPct = toPct(dog?.stats?.mentalStimulation);
   const rawHealthPct = toPct(vitals?.health);
   const healthPct =
@@ -749,47 +962,127 @@ export default function MainGame({ scene, dogInteractive = true }) {
       potty: clamp(Math.max(hungerPct * 0.42, thirstPct * 0.76), 0, 100),
       training: clamp(100 - mentalStimulationPct * 0.78, 0, 100),
     }),
-    [
-      bondPct,
-      cleanlinessPct,
-      hungerPct,
-      mentalStimulationPct,
-      thirstPct,
-    ]
-  );
-  const timeLighting = useMemo(() => getTimeOfDayLighting(liveNow), [liveNow]);
-  const dogSceneFilter = useMemo(() => {
-    const warmth = Number(timeLighting.warmth || 0);
-    const daylight = Number(timeLighting.daylight || 0);
-    const nightDepth = Number(timeLighting.nightDepth || 0);
-    const brightness = clamp(0.84 + daylight * 0.22 + warmth * 0.06, 0.78, 1.18);
-    const saturate = clamp(0.82 + daylight * 0.26 + warmth * 0.12, 0.76, 1.18);
-    const sepia = clamp(warmth * 0.18, 0, 0.18);
-    const hue = Number(((warmth - nightDepth * 0.18) * 4).toFixed(2));
-    return `brightness(${brightness}) saturate(${saturate}) sepia(${sepia}) hue-rotate(${hue}deg)`;
-  }, [timeLighting]);
-  const theme = useMemo(
-    () => ({
-      dogTint: dogSceneFilter,
-    }),
-    [dogSceneFilter]
+    [bondPct, cleanlinessPct, hungerPct, mentalStimulationPct, thirstPct]
   );
   const cloudSyncUi = useMemo(
     () => formatCloudSyncLabel(cloudSync, isLoggedIn, liveNow),
     [cloudSync, isLoggedIn, liveNow]
   );
-  const ownerName = useMemo(() => {
-    if (!isLoggedIn) return "Catfish";
-    const displayName = String(user?.displayName || "").trim();
-    if (displayName) return displayName;
-    const email = String(user?.email || "").trim();
-    if (email.includes("@")) return email.split("@")[0];
-    return "Player";
-  }, [isLoggedIn, user?.displayName, user?.email]);
-  const ownerAvatarUrl = useMemo(() => {
-    const avatar = String(user?.avatarUrl || "").trim();
-    return avatar || DEFAULT_OWNER_AVATAR;
-  }, [user?.avatarUrl]);
+  const levelProgress = useMemo(
+    () =>
+      getLevelProgress({
+        level: overallLevel,
+        xp: Math.max(0, Math.floor(Number(dog?.xp || 0))),
+      }),
+    [dog?.xp, overallLevel]
+  );
+  const queueMemoryMoment = useCallback(
+    (eventLike) => {
+      const formatted = formatMemoryMoment(eventLike, {
+        dogName: identityDogName,
+      });
+      if (!formatted) return;
+
+      const dedupeKey = String(
+        formatted.dedupeKey || formatted.id || ""
+      ).trim();
+      const cooldownMs = Math.max(
+        1_000,
+        Number(formatted.cooldownMs || 120_000)
+      );
+      const now = Date.now();
+
+      if (dedupeKey) {
+        const lastShownAt = Number(
+          memoryMomentShownAtRef.current.get(dedupeKey) || 0
+        );
+        if (lastShownAt > 0 && now - lastShownAt < cooldownMs) return;
+        memoryMomentShownAtRef.current.set(dedupeKey, now);
+      }
+
+      memoryMomentQueueRef.current.push(formatted);
+      if (!memoryMoment) {
+        const nextMoment = memoryMomentQueueRef.current.shift() || null;
+        if (nextMoment) setMemoryMoment(nextMoment);
+      }
+    },
+    [identityDogName, memoryMoment]
+  );
+
+  useEffect(() => {
+    if (!memoryMoment) {
+      const nextMoment = memoryMomentQueueRef.current.shift() || null;
+      if (nextMoment) {
+        setMemoryMoment(nextMoment);
+      }
+      return;
+    }
+
+    if (memoryMomentDismissRef.current) {
+      window.clearTimeout(memoryMomentDismissRef.current);
+    }
+    memoryMomentDismissRef.current = window.setTimeout(
+      () => setMemoryMoment(null),
+      Math.max(2_200, Number(memoryMoment.durationMs || 3200))
+    );
+
+    return () => {
+      if (memoryMomentDismissRef.current) {
+        window.clearTimeout(memoryMomentDismissRef.current);
+        memoryMomentDismissRef.current = 0;
+      }
+    };
+  }, [memoryMoment]);
+
+  useEffect(
+    () => () => {
+      if (memoryMomentDismissRef.current) {
+        window.clearTimeout(memoryMomentDismissRef.current);
+      }
+    },
+    []
+  );
+
+  useEffect(() => {
+    const nextLevel = Math.max(1, Math.floor(Number(overallLevel || 1)));
+    const previousLevel = trackedLevelRef.current;
+
+    if (previousLevel === null) {
+      trackedLevelRef.current = nextLevel;
+      return;
+    }
+
+    if (nextLevel > previousLevel) {
+      trackLevelUp({
+        level: nextLevel,
+        previousLevel,
+        stage: String(life?.stage || "PUPPY").toLowerCase(),
+      });
+    }
+
+    trackedLevelRef.current = nextLevel;
+  }, [life?.stage, overallLevel]);
+  useEffect(() => {
+    const nextLevel = Math.max(1, Math.floor(Number(overallLevel || 1)));
+    const previousLevel = memoryMomentLevelRef.current;
+
+    if (previousLevel === null) {
+      memoryMomentLevelRef.current = nextLevel;
+      return;
+    }
+
+    if (previousLevel <= 1 && nextLevel > 1) {
+      queueMemoryMoment(
+        createMemoryMomentEvent(MEMORY_MOMENT_TYPES.FIRST_LEVEL_UP, {
+          level: nextLevel,
+          uniqueKey: "first_level_up",
+          occurredAt: Date.now(),
+        })
+      );
+    }
+
+    memoryMomentLevelRef.current = nextLevel;
+  }, [overallLevel, queueMemoryMoment]);
   const pottyTrainingState =
     dog?.training?.potty && typeof dog.training.potty === "object"
       ? dog.training.potty
@@ -982,7 +1275,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
   );
   const showRunawayLetter = false;
   const controlsDisabled = !dogInteractive || trickAnimationBusy;
-  const sceneLocationLabel = String(weatherDetails?.name || "")
+  const _sceneLocationLabel = String(weatherDetails?.name || "")
     .trim()
     .replace(/\s{2,}/g, " ");
 
@@ -1014,23 +1307,13 @@ export default function MainGame({ scene, dogInteractive = true }) {
     .toLowerCase();
   const voiceInputEnabled =
     trainingInputMode === "voice" || trainingInputMode === "both";
-  const dogRenderZIndex = sleepInDogHouse
+  const _dogRenderZIndex = sleepInDogHouse
     ? 25
     : Math.max(14, Math.round(15 + dogDepthNorm * 20));
+  const _streamlinedScene = true;
   const temperamentReady = Boolean(
     dog?.temperament?.revealReady && !dog?.temperament?.revealedAt
   );
-  const activeSurprise =
-    dog?.surprise?.active && typeof dog.surprise.active === "object"
-      ? dog.surprise.active
-      : null;
-  const surpriseType = String(activeSurprise?.type || "").toUpperCase();
-  const hijackedActionKey =
-    surpriseType === "STOLEN_BUTTON"
-      ? String(activeSurprise?.stolenAction || "")
-          .trim()
-          .toLowerCase()
-      : "";
   const triggerActionFeedback = useCallback((key) => {
     const nextKey = String(key || "")
       .trim()
@@ -1062,16 +1345,8 @@ export default function MainGame({ scene, dogInteractive = true }) {
       delete statFeedbackTimeoutsRef.current[statKey];
     }, 720);
   }, []);
-  const isActionHijacked = useCallback(
-    (actionKey) =>
-      !!hijackedActionKey &&
-      String(actionKey || "")
-        .trim()
-        .toLowerCase() === hijackedActionKey,
-    [hijackedActionKey]
-  );
-  const tricksLocked =
-    controlsDisabled || isActionHijacked("train") || !pottyMasteryComplete;
+  const isActionHijacked = useCallback(() => false, []);
+  const tricksLocked = controlsDisabled || !pottyMasteryComplete;
   const bottomMenuTabs = useMemo(
     () =>
       BOTTOM_MENU_TABS.map((tab) =>
@@ -1187,6 +1462,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
   useEffect(() => {
     if (!showRunawayLetter) return;
     setInteractionOpen(false);
+    setBottomMenuCategory("");
     setPlacingBowl(false);
   }, [showRunawayLetter]);
 
@@ -1255,31 +1531,33 @@ export default function MainGame({ scene, dogInteractive = true }) {
   }, [dog?.lastAction, dog?.memory?.lastTrainingReaction]);
   const lastMasteredCommandId = dog?.memory?.lastMasteredCommandId || null;
   const lastMasteredCommandAt = Number(dog?.memory?.lastMasteredCommandAt || 0);
+  const lastTreasureFoundId = dog?.memory?.lastTreasureFoundId || null;
+  const lastTreasureFoundAt = Number(dog?.memory?.lastTreasureFoundAt || 0);
   const lastUnlockedCommandId = obedienceUnlockState?.lastUnlockedId || null;
   const lastUnlockedCommandAt = Number(
     obedienceUnlockState?.lastUnlockedAt || 0
   );
   const lastDreamWoofAt = Number(dog?.memory?.lastDreamWoofAt || 0);
-  const showDreamBubble =
+  const _showDreamBubble =
     lastDreamWoofAt > 0 && liveNow - lastDreamWoofAt <= 35_000;
   const lastGuiltyPawsAt = Number(dog?.memory?.lastGuiltyPawsAt || 0);
-  const showGuiltyPaws =
+  const _showGuiltyPaws =
     lastGuiltyPawsAt > 0 && liveNow - lastGuiltyPawsAt <= 45_000;
-  const isSleepyState =
-    moodLabel.toLowerCase() === "sleepy" ||
+  const _isSleepyState =
+    String(displayMoodLabel || "").toLowerCase() === "sleepy" ||
     Number(dog?.stats?.energy || 0) <= 15;
-  const showFireflySnap =
+  const _showFireflySnap =
     fireflySnapAt > 0 && liveNow - Number(fireflySnapAt || 0) <= 2600;
   const showMidnightZoomies =
     midnightZoomiesAt > 0 && liveNow - midnightZoomiesAt <= 7000;
-  const showButterflyNotice =
+  const _showButterflyNotice =
     butterflyNoticeAt > 0 && liveNow - butterflyNoticeAt <= 1100;
   const activeInvestigationLabel =
     investigationProps.find((prop) => prop.id === activeInvestigationId)
       ?.label || "";
   const activeAnimatedEventType = showMidnightZoomies
     ? "midnight_zoomies"
-    : showFireflySnap
+    : _showFireflySnap
       ? "firefly_snap"
       : ambientEvent?.type;
   const activeAnimatedEventMeta = useMemo(
@@ -1287,9 +1565,9 @@ export default function MainGame({ scene, dogInteractive = true }) {
     [activeAnimatedEventType]
   );
   const treasurePhase = String(treasureHunt?.phase || "").toLowerCase();
-  const showTreasurePrompt =
+  const _showTreasurePrompt =
     treasurePhase === "sniffing" || treasurePhase === "digging";
-  const showTreasureMarker = Boolean(treasureHunt);
+  const _showTreasureMarker = Boolean(treasureHunt);
   const fireflySeeds = useMemo(
     () =>
       Array.from({ length: 9 }, (_, i) => ({
@@ -1375,6 +1653,9 @@ export default function MainGame({ scene, dogInteractive = true }) {
       if (uiAnimResetTimeoutRef.current) {
         window.clearTimeout(uiAnimResetTimeoutRef.current);
       }
+      if (autoWanderLookTimeoutRef.current) {
+        window.clearTimeout(autoWanderLookTimeoutRef.current);
+      }
       Object.values(statFeedbackTimeoutsRef.current).forEach((timerId) => {
         window.clearTimeout(timerId);
       });
@@ -1414,18 +1695,59 @@ export default function MainGame({ scene, dogInteractive = true }) {
 
   useEffect(() => {
     if (!lastMasteredCommandAt || !lastMasteredCommandId) return;
-    const commandLabel = getCommandLabel(lastMasteredCommandId, "That trick");
-    toast.once(
-      `mastered:${lastMasteredCommandId}:${lastMasteredCommandAt}`,
-      {
-        type: "reward",
-        message: `Mastered: ${commandLabel}.`,
-        durationMs: 3200,
-        haptic: true,
-      },
-      60_000
+    const dedupeKey = `${lastMasteredCommandId}:${lastMasteredCommandAt}`;
+    if (lastMasteredMomentRef.current === dedupeKey) return;
+    lastMasteredMomentRef.current = dedupeKey;
+    queueMemoryMoment(
+      createMemoryMomentEvent(MEMORY_MOMENT_TYPES.TRICK_MASTERED, {
+        commandId: lastMasteredCommandId,
+        commandLabel: getCommandLabel(lastMasteredCommandId, "That trick"),
+        occurredAt: lastMasteredCommandAt,
+        uniqueKey: `trick_mastered:${dedupeKey}`,
+      })
     );
-  }, [lastMasteredCommandAt, lastMasteredCommandId, toast]);
+  }, [lastMasteredCommandAt, lastMasteredCommandId, queueMemoryMoment]);
+
+  useEffect(() => {
+    if (!lastTreasureFoundAt || !lastTreasureFoundId) return;
+    if (lastTreasureFoundAt <= lastTreasureMomentRef.current) return;
+    lastTreasureMomentRef.current = lastTreasureFoundAt;
+    queueMemoryMoment(
+      createMemoryMomentEvent(MEMORY_MOMENT_TYPES.TREASURE_FOUND, {
+        rewardId: lastTreasureFoundId,
+        rewardName: formatTreasureName(lastTreasureFoundId),
+        occurredAt: lastTreasureFoundAt,
+        uniqueKey: `treasure_found:${lastTreasureFoundId}:${lastTreasureFoundAt}`,
+      })
+    );
+  }, [lastTreasureFoundAt, lastTreasureFoundId, queueMemoryMoment]);
+
+  useEffect(() => {
+    const sleepingInDoghouse = Boolean(effectiveDogSleeping && sleepInDogHouse);
+    const wasSleepingInDoghouse = doghouseSleepActiveRef.current;
+    if (!wasSleepingInDoghouse && sleepingInDoghouse) {
+      const now = Date.now();
+      queueMemoryMoment(
+        createMemoryMomentEvent(MEMORY_MOMENT_TYPES.SLEPT_IN_DOGHOUSE, {
+          occurredAt: now,
+          uniqueKey: buildDoghouseSleepMomentKey(now),
+        })
+      );
+    }
+    doghouseSleepActiveRef.current = sleepingInDoghouse;
+  }, [effectiveDogSleeping, queueMemoryMoment, sleepInDogHouse]);
+
+  useEffect(() => {
+    if (!midnightZoomiesAt) return;
+    if (midnightZoomiesAt <= lastMidnightZoomiesMomentRef.current) return;
+    lastMidnightZoomiesMomentRef.current = midnightZoomiesAt;
+    queueMemoryMoment(
+      createMemoryMomentEvent(MEMORY_MOMENT_TYPES.MIDNIGHT_ZOOMIES, {
+        occurredAt: midnightZoomiesAt,
+        uniqueKey: `midnight_zoomies:${midnightZoomiesAt}`,
+      })
+    );
+  }, [midnightZoomiesAt, queueMemoryMoment]);
 
   useEffect(() => {
     if (pawPrintsEnabled) return;
@@ -1439,7 +1761,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
     setTreasureHunt(null);
   }, [environmentMode]);
 
-  const handleDogPositionChange = useCallback(
+  const _handleDogPositionChange = useCallback(
     (pos) => {
       if (!pos || typeof pos !== "object") return;
       const now = Date.now();
@@ -1517,6 +1839,45 @@ export default function MainGame({ scene, dogInteractive = true }) {
     },
     [cleanlinessTier, pawPrintsEnabled]
   );
+
+  useEffect(() => {
+    const xNorm = clamp(
+      Number(
+        (sleepPositionOverride?.x ??
+          dog?.position?.x ??
+          DOG_WORLD_WIDTH * 0.5) / DOG_WORLD_WIDTH
+      ),
+      0,
+      1
+    );
+    const yNorm = clamp(
+      Number(
+        (sleepPositionOverride?.y ??
+          dog?.position?.y ??
+          DOG_WORLD_HEIGHT * 0.74) / DOG_WORLD_HEIGHT
+      ),
+      0,
+      1
+    );
+
+    setDogPositionNorm((current) => {
+      const sameX = Math.abs(Number(current?.xNorm || 0.5) - xNorm) < 0.001;
+      const sameY = Math.abs(Number(current?.yNorm || 0.74) - yNorm) < 0.001;
+      const sameMoving = Boolean(current?.moving) === Boolean(isDogMoving);
+      if (sameX && sameY && sameMoving) return current;
+      return {
+        xNorm,
+        yNorm,
+        moving: Boolean(isDogMoving),
+      };
+    });
+  }, [
+    dog?.position?.x,
+    dog?.position?.y,
+    isDogMoving,
+    sleepPositionOverride?.x,
+    sleepPositionOverride?.y,
+  ]);
 
   useEffect(() => {
     dogPositionNormRef.current = dogPositionNorm;
@@ -1747,6 +2108,11 @@ export default function MainGame({ scene, dogInteractive = true }) {
         speedBoost: 1.2,
         lockControls: true,
       });
+      trackTrainTrick({
+        commandId,
+        input,
+        stage: life?.stage || "PUPPY",
+      });
       dispatch(
         trainObedience({
           now: Date.now(),
@@ -1861,7 +2227,6 @@ export default function MainGame({ scene, dogInteractive = true }) {
       controlsDisabled ||
       effectiveDogSleeping ||
       movementLocked ||
-      activeSurprise ||
       treasureHunt
     ) {
       return;
@@ -1882,7 +2247,6 @@ export default function MainGame({ scene, dogInteractive = true }) {
     });
     setAttentionTarget({ xNorm: target.xNorm, yNorm: target.yNorm, at: now });
   }, [
-    activeSurprise,
     clearTreasureHuntTimer,
     controlsDisabled,
     effectiveDogSleeping,
@@ -1891,7 +2255,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
     treasureHunt,
   ]);
 
-  const handleTreasureHuntTap = useCallback(() => {
+  const _handleTreasureHuntTap = useCallback(() => {
     if (treasurePhase !== "sniffing" || !treasureHunt) return;
 
     const activeHunt = treasureHunt;
@@ -1904,19 +2268,28 @@ export default function MainGame({ scene, dogInteractive = true }) {
     setUiAnimOverride("scratch");
     setUiSpeedBoost(1.05);
 
-    treasureHuntTimeoutRef.current = window.setTimeout(async () => {
-      dispatch(
-        claimTreasureFind({
-          id: activeHunt.rewardId,
-          now: Date.now(),
-        })
-      );
-      await triggerPropHaptic("success");
-      toast.reward(
-        `${activeHunt.rewardIcon} Dug up ${activeHunt.rewardName}.`,
-        2400
-      );
-      clearTreasureHunt();
+    const revealTreasureAfterDig = async () => {
+      try {
+        dispatch(
+          claimTreasureFind({
+            id: activeHunt.rewardId,
+            now: Date.now(),
+          })
+        );
+        await triggerPropHaptic("success");
+        toast.reward(
+          `${activeHunt.rewardIcon} Dug up ${activeHunt.rewardName}.`,
+          2400
+        );
+        clearTreasureHunt();
+      } catch (error) {
+        // Prevent unhandled promise rejections from async timeout callback
+        console.error("Failed to reveal treasure hunt reward:", error);
+      }
+    };
+
+    treasureHuntTimeoutRef.current = window.setTimeout(() => {
+      void revealTreasureAfterDig();
     }, TREASURE_HUNT_DIG_REVEAL_MS);
   }, [
     clearTreasureHunt,
@@ -1969,6 +2342,56 @@ export default function MainGame({ scene, dogInteractive = true }) {
     dispatch(goPotty({ now: Date.now() }));
   }, [controlsDisabled, dispatch, isActionHijacked, triggerActionFeedback]);
 
+  const handleGiveWater = useCallback(() => {
+    if (controlsDisabled) return;
+    trackGiveWater({
+      source: "game_controls",
+      stage: life?.stage || "PUPPY",
+    });
+    triggerActionFeedback("water");
+    dispatch(giveWater({ now: Date.now() }));
+  }, [controlsDisabled, dispatch, life?.stage, triggerActionFeedback]);
+
+  const handleFeedAction = useCallback(
+    (foodType, source = "game_controls") => {
+      if (controlsDisabled) return false;
+
+      const resolvedFoodType = String(foodType || "")
+        .trim()
+        .toLowerCase();
+      const now = Date.now();
+      trackFeedDog({
+        feedType: resolvedFoodType || "regular_kibble",
+        source,
+        stage: life?.stage || "PUPPY",
+      });
+      dispatch(
+        feed({
+          now,
+          foodType: resolvedFoodType || "regular_kibble",
+          source,
+        })
+      );
+      return true;
+    },
+    [controlsDisabled, dispatch, life?.stage]
+  );
+
+  const dispatchPlayAction = useCallback(
+    (source = "button") => {
+      const now = Date.now();
+      lastPlayTapAtRef.current = now;
+      trackPlayWithDog({
+        source,
+        stage: life?.stage || "PUPPY",
+      });
+      triggerActionFeedback("play");
+      dispatch(play({ now, source }));
+      return now;
+    },
+    [dispatch, life?.stage, triggerActionFeedback]
+  );
+
   const handlePlayAction = useCallback(
     (source = "dock") => {
       if (controlsDisabled) return;
@@ -1982,8 +2405,14 @@ export default function MainGame({ scene, dogInteractive = true }) {
   const handleOpenInteractionMenu = useCallback(() => {
     if (controlsDisabled) return;
     triggerActionFeedback("interact");
+    setBottomMenuCategory("");
     setInteractionOpen(true);
   }, [controlsDisabled, triggerActionFeedback]);
+
+  const closeInteractionMenu = useCallback(() => {
+    setInteractionOpen(false);
+    setBottomMenuCategory("");
+  }, []);
 
   const handleOpenRoute = useCallback(
     (path) => {
@@ -2018,341 +2447,19 @@ export default function MainGame({ scene, dogInteractive = true }) {
   );
 
   const handleBottomMenuItemPress = useCallback(
-    async (item) => {
+    (item) => {
       if (!item || item.disabled) return;
-      await triggerDockFeedback({
+      void triggerDockFeedback({
         key: item.key,
         message:
           item.feedbackMessage ||
-          (item.route
-            ? `Opening ${item.label}.`
-            : `${item.label} triggered.`),
+          (item.route ? `Opening ${item.label}.` : `${item.label} triggered.`),
         type: item.feedbackType || "info",
         hapticMode: item.feedbackHaptic || "impact",
       });
       item.onClick?.();
     },
     [triggerDockFeedback]
-  );
-
-  const bottomMenuSections = useMemo(
-    () => ({
-      interact: {
-        title: "Interactions",
-        subtitle: "Daily care and fast-touch actions.",
-        items: [
-          {
-            key: "feed",
-            label: "Quick Feed",
-            detail: "Top off hunger fast",
-            icon: "🍖",
-            progress: dockNeedMetrics.hunger,
-            progressTone: "amber",
-            onClick: handleQuickFeed,
-            feedbackMessage: "Quick feed queued.",
-            disabled: controlsDisabled,
-            active: activeActionFeedbackKey === "quick-feed",
-          },
-          {
-            key: "water",
-            label: "Water",
-            detail: "Hydrate and recover",
-            icon: "💧",
-            progress: dockNeedMetrics.thirst,
-            progressTone: "sky",
-            onClick: handleGiveWater,
-            feedbackMessage: "Water ready.",
-            disabled: controlsDisabled,
-            active: activeActionFeedbackKey === "water",
-          },
-          {
-            key: "play",
-            label: isActionHijacked("play") ? "Play Stolen" : "Play",
-            detail: toysIgnored ? "Toys ignored right now" : "Boost happiness",
-            icon: isActionHijacked("play") ? "🕵️" : "🎾",
-            progress: dockNeedMetrics.play,
-            progressTone: "emerald",
-            onClick: () => handlePlayAction("dock"),
-            feedbackMessage: toysIgnored
-              ? "Toys ignored right now."
-              : "Play session starting.",
-            disabled:
-              controlsDisabled || toysIgnored || isActionHijacked("play"),
-            active: activeActionFeedbackKey === "play",
-          },
-          {
-            key: "pet",
-            label: isActionHijacked("pet") ? "Pet Stolen" : "Pet",
-            detail: "Tap-time affection",
-            icon: isActionHijacked("pet") ? "🕵️" : "🖐️",
-            progress: dockNeedMetrics.affection,
-            progressTone: "rose",
-            onClick: handleDogPetTap,
-            feedbackMessage: "Petting your pup.",
-            disabled: controlsDisabled || isActionHijacked("pet"),
-            active: activeActionFeedbackKey === "pet",
-          },
-          {
-            key: "bath",
-            label: isActionHijacked("bath") ? "Bath Stolen" : "Bath",
-            detail: "Clean up grime",
-            icon: isActionHijacked("bath") ? "🕵️" : "🧼",
-            progress: dockNeedMetrics.hygiene,
-            progressTone: "violet",
-            onClick: handleBathAction,
-            feedbackMessage: "Bath routine started.",
-            disabled: controlsDisabled || isActionHijacked("bath"),
-            active: activeActionFeedbackKey === "bath",
-          },
-          {
-            key: "potty",
-            label: isActionHijacked("potty") ? "Potty Stolen" : "Potty",
-            detail: pottyButtonTooltip,
-            icon: isActionHijacked("potty") ? "🕵️" : "🌿",
-            progress: dockNeedMetrics.potty,
-            progressTone: "lime",
-            onClick: handlePottyAction,
-            feedbackMessage: "Potty break queued.",
-            disabled: controlsDisabled || isActionHijacked("potty"),
-            active: activeActionFeedbackKey === "potty",
-          },
-          {
-            key: "care-sheet",
-            label: "Care Menu",
-            detail: "Open full interaction sheet",
-            icon: "✨",
-            progress: Math.max(
-              dockNeedMetrics.hunger,
-              dockNeedMetrics.thirst,
-              dockNeedMetrics.affection
-            ),
-            progressTone: "gold",
-            onClick: handleOpenInteractionMenu,
-            feedbackMessage: "Opening interactions.",
-            disabled: controlsDisabled,
-            active: activeActionFeedbackKey === "interact",
-          },
-        ],
-      },
-      train: {
-        title: "Training",
-        subtitle: "Commands, routines, and growth systems.",
-        items: [
-          {
-            key: "tricks",
-            label: "Tricks",
-            detail: pottyMasteryComplete
-              ? "Open command practice"
-              : "Potty training first",
-            icon: isActionHijacked("train") ? "🕵️" : "🎯",
-            progress: dockNeedMetrics.training,
-            progressTone: "gold",
-            onClick: openTricksPicker,
-            feedbackMessage: pottyMasteryComplete
-              ? "Training menu ready."
-              : "Potty training required first.",
-            feedbackType: pottyMasteryComplete ? "info" : "warn",
-            disabled: tricksLocked,
-            active: activeActionFeedbackKey === "tricks",
-          },
-          {
-            key: "voice",
-            label: voiceListening ? "Listening..." : "Voice Train",
-            detail: voiceSupported
-              ? "Speech-based training"
-              : "Voice unavailable",
-            icon: "🎙️",
-            progress: dockNeedMetrics.training,
-            progressTone: "sky",
-            onClick: handleVoiceTrainTap,
-            feedbackMessage: voiceListening
-              ? "Voice training live."
-              : "Starting voice training.",
-            disabled:
-              controlsDisabled ||
-              !voiceInputEnabled ||
-              !pottyMasteryComplete ||
-              !voiceSupported,
-            active: activeActionFeedbackKey === "voice-train",
-          },
-          {
-            key: "skill-tree",
-            label: "Skill Tree",
-            detail: "Perks and permanent growth",
-            icon: "🌟",
-            onClick: () => handleOpenRoute(PATHS.SKILL_TREE),
-            feedbackMessage: "Opening skill tree.",
-            route: PATHS.SKILL_TREE,
-          },
-          {
-            key: "potty-guide",
-            label: "Potty Guide",
-            detail: "Routines and progress log",
-            icon: "🪴",
-            onClick: () => handleOpenRoute(PATHS.POTTY),
-            feedbackMessage: "Opening potty guide.",
-            route: PATHS.POTTY,
-          },
-        ],
-      },
-      journey: {
-        title: "Journey",
-        subtitle: "Progress pages, story, and social loop.",
-        items: [
-          {
-            key: "store",
-            label: "Store",
-            detail: "Cosmetics and rewards",
-            icon: "🛍️",
-            onClick: () => handleOpenRoute(PATHS.STORE),
-            feedbackMessage: "Opening store.",
-            route: PATHS.STORE,
-          },
-          {
-            key: "memories",
-            label: "Memories",
-            detail: "Milestones and moments",
-            icon: "📖",
-            onClick: () => handleOpenRoute(PATHS.MEMORIES),
-            feedbackMessage: "Opening memories.",
-            route: PATHS.MEMORIES,
-          },
-          {
-            key: "dreams",
-            label: "Dreams",
-            detail: "Sleep journal and motifs",
-            icon: "🌙",
-            onClick: () => handleOpenRoute(PATHS.DREAMS),
-            feedbackMessage: "Opening dreams.",
-            route: PATHS.DREAMS,
-          },
-          {
-            key: "temperament",
-            label: "Temperament",
-            detail: temperamentPageAvailable
-              ? "Open archetype card"
-              : "Unlocks after more play",
-            icon: "🧬",
-            onClick: () => handleOpenRoute(PATHS.TEMPERAMENT_REVEAL),
-            feedbackMessage: temperamentPageAvailable
-              ? "Opening temperament."
-              : "Temperament unlock is not ready yet.",
-            feedbackType: temperamentPageAvailable ? "info" : "warn",
-            route: PATHS.TEMPERAMENT_REVEAL,
-            disabled: !temperamentPageAvailable,
-          },
-          {
-            key: "share",
-            label: "Share Pup",
-            detail: "Rewarded social share",
-            icon: "📤",
-            onClick: handleSharePup,
-            feedbackMessage: "Preparing share card.",
-            feedbackHaptic: "success",
-            active: activeActionFeedbackKey === "share-pup",
-          },
-          {
-            key: "menu",
-            label: "Menu",
-            detail: "Utilities and app links",
-            icon: "☰",
-            onClick: () => handleOpenRoute(PATHS.MENU),
-            feedbackMessage: "Opening menu.",
-            route: PATHS.MENU,
-          },
-        ],
-      },
-      settings: {
-        title: "Settings",
-        subtitle: "Preferences, support, and app controls.",
-        items: [
-          {
-            key: "settings",
-            label: "Settings",
-            detail: "Audio, gameplay, storage",
-            icon: "⚙️",
-            onClick: () => handleOpenRoute(PATHS.SETTINGS),
-            feedbackMessage: "Opening settings.",
-            route: PATHS.SETTINGS,
-          },
-          {
-            key: "help",
-            label: "Help",
-            detail: "Support and troubleshooting",
-            icon: "❓",
-            onClick: () => handleOpenRoute(PATHS.HELP),
-            feedbackMessage: "Opening help.",
-            route: PATHS.HELP,
-          },
-          {
-            key: "about",
-            label: "About",
-            detail: "What Doggerz is",
-            icon: "ℹ️",
-            onClick: () => handleOpenRoute(PATHS.ABOUT),
-            feedbackMessage: "Opening about page.",
-            route: PATHS.ABOUT,
-          },
-        ],
-      },
-    }),
-    [
-      activeActionFeedbackKey,
-      controlsDisabled,
-      dockNeedMetrics,
-      handleBathAction,
-      handleDogPetTap,
-      handleGiveWater,
-      handleOpenInteractionMenu,
-      handleOpenRoute,
-      handlePlayAction,
-      handlePottyAction,
-      handleQuickFeed,
-      handleSharePup,
-      handleVoiceTrainTap,
-      isActionHijacked,
-      openTricksPicker,
-      pottyButtonTooltip,
-      pottyMasteryComplete,
-      temperamentPageAvailable,
-      toysIgnored,
-      tricksLocked,
-      voiceInputEnabled,
-      voiceListening,
-      voiceSupported,
-    ]
-  );
-
-  const handleBottomMenuSelect = useCallback(
-    async (tabId) => {
-      const normalizedTabId = String(tabId || "").trim().toLowerCase();
-      if (normalizedTabId === "train" && pottyMasteryComplete) {
-        await triggerDockFeedback({
-          key: "tricks-tab",
-          message: "Tricks menu ready.",
-        });
-        openTricksPicker();
-        return;
-      }
-      const tabCopy = bottomMenuSections?.[normalizedTabId];
-      const closing = bottomMenuCategory === normalizedTabId;
-      await triggerDockFeedback({
-        key: normalizedTabId || "dock",
-        message: closing
-          ? "Dock collapsed."
-          : `${tabCopy?.title || "Menu"} ready.`,
-      });
-      setBottomMenuCategory((current) =>
-        current === normalizedTabId ? "" : normalizedTabId
-      );
-    },
-    [
-      bottomMenuCategory,
-      bottomMenuSections,
-      openTricksPicker,
-      pottyMasteryComplete,
-      triggerDockFeedback,
-    ]
   );
 
   const startPropInvestigation = useCallback(
@@ -2461,7 +2568,6 @@ export default function MainGame({ scene, dogInteractive = true }) {
       controlsDisabled ||
       effectiveDogSleeping ||
       movementLocked ||
-      activeSurprise ||
       treasureHunt
     ) {
       return undefined;
@@ -2483,7 +2589,6 @@ export default function MainGame({ scene, dogInteractive = true }) {
     };
   }, [
     activeInvestigationId,
-    activeSurprise,
     controlsDisabled,
     dog?.memory?.lastTreasureHuntAt,
     dog?.stats?.energy,
@@ -2496,27 +2601,10 @@ export default function MainGame({ scene, dogInteractive = true }) {
 
   useEffect(() => {
     if (!treasureHunt) return;
-    if (!dogInteractive || effectiveDogSleeping || activeSurprise) {
+    if (!dogInteractive || effectiveDogSleeping) {
       clearTreasureHunt();
     }
-  }, [
-    activeSurprise,
-    clearTreasureHunt,
-    dogInteractive,
-    effectiveDogSleeping,
-    treasureHunt,
-  ]);
-
-  const dispatchPlayAction = useCallback(
-    (source = "button") => {
-      const now = Date.now();
-      lastPlayTapAtRef.current = now;
-      triggerActionFeedback("play");
-      dispatch(play({ now, source }));
-      return now;
-    },
-    [dispatch, triggerActionFeedback]
-  );
+  }, [clearTreasureHunt, dogInteractive, effectiveDogSleeping, treasureHunt]);
 
   const handleToySqueak = useCallback(
     (point) => {
@@ -2554,13 +2642,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
         });
         if (hit?.accepted) {
           if (itemType === "food") {
-            dispatch(
-              feed({
-                now,
-                foodType: "regular_kibble",
-                source: "drag_drop_food",
-              })
-            );
+            handleFeedAction("regular_kibble", "drag_drop_food");
             setUiAnimOverride("eat");
             setUiSpeedBoost(1.1);
             if (quickFeedResetRef.current) {
@@ -2570,17 +2652,18 @@ export default function MainGame({ scene, dogInteractive = true }) {
               setUiAnimOverride("");
               setUiSpeedBoost(1);
             }, 900);
-            return;
+            return true;
           }
           dispatchPlayAction("toy_drop");
-          return;
+          return true;
         }
       }
 
-      if (itemType === "food") return;
+      if (itemType === "food") return false;
       dispatchPlayAction(source === "drop" ? "toy_drop_miss" : "toy");
+      return false;
     },
-    [controlsDisabled, dispatch, dispatchPlayAction, toysIgnored]
+    [controlsDisabled, dispatchPlayAction, handleFeedAction, toysIgnored]
   );
 
   const handleViewportPointerDown = useCallback(
@@ -2708,6 +2791,133 @@ export default function MainGame({ scene, dogInteractive = true }) {
   }, []);
 
   useEffect(() => {
+    const shouldPauseAmbientWander =
+      SIMULATION_OWNS_AMBIENT_WANDER ||
+      !dogInteractive ||
+      controlsDisabled ||
+      effectiveDogSleeping ||
+      movementLocked ||
+      placingBowl ||
+      pendingSleepWalk ||
+      interactionOpen ||
+      tricksOpen ||
+      trainingLogOpen ||
+      treasureHunt ||
+      (ambientEventRoute && !ambientEventRoute.done);
+
+    if (shouldPauseAmbientWander) {
+      if (autoWanderLookTimeoutRef.current) {
+        window.clearTimeout(autoWanderLookTimeoutRef.current);
+        autoWanderLookTimeoutRef.current = 0;
+      }
+      pendingAutoWanderTargetRef.current = null;
+      return;
+    }
+
+    const now = Number(liveNow || Date.now());
+    const currentAiState = String(dog?.aiState || "")
+      .trim()
+      .toLowerCase();
+    if (currentAiState && currentAiState !== "idle") return;
+    if (dog?.targetPosition) return;
+    if (isDogMoving) return;
+    if (
+      pendingAutoWanderTargetRef.current ||
+      autoWanderLookTimeoutRef.current
+    ) {
+      return;
+    }
+
+    if (!nextAutoWanderAtRef.current) {
+      nextAutoWanderAtRef.current =
+        now +
+        AUTO_WANDER_MIN_INTERVAL_MS +
+        Math.random() * AUTO_WANDER_INTERVAL_JITTER_MS;
+      return;
+    }
+
+    if (now < Number(nextAutoWanderAtRef.current || 0)) return;
+
+    const fallbackWorldPos = toWorldPosition(0.5, 0.74);
+    const origin = {
+      x: Number.isFinite(Number(dog?.position?.x))
+        ? Number(dog.position.x)
+        : fallbackWorldPos.x,
+      y: Number.isFinite(Number(dog?.position?.y))
+        ? Number(dog.position.y)
+        : fallbackWorldPos.y,
+    };
+    const targetPosition = createGentleWanderTarget(origin);
+
+    nextAutoWanderAtRef.current =
+      now +
+      AUTO_WANDER_MIN_INTERVAL_MS +
+      Math.random() * AUTO_WANDER_INTERVAL_JITTER_MS;
+
+    setAttentionTarget({
+      xNorm: clamp(targetPosition.x / DOG_WORLD_WIDTH, 0, 1),
+      yNorm: clamp(targetPosition.y / DOG_WORLD_HEIGHT, 0, 1),
+      at: now,
+    });
+
+    pendingAutoWanderTargetRef.current = targetPosition;
+    autoWanderLookTimeoutRef.current = window.setTimeout(() => {
+      autoWanderLookTimeoutRef.current = 0;
+      const queuedTarget = pendingAutoWanderTargetRef.current;
+      pendingAutoWanderTargetRef.current = null;
+      if (!queuedTarget) return;
+
+      const latestState = store.getState?.();
+      const latestDog = latestState?.dog;
+      const latestAiState = String(latestDog?.aiState || "")
+        .trim()
+        .toLowerCase();
+      const blocked =
+        latestDog?.isAsleep === true ||
+        latestDog?.sleeping === true ||
+        latestDog?.targetPosition ||
+        (latestAiState && latestAiState !== "idle");
+      if (blocked) return;
+
+      const walkNow = Date.now();
+      dispatch(
+        simulationTick({
+          now: walkNow,
+          action: "walk",
+          aiState: "walk",
+          aiStateUntilAt: walkNow + AUTO_WANDER_WALK_WINDOW_MS,
+          targetPosition: {
+            ...queuedTarget,
+            id: `wander_auto_${walkNow}`,
+            type: "wander_auto",
+            label: "Yard stroll",
+          },
+        })
+      );
+    }, AUTO_WANDER_ATTENTIVE_MS);
+  }, [
+    ambientEventRoute,
+    controlsDisabled,
+    dispatch,
+    dog?.aiState,
+    dog?.position?.x,
+    dog?.position?.y,
+    dog?.targetPosition,
+    dogInteractive,
+    effectiveDogSleeping,
+    interactionOpen,
+    isDogMoving,
+    liveNow,
+    movementLocked,
+    pendingSleepWalk,
+    placingBowl,
+    store,
+    trainingLogOpen,
+    treasureHunt,
+    tricksOpen,
+  ]);
+
+  useEffect(() => {
     if (!dogInteractive) return undefined;
 
     const spawnAmbientEvent = () => {
@@ -2831,8 +3041,8 @@ export default function MainGame({ scene, dogInteractive = true }) {
         setAmbientAnimOverride("sit");
         setAmbientSpeedBoost(1);
       } else if (route.type === "comet") {
-        setAmbientAnimOverride("bark");
-        setAmbientSpeedBoost(1.08);
+        setAmbientAnimOverride("idle");
+        setAmbientSpeedBoost(1);
       }
 
       setAmbientEventRoute(route);
@@ -3076,6 +3286,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
         rest({
           now,
           action: "sleep_auto_low_energy",
+          napSpotId: pendingSleepWalk.mode || "yard",
         })
       );
       setPendingSleepWalk(null);
@@ -3132,40 +3343,6 @@ export default function MainGame({ scene, dogInteractive = true }) {
   }, []);
 
   useEffect(() => {
-    if (!dogInteractive) return undefined;
-    const triggerRandomHeist = (stolenAction = "") => {
-      const now = Date.now();
-      dispatch(
-        triggerButtonHeist({
-          now,
-          silenceMs: 60_000,
-          stolenAction:
-            String(stolenAction || "")
-              .trim()
-              .toLowerCase() || undefined,
-        })
-      );
-    };
-
-    window.triggerRandomHeist = triggerRandomHeist;
-    if (window.__DOGGERZ_DEBUG__) {
-      window.__DOGGERZ_DEBUG__.triggerRandomHeist = triggerRandomHeist;
-    }
-
-    return () => {
-      if (window.triggerRandomHeist === triggerRandomHeist) {
-        delete window.triggerRandomHeist;
-      }
-      if (
-        window.__DOGGERZ_DEBUG__ &&
-        window.__DOGGERZ_DEBUG__.triggerRandomHeist === triggerRandomHeist
-      ) {
-        delete window.__DOGGERZ_DEBUG__.triggerRandomHeist;
-      }
-    };
-  }, [dispatch, dogInteractive]);
-
-  useEffect(() => {
     const { auth: initializedAuth } = initFirebase();
     const auth = initializedAuth || firebaseAuth;
     if (!auth) return undefined;
@@ -3210,6 +3387,11 @@ export default function MainGame({ scene, dogInteractive = true }) {
     if (controlsDisabled) return;
     const now = Date.now();
 
+    trackFeedDog({
+      feedType: "quick_feed",
+      source: "quick_feed",
+      stage: life?.stage || "PUPPY",
+    });
     triggerActionFeedback("quick-feed");
     dispatch(quickFeed({ now }));
     setUiAnimOverride("wag");
@@ -3243,188 +3425,434 @@ export default function MainGame({ scene, dogInteractive = true }) {
   }, [
     controlsDisabled,
     dispatch,
+    life?.stage,
     settings?.audio?.enabled,
     settings?.audio?.masterVolume,
     settings?.audio?.sfxVolume,
     triggerActionFeedback,
   ]);
 
-  const handleGiveWater = useCallback(() => {
-    if (controlsDisabled) return;
-    triggerActionFeedback("water");
-    dispatch(giveWater({ now: Date.now() }));
-  }, [controlsDisabled, dispatch, triggerActionFeedback]);
+  const buildBaseShareContext = useCallback(
+    () => ({
+      dogName: identityDogName,
+      stageLabel,
+      level: overallLevel,
+      bondPct: Math.round(Number(dog?.bond?.value || 0)),
+      energyPct,
+    }),
+    [dog?.bond?.value, energyPct, identityDogName, overallLevel, stageLabel]
+  );
 
-  const handleSharePup = useCallback(async () => {
-    triggerActionFeedback("share-pup");
-    const pupName = dog?.name || "my Doggerz pup";
-    const shareUrl = String(
-      import.meta.env.VITE_APP_SHARE_URL || "https://doggerz.app"
-    );
-    const shareTitle = "Meet my Doggerz pup";
-    const shareText = `Check out ${pupName} in Doggerz. Lv ${overallLevel}, ${energyPct}% energy, ${Math.round(Number(dog?.bond?.value || 0))}% bond.`;
-
-    try {
-      if (Capacitor.getPlatform?.() !== "web") {
-        try {
-          const { Share } = await import("@capacitor/share");
-          await Share.share({
-            title: shareTitle,
-            text: shareText,
-            url: shareUrl,
-            dialogTitle: "Show off your pup",
-          });
-        } catch {
-          if (typeof navigator !== "undefined" && navigator.share) {
-            await navigator.share({
-              title: shareTitle,
-              text: `${shareText} ${shareUrl}`,
-            });
-          } else if (typeof navigator !== "undefined" && navigator.clipboard) {
-            await navigator.clipboard.writeText(`${shareText} ${shareUrl}`);
-            toast.success("Share text copied.");
-            return;
-          } else {
-            toast.error("Sharing is not available on this device.");
-            return;
-          }
-        }
-      } else if (typeof navigator !== "undefined" && navigator.share) {
-        await navigator.share({
-          title: shareTitle,
-          text: `${shareText} ${shareUrl}`,
+  const handleShareCard = useCallback(
+    async (card, { reward = false } = {}) => {
+      if (!card) return;
+      try {
+        await shareDoggerzMoment(card, {
+          shareUrl: String(
+            import.meta.env.VITE_APP_SHARE_URL || "https://doggerz.app"
+          ),
+          onCopied: () => toast.success("Share text copied."),
         });
-      } else if (typeof navigator !== "undefined" && navigator.clipboard) {
-        await navigator.clipboard.writeText(`${shareText} ${shareUrl}`);
-        toast.success("Share text copied.");
-        return;
-      } else {
-        toast.error("Sharing is not available on this device.");
+        if (reward && shareRewardReady) {
+          dispatch(
+            rewardSocialShare({ now: Date.now(), energy: 10, happiness: 3 })
+          );
+          toast.reward("Shared your pup. +10 energy.");
+        } else {
+          toast.success("Shared your moment.");
+        }
+        setShareMomentCard(null);
+      } catch (error) {
+        const message = String(error?.message || "").toLowerCase();
+        if (message.includes("cancel")) return;
+        toast.error("Share canceled or unavailable.");
+      }
+    },
+    [dispatch, shareRewardReady, toast]
+  );
+
+  const handleSharePup = useCallback(() => {
+    triggerActionFeedback("share-pup");
+    setShareMomentCard(buildGenericPupShareCard(buildBaseShareContext()));
+  }, [buildBaseShareContext, triggerActionFeedback]);
+
+  const handleShareMemoryMoment = useCallback(() => {
+    if (!memoryMoment || !isShareableMemoryMoment(memoryMoment)) return;
+    setShareMomentCard(
+      buildShareMomentCard(memoryMoment, buildBaseShareContext())
+    );
+  }, [buildBaseShareContext, memoryMoment]);
+
+  const handleShareMasteryMoment = useCallback(() => {
+    if (!masteryCelebration) return;
+    setShareMomentCard(
+      buildShareMomentCard(
+        {
+          id: `trick_mastered:${String(masteryCelebration.id || masteryCelebration.label || "trick")}`,
+          type: "trick_mastered",
+          payload: {
+            commandLabel: masteryCelebration.label,
+          },
+        },
+        buildBaseShareContext()
+      )
+    );
+  }, [buildBaseShareContext, masteryCelebration]);
+
+  const bottomMenuSections = useMemo(
+    () => ({
+      interact: {
+        title: "Interactions",
+        subtitle: "Daily care and fast-touch actions.",
+        items: [
+          {
+            key: "feed",
+            label: "Quick Feed",
+            detail: "Top off hunger fast",
+            icon: "🍖",
+            progress: dockNeedMetrics.hunger,
+            progressTone: "amber",
+            onClick: handleQuickFeed,
+            feedbackMessage: "Quick feed queued.",
+            disabled: controlsDisabled,
+            active: activeActionFeedbackKey === "quick-feed",
+          },
+          {
+            key: "water",
+            label: "Water",
+            detail: "Hydrate and recover",
+            icon: "💧",
+            progress: dockNeedMetrics.thirst,
+            progressTone: "sky",
+            onClick: handleGiveWater,
+            feedbackMessage: "Water ready.",
+            disabled: controlsDisabled,
+            active: activeActionFeedbackKey === "water",
+          },
+          {
+            key: "play",
+            label: "Play",
+            detail: toysIgnored ? "Toys ignored right now" : "Boost happiness",
+            icon: "🎾",
+            progress: dockNeedMetrics.play,
+            progressTone: "emerald",
+            onClick: () => handlePlayAction("dock"),
+            feedbackMessage: toysIgnored
+              ? "Toys ignored right now."
+              : "Play session starting.",
+            disabled: controlsDisabled || toysIgnored,
+            active: activeActionFeedbackKey === "play",
+          },
+          {
+            key: "pet",
+            label: "Pet",
+            detail: "Tap-time affection",
+            icon: "🖐️",
+            progress: dockNeedMetrics.affection,
+            progressTone: "rose",
+            onClick: handleDogPetTap,
+            feedbackMessage: "Petting your pup.",
+            disabled: controlsDisabled,
+            active: activeActionFeedbackKey === "pet",
+          },
+          {
+            key: "bath",
+            label: "Bath",
+            detail: "Clean up grime",
+            icon: "🧼",
+            progress: dockNeedMetrics.hygiene,
+            progressTone: "violet",
+            onClick: handleBathAction,
+            feedbackMessage: "Bath routine started.",
+            disabled: controlsDisabled,
+            active: activeActionFeedbackKey === "bath",
+          },
+          {
+            key: "potty",
+            label: "Potty",
+            detail: pottyButtonTooltip,
+            icon: "🌿",
+            progress: dockNeedMetrics.potty,
+            progressTone: "lime",
+            onClick: handlePottyAction,
+            feedbackMessage: "Potty break queued.",
+            disabled: controlsDisabled,
+            active: activeActionFeedbackKey === "potty",
+          },
+          {
+            key: "care-sheet",
+            label: "Care Menu",
+            detail: "Open full interaction sheet",
+            icon: "✨",
+            progress: Math.max(
+              dockNeedMetrics.hunger,
+              dockNeedMetrics.thirst,
+              dockNeedMetrics.affection
+            ),
+            progressTone: "gold",
+            onClick: handleOpenInteractionMenu,
+            feedbackMessage: "Opening interactions.",
+            disabled: controlsDisabled,
+            active: activeActionFeedbackKey === "interact",
+          },
+        ],
+      },
+      train: {
+        title: "Training",
+        subtitle: "Commands, routines, and growth systems.",
+        items: [
+          {
+            key: "tricks",
+            label: "Tricks",
+            detail: pottyMasteryComplete
+              ? "Open command practice"
+              : "Potty training first",
+            icon: "🎯",
+            progress: dockNeedMetrics.training,
+            progressTone: "gold",
+            onClick: openTricksPicker,
+            feedbackMessage: pottyMasteryComplete
+              ? "Training menu ready."
+              : "Potty training required first.",
+            feedbackType: pottyMasteryComplete ? "info" : "warn",
+            disabled: tricksLocked,
+            active: activeActionFeedbackKey === "tricks",
+          },
+          {
+            key: "voice",
+            label: voiceListening ? "Listening..." : "Voice Train",
+            detail: voiceSupported
+              ? "Speech-based training"
+              : "Voice unavailable",
+            icon: "🎙️",
+            progress: dockNeedMetrics.training,
+            progressTone: "sky",
+            onClick: handleVoiceTrainTap,
+            feedbackMessage: voiceListening
+              ? "Voice training live."
+              : "Starting voice training.",
+            disabled:
+              controlsDisabled ||
+              !voiceInputEnabled ||
+              !pottyMasteryComplete ||
+              !voiceSupported,
+            active: activeActionFeedbackKey === "voice-train",
+          },
+          {
+            key: "skill-tree",
+            label: "Skill Tree",
+            detail: "Perks and permanent growth",
+            icon: "🌟",
+            onClick: () => handleOpenRoute(PATHS.SKILL_TREE),
+            feedbackMessage: "Opening skill tree.",
+            route: PATHS.SKILL_TREE,
+          },
+          {
+            key: "potty-guide",
+            label: "Potty Guide",
+            detail: "Routines and progress log",
+            icon: "🪴",
+            onClick: () => handleOpenRoute(PATHS.POTTY),
+            feedbackMessage: "Opening potty guide.",
+            route: PATHS.POTTY,
+          },
+        ],
+      },
+      journey: {
+        title: "Journey",
+        subtitle: "Progress pages, story, and social loop.",
+        items: [
+          {
+            key: "store",
+            label: "Store",
+            detail: "Cosmetics and rewards",
+            icon: "🛍️",
+            onClick: () => handleOpenRoute(PATHS.STORE),
+            feedbackMessage: "Opening store.",
+            route: PATHS.STORE,
+          },
+          {
+            key: "memories",
+            label: "Memories",
+            detail: "Milestones and moments",
+            icon: "📖",
+            onClick: () => handleOpenRoute(PATHS.MEMORIES),
+            feedbackMessage: "Opening memories.",
+            route: PATHS.MEMORIES,
+          },
+          {
+            key: "dreams",
+            label: "Dreams",
+            detail: "Sleep journal and motifs",
+            icon: "🌙",
+            onClick: () => handleOpenRoute(PATHS.DREAMS),
+            feedbackMessage: "Opening dreams.",
+            route: PATHS.DREAMS,
+          },
+          {
+            key: "temperament",
+            label: "Temperament",
+            detail: temperamentPageAvailable
+              ? "Open archetype card"
+              : "Unlocks after more play",
+            icon: "🧬",
+            onClick: () => handleOpenRoute(PATHS.TEMPERAMENT_REVEAL),
+            feedbackMessage: temperamentPageAvailable
+              ? "Opening temperament."
+              : "Temperament unlock is not ready yet.",
+            feedbackType: temperamentPageAvailable ? "info" : "warn",
+            route: PATHS.TEMPERAMENT_REVEAL,
+            disabled: !temperamentPageAvailable,
+          },
+          {
+            key: "share",
+            label: "Share Pup",
+            detail: "Rewarded social share",
+            icon: "📤",
+            onClick: handleSharePup,
+            feedbackMessage: "Preparing share card.",
+            feedbackHaptic: "success",
+            active: activeActionFeedbackKey === "share-pup",
+          },
+          {
+            key: "menu",
+            label: "Menu",
+            detail: "Utilities and app links",
+            icon: "☰",
+            onClick: () => handleOpenRoute(PATHS.MENU),
+            feedbackMessage: "Opening menu.",
+            route: PATHS.MENU,
+          },
+        ],
+      },
+      settings: {
+        title: "Settings",
+        subtitle: "Preferences, support, and app controls.",
+        items: [
+          {
+            key: "settings",
+            label: "Settings",
+            detail: "Audio, gameplay, storage",
+            icon: "⚙️",
+            onClick: () => handleOpenRoute(PATHS.SETTINGS),
+            feedbackMessage: "Opening settings.",
+            route: PATHS.SETTINGS,
+          },
+          {
+            key: "help",
+            label: "Help",
+            detail: "Support and troubleshooting",
+            icon: "❓",
+            onClick: () => handleOpenRoute(PATHS.HELP),
+            feedbackMessage: "Opening help.",
+            route: PATHS.HELP,
+          },
+          {
+            key: "about",
+            label: "About",
+            detail: "What Doggerz is",
+            icon: "ℹ️",
+            onClick: () => handleOpenRoute(PATHS.ABOUT),
+            feedbackMessage: "Opening about page.",
+            route: PATHS.ABOUT,
+          },
+        ],
+      },
+    }),
+    [
+      activeActionFeedbackKey,
+      controlsDisabled,
+      dockNeedMetrics,
+      handleBathAction,
+      handleDogPetTap,
+      handleGiveWater,
+      handleOpenInteractionMenu,
+      handleOpenRoute,
+      handlePlayAction,
+      handlePottyAction,
+      handleQuickFeed,
+      handleSharePup,
+      handleVoiceTrainTap,
+      openTricksPicker,
+      pottyButtonTooltip,
+      pottyMasteryComplete,
+      temperamentPageAvailable,
+      toysIgnored,
+      tricksLocked,
+      voiceInputEnabled,
+      voiceListening,
+      voiceSupported,
+    ]
+  );
+
+  const handleBottomMenuSelect = useCallback(
+    (tabId) => {
+      const normalizedTabId = String(tabId || "")
+        .trim()
+        .toLowerCase();
+      if (normalizedTabId === "train" && pottyMasteryComplete) {
+        void triggerDockFeedback({
+          key: "tricks-tab",
+          message: "Tricks menu ready.",
+        });
+        openTricksPicker();
         return;
       }
-      if (shareRewardReady) {
-        dispatch(
-          rewardSocialShare({ now: Date.now(), energy: 10, happiness: 3 })
-        );
-        toast.reward("Shared your pup. +10 energy.");
-      } else {
-        toast.success("Shared your pup.");
-      }
-    } catch (error) {
-      const message = String(error?.message || "").toLowerCase();
-      if (message.includes("cancel")) return;
-      toast.error("Share canceled or unavailable.");
-    }
-  }, [
-    dispatch,
-    dog?.bond?.value,
-    dog?.name,
-    energyPct,
-    overallLevel,
-    shareRewardReady,
-    toast,
-    triggerActionFeedback,
-  ]);
+      const tabCopy = bottomMenuSections?.[normalizedTabId];
+      const closing = bottomMenuCategory === normalizedTabId;
+      void triggerDockFeedback({
+        key: normalizedTabId || "dock",
+        message: closing
+          ? "Dock collapsed."
+          : `${tabCopy?.title || "Menu"} ready.`,
+      });
+      setBottomMenuCategory((current) =>
+        current === normalizedTabId ? "" : normalizedTabId
+      );
+    },
+    [
+      bottomMenuCategory,
+      bottomMenuSections,
+      openTricksPicker,
+      pottyMasteryComplete,
+      triggerDockFeedback,
+    ]
+  );
 
   return (
     <div className="relative flex min-h-dvh flex-col overflow-hidden">
-      <EnvironmentScene
-        environment={environmentMode}
-        season={seasonMode}
-        timeOfDay={resolvedTimeBucket}
-        weather={scene?.weatherKey || "clear"}
-        reduceMotion={reduceMotion}
-        reduceTransparency={reduceTransparency}
-        holes={holes}
-        onButterflySpotted={runButterflyNoticeChase}
-      />
-
-      <div className="main-scroll-container relative z-20 mx-auto flex min-h-dvh w-full max-w-6xl flex-1 flex-col pb-[calc(env(safe-area-inset-bottom,0px)+124px)]">
-        <div className="pup-card flex min-h-0 flex-1 flex-col rounded-[28px] sm:p-6">
-          <div className="rounded-[24px] border border-doggerz-leaf/25 bg-[linear-gradient(180deg,rgba(2,6,23,0.68),rgba(2,6,23,0.5))] px-4 py-4 shadow-[0_14px_38px_rgba(2,6,23,0.22)] sm:px-5 sm:py-5">
-            <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-              <div className="flex items-start gap-3">
-                <OwnerBadge name={ownerName} avatarUrl={ownerAvatarUrl} />
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2 text-2xl font-black tracking-tight text-doggerz-bone sm:text-3xl">
-                    <span>{dog?.name || "Your pup"}</span>
-                    {isFounder ? (
-                      <span className="inline-flex items-center rounded-full border border-sky-300/35 bg-sky-400/12 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.18em] text-sky-100 shadow-[0_0_20px_rgba(96,165,250,0.18)]">
-                        Founder
-                      </span>
-                    ) : null}
-                  </div>
-                  <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-doggerz-paw/75">
-                    <span>{stageLabel}</span>
-                    <span className="text-white/25">•</span>
-                    <span>{ageBucketLabel}</span>
-                    <span className="text-white/25">•</span>
-                    <span>{scene?.label || "Backyard"}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:min-w-[460px]">
-                <HudChip
-                  label="Level"
-                  value={`Lv ${overallLevel}`}
-                  tooltip="Overall progression level. Higher levels unlock tougher training tracks."
-                />
-                <HudChip
-                  label="Age"
-                  value={agePillValue}
-                  tooltip={agePillTooltip}
-                />
-                <HudChip
-                  label="Condition"
-                  value={displayMoodLabel}
-                  tooltip="Current emotional state based on needs and events."
-                />
-                <HudChip
-                  label="Stage"
-                  value={stageLabel}
-                  tooltip="Current life stage of your pup."
-                />
-              </div>
-            </div>
-
-          </div>
-          <div className="mt-4 flex min-h-0 flex-1 flex-col gap-4">
-            <div className="order-3 space-y-4">
-              {hijackedActionKey ||
-              activeAnimatedEventMeta ||
-              actionOutcomeLabel ? (
+      <div className="main-scroll-container relative z-20 mx-auto flex min-h-dvh w-full max-w-6xl flex-1 flex-col gap-3 pb-[calc(env(safe-area-inset-bottom,0px)+124px)] sm:gap-4">
+        <GameTopBar
+          dogName={dog?.name || "Doggerz Pup"}
+          dogStage={stageLabel || "Puppy"}
+          conditionLabel={displayMoodLabel || "Content"}
+          conditionTone={displayMoodTone}
+          conditionHint={displayMoodHint}
+          avatarSrc={dog?.profileImage || dog?.avatar || ""}
+          coins={Number(dog?.currency?.coins || dog?.coins || 0)}
+          gems={Number(dog?.currency?.gems || dog?.gems || 0)}
+          level={Number(overallLevel || 1)}
+          xp={levelProgress.inLevelXp}
+          xpMax={levelProgress.levelSpan}
+          saveLabel={cloudSyncUi.label}
+          saveDetail={cloudSyncUi.detail}
+          saveTone={cloudSyncUi.tone}
+          saveHint={cloudSyncUi.reassurance}
+          onOpenSettings={() => setBottomMenuCategory("settings")}
+          onOpenShop={() => navigate(PATHS.STORE)}
+        />
+        <div className="pup-card flex min-h-0 flex-1 flex-col rounded-[28px] px-3 pb-4 sm:px-6 sm:pb-6">
+          <div className="flex min-h-0 flex-1 flex-col gap-4">
+            <div className={statsStackClassName}>
+              {activeAnimatedEventMeta || actionOutcomeLabel ? (
                 <div className="game-card event-card">
                   <h3 className="m-0 text-[1.1rem] font-black uppercase tracking-[0.08em] text-[var(--text-main)]">
-                    {hijackedActionKey
-                      ? "Button Heist"
-                      : activeAnimatedEventMeta?.label || "Yard Event"}
+                    {activeAnimatedEventMeta?.label || "Yard Event"}
                   </h3>
                   <p className="mt-2 text-sm text-[var(--text-muted)]">
-                    {hijackedActionKey
-                      ? String(activeSurprise?.message || "").trim() ||
-                        `Your pup stole "${toTitle(hijackedActionKey, "Play")}". Play fetch to get it back.`
-                      : actionOutcomeLabel ||
-                        `Watch the yard. ${activeAnimatedEventMeta?.label || "Something"} is happening right now.`}
+                    {actionOutcomeLabel ||
+                      `Watch the yard. ${activeAnimatedEventMeta?.label || "Something"} is happening right now.`}
                   </p>
-                  {hijackedActionKey ? (
-                    <div className="mt-4 flex justify-end">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          dispatch(
-                            resolveSessionSurprise({
-                              now: Date.now(),
-                              method: "fetch",
-                            })
-                          )
-                        }
-                        className="dz-touch-button rounded-xl border-0 bg-[var(--accent-gold)] px-5 py-2.5 text-sm font-black text-black"
-                      >
-                        PLAY FETCH
-                      </button>
-                    </div>
-                  ) : null}
                 </div>
               ) : null}
               <h2 className="m-0 text-2xl font-black tracking-tight text-white">
@@ -3448,6 +3876,109 @@ export default function MainGame({ scene, dogInteractive = true }) {
               </div>
               <div className="text-xs text-doggerz-paw/80">
                 Bond: {bondPct}% • Hunger: {hungerPct}% • Age: {agePillValue}
+              </div>
+              <div
+                className={`game-card rounded-2xl border px-4 py-4 ${identityFlavorToneClass}`}
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-[10px] font-bold uppercase tracking-[0.18em] opacity-80">
+                      Today With {identityDogName}
+                    </div>
+                    <div className="mt-1 text-base font-black">
+                      {dailyFlavorTitle}
+                    </div>
+                    <div className="mt-2 text-[11px] leading-5 opacity-90">
+                      {dailyFlavorBody}
+                    </div>
+                  </div>
+                  <div className="rounded-full border border-white/15 bg-black/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white/85">
+                    Daily Read
+                  </div>
+                </div>
+                {favoriteReadouts.length ? (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {favoriteReadouts.map((item) => (
+                      <div
+                        key={item.id}
+                        className="rounded-full border border-white/12 bg-black/15 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-white/85"
+                      >
+                        <span className="text-white/55">{item.label}</span>{" "}
+                        {item.value}
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+              <div
+                className={`game-card rounded-2xl border px-4 py-4 ${cadenceToneClass}`}
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-[10px] font-bold uppercase tracking-[0.18em] opacity-80">
+                      Care Cadence
+                    </div>
+                    <div className="mt-1 text-base font-black">
+                      {cadenceModel?.dailyMoment?.title || "Daily Check-in"}
+                    </div>
+                    <div className="mt-2 text-[11px] leading-5 opacity-90">
+                      {cadenceModel?.dailyMoment?.body ||
+                        "Small care moments keep your dog’s day feeling steady."}
+                    </div>
+                  </div>
+                  <div className="rounded-full border border-white/15 bg-black/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white/85">
+                    {cadenceModel?.dailyMoment?.windowLabel ||
+                      cadenceModel?.routineTheme?.label ||
+                      "Routine"}
+                  </div>
+                </div>
+                <div className="mt-3 grid grid-cols-1 gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-white/80 sm:grid-cols-3">
+                  <div className="rounded-xl border border-white/10 bg-black/15 px-3 py-2">
+                    <div className="text-[9px] text-white/60">
+                      Rotating Event
+                    </div>
+                    <div className="mt-1 text-[11px] text-white">
+                      {cadenceModel?.rotatingEvent?.label || "Daily Care"}
+                    </div>
+                    <div className="mt-1 text-[10px] font-medium normal-case tracking-normal text-white/70">
+                      {cadenceModel?.rotatingEvent?.detail ||
+                        "Small rotating moments keep return visits from feeling repetitive."}
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-black/15 px-3 py-2">
+                    <div className="text-[9px] text-white/60">Theme</div>
+                    <div className="mt-1 text-[11px] text-white">
+                      {cadenceModel?.routineTheme?.summary ||
+                        "Steady rituals build trust."}
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-black/15 px-3 py-2">
+                    <div className="text-[9px] text-white/60">
+                      Occasional Surprise
+                    </div>
+                    <div className="mt-1 text-[11px] text-white">
+                      {cadenceModel?.surprise?.label || "Small surprise"}
+                    </div>
+                    <div className="mt-1 text-[10px] font-medium normal-case tracking-normal text-white/70">
+                      {cadenceSurpriseDetail}
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-3 flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-white/70">
+                  <div className="rounded-full border border-white/10 bg-black/15 px-2.5 py-1">
+                    {cadenceModel?.dayKey || "Today"}
+                  </div>
+                  <div className="rounded-full border border-white/10 bg-black/15 px-2.5 py-1">
+                    {cadenceModel?.routineTheme?.label || "Routine"}
+                  </div>
+                  <div className="rounded-full border border-white/10 bg-black/15 px-2.5 py-1">
+                    {Math.max(
+                      0,
+                      Number(cadenceModel?.surprise?.readinessPct || 0)
+                    )}
+                    % surprise warmth
+                  </div>
+                </div>
               </div>
               <div
                 className={`game-card rounded-2xl border px-4 py-4 ${lifecycleCardToneClass}`}
@@ -3476,13 +4007,17 @@ export default function MainGame({ scene, dogInteractive = true }) {
                 </div>
                 <div className="mt-3 grid grid-cols-1 gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-white/80 sm:grid-cols-2">
                   <div className="rounded-xl border border-white/10 bg-black/15 px-3 py-2">
-                    <div className="text-[9px] text-white/60">Stage Progress</div>
+                    <div className="text-[9px] text-white/60">
+                      Stage Progress
+                    </div>
                     <div className="mt-1 text-[11px] text-white">
                       {stageProgressLabel}
                     </div>
                   </div>
                   <div className="rounded-xl border border-white/10 bg-black/15 px-3 py-2">
-                    <div className="text-[9px] text-white/60">Next Milestone</div>
+                    <div className="text-[9px] text-white/60">
+                      Next Milestone
+                    </div>
                     <div className="mt-1 text-[11px] text-white">
                       {nextStageCountdown}
                     </div>
@@ -3530,7 +4065,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
               ) : null}
             </div>
 
-            <div className="order-1 flex min-h-[360px] flex-1 flex-col rounded-3xl border border-doggerz-leaf/35 bg-black/30 px-2 py-4 sm:min-h-[440px] sm:px-4">
+            <div className={yardRegionClassName}>
               {showRunawayLetter ? (
                 <RunawayLetterPanel
                   dogName={dog?.name || "Your pup"}
@@ -3540,419 +4075,162 @@ export default function MainGame({ scene, dogInteractive = true }) {
                   }
                 />
               ) : (
-                <div
-                  ref={dogViewportRef}
-                  id="backyard"
-                  className={`yard-viewport sprite-stage game-card !mb-0 !p-0 ${visualNight ? "yard-night" : "yard-day"} relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-[24px] border border-doggerz-leaf/25 bg-black/20`}
-                  onPointerDown={handleViewportPointerDown}
-                  onPointerMove={handleViewportPointerMove}
-                  onPointerUp={handleViewportPointerUp}
-                  onPointerCancel={handleViewportPointerCancel}
-                >
-                  <div className="pointer-events-none absolute inset-x-3 top-3 z-[31] flex items-start justify-between gap-3 sm:inset-x-4 sm:top-4">
-                    <div className="max-w-[62%] pointer-events-auto">
-                      <DogStatusBubble
-                        name={dog?.name || "Your pup"}
-                        stageLabel={stageLabel}
-                        ageValue={agePillValue}
-                        moodLabel={displayMoodLabel}
-                        energyPct={energyPct}
-                      />
-                    </div>
-                    <div className="flex max-w-[46%] flex-col items-end gap-2 pointer-events-auto">
-                      <ModernStatusPill
-                        label="Weather"
-                        value={scene?.weather || "Clear"}
-                        detail={sceneLocationLabel || "Local"}
-                        tone="sky"
-                      />
-                      <ModernStatusPill
-                        label={cloudSyncUi.label}
-                        value={cloudSyncUi.detail || "Ready"}
-                        detail={isLoggedIn ? "Cloud save" : "Local save"}
-                        tone={cloudSyncUi.tone}
-                      />
-                    </div>
+                <>
+                  <div className="pointer-events-none absolute left-3 top-3 z-[35] max-w-[220px] sm:left-4 sm:top-4 sm:max-w-[240px]">
+                    <MoodBadge
+                      label={displayMoodLabel || "Content"}
+                      tone={displayMoodTone}
+                      hint={displayMoodHint || "Comfortable right now."}
+                      accent={displayMoodAccent}
+                    />
                   </div>
-                  <YardBackdrop
+                  <div className="absolute right-3 top-3 z-[35] max-w-[220px] sm:right-4 sm:top-4 sm:max-w-[260px]">
+                    <MemoryMomentToast
+                      moment={memoryMoment}
+                      onShare={
+                        memoryMoment && isShareableMemoryMoment(memoryMoment)
+                          ? handleShareMemoryMoment
+                          : undefined
+                      }
+                      shareLabel="Share"
+                    />
+                  </div>
+                  <DogStage
+                    ref={dogViewportRef}
+                    id="backyard"
+                    scene={scene}
                     environment={environmentMode}
-                    dogXNorm={dogPositionNorm.xNorm}
                     isNight={visualNight}
-                    sunriseProgress={sunriseBlend}
+                    weather={scene?.weatherKey || weatherCondition || "clear"}
                     reduceMotion={reduceMotion}
-                    dogSleepingInDoghouse={sleepInDogHouse && effectiveDogSleeping}
-                    environmentTargets={environmentTargets}
-                    activeEnvironmentTargetId={dog?.targetPosition?.id || ""}
-                    props={investigationProps}
+                    dogName={dog?.name || "Your pup"}
+                    stageLabel={stageLabel}
+                    conditionLabel={displayMoodLabel}
+                    conditionTone={displayMoodTone}
+                    syncLabel={cloudSyncUi.label}
+                    syncDetail={
+                      cloudSyncUi.detail ||
+                      (isLoggedIn ? "Cloud save" : "Local save")
+                    }
+                    syncTone={cloudSyncUi.tone}
+                    dogPositionNorm={{
+                      xNorm: clamp(
+                        Number(
+                          (sleepPositionOverride?.x ??
+                            dog?.position?.x ??
+                            DOG_WORLD_WIDTH * 0.5) / DOG_WORLD_WIDTH
+                        ),
+                        0,
+                        1
+                      ),
+                      yNorm: clamp(
+                        Number(
+                          (sleepPositionOverride?.y ??
+                            dog?.position?.y ??
+                            DOG_WORLD_HEIGHT * 0.74) / DOG_WORLD_HEIGHT
+                        ),
+                        0,
+                        1
+                      ),
+                      moving: Boolean(isDogMoving),
+                    }}
+                    investigationProps={investigationProps}
                     activePropId={activeInvestigationId}
                     onPropTap={handlePropTap}
-                  />
-                  {backdropLayers.length ? (
-                    <div className="pointer-events-none absolute inset-0 z-[6]">
-                      {backdropLayers.map((layer) => (
-                        <div
-                          key={layer.key}
-                          className="absolute inset-0"
-                          style={layer.style}
-                        />
-                      ))}
-                    </div>
-                  ) : null}
-                  <div
-                    id="ui-container"
-                    className="absolute left-4 top-4 z-40 flex flex-col gap-2"
-                  >
-                    <div className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-black/55 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.14em] text-doggerz-bone shadow-[0_10px_28px_rgba(15,23,42,0.25)] backdrop-blur-sm">
-                      <span id="energy-display">Energy {energyPct}%</span>
-                      <span className="text-white/35">•</span>
-                      <span>Bond {bondPct}%</span>
-                    </div>
-                    {goldenYearsActive ? (
-                      <div className="inline-flex items-center gap-2 rounded-2xl border border-amber-300/45 bg-amber-400/15 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.14em] text-amber-50 shadow-[0_10px_28px_rgba(120,53,15,0.25)] backdrop-blur-sm">
-                        ✨ Golden Years • Safe to day 180
-                      </div>
-                    ) : null}
-                  </div>
-                  {isRainScene ? (
-                    <div
-                      className="pointer-events-none absolute inset-0 z-10 overflow-hidden"
-                      style={{ opacity: 0.78 }}
-                    >
-                      <div
-                        className="absolute -inset-[18%]"
-                        style={{
-                          backgroundImage:
-                            "repeating-linear-gradient(106deg, rgba(191,219,254,0) 0px, rgba(191,219,254,0) 10px, rgba(191,219,254,0.82) 11px, rgba(191,219,254,0.82) 12px)",
-                          animation: reduceMotion
-                            ? "none"
-                            : "dgViewportRain 0.62s linear infinite",
-                        }}
-                      />
-                    </div>
-                  ) : null}
-                  {isSnowScene ? (
-                    <div className="pointer-events-none absolute inset-0 z-10 overflow-hidden opacity-80">
-                      <div
-                        className="absolute -inset-[15%]"
-                        style={{
-                          backgroundImage:
-                            "radial-gradient(circle, rgba(255,255,255,0.92) 0 1.2px, transparent 1.4px)",
-                          backgroundSize: "18px 18px",
-                          animation: reduceMotion
-                            ? "none"
-                            : "dgSnowFall 1.6s linear infinite",
-                        }}
-                      />
-                    </div>
-                  ) : null}
-                  {isSummerNight ? (
-                    <div className="pointer-events-none absolute inset-0 z-[14]">
-                      {fireflySeeds.map((seed) => (
-                        <span
-                          key={`firefly-${seed.id}`}
-                          className="absolute block h-2 w-2 rounded-full"
-                          style={{
-                            left: `${seed.x}%`,
-                            top: `${seed.y}%`,
-                            background:
-                              "radial-gradient(circle at center, rgba(252,211,77,0.95) 0%, rgba(250,204,21,0.18) 70%, transparent 100%)",
-                            boxShadow: "0 0 10px rgba(250,204,21,0.6)",
-                            animation: reduceMotion
-                              ? "none"
-                              : `dgFireflyPulse ${seed.duration}s ease-in-out ${seed.delay}s infinite, dgFireflyDrift ${Math.max(
-                                  3,
-                                  seed.duration + 0.8
-                                )}s ease-in-out ${seed.delay}s infinite`,
-                          }}
-                        />
-                      ))}
-                    </div>
-                  ) : null}
-                  {ambientEvent?.type === "butterfly" ? (
-                    <div className="pointer-events-none absolute inset-0 z-[16] overflow-hidden">
-                      <span
-                        className="absolute text-2xl"
-                        style={{
-                          left: "-8%",
-                          top: `${Math.round(Number(ambientEvent?.yNorm || 0.24) * 100)}%`,
-                          transform: "translateY(-50%)",
-                          animation: reduceMotion
-                            ? "none"
-                            : "dgButterflyTraverse 9s linear forwards",
-                        }}
-                      >
-                        🦋
-                      </span>
-                    </div>
-                  ) : null}
-                  {showButterflyNotice ? (
-                    <div
-                      className="pointer-events-none absolute z-[22]"
-                      style={{
-                        left: `${Math.round(clamp(dogPositionNorm.xNorm, 0.05, 0.95) * 100)}%`,
-                        top: `${Math.round(clamp(dogPositionNorm.yNorm - 0.19, 0.08, 0.86) * 100)}%`,
-                        transform: "translate(-50%, -50%)",
-                      }}
-                      aria-hidden="true"
-                    >
-                      <span className="grid h-8 w-8 place-items-center rounded-full border border-amber-200/55 bg-black/65 text-sm font-black text-amber-100 shadow-[0_0_20px_rgba(250,204,21,0.35)] animate-pulse">
-                        !
-                      </span>
-                    </div>
-                  ) : null}
-                  {ambientEvent?.type === "owl" ? (
-                    <div className="pointer-events-none absolute left-[17%] top-[30%] z-[16] text-2xl">
-                      <span
-                        style={{
-                          animation: reduceMotion
-                            ? "none"
-                            : "dgOwlPerchPulse 2.4s ease-in-out infinite",
-                        }}
-                      >
-                        🦉
-                      </span>
-                    </div>
-                  ) : null}
-                  {ambientEvent?.type === "comet" ? (
-                    <div className="pointer-events-none absolute inset-0 z-[17] overflow-hidden">
-                      <span className="absolute left-[-18%] top-[12%] text-2xl animate-[dgCometTraverse_4.2s_linear_forwards]">
-                        ☄️
-                      </span>
-                    </div>
-                  ) : null}
-                  {ambientEvent?.type === "leaf_gust" ? (
-                    <div className="pointer-events-none absolute inset-0 z-[17] overflow-hidden">
-                      {Array.from({ length: 8 }, (_, i) => (
-                        <span
-                          key={`leaf-gust-${i}`}
-                          className="absolute text-lg"
-                          style={{
-                            left: `${-18 + i * 8}%`,
-                            top: `${54 + (i % 3) * 6}%`,
-                            opacity: 0.8,
-                            animation: `dgLeafGust ${3.8 + i * 0.18}s linear ${i * 0.12}s forwards`,
-                          }}
-                        >
-                          🍃
-                        </span>
-                      ))}
-                    </div>
-                  ) : null}
-                  {pawPrints.length > 0 ? (
-                    <div className="pointer-events-none absolute inset-0 z-20">
-                      {pawPrints.map((print) => (
-                        <span
-                          key={print.id}
-                          className="mud-paw-print"
-                          style={{
-                            left: `${Number(print.x || 0)}px`,
-                            top: `${Number(print.y || 0)}px`,
-                            width: `${Number(print.size || 18)}px`,
-                            height: `${Number(print.size || 18)}px`,
-                            transform: `translate(-50%, -50%) rotate(${Number(
-                              print.rot || 0
-                            )}deg)`,
-                            color: print.fill,
-                          }}
-                        >
-                          <PawPrintSvg className="h-full w-full" />
-                        </span>
-                      ))}
-                    </div>
-                  ) : null}
-                  <Suspense
-                    fallback={
-                      <div className="flex h-[340px] w-full items-center justify-center rounded-3xl border border-doggerz-leaf/30 bg-black/30 text-xs uppercase tracking-[0.2em] text-doggerz-paw/80">
-                        Loading Pup
-                      </div>
+                    pawPrints={pawPrints}
+                    fireflySeeds={fireflySeeds}
+                    showFireflies={isSummerNight}
+                    placingBowl={placingBowl}
+                    dogSleepingInDoghouse={
+                      sleepInDogHouse && effectiveDogSleeping
                     }
-                  >
-                    <div
-                      className="absolute inset-0"
-                      data-night-owl={nightOwlActive ? "true" : "false"}
-                      style={{
-                        zIndex: dogRenderZIndex,
-                        filter: [
-                          goldenYearsActive
-                            ? "drop-shadow(0 0 14px rgba(255, 215, 64, 0.55)) drop-shadow(0 0 22px rgba(251, 191, 36, 0.28))"
-                            : nightOwlActive
-                              ? "drop-shadow(0 0 10px rgba(200, 230, 255, 0.32))"
-                              : "",
-                          theme.dogTint,
-                        ]
-                          .filter(Boolean)
-                          .join(" "),
-                        transition: "filter 220ms ease",
-                      }}
-                    >
-                      <DogPixiView
-                        stage={renderStageForSprites}
-                        condition={renderModel?.condition}
-                        anim={syncedSpriteAnim}
-                        behaviorState={dog?.aiState || "idle"}
-                        position={dogRenderPosition}
-                        facing={dog?.facing || "right"}
-                        equippedCosmetics={dog?.cosmetics?.equipped || null}
-                        width="100%"
-                        height="100%"
-                        scale={1.6}
-                        baseScale={dogBaseScale}
-                        animSpeedMultiplier={effectiveAnimationSpeedMultiplier}
-                        bondValue={Number(dog?.bond?.value ?? 0)}
-                        dogIsSleeping={effectiveDogSleeping}
-                        insideShelter={sleepInDogHouse && effectiveDogSleeping}
-                        onPositionChange={handleDogPositionChange}
-                        onDogTap={
-                          treasurePhase === "sniffing"
-                            ? handleTreasureHuntTap
-                            : handleDogPetTap
-                        }
-                      />
-                    </div>
-                  </Suspense>
-                  {masteryCelebration ? (
-                    <div className="pointer-events-none absolute inset-0 z-[26] flex items-center justify-center">
-                      <div className="mastery-burst" aria-hidden="true" />
-                      <div className="mastery-celebration-card">
-                        <div className="mastery-celebration-card__eyebrow">
-                          {masteryCelebration.rank} Trick
-                        </div>
-                        <div className="mastery-celebration-card__title">
-                          Mastered: {masteryCelebration.label}
-                        </div>
-                        <div className="mastery-celebration-card__perk">
-                          {masteryCelebration.perk}
-                        </div>
-                      </div>
-                    </div>
-                  ) : null}
-                  {showTreasureMarker ? (
-                    <div
-                      className="pointer-events-none absolute z-[24]"
-                      style={{
-                        left: `${Number(treasureHunt?.xNorm || 0.5) * 100}%`,
-                        top: `${Number(treasureHunt?.yNorm || 0.75) * 100}%`,
-                        transform: "translate(-50%, -50%)",
-                      }}
-                      aria-hidden="true"
-                    >
-                      <div className="grid h-10 w-10 place-items-center rounded-full border border-amber-200/45 bg-black/55 text-xl shadow-[0_0_28px_rgba(250,204,21,0.22)]">
-                        {treasurePhase === "digging" ? "🕳️" : "❓"}
-                      </div>
-                    </div>
-                  ) : null}
-                  {showDreamBubble ? (
-                    <div className="pointer-events-none absolute left-1/2 top-8 z-30 -translate-x-1/2 rounded-2xl border border-white/25 bg-black/55 px-3 py-1 text-xs font-semibold text-doggerz-bone">
-                      💭 woof...
-                    </div>
-                  ) : null}
-                  {showTreasurePrompt ? (
-                    <div className="pointer-events-none absolute left-1/2 top-8 z-30 -translate-x-1/2 rounded-2xl border border-amber-300/45 bg-black/70 px-3 py-1 text-xs font-semibold text-amber-100 shadow-[0_10px_24px_rgba(120,53,15,0.28)]">
-                      {treasurePhase === "digging"
-                        ? `Digging up ${treasureHunt?.rewardName || "something"}...`
-                        : "Caught a scent. Tap your pup before it disappears."}
-                    </div>
-                  ) : null}
-                  {isSleepyState ? (
-                    <div className="pointer-events-none absolute left-1/2 top-14 z-30 -translate-x-1/2 text-xs text-doggerz-bone/80">
-                      <span className="inline-block animate-[dgZzzFloat_2.2s_ease-in-out_infinite]">
-                        zZz
-                      </span>
-                      <span className="ml-2 inline-block animate-[dgZzzFloat_2.2s_ease-in-out_infinite_0.4s]">
-                        zZz
-                      </span>
-                    </div>
-                  ) : null}
-                  {showGettingSleepyWarning ? (
-                    <div className="pointer-events-none absolute left-1/2 top-5 z-30 -translate-x-1/2 rounded-full border border-amber-300/55 bg-black/70 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-amber-100 shadow-[0_10px_24px_rgba(120,53,15,0.3)]">
-                      getting sleepy...
-                    </div>
-                  ) : null}
-                  {foodBowl ? (
-                    <div
-                      className="pointer-events-none absolute z-20"
-                      style={{
-                        left: `${foodBowl.xNorm * 100}%`,
-                        top: `${foodBowl.yNorm * 100}%`,
-                        transform: "translate(-50%, -50%)",
-                      }}
-                      aria-hidden="true"
-                    >
-                      <div className="dog-bowl grid h-10 w-12 place-items-center rounded-full border border-doggerz-bone/60 bg-doggerz-bone/25 text-lg shadow-[0_8px_20px_rgba(2,6,23,0.35)]">
-                        🥣
-                      </div>
-                      {String(foodBowl.surface || "") === "low_table" ? (
-                        <div className="mt-1 whitespace-nowrap rounded-full border border-amber-300/35 bg-black/60 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-amber-100">
-                          theft risk
-                        </div>
-                      ) : null}
-                    </div>
-                  ) : null}
-                  {showGuiltyPaws ? (
-                    <div className="pointer-events-none absolute bottom-12 left-5 z-30 rounded-xl border border-amber-300/45 bg-black/55 px-2 py-1 text-xs text-amber-100">
-                      🥣 spilled... sorry.
-                    </div>
-                  ) : null}
-                  {showFireflySnap ? (
-                    <div className="pointer-events-none absolute left-1/2 top-[58%] z-30 -translate-x-1/2 rounded-full border border-amber-200/40 bg-black/55 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-amber-100">
-                      snap!
-                    </div>
-                  ) : null}
-                  {sleepInDogHouse ? (
-                    <div className="pointer-events-none absolute right-[12%] top-[57%] z-[27] -translate-y-full rounded-full border border-doggerz-leaf/35 bg-black/60 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-doggerz-bone shadow-[0_10px_24px_rgba(2,6,23,0.28)]">
-                      napping inside
-                    </div>
-                  ) : null}
-                  {sleepInYard ? (
-                    <div className="pointer-events-none absolute left-1/2 top-[60%] z-30 -translate-x-1/2 rounded-full border border-doggerz-leaf/45 bg-black/60 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-doggerz-bone">
-                      yard nap
-                    </div>
-                  ) : null}
-                  {placingBowl ? (
-                    <div className="pointer-events-none absolute bottom-3 left-1/2 z-30 -translate-x-1/2 rounded-full border border-white/15 bg-black/70 px-3 py-1 text-[10px] uppercase tracking-[0.18em] text-doggerz-bone">
-                      {isApartmentEnvironment
-                        ? "Tap the floor or low table"
-                        : "Tap to place bowl"}
-                    </div>
-                  ) : null}
-                  {!effectiveDogSleeping ? (
+                    dogScaleBias={experimentalDogScaleBias}
+                    idleAnimationIntensity={idleAnimationIntensity}
+                    containerClassName={`yard-viewport ${visualNight ? "yard-night" : "yard-day"} relative w-full h-full min-h-0 overflow-hidden`}
+                    rendererClassName="absolute inset-0 z-[22] pointer-events-none"
+                    rendererMinHeight={null}
+                    onPointerDown={handleViewportPointerDown}
+                    onPointerMove={handleViewportPointerMove}
+                    onPointerUp={handleViewportPointerUp}
+                    onPointerCancel={handleViewportPointerCancel}
+                  />
+                  {!effectiveDogSleeping && !placingBowl ? (
                     <>
                       <DogToy
                         onSqueak={handleToySqueak}
                         itemType="food"
                         title="Drag food onto your pup to feed"
-                        className="bottom-3 right-16 left-auto top-auto z-30 h-11 w-11"
+                        className="absolute bottom-3 right-16 left-auto top-auto z-[30] h-11 w-11"
                       />
                       <DogToy
                         onSqueak={handleToySqueak}
                         itemType="toy"
                         title="Drag toy onto your pup to play"
-                        className="bottom-3 right-3 left-auto top-auto z-30 h-11 w-11"
+                        className="absolute bottom-3 right-3 left-auto top-auto z-[30] h-11 w-11"
                       />
                     </>
                   ) : null}
-                </div>
+                  {masteryCelebration ? (
+                    <div className="absolute inset-0 z-[26] flex items-center justify-center">
+                      <div className="mastery-burst" aria-hidden="true" />
+                      <div className="mastery-celebration-card">
+                        <div className="mastery-celebration-card__eyebrow">
+                          Mastery Unlocked
+                        </div>
+                        <div className="mastery-celebration-card__title">
+                          {masteryCelebration.label}
+                        </div>
+                        <div className="mastery-celebration-card__rank">
+                          {masteryCelebration.rank} Rank
+                        </div>
+                        <div className="mastery-celebration-card__perk">
+                          {masteryCelebration.perk}
+                        </div>
+                        <div className="mt-4 flex justify-center">
+                          <button
+                            type="button"
+                            onClick={handleShareMasteryMoment}
+                            className="rounded-full border border-white/15 bg-black/25 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-white/90 transition hover:bg-black/35"
+                          >
+                            Share Moment
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
+                </>
               )}
             </div>
-
-            {!showRunawayLetter ? (
+            {shareMomentCard ? (
+              <div className="fixed inset-0 z-[64] flex items-end justify-center bg-[linear-gradient(180deg,rgba(2,6,23,0.12),rgba(2,6,23,0.74))] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+16px)] pt-8 sm:items-center">
+                <div
+                  className="absolute inset-0"
+                  onClick={() => setShareMomentCard(null)}
+                  aria-hidden="true"
+                />
+                <ShareMomentCard
+                  card={shareMomentCard}
+                  className="relative z-[65] w-full max-w-md"
+                  onClose={() => setShareMomentCard(null)}
+                  onShare={() =>
+                    handleShareCard(shareMomentCard, {
+                      reward: shareMomentCard?.rewardEligible === true,
+                    })
+                  }
+                />
+              </div>
+            ) : null}
+            {!showRunawayLetter &&
+            !interactionOpen &&
+            !tricksOpen &&
+            !trainingLogOpen &&
+            !(temperamentReady && !temperamentCardDismissed) ? (
               <div
                 data-doggerz-ignore-swipe="true"
-                className="ui-layer fixed inset-x-0 bottom-0 z-[56] flex justify-center px-3 pt-6 pb-[calc(env(safe-area-inset-bottom,0px)+12px)]"
-                onPointerDownCapture={(event) => {
-                  event.stopPropagation();
-                }}
-                onPointerMoveCapture={(event) => {
-                  event.stopPropagation();
-                }}
-                onPointerUpCapture={(event) => {
-                  event.stopPropagation();
-                }}
-                onClickCapture={(event) => {
-                  event.stopPropagation();
-                }}
+                className="ui-layer fixed inset-x-0 bottom-0 z-[56] flex justify-center px-2 pt-8 pb-[calc(env(safe-area-inset-bottom,0px)+10px)] sm:px-4"
               >
-                <div className="w-full max-w-3xl">
+                <div className="relative w-full max-w-3xl">
+                  <div className="pointer-events-none absolute inset-x-6 -top-5 h-8 rounded-full bg-[radial-gradient(circle_at_center,rgba(251,191,36,0.2),rgba(251,191,36,0)_72%)] blur-xl" />
                   <BottomMenuDock
                     activeCategory={bottomMenuCategory}
                     onSelectCategory={handleBottomMenuSelect}
@@ -3979,78 +4257,57 @@ export default function MainGame({ scene, dogInteractive = true }) {
       ) : null}
       {interactionOpen ? (
         <InteractionSheet
-          onClose={() => setInteractionOpen(false)}
+          onClose={closeInteractionMenu}
+          onQuickFeed={() => {
+            handleQuickFeed();
+            closeInteractionMenu();
+          }}
           onDropBowl={() => {
             setPlacingBowl(true);
-            setInteractionOpen(false);
+            closeInteractionMenu();
           }}
           onGiveWater={() => {
-            dispatch(giveWater({ now: Date.now() }));
-            setInteractionOpen(false);
+            handleGiveWater();
+            closeInteractionMenu();
           }}
           onPlay={() => {
             if (toysIgnored) {
-              setInteractionOpen(false);
+              closeInteractionMenu();
               return;
             }
-            if (isActionHijacked("play")) {
-              setInteractionOpen(false);
-              return;
-            }
-            dispatchPlayAction("sheet");
-            setInteractionOpen(false);
+            handlePlayAction("sheet");
+            closeInteractionMenu();
           }}
           onFeedRegular={() => {
-            dispatch(feed({ now: Date.now(), foodType: "regular_kibble" }));
-            setInteractionOpen(false);
+            handleFeedAction("regular_kibble", "interaction_sheet");
+            closeInteractionMenu();
           }}
           onFeedHuman={() => {
-            dispatch(feed({ now: Date.now(), foodType: "human_food" }));
-            setInteractionOpen(false);
+            handleFeedAction("human_food", "interaction_sheet");
+            closeInteractionMenu();
           }}
           onFeedPremium={() => {
-            dispatch(feed({ now: Date.now(), foodType: "premium_kibble" }));
-            setInteractionOpen(false);
+            handleFeedAction("premium_kibble", "interaction_sheet");
+            closeInteractionMenu();
           }}
           premiumKibbleCount={premiumKibbleCount}
           onPet={() => {
-            if (isActionHijacked("pet")) {
-              setInteractionOpen(false);
-              return;
-            }
-            dispatch(petDog({ now: Date.now() }));
-            setInteractionOpen(false);
+            handleDogPetTap();
+            closeInteractionMenu();
           }}
           onBath={() => {
-            if (isActionHijacked("bath")) {
-              setInteractionOpen(false);
-              return;
-            }
-            dispatch(bathe({ now: Date.now() }));
-            setInteractionOpen(false);
+            handleBathAction();
+            closeInteractionMenu();
           }}
           onPotty={() => {
-            if (isActionHijacked("potty")) {
-              setInteractionOpen(false);
-              return;
-            }
-            dispatch(goPotty({ now: Date.now() }));
-            setInteractionOpen(false);
+            handlePottyAction();
+            closeInteractionMenu();
           }}
           onOpenTricks={() => {
-            if (isActionHijacked("train")) {
-              setInteractionOpen(false);
-              return;
-            }
-            setInteractionOpen(false);
+            closeInteractionMenu();
             openTricksPicker();
           }}
           showTricksButton={pottyMasteryComplete}
-          playHijacked={isActionHijacked("play")}
-          petHijacked={isActionHijacked("pet")}
-          bathHijacked={isActionHijacked("bath")}
-          pottyHijacked={isActionHijacked("potty")}
-          trainHijacked={isActionHijacked("train")}
           pottyTooltip={pottyButtonTooltip}
         />
       ) : null}
@@ -4124,17 +4381,17 @@ export default function MainGame({ scene, dogInteractive = true }) {
   100% { transform: translate3d(126vw, -22px, 0) rotate(420deg); opacity: 0; }
 }
 @keyframes dgMasteryBurst {
-  0% { transform: scale(0.45); opacity: 0; }
-  18% { opacity: 0.92; }
-  100% { transform: scale(2.35); opacity: 0; }
+  0% { transform: scale(0.72); opacity: 0; }
+  22% { opacity: 0.38; }
+  100% { transform: scale(1.68); opacity: 0; }
 }
 @keyframes dgMasteryCardIn {
-  0% { transform: translate3d(0, 12px, 0) scale(0.9); opacity: 0; }
+  0% { transform: translate3d(0, 8px, 0) scale(0.96); opacity: 0; }
   100% { transform: translate3d(0, 0, 0) scale(1); opacity: 1; }
 }
 @keyframes dgGoldShine {
   0% { filter: brightness(1); }
-  50% { filter: brightness(1.45); }
+  50% { filter: brightness(1.12); }
   100% { filter: brightness(1); }
 }
 @keyframes dgDockPressPop {
@@ -4153,22 +4410,22 @@ export default function MainGame({ scene, dogInteractive = true }) {
 }
 .mastery-burst {
   position: absolute;
-  width: 220px;
-  height: 220px;
+  width: 170px;
+  height: 170px;
   border-radius: 999px;
-  background: radial-gradient(circle, color-mix(in srgb, var(--accent-gold) 78%, white 10%) 0%, rgba(251,191,36,0.18) 46%, rgba(251,191,36,0) 72%);
-  animation: dgMasteryBurst 1.9s ease-out forwards;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent-gold) 66%, white 6%) 0%, rgba(251,191,36,0.14) 48%, rgba(251,191,36,0) 72%);
+  animation: dgMasteryBurst 1.5s ease-out forwards;
 }
 .mastery-celebration-card {
-  max-width: min(78vw, 360px);
-  border: 1px solid rgba(251, 191, 36, 0.42);
-  border-radius: 24px;
-  padding: 14px 18px;
+  max-width: min(82vw, 340px);
+  border: 1px solid rgba(251, 191, 36, 0.34);
+  border-radius: 20px;
+  padding: 12px 16px;
   text-align: center;
   color: var(--text-main);
   background: linear-gradient(180deg, rgba(15,23,42,0.96), rgba(2,6,23,0.92));
-  box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 18px 44px rgba(2,6,23,0.55), 0 0 44px rgba(251,191,36,0.2);
-  animation: dgMasteryCardIn 220ms ease-out forwards, dgGoldShine 1.5s ease-in-out 0.1s 2;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 14px 34px rgba(2,6,23,0.5), 0 0 26px rgba(251,191,36,0.14);
+  animation: dgMasteryCardIn 200ms ease-out forwards, dgGoldShine 1.1s ease-in-out 0.12s 1;
 }
 .mastery-celebration-card__eyebrow {
   font-size: 10px;
@@ -4178,18 +4435,26 @@ export default function MainGame({ scene, dogInteractive = true }) {
   color: color-mix(in srgb, var(--accent-gold) 78%, white 12%);
 }
 .mastery-celebration-card__title {
-  margin-top: 6px;
-  font-size: 20px;
+  margin-top: 5px;
+  font-size: 19px;
   font-weight: 900;
-  line-height: 1.15;
+  line-height: 1.2;
   color: color-mix(in srgb, var(--accent-gold) 82%, white 18%);
-  text-shadow: 0 0 16px rgba(251,191,36,0.24);
+  text-shadow: 0 0 10px rgba(251,191,36,0.18);
+}
+.mastery-celebration-card__rank {
+  margin-top: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(251,191,36,0.86);
 }
 .mastery-celebration-card__perk {
-  margin-top: 8px;
+  margin-top: 6px;
   font-size: 12px;
   line-height: 1.4;
-  color: rgba(229,231,235,0.86);
+  color: rgba(229,231,235,0.9);
 }
 .badge-icon {
   width: 50px;
@@ -4248,813 +4513,6 @@ export default function MainGame({ scene, dogInteractive = true }) {
   letter-spacing: 0.06em;
 }`}
       </style>
-    </div>
-  );
-}
-
-function RunawayLetterPanel({
-  dogName = "your pup",
-  endTimestamp = 0,
-  onWelcome,
-}) {
-  const countdown = useCountdown(endTimestamp);
-
-  return (
-    <div className="overflow-hidden rounded-[24px] border border-amber-300/25 bg-[radial-gradient(circle_at_top,rgba(251,191,36,0.16),transparent_45%),linear-gradient(180deg,rgba(24,16,10,0.96),rgba(9,8,7,0.98))] p-5 text-amber-50 shadow-[0_18px_46px_rgba(15,10,3,0.45)]">
-      <div className="text-[11px] font-black uppercase tracking-[0.22em] text-amber-200/80">
-        Dear Hooman
-      </div>
-      <h3 className="mt-2 text-2xl font-black tracking-tight text-amber-100">
-        {dogName} is on strike.
-      </h3>
-      <p className="mt-3 max-w-2xl text-sm leading-6 text-amber-50/88">
-        You were gone too long, so your dog packed a dramatic little bag and
-        left you a letter instead of waiting in the yard. No coins, no XP, and
-        no playtime until the cooldown burns off.
-      </p>
-      <div className="mt-5 inline-flex rounded-2xl border border-amber-300/30 bg-black/30 px-4 py-3 text-left shadow-[0_10px_24px_rgba(0,0,0,0.22)]">
-        <div>
-          <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-200/70">
-            I&apos;ll be back in
-          </div>
-          <div className="countdown-clock mt-1 text-3xl font-black tracking-tight text-amber-100">
-            {countdown.formatted}
-          </div>
-          <div className="mt-1 text-xs text-amber-100/70">
-            ...if I feel like it.
-          </div>
-        </div>
-      </div>
-      {countdown.isComplete ? (
-        <div className="mt-5">
-          <button
-            type="button"
-            onClick={onWelcome}
-            className="rounded-2xl border border-emerald-300/35 bg-emerald-400/15 px-4 py-2 text-sm font-bold text-emerald-50 shadow-[0_10px_24px_rgba(16,185,129,0.18)] hover:bg-emerald-400/20"
-          >
-            Welcome your dog back
-          </button>
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-function TemperamentRevealCard({ copy, onLater, onReveal }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4">
-      <div className="w-full max-w-lg rounded-3xl border border-doggerz-leaf/35 bg-black/90 p-5 text-doggerz-bone shadow-[0_20px_50px_rgba(2,6,23,0.7)]">
-        <div className="text-xs uppercase tracking-[0.2em] text-doggerz-paw/90">
-          Temperament Milestone
-        </div>
-        <h3 className="mt-2 text-xl font-black tracking-tight">
-          {copy?.title}
-        </h3>
-        <p className="mt-3 text-sm text-doggerz-bone/85">{copy?.summary}</p>
-        <p className="mt-2 text-xs text-doggerz-bone/70">{copy?.detail}</p>
-        <div className="mt-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs">
-          Primary: {copy?.primary || "Unknown"} • Secondary:{" "}
-          {copy?.secondary || "Unknown"}
-        </div>
-        <div className="mt-4 flex items-center justify-end gap-2">
-          <button
-            type="button"
-            onClick={onLater}
-            className="rounded-xl border border-white/20 bg-white/5 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-doggerz-bone/80 hover:bg-white/10"
-          >
-            Later
-          </button>
-          <button
-            type="button"
-            onClick={onReveal}
-            className="rounded-xl border border-doggerz-leaf/45 bg-doggerz-neon/20 px-3 py-2 text-xs font-bold uppercase tracking-[0.14em] text-doggerz-bone hover:bg-doggerz-neon/30"
-          >
-            Open Card
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function BottomMenuDock({
-  tabs = [],
-  activeCategory = "",
-  sections = {},
-  onSelectCategory,
-  onSelectItem,
-  onPointerEnter,
-}) {
-  const activeSection = sections?.[activeCategory] || null;
-
-  return (
-    <div className="relative mt-5 overflow-hidden rounded-[32px] border border-amber-200/18 bg-[linear-gradient(180deg,rgba(11,17,32,0.82),rgba(2,6,23,0.94))] p-3 shadow-[0_24px_60px_rgba(2,6,23,0.58),0_36px_90px_rgba(2,6,23,0.38),inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-3xl">
-      <div className="pointer-events-none absolute inset-x-[8%] top-0 h-14 rounded-full bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.24),rgba(255,255,255,0)_72%)] blur-2xl" />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-[linear-gradient(180deg,rgba(251,191,36,0),rgba(251,191,36,0.08))]" />
-      <div className="pointer-events-none absolute inset-0 rounded-[32px] border border-white/8 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)]" />
-      {activeSection ? (
-        <div className="relative rounded-[24px] border border-amber-200/14 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] p-3 shadow-[0_18px_36px_rgba(2,6,23,0.3),inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-3xl">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <div className="text-[11px] font-black uppercase tracking-[0.18em] text-amber-100/90">
-                {activeSection.title}
-              </div>
-              <div className="mt-1 text-xs text-doggerz-bone/70">
-                {activeSection.subtitle}
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => onSelectCategory?.(activeCategory)}
-              className="dock-glass-button dock-pressable rounded-full border border-white/14 bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-doggerz-bone/80"
-            >
-              Hide
-            </button>
-          </div>
-          <div className="mt-3 grid grid-cols-2 gap-2 lg:grid-cols-3">
-            {activeSection.items.map((item) => (
-              <BottomMenuCardButton
-                key={item.key}
-                item={item}
-                label={item.label}
-                detail={item.detail}
-                icon={item.icon}
-                onClick={onSelectItem}
-                onPointerEnter={onPointerEnter}
-                disabled={item.disabled}
-                active={item.active}
-              />
-            ))}
-          </div>
-        </div>
-      ) : null}
-
-      <div className={`${activeSection ? "mt-3" : ""} grid grid-cols-4 gap-2`}>
-        {tabs.map((tab) => {
-          const active = tab.id === activeCategory;
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => onSelectCategory?.(tab.id)}
-              onPointerEnter={onPointerEnter}
-              className={`dock-glass-button dock-pressable dz-touch-button dz-touch-hover relative rounded-[22px] border px-3 py-3 text-center transition ${
-                active
-                  ? "border-amber-200/35 bg-[linear-gradient(180deg,rgba(251,191,36,0.22),rgba(251,191,36,0.08))] text-doggerz-bone shadow-[0_16px_32px_rgba(251,191,36,0.16)]"
-                  : "border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] text-doggerz-bone/82 hover:bg-white/10"
-              }`}
-            >
-              <span className="dz-touch-glow pointer-events-none absolute inset-0 rounded-[22px] bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.18),rgba(255,255,255,0)_64%)]" />
-              <span className="block text-lg">{tab.icon}</span>
-              <span className="mt-1 block text-[11px] font-bold uppercase tracking-[0.14em]">
-                {tab.label}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function BottomMenuCardButton({
-  item = null,
-  label,
-  detail,
-  icon,
-  onClick,
-  onPointerEnter,
-  disabled = false,
-  active = false,
-}) {
-  const progress = clamp(Number(item?.progress || 0), 0, 100);
-  const ringTone =
-    String(item?.progressTone || "gold")
-      .trim()
-      .toLowerCase();
-  const ringColor =
-    ringTone === "amber"
-      ? "rgba(251,191,36,0.95)"
-      : ringTone === "sky"
-        ? "rgba(56,189,248,0.95)"
-        : ringTone === "emerald"
-          ? "rgba(52,211,153,0.95)"
-          : ringTone === "rose"
-            ? "rgba(251,113,133,0.95)"
-            : ringTone === "violet"
-              ? "rgba(167,139,250,0.95)"
-              : ringTone === "lime"
-                ? "rgba(163,230,53,0.95)"
-                : "rgba(250,204,21,0.95)";
-  const ringTrack = "rgba(255,255,255,0.08)";
-  const ringBackground = `conic-gradient(${ringColor} 0 ${progress}%, ${ringTrack} ${progress}% 100%)`;
-
-  return (
-    <Tooltip content={detail || label} className="w-full">
-      <button
-        type="button"
-        onClick={() => onClick?.(item)}
-        onPointerEnter={onPointerEnter}
-        disabled={disabled}
-        className={`dock-glass-button dock-pressable dz-touch-button dz-touch-hover group relative w-full overflow-hidden rounded-[22px] border px-3 py-3 text-left transition disabled:cursor-not-allowed disabled:opacity-45 ${
-          active
-            ? "btn-feedback-pop border-doggerz-neon/45 bg-[linear-gradient(180deg,rgba(45,212,191,0.18),rgba(45,212,191,0.08))]"
-            : "border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.1),rgba(255,255,255,0.04))] hover:bg-white/10"
-        }`}
-      >
-        <span className="dz-touch-glow pointer-events-none absolute inset-0 rounded-[22px] bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.16),rgba(255,255,255,0)_62%)]" />
-        <div className="flex items-start gap-3">
-          <span
-            className="relative grid h-11 w-11 shrink-0 place-items-center rounded-[18px] text-lg"
-            style={{
-              background: ringBackground,
-              boxShadow:
-                "0 14px 24px rgba(2,6,23,0.18), inset 0 1px 0 rgba(255,255,255,0.06)",
-            }}
-          >
-            <span className="absolute inset-[2px] rounded-[16px] bg-[linear-gradient(180deg,rgba(15,23,42,0.95),rgba(2,6,23,0.9))]" />
-            <span className="absolute inset-[6px] rounded-[14px] bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.12),rgba(255,255,255,0)_60%),linear-gradient(180deg,rgba(12,18,32,0.92),rgba(2,6,23,0.86))]" />
-            <span className="relative z-[1]">{icon}</span>
-          </span>
-          <span className="min-w-0">
-            <span className="block text-sm font-bold text-doggerz-bone">
-              {label}
-            </span>
-            <span className="mt-1 block text-[11px] leading-4 text-doggerz-paw/75">
-              {detail}
-            </span>
-          </span>
-        </div>
-      </button>
-    </Tooltip>
-  );
-}
-
-function InteractionSheet({
-  onClose,
-  onDropBowl,
-  onFeedRegular,
-  onFeedHuman,
-  onFeedPremium,
-  premiumKibbleCount = 0,
-  onGiveWater,
-  onPlay,
-  onPet,
-  onBath,
-  onPotty,
-  onOpenTricks,
-  showTricksButton = false,
-  playHijacked = false,
-  petHijacked = false,
-  bathHijacked = false,
-  pottyHijacked = false,
-  trainHijacked = false,
-  pottyTooltip = "",
-}) {
-  return (
-    <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/45 p-4 sm:p-6">
-      <div className="w-full max-w-xl rounded-[28px] border border-doggerz-leaf/30 bg-black/85 p-4 text-doggerz-bone shadow-[0_18px_48px_rgba(2,6,23,0.65)] backdrop-blur-md">
-        <div className="flex items-center justify-between">
-          <div className="text-sm font-semibold uppercase tracking-[0.2em] text-doggerz-paw">
-            Interactions
-          </div>
-          <div className="rounded-full border border-white/15 bg-black/40 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-100">
-            Premium bowls: {premiumKibbleCount}
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="dz-touch-button rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-doggerz-bone"
-          >
-            Close
-          </button>
-        </div>
-        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
-          <SheetButton
-            label="Feed Regular Kibble"
-            icon="🦴"
-            onClick={onFeedRegular}
-            tooltip="Standard meal. Reliable hunger recovery."
-          />
-          <SheetButton
-            label="Feed Human Food"
-            icon="🍟"
-            onClick={onFeedHuman}
-            tooltip="Fast happiness spike, but not ideal as a routine diet."
-          />
-          <SheetButton
-            label="Feed Premium Kibble"
-            icon="🥩"
-            onClick={onFeedPremium}
-            disabled={premiumKibbleCount <= 0}
-            tooltip="Best meal quality. Uses one premium bowl."
-          />
-          <SheetButton
-            label="Drop Food Bowl"
-            icon="🥣"
-            onClick={onDropBowl}
-            tooltip="Place a bowl in the scene so your pup can eat from it."
-          />
-          <SheetButton
-            label="Give Water"
-            icon="💧"
-            onClick={onGiveWater}
-            tooltip="Hydration support for mood and health."
-          />
-          <SheetButton
-            label={playHijacked ? "Play (stolen)" : "Play"}
-            icon="🎾"
-            onClick={onPlay}
-            disabled={playHijacked}
-            tooltip={
-              playHijacked
-                ? "Play is currently stolen by a surprise event."
-                : "Active play boosts happiness and bond."
-            }
-          />
-          <SheetButton
-            label={petHijacked ? "Pet (stolen)" : "Pet"}
-            icon="🖐️"
-            onClick={onPet}
-            disabled={petHijacked}
-            tooltip={
-              petHijacked
-                ? "Pet is currently stolen by a surprise event."
-                : "Petting steadily increases affection."
-            }
-          />
-          <SheetButton
-            label={bathHijacked ? "Bath (stolen)" : "Bath"}
-            icon="🧼"
-            onClick={onBath}
-            disabled={bathHijacked}
-            tooltip={
-              bathHijacked
-                ? "Bath is currently stolen by a surprise event."
-                : "Cleaning prevents hygiene-related penalties."
-            }
-          />
-          <SheetButton
-            label={pottyHijacked ? "Potty (stolen)" : "Potty"}
-            icon="🌿"
-            onClick={onPotty}
-            disabled={pottyHijacked}
-            tooltip={
-              pottyHijacked
-                ? "Potty is currently stolen by a surprise event."
-                : pottyTooltip || "Potty routine helps avoid accidents."
-            }
-          />
-          {showTricksButton ? (
-            <SheetButton
-              label={trainHijacked ? "Tricks (stolen)" : "Tricks"}
-              icon="🎯"
-              onClick={onOpenTricks}
-              disabled={trainHijacked}
-              tooltip={
-                trainHijacked
-                  ? "Tricks are currently stolen by a surprise event."
-                  : "Open the trick list and choose a command to practice."
-              }
-            />
-          ) : null}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function PottyTrainingCard({
-  successCount = 0,
-  goal = 1,
-  progressPct = 0,
-  copy = "",
-}) {
-  return (
-    <div className="mt-2 rounded-xl border border-amber-300/35 bg-amber-400/10 px-3 py-3 text-amber-50">
-      <div className="flex items-center justify-between gap-2 text-[11px] font-bold uppercase tracking-[0.16em]">
-        <span>Potty Training</span>
-        <span>
-          {successCount}/{goal}
-        </span>
-      </div>
-      <div className="mt-2 h-2 overflow-hidden rounded-full bg-black/45">
-        <div
-          className="h-full rounded-full bg-gradient-to-r from-amber-300 via-lime-300 to-emerald-300 transition-[width] duration-300"
-          style={{ width: `${clamp(progressPct, 0, 100)}%` }}
-        />
-      </div>
-      <div className="mt-2 text-[11px] font-semibold text-amber-100/90">
-        {copy}
-      </div>
-    </div>
-  );
-}
-
-function TricksOverlay({
-  commands = [],
-  unlockedCount = 0,
-  activeCount = 0,
-  activeLimit = 1,
-  pendingCount = 0,
-  onClose,
-  onOpenLog,
-  onTrainCommand,
-}) {
-  const [isVisible, setIsVisible] = useState(false);
-
-  useEffect(() => {
-    const rafId = window.requestAnimationFrame(() => {
-      setIsVisible(true);
-    });
-    return () => {
-      window.cancelAnimationFrame(rafId);
-    };
-  }, []);
-
-  return (
-    <div
-      className="fixed inset-0 z-40 flex items-end justify-center bg-[linear-gradient(180deg,rgba(2,6,23,0.12),rgba(2,6,23,0.72))] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+16px)] pt-6"
-      onClick={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
-    >
-      <div
-        className={`w-full max-w-xl rounded-[28px] border border-doggerz-leaf/30 bg-[linear-gradient(180deg,rgba(2,6,23,0.96),rgba(15,23,42,0.94))] p-4 text-doggerz-bone shadow-[0_24px_64px_rgba(2,6,23,0.7)] backdrop-blur-3xl transition duration-300 ease-out ${
-          isVisible
-            ? "translate-y-0 opacity-100"
-            : "translate-y-10 opacity-0"
-        }`}
-      >
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="text-sm font-semibold uppercase tracking-[0.2em] text-doggerz-paw">
-              Tricks
-            </div>
-            <div className="mt-1 text-xs text-doggerz-bone/75">
-              Ready: {unlockedCount}. Active lessons: {activeCount}/
-              {activeLimit}
-            </div>
-            <div className="mt-1 text-[11px] text-doggerz-bone/60">
-              {pendingCount > 0
-                ? `${pendingCount} more trick${pendingCount === 1 ? "" : "s"} warming up in the queue.`
-                : "Pick a ready command to practice."}
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {activeCount >= activeLimit ? (
-              <span className="rounded-full border border-doggerz-neon/35 bg-doggerz-neon/10 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-doggerz-neon">
-                Focus Set Full
-              </span>
-            ) : null}
-            <button
-              type="button"
-              onClick={onOpenLog}
-              className="dz-touch-button rounded-full border border-doggerz-leaf/35 bg-doggerz-neon/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-doggerz-bone"
-            >
-              Training Log
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="dz-touch-button rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-doggerz-bone"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-        <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
-          {commands.map((command) => (
-            <button
-              key={command.id}
-              type="button"
-              disabled={!command.unlocked}
-              onClick={() => onTrainCommand(command.id)}
-              className={`rounded-2xl border px-3 py-3 text-left transition ${
-                command.unlocked
-                  ? "border-doggerz-leaf/35 bg-doggerz-neon/10 hover:bg-doggerz-neon/15"
-                  : "cursor-not-allowed border-white/10 bg-white/5 opacity-60"
-              }`}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-sm font-bold text-doggerz-bone">
-                  {command.label}
-                </span>
-                <span className="rounded-full border border-white/10 bg-black/35 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-doggerz-paw/85">
-                  {command.requirementLabel}
-                </span>
-              </div>
-              <div className="mt-1 text-[11px] text-doggerz-bone/65">
-                {command.helperText}
-              </div>
-              <div className="mt-2 flex items-center justify-between gap-2 text-[10px] uppercase tracking-[0.14em] text-doggerz-paw/75">
-                <span>{command.group || "Trick"}</span>
-                <span>{command.difficultyStars}</span>
-              </div>
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function TrainingLogOverlay({
-  commands = [],
-  unlockedCount = 0,
-  masteredCount = 0,
-  onClose,
-}) {
-  const masteredCommands = commands.filter((command) => command.mastered);
-  return (
-    <div
-      className="fixed inset-0 z-40 flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm"
-      onClick={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
-    >
-      <div className="w-full max-w-2xl rounded-[28px] border border-doggerz-leaf/30 bg-[linear-gradient(180deg,rgba(2,6,23,0.97),rgba(15,23,42,0.96))] p-4 text-doggerz-bone shadow-[0_20px_50px_rgba(2,6,23,0.75)]">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="text-xs font-semibold uppercase tracking-[0.22em] text-doggerz-paw/85">
-              Training Logs
-            </div>
-            <h3 className="mt-1 text-xl font-black tracking-tight text-doggerz-bone">
-              Command Registry
-            </h3>
-            <div className="mt-2 flex flex-wrap gap-2 text-[10px] uppercase tracking-[0.14em]">
-              <span className="rounded-full border border-doggerz-leaf/30 bg-doggerz-neon/10 px-2 py-1 text-doggerz-bone/85">
-                Ready {unlockedCount}
-              </span>
-              <span className="rounded-full border border-amber-300/30 bg-amber-400/10 px-2 py-1 text-amber-100/90">
-                Mastered {masteredCount}
-              </span>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="dz-touch-button rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-doggerz-bone"
-          >
-            Back
-          </button>
-        </div>
-        <div className="mt-4 rounded-2xl border border-amber-300/20 bg-amber-400/10 p-3">
-          <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-amber-100/80">
-            Hall of Fame
-          </div>
-          <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
-            {masteredCommands.length ? (
-              masteredCommands.map((command) => (
-                <div
-                  key={`badge-${command.id}`}
-                  className={`badge-icon pulse-gold badge-${command.id}`}
-                  title={`Master of ${command.label}`}
-                  aria-label={`Master of ${command.label}`}
-                >
-                  <span>
-                    {String(command.label || "")
-                      .slice(0, 2)
-                      .toUpperCase()}
-                  </span>
-                </div>
-              ))
-            ) : (
-              <div className="text-[11px] text-amber-50/75">
-                No mastered badges yet. Finish a trick to start the wall.
-              </div>
-            )}
-          </div>
-        </div>
-        <div className="mt-4 max-h-[72vh] space-y-2 overflow-y-auto pr-1">
-          {commands.map((command) => (
-            <div
-              key={command.id}
-              className={`rounded-2xl border px-3 py-3 ${
-                command.mastered
-                  ? "border-amber-300/35 bg-amber-400/10"
-                  : command.unlocked
-                    ? "border-doggerz-leaf/30 bg-white/5"
-                    : "border-white/10 bg-black/35"
-              }`}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <div className="text-sm font-bold text-doggerz-bone">
-                    {command.label}
-                  </div>
-                  <div className="mt-1 flex flex-wrap items-center gap-2 text-[10px] uppercase tracking-[0.14em] text-doggerz-paw/75">
-                    <span>{command.group || "Trick"}</span>
-                    <span>{command.difficultyStars}</span>
-                    <span>{command.requirementLabel}</span>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-lg font-black text-doggerz-bone">
-                    {command.masteryPct}%
-                  </div>
-                  <div className="text-[10px] uppercase tracking-[0.14em] text-doggerz-paw/70">
-                    Mastery
-                  </div>
-                </div>
-              </div>
-              <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
-                {command.mastered ? (
-                  <div className="flex h-full items-center justify-center bg-gradient-to-r from-amber-300 via-yellow-300 to-emerald-300 text-[9px] font-black uppercase tracking-[0.16em] text-slate-950">
-                    Star Mastered
-                  </div>
-                ) : (
-                  <div
-                    className={`h-full rounded-full transition-[width] duration-300 ${
-                      command.unlocked
-                        ? "bg-gradient-to-r from-doggerz-neon via-doggerz-leaf to-doggerz-sky"
-                        : "bg-white/25"
-                    }`}
-                    style={{ width: `${clamp(command.masteryPct, 0, 100)}%` }}
-                  />
-                )}
-              </div>
-              <div className="mt-3 text-[12px] leading-5 text-doggerz-bone/78">
-                {command.summary || command.helperText}
-              </div>
-              <div className="mt-2 text-[11px] font-semibold text-doggerz-neonSoft">
-                {command.masteryRank?.label}: {command.masteryRank?.perk}
-              </div>
-              <div className="mt-2 text-[11px] text-doggerz-bone/60">
-                {command.helperText}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function SheetButton({ label, icon, onClick, disabled = false, tooltip = "" }) {
-  const tooltipText = tooltip || label;
-  return (
-    <Tooltip content={tooltipText} className="w-full" side="top">
-      <button
-        type="button"
-        onClick={onClick}
-        disabled={disabled}
-        className="dz-touch-button dz-touch-hover group flex w-full items-center gap-2 rounded-2xl border border-doggerz-leaf/30 bg-black/40 px-3 py-3 text-left text-sm font-semibold text-doggerz-bone transition disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        <span className="grid h-9 w-9 place-items-center rounded-xl border border-white/20 bg-black/25 text-base">
-          {icon}
-        </span>
-        <span className="leading-tight">{label}</span>
-      </button>
-    </Tooltip>
-  );
-}
-
-function HudChip({ label, value, tooltip = "" }) {
-  return (
-    <Tooltip content={tooltip || label} className="w-full">
-      <div className="stat-box w-full rounded-xl px-3 py-2">
-        <div className="stat-label text-[10px] font-semibold tracking-[0.14em]">
-          {label}
-        </div>
-        <div className="stat-value mt-0.5 text-sm font-bold sm:text-[15px]">
-          {value}
-        </div>
-      </div>
-    </Tooltip>
-  );
-}
-
-function DogStatusBubble({
-  name = "Your pup",
-  stageLabel = "Puppy",
-  ageValue = "0w",
-  moodLabel = "Calm",
-  energyPct = 100,
-}) {
-  return (
-    <Tooltip
-      content={`${name} • ${stageLabel} • ${ageValue} • ${moodLabel} • ${Math.round(
-        Number(energyPct || 0)
-      )}% energy`}
-      className="w-full"
-    >
-      <div className="inline-flex min-w-0 max-w-full items-center gap-3 rounded-[24px] border border-white/16 bg-[linear-gradient(180deg,rgba(15,23,42,0.74),rgba(2,6,23,0.62))] px-3 py-2 text-doggerz-bone shadow-[0_16px_40px_rgba(2,6,23,0.32)] backdrop-blur-2xl sm:px-4 sm:py-3">
-        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-[18px] border border-emerald-300/20 bg-[radial-gradient(circle_at_30%_30%,rgba(45,212,191,0.22),rgba(45,212,191,0.04)_64%)] text-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
-          🐶
-        </div>
-        <div className="min-w-0">
-          <div className="truncate text-sm font-black tracking-tight text-white sm:text-[15px]">
-            {name}
-          </div>
-          <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-doggerz-paw/80">
-            <span>{stageLabel}</span>
-            <span className="text-white/25">•</span>
-            <span>{ageValue}</span>
-            <span className="text-white/25">•</span>
-            <span>{moodLabel}</span>
-          </div>
-          <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
-            <div
-              className="h-full rounded-full bg-[linear-gradient(90deg,rgba(45,212,191,0.88),rgba(110,231,183,0.98))]"
-              style={{ width: `${clamp(Number(energyPct || 0), 0, 100)}%` }}
-            />
-          </div>
-        </div>
-      </div>
-    </Tooltip>
-  );
-}
-
-function ModernStatusPill({
-  label,
-  value,
-  detail = "",
-  tone = "muted",
-}) {
-  const toneClass =
-    tone === "ok"
-      ? "border-emerald-300/28 bg-[linear-gradient(180deg,rgba(16,185,129,0.22),rgba(16,185,129,0.08))] text-emerald-50"
-      : tone === "error"
-        ? "border-rose-300/28 bg-[linear-gradient(180deg,rgba(244,63,94,0.22),rgba(244,63,94,0.08))] text-rose-50"
-        : tone === "pending"
-          ? "border-amber-300/28 bg-[linear-gradient(180deg,rgba(251,191,36,0.22),rgba(251,191,36,0.08))] text-amber-50"
-          : tone === "sky"
-            ? "border-sky-300/28 bg-[linear-gradient(180deg,rgba(56,189,248,0.22),rgba(56,189,248,0.08))] text-sky-50"
-            : "border-white/14 bg-[linear-gradient(180deg,rgba(255,255,255,0.1),rgba(255,255,255,0.04))] text-white/85";
-
-  return (
-    <Tooltip
-      content={detail ? `${label}: ${value} • ${detail}` : `${label}: ${value}`}
-      className="w-full"
-    >
-      <div
-        className={`inline-flex min-w-0 max-w-full items-center gap-2 rounded-full border px-3 py-2 text-right shadow-[0_16px_34px_rgba(2,6,23,0.28)] backdrop-blur-2xl ${toneClass}`}
-      >
-        <span className="shrink-0 text-[10px] font-black uppercase tracking-[0.16em] opacity-80">
-          {label}
-        </span>
-        <span className="min-w-0 truncate text-[11px] font-bold sm:text-xs">
-          {value}
-        </span>
-      </div>
-    </Tooltip>
-  );
-}
-
-function OwnerBadge({ name = "Catfish", avatarUrl = DEFAULT_OWNER_AVATAR }) {
-  const [src, setSrc] = useState(avatarUrl || DEFAULT_OWNER_AVATAR);
-
-  useEffect(() => {
-    setSrc(avatarUrl || DEFAULT_OWNER_AVATAR);
-  }, [avatarUrl]);
-
-  return (
-    <div className="owner-badge">
-      <img
-        src={src}
-        alt="Owner avatar"
-        className="owner-badge__avatar"
-        loading="lazy"
-        referrerPolicy="no-referrer"
-        onError={() => {
-          if (src !== DEFAULT_OWNER_AVATAR) {
-            setSrc(DEFAULT_OWNER_AVATAR);
-          }
-        }}
-      />
-      <div className="owner-badge__meta">
-        <span className="owner-badge__label">Owner</span>
-        <span className="owner-badge__name">{name}</span>
-      </div>
-    </div>
-  );
-}
-
-function StatBarCard({
-  label,
-  value,
-  color,
-  critical = false,
-  popped = false,
-}) {
-  const pct = clamp(Number(value || 0), 0, 100);
-  return (
-    <div
-      className={`game-card stat-bar-card ${critical ? "critical-warning" : ""} ${
-        popped ? "stat-pop" : ""
-      }`}
-    >
-      <div className="flex items-center justify-between">
-        <span className="env-label !mb-0">{label}</span>
-        <span className="env-label !mb-0 !text-[var(--text-main)]">{pct}%</span>
-      </div>
-      <div className="stat-bar-container">
-        <div
-          className="stat-bar-fill"
-          style={{ width: `${pct}%`, backgroundColor: color }}
-        />
-      </div>
     </div>
   );
 }
