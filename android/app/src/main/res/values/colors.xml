@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="doggerz_primary">#184E3A</color>
+    <color name="doggerz_primary_dark">#0F3528</color>
+    <color name="doggerz_accent">#F2B544</color>
+    <color name="doggerz_launch_background">#F6F0E4</color>
+</resources>
