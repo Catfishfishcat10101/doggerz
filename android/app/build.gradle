@@ -1,6 +1,14 @@
 
 import java.io.FileInputStream
 import java.util.Properties
+
+
+buildscript {
+    dependencies {
+        classpath 'org.codehaus.groovy:groovy-json:3.0.13'
+    }
+}
+
 import groovy.json.JsonSlurper
 
 plugins {

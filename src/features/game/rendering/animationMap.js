@@ -1,126 +1,53 @@
 // src/features/game/rendering/animationMap.js
 
-const STABLE_DOG_LAYOUT = Object.freeze({
-  anchorX: 0.5,
-  anchorY: 0.98,
-  scaleMultiplier: 1,
-  groundOffsetPx: 0,
-});
+import { DOG_ACTIONS } from "./DogAction.js";
+import {
+  DEFAULT_DOG_ACTION,
+  DOG_ANIMATION_MAP,
+  LOOPING_RENDER_ACTIONS,
+  ONE_SHOT_RENDER_ACTIONS,
+  STABLE_DOG_ACTIONS,
+  STABLE_DOG_ANIMATION_CONTRACT,
+  resolveContractClipKey,
+  resolveStableDogAction,
+} from "./dogAnimationMap.js";
 
-// Long-term action names used by gameplay/simulation.
-// Keep these stable as production sheets are swapped in later.
 export const INTENDED_DOG_ACTIONS = Object.freeze({
-  idle: "idle",
+  idle: DOG_ACTIONS.idle,
   idle_resting: "idle_resting",
-  walk: "walk",
-  bark: "bark",
-  beg: "beg",
-  scratch: "scratch",
-  dig: "dig",
-  sleep: "sleep",
+  idle_calm: "idle_calm",
+  walk: DOG_ACTIONS.walk,
+  walk_left: "walk_left",
+  walk_right: "walk_right",
+  turn_walk_left: "turn_walk_left",
+  turn_walk_right: "turn_walk_right",
+  bark: DOG_ACTIONS.bark,
+  speak: "speak",
+  dig: DOG_ACTIONS.dig,
+  sleep: DOG_ACTIONS.sleep,
+  light_sleep: "light_sleep",
+  deep_rem_sleep: "deep_rem_sleep",
+  paw: DOG_ACTIONS.paw,
+  shake: "shake",
+  highfive: "highfive",
+  eat: DOG_ACTIONS.eat,
+  drink: DOG_ACTIONS.drink,
+  scratch: DOG_ACTIONS.scratch,
+  gate_watch: "gate_watch",
+  sniff: "sniff",
 });
 
-const TEMP_CANONICAL_SHEET = "/assets/sprites/jr/pup_idle_resting.png";
+export const DOG_ANIMATIONS = DOG_ANIMATION_MAP;
+export const DEFAULT_ANIMATION = DEFAULT_DOG_ACTION;
+export const SUPPORTED_RENDER_ACTIONS = Object.freeze(
+  new Set([
+    ...Array.from(LOOPING_RENDER_ACTIONS),
+    ...Array.from(ONE_SHOT_RENDER_ACTIONS),
+  ])
+);
 
-// Temporary art safeguard policy:
-// - Centralize sheet routing in one map.
-// - Route unsupported/mismatched visuals to stable fallback actions.
-// Replace these values with production-ready sheets per action when available.
-const TEMP_SHEET_BY_ACTION = Object.freeze({
-  [INTENDED_DOG_ACTIONS.idle]: TEMP_CANONICAL_SHEET,
-  [INTENDED_DOG_ACTIONS.idle_resting]: TEMP_CANONICAL_SHEET,
-  [INTENDED_DOG_ACTIONS.walk]: TEMP_CANONICAL_SHEET,
-  [INTENDED_DOG_ACTIONS.bark]: TEMP_CANONICAL_SHEET,
-  [INTENDED_DOG_ACTIONS.beg]: TEMP_CANONICAL_SHEET,
-  [INTENDED_DOG_ACTIONS.scratch]: TEMP_CANONICAL_SHEET,
-  [INTENDED_DOG_ACTIONS.dig]: TEMP_CANONICAL_SHEET,
-  [INTENDED_DOG_ACTIONS.sleep]: TEMP_CANONICAL_SHEET,
-});
-
-const TEMP_ACTION_FALLBACK = Object.freeze({
-  bark: "idle_resting",
-  beg: "idle_resting",
-  dig: "idle_resting",
-});
-
-function resolveSheetForAction(action) {
-  return TEMP_SHEET_BY_ACTION[action] || TEMP_CANONICAL_SHEET;
-}
-
-function createAnimationConfig(action, { frameCount, fps, loop }) {
-  return Object.freeze({
-    src: resolveSheetForAction(action),
-    columns: 4,
-    rows: 4,
-    frameCount,
-    fps,
-    loop,
-    ...STABLE_DOG_LAYOUT,
-  });
-}
-
-export const DOG_ANIMATIONS = Object.freeze({
-  [INTENDED_DOG_ACTIONS.idle]: createAnimationConfig(
-    INTENDED_DOG_ACTIONS.idle,
-    { frameCount: 16, fps: 3, loop: true }
-  ),
-  [INTENDED_DOG_ACTIONS.idle_resting]: createAnimationConfig(
-    INTENDED_DOG_ACTIONS.idle_resting,
-    { frameCount: 16, fps: 3, loop: true }
-  ),
-  [INTENDED_DOG_ACTIONS.walk]: createAnimationConfig(
-    INTENDED_DOG_ACTIONS.walk,
-    { frameCount: 16, fps: 3, loop: true }
-  ),
-  [INTENDED_DOG_ACTIONS.bark]: createAnimationConfig(
-    INTENDED_DOG_ACTIONS.bark,
-    { frameCount: 4, fps: 4, loop: false }
-  ),
-  [INTENDED_DOG_ACTIONS.beg]: createAnimationConfig(INTENDED_DOG_ACTIONS.beg, {
-    frameCount: 4,
-    fps: 4,
-    loop: false,
-  }),
-  [INTENDED_DOG_ACTIONS.scratch]: createAnimationConfig(
-    INTENDED_DOG_ACTIONS.scratch,
-    { frameCount: 4, fps: 3, loop: true }
-  ),
-  [INTENDED_DOG_ACTIONS.dig]: createAnimationConfig(INTENDED_DOG_ACTIONS.dig, {
-    frameCount: 4,
-    fps: 4,
-    loop: false,
-  }),
-  [INTENDED_DOG_ACTIONS.sleep]: createAnimationConfig(
-    INTENDED_DOG_ACTIONS.sleep,
-    { frameCount: 4, fps: 2, loop: true }
-  ),
-});
-
-export const DEFAULT_ANIMATION = "idle_resting";
-
-const DOG_ANIMATION_ALIASES = Object.freeze({
-  digging: "dig",
-  walk_left: "walk",
-  walk_right: "walk",
-  turn_walk_left: "walk",
-  turn_walk_right: "walk",
-});
-
-function normalizeAnimationKey(value) {
-  return String(value || "")
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, "_")
-    .replace(/-+/g, "_");
-}
-
-function resolveSafeDisplayActionKey(actionLike) {
-  const key = normalizeAnimationKey(actionLike);
-  const aliased = DOG_ANIMATION_ALIASES[key] || key;
-  if (!aliased) return DEFAULT_ANIMATION;
-  // Temporary art policy: anything visually unsupported degrades to calm idle.
-  const fallback = TEMP_ACTION_FALLBACK[aliased] || aliased;
-  return DOG_ANIMATIONS[fallback] ? fallback : DEFAULT_ANIMATION;
+export function resolveRenderableActionKey(actionLike) {
+  return resolveContractClipKey(actionLike);
 }
 
 export function resolveDogAnimationKey({
@@ -130,29 +57,13 @@ export function resolveDogAnimationKey({
   isDirty = false,
   isBarking = false,
 }) {
-  const overrideKey = resolveSafeDisplayActionKey(overrideAction);
-  if (normalizeAnimationKey(overrideAction) && DOG_ANIMATIONS[overrideKey]) {
-    return overrideKey;
+  if (String(overrideAction || "").trim()) {
+    return resolveStableDogAction(overrideAction, DEFAULT_ANIMATION);
   }
-
-  if (isSleeping && DOG_ANIMATIONS.sleep) {
-    return "sleep";
-  }
-
-  // Bark should be one-shot via overrideAction only (not persistent state).
-  void isBarking;
-
-  if (isDirty && DOG_ANIMATIONS.scratch) {
-    return "scratch";
-  }
-
-  const desiredKey = resolveSafeDisplayActionKey(desiredAction);
-  if (desiredKey === "idle" && DOG_ANIMATIONS.idle_resting) {
-    return "idle_resting";
-  }
-  if (desiredKey && DOG_ANIMATIONS[desiredKey]) {
-    return desiredKey;
-  }
-
-  return DEFAULT_ANIMATION;
+  if (isSleeping) return DOG_ACTIONS.sleep;
+  if (isBarking) return DOG_ACTIONS.bark;
+  if (isDirty) return DOG_ACTIONS.scratch;
+  return resolveStableDogAction(desiredAction, DEFAULT_ANIMATION);
 }
+
+export { STABLE_DOG_ACTIONS, STABLE_DOG_ANIMATION_CONTRACT };

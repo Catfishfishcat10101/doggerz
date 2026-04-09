@@ -6,11 +6,10 @@ import {
   useRef,
   useState,
 } from "react";
-import DogRenderer from "@/features/game/rendering/DogRenderer.jsx";
-import GroundShadow from "@/features/game/rendering/GroundShadow.jsx";
+import DogMobileCanvas from "@/features/game/rendering/DogMobileCanvas.jsx";
+import { resolveDogBrain } from "@/features/game/rendering/DogBrain.js";
 import SceneHud from "@/features/game/rendering/SceneHud.jsx";
 import YardScene from "@/features/game/rendering/YardScene.jsx";
-import { resolveDogAnimationPolicy } from "@/features/game/rendering/animationPolicy.js";
 import { getSceneLayout } from "@/features/game/rendering/sceneLayout.js";
 import { useDogGameView } from "@/hooks/useDogState.js";
 
@@ -60,7 +59,9 @@ const DogStage = forwardRef(function DogStage(
     placingBowl = false,
     dogSleepingInDoghouse = false,
     dogScaleBias = 0.95,
+    animationSpeedMultiplier = 1,
     idleAnimationIntensity = "calm",
+    requestedAnimation = "",
     containerClassName = "",
     rendererClassName = "",
     rendererMinHeight = undefined,
@@ -205,7 +206,7 @@ const DogStage = forwardRef(function DogStage(
   const sectionClassName =
     containerClassName || "relative isolate w-full h-full overflow-hidden";
   const dogRendererClassName =
-    rendererClassName || "absolute inset-0 z-[22] pointer-events-none";
+    rendererClassName || "absolute inset-0 pointer-events-none";
   const sectionStyle = useMemo(
     () => ({
       minHeight: `${resolvedViewportMinHeight}px`,
@@ -215,11 +216,10 @@ const DogStage = forwardRef(function DogStage(
     [resolvedViewportMinHeight]
   );
 
-  const animationPolicy = useMemo(
-    () => resolveDogAnimationPolicy({ dog, renderModel }),
+  const brainState = useMemo(
+    () => resolveDogBrain({ dog, renderModel }),
     [dog, renderModel]
   );
-
   return (
     <section
       ref={setViewportRef}
@@ -248,39 +248,22 @@ const DogStage = forwardRef(function DogStage(
           showFireflies={showFireflies}
           showBowlHint={placingBowl}
         />
-
-        <GroundShadow
-          xNorm={sceneLayout.dog.shadow.xNorm}
-          yNorm={sceneLayout.dog.shadow.yNorm}
-          widthPx={sceneLayout.dog.shadow.widthPx}
-          heightPx={sceneLayout.dog.shadow.heightPx}
-          opacity={sceneLayout.dog.shadow.opacity}
-        />
-
-        <DogRenderer
-          desiredAction={animationPolicy.desiredAction}
-          overrideAction={animationPolicy.overrideAction}
-          facing={animationPolicy.facing}
-          isSleeping={animationPolicy.isSleeping}
-          isDirty={animationPolicy.isDirty}
-          isBarking={animationPolicy.isBarking}
-          xNorm={sceneLayout.dog.xNorm}
-          groundYNorm={sceneLayout.dog.groundYNorm}
-          maxWidthRatio={sceneLayout.dog.widthRatio}
-          maxHeightRatio={sceneLayout.dog.heightRatio}
-          scaleBias={
-            dogSleepingInDoghouse
-              ? Math.max(
-                  0.8,
-                  Math.min(1.08, Number(dogScaleBias || 0.95) * 0.92)
-                )
-              : Math.max(0.82, Math.min(1.12, Number(dogScaleBias || 0.95)))
-          }
-          idleIntensity={idleAnimationIntensity}
-          className={dogRendererClassName}
-          minHeight={rendererMinHeight ?? resolvedViewportMinHeight}
-        />
       </div>
+
+      <DogMobileCanvas
+        dog={dog}
+        renderModel={renderModel}
+        brainState={brainState}
+        requestedAction={requestedAnimation}
+        sceneLayout={sceneLayout}
+        reduceMotion={reduceMotion}
+        dogScaleBias={dogScaleBias}
+        dogSleepingInDoghouse={dogSleepingInDoghouse}
+        idleAnimationIntensity={idleAnimationIntensity}
+        animationSpeedMultiplier={animationSpeedMultiplier}
+        rendererClassName={dogRendererClassName}
+        rendererMinHeight={rendererMinHeight ?? resolvedViewportMinHeight}
+      />
 
       <SceneHud leftItems={sceneHudLeft} rightItems={sceneHudRight} />
 

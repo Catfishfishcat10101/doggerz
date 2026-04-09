@@ -13,10 +13,10 @@ function resolveDogWidthRatio(width, height, sleeping) {
 
 function resolveDogGroundY(inputYNorm, sleeping, compactViewport) {
   if (sleeping) return 0.77;
-  const groundedY = 0.69 + clamp(inputYNorm, 0.45, 0.95) * 0.14;
+  const groundedY = 0.675 + clamp(inputYNorm, 0.45, 0.95) * 0.125;
   if (compactViewport) {
     return clamp(
-      groundedY - 0.02,
+      groundedY - 0.01,
       SCENE_TOKENS.dog.minY,
       SCENE_TOKENS.dog.maxY - 0.02
     );

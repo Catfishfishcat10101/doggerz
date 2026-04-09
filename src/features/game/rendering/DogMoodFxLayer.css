@@ -1,0 +1,144 @@
+.dg-dog-fx-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: radial-gradient(
+    circle at 32% 28%,
+    rgba(255, 255, 255, 0.32),
+    rgba(17, 24, 39, 0.5)
+  );
+  box-shadow: 0 8px 20px rgba(2, 6, 23, 0.28);
+  color: #ffffff;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.dg-dog-fx-dirt-overlay {
+  border-radius: 999px;
+  pointer-events: none;
+  background-image:
+    radial-gradient(
+      circle at 18% 24%,
+      rgba(120, 72, 42, 0.38) 0 10%,
+      transparent 24%
+    ),
+    radial-gradient(
+      circle at 72% 36%,
+      rgba(120, 72, 42, 0.32) 0 9%,
+      transparent 22%
+    ),
+    radial-gradient(
+      circle at 45% 68%,
+      rgba(101, 67, 33, 0.34) 0 10%,
+      transparent 24%
+    ),
+    radial-gradient(
+      circle at 26% 74%,
+      rgba(120, 72, 42, 0.22) 0 8%,
+      transparent 20%
+    ),
+    radial-gradient(
+      circle at 66% 76%,
+      rgba(89, 56, 26, 0.24) 0 8%,
+      transparent 19%
+    );
+  mix-blend-mode: multiply;
+  filter: saturate(0.9);
+}
+
+.dg-dog-fx-flea-dot {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: radial-gradient(
+    circle at 36% 34%,
+    rgba(252, 230, 160, 0.9),
+    rgba(82, 53, 21, 0.78)
+  );
+  box-shadow: 0 0 6px rgba(250, 204, 21, 0.35);
+  animation: dgFxFleaSkitter 0.85s ease-in-out infinite alternate;
+}
+
+.dg-dog-fx-heart-pop {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-size: 16px;
+  line-height: 1;
+  filter: drop-shadow(0 6px 12px rgba(136, 19, 55, 0.35));
+  animation: dgFxHeartPop var(--dg-fx-duration, 1.2s) ease-out forwards;
+}
+
+.dg-dog-fx-bark-particle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(
+    circle at 36% 30%,
+    rgba(255, 247, 207, 0.96),
+    rgba(251, 191, 36, 0.65)
+  );
+  box-shadow: 0 0 8px rgba(251, 191, 36, 0.38);
+  animation: dgFxBarkBurst var(--dg-fx-duration, 0.72s) ease-out forwards;
+}
+
+@keyframes dgFxHeartPop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.72);
+  }
+
+  18% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(
+        calc(-50% + var(--dg-fx-dx, 0px)),
+        calc(-50% + var(--dg-fx-dy, -46px))
+      )
+      scale(0.88);
+  }
+}
+
+@keyframes dgFxBarkBurst {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.72);
+  }
+
+  12% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(
+        calc(-50% + var(--dg-fx-dx, 22px)),
+        calc(-50% + var(--dg-fx-dy, 0px))
+      )
+      scale(0.3);
+  }
+}
+
+@keyframes dgFxFleaSkitter {
+  0% {
+    transform: translate(0, 0) scale(0.92);
+    opacity: 0.85;
+  }
+
+  100% {
+    transform: translate(var(--dg-flea-dx, 2px), var(--dg-flea-dy, -2px))
+      scale(1.08);
+    opacity: 1;
+  }
+}

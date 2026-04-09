@@ -1,6 +1,6 @@
 {
   "name": "doggerz",
-  "version": "2.1.9",
+  "version": "3.0.0",
   "main": "src/app/main.jsx",
   "private": true,
   "engines": {
@@ -70,12 +70,14 @@
     "@capacitor/share": "^8.0.1",
     "@capacitor/splash-screen": "^8.0.1",
     "@capacitor/status-bar": "^8.0.1",
+    "@langchain/openai": "^1.4.3",
     "@pixi/assets": "7.4.3",
     "@pixi/core": "7.4.3",
     "@pixi/react": "7.1.2",
     "@reduxjs/toolkit": "^2.10.1",
     "@revenuecat/purchases-capacitor": "^12.0.5",
     "@tanstack/react-query": "^5.90.21",
+    "deepagents": "^1.9.0",
     "firebase": "^11.10.0",
     "lucide-react": "^1.7.0",
     "pixi.js": "7.4.3",
@@ -85,6 +87,8 @@
     "react-hot-toast": "^2.6.0",
     "react-redux": "^9.2.0",
     "react-router-dom": "^6.30.2",
+    "replace": "^0.2.2",
+    "rg": "^0.0.2",
     "suncalc": "^1.9.0"
   },
   "devDependencies": {

@@ -3,6 +3,9 @@
 import { Assets, Rectangle, Texture } from "pixi.js";
 import { withBaseUrl } from "@/utils/assetUtils.js";
 
+const GRID_TEXTURE_PROMISE_CACHE = new Map();
+const GRID_ANIMATION_MAP_PROMISE_CACHE = new WeakMap();
+
 function removeEdgeConnectedWhiteBackground(texture) {
   if (typeof document === "undefined") {
     return texture;
@@ -83,62 +86,112 @@ function removeEdgeConnectedWhiteBackground(texture) {
   return Texture.from(canvas);
 }
 
+export async function loadAtlasFrames({
+  src,
+  frameWidth = undefined,
+  frameHeight = undefined,
+  columns = 4,
+  rows = 4,
+  totalFrames = 16,
+}) {
+  const safeColumns = Math.max(1, Number(columns || 1));
+  const safeRows = Math.max(1, Number(rows || 1));
+  const safeFrameWidth = Math.max(0, Number(frameWidth || 0));
+  const safeFrameHeight = Math.max(0, Number(frameHeight || 0));
+  const safeTotalFrames = Math.max(1, Number(totalFrames || 1));
+  const key = `${withBaseUrl(src)}|${safeFrameWidth}|${safeFrameHeight}|${safeColumns}|${safeRows}|${safeTotalFrames}`;
+  if (GRID_TEXTURE_PROMISE_CACHE.has(key)) {
+    return GRID_TEXTURE_PROMISE_CACHE.get(key);
+  }
+
+  const texturePromise = (async () => {
+    const loadedTexture = await Assets.load(withBaseUrl(src));
+    const texture = removeEdgeConnectedWhiteBackground(loadedTexture);
+    const totalWidth = Number(texture?.width || loadedTexture?.width || 0);
+    const totalHeight = Number(texture?.height || loadedTexture?.height || 0);
+
+    if (!totalWidth || !totalHeight) {
+      throw new Error(`[DogRenderer] Failed to load texture size for ${src}`);
+    }
+
+    const resolvedFrameWidth =
+      safeFrameWidth || Math.floor(totalWidth / safeColumns);
+    const resolvedFrameHeight =
+      safeFrameHeight || Math.floor(totalHeight / safeRows);
+
+    if (!resolvedFrameWidth || !resolvedFrameHeight) {
+      throw new Error(`[DogRenderer] Invalid grid dimensions for ${src}`);
+    }
+
+    const textures = [];
+    const maxFrames = Math.min(safeTotalFrames, safeColumns * safeRows);
+
+    for (let i = 0; i < maxFrames; i += 1) {
+      const col = i % safeColumns;
+      const row = Math.floor(i / safeColumns);
+      const frame = new Rectangle(
+        col * resolvedFrameWidth,
+        row * resolvedFrameHeight,
+        resolvedFrameWidth,
+        resolvedFrameHeight
+      );
+
+      textures.push(new Texture(texture.baseTexture, frame));
+    }
+
+    return textures;
+  })();
+
+  GRID_TEXTURE_PROMISE_CACHE.set(key, texturePromise);
+  return texturePromise;
+}
+
 export async function loadGridAnimation({
   src,
   columns = 4,
   rows = 4,
   frameCount = 16,
 }) {
-  const loadedTexture = await Assets.load(withBaseUrl(src));
-  const texture = removeEdgeConnectedWhiteBackground(loadedTexture);
-  const totalWidth = Number(texture?.width || loadedTexture?.width || 0);
-  const totalHeight = Number(texture?.height || loadedTexture?.height || 0);
-
-  if (!totalWidth || !totalHeight) {
-    throw new Error(`[DogRenderer] Failed to load texture size for ${src}`);
-  }
-
-  const frameWidth = Math.floor(totalWidth / Math.max(1, columns));
-  const frameHeight = Math.floor(totalHeight / Math.max(1, rows));
-
-  if (!frameWidth || !frameHeight) {
-    throw new Error(`[DogRenderer] Invalid grid dimensions for ${src}`);
-  }
-
-  const textures = [];
-  const maxFrames = Math.min(Math.max(1, frameCount), columns * rows);
-
-  for (let i = 0; i < maxFrames; i += 1) {
-    const col = i % columns;
-    const row = Math.floor(i / columns);
-    const frame = new Rectangle(
-      col * frameWidth,
-      row * frameHeight,
-      frameWidth,
-      frameHeight
-    );
-
-    textures.push(new Texture(texture.baseTexture, frame));
-  }
-
-  return textures;
+  return loadAtlasFrames({
+    src,
+    columns,
+    rows,
+    totalFrames: frameCount,
+  });
 }
 
 export async function preloadGridAnimations(animationMap = {}) {
-  const entries = await Promise.all(
-    Object.entries(animationMap).map(async ([key, config]) => {
-      try {
-        const textures = await loadGridAnimation(config);
-        return [key, { ...config, textures }];
-      } catch (error) {
-        console.warn(
-          `[DogRenderer] Skipping animation "${key}" because it failed to load.`,
-          error
-        );
-        return null;
-      }
-    })
-  );
+  if (!animationMap || typeof animationMap !== "object") return {};
+  if (GRID_ANIMATION_MAP_PROMISE_CACHE.has(animationMap)) {
+    return GRID_ANIMATION_MAP_PROMISE_CACHE.get(animationMap);
+  }
 
-  return Object.fromEntries(entries.filter(Boolean));
+  const preloadPromise = (async () => {
+    const entries = await Promise.all(
+      Object.entries(animationMap).map(async ([key, config]) => {
+        try {
+          const textures = await loadAtlasFrames({
+            src: config?.src,
+            frameWidth: config?.frameWidth,
+            frameHeight: config?.frameHeight,
+            columns: config?.columns,
+            rows: config?.rows,
+            totalFrames: config?.frameCount,
+          });
+          return [key, { ...config, textures }];
+        } catch (error) {
+          console.warn(
+            `[DogRenderer] Skipping animation "${key}" because it failed to load.`,
+            error
+          );
+          return null;
+        }
+      })
+    );
+
+    return Object.fromEntries(entries.filter(Boolean));
+  })();
+
+  GRID_ANIMATION_MAP_PROMISE_CACHE.set(animationMap, preloadPromise);
+  return preloadPromise;
 }

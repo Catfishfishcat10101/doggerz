@@ -86,6 +86,7 @@ import {
 import { formatMemoryMoment } from "@/features/dog/memory/memoryFormatter.js";
 import { getLevelProgress } from "@/features/dog/ExperienceAndLeveling.js";
 import {
+  getRetentionAnalyticsSnapshot,
   trackFeedDog,
   trackGiveWater,
   trackLevelUp,
@@ -103,6 +104,7 @@ import {
   isShareableMemoryMoment,
   shareDoggerzMoment,
 } from "@/features/social/shareMomentCards.js";
+import { getLiveContentSnapshot } from "@/features/live/liveContentEngine.js";
 
 const SHARE_REWARD_COOLDOWN_MS = 12 * 60 * 60 * 1000;
 const BOTTOM_MENU_TABS = Object.freeze([
@@ -199,18 +201,6 @@ const DOGHOUSE_SLEEP_X_NORM = 0.78;
 const DOGHOUSE_SLEEP_Y_NORM = 0.65;
 const YARD_TAP_MIN_Y_NORM = 0.68;
 const YARD_TAP_MAX_Y_NORM = 0.92;
-const AUTO_WANDER_MIN_INTERVAL_MS = 20_000;
-const AUTO_WANDER_INTERVAL_JITTER_MS = 16_000;
-const AUTO_WANDER_STEP_MIN_PX = 42;
-const AUTO_WANDER_STEP_MAX_PX = 110;
-const AUTO_WANDER_Y_DRIFT_PX = 22;
-const AUTO_WANDER_X_MARGIN = 90;
-const AUTO_WANDER_Y_MIN = 280;
-const AUTO_WANDER_Y_MAX = DOG_WORLD_HEIGHT - 40;
-const AUTO_WANDER_ATTENTIVE_MS = 1500;
-const AUTO_WANDER_WALK_WINDOW_MS = 8000;
-const SIMULATION_OWNS_AMBIENT_WANDER = true;
-
 function formatDogAgePill(ageDays) {
   const totalDays = Math.max(0, Math.floor(Number(ageDays || 0)));
   const DAYS_PER_WEEK = 7;
@@ -374,6 +364,79 @@ function isSummerMonth(ms = Date.now()) {
   return month >= 5 && month <= 7;
 }
 
+function getLocalDayKey(now = Date.now()) {
+  try {
+    const date = new Date(now);
+    return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+  } catch {
+    return "1970-1-1";
+  }
+}
+
+function isSameLocalDay(timestamp, now = Date.now()) {
+  const ts = Number(timestamp || 0);
+  if (!Number.isFinite(ts) || ts <= 0) return false;
+  return getLocalDayKey(ts) === getLocalDayKey(now);
+}
+
+function getHabitLoopModel(dog = {}, cadenceModel = null, now = Date.now()) {
+  const streakDays = Math.max(
+    0,
+    Math.floor(
+      Number(dog?.streak?.currentStreakDays || dog?.consecutiveDays || 0)
+    )
+  );
+  const fedToday = isSameLocalDay(dog?.memory?.lastFedAt, now);
+  const playedToday = isSameLocalDay(dog?.memory?.lastPlayedAt, now);
+  const wateredToday = isSameLocalDay(dog?.memory?.lastDrankAt, now);
+  const completedCount =
+    (fedToday ? 1 : 0) + (playedToday ? 1 : 0) + (wateredToday ? 1 : 0);
+  const surpriseReady = Boolean(cadenceModel?.surprise?.ready);
+  const surprisePct = Math.max(
+    0,
+    Math.round(Number(cadenceModel?.surprise?.readinessPct || 0))
+  );
+
+  if (fedToday && playedToday) {
+    return {
+      label: "Daily rhythm active",
+      detail:
+        "You already landed the warm essentials today. Anything extra is a bonus.",
+      tone: "emerald",
+      completedCount,
+      streakDays,
+      surpriseReady,
+      surprisePct,
+    };
+  }
+
+  if (fedToday || playedToday) {
+    return {
+      label: "One more warm check-in",
+      detail:
+        fedToday && !playedToday
+          ? "A short play burst will round out today without turning it into a chore."
+          : "A calm feed keeps the loop feeling complete.",
+      tone: "sky",
+      completedCount,
+      streakDays,
+      surpriseReady,
+      surprisePct,
+    };
+  }
+
+  return {
+    label: "Start small today",
+    detail:
+      "A feed or play tap is enough to wake the routine back up. No marathon needed.",
+    tone: "amber",
+    completedCount,
+    streakDays,
+    surpriseReady,
+    surprisePct,
+  };
+}
+
 function createInvestigationProps(environment = "yard") {
   const source =
     String(environment || "").toLowerCase() === "apartment"
@@ -406,30 +469,6 @@ function toWorldPosition(xNorm = 0.5, yNorm = 0.74) {
 
 function clampYardTapYNorm(value) {
   return clamp(Number(value || 0.74), YARD_TAP_MIN_Y_NORM, YARD_TAP_MAX_Y_NORM);
-}
-
-function createGentleWanderTarget(
-  origin = { x: DOG_WORLD_WIDTH * 0.5, y: 370 }
-) {
-  const baseX = Number.isFinite(Number(origin?.x))
-    ? Number(origin.x)
-    : DOG_WORLD_WIDTH * 0.5;
-  const baseY = Number.isFinite(Number(origin?.y)) ? Number(origin.y) : 370;
-  const distance =
-    AUTO_WANDER_STEP_MIN_PX +
-    Math.random() * (AUTO_WANDER_STEP_MAX_PX - AUTO_WANDER_STEP_MIN_PX);
-  const direction = Math.random() < 0.5 ? -1 : 1;
-  const driftY =
-    Math.random() * AUTO_WANDER_Y_DRIFT_PX * 2 - AUTO_WANDER_Y_DRIFT_PX;
-
-  return {
-    x: clamp(
-      baseX + direction * distance,
-      AUTO_WANDER_X_MARGIN,
-      DOG_WORLD_WIDTH - AUTO_WANDER_X_MARGIN
-    ),
-    y: clamp(baseY + driftY, AUTO_WANDER_Y_MIN, AUTO_WANDER_Y_MAX),
-  };
 }
 
 function toTitle(input, fallback = "Calm") {
@@ -546,9 +585,6 @@ export default function MainGame({ scene, dogInteractive = true }) {
   const propGateRef = useRef({});
   const lowEnergyAutoSleepAtRef = useRef(0);
   const sleepWalkRetargetAtRef = useRef(0);
-  const nextAutoWanderAtRef = useRef(0);
-  const pendingAutoWanderTargetRef = useRef(null);
-  const autoWanderLookTimeoutRef = useRef(0);
   const dogViewportRef = useRef(null);
   const swipeRecognizerRef = useRef(null);
   const dragDropManagerRef = useRef(null);
@@ -562,6 +598,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
   const previousVitalSnapshotRef = useRef({ energy: null, health: null });
   const trackedLevelRef = useRef(null);
   const memoryMomentLevelRef = useRef(null);
+  const firstCareLoopMomentRef = useRef(0);
   const memoryMomentShownAtRef = useRef(new Map());
   const memoryMomentQueueRef = useRef([]);
   const memoryMomentDismissRef = useRef(0);
@@ -762,6 +799,14 @@ export default function MainGame({ scene, dogInteractive = true }) {
   const ageBucketLabel = String(life?.ageBucketLabel || "New pup");
   const dailyFlavor = identity?.dailyFlavor || null;
   const favoriteSummary = identity?.favoriteSummary || null;
+  const behaviorTendencies = useMemo(
+    () =>
+      Array.isArray(identity?.behaviorTendencies)
+        ? identity.behaviorTendencies
+        : [],
+    [identity?.behaviorTendencies]
+  );
+  const styleSignature = identity?.styleSignature || null;
   const identityDogName =
     String(identity?.name || dog?.name || "Your pup").trim() || "Your pup";
   const dailyFlavorTitle = String(
@@ -799,6 +844,41 @@ export default function MainGame({ scene, dogInteractive = true }) {
       favoriteSummary?.favoriteToyLabel,
     ]
   );
+  const identitySignatureReadouts = useMemo(
+    () =>
+      [
+        styleSignature?.collarLabel
+          ? { id: "collar", label: "Collar", value: styleSignature.collarLabel }
+          : null,
+        styleSignature?.tagLabel
+          ? { id: "tag", label: "Tag", value: styleSignature.tagLabel }
+          : null,
+        styleSignature?.backdropLabel
+          ? {
+              id: "backdrop",
+              label: "Yard Theme",
+              value: styleSignature.backdropLabel,
+            }
+          : null,
+        styleSignature?.environmentLabel
+          ? {
+              id: "environment",
+              label: "Home",
+              value: styleSignature.environmentLabel,
+            }
+          : null,
+      ].filter(Boolean),
+    [
+      styleSignature?.backdropLabel,
+      styleSignature?.collarLabel,
+      styleSignature?.environmentLabel,
+      styleSignature?.tagLabel,
+    ]
+  );
+  const retentionAnalytics = useMemo(
+    () => getRetentionAnalyticsSnapshot({ now: liveNow }),
+    [liveNow]
+  );
   const cadenceModel = useMemo(
     () =>
       getRetentionCadenceModel({
@@ -806,13 +886,43 @@ export default function MainGame({ scene, dogInteractive = true }) {
         now: liveNow,
         isNight: visualNight,
         environment: environmentMode,
+        analyticsSnapshot: retentionAnalytics,
       }),
-    [dog, environmentMode, liveNow, visualNight]
+    [dog, environmentMode, liveNow, retentionAnalytics, visualNight]
   );
   const cadenceToneClass = getCadenceToneClass(cadenceModel?.microMoment?.tone);
+  const retentionRiskBand = String(cadenceModel?.retention?.riskBand || "low")
+    .trim()
+    .toLowerCase();
+  const retentionInsightLabel = useMemo(() => {
+    const reasons = Array.isArray(cadenceModel?.retention?.dropOffReasons)
+      ? cadenceModel.retention.dropOffReasons
+      : [];
+    if (reasons.includes("very_short_first_session")) {
+      return "Keep sessions brief and warm";
+    }
+    if (
+      reasons.includes("no_first_care_action") ||
+      reasons.includes("low_first_care_coverage")
+    ) {
+      return "First-day care trio helps bonding";
+    }
+    if (retentionRiskBand === "high" || retentionRiskBand === "medium") {
+      return "Reconnect gently today";
+    }
+    return "";
+  }, [cadenceModel?.retention?.dropOffReasons, retentionRiskBand]);
   const cadenceSurpriseDetail = cadenceModel?.surprise?.ready
     ? `${cadenceModel?.surprise?.hint || cadenceModel?.surprise?.label || "A small surprise may appear later."}`
     : `${Math.max(0, Number(cadenceModel?.surprise?.readinessPct || 0))}% warmed`;
+  const habitLoopModel = useMemo(
+    () => getHabitLoopModel(dog, cadenceModel, liveNow),
+    [cadenceModel, dog, liveNow]
+  );
+  const liveContent = useMemo(
+    () => getLiveContentSnapshot({ now: liveNow }),
+    [liveNow]
+  );
   const gameUiLayoutVariant = String(
     gameExperimentConfig?.uiLayoutVariant || "default"
   )
@@ -821,9 +931,9 @@ export default function MainGame({ scene, dogInteractive = true }) {
   const compactHudLayout = gameUiLayoutVariant === "compact_hud";
   const expandedYardLayout = gameUiLayoutVariant === "expanded_yard";
   const experimentalDogScaleBias = clamp(
-    Number(gameExperimentConfig?.dogScaleBias || 0.95),
+    Number(gameExperimentConfig?.dogScaleBias || 1.02),
     0.82,
-    1.12
+    1.18
   );
   const idleAnimationIntensity = String(
     gameExperimentConfig?.idleAnimationIntensity || "calm"
@@ -835,10 +945,10 @@ export default function MainGame({ scene, dogInteractive = true }) {
     : "order-3 space-y-4";
   const yardRegionClassName = `order-1 relative -mx-3 sm:-mx-6 w-full overflow-hidden ${
     expandedYardLayout
-      ? "h-[62vh] min-h-[438px] max-h-[760px]"
+      ? "h-[64vh] min-h-[452px] max-h-[780px]"
       : compactHudLayout
-        ? "h-[60vh] min-h-[428px] max-h-[740px]"
-        : "h-[58vh] min-h-[420px] max-h-[720px]"
+        ? "h-[62vh] min-h-[440px] max-h-[756px]"
+        : "h-[60vh] min-h-[436px] max-h-[740px]"
   }`;
   const _dogBaseScale = 0.4 + clamp(ageDays / 365, 0, 1) * 0.4;
   const stageHeadline = String(life?.headline || "Tiny chaos era");
@@ -908,7 +1018,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
     life?.stage,
     renderStageForSprites,
   ]);
-  const _syncedSpriteAnim = activeHudAnimationId || curatedSpriteAnim;
+  const syncedSpriteAnim = activeHudAnimationId || curatedSpriteAnim;
   const lifecycleTone = String(life?.tone || "fresh").toLowerCase();
   const lifecycleCardToneClass =
     lifecycleTone === "warm"
@@ -921,6 +1031,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
   const thirstPct = toPct(dog?.stats?.thirst);
   const energyPct = toPct(vitals?.energy);
   const cleanlinessPct = toPct(dog?.stats?.cleanliness);
+  const happinessPct = toPct(vitals?.happiness);
   const moodPresentation = useMemo(
     () =>
       getMoodPresentation({
@@ -929,13 +1040,14 @@ export default function MainGame({ scene, dogInteractive = true }) {
         thirstPct,
         energyPct,
         cleanlinessPct,
-        happinessPct: toPct(vitals?.happiness),
+        happinessPct,
         ambientType: ambientEvent?.type || "",
       }),
     [
       ambientEvent?.type,
       cleanlinessPct,
       energyPct,
+      happinessPct,
       hungerPct,
       thirstPct,
       vitals?.moodLabel,
@@ -980,6 +1092,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
     (eventLike) => {
       const formatted = formatMemoryMoment(eventLike, {
         dogName: identityDogName,
+        personalityVoice: identity?.memoryVoice || "steady",
       });
       if (!formatted) return;
 
@@ -1006,7 +1119,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
         if (nextMoment) setMemoryMoment(nextMoment);
       }
     },
-    [identityDogName, memoryMoment]
+    [identity?.memoryVoice, identityDogName, memoryMoment]
   );
 
   useEffect(() => {
@@ -1083,6 +1196,26 @@ export default function MainGame({ scene, dogInteractive = true }) {
 
     memoryMomentLevelRef.current = nextLevel;
   }, [overallLevel, queueMemoryMoment]);
+
+  useEffect(() => {
+    const completedAt = Math.max(
+      0,
+      Number(retentionAnalytics?.firstCareLoopCompletedAt || 0)
+    );
+    if (!retentionAnalytics?.firstCareLoopCompleted || !completedAt) return;
+    if (completedAt <= firstCareLoopMomentRef.current) return;
+    firstCareLoopMomentRef.current = completedAt;
+    queueMemoryMoment(
+      createMemoryMomentEvent(MEMORY_MOMENT_TYPES.FIRST_CARE_LOOP, {
+        occurredAt: completedAt,
+        uniqueKey: `first_care_loop:${completedAt}`,
+      })
+    );
+  }, [
+    queueMemoryMoment,
+    retentionAnalytics?.firstCareLoopCompleted,
+    retentionAnalytics?.firstCareLoopCompletedAt,
+  ]);
   const pottyTrainingState =
     dog?.training?.potty && typeof dog.training.potty === "object"
       ? dog.training.potty
@@ -1653,9 +1786,6 @@ export default function MainGame({ scene, dogInteractive = true }) {
       if (uiAnimResetTimeoutRef.current) {
         window.clearTimeout(uiAnimResetTimeoutRef.current);
       }
-      if (autoWanderLookTimeoutRef.current) {
-        window.clearTimeout(autoWanderLookTimeoutRef.current);
-      }
       Object.values(statFeedbackTimeoutsRef.current).forEach((timerId) => {
         window.clearTimeout(timerId);
       });
@@ -2122,7 +2252,14 @@ export default function MainGame({ scene, dogInteractive = true }) {
       );
       setTricksOpen(false);
     },
-    [dispatch, playHudAnimation, pottyMasteryComplete, toast, trickOptionsById]
+    [
+      dispatch,
+      life?.stage,
+      playHudAnimation,
+      pottyMasteryComplete,
+      toast,
+      trickOptionsById,
+    ]
   );
 
   const triggerPropHaptic = useCallback(
@@ -2350,7 +2487,24 @@ export default function MainGame({ scene, dogInteractive = true }) {
     });
     triggerActionFeedback("water");
     dispatch(giveWater({ now: Date.now() }));
-  }, [controlsDisabled, dispatch, life?.stage, triggerActionFeedback]);
+    toast.once(
+      `habit:water:${getLocalDayKey()}`,
+      {
+        type: "success",
+        message: "Fresh water landed well. Small care still counts.",
+        durationMs: 2200,
+      },
+      90_000
+    );
+    triggerStatPop("health");
+  }, [
+    controlsDisabled,
+    dispatch,
+    life?.stage,
+    toast,
+    triggerActionFeedback,
+    triggerStatPop,
+  ]);
 
   const handleFeedAction = useCallback(
     (foodType, source = "game_controls") => {
@@ -2372,9 +2526,27 @@ export default function MainGame({ scene, dogInteractive = true }) {
           source,
         })
       );
+      triggerActionFeedback("quick-feed");
+      toast.once(
+        `habit:feed:${getLocalDayKey()}:${resolvedFoodType || "regular_kibble"}`,
+        {
+          type: "reward",
+          message: "Fed and settled. The routine is starting to stick.",
+          durationMs: 2200,
+        },
+        90_000
+      );
+      triggerStatPop("health");
       return true;
     },
-    [controlsDisabled, dispatch, life?.stage]
+    [
+      controlsDisabled,
+      dispatch,
+      life?.stage,
+      toast,
+      triggerActionFeedback,
+      triggerStatPop,
+    ]
   );
 
   const dispatchPlayAction = useCallback(
@@ -2387,9 +2559,19 @@ export default function MainGame({ scene, dogInteractive = true }) {
       });
       triggerActionFeedback("play");
       dispatch(play({ now, source }));
+      toast.once(
+        `habit:play:${getLocalDayKey()}`,
+        {
+          type: "reward",
+          message: "Good play burst. Mood and bond both got a lift.",
+          durationMs: 2200,
+        },
+        90_000
+      );
+      triggerStatPop("energy");
       return now;
     },
-    [dispatch, life?.stage, triggerActionFeedback]
+    [dispatch, life?.stage, toast, triggerActionFeedback, triggerStatPop]
   );
 
   const handlePlayAction = useCallback(
@@ -2786,136 +2968,23 @@ export default function MainGame({ scene, dogInteractive = true }) {
   }, [dispatch, foodBowl, isApartmentEnvironment]);
 
   useEffect(() => {
-    const timer = window.setInterval(() => setLiveNow(Date.now()), 1000);
-    return () => window.clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
-    const shouldPauseAmbientWander =
-      SIMULATION_OWNS_AMBIENT_WANDER ||
-      !dogInteractive ||
-      controlsDisabled ||
-      effectiveDogSleeping ||
-      movementLocked ||
-      placingBowl ||
-      pendingSleepWalk ||
-      interactionOpen ||
-      tricksOpen ||
-      trainingLogOpen ||
-      treasureHunt ||
-      (ambientEventRoute && !ambientEventRoute.done);
-
-    if (shouldPauseAmbientWander) {
-      if (autoWanderLookTimeoutRef.current) {
-        window.clearTimeout(autoWanderLookTimeoutRef.current);
-        autoWanderLookTimeoutRef.current = 0;
-      }
-      pendingAutoWanderTargetRef.current = null;
-      return;
-    }
-
-    const now = Number(liveNow || Date.now());
-    const currentAiState = String(dog?.aiState || "")
-      .trim()
-      .toLowerCase();
-    if (currentAiState && currentAiState !== "idle") return;
-    if (dog?.targetPosition) return;
-    if (isDogMoving) return;
-    if (
-      pendingAutoWanderTargetRef.current ||
-      autoWanderLookTimeoutRef.current
-    ) {
-      return;
-    }
-
-    if (!nextAutoWanderAtRef.current) {
-      nextAutoWanderAtRef.current =
-        now +
-        AUTO_WANDER_MIN_INTERVAL_MS +
-        Math.random() * AUTO_WANDER_INTERVAL_JITTER_MS;
-      return;
-    }
-
-    if (now < Number(nextAutoWanderAtRef.current || 0)) return;
-
-    const fallbackWorldPos = toWorldPosition(0.5, 0.74);
-    const origin = {
-      x: Number.isFinite(Number(dog?.position?.x))
-        ? Number(dog.position.x)
-        : fallbackWorldPos.x,
-      y: Number.isFinite(Number(dog?.position?.y))
-        ? Number(dog.position.y)
-        : fallbackWorldPos.y,
+    let timer = 0;
+    const schedule = () => {
+      const delayMs =
+        typeof document !== "undefined" && document.visibilityState === "hidden"
+          ? 15_000
+          : 2_000;
+      timer = window.setTimeout(() => {
+        setLiveNow(Date.now());
+        schedule();
+      }, delayMs);
     };
-    const targetPosition = createGentleWanderTarget(origin);
 
-    nextAutoWanderAtRef.current =
-      now +
-      AUTO_WANDER_MIN_INTERVAL_MS +
-      Math.random() * AUTO_WANDER_INTERVAL_JITTER_MS;
-
-    setAttentionTarget({
-      xNorm: clamp(targetPosition.x / DOG_WORLD_WIDTH, 0, 1),
-      yNorm: clamp(targetPosition.y / DOG_WORLD_HEIGHT, 0, 1),
-      at: now,
-    });
-
-    pendingAutoWanderTargetRef.current = targetPosition;
-    autoWanderLookTimeoutRef.current = window.setTimeout(() => {
-      autoWanderLookTimeoutRef.current = 0;
-      const queuedTarget = pendingAutoWanderTargetRef.current;
-      pendingAutoWanderTargetRef.current = null;
-      if (!queuedTarget) return;
-
-      const latestState = store.getState?.();
-      const latestDog = latestState?.dog;
-      const latestAiState = String(latestDog?.aiState || "")
-        .trim()
-        .toLowerCase();
-      const blocked =
-        latestDog?.isAsleep === true ||
-        latestDog?.sleeping === true ||
-        latestDog?.targetPosition ||
-        (latestAiState && latestAiState !== "idle");
-      if (blocked) return;
-
-      const walkNow = Date.now();
-      dispatch(
-        simulationTick({
-          now: walkNow,
-          action: "walk",
-          aiState: "walk",
-          aiStateUntilAt: walkNow + AUTO_WANDER_WALK_WINDOW_MS,
-          targetPosition: {
-            ...queuedTarget,
-            id: `wander_auto_${walkNow}`,
-            type: "wander_auto",
-            label: "Yard stroll",
-          },
-        })
-      );
-    }, AUTO_WANDER_ATTENTIVE_MS);
-  }, [
-    ambientEventRoute,
-    controlsDisabled,
-    dispatch,
-    dog?.aiState,
-    dog?.position?.x,
-    dog?.position?.y,
-    dog?.targetPosition,
-    dogInteractive,
-    effectiveDogSleeping,
-    interactionOpen,
-    isDogMoving,
-    liveNow,
-    movementLocked,
-    pendingSleepWalk,
-    placingBowl,
-    store,
-    trainingLogOpen,
-    treasureHunt,
-    tricksOpen,
-  ]);
+    schedule();
+    return () => {
+      if (timer) window.clearTimeout(timer);
+    };
+  }, []);
 
   useEffect(() => {
     if (!dogInteractive) return undefined;
@@ -3439,8 +3508,22 @@ export default function MainGame({ scene, dogInteractive = true }) {
       level: overallLevel,
       bondPct: Math.round(Number(dog?.bond?.value || 0)),
       energyPct,
+      personalitySummary: identity?.personalitySummary || "",
+      tendencyLabels: behaviorTendencies
+        .map((item) => item?.label)
+        .filter(Boolean),
+      styleSignature,
     }),
-    [dog?.bond?.value, energyPct, identityDogName, overallLevel, stageLabel]
+    [
+      behaviorTendencies,
+      dog?.bond?.value,
+      energyPct,
+      identity?.personalitySummary,
+      identityDogName,
+      overallLevel,
+      stageLabel,
+      styleSignature,
+    ]
   );
 
   const handleShareCard = useCallback(
@@ -3498,6 +3581,52 @@ export default function MainGame({ scene, dogInteractive = true }) {
       )
     );
   }, [buildBaseShareContext, masteryCelebration]);
+
+  const handleShareIdentityProfile = useCallback(() => {
+    setShareMomentCard(
+      buildShareMomentCard(
+        {
+          id: `identity_profile:${identity?.profileId || identityDogName}`,
+          type: "identity_profile",
+        },
+        buildBaseShareContext()
+      )
+    );
+  }, [buildBaseShareContext, identity?.profileId, identityDogName]);
+
+  const funnyShareMoment = useMemo(() => {
+    const key = String(dog?.lastAction || "")
+      .trim()
+      .toLowerCase();
+    const mapping = {
+      pet_zoomies: "post-pet zoomies",
+      pet_side_eye: "dramatic side-eye",
+      pet_doze_off: "pet-then-nap collapse",
+      train_zoomies: "training zoomies",
+      train_reinterpret: "freestyle obedience remix",
+      train_ignore: "full command refusal",
+      potty_fakeout: "potty fake-out",
+      table_theft: "table snack theft",
+    };
+    const label = mapping[key];
+    if (!label || !actionOutcomeLabel) return null;
+    return {
+      id: `funny_behavior:${key}:${Math.floor(Date.now() / 10000)}`,
+      type: "funny_behavior",
+      payload: {
+        behavior: key,
+        label,
+        summary: actionOutcomeLabel,
+      },
+    };
+  }, [actionOutcomeLabel, dog?.lastAction]);
+
+  const handleShareFunnyMoment = useCallback(() => {
+    if (!funnyShareMoment) return;
+    setShareMomentCard(
+      buildShareMomentCard(funnyShareMoment, buildBaseShareContext())
+    );
+  }, [buildBaseShareContext, funnyShareMoment]);
 
   const bottomMenuSections = useMemo(
     () => ({
@@ -3846,13 +3975,26 @@ export default function MainGame({ scene, dogInteractive = true }) {
             <div className={statsStackClassName}>
               {activeAnimatedEventMeta || actionOutcomeLabel ? (
                 <div className="game-card event-card">
-                  <h3 className="m-0 text-[1.1rem] font-black uppercase tracking-[0.08em] text-[var(--text-main)]">
-                    {activeAnimatedEventMeta?.label || "Yard Event"}
-                  </h3>
-                  <p className="mt-2 text-sm text-[var(--text-muted)]">
-                    {actionOutcomeLabel ||
-                      `Watch the yard. ${activeAnimatedEventMeta?.label || "Something"} is happening right now.`}
-                  </p>
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h3 className="m-0 text-[1.1rem] font-black uppercase tracking-[0.08em] text-[var(--text-main)]">
+                        {activeAnimatedEventMeta?.label || "Yard Event"}
+                      </h3>
+                      <p className="mt-2 text-sm text-[var(--text-muted)]">
+                        {actionOutcomeLabel ||
+                          `Watch the yard. ${activeAnimatedEventMeta?.label || "Something"} is happening right now.`}
+                      </p>
+                    </div>
+                    {funnyShareMoment ? (
+                      <button
+                        type="button"
+                        onClick={handleShareFunnyMoment}
+                        className="rounded-full border border-white/15 bg-black/20 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-white/88 transition hover:bg-black/30"
+                      >
+                        Share Moment
+                      </button>
+                    ) : null}
+                  </div>
                 </div>
               ) : null}
               <h2 className="m-0 text-2xl font-black tracking-tight text-white">
@@ -3892,8 +4034,17 @@ export default function MainGame({ scene, dogInteractive = true }) {
                       {dailyFlavorBody}
                     </div>
                   </div>
-                  <div className="rounded-full border border-white/15 bg-black/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white/85">
-                    Daily Read
+                  <div className="flex items-center gap-2">
+                    <div className="rounded-full border border-white/15 bg-black/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white/85">
+                      Daily Read
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleShareIdentityProfile}
+                      className="rounded-full border border-white/15 bg-black/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white/88 transition hover:bg-black/30"
+                    >
+                      Share Pup
+                    </button>
                   </div>
                 </div>
                 {favoriteReadouts.length ? (
@@ -3907,6 +4058,37 @@ export default function MainGame({ scene, dogInteractive = true }) {
                         {item.value}
                       </div>
                     ))}
+                  </div>
+                ) : null}
+                {behaviorTendencies.length ? (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {behaviorTendencies.map((item) => (
+                      <div
+                        key={item.id}
+                        className="rounded-full border border-emerald-200/20 bg-emerald-400/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-50"
+                        title={item.summary || item.label}
+                      >
+                        {item.label}
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+                {identitySignatureReadouts.length ? (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {identitySignatureReadouts.map((item) => (
+                      <div
+                        key={item.id}
+                        className="rounded-full border border-white/12 bg-black/15 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-white/85"
+                      >
+                        <span className="text-white/55">{item.label}</span>{" "}
+                        {item.value}
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+                {identity?.personalitySummary ? (
+                  <div className="mt-3 text-[11px] leading-5 text-white/72">
+                    {identity.personalitySummary}
                   </div>
                 ) : null}
               </div>
@@ -3964,6 +4146,54 @@ export default function MainGame({ scene, dogInteractive = true }) {
                     </div>
                   </div>
                 </div>
+                <div className="mt-3 rounded-xl border border-white/10 bg-black/15 px-3 py-3">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-white/60">
+                        Habit Loop
+                      </div>
+                      <div className="mt-1 text-[11px] font-bold text-white">
+                        {habitLoopModel.label}
+                      </div>
+                      <div className="mt-1 text-[10px] font-medium normal-case tracking-normal text-white/70">
+                        {habitLoopModel.detail}
+                      </div>
+                    </div>
+                    <div className="rounded-full border border-white/10 bg-black/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white/80">
+                      {Math.max(0, Number(habitLoopModel.streakDays || 0))}d
+                      streak
+                    </div>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-white/70">
+                    <div className="rounded-full border border-white/10 bg-black/20 px-2.5 py-1">
+                      {Math.max(0, Number(habitLoopModel.completedCount || 0))}
+                      /3 care touches
+                    </div>
+                    <div className="rounded-full border border-white/10 bg-black/20 px-2.5 py-1">
+                      {habitLoopModel.surpriseReady
+                        ? "surprise warmed"
+                        : `${Math.max(0, Number(habitLoopModel.surprisePct || 0))}% surprise`}
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-3 rounded-xl border border-white/10 bg-black/15 px-3 py-3">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-white/60">
+                        Live Update
+                      </div>
+                      <div className="mt-1 text-[11px] font-bold text-white">
+                        {liveContent.bulletin.title}
+                      </div>
+                      <div className="mt-1 text-[10px] font-medium normal-case tracking-normal text-white/70">
+                        {liveContent.bulletin.body}
+                      </div>
+                    </div>
+                    <div className="rounded-full border border-white/10 bg-black/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white/80">
+                      {liveContent.seasonalDrop.label}
+                    </div>
+                  </div>
+                </div>
                 <div className="mt-3 flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-white/70">
                   <div className="rounded-full border border-white/10 bg-black/15 px-2.5 py-1">
                     {cadenceModel?.dayKey || "Today"}
@@ -3978,6 +4208,11 @@ export default function MainGame({ scene, dogInteractive = true }) {
                     )}
                     % surprise warmth
                   </div>
+                  {retentionInsightLabel ? (
+                    <div className="rounded-full border border-emerald-200/25 bg-emerald-400/10 px-2.5 py-1 text-emerald-50">
+                      {retentionInsightLabel}
+                    </div>
+                  ) : null}
                 </div>
               </div>
               <div
@@ -4145,7 +4380,11 @@ export default function MainGame({ scene, dogInteractive = true }) {
                       sleepInDogHouse && effectiveDogSleeping
                     }
                     dogScaleBias={experimentalDogScaleBias}
+                    animationSpeedMultiplier={
+                      _effectiveAnimationSpeedMultiplier
+                    }
                     idleAnimationIntensity={idleAnimationIntensity}
+                    requestedAnimation={syncedSpriteAnim}
                     containerClassName={`yard-viewport ${visualNight ? "yard-night" : "yard-day"} relative w-full h-full min-h-0 overflow-hidden`}
                     rendererClassName="absolute inset-0 z-[22] pointer-events-none"
                     rendererMinHeight={null}
