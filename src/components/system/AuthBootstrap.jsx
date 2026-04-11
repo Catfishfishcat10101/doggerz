@@ -3,10 +3,7 @@ import { useDispatch } from "react-redux";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 
 import { auth, firebaseReady } from "@/lib/firebase/index.js";
-import {
-  clearUserAuth,
-  setUser,
-} from "@/store/userSlice.js";
+import { clearUserAuth, setUser } from "@/store/userSlice.js";
 import { debugError, debugLog } from "@/utils/debugLogger.js";
 
 export default function AuthBootstrap() {

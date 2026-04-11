@@ -180,11 +180,45 @@ function pickFavoriteContext({
   return null;
 }
 
+function pickPersonalityContext(personalityProfile) {
+  const tendencies = Array.isArray(
+    personalityProfile?.behaviorTendencies?.tendencies
+  )
+    ? personalityProfile.behaviorTendencies.tendencies
+    : [];
+  const tendencyIds = tendencies.map((item) =>
+    String(item?.id || "")
+      .trim()
+      .toLowerCase()
+  );
+
+  if (tendencyIds.includes("clingy")) {
+    return "They read small reassurances as meaningful contact, not filler.";
+  }
+  if (tendencyIds.includes("curious")) {
+    return "They are likely to investigate before they fully settle.";
+  }
+  if (tendencyIds.includes("playful")) {
+    return "A short burst of play will land better than a long busy session.";
+  }
+  if (tendencyIds.includes("cozy")) {
+    return "Comfort and familiarity are part of their personality now.";
+  }
+  if (tendencyIds.includes("confident")) {
+    return "They seem to carry themselves like the yard already belongs to them.";
+  }
+  if (tendencyIds.includes("orderly")) {
+    return "Clear routine helps them feel like themself, not just managed.";
+  }
+  return null;
+}
+
 export function getDailyIdentityFlavor({
   stage,
   profileId,
   moodLabel,
   primaryTemperament,
+  personalityProfile,
   favoriteToyLabel,
   favoriteFoodLabel,
   favoriteNapSpotLabel,
@@ -205,6 +239,7 @@ export function getDailyIdentityFlavor({
     template?.body || "A steady day together still counts.",
     TEMPERAMENT_CONTEXT_BY_KEY[temperamentKey] || null,
     MOOD_CONTEXT_BY_KEY[moodKey] || null,
+    pickPersonalityContext(personalityProfile),
     pickFavoriteContext({
       moodKey,
       favoriteToyLabel,

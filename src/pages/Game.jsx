@@ -31,9 +31,12 @@ import {
   normalizeWeatherCondition,
 } from "@/utils/weather.js";
 import {
+  getPlayerSegmentationSnapshot,
   trackEnterGame,
+  trackPlayerSegmentSnapshot,
   trackSessionDuration,
 } from "@/lib/analytics/gameAnalytics.js";
+import { startPerfBudgetMonitor } from "@/lib/perf/perfBudget.js";
 
 function titleCase(s) {
   const str = String(s || "").trim();
@@ -70,6 +73,9 @@ export default function GamePage() {
   const settings = useSelector(selectSettings);
   const [rewardNow, setRewardNow] = useState(() => Date.now());
   const [adoptionGateReady, setAdoptionGateReady] = useState(false);
+  const [perfSample, setPerfSample] = useState(null);
+  const [runtimePerfReduced, setRuntimePerfReduced] = useState(false);
+  const perfHealthyStreakRef = useRef(0);
   const activeModalId = String(activeModal?.id || "").trim();
   const lifecycleStatus = String(dog?.lifecycleStatus || "NONE").toUpperCase();
   const lifecycleNoticeKey =
@@ -89,7 +95,8 @@ export default function GamePage() {
     enabled: dogInteractive,
   });
 
-  const perfReduced = shouldReduceEffects(settings?.perfMode);
+  const perfReduced =
+    shouldReduceEffects(settings?.perfMode) || runtimePerfReduced;
   const showBackgroundPhotos = settings?.showBackgroundPhotos !== false;
   const usePreciseDayNightLocation =
     settings?.usePreciseDayNightLocation === true;
@@ -146,6 +153,28 @@ export default function GamePage() {
   }, []);
 
   useEffect(() => {
+    const shouldShowPerfOverlay = import.meta.env.DEV;
+    const stopMonitor = startPerfBudgetMonitor({
+      sampleIntervalMs: 60_000,
+      onSample: (sample) => {
+        if (shouldShowPerfOverlay) setPerfSample(sample);
+        if (sample?.overBudget) {
+          perfHealthyStreakRef.current = 0;
+          setRuntimePerfReduced(true);
+          return;
+        }
+        perfHealthyStreakRef.current += 1;
+        if (perfHealthyStreakRef.current >= 3) {
+          setRuntimePerfReduced(false);
+        }
+      },
+    });
+    return () => {
+      stopMonitor();
+    };
+  }, []);
+
+  useEffect(() => {
     gameSessionStartedAtRef.current = Date.now();
     gameSessionLoggedRef.current = false;
 
@@ -153,6 +182,11 @@ export default function GamePage() {
     trackEnterGame({
       hasDog: sessionMeta.hasDog,
       lifecycleStatus: sessionMeta.lifecycleStatus,
+    });
+    const segmentSnapshot = getPlayerSegmentationSnapshot();
+    trackPlayerSegmentSnapshot({
+      snapshot: segmentSnapshot,
+      source: "game_enter",
     });
 
     const flushSessionDuration = () => {
@@ -372,6 +406,36 @@ export default function GamePage() {
           <MainGame scene={scene} dogInteractive={dogInteractive} />
         )}
       </div>
+      {import.meta.env.DEV && perfSample ? (
+        <div className="pointer-events-none fixed bottom-2 right-2 z-[90] rounded-xl border border-white/20 bg-black/65 px-2.5 py-2 text-[10px] font-semibold text-white/90 backdrop-blur">
+          <div className="uppercase tracking-[0.12em] text-emerald-200/90">
+            Perf
+          </div>
+          <div>FPS: {Math.round(Number(perfSample?.fps || 0))}</div>
+          <div>
+            Long tasks/min:{" "}
+            {Math.round(Number(perfSample?.longTasksPerMinute || 0))}
+          </div>
+          <div>
+            Heap:{" "}
+            {Number.isFinite(Number(perfSample?.heapUsedMb))
+              ? `${Math.round(Number(perfSample.heapUsedMb))}MB`
+              : "n/a"}
+          </div>
+          <div
+            className={
+              perfSample?.overBudget
+                ? "text-amber-200 font-bold"
+                : "text-emerald-200"
+            }
+          >
+            {perfSample?.overBudget ? "Over budget" : "Within budget"}
+          </div>
+          <div className="text-white/70">
+            Scene mode: {runtimePerfReduced ? "scaled-down" : "full"}
+          </div>
+        </div>
+      ) : null}
       <GrowthCelebration />
     </div>
   );

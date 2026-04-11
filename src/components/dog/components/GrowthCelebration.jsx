@@ -52,6 +52,30 @@ export default function GrowthCelebration() {
     () => formatAgeLabel(milestone?.ageDays),
     [milestone?.ageDays]
   );
+  const shareContext = useMemo(
+    () => ({
+      dogName: dog?.name || "My pup",
+      stageLabel: toLabel,
+      level: dog?.level || 1,
+      bondPct: dogState?.bond?.value || 0,
+      energyPct: dogState?.stats?.energy || 0,
+      personalitySummary: dog?.personalitySummary || "",
+      tendencyLabels: Array.isArray(dog?.behaviorTendencies)
+        ? dog.behaviorTendencies.map((item) => item?.label).filter(Boolean)
+        : [],
+      styleSignature: dog?.styleSignature || null,
+    }),
+    [
+      dog?.behaviorTendencies,
+      dog?.level,
+      dog?.name,
+      dog?.personalitySummary,
+      dog?.styleSignature,
+      dogState?.bond?.value,
+      dogState?.stats?.energy,
+      toLabel,
+    ]
+  );
 
   useEffect(() => {
     if (!milestone) return;
@@ -67,13 +91,7 @@ export default function GrowthCelebration() {
         fromStage: fromLabel,
         toStage: toLabel,
       },
-      {
-        dogName: dog?.name || "My pup",
-        stageLabel: toLabel,
-        level: dog?.level || 1,
-        bondPct: dogState?.bond?.value || 0,
-        energyPct: dogState?.stats?.energy || 0,
-      }
+      shareContext
     );
 
     try {
@@ -145,13 +163,7 @@ export default function GrowthCelebration() {
                   fromStage: fromLabel,
                   toStage: toLabel,
                 },
-                {
-                  dogName: dog?.name || "My pup",
-                  stageLabel: toLabel,
-                  level: dog?.level || 1,
-                  bondPct: dogState?.bond?.value || 0,
-                  energyPct: dogState?.stats?.energy || 0,
-                }
+                shareContext
               )}
               onClose={() => setShareCardOpen(false)}
               onShare={handleShareMilestone}

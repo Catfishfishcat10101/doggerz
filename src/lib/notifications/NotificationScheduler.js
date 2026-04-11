@@ -12,24 +12,23 @@ export const DEFAULT_DOGGERZ_REMINDERS = Object.freeze([
   {
     key: "checkin-hungry",
     label: "Hungry",
-    title: "Your pup is hungry",
-    message: "It has been 4 hours. A quick snack keeps them happy.",
+    title: "Your pup is a little hungry",
+    message: "A small meal would make their tail wag again.",
     thresholdMs: CHECK_IN_THRESHOLDS.hungryMs,
   },
   {
-    key: "checkin-dirty",
-    label: "Needs a bath",
-    title: "Your pup needs a rinse",
-    message: "It has been 12 hours. They are getting scruffy.",
-    thresholdMs: CHECK_IN_THRESHOLDS.dirtyMs,
+    key: "checkin-lonely",
+    label: "Lonely",
+    title: "Your pup misses you",
+    message: "A quick check-in and a little play would mean a lot.",
+    thresholdMs: CHECK_IN_THRESHOLDS.strayMs,
   },
   {
-    key: "checkin-stray",
-    label: "Feeling lonely",
-    title: "Your Jack Russell is lonely",
-    message:
-      "It has been 24 hours. Your pup is looking a bit stray. Come check in.",
-    thresholdMs: CHECK_IN_THRESHOLDS.strayMs,
+    key: "checkin-milestone",
+    label: "Milestone ready",
+    title: "A milestone moment is waiting",
+    message: "Your dog has a growth moment ready for you to celebrate.",
+    thresholdMs: 30 * 60 * 1000,
   },
 ]);
 
@@ -49,6 +48,7 @@ function normalizeReminders(reminders) {
 export async function scheduleDogNotifications({
   lastSeenAt,
   lastFedAt,
+  baseByKey = {},
   reminders = DEFAULT_DOGGERZ_REMINDERS,
 } = {}) {
   const permission = await ensureNotificationsEnabled();
@@ -57,6 +57,8 @@ export async function scheduleDogNotifications({
   return scheduleLifeLoopNotifications({
     lastSeenAt: Number(lastSeenAt || Date.now()),
     lastFedAt: Number(lastFedAt || 0),
+    baseByKey:
+      baseByKey && typeof baseByKey === "object" ? { ...baseByKey } : {},
     reminders: normalizeReminders(reminders),
   });
 }

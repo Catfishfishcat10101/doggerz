@@ -602,6 +602,10 @@ function refreshDailyIdentityFlavor(state, now = nowMs()) {
     profileId: state?.identity?.profileId || null,
     moodLabel: state?.emotionCue || null,
     primaryTemperament: state?.temperament?.primary || null,
+    personalityProfile:
+      state?.personalityProfile && typeof state.personalityProfile === "object"
+        ? state.personalityProfile
+        : null,
     favoriteToyLabel,
     favoriteFoodLabel,
     favoriteNapSpotLabel,
@@ -1386,6 +1390,7 @@ const initialMemory = {
   lastFedAt: null,
   lastDrankAt: null,
   lastPlayedAt: null,
+  lastAmbientWanderAt: null,
   lastBathedAt: null,
   lastTrainedAt: null,
   lastTrainedCommandId: null,
@@ -5787,6 +5792,15 @@ const dogSlice = createSlice({
               ),
             }
           : null;
+      }
+      if (
+        action === "walk" &&
+        String(state.targetPosition?.type || "")
+          .trim()
+          .toLowerCase() === "brain_wander"
+      ) {
+        const memory = ensureMemoryState(state);
+        memory.lastAmbientWanderAt = payload?.now ?? nowMs();
       }
       const speed = Number(updates.speed);
       if (Number.isFinite(speed) && speed > 0) {

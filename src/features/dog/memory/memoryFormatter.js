@@ -9,7 +9,27 @@ function titleize(value, fallback = "Memory moment") {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
-export function formatMemoryMoment(moment, { dogName = "Your pup" } = {}) {
+function getMemoryVoiceLine(voice, fallback) {
+  const key = String(voice || "")
+    .trim()
+    .toLowerCase();
+  if (key === "clingy") return "It landed like reassurance, not routine.";
+  if (key === "curious") return "They treated it like a little discovery.";
+  if (key === "playful")
+    return "It felt more like shared fun than maintenance.";
+  if (key === "cozy")
+    return "It settled into the kind of comfort they remember.";
+  if (key === "confident")
+    return "They carried the moment like it already belonged to them.";
+  if (key === "orderly")
+    return "They responded to the routine with visible ease.";
+  return fallback;
+}
+
+export function formatMemoryMoment(
+  moment,
+  { dogName = "Your pup", personalityVoice = "steady" } = {}
+) {
   if (!moment || typeof moment !== "object") return null;
 
   const type = String(moment.type || "")
@@ -43,6 +63,17 @@ export function formatMemoryMoment(moment, { dogName = "Your pup" } = {}) {
     };
   }
 
+  if (type === MEMORY_MOMENT_TYPES.FIRST_CARE_LOOP) {
+    return {
+      ...base,
+      icon: "🎁",
+      eyebrow: "First Care Loop",
+      title: "Routine established",
+      body: `${name} felt your first full care rhythm today. ${getMemoryVoiceLine(personalityVoice, "It already feels like part of your shared routine.")}`,
+      tone: "emerald",
+    };
+  }
+
   if (type === MEMORY_MOMENT_TYPES.TRICK_MASTERED) {
     const commandLabel = titleize(payload.commandLabel, "That trick");
     return {
@@ -50,7 +81,7 @@ export function formatMemoryMoment(moment, { dogName = "Your pup" } = {}) {
       icon: "🎯",
       eyebrow: "Mastery",
       title: `${commandLabel} mastered`,
-      body: `${name} now performs it with confidence.`,
+      body: `${name} now performs it with confidence. ${getMemoryVoiceLine(personalityVoice, "The repetition turned into identity.")}`,
       tone: "sky",
     };
   }
@@ -65,7 +96,7 @@ export function formatMemoryMoment(moment, { dogName = "Your pup" } = {}) {
       icon: payload.rewardIcon ? String(payload.rewardIcon) : "🦴",
       eyebrow: "Treasure Found",
       title: rewardName,
-      body: `${name} followed a scent trail and dug this up.`,
+      body: `${name} followed a scent trail and dug this up. ${getMemoryVoiceLine(personalityVoice, "A small surprise turned into a real memory.")}`,
       tone: "amber",
     };
   }
@@ -76,7 +107,10 @@ export function formatMemoryMoment(moment, { dogName = "Your pup" } = {}) {
       icon: "🏠",
       eyebrow: "Cozy Rest",
       title: `${name} settled in the doghouse`,
-      body: "A calm, safe rest moment in the yard.",
+      body: getMemoryVoiceLine(
+        personalityVoice,
+        "A calm, safe rest moment in the yard."
+      ),
       tone: "emerald",
     };
   }
@@ -87,7 +121,7 @@ export function formatMemoryMoment(moment, { dogName = "Your pup" } = {}) {
       icon: "🌙",
       eyebrow: "Night Spark",
       title: "Midnight zoomies",
-      body: `${name} burst into a playful late-night sprint.`,
+      body: `${name} burst into a playful late-night sprint. ${getMemoryVoiceLine(personalityVoice, "The yard felt briefly too small for that mood.")}`,
       tone: "sky",
     };
   }

@@ -49,6 +49,9 @@ import {
   setSfxVolume,
   setShowHints,
   setDailyRemindersEnabled,
+  setNotificationHungerEnabled,
+  setNotificationLonelinessEnabled,
+  setNotificationMilestonesEnabled,
   setTheme,
   setHapticsEnabled,
   setStoreHoverPreview,
@@ -1484,6 +1487,27 @@ export default function Settings() {
               description="Shows a gentle reminder when your pup needs attention."
               checked={settings?.dailyRemindersEnabled !== false}
               onChange={(v) => dispatch(setDailyRemindersEnabled(v))}
+            />
+            <Switch
+              id="notificationHungerEnabled"
+              label="Hunger reminders"
+              description="Calm nudges when your dog likely needs food."
+              checked={settings?.notificationHungerEnabled !== false}
+              onChange={(v) => dispatch(setNotificationHungerEnabled(v))}
+            />
+            <Switch
+              id="notificationLonelinessEnabled"
+              label="Loneliness reminders"
+              description="Gentle check-in prompts if your dog has been alone."
+              checked={settings?.notificationLonelinessEnabled !== false}
+              onChange={(v) => dispatch(setNotificationLonelinessEnabled(v))}
+            />
+            <Switch
+              id="notificationMilestonesEnabled"
+              label="Milestone reminders"
+              description="Alerts when a growth milestone is ready to celebrate."
+              checked={settings?.notificationMilestonesEnabled !== false}
+              onChange={(v) => dispatch(setNotificationMilestonesEnabled(v))}
             />
 
             <div className="flex flex-col gap-3 rounded-xl border border-white/10 bg-black/10 px-4 py-3 dark:bg-black/20">

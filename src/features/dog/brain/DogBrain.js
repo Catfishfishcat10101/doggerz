@@ -14,6 +14,10 @@ const WANDER_Y_DRIFT_PX = 18;
 const WANDER_X_MARGIN = 72;
 const WANDER_Y_MIN = 260;
 const WANDER_Y_MAX = DOG_WORLD_HEIGHT - 40;
+const AMBIENT_WANDER_MIN_INTERVAL_MS = 26_000;
+const AMBIENT_WANDER_INTERVAL_JITTER_MS = 18_000;
+const AMBIENT_WANDER_MIN_ENERGY = 28;
+const AMBIENT_WANDER_IDLE_STATES = new Set(["idle", "rest"]);
 
 export const DOG_BRAIN_PRIORITIES = Object.freeze({
   sleep: 100,
@@ -164,6 +168,41 @@ function createStableWanderTarget(dog, now, origin) {
   };
 }
 
+function getLastAmbientWanderAt(dog) {
+  return normalizeNumber(dog?.memory?.lastAmbientWanderAt, 0);
+}
+
+function getAmbientWanderCooldownMs(dog, mentalStimulation) {
+  const personalityJitter =
+    seedUnit(hashSeed(normalizeNumber(dog?.adoptedAt, 1)) + 29) *
+    AMBIENT_WANDER_INTERVAL_JITTER_MS;
+  const stimulationDelay = clamp(mentalStimulation, 0, 100) * 120;
+
+  return Math.round(
+    AMBIENT_WANDER_MIN_INTERVAL_MS + personalityJitter + stimulationDelay
+  );
+}
+
+function shouldStartAmbientWander({
+  dog,
+  now,
+  aiState,
+  aiStateUntilAt,
+  targetPosition,
+  energy,
+  mentalStimulation,
+}) {
+  if (targetPosition) return false;
+  if (!AMBIENT_WANDER_IDLE_STATES.has(aiState)) return false;
+  if (aiStateUntilAt > now) return false;
+  if (energy < AMBIENT_WANDER_MIN_ENERGY) return false;
+  if (mentalStimulation <= LOW_STIMULATION_WALK_THRESHOLD) return false;
+
+  const lastAmbientWanderAt = getLastAmbientWanderAt(dog);
+  const cooldownMs = getAmbientWanderCooldownMs(dog, mentalStimulation);
+  return now - lastAmbientWanderAt >= cooldownMs;
+}
+
 export function buildDogBrainState(dog) {
   const stats = dog?.stats && typeof dog.stats === "object" ? dog.stats : {};
 
@@ -290,6 +329,25 @@ export function evaluateDogBrain(input, { now = Date.now() } = {}) {
       },
       reason: "near_interesting_prop",
       priority: DOG_BRAIN_PRIORITIES.sniff,
+    });
+  }
+
+  if (
+    shouldStartAmbientWander({
+      dog,
+      now,
+      aiState,
+      aiStateUntilAt,
+      targetPosition,
+      energy,
+      mentalStimulation,
+    })
+  ) {
+    return createDecision({
+      desiredAction: "walk",
+      desiredTarget: createStableWanderTarget(dog, now + 11, position),
+      reason: "ambient_stroll",
+      priority: DOG_BRAIN_PRIORITIES.walk,
     });
   }
 

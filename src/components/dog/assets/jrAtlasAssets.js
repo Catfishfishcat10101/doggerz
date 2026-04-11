@@ -67,6 +67,18 @@ export const JR_ANIMATIONS = Object.freeze([
 ]);
 
 const ENABLED_ATLAS_SPEC_IDS = Object.freeze(new Set());
+const ESSENTIAL_PRELOAD_STAGES = Object.freeze(["pup"]);
+const ESSENTIAL_PRELOAD_CONDITIONS = Object.freeze(["clean"]);
+const ESSENTIAL_PRELOAD_ANIMATIONS = Object.freeze([
+  "idle",
+  "idle_resting",
+  "walk",
+  "sleep",
+  "scratch",
+  "bark",
+  "beg",
+  "dig",
+]);
 
 function unique(list) {
   return [...new Set(list.filter(Boolean))];
@@ -131,6 +143,25 @@ function buildSheetSources() {
 
 export const JR_ALL_SPRITE_SHEET_URLS = Object.freeze(buildSheetSources());
 
+function buildEssentialSheetSources() {
+  const urls = [];
+  ESSENTIAL_PRELOAD_STAGES.forEach((stage) => {
+    ESSENTIAL_PRELOAD_CONDITIONS.forEach((condition) => {
+      urls.push(getDogPixiSheetUrl(stage, condition));
+    });
+  });
+  ESSENTIAL_PRELOAD_STAGES.forEach((stage) => {
+    ESSENTIAL_PRELOAD_ANIMATIONS.forEach((anim) => {
+      urls.push(getDogAnimSpriteUrl(stage, anim));
+    });
+  });
+  return unique(urls);
+}
+
+export const JR_ESSENTIAL_SPRITE_SHEET_URLS = Object.freeze(
+  buildEssentialSheetSources()
+);
+
 function buildAnimationFrameUrls() {
   const urls = [];
   STAGES.forEach((stage) => {
@@ -157,7 +188,7 @@ export const JR_ALL_FRAME_URLS = Object.freeze(
   ])
 );
 
-let preloadPromise = null;
+const preloadPromiseByMode = new Map();
 
 function stripFrameFragment(url) {
   return String(url || "").split("#")[0];
@@ -174,21 +205,36 @@ function preloadImage(url) {
   });
 }
 
-export function preloadJackRussellSheets() {
-  if (preloadPromise) return preloadPromise;
-  const sources = JR_ALL_SPRITE_SHEET_URLS;
-  preloadPromise = Promise.all(sources.map((url) => preloadImage(url))).then(
-    (results) => {
-      const failed = results.filter((result) => !result.ok);
-      if (failed.length > 0) {
-        // Log failed preloads so callers and tooling can react or debug.
-        console.warn(
-          "[JR preload] One or more Jack Russell sprite sheets failed to preload",
-          { failed }
-        );
-      }
-      return results;
+export function preloadJackRussellSheets({ mode = "essential" } = {}) {
+  const preloadMode =
+    String(mode || "")
+      .trim()
+      .toLowerCase() === "full"
+      ? "full"
+      : "essential";
+  if (preloadPromiseByMode.has(preloadMode)) {
+    return preloadPromiseByMode.get(preloadMode);
+  }
+
+  const sources =
+    preloadMode === "full"
+      ? JR_ALL_SPRITE_SHEET_URLS
+      : JR_ESSENTIAL_SPRITE_SHEET_URLS;
+
+  const preloadPromise = Promise.all(
+    sources.map((url) => preloadImage(url))
+  ).then((results) => {
+    const failed = results.filter((result) => !result.ok);
+    if (failed.length > 0) {
+      // Log failed preloads so callers and tooling can react or debug.
+      console.warn(
+        "[JR preload] One or more Jack Russell sprite sheets failed to preload",
+        { failed, mode: preloadMode }
+      );
     }
-  );
+    return results;
+  });
+
+  preloadPromiseByMode.set(preloadMode, preloadPromise);
   return preloadPromise;
 }

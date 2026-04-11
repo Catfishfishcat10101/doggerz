@@ -1,3 +1,4 @@
+// Developer demo-only renderer. Not used by Landing, Adopt, Game, or Store.
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import {

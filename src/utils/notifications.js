@@ -10,8 +10,9 @@ export const DOG_ALERT_SOUND_FILE = `${DOG_ALERT_SOUND_NAME}.mp3`;
 
 const LIFE_LOOP_IDS = Object.freeze({
   hungry: 9101,
-  dirty: 9102,
-  stray: 9103,
+  lonely: 9102,
+  stray: 9102,
+  milestone: 9103,
 });
 
 function isNativeNotifications() {
@@ -152,6 +153,7 @@ export async function cancelLifeLoopNotifications() {
 export async function scheduleLifeLoopNotifications({
   lastSeenAt,
   lastFedAt,
+  baseByKey = {},
   reminders = [],
 } = {}) {
   if (!isNativeNotifications()) return false;
@@ -162,15 +164,20 @@ export async function scheduleLifeLoopNotifications({
   const now = Date.now();
   const seenBase = Number(lastSeenAt || now);
   const fedBase = Number(lastFedAt || seenBase);
+  const reminderBaseByKey =
+    baseByKey && typeof baseByKey === "object" ? baseByKey : {};
 
   const notifications = reminders.map((reminder, idx) => {
     const reminderKey = String(reminder.key || "");
+    const explicitBase = Number(reminderBaseByKey[reminderKey] || 0);
     const base =
-      reminderKey === "checkin-hungry" &&
-      Number.isFinite(fedBase) &&
-      fedBase > 0
-        ? fedBase
-        : seenBase;
+      Number.isFinite(explicitBase) && explicitBase > 0
+        ? explicitBase
+        : reminderKey === "checkin-hungry" &&
+            Number.isFinite(fedBase) &&
+            fedBase > 0
+          ? fedBase
+          : seenBase;
     const fireAt = Math.max(
       now + 60_000,
       base + Number(reminder.thresholdMs || 0)
@@ -188,6 +195,7 @@ export async function scheduleLifeLoopNotifications({
   });
 
   await cancelLifeLoopNotifications();
+  if (!notifications.length) return true;
   try {
     await LocalNotifications.schedule({ notifications });
     return true;

@@ -49,18 +49,62 @@ const selectDogIdentityModel = createSelector(
     selectDogIdentityProfile,
     selectDogPrimaryFavoriteSummary,
     selectDogDailyFlavor,
+    selectCosmeticCatalog,
   ],
-  (dog, identityProfile, favoriteSummary, dailyFlavor) => ({
-    profileId: String(identityProfile?.profileId || "").trim() || null,
-    visualIdentity:
-      String(identityProfile?.visualIdentity || "").trim() || "jr_canonical_v1",
-    name: String(dog?.name || identityProfile?.name || "Pup").trim() || "Pup",
-    level: Math.max(1, Math.floor(Number(dog?.level || 1))),
-    xp: Math.max(0, Math.floor(Number(dog?.xp || 0))),
-    coins: Math.max(0, Math.floor(Number(dog?.coins || 0))),
-    favoriteSummary,
-    dailyFlavor,
-  })
+  (dog, identityProfile, favoriteSummary, dailyFlavor, catalog) => {
+    const catalogItems = Array.isArray(catalog) ? catalog : [];
+    const catalogById = new Map(
+      catalogItems
+        .map((item) => [String(item?.id || "").trim(), item])
+        .filter(([id]) => id)
+    );
+    const equipped = dog?.cosmetics?.equipped || {};
+    const collarLabel = catalogById.get(
+      String(equipped?.collar || "").trim()
+    )?.label;
+    const tagLabel = catalogById.get(String(equipped?.tag || "").trim())?.label;
+    const backdropLabel = catalogById.get(
+      String(equipped?.backdrop || "").trim()
+    )?.label;
+    const personalityProfile =
+      dog?.personalityProfile && typeof dog.personalityProfile === "object"
+        ? dog.personalityProfile
+        : {};
+    const behaviorTendencies = Array.isArray(
+      personalityProfile?.behaviorTendencies?.tendencies
+    )
+      ? personalityProfile.behaviorTendencies.tendencies
+      : [];
+
+    return {
+      profileId: String(identityProfile?.profileId || "").trim() || null,
+      visualIdentity:
+        String(identityProfile?.visualIdentity || "").trim() ||
+        "jr_canonical_v1",
+      name: String(dog?.name || identityProfile?.name || "Pup").trim() || "Pup",
+      level: Math.max(1, Math.floor(Number(dog?.level || 1))),
+      xp: Math.max(0, Math.floor(Number(dog?.xp || 0))),
+      coins: Math.max(0, Math.floor(Number(dog?.coins || 0))),
+      favoriteSummary,
+      dailyFlavor,
+      personalityProfile,
+      behaviorTendencies,
+      memoryVoice:
+        String(personalityProfile?.memoryVoice || "").trim() || "steady",
+      personalitySummary:
+        String(personalityProfile?.behaviorTendencies?.summary || "").trim() ||
+        "Settles into familiar routines and remembers how you care for them.",
+      styleSignature: {
+        collarLabel: collarLabel || null,
+        tagLabel: tagLabel || null,
+        backdropLabel: backdropLabel || null,
+        environmentLabel:
+          String(dog?.yard?.environment || "yard").toLowerCase() === "apartment"
+            ? "Apartment"
+            : "Backyard",
+      },
+    };
+  }
 );
 
 const selectDogIdentityContentModel = createSelector(

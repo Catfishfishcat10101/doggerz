@@ -1,5 +1,6 @@
 export const MEMORY_MOMENT_TYPES = Object.freeze({
   FIRST_LEVEL_UP: "first_level_up",
+  FIRST_CARE_LOOP: "first_care_loop",
   TRICK_MASTERED: "trick_mastered",
   TREASURE_FOUND: "treasure_found",
   SLEPT_IN_DOGHOUSE: "slept_in_doghouse",
@@ -9,6 +10,10 @@ export const MEMORY_MOMENT_TYPES = Object.freeze({
 const MEMORY_MOMENT_META = Object.freeze({
   [MEMORY_MOMENT_TYPES.FIRST_LEVEL_UP]: Object.freeze({
     durationMs: 3400,
+    cooldownMs: 24 * 60 * 60 * 1000,
+  }),
+  [MEMORY_MOMENT_TYPES.FIRST_CARE_LOOP]: Object.freeze({
+    durationMs: 3200,
     cooldownMs: 24 * 60 * 60 * 1000,
   }),
   [MEMORY_MOMENT_TYPES.TRICK_MASTERED]: Object.freeze({

@@ -14,6 +14,10 @@ import { useDogStoreView } from "@/hooks/useDogState.js";
 import { getSpriteForLifeStage } from "@/utils/lifecycle.js";
 import { resolveBackdropLayers } from "@/utils/backgroundLayers.js";
 import {
+  getLiveCatalogMeta,
+  getLiveContentSnapshot,
+} from "@/features/live/liveContentEngine.js";
+import {
   purchaseCosmetic,
   equipCosmetic,
   setActiveToy,
@@ -364,6 +368,22 @@ function CollectionPill({ collection }) {
   );
 }
 
+function LivePill({ tone = "emerald", children }) {
+  const toneClass =
+    tone === "amber"
+      ? "border-amber-400/30 bg-amber-500/12 text-amber-100"
+      : tone === "sky"
+        ? "border-sky-400/30 bg-sky-500/12 text-sky-100"
+        : "border-emerald-400/30 bg-emerald-500/12 text-emerald-100";
+  return (
+    <span
+      className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] ${toneClass}`}
+    >
+      {children}
+    </span>
+  );
+}
+
 function getItemStateMeta({
   owned = false,
   isEquipped = false,
@@ -581,6 +601,10 @@ export default function Store() {
     return slots.filter((value) => String(value || "").trim().length > 0)
       .length;
   }, [equipped?.backdrop, equipped?.collar, equipped?.tag]);
+  const liveContent = useMemo(
+    () => getLiveContentSnapshot({ now: Date.now(), catalog }),
+    [catalog]
+  );
 
   const collectionCounts = useMemo(() => {
     const items = Array.isArray(catalog) ? catalog : [];
@@ -688,6 +712,8 @@ export default function Store() {
               : 9;
 
     const baseComparator = (a, b) => {
+      const liveA = getLiveCatalogMeta(a, liveContent);
+      const liveB = getLiveCatalogMeta(b, liveContent);
       if (sortKey === "price") {
         return priceForCatalogItem(a) - priceForCatalogItem(b);
       }
@@ -704,6 +730,9 @@ export default function Store() {
       }
 
       // recommended: slot grouping + threshold
+      const featuredA = liveA.isLive ? 0 : 1;
+      const featuredB = liveB.isLive ? 0 : 1;
+      if (featuredA !== featuredB) return featuredA - featuredB;
       const sa = String(a.slot || "").toLowerCase();
       const sb = String(b.slot || "").toLowerCase();
       const ca = getStoreCategory(a);
@@ -741,6 +770,7 @@ export default function Store() {
     trimmedQuery,
     unlocked,
     isFounder,
+    liveContent,
   ]);
 
   const focusedItem = useMemo(() => {
@@ -872,14 +902,68 @@ export default function Store() {
             </div>
             <div className="rounded-3xl border border-white/10 bg-black/20 p-4">
               <div className="text-xs uppercase tracking-[0.22em] text-zinc-400">
-                Coming soon
+                Live this week
               </div>
               <div className="mt-1 text-sm font-extrabold text-zinc-100">
-                Rotating seasonal drops
+                {liveContent.weeklyRotation.label}
               </div>
               <div className="mt-2 text-sm text-zinc-300">
-                Seasonal items appear with clear labels and keep your look
-                feeling fresh without changing gameplay balance.
+                {liveContent.weeklyRotation.summary}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="mb-8 rounded-3xl border border-white/10 bg-black/25 p-5 sm:p-6">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <div className="text-xs uppercase tracking-[0.22em] text-zinc-400">
+                Live Content
+              </div>
+              <div className="mt-1 text-lg font-extrabold text-zinc-100">
+                Lightweight drops, refreshed weekly
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <LivePill tone="sky">{liveContent.weeklyRotation.mood}</LivePill>
+              <LivePill tone="amber">{liveContent.seasonalDrop.label}</LivePill>
+            </div>
+          </div>
+          <div className="mt-4 grid gap-3 lg:grid-cols-2">
+            <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+              <div className="text-xs uppercase tracking-[0.2em] text-zinc-400">
+                Weekly Rotation
+              </div>
+              <div className="mt-1 text-sm font-extrabold text-zinc-100">
+                {liveContent.weeklyRotation.label}
+              </div>
+              <div className="mt-2 text-sm text-zinc-300">
+                {liveContent.weeklyRotation.summary}
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {liveContent.weeklyItems.map((item) => (
+                  <LivePill key={item.id} tone="sky">
+                    {item.label}
+                  </LivePill>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+              <div className="text-xs uppercase tracking-[0.2em] text-zinc-400">
+                Seasonal Spotlight
+              </div>
+              <div className="mt-1 text-sm font-extrabold text-zinc-100">
+                {liveContent.seasonalDrop.label}
+              </div>
+              <div className="mt-2 text-sm text-zinc-300">
+                {liveContent.seasonalDrop.summary}
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {liveContent.seasonalItems.map((item) => (
+                  <LivePill key={item.id} tone="amber">
+                    {item.label}
+                  </LivePill>
+                ))}
               </div>
             </div>
           </div>
@@ -1790,6 +1874,7 @@ export default function Store() {
                   const isEquipped = slot && equipped?.[slot] === id;
                   const wearable = WEARABLE_SLOTS.has(slot);
                   const rarity = rarityForThreshold(threshold);
+                  const liveMeta = getLiveCatalogMeta(item, liveContent);
                   const ownershipLabel = wearable
                     ? isEquipped
                       ? "Equipped"
@@ -1837,6 +1922,12 @@ export default function Store() {
                             <SlotPill slot={slot} />
                             <CategoryPill category={category} />
                             <CollectionPill collection={collection} />
+                            {liveMeta.isWeeklyFeatured ? (
+                              <LivePill tone="sky">Weekly Pick</LivePill>
+                            ) : null}
+                            {liveMeta.isSeasonalLive ? (
+                              <LivePill tone="amber">Season Live</LivePill>
+                            ) : null}
                             <ItemStatePill state={itemState} />
                             <span
                               className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] ${rarity.className}`}

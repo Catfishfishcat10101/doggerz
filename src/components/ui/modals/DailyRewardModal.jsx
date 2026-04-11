@@ -1,5 +1,3 @@
-// src/components/ui/modals/DailyRewardModal.jsx
-
 import { useMemo, useState } from "react";
 import { useDispatch } from "react-redux";
 

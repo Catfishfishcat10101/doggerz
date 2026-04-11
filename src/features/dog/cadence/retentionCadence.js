@@ -303,6 +303,72 @@ function pickDailyMoment({ dog, now, isNight, profileSeed, dayKey }) {
   );
 }
 
+function pickRetentionTunedMoment({
+  analyticsSnapshot,
+  dog,
+  now: _now,
+  isNight,
+}) {
+  const snapshot =
+    analyticsSnapshot && typeof analyticsSnapshot === "object"
+      ? analyticsSnapshot
+      : null;
+  if (!snapshot) return null;
+
+  const firstSessionSeconds = Math.max(
+    0,
+    Math.round(Number(snapshot.firstSessionSeconds || 0))
+  );
+  const firstCare = snapshot.firstSessionCare || {};
+  const careCompleted = Math.max(
+    0,
+    Math.floor(Number(firstCare.completedCount || 0))
+  );
+  const returnGapHours = Math.max(0, Number(snapshot.returnGapHours || 0));
+  const hunger = Number(dog?.stats?.hunger || 0);
+  const thirst = Number(dog?.stats?.thirst || 0);
+  const missingCarePressure = Math.max(hunger, thirst);
+
+  if (returnGapHours >= 36) {
+    return {
+      id: "missed_you_long_gap",
+      title: "I missed you",
+      body: "Your dog is glad you're back. Start with one calm care action, then let the yard settle.",
+      tone: "emerald",
+      windowLabel: "Welcome-back moment",
+      urgency: "soft",
+    };
+  }
+
+  if (returnGapHours >= 20 && missingCarePressure >= 55) {
+    return {
+      id: "soft_reconnect_care",
+      title: "Gentle reconnect",
+      body: "A quick water and feed check will steady the day without turning it into a grind.",
+      tone: isNight ? "sky" : "amber",
+      windowLabel: "Return moment",
+      urgency: "light",
+    };
+  }
+
+  if (
+    firstSessionSeconds > 0 &&
+    firstSessionSeconds < 90 &&
+    careCompleted <= 1
+  ) {
+    return {
+      id: "first_session_guided_loop",
+      title: "Start with the care trio",
+      body: "Feed, water, and one play tap is enough for a good first day. Keep it short and warm.",
+      tone: "emerald",
+      windowLabel: "First-day rhythm",
+      urgency: "none",
+    };
+  }
+
+  return null;
+}
+
 function pickRotatingEvent({ dog, now, environment, profileSeed, dayKey }) {
   const stageKey = resolveStageKey(dog);
   const lastTrainedHours = hoursSince(dog?.memory?.lastTrainedAt, now);
@@ -392,6 +458,7 @@ export function getRetentionCadenceModel({
   now = Date.now(),
   isNight = false,
   environment = "yard",
+  analyticsSnapshot = null,
 } = {}) {
   const dayKey = getDayKey(now);
   const weekKey = getWeekKey(now);
@@ -405,13 +472,20 @@ export function getRetentionCadenceModel({
     Math.floor(Number(dog?.streak?.currentStreakDays || 0))
   );
 
-  const dailyMoment = pickDailyMoment({
+  const baseDailyMoment = pickDailyMoment({
     dog,
     now,
     isNight,
     profileSeed,
     dayKey,
   });
+  const tunedDailyMoment =
+    pickRetentionTunedMoment({
+      analyticsSnapshot,
+      dog,
+      now,
+      isNight,
+    }) || baseDailyMoment;
   const rotatingEvent = pickRotatingEvent({
     dog,
     now,
@@ -433,8 +507,8 @@ export function getRetentionCadenceModel({
   });
 
   const resolvedDailyMoment = {
-    ...dailyMoment,
-    tone: resolveCadenceTone(dailyMoment.tone, isNight),
+    ...tunedDailyMoment,
+    tone: resolveCadenceTone(tunedDailyMoment.tone, isNight),
   };
   const resolvedRotatingEvent = {
     ...rotatingEvent,
@@ -448,6 +522,18 @@ export function getRetentionCadenceModel({
     rotatingEvent: resolvedRotatingEvent,
     routineTheme,
     surprise,
+    retention: {
+      riskBand: String(analyticsSnapshot?.riskBand || "low")
+        .trim()
+        .toLowerCase(),
+      dropOffReasons: Array.isArray(analyticsSnapshot?.dropOffReasons)
+        ? [...analyticsSnapshot.dropOffReasons]
+        : [],
+      firstSessionComplete: Boolean(analyticsSnapshot?.firstSessionComplete),
+      firstCareLoopCompleted: Boolean(
+        analyticsSnapshot?.firstCareLoopCompleted
+      ),
+    },
     // Backward-compatible aliases for the existing HUD card.
     microMoment: resolvedDailyMoment,
     rotatingCare: resolvedRotatingEvent,

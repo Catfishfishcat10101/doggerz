@@ -311,7 +311,12 @@ export function runSimulation(
     if (brainResult?.mood) {
       changes.mood = brainResult.mood;
     }
-    if (brainResult?.startedWalk && brainResult?.targetPosition) {
+    if (
+      brainResult?.startedWalk &&
+      brainResult?.targetPosition &&
+      String(brainResult?.targetPosition?.type || "").toLowerCase() !==
+        "brain_wander"
+    ) {
       const targetPosition = brainResult.targetPosition;
       memories.push(
         createMemoryEvent("wandered", {

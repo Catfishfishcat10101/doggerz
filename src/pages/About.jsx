@@ -3,9 +3,9 @@
 import { Link } from "react-router-dom";
 
 import { PATHS } from "@/app/routes.js";
+import SpriteSheetDog from "@/components/dog/renderers/SpriteSheetDog.jsx";
 import PageShell from "@/components/layout/PageShell.jsx";
 import { PageHeader } from "@/components/layout/PageSections.jsx";
-import { withBaseUrl } from "@/utils/assetUtils.js";
 
 const CORE_LOOP = [
   "Play together to keep energy and happiness up.",
@@ -163,13 +163,19 @@ export default function AboutPage() {
                 Tour your virtual pup
               </div>
               <div className="mt-4 flex items-center gap-4">
-                <div className="h-20 w-20 rounded-2xl border border-white/10 bg-black/40 p-2">
-                  <img
-                    src={withBaseUrl("/assets/sprites/jr/pup_idle.png")}
-                    alt="Jack Russell"
-                    className="h-full w-full rounded-xl object-contain"
-                    loading="lazy"
-                  />
+                <div className="h-24 w-24 rounded-2xl border border-white/10 bg-black/40 p-2">
+                  <div className="flex h-full w-full items-end justify-center rounded-xl">
+                    <SpriteSheetDog
+                      stage="PUPPY"
+                      anim="idle"
+                      facing={1}
+                      size={80}
+                      groundYNorm={0.6}
+                      maxWidthRatio={0.86}
+                      maxHeightRatio={0.86}
+                      className="select-none"
+                    />
+                  </div>
                 </div>
                 <div>
                   <div className="text-sm font-semibold text-zinc-100">

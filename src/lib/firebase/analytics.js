@@ -10,6 +10,11 @@ const ANALYTICS_EVENTS = new Set([
   "train_trick",
   "level_up",
   "session_duration",
+  "store_view",
+  "store_item_view",
+  "store_purchase_attempt",
+  "store_purchase_success",
+  "player_segment_snapshot",
 ]);
 
 let analyticsInstancePromise = null;

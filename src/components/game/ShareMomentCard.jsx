@@ -46,6 +46,10 @@ export default function ShareMomentCard({
 
   const accent = resolveAccentClasses(card.accent);
   const stats = Array.isArray(card.stats) ? card.stats.filter(Boolean) : [];
+  const chips = Array.isArray(card.chips) ? card.chips.filter(Boolean) : [];
+  const signature = Array.isArray(card.signature)
+    ? card.signature.filter(Boolean)
+    : [];
 
   return (
     <div
@@ -83,6 +87,32 @@ export default function ShareMomentCard({
               <div className="mt-1 text-sm font-black text-white">
                 {item.value}
               </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      {chips.length ? (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {chips.map((item) => (
+            <div
+              key={item}
+              className={`rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] ${accent.chip}`}
+            >
+              {item}
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      {signature.length ? (
+        <div className="mt-3 flex flex-wrap gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-white/72">
+          {signature.map((item) => (
+            <div
+              key={item}
+              className="rounded-full border border-white/12 bg-black/18 px-2.5 py-1"
+            >
+              {item}
             </div>
           ))}
         </div>

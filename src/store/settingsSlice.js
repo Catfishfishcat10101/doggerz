@@ -235,6 +235,11 @@ function normalizeLoadedSettings(raw) {
   // Haptics (mobile vibration)
   next.hapticsEnabled = next.hapticsEnabled !== false;
   next.dailyRemindersEnabled = next.dailyRemindersEnabled !== false;
+  next.notificationHungerEnabled = next.notificationHungerEnabled !== false;
+  next.notificationLonelinessEnabled =
+    next.notificationLonelinessEnabled !== false;
+  next.notificationMilestonesEnabled =
+    next.notificationMilestonesEnabled !== false;
 
   // Ensure nested audio exists
   next.audio = {
@@ -277,6 +282,9 @@ const DEFAULT_SETTINGS_STATE = {
   // UI preferences
   showHints: true,
   dailyRemindersEnabled: true,
+  notificationHungerEnabled: true,
+  notificationLonelinessEnabled: true,
+  notificationMilestonesEnabled: true,
 
   // Haptics
   hapticsEnabled: true,
@@ -480,6 +488,21 @@ const settingsSlice = createSlice({
 
     setDailyRemindersEnabled(state, action) {
       state.dailyRemindersEnabled = Boolean(action.payload);
+      saveToStorage(state);
+    },
+
+    setNotificationHungerEnabled(state, action) {
+      state.notificationHungerEnabled = Boolean(action.payload);
+      saveToStorage(state);
+    },
+
+    setNotificationLonelinessEnabled(state, action) {
+      state.notificationLonelinessEnabled = Boolean(action.payload);
+      saveToStorage(state);
+    },
+
+    setNotificationMilestonesEnabled(state, action) {
+      state.notificationMilestonesEnabled = Boolean(action.payload);
       saveToStorage(state);
     },
 
@@ -902,6 +925,12 @@ const settingsSlice = createSlice({
       state.perfMode = next.perfMode || state.perfMode || "auto";
       state.showHints = Boolean(next.showHints);
       state.dailyRemindersEnabled = next.dailyRemindersEnabled !== false;
+      state.notificationHungerEnabled =
+        next.notificationHungerEnabled !== false;
+      state.notificationLonelinessEnabled =
+        next.notificationLonelinessEnabled !== false;
+      state.notificationMilestonesEnabled =
+        next.notificationMilestonesEnabled !== false;
 
       state.showGameMicroHud = next.showGameMicroHud !== false;
       state.showCritters = next.showCritters !== false;
@@ -1031,6 +1060,9 @@ export const {
   setFontScale,
   setShowHints,
   setDailyRemindersEnabled,
+  setNotificationHungerEnabled,
+  setNotificationLonelinessEnabled,
+  setNotificationMilestonesEnabled,
   setHapticsEnabled,
   setBatterySaver,
   setVoiceCommandsEnabled,

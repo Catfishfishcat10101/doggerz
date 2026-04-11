@@ -488,6 +488,105 @@ function computeInstinctEngine(
   };
 }
 
+function computeBehaviorTendencies(
+  dog,
+  coreTemperament = {},
+  dynamicStates = {},
+  learnedTraits = {},
+  instinctEngine = {},
+  trust = {},
+  bigFive = {}
+) {
+  const socialDrive = clamp(Number(coreTemperament.socialDrive || 0), 0, 100);
+  const inquisitiveness = clamp(
+    Number(coreTemperament.inquisitiveness || 0),
+    0,
+    100
+  );
+  const energyCeiling = clamp(
+    Number(coreTemperament.energyCeiling || 0),
+    0,
+    100
+  );
+  const houseManners = clamp(Number(learnedTraits.houseManners || 0), 0, 100);
+  const trustScore = clamp(Number(trust.score || 0), 0, 100);
+  const confidence = clamp(Number(dynamicStates.confidence || 0), 0, 100);
+  const frustration = clamp(Number(dynamicStates.frustration || 0), 0, 100);
+  const separationAnxiety = clamp(
+    Number(instinctEngine.separationAnxiety || 0),
+    0,
+    100
+  );
+  const chewingUrge = clamp(Number(instinctEngine.chewingUrge || 0), 0, 100);
+  const conscientiousness = clamp(
+    Number(bigFive.conscientiousness || 0),
+    0,
+    100
+  );
+
+  const tendencies = [];
+  let memoryVoice = "steady";
+  let summary = "Settles into warm, steady routines.";
+
+  if (separationAnxiety >= 68 || socialDrive >= 72) {
+    tendencies.push({
+      id: "clingy",
+      label: "Clingy",
+      summary: "Leans toward closeness and notices your return quickly.",
+    });
+    memoryVoice = "clingy";
+    summary =
+      "Notices your presence fast and wants closeness to feel consistent.";
+  } else if (trustScore >= 72 && confidence >= 64) {
+    tendencies.push({
+      id: "confident",
+      label: "Confident",
+      summary: "Carries routine with quiet certainty.",
+    });
+    memoryVoice = "confident";
+    summary =
+      "Handles the yard with quiet confidence and a clear sense of routine.";
+  }
+
+  if (inquisitiveness >= 66 || chewingUrge >= 58) {
+    tendencies.push({
+      id: "curious",
+      label: "Curious",
+      summary: "Gets pulled toward details, props, and little discoveries.",
+    });
+    if (memoryVoice === "steady") memoryVoice = "curious";
+  } else if (houseManners >= 70 || conscientiousness >= 66) {
+    tendencies.push({
+      id: "orderly",
+      label: "Orderly",
+      summary: "Responds well to dependable structure and repeatable rituals.",
+    });
+    if (memoryVoice === "steady") memoryVoice = "orderly";
+  }
+
+  if (energyCeiling >= 70 && frustration < 55) {
+    tendencies.push({
+      id: "playful",
+      label: "Playful",
+      summary: "Prefers short, spirited bursts over passive downtime.",
+    });
+    if (memoryVoice === "steady") memoryVoice = "playful";
+  } else if (energyCeiling <= 38 || dog?.lifeStage?.stage === "SENIOR") {
+    tendencies.push({
+      id: "cozy",
+      label: "Cozy",
+      summary: "Feels most like themself in calmer, comfort-first rhythms.",
+    });
+    if (memoryVoice === "steady") memoryVoice = "cozy";
+  }
+
+  return {
+    summary,
+    memoryVoice,
+    tendencies: tendencies.slice(0, 3),
+  };
+}
+
 export function derivePersonalityProfile(dog) {
   const traits = dog?.personality?.traits || {};
   const coreTemperament = computeCoreTemperament(traits);
@@ -508,6 +607,15 @@ export function derivePersonalityProfile(dog) {
     bigFive
   );
   const stressSignals = computeStressSignals(dog, dynamicStates, trust);
+  const behaviorTendencies = computeBehaviorTendencies(
+    dog,
+    coreTemperament,
+    dynamicStates,
+    learnedTraits,
+    instinctEngine,
+    trust,
+    bigFive
+  );
 
   return {
     modelVersion: 3,
@@ -522,5 +630,7 @@ export function derivePersonalityProfile(dog) {
     instinctEngine,
     trust,
     stressSignals,
+    behaviorTendencies,
+    memoryVoice: behaviorTendencies.memoryVoice,
   };
 }

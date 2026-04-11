@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
 import PageShell from "@/components/layout/PageShell.jsx";
-import { withBaseUrl } from "@/utils/assetUtils.js";
+import SpriteSheetDog from "@/components/dog/renderers/SpriteSheetDog.jsx";
 import { PATHS } from "@/app/routes.js";
 import { adoptPup } from "@/store/dogThunks.js";
 import {
@@ -22,7 +22,6 @@ import { useDog } from "@/hooks/useDogState.js";
 
 const WORKFLOW_ID = "adopt";
 const ADOPT_STEPS = ["Box", "Name", "Play"];
-const HERO_DOG_SRC = withBaseUrl("/assets/sprites/jr/pup_idle.png");
 
 function StepDot({ active = false, done = false }) {
   return (
@@ -341,10 +340,12 @@ export default function AdoptPage() {
             </div>
 
             <div className="mt-6 flex items-center justify-center">
-              <img
-                src={HERO_DOG_SRC}
-                alt="Jack Russell puppy"
-                className="h-40 w-40 object-contain drop-shadow-[0_18px_30px_rgba(0,0,0,0.45)]"
+              <SpriteSheetDog
+                stage="PUPPY"
+                anim="idle"
+                facing={1}
+                size={160}
+                className="select-none drop-shadow-[0_18px_30px_rgba(0,0,0,0.45)]"
               />
             </div>
           </div>

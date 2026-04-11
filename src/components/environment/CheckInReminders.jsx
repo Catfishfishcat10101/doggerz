@@ -25,12 +25,12 @@ const REMINDERS = DEFAULT_DOGGERZ_REMINDERS.map((item) => ({
   ...item,
   cooldownMs:
     item.key === "checkin-hungry"
-      ? 3 * 60 * 60 * 1000
-      : item.key === "checkin-dirty"
-        ? 6 * 60 * 60 * 1000
-        : 12 * 60 * 60 * 1000,
+      ? 6 * 60 * 60 * 1000
+      : item.key === "checkin-milestone"
+        ? 24 * 60 * 60 * 1000
+        : 18 * 60 * 60 * 1000,
   icon:
-    item.key === "checkin-stray"
+    item.key === "checkin-lonely"
       ? "/assets/sprites/jr/pup_idle.png"
       : "/assets/icons/icon-192.png",
 }));
@@ -43,6 +43,8 @@ export default function CheckInReminders() {
   const lastSeenAt =
     dog?.memory?.lastSeenAt || dog?.memory?.lastSeen || dog?.lastUpdatedAt || 0;
   const lastFedAt = dog?.memory?.lastFedAt || 0;
+  const pendingMilestone = dog?.milestones?.pending || null;
+  const milestoneTriggeredAt = Number(pendingMilestone?.triggeredAt || 0);
 
   const clearTimers = React.useCallback(() => {
     timersRef.current.forEach((id) => window.clearTimeout(id));
@@ -53,6 +55,27 @@ export default function CheckInReminders() {
     if (!settings?.dailyRemindersEnabled) return undefined;
     if (!lastSeenAt) return undefined;
     let cancelled = false;
+    const enabledReminders = REMINDERS.filter((reminder) => {
+      if (reminder.key === "checkin-hungry") {
+        return settings?.notificationHungerEnabled !== false;
+      }
+      if (reminder.key === "checkin-lonely") {
+        return settings?.notificationLonelinessEnabled !== false;
+      }
+      if (reminder.key === "checkin-milestone") {
+        return (
+          settings?.notificationMilestonesEnabled !== false &&
+          milestoneTriggeredAt > 0
+        );
+      }
+      return false;
+    });
+    const baseByKey =
+      milestoneTriggeredAt > 0
+        ? {
+            "checkin-milestone": milestoneTriggeredAt,
+          }
+        : {};
 
     const root = document.documentElement;
     const tier = getCheckInTier(lastSeenAt).tier;
@@ -66,7 +89,9 @@ export default function CheckInReminders() {
       const reminderElapsedMs =
         reminder.key === "checkin-hungry"
           ? Math.max(0, now - Number(lastFedAt || lastSeenAt || 0))
-          : elapsedMs;
+          : reminder.key === "checkin-milestone"
+            ? Math.max(0, now - Number(milestoneTriggeredAt || now))
+            : elapsedMs;
       const timeUntil = reminder.thresholdMs - reminderElapsedMs;
       const fire = async () => {
         if (!settings?.dailyRemindersEnabled) return;
@@ -105,7 +130,8 @@ export default function CheckInReminders() {
       const scheduled = await scheduleDogNotifications({
         lastSeenAt,
         lastFedAt,
-        reminders: REMINDERS,
+        baseByKey,
+        reminders: enabledReminders,
       });
       if (cancelled || scheduled) return;
 
@@ -114,7 +140,7 @@ export default function CheckInReminders() {
       }
 
       clearTimers();
-      REMINDERS.forEach(schedule);
+      enabledReminders.forEach(schedule);
     };
 
     run();
@@ -123,7 +149,16 @@ export default function CheckInReminders() {
       cancelled = true;
       clearTimers();
     };
-  }, [clearTimers, lastFedAt, lastSeenAt, settings?.dailyRemindersEnabled]);
+  }, [
+    clearTimers,
+    lastFedAt,
+    lastSeenAt,
+    milestoneTriggeredAt,
+    settings?.dailyRemindersEnabled,
+    settings?.notificationHungerEnabled,
+    settings?.notificationLonelinessEnabled,
+    settings?.notificationMilestonesEnabled,
+  ]);
 
   React.useEffect(() => {
     if (settings?.dailyRemindersEnabled) return;

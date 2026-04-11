@@ -22,9 +22,11 @@ export function isShareableMemoryMoment(moment) {
     .toLowerCase();
   return [
     "first_level_up",
+    "first_care_loop",
     "treasure_found",
     "midnight_zoomies",
     "trick_mastered",
+    "slept_in_doghouse",
   ].includes(type);
 }
 
@@ -34,6 +36,14 @@ export function buildShareMomentCard(momentLike, context = {}) {
   const level = Math.max(1, Math.floor(Number(context?.level || 1)));
   const bondPct = Math.max(0, Math.round(Number(context?.bondPct || 0)));
   const energyPct = Math.max(0, Math.round(Number(context?.energyPct || 0)));
+  const personalitySummary = String(context?.personalitySummary || "").trim();
+  const styleSignature = context?.styleSignature || null;
+  const tendencyLabels = Array.isArray(context?.tendencyLabels)
+    ? context.tendencyLabels
+        .map((value) => String(value || "").trim())
+        .filter(Boolean)
+        .slice(0, 3)
+    : [];
   const type = String(momentLike?.type || momentLike?.kind || "pup")
     .trim()
     .toLowerCase();
@@ -51,6 +61,18 @@ export function buildShareMomentCard(momentLike, context = {}) {
       { label: "Stage", value: stageLabel },
       { label: "Bond", value: `${bondPct}%` },
     ],
+    chips: tendencyLabels,
+    signature: [
+      styleSignature?.collarLabel
+        ? `Collar: ${styleSignature.collarLabel}`
+        : "",
+      styleSignature?.tagLabel ? `Tag: ${styleSignature.tagLabel}` : "",
+      styleSignature?.backdropLabel
+        ? `Yard: ${styleSignature.backdropLabel}`
+        : "",
+    ]
+      .filter(Boolean)
+      .slice(0, 2),
     shareTitle: "My Doggerz moment",
     shareText: `Checking in with ${dogName} in Doggerz. Lv ${level}, ${bondPct}% bond, ${energyPct}% energy.`,
   };
@@ -73,6 +95,25 @@ export function buildShareMomentCard(momentLike, context = {}) {
       ],
       shareTitle: `${dogName} leveled up in Doggerz`,
       shareText: `${dogName} just reached Level ${nextLevel} in Doggerz. Calm care, steady progress, one very good dog.`,
+    };
+  }
+
+  if (type === "first_care_loop") {
+    return {
+      ...base,
+      eyebrow: "Daily Ritual",
+      title: `${dogName} settled into the routine`,
+      body:
+        personalitySummary ||
+        "A few small care actions turned into a real check-in ritual.",
+      accent: "emerald",
+      stats: [
+        { label: "Bond", value: `${bondPct}%` },
+        { label: "Stage", value: stageLabel },
+        { label: "Energy", value: `${energyPct}%` },
+      ],
+      shareTitle: `${dogName} has a real routine now`,
+      shareText: `${dogName} is starting to feel like a real daily companion in Doggerz. Small care loop, big attachment.`,
     };
   }
 
@@ -132,6 +173,23 @@ export function buildShareMomentCard(momentLike, context = {}) {
     };
   }
 
+  if (type === "slept_in_doghouse") {
+    return {
+      ...base,
+      eyebrow: "Cozy Moment",
+      title: `${dogName} picked the doghouse tonight`,
+      body: "One of those quiet little pet-game moments that makes the dog feel real.",
+      accent: "emerald",
+      stats: [
+        { label: "Stage", value: stageLabel },
+        { label: "Bond", value: `${bondPct}%` },
+        { label: "Mood", value: "Cozy" },
+      ],
+      shareTitle: `${dogName} had a cozy Doggerz moment`,
+      shareText: `${dogName} curled up in the doghouse in Doggerz and it was unreasonably wholesome.`,
+    };
+  }
+
   if (type === "growth_milestone") {
     const toStage = normalizeStageLabel(momentLike?.toStage, stageLabel);
     const fromStage = normalizeStageLabel(momentLike?.fromStage, "Puppy");
@@ -148,6 +206,50 @@ export function buildShareMomentCard(momentLike, context = {}) {
       ],
       shareTitle: `${dogName} hit a Doggerz milestone`,
       shareText: `${dogName} just hit a new life-stage milestone in Doggerz: ${fromStage} to ${toStage}.`,
+    };
+  }
+
+  if (type === "funny_behavior") {
+    const label = titleize(
+      momentLike?.payload?.label ||
+        momentLike?.payload?.behavior ||
+        "Funny behavior",
+      "Funny behavior"
+    );
+    return {
+      ...base,
+      eyebrow: "Funny Moment",
+      title: `${dogName}: ${label}`,
+      body:
+        String(momentLike?.payload?.summary || "").trim() ||
+        "A brief weird-dog moment that felt too specific not to share.",
+      accent: "rose",
+      stats: [
+        { label: "Mood", value: "Chaos" },
+        { label: "Stage", value: stageLabel },
+        { label: "Bond", value: `${bondPct}%` },
+      ],
+      shareTitle: `${dogName} had a Doggerz moment`,
+      shareText: `${dogName} just did the most ${label.toLowerCase()} thing in Doggerz. This dog has a real personality.`,
+    };
+  }
+
+  if (type === "identity_profile") {
+    return {
+      ...base,
+      eyebrow: "My Dog",
+      title: `${dogName}'s Doggerz profile`,
+      body:
+        personalitySummary ||
+        `${dogName} is turning into a distinct little companion with their own habits and look.`,
+      accent: "sky",
+      stats: [
+        { label: "Level", value: `Lv ${level}` },
+        { label: "Stage", value: stageLabel },
+        { label: "Bond", value: `${bondPct}%` },
+      ],
+      shareTitle: `Meet ${dogName} from Doggerz`,
+      shareText: `Meet ${dogName} in Doggerz. ${personalitySummary || `${dogName} already has a real personality.`}`,
     };
   }
 
