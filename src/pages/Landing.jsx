@@ -1,21 +1,71 @@
 // src/pages/Landing.jsx
 
+import { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 
+import { SocialButton } from "@/components/base/buttons/social-button.jsx";
 import HeroDog from "@/components/dog/renderers/HeroDog.jsx";
 import PageShell from "@/components/layout/PageShell.jsx";
 import { PATHS } from "@/app/routes.js";
 import { selectIsLoggedIn } from "@/store/userSlice.js";
+import {
+  getStoredValue,
+  removeStoredValues,
+  setStoredValue,
+} from "@/utils/nativeStorage.js";
+
+const STORAGE_REMEMBER = "doggerz:loginRememberEmail";
+const STORAGE_EMAIL = "doggerz:loginEmail";
+
+function SocialButtonGroupBrandDemo() {
+  return (
+    <div className="flex w-full flex-col gap-3">
+      <SocialButton social="google" theme="brand">
+        Sign in with Google
+      </SocialButton>
+      <SocialButton social="facebook" theme="brand">
+        Sign in with Facebook
+      </SocialButton>
+      <SocialButton social="apple" theme="brand">
+        Sign in with Apple
+      </SocialButton>
+    </div>
+  );
+}
 
 export default function Landing() {
   const isLoggedIn = useSelector(selectIsLoggedIn);
   const { reduceMotion, batterySaver } = useSelector(
     (state) => state.settings || {}
   );
-  if (isLoggedIn) return <Navigate to={PATHS.GAME} replace />;
+  const [rememberMe, setRememberMe] = useState(false);
 
   const showBlurDecor = !reduceMotion && !batterySaver;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    getStoredValue(STORAGE_REMEMBER).then((value) => {
+      if (cancelled) return;
+      setRememberMe(value === "1");
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleRememberMeChange = async (checked) => {
+    setRememberMe(Boolean(checked));
+    if (checked) {
+      await setStoredValue(STORAGE_REMEMBER, "1");
+      return;
+    }
+    await removeStoredValues([STORAGE_REMEMBER, STORAGE_EMAIL]);
+  };
+
+  if (isLoggedIn) return <Navigate to={PATHS.GAME} replace />;
 
   return (
     <PageShell useSurface={false}>
@@ -70,6 +120,39 @@ export default function Landing() {
           >
             Login
           </Link>
+
+          <div className="flex items-center gap-3 pt-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-doggerz-paw/40">
+            <span className="h-px flex-1 bg-white/10" />
+            <span>or</span>
+            <span className="h-px flex-1 bg-white/10" />
+          </div>
+
+          <SocialButtonGroupBrandDemo />
+
+          <label className="mt-1 flex items-start gap-3 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-left transition hover:bg-black/25">
+            <span className="relative mt-0.5 inline-flex h-6 w-10 shrink-0 items-center">
+              <input
+                type="checkbox"
+                className="peer sr-only"
+                checked={rememberMe}
+                onChange={(event) => {
+                  handleRememberMeChange(event.target.checked);
+                }}
+                aria-label="Remember me"
+              />
+              <span className="absolute inset-0 rounded-full border border-white/10 bg-white/10 transition peer-checked:border-emerald-300/40 peer-checked:bg-emerald-400/25" />
+              <span className="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.3)] transition peer-checked:translate-x-4 peer-checked:bg-emerald-200" />
+            </span>
+
+            <span className="flex min-w-0 flex-col">
+              <span className="text-sm font-semibold text-zinc-100">
+                Remember me
+              </span>
+              <span className="text-xs leading-relaxed text-doggerz-paw/70">
+                Save my login details for next time.
+              </span>
+            </span>
+          </label>
         </div>
       </div>
     </PageShell>
