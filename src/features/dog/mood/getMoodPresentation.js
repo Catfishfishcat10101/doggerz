@@ -65,6 +65,18 @@ const MOOD_PRESENTATION_BY_KEY = Object.freeze({
     hint: "Missing some attention.",
     accent: "Needs company",
   },
+  potty: {
+    label: "Potty Time",
+    tone: "warning",
+    hint: "Bathroom urgency is building.",
+    accent: "Needs outside",
+  },
+  bored: {
+    label: "Bored",
+    tone: "sky",
+    hint: "Needs a little mental work.",
+    accent: "Needs engagement",
+  },
   hungry: {
     label: "Hungry",
     tone: "warning",
@@ -83,11 +95,29 @@ const MOOD_PRESENTATION_BY_KEY = Object.freeze({
     hint: "A bath would help.",
     accent: "Needs cleanup",
   },
+  itchy: {
+    label: "Itchy",
+    tone: "warning",
+    hint: "Skin or coat discomfort is distracting.",
+    accent: "Needs relief",
+  },
   sleepy: {
     label: "Sleepy",
     tone: "danger",
     hint: "Needs proper rest.",
     accent: "Low energy",
+  },
+  sick: {
+    label: "Unwell",
+    tone: "danger",
+    hint: "Needs gentler care and recovery.",
+    accent: "Low health",
+  },
+  sore: {
+    label: "Sore",
+    tone: "warning",
+    hint: "Movement looks a little stiff.",
+    accent: "Take it easy",
   },
   wild: {
     label: "Wild",
@@ -129,7 +159,12 @@ export function getMoodPresentation({
   thirstPct = 0,
   energyPct = 0,
   cleanlinessPct = 0,
+  cleanlinessTier = "FRESH",
   happinessPct = 0,
+  healthPct = 100,
+  affectionPct = 100,
+  pottyPct = 0,
+  stimulationPct = 100,
   ambientType = "",
 } = {}) {
   const ambientKey = normalizeMoodKey(ambientType);
@@ -141,8 +176,18 @@ export function getMoodPresentation({
   const directMood = MOOD_PRESENTATION_BY_KEY[moodKey];
   if (directMood) return directMood;
 
+  const normalizedTier = normalizeMoodKey(cleanlinessTier);
+  if (clamp(healthPct, 0, 100) <= 22) {
+    return MOOD_PRESENTATION_BY_KEY.sick;
+  }
   if (clamp(energyPct, 0, 100) <= 20) {
     return MOOD_PRESENTATION_BY_KEY.sleepy;
+  }
+  if (clamp(pottyPct, 0, 100) >= 88) {
+    return MOOD_PRESENTATION_BY_KEY.potty;
+  }
+  if (normalizedTier === "fleas" || normalizedTier === "mange") {
+    return MOOD_PRESENTATION_BY_KEY.itchy;
   }
   if (clamp(hungerPct, 0, 100) >= 72) {
     return MOOD_PRESENTATION_BY_KEY.hungry;
@@ -150,11 +195,23 @@ export function getMoodPresentation({
   if (clamp(thirstPct, 0, 100) >= 72) {
     return MOOD_PRESENTATION_BY_KEY.thirsty;
   }
+  if (clamp(affectionPct, 0, 100) <= 28) {
+    return MOOD_PRESENTATION_BY_KEY.lonely;
+  }
+  if (clamp(stimulationPct, 0, 100) <= 28) {
+    return MOOD_PRESENTATION_BY_KEY.bored;
+  }
   if (clamp(cleanlinessPct, 0, 100) <= 32) {
     return MOOD_PRESENTATION_BY_KEY.dirty;
   }
+  if (clamp(happinessPct, 0, 100) <= 35) {
+    return MOOD_PRESENTATION_BY_KEY.uneasy;
+  }
   if (clamp(happinessPct, 0, 100) >= 78) {
     return MOOD_PRESENTATION_BY_KEY.happy;
+  }
+  if (clamp(happinessPct, 0, 100) >= 64) {
+    return MOOD_PRESENTATION_BY_KEY.content;
   }
 
   return MOOD_PRESENTATION_BY_KEY.calm;

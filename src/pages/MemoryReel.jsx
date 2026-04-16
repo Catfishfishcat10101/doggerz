@@ -2,9 +2,14 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
+import { PATHS } from "@/app/routes.js";
 import { useDogMemoryState } from "@/hooks/useDogState.js";
 import PageShell from "@/components/layout/PageShell.jsx";
 import EmptySlate from "@/components/ui/EmptySlate.jsx";
+import {
+  buildMemoryJournalModel,
+  getMemoryStoryFilterOptions,
+} from "@/features/dog/memory/memoryJournalModel.js";
 
 const TYPE_OPTIONS = [
   "All",
@@ -34,36 +39,34 @@ export default function MemoryReel() {
 
   const [query, setQuery] = useState("");
   const [type, setType] = useState("All");
+  const [storyFilter, setStoryFilter] = useState("all");
   const [compact, setCompact] = useState(false);
   const [showBody, setShowBody] = useState(true);
   const [sortNewest, setSortNewest] = useState(true);
   const [showMoodTags, setShowMoodTags] = useState(true);
+  const storyFilterOptions = useMemo(() => getMemoryStoryFilterOptions(), []);
+  const journalModel = useMemo(
+    () =>
+      buildMemoryJournalModel({
+        memories,
+        journalEntries: journal?.entries,
+        query,
+        categoryFilter: storyFilter,
+        sortNewest,
+      }),
+    [journal?.entries, memories, query, sortNewest, storyFilter]
+  );
 
   const entries = useMemo(() => {
-    const rawMemories = Array.isArray(memories) ? memories : [];
-    const rawJournal = Array.isArray(journal?.entries) ? journal.entries : [];
-    const raw = rawMemories.length ? rawMemories : rawJournal;
-    const q = query.trim().toLowerCase();
-    const filtered = raw.filter((e) => {
+    const filtered = journalModel.entries.filter((e) => {
       const entryType = String(e?.category || e?.type || "").toUpperCase();
       if (type !== "All" && entryType !== type) {
         return false;
       }
-      if (!q) return true;
-      const summary = String(e?.summary || "").toLowerCase();
-      const body = String(e?.body || "").toLowerCase();
-      const sourceMemory = String(e?.sourceMemory || "").toLowerCase();
-      return (
-        summary.includes(q) || body.includes(q) || sourceMemory.includes(q)
-      );
+      return true;
     });
-    const sorted = filtered.slice().sort((a, b) => {
-      const ta = Number(a?.timestamp || 0);
-      const tb = Number(b?.timestamp || 0);
-      return sortNewest ? tb - ta : ta - tb;
-    });
-    return sorted;
-  }, [journal?.entries, memories, query, type, sortNewest]);
+    return filtered;
+  }, [journalModel.entries, type]);
 
   return (
     <PageShell mainClassName="px-4 py-10" containerClassName="w-full max-w-5xl">
@@ -81,6 +84,9 @@ export default function MemoryReel() {
               lasting bond.
             </p>
             <div className="mt-4 flex flex-wrap gap-2 text-[11px] text-zinc-300">
+              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                Story moments {journalModel.totalEntries}
+              </span>
               <span className="rounded-full border border-amber-400/30 bg-amber-500/10 px-3 py-1">
                 Hungry drive {Math.round(Number(memoryDrives?.hungry || 0))}
               </span>
@@ -97,6 +103,58 @@ export default function MemoryReel() {
           </div>
 
           <div className="p-6 sm:p-8">
+            {journalModel.highlights.length > 0 ? (
+              <div className="mb-6 grid gap-3 lg:grid-cols-3">
+                {journalModel.highlights.slice(0, 3).map((highlight) => (
+                  <article
+                    key={highlight.id}
+                    className="rounded-3xl border border-white/10 bg-black/25 p-4"
+                  >
+                    <div className="flex items-center justify-between gap-2 text-[11px] text-zinc-400">
+                      <span>
+                        {highlight.category?.icon} {highlight.category?.label}
+                      </span>
+                      <span>{formatEntryDate(highlight.timestamp)}</span>
+                    </div>
+                    <h2 className="mt-2 text-sm font-semibold text-emerald-100">
+                      {highlight.summary}
+                    </h2>
+                    <p className="mt-2 text-xs leading-5 text-zinc-400">
+                      A standout moment from the{" "}
+                      {String(
+                        highlight.category?.label || "story"
+                      ).toLowerCase()}{" "}
+                      chapter.
+                    </p>
+                  </article>
+                ))}
+              </div>
+            ) : null}
+
+            <div className="mb-6 flex flex-wrap gap-2">
+              {storyFilterOptions.map((option) => {
+                const count =
+                  option.id === "all"
+                    ? journalModel.countsByCategory?.all || 0
+                    : journalModel.countsByCategory?.[option.id] || 0;
+                const active = storyFilter === option.id;
+                return (
+                  <button
+                    key={option.id}
+                    type="button"
+                    onClick={() => setStoryFilter(option.id)}
+                    className={`rounded-full border px-3 py-1 text-[11px] font-semibold transition ${
+                      active
+                        ? "border-emerald-400/30 bg-emerald-500/10 text-emerald-100"
+                        : "border-white/10 bg-black/30 text-zinc-300 hover:bg-black/45"
+                    }`}
+                  >
+                    {option.label} · {count}
+                  </button>
+                );
+              })}
+            </div>
+
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
                 <input
@@ -173,6 +231,7 @@ export default function MemoryReel() {
                   onPrimary={() => {
                     setQuery("");
                     setType("All");
+                    setStoryFilter("all");
                   }}
                 />
               ) : (
@@ -191,6 +250,12 @@ export default function MemoryReel() {
                         {entry.moodTag && showMoodTags ? (
                           <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-zinc-300">
                             {entry.moodTag}
+                          </span>
+                        ) : null}
+                        {entry.storyCategory ? (
+                          <span className="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-emerald-100">
+                            {entry.storyCategory.icon}{" "}
+                            {entry.storyCategory.label}
                           </span>
                         ) : null}
                         {entry.emotion ? (
@@ -222,13 +287,13 @@ export default function MemoryReel() {
             {entries.length > 0 ? (
               <div className="mt-8 flex flex-col sm:flex-row gap-3">
                 <Link
-                  to="/game"
+                  to={PATHS.GAME}
                   className="inline-flex items-center justify-center rounded-2xl px-5 py-3 text-sm font-extrabold bg-emerald-400 text-black shadow-[0_0_35px_rgba(52,211,153,0.25)] hover:bg-emerald-300 transition"
                 >
                   Back to the yard
                 </Link>
                 <Link
-                  to="/rainbow-bridge"
+                  to={PATHS.RAINBOW_BRIDGE}
                   className="inline-flex items-center justify-center rounded-2xl px-5 py-3 text-sm font-semibold border border-white/15 bg-black/30 text-zinc-100 hover:bg-black/45 transition"
                 >
                   Visit Rainbow Bridge

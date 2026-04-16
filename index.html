@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1, viewport-fit=cover"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
     />
     <meta name="theme-color" content="#10b981" />
     <meta name="color-scheme" content="dark light" />
@@ -18,7 +18,7 @@
     />
 
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="D O G G E R Z" />
+    <meta property="og:title" content="Doggerz" />
     <meta property="og:site_name" content="Doggerz" />
     <meta
       property="og:description"
@@ -38,9 +38,12 @@
       sizes="512x512"
       href="/assets/icons/icon-512.png"
     />
+    <link rel="apple-touch-icon" href="/assets/icons/icon-192.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="preload" as="image" href="/assets/icons/icon-192.png" />
+    <link rel="preload" as="image" href="/assets/sprites/jr/pup_idle.png" />
 
-    <title>D o g g e r z</title>
+    <title>Doggerz</title>
 
     <style>
       /* Minimal boot UI so the app feels responsive before React mounts */
@@ -66,7 +69,6 @@
         );
       }
 
-      /* Better default tap behavior */
       * {
         -webkit-tap-highlight-color: transparent;
       }
@@ -79,8 +81,11 @@
         min-height: 100vh;
         display: grid;
         place-items: center;
+        gap: 14px;
         padding: 24px;
         color: var(--dg-fg);
+        pointer-events: none;
+        user-select: none;
         font-family:
           ui-sans-serif,
           system-ui,
@@ -95,7 +100,7 @@
 
       .dg-boot__card {
         width: 100%;
-        max-width: 560px;
+        max-width: 420px;
         border-radius: 28px;
         border: 1px solid rgba(255, 255, 255, 0.1);
         background: rgba(0, 0, 0, 0.35);
@@ -108,7 +113,8 @@
       .dg-boot__row {
         display: flex;
         align-items: center;
-        gap: 14px;
+        justify-content: center;
+        gap: 10px;
       }
 
       .dg-boot__logo {
@@ -122,12 +128,49 @@
         object-fit: cover;
       }
 
+      .dg-boot__label {
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.88);
+      }
+
+      .dg-boot__hero {
+        width: 192px;
+        aspect-ratio: 1 / 1;
+        margin: 18px auto 0;
+        overflow: hidden;
+        border-radius: 999px;
+        border: 1px solid rgba(16, 185, 129, 0.35);
+        background:
+          radial-gradient(
+            circle at 35% 28%,
+            rgba(16, 185, 129, 0.22),
+            rgba(0, 0, 0, 0) 58%
+          ),
+          rgba(0, 0, 0, 0.45);
+        box-shadow: 0 0 60px rgba(16, 185, 129, 0.16);
+        padding: 4px;
+        box-sizing: border-box;
+      }
+
+      .dg-boot__hero > img {
+        width: 100%;
+        height: 100%;
+        display: block;
+        border-radius: inherit;
+        object-fit: cover;
+        object-position: 74% 38%;
+      }
+
       .dg-boot__title {
-        font-weight: 900;
-        letter-spacing: 0.02em;
+        margin: 18px 0 0;
         font-size: 26px;
         line-height: 1.05;
-        margin: 0;
+        font-weight: 900;
+        letter-spacing: 0.02em;
+        text-align: center;
         color: rgba(167, 243, 208, 0.95);
         text-shadow: 0 0 18px rgba(16, 185, 129, 0.55);
       }
@@ -138,28 +181,31 @@
         font-weight: 700;
         letter-spacing: 0.18em;
         text-transform: uppercase;
+        text-align: center;
         color: rgba(255, 255, 255, 0.9);
       }
 
       .dg-boot__hint {
         margin-top: 16px;
         font-size: 13px;
+        text-align: center;
         color: var(--dg-muted);
       }
 
       .dg-boot__bar {
-        margin-top: 14px;
+        width: min(420px, 100%);
         height: 10px;
+        margin-top: 0;
         border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
         background: rgba(255, 255, 255, 0.08);
         overflow: hidden;
-        border: 1px solid rgba(255, 255, 255, 0.1);
       }
 
       .dg-boot__bar > span {
         display: block;
-        height: 100%;
         width: 42%;
+        height: 100%;
         border-radius: 999px;
         background: linear-gradient(
           90deg,
@@ -181,9 +227,9 @@
 
       @media (prefers-reduced-motion: reduce) {
         .dg-boot__bar > span {
-          animation: none;
           width: 60%;
           transform: translateX(0);
+          animation: none;
         }
       }
     </style>
@@ -194,8 +240,8 @@
         "@type": "VideoGame",
         "name": "Doggerz",
         "applicationCategory": "GameApplication",
-        "operatingSystem": "Web",
-        "description": "A virtual pup simulator where you adopt, train, and bond over time.",
+        "operatingSystem": "Android",
+        "description": "ONE DOG. YOUR CHOICES. A BOND FOR LIFE. Adopt a pup and make choices that shape its behavior in this virtual pet simulator focused on bonding and growth over time.",
         "inLanguage": "en"
       }
     </script>
@@ -225,22 +271,27 @@
               alt=""
               decoding="async"
             />
-            <div>
-              <h1 class="dg-boot__title">D O G G E R Z</h1>
-              <p class="dg-boot__sub">ADOPT. RAISE. TRAIN.</p>
-            </div>
+            <div class="dg-boot__label">Doggerz</div>
           </div>
 
-          <div class="dg-boot__hint">Looking for a Leash.…</div>
-          <div class="dg-boot__hint">Your pup is paying attention... t</div>
+          <div class="dg-boot__hero">
+            <img
+              src="/assets/sprites/jr/pup_idle.png"
+              alt=""
+              width="192"
+              height="192"
+              loading="eager"
+              decoding="async"
+            />
+          </div>
+
+          <h1 class="dg-boot__title">Doggerz</h1>
+          <p class="dg-boot__sub">Doggerz</p>
+          <div class="dg-boot__hint">Doggerz</div>
         </div>
 
         <div class="dg-boot__bar"><span></span></div>
-
-        <div class="dg-boot__hint">
-          Your pup learns from you....<br />
-          spend time and create a bond.
-        </div>
+        <div class="dg-boot__hint">Doggerz</div>
       </div>
     </div>
     <script type="module" src="/src/app/main.jsx"></script>

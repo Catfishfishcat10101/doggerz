@@ -42,7 +42,8 @@ export default function MenuPage() {
 
         <div className="mt-8 rounded-3xl border border-white/10 bg-black/20 px-5 py-4 text-sm text-zinc-400">
           Core support and policy pages are grouped above under Support &amp;
-          Info. App tuning still lives in{" "}
+          Info. Care systems like potty, memories, dreams, and the training
+          roadmap now live here too, while app tuning still lives in{" "}
           <Link
             to="/settings"
             className="font-semibold text-emerald-200 hover:text-emerald-100"

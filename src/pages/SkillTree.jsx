@@ -4,7 +4,7 @@ import * as React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import PageShell from "@/components/layout/PageShell.jsx";
-import { useDogSkillTreeState } from "@/hooks/useDogState.js";
+import { useDog, useDogSkillTreeState } from "@/hooks/useDogState.js";
 import { PATHS } from "@/app/routes.js";
 import {
   respecSkillTree,
@@ -24,6 +24,14 @@ import {
   getSkillTreeRequiredPerkIds,
   getSkillTreeUnlockCheck,
 } from "@/features/training/skillTree.js";
+import {
+  selectMasteredCommandCount,
+  selectNextProgressionMilestone,
+  selectPottyTrainingTrack,
+  selectReliableCommandCount,
+  selectUnlockedFeatures,
+} from "@/features/preogression/progressionSelectors.js";
+import { buildTrainingRoadmapModel } from "@/features/training/trainingRoadmap.js";
 
 const BRANCH_STYLES = {
   companion: {
@@ -64,8 +72,14 @@ function buildBranchTiers(perks) {
 
 export default function SkillTree() {
   const dispatch = useDispatch();
+  const dog = useDog();
   const { level, unlockedIds, points, lastUnlockedId, lastUnlockedAt } =
     useDogSkillTreeState();
+  const pottyTrack = useSelector(selectPottyTrainingTrack);
+  const unlockedFeatures = useSelector(selectUnlockedFeatures);
+  const reliableCommandCount = useSelector(selectReliableCommandCount);
+  const masteredCommandCount = useSelector(selectMasteredCommandCount);
+  const nextProgressionMilestone = useSelector(selectNextProgressionMilestone);
   const unlockedSet = React.useMemo(() => new Set(unlockedIds), [unlockedIds]);
   const pointsAvailable = points?.pointsAvailable ?? 0;
   const pointsEarned = points?.pointsEarned ?? Math.max(0, level - 1);
@@ -113,6 +127,28 @@ export default function SkillTree() {
     []
   );
 
+  const roadmap = React.useMemo(
+    () =>
+      buildTrainingRoadmapModel({
+        dogName: dog?.name || "Your pup",
+        pottyTrack,
+        unlockedFeatures,
+        reliableCommandCount,
+        masteredCommandCount,
+        unlockedSkillIds: unlockedIds,
+        nextMilestone: nextProgressionMilestone,
+      }),
+    [
+      dog?.name,
+      pottyTrack,
+      unlockedFeatures,
+      reliableCommandCount,
+      masteredCommandCount,
+      unlockedIds,
+      nextProgressionMilestone,
+    ]
+  );
+
   const filteredBranches = React.useMemo(() => {
     if (activeBranchId === "all") return branches;
     return branches.filter((b) => b.id === activeBranchId);
@@ -134,8 +170,17 @@ export default function SkillTree() {
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div className="max-w-2xl">
             <div className="text-xs uppercase tracking-[0.4em] text-amber-700/70">
-              Skill Tree
+              Training roadmap
             </div>
+            <h1 className="mt-2 text-3xl font-semibold text-slate-900">
+              Realistic growth before specialization.
+            </h1>
+            <p className="mt-3 text-sm leading-6 text-slate-600">
+              House manners come first, reliable cues come second, and long-term
+              perk branches come after the routine feels real. This page now
+              frames the perk tree as temperament shaping, not a replacement for
+              daily care.
+            </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <div className="rounded-2xl border border-amber-200/70 bg-white/70 px-4 py-3 shadow-sm">
@@ -254,7 +299,125 @@ export default function SkillTree() {
           </div>
         </div>
 
+        <div className="mt-8 rounded-3xl border border-slate-200/80 bg-white/75 p-5 shadow-[0_20px_80px_rgba(60,35,10,0.1)]">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <div className="text-[11px] uppercase tracking-[0.24em] text-amber-700/70">
+                Roadmap first
+              </div>
+              <div className="mt-1 text-xl font-semibold text-slate-900">
+                Training should read like a believable life arc.
+              </div>
+            </div>
+            <div className="text-xs text-slate-500">
+              Potty status:{" "}
+              <span className="font-semibold text-slate-800">
+                {roadmap.pottyPhaseMeta.shortLabel}
+              </span>
+            </div>
+          </div>
+
+          <div className="mt-5 grid gap-4 lg:grid-cols-3">
+            {roadmap.steps.map((step) => (
+              <article
+                key={step.id}
+                className="rounded-2xl border border-slate-200/80 bg-white/80 p-4"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+                    {step.eyebrow}
+                  </div>
+                  <span
+                    className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${step.statusMeta.badgeClass}`}
+                  >
+                    {step.statusMeta.label}
+                  </span>
+                </div>
+                <h2 className="mt-2 text-lg font-semibold text-slate-900">
+                  {step.title}
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  {step.summary}
+                </p>
+                <p className="mt-2 text-xs leading-5 text-slate-500">
+                  {step.detail}
+                </p>
+                <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-200">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-sky-300 to-amber-300"
+                    style={{
+                      width: `${Math.max(0, Math.min(100, step.progressPct || 0))}%`,
+                    }}
+                  />
+                </div>
+              </article>
+            ))}
+          </div>
+
+          <div className="mt-5 grid gap-4 lg:grid-cols-[1.2fr,0.8fr]">
+            <div className="rounded-2xl border border-slate-200/80 bg-white/80 p-4">
+              <div className="text-[11px] uppercase tracking-[0.22em] text-slate-500">
+                Next focus
+              </div>
+              <div className="mt-2 text-lg font-semibold text-slate-900">
+                {roadmap.nextFocus.title}
+              </div>
+              <p className="mt-2 text-sm text-slate-600">
+                {roadmap.nextFocus.summary}
+              </p>
+              <p className="mt-2 text-xs leading-5 text-slate-500">
+                {roadmap.nextFocus.detail}
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Link
+                  to={PATHS.POTTY}
+                  className="inline-flex items-center justify-center rounded-full border border-emerald-300/80 bg-emerald-100/70 px-3 py-1.5 text-xs font-semibold text-emerald-800 transition hover:bg-emerald-100"
+                >
+                  Potty routine
+                </Link>
+                <Link
+                  to={PATHS.MEMORIES}
+                  className="inline-flex items-center justify-center rounded-full border border-slate-300/80 bg-white/80 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-white"
+                >
+                  Memory reel
+                </Link>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200/80 bg-white/80 p-4">
+              <div className="text-[11px] uppercase tracking-[0.22em] text-slate-500">
+                Progression signal
+              </div>
+              <div className="mt-2 text-base font-semibold text-slate-900">
+                {roadmap.milestoneLabel || "No queued milestone just now"}
+              </div>
+              {roadmap.milestoneBody ? (
+                <p className="mt-2 text-sm text-slate-600">
+                  {roadmap.milestoneBody}
+                </p>
+              ) : (
+                <p className="mt-2 text-sm text-slate-600">
+                  Keep routine, bond, and short training sessions rolling. The
+                  sim is designed to unlock meaningfully instead of all at once.
+                </p>
+              )}
+              <div className="mt-4 rounded-2xl border border-amber-200/80 bg-amber-50/80 p-3 text-xs text-amber-800">
+                Reliable commands:{" "}
+                <span className="font-semibold">{roadmap.reliableCount}</span>
+                <br />
+                Mastered commands:{" "}
+                <span className="font-semibold">{roadmap.masteredCount}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div className="mt-8 grid gap-6 lg:grid-cols-3">
+          <div className="lg:col-span-3 rounded-3xl border border-slate-200/80 bg-white/65 px-5 py-4 text-sm text-slate-600 shadow-[0_12px_40px_rgba(60,35,10,0.08)]">
+            The cards below are long-term shaping perks. They complement the
+            realistic care loop instead of replacing it — think resilience,
+            comfort, and training tempo, not magic obedience buttons.
+          </div>
           {filteredBranches.map((branch) => (
             <section
               key={branch.id}

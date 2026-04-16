@@ -115,12 +115,23 @@ const DEFAULT_ANIMATION_STATE = Object.freeze({
 const MOOD_TO_DESIRED_ACTION = Object.freeze({
   sleepy: "sleep",
   hungry: "eat",
+  thirsty: "drink",
+  potty: "walk",
   dirty: "scratch",
+  itchy: "scratch",
   excited: "walk",
+  restless: "walk",
+  bored: "walk",
+  lonely: "paw",
   sad: "idle",
+  uneasy: "idle",
+  sore: "idle",
+  sick: "idle",
   stressed: "idle",
   fragile: "idle",
   happy: "idle",
+  content: "idle",
+  calm: "idle",
   ok: "idle",
 });
 
@@ -1151,6 +1162,11 @@ function computeMoodlets(state) {
   const energy = Number(stats.energy || 0);
   const cleanliness = Number(stats.cleanliness || 0);
   const health = Number(stats.health || 0);
+  const affection = Number(stats.affection || 0);
+  const mentalStimulation = Number(stats.mentalStimulation || 0);
+  const neglectStrikes = Number(state.memory?.neglectStrikes || 0);
+  const parasiteLoad = Number(state?.healthSilo?.parasiteLoad || 0);
+  const jointStiffness = Number(state?.healthSilo?.jointStiffness || 0);
   const pottyLevel = Number(state.pottyLevel || 0);
   const moodlets = [];
 
@@ -1162,23 +1178,23 @@ function computeMoodlets(state) {
     });
   };
 
-  if (hunger >= 70) {
+  if (hunger >= 65) {
     add("hungry", hunger >= 90 ? 3 : hunger >= 80 ? 2 : 1, "Hunger");
   }
-  if (thirst >= 70) {
+  if (thirst >= 65) {
     add("thirsty", thirst >= 90 ? 3 : thirst >= 80 ? 2 : 1, "Thirst");
   }
-  if (pottyLevel >= 80) {
+  if (pottyLevel >= 75) {
     add(
       "potty",
       pottyLevel >= 95 ? 3 : pottyLevel >= 88 ? 2 : 1,
       "Needs a bathroom break"
     );
   }
-  if (energy <= 30) {
+  if (energy <= 35) {
     add("tired", energy <= 15 ? 3 : energy <= 25 ? 2 : 1, "Low energy");
   }
-  if (cleanliness <= 35) {
+  if (cleanliness <= 40) {
     add(
       "dirty",
       cleanliness <= 15 ? 3 : cleanliness <= 25 ? 2 : 1,
@@ -1188,37 +1204,53 @@ function computeMoodlets(state) {
   if (health <= 35) {
     add("sick", health <= 15 ? 3 : health <= 25 ? 2 : 1, "Needs care");
   }
-  if (stats.affection <= 30) {
-    add("lonely", stats.affection <= 15 ? 3 : 2, "Needs cuddles");
+  if (affection <= 40) {
+    add(
+      "lonely",
+      affection <= 15 ? 3 : affection <= 25 ? 2 : 1,
+      "Needs cuddles"
+    );
   }
-  if (stats.mentalStimulation <= 30) {
-    add("bored", stats.mentalStimulation <= 15 ? 3 : 2, "Needs a job to do");
+  if (mentalStimulation <= 40) {
+    add(
+      "bored",
+      mentalStimulation <= 15 ? 3 : mentalStimulation <= 25 ? 2 : 1,
+      "Needs a job to do"
+    );
   }
   if (happiness >= 75) {
     add("happy", happiness >= 90 ? 2 : 1, "Good vibes");
   }
-  if ((state.memory?.neglectStrikes || 0) > 0) {
-    const strikes = Math.min(3, Math.max(1, state.memory.neglectStrikes || 0));
+  if (neglectStrikes > 0) {
+    const strikes = Math.min(3, Math.max(1, neglectStrikes));
     add("lonely", strikes, "Time apart");
   }
   if (state.lastAction === "trainFailed") {
     add("stubborn", 1, "Training");
   }
-  if (Number(state?.healthSilo?.jointStiffness || 0) >= 70) {
-    add(
-      "sore",
-      Number(state.healthSilo.jointStiffness) >= 85 ? 2 : 1,
-      "Joints"
-    );
+  if (jointStiffness >= 70) {
+    add("sore", jointStiffness >= 85 ? 2 : 1, "Joints");
   }
   if (Number(state?.healthSilo?.dentalHealth || 100) <= 35) {
     add("dental_pain", 1, "Teeth");
   }
-  if (state.cleanlinessTier === "FLEAS") {
+  if (state.cleanlinessTier === "FLEAS" || parasiteLoad >= 70) {
     add("itchy", 2, "Fleas");
   }
-  if (state.cleanlinessTier === "MANGE") {
+  if (state.cleanlinessTier === "MANGE" || parasiteLoad >= 90) {
     add("itchy", 3, "Mange");
+  }
+  if (
+    happiness <= 35 &&
+    [
+      hunger >= 70,
+      thirst >= 70,
+      pottyLevel >= 75,
+      affection <= 35,
+      mentalStimulation <= 35,
+    ].filter(Boolean).length >= 2
+  ) {
+    add("uneasy", happiness <= 20 ? 3 : 2, "Overloaded needs");
   }
 
   return moodlets;
@@ -1232,18 +1264,64 @@ function deriveEmotionCue(state) {
   const energy = Number(stats.energy || 0);
   const cleanliness = Number(stats.cleanliness || 0);
   const health = Number(stats.health || 0);
+  const affection = Number(stats.affection || 0);
+  const mentalStimulation = Number(stats.mentalStimulation || 0);
+  const pottyLevel = Number(state.pottyLevel || 0);
+  const neglectStrikes = Number(state.memory?.neglectStrikes || 0);
+  const parasiteLoad = Number(state?.healthSilo?.parasiteLoad || 0);
+  const jointStiffness = Number(state?.healthSilo?.jointStiffness || 0);
+  const overloadedNeedCount = [
+    hunger >= 75,
+    thirst >= 75,
+    pottyLevel >= 80,
+    energy <= 30,
+    cleanliness <= 30,
+    affection <= 30,
+    mentalStimulation <= 30,
+  ].filter(Boolean).length;
 
   if (state.lastAction === "trainFailed") return "stubborn";
+  if (health <= 18) return "sick";
+  if (jointStiffness >= 85) return "sore";
+  if (energy <= 12) return "sleepy";
+  if (pottyLevel >= 92) return "potty";
+  if (thirst >= 88) return "thirsty";
+  if (hunger >= 88) return "hungry";
   if (energy <= 20) return "sleepy";
-  if (Number(state?.healthSilo?.jointStiffness || 0) >= 85) return "sore";
-  if (health <= 20) return "sick";
-  if (thirst >= 85) return "thirsty";
-  if (hunger >= 85) return "hungry";
-  if (cleanliness <= 20) return "dirty";
-  if ((state.memory?.neglectStrikes || 0) > 0 && happiness < 40)
+  if (
+    state.cleanlinessTier === "MANGE" ||
+    state.cleanlinessTier === "FLEAS" ||
+    parasiteLoad >= 75
+  )
+    return "itchy";
+  if (cleanliness <= 18) return "dirty";
+  if (affection <= 18 || (neglectStrikes >= 2 && happiness < 55))
     return "lonely";
+  if (mentalStimulation <= 18) return "bored";
+  if (overloadedNeedCount >= 3 && happiness < 45) return "uneasy";
   if (happiness >= 85) return "happy";
+  if (happiness >= 68 && overloadedNeedCount <= 1) return "content";
+  if (overloadedNeedCount >= 2) return "restless";
   return null;
+}
+
+function restoreAffectionAndTrust(state, amount = 0) {
+  const delta = Math.max(0, Number(amount || 0));
+  if (!delta) return;
+  state.stats.affection = clamp(
+    Number(state.stats.affection || 0) + delta,
+    0,
+    100
+  );
+}
+
+function relieveNeglectWithCare(state, amount = 1) {
+  const memory = ensureMemoryState(state);
+  const current = Math.max(0, Math.floor(Number(memory.neglectStrikes || 0)));
+  const delta = Math.max(0, Math.floor(Number(amount || 0)));
+  if (!current || !delta) return false;
+  memory.neglectStrikes = Math.max(0, current - delta);
+  return memory.neglectStrikes !== current;
 }
 const getDaysBetween = (fromMs, toMs) => {
   if (!fromMs) return Infinity;
@@ -5045,6 +5123,8 @@ const dogSlice = createSlice({
         0,
         100
       );
+      restoreAffectionAndTrust(state, 4);
+      relieveNeglectWithCare(state, 1);
 
       state.memory.lastFedAt = now;
       state.memory.lastFedFoodType = "quick_feed";
@@ -5106,6 +5186,8 @@ const dogSlice = createSlice({
       const amount = payload?.amount ?? 100;
       state.stats.thirst = clamp(state.stats.thirst - amount, 0, 100);
       state.stats.happiness = clamp(state.stats.happiness + 2, 0, 100);
+      restoreAffectionAndTrust(state, 3);
+      relieveNeglectWithCare(state, 1);
 
       state.memory.lastDrankAt = now;
       state.memory.lastSeenAt = now;
@@ -5185,6 +5267,8 @@ const dogSlice = createSlice({
           100
         );
       }
+      restoreAffectionAndTrust(state, 6);
+      relieveNeglectWithCare(state, 1);
 
       state.memory.lastPlayedAt = now;
       state.memory.lastSeenAt = now;
@@ -5278,6 +5362,8 @@ const dogSlice = createSlice({
       const sassChance = isSpicy ? 0.16 : 0.09;
       const roll = Math.random();
       trackTemperamentMetric(state, "totalTaps", 1, now);
+      restoreAffectionAndTrust(state, 12);
+      relieveNeglectWithCare(state, 1);
 
       let outcome = "PET_CUDDLE";
       let threshold = dozeChance;
@@ -5411,6 +5497,8 @@ const dogSlice = createSlice({
         100
       );
       state.stats.happiness = clamp(state.stats.happiness + 3, 0, 100);
+      restoreAffectionAndTrust(state, 4);
+      relieveNeglectWithCare(state, 1);
 
       state.memory.lastSeenAt = now;
       updateFavoriteNapSpotPreference(state, payload?.napSpotId || "yard", now);
@@ -5583,6 +5671,8 @@ const dogSlice = createSlice({
         0,
         100
       );
+      restoreAffectionAndTrust(state, 2);
+      relieveNeglectWithCare(state, 1);
 
       state.memory.lastBathedAt = now;
       state.memory.lastSeenAt = now;
@@ -5628,6 +5718,8 @@ const dogSlice = createSlice({
       state.pottyLevel = 0;
       state.poopCount += 1;
       state.stats.happiness = clamp(state.stats.happiness + 3, 0, 100);
+      restoreAffectionAndTrust(state, 3);
+      relieveNeglectWithCare(state, 1);
       state.memory.lastSeenAt = now;
       state.lastAction = "potty";
       applyFsmAction(state, "potty", now);

@@ -6,6 +6,10 @@ import {
   hydrateDog,
 } from "@/store/dogSlice.js";
 import {
+  hydrateProgression,
+  resetProgression,
+} from "@/features/preogression/progressionSlice.js";
+import {
   hydrateSettings,
   selectSettings,
   SETTINGS_STORAGE_KEY,
@@ -34,6 +38,7 @@ import {
   getDogAnimSpriteUrl,
   getDogPixiSheetUrl,
 } from "@/utils/dogSpritePaths.js";
+import { configureStatusBar } from "@/utils/statusBar.js";
 // This module orchestrates the startup sequence of the Doggerz application, handling local data hydration, asset preloading, Firebase synchronization, and weather reality matching. It includes robust error handling to ensure a smooth user experience even when certain services are unavailable.
 
 const STARTUP_ASSET_TIMEOUT_MS = 5000;
@@ -46,6 +51,34 @@ function parseStoredJson(raw, label) {
     console.warn(`[Doggerz] Failed to parse startup ${label}:`, error);
     return null;
   }
+}
+
+function splitPersistedDogRecord(raw) {
+  if (!raw || typeof raw !== "object") {
+    return { dogPayload: null, progressionPayload: null };
+  }
+
+  if (raw.dog && typeof raw.dog === "object") {
+    return {
+      dogPayload: raw.dog,
+      progressionPayload:
+        raw.progression && typeof raw.progression === "object"
+          ? raw.progression
+          : null,
+    };
+  }
+
+  const dogPayload = { ...raw };
+  const progressionPayload =
+    dogPayload.progression && typeof dogPayload.progression === "object"
+      ? dogPayload.progression
+      : null;
+  delete dogPayload.progression;
+
+  return {
+    dogPayload,
+    progressionPayload,
+  };
 }
 // Builds a fallback weather snapshot for startup, using sunny/day defaults and including any relevant error information.
 
@@ -144,9 +177,16 @@ async function loadLocalFallbacks() {
 
   const dogParsed = parseStoredJson(dogRaw, getDogStorageKey(null));
   const dogLegacyParsed = parseStoredJson(dogLegacyRaw, DOG_STORAGE_KEY);
-  const dogPayload = dogParsed || dogLegacyParsed;
+  const persistedRecord = dogParsed || dogLegacyParsed;
+  const { dogPayload, progressionPayload } =
+    splitPersistedDogRecord(persistedRecord);
   if (dogPayload && typeof dogPayload === "object") {
     store.dispatch(hydrateDog(dogPayload));
+    if (progressionPayload) {
+      store.dispatch(hydrateProgression(progressionPayload));
+    } else {
+      store.dispatch(resetProgression());
+    }
   }
 
   return store.getState();
@@ -297,6 +337,7 @@ const Doggerz = {
     console.log("System Initializing...");
 
     try {
+      await configureStatusBar();
       await this.loadLocalFallbacks();
       await this.Renderer.preload();
       await this.Firebase.sync();

@@ -14,7 +14,7 @@ const PUPPY_ACTION_FILE_MAP = Object.freeze({
   idle: "pup_idle.png",
   walk: "pup_walk.png",
   walk_left: "pup_walk_left.png",
-  walk_right: "pup_walk_right.png",
+  walk_right: "pup_sniff.png",
   turn_walk_left: "pup_turn_walk_left.png",
   turn_walk_right: "pup_turn_walk_right.png",
   bark: "pup_bark.png",

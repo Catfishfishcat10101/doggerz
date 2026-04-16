@@ -5,6 +5,7 @@ import { useSelector } from "react-redux";
 import { SOCIAL_LINKS } from "@/app/config/links.js";
 import DogAIEngine from "@/components/dog/DogAIEngine.jsx";
 import Fireball from "@/components/dog/renderers/Fireball.jsx";
+import HeroDog from "@/components/dog/renderers/HeroDog.jsx";
 import { OBEDIENCE_COMMANDS } from "@/features/training/obedienceCommands.js";
 import PageShell from "@/components/layout/PageShell.jsx";
 import {
@@ -73,6 +74,68 @@ function Badge({ children }) {
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
+
+const HERO_DOG_VARIANT_DEMOS = Object.freeze([
+  Object.freeze({
+    id: "card",
+    variant: "card",
+    label: "Card",
+    blurb: "Compact stat or explainer card framing.",
+  }),
+  Object.freeze({
+    id: "promo",
+    variant: "promo",
+    label: "Promo",
+    blurb: "Medium-size callout for onboarding and CTAs.",
+  }),
+  Object.freeze({
+    id: "landing",
+    variant: "landing",
+    label: "Landing",
+    blurb: "Hero framing with a little more presence.",
+  }),
+  Object.freeze({
+    id: "showcase",
+    variant: "showcase",
+    label: "Showcase",
+    blurb: "Large store or preview-stage presentation.",
+  }),
+]);
+
+const HERO_DOG_PRESET_DEMOS = Object.freeze([
+  Object.freeze({
+    id: "idle-wag",
+    preset: "idle-wag",
+    label: "Idle wag",
+    blurb: "Friendly, upbeat hero loop.",
+    recommendation: "Hero default",
+  }),
+  Object.freeze({
+    id: "idle-sniff",
+    preset: "idle-sniff",
+    label: "Idle sniff",
+    blurb: "Small investigative motion for info cards.",
+    recommendation: "Primary default",
+  }),
+  Object.freeze({
+    id: "idle-paw",
+    preset: "idle-paw",
+    label: "Idle paw",
+    blurb: "Welcoming gesture for onboarding surfaces.",
+  }),
+  Object.freeze({
+    id: "idle-beg",
+    preset: "idle-beg",
+    label: "Idle beg",
+    blurb: "Cute attention-seeking pose for promos.",
+  }),
+  Object.freeze({
+    id: "idle-rest",
+    preset: "idle-rest",
+    label: "Idle rest",
+    blurb: "Soft calmer loop for low-pressure scenes.",
+  }),
+]);
 
 function getAgeLabel(life) {
   if (life?.ageBucketLabel) return life.ageBucketLabel;
@@ -216,6 +279,9 @@ export default function DevelopersPage() {
   const pauseFireball = perfReduced || settings?.batterySaver === true;
   const hud = React.useMemo(() => getTrainingHudModel(dog), [dog]);
   const ageLabel = getAgeLabel(life);
+  const previewStage = String(life?.stage || "PUPPY")
+    .trim()
+    .toUpperCase();
 
   const handlePetDog = React.useCallback(() => {
     petDog({ now: Date.now(), source: "developers_fireball_demo" });
@@ -437,6 +503,115 @@ npm run build`}
                 </span>
                 . If keys are missing, the app stays playable locally.
               </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-zinc-800 bg-zinc-950/40 p-6">
+          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div>
+              <h2 className="text-lg font-bold">HeroDog preview gallery</h2>
+              <p className="mt-1 max-w-3xl text-sm text-zinc-400">
+                Quick visual tuning bench for the shared preview wrapper.
+                Variants handle framing; presets handle motion flavor.
+              </p>
+              <p className="mt-2 text-xs text-zinc-500">
+                Recommended starting points:{" "}
+                <span className="font-semibold text-zinc-300">idle-sniff</span>{" "}
+                for most new informational surfaces, and{" "}
+                <span className="font-semibold text-zinc-300">idle-wag</span>{" "}
+                for welcoming hero or CTA moments.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-2 text-[11px] uppercase tracking-[0.18em] text-zinc-300">
+              <Badge>shared wrapper</Badge>
+              <Badge>named variants</Badge>
+              <Badge>motion presets</Badge>
+            </div>
+          </div>
+
+          <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-[0.22em] text-zinc-500">
+                Variants
+              </div>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                {HERO_DOG_VARIANT_DEMOS.map((entry) => (
+                  <article
+                    key={entry.id}
+                    className="rounded-2xl border border-zinc-800/70 bg-zinc-950/30 p-4"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h3 className="text-sm font-semibold text-zinc-100">
+                          {entry.label}
+                        </h3>
+                        <p className="mt-1 text-xs text-zinc-400">
+                          {entry.blurb}
+                        </p>
+                      </div>
+                      <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-300">
+                        {entry.variant}
+                      </span>
+                    </div>
+                    <div className="mt-4 flex min-h-[170px] items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-[radial-gradient(circle_at_50%_20%,rgba(255,255,255,0.07),transparent_46%),linear-gradient(180deg,rgba(16,185,129,0.12),rgba(2,6,23,0.22))]">
+                      <HeroDog
+                        stage={previewStage}
+                        variant={entry.variant}
+                        anim="idle"
+                        reduceMotion={reduceMotion}
+                        className="select-none"
+                      />
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-[0.22em] text-zinc-500">
+                Motion presets
+              </div>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {HERO_DOG_PRESET_DEMOS.map((entry) => (
+                  <article
+                    key={entry.id}
+                    className="rounded-2xl border border-zinc-800/70 bg-zinc-950/30 p-4"
+                  >
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="text-sm font-semibold text-zinc-100">
+                          {entry.label}
+                        </h3>
+                        {entry.recommendation ? (
+                          <span className="rounded-full border border-emerald-400/25 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-200">
+                            {entry.recommendation}
+                          </span>
+                        ) : null}
+                      </div>
+                      <p className="mt-1 text-xs text-zinc-400">
+                        {entry.blurb}
+                      </p>
+                    </div>
+                    <div className="mt-4 flex min-h-[170px] items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-[radial-gradient(circle_at_50%_20%,rgba(255,255,255,0.07),transparent_46%),linear-gradient(180deg,rgba(14,165,233,0.12),rgba(2,6,23,0.22))]">
+                      <HeroDog
+                        stage={previewStage}
+                        variant="promo"
+                        anim="idle"
+                        animationPreset={entry.preset}
+                        reduceMotion={reduceMotion}
+                        className="select-none"
+                      />
+                    </div>
+                    <div className="mt-3 text-[11px] text-zinc-500">
+                      <code className="rounded bg-black/30 px-1.5 py-0.5 text-zinc-300">
+                        {entry.preset}
+                      </code>
+                    </div>
+                  </article>
+                ))}
+              </div>
             </div>
           </div>
         </section>

@@ -10,7 +10,6 @@ import store from "@/store/store.js";
 import "@/index.css";
 import AppPreferencesEffects from "@/components/system/AppPreferencesEffects.jsx";
 import AppGameEffects from "@/components/system/AppGameEffects.jsx";
-import AppStorageHydrator from "@/components/system/AppStorageHydrator.jsx";
 import AuthBootstrap from "@/components/system/AuthBootstrap.jsx";
 import CheckInReminders from "@/components/environment/CheckInReminders.jsx";
 import { ToastProvider } from "@/components/system/ToastProvider.jsx";
@@ -32,9 +31,12 @@ import { ModalProvider } from "@/components/ui/modals/ModalProvider.jsx";
 import { initializeDoggerz } from "./bootstrap/doggerzController.js";
 import { initRemoteConfig } from "@/lib/firebase/remoteConfig.js";
 import { trackAppOpen } from "@/lib/analytics/gameAnalytics.js";
+import { hideLaunchSplashScreen } from "@/utils/splashScreen.js";
 
 function renderFatalBootError(error) {
   if (typeof document === "undefined") return;
+
+  void hideLaunchSplashScreen();
 
   const root = document.getElementById("root");
   if (!root) return;
@@ -228,7 +230,6 @@ function mountApp() {
         <Provider store={store}>
           <ErrorBoundary fallback={AppCrashFallback}>
             <AuthBootstrap />
-            <AppStorageHydrator />
             <AppPreferencesEffects />
             <AppGameEffects />
             <CheckInReminders />
@@ -244,6 +245,16 @@ function mountApp() {
       </QueryClientProvider>
     </React.StrictMode>
   );
+
+  if (typeof window !== "undefined") {
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        void hideLaunchSplashScreen();
+      });
+    });
+  } else {
+    void hideLaunchSplashScreen();
+  }
 }
 
 async function bootstrapApp() {

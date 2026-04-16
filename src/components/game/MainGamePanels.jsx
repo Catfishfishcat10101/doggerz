@@ -8,6 +8,76 @@ function clamp(value, min, max) {
   return Math.max(min, Math.min(max, numeric));
 }
 
+function getDockUrgencyLevel(item = null) {
+  const explicitLevel = String(item?.urgencyLevel || "")
+    .trim()
+    .toLowerCase();
+  if (explicitLevel) return explicitLevel;
+  if (item?.disabled) return "muted";
+
+  const progress = clamp(Number(item?.progress || 0), 0, 100);
+  if (progress >= 84) return "critical";
+  if (progress >= 66) return "high";
+  if (progress >= 46) return "elevated";
+  return "normal";
+}
+
+function getDockUrgencyBadge(level = "normal") {
+  if (level === "critical") return "Now";
+  if (level === "high") return "Soon";
+  if (level === "elevated") return "Watch";
+  return "";
+}
+
+function getDockUrgencyCardClasses(level = "normal") {
+  if (level === "critical") {
+    return "border-amber-300/32 bg-[linear-gradient(180deg,rgba(251,191,36,0.18),rgba(255,255,255,0.04))] shadow-[0_16px_34px_rgba(251,191,36,0.12)]";
+  }
+  if (level === "high") {
+    return "border-sky-300/24 bg-[linear-gradient(180deg,rgba(56,189,248,0.15),rgba(255,255,255,0.04))] shadow-[0_14px_28px_rgba(56,189,248,0.08)]";
+  }
+  if (level === "elevated") {
+    return "border-emerald-300/20 bg-[linear-gradient(180deg,rgba(52,211,153,0.12),rgba(255,255,255,0.04))]";
+  }
+  return "border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.1),rgba(255,255,255,0.04))] hover:bg-white/10";
+}
+
+function getDockUrgencyTabClasses(level = "normal") {
+  if (level === "critical") {
+    return "border-amber-200/26 bg-[linear-gradient(180deg,rgba(251,191,36,0.18),rgba(255,255,255,0.04))] text-doggerz-bone shadow-[0_12px_24px_rgba(251,191,36,0.12)]";
+  }
+  if (level === "high") {
+    return "border-sky-300/20 bg-[linear-gradient(180deg,rgba(56,189,248,0.14),rgba(255,255,255,0.03))] text-doggerz-bone/90 shadow-[0_12px_24px_rgba(56,189,248,0.08)]";
+  }
+  if (level === "elevated") {
+    return "border-emerald-300/18 bg-[linear-gradient(180deg,rgba(52,211,153,0.1),rgba(255,255,255,0.03))] text-doggerz-bone/88";
+  }
+  return "border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] text-doggerz-bone/82 hover:bg-white/10";
+}
+
+function getDockUrgencyBadgeClasses(level = "normal") {
+  if (level === "critical") {
+    return "border-amber-200/30 bg-amber-300/18 text-amber-50 animate-pulse";
+  }
+  if (level === "high") {
+    return "border-sky-300/30 bg-sky-300/14 text-sky-50";
+  }
+  if (level === "elevated") {
+    return "border-emerald-300/24 bg-emerald-300/12 text-emerald-50";
+  }
+  return "border-white/12 bg-white/8 text-doggerz-bone/70";
+}
+
+function getSectionUrgencyLevel(section = null) {
+  const items = Array.isArray(section?.items) ? section.items : [];
+  if (!items.length) return "normal";
+  const levels = items.map((item) => getDockUrgencyLevel(item));
+  if (levels.includes("critical")) return "critical";
+  if (levels.includes("high")) return "high";
+  if (levels.includes("elevated")) return "elevated";
+  return "normal";
+}
+
 export function RunawayLetterPanel({
   dogName = "your pup",
   endTimestamp = 0,
@@ -102,6 +172,10 @@ export function BottomMenuDock({
   onPointerEnter,
 }) {
   const activeSection = sections?.[activeCategory] || null;
+  const tabUrgencyById = tabs.reduce((accumulator, tab) => {
+    accumulator[tab.id] = getSectionUrgencyLevel(sections?.[tab.id] || null);
+    return accumulator;
+  }, {});
 
   return (
     <div className="relative overflow-hidden rounded-[30px] border border-amber-200/18 bg-[linear-gradient(180deg,rgba(8,12,24,0.88),rgba(2,6,23,0.96))] p-2 shadow-[0_20px_44px_rgba(2,6,23,0.56),0_24px_68px_rgba(2,6,23,0.34),inset_0_1px_0_rgba(255,255,255,0.14)] backdrop-blur-3xl sm:p-2.5">
@@ -152,6 +226,8 @@ export function BottomMenuDock({
       >
         {tabs.map((tab) => {
           const active = tab.id === activeCategory;
+          const urgencyLevel = tabUrgencyById?.[tab.id] || "normal";
+          const urgencyBadge = getDockUrgencyBadge(urgencyLevel);
           return (
             <button
               key={tab.id}
@@ -161,10 +237,19 @@ export function BottomMenuDock({
               className={`dock-glass-button dock-pressable dz-touch-button dz-touch-hover relative min-h-[58px] rounded-[22px] border px-2.5 py-2.5 text-center transition sm:min-h-[62px] sm:px-3 sm:py-3 ${
                 active
                   ? "border-amber-200/35 bg-[linear-gradient(180deg,rgba(251,191,36,0.22),rgba(251,191,36,0.08))] text-doggerz-bone shadow-[0_16px_32px_rgba(251,191,36,0.16)]"
-                  : "border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] text-doggerz-bone/82 hover:bg-white/10"
+                  : getDockUrgencyTabClasses(urgencyLevel)
               }`}
             >
               <span className="dz-touch-glow pointer-events-none absolute inset-0 rounded-[22px] bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.18),rgba(255,255,255,0)_64%)]" />
+              {urgencyBadge && !active ? (
+                <span
+                  className={`absolute right-2 top-2 rounded-full border px-1.5 py-0.5 text-[8px] font-black uppercase tracking-[0.16em] ${getDockUrgencyBadgeClasses(
+                    urgencyLevel
+                  )}`}
+                >
+                  {urgencyBadge}
+                </span>
+              ) : null}
               <span className="block text-[1.05rem] sm:text-lg">
                 {tab.icon}
               </span>
@@ -190,6 +275,8 @@ function BottomMenuCardButton({
   active = false,
 }) {
   const progress = clamp(Number(item?.progress || 0), 0, 100);
+  const urgencyLevel = getDockUrgencyLevel(item);
+  const urgencyBadge = getDockUrgencyBadge(urgencyLevel);
   const ringTone = String(item?.progressTone || "gold")
     .trim()
     .toLowerCase();
@@ -220,10 +307,19 @@ function BottomMenuCardButton({
         className={`dock-glass-button dock-pressable dz-touch-button dz-touch-hover group relative w-full min-h-[72px] overflow-hidden rounded-[20px] border px-3 py-2.5 text-left transition disabled:cursor-not-allowed disabled:opacity-45 sm:min-h-[76px] ${
           active
             ? "btn-feedback-pop border-doggerz-neon/45 bg-[linear-gradient(180deg,rgba(45,212,191,0.18),rgba(45,212,191,0.08))]"
-            : "border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.1),rgba(255,255,255,0.04))] hover:bg-white/10"
+            : getDockUrgencyCardClasses(urgencyLevel)
         }`}
       >
         <span className="dz-touch-glow pointer-events-none absolute inset-0 rounded-[22px] bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.16),rgba(255,255,255,0)_62%)]" />
+        {urgencyBadge && !active && !disabled ? (
+          <span
+            className={`absolute right-2.5 top-2.5 rounded-full border px-1.5 py-0.5 text-[8px] font-black uppercase tracking-[0.16em] ${getDockUrgencyBadgeClasses(
+              urgencyLevel
+            )}`}
+          >
+            {urgencyBadge}
+          </span>
+        ) : null}
         <div className="flex items-start gap-3">
           <span
             className="relative grid h-11 w-11 shrink-0 place-items-center rounded-[18px] text-lg"

@@ -1,15 +1,5 @@
 
-import java.io.FileInputStream
 import java.util.Properties
-
-
-buildscript {
-    dependencies {
-        classpath 'org.codehaus.groovy:groovy-json:3.0.13'
-    }
-}
-
-import groovy.json.JsonSlurper
 
 plugins {
     id 'com.android.application'
@@ -20,7 +10,7 @@ if (!versionFile.exists()) {
     throw new GradleException("Missing version.json at ${versionFile.absolutePath}")
 }
 
-def versionJson = new JsonSlurper().parse(versionFile)
+def versionJson = new groovy.json.JsonSlurper().parse(versionFile)
 def versionNameRaw = versionJson?.versionName?.toString()?.trim()
 def versionCodeRaw = versionJson?.versionCode
 
@@ -34,6 +24,63 @@ if (!(versionCodeRaw instanceof Number) || versionCodeRaw.intValue() < 1) {
 
 def parsedVersionCode = versionCodeRaw.intValue()
 def parsedVersionName = versionNameRaw
+def repoRootDir = rootProject.projectDir.parentFile
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+def keystoreProperties = new Properties()
+if (keystorePropertiesFile.exists()) {
+    keystorePropertiesFile.withInputStream { stream ->
+        keystoreProperties.load(stream)
+    }
+}
+
+def resolveReleaseSigningValue = { envKey, propKey ->
+    def envValue = System.getenv(envKey)?.toString()?.trim()
+    if (envValue) return envValue
+    def propValue = keystoreProperties.getProperty(propKey)?.toString()?.trim()
+    return propValue ?: null
+}
+
+// Release keystore paths may come from env or keystore.properties and are
+// accepted as absolute, repo-root-relative (recommended), or android-relative.
+// This mirrors the release builder so preflight and Gradle resolve the same
+// file instead of disagreeing at bundle time.
+def resolveMaybeRelativeFile = { rawPath ->
+    def normalizedPath = rawPath?.toString()?.trim()
+    if (!normalizedPath) return null
+
+    def directFile = new File(normalizedPath)
+    if (directFile.isAbsolute()) return directFile
+
+    def repoRelativeFile = new File(repoRootDir, normalizedPath)
+    if (repoRelativeFile.exists()) return repoRelativeFile
+
+    def androidRelativeFile = new File(rootProject.projectDir, normalizedPath)
+    if (androidRelativeFile.exists()) return androidRelativeFile
+
+    return repoRelativeFile
+}
+
+def releaseStoreFilePath = resolveReleaseSigningValue("DOGGERZ_ANDROID_KEYSTORE_PATH", "storeFile")
+def releaseStorePassword = resolveReleaseSigningValue("DOGGERZ_ANDROID_KEYSTORE_PASSWORD", "storePassword")
+def releaseKeyAlias = resolveReleaseSigningValue("DOGGERZ_ANDROID_KEY_ALIAS", "keyAlias")
+def releaseKeyPassword = resolveReleaseSigningValue("DOGGERZ_ANDROID_KEY_PASSWORD", "keyPassword")
+def releaseStoreFile = resolveMaybeRelativeFile(releaseStoreFilePath)
+def releaseSigningReady = (
+        releaseStoreFile &&
+        releaseStoreFile.exists() &&
+        releaseStorePassword &&
+        releaseKeyAlias &&
+        releaseKeyPassword
+)
+
+def releaseSigningIssues = []
+if (!releaseStoreFilePath) releaseSigningIssues << "DOGGERZ_ANDROID_KEYSTORE_PATH/storeFile"
+if (!releaseStorePassword) releaseSigningIssues << "DOGGERZ_ANDROID_KEYSTORE_PASSWORD/storePassword"
+if (!releaseKeyAlias) releaseSigningIssues << "DOGGERZ_ANDROID_KEY_ALIAS/keyAlias"
+if (!releaseKeyPassword) releaseSigningIssues << "DOGGERZ_ANDROID_KEY_PASSWORD/keyPassword"
+if (releaseStoreFilePath && !(releaseStoreFile?.exists())) {
+    releaseSigningIssues << "keystore file not found at ${releaseStoreFile?.absolutePath}"
+}
 
 android {
     namespace "com.doggerz.app"
@@ -54,15 +101,15 @@ android {
 
     signingConfigs {
         release {
-            def keystorePropertiesFile = rootProject.file("keystore.properties")
-            if (keystorePropertiesFile.exists()) {
-                def keystoreProperties = new Properties()
-                keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
-
-                storeFile rootProject.file(keystoreProperties['storeFile'])
-                storePassword keystoreProperties['storePassword']
-                keyAlias keystoreProperties['keyAlias']
-                keyPassword keystoreProperties['keyPassword']
+            if (releaseSigningReady) {
+                storeFile releaseStoreFile
+                storePassword releaseStorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
+                enableV1Signing true
+                enableV2Signing true
+                enableV3Signing true
+                enableV4Signing true
             }
         }
     }
@@ -75,7 +122,9 @@ android {
         release {
             minifyEnabled false
             shrinkResources false
-            signingConfig signingConfigs.release
+            if (releaseSigningReady) {
+                signingConfig signingConfigs.release
+            }
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
@@ -100,6 +149,16 @@ android {
                     'META-INF/AL2.0',
                     'META-INF/LGPL2.1'
             ]
+        }
+    }
+}
+
+tasks.matching { it.name in ["assembleRelease", "bundleRelease"] }.configureEach {
+    doFirst {
+        if (!releaseSigningReady) {
+            throw new GradleException(
+                    "Release signing is not configured. Provide DOGGERZ_ANDROID_KEYSTORE_PATH, DOGGERZ_ANDROID_KEYSTORE_PASSWORD, DOGGERZ_ANDROID_KEY_ALIAS, and DOGGERZ_ANDROID_KEY_PASSWORD, or populate android/keystore.properties. Missing: ${releaseSigningIssues.join(', ')}"
+            )
         }
     }
 }

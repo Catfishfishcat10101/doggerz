@@ -128,6 +128,23 @@ describe("resolveDogAnimationSelection", () => {
     expect(selection.finalAction).toBe("walk_left");
   });
 
+  it("uses directional locomotion clips when movement facing is known", () => {
+    const selection = resolveDogAnimationSelection({
+      dog: {
+        moving: true,
+        facing: "right",
+      },
+      brainState: {
+        facing: "right",
+      },
+      renderModel: {},
+    });
+
+    expect(selection.preferredFacing).toBe("right");
+    expect(selection.baseAction).toBe("walk_right");
+    expect(selection.finalAction).toBe("walk_right");
+  });
+
   it("keeps critical-need loops above locomotion and ambient intent", () => {
     const selection = resolveDogAnimationSelection({
       dog: { sleeping: true },

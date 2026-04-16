@@ -366,8 +366,9 @@ html[data-skill-pulse="1"] .dz-perk-card[data-state="unlocked"] {
 
   .main-scroll-container {
     padding: 16px 16px calc(100px + var(--safe-area-bottom)) 16px;
-    overflow-y: auto;
-    height: 100vh;
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
   }
 
   .pup-card {
@@ -380,7 +381,7 @@ html[data-skill-pulse="1"] .dz-perk-card[data-state="unlocked"] {
     padding: 16px;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
     border: none;
-    margin-bottom: 16px;
+    margin-bottom: 0;
   }
 
   .stats-grid {
@@ -526,11 +527,14 @@ html,
 body,
 #root {
   height: 100%;
+  width: 100%;
 }
 
 html {
   /* Prevent layout shift when scrollbars appear/disappear (supported browsers). */
   scrollbar-gutter: stable;
+  overscroll-behavior: none;
+  overflow: hidden;
 }
 
 html[data-theme="dark"] {
@@ -563,11 +567,14 @@ body {
   background-color: var(--bg, #020617);
   color: var(--text-main, #f9fafb);
   -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+  overflow: hidden;
 }
 
 /* Let the main app stretch full height (helps flex layouts and pages). */
 #root {
   min-height: 100vh;
+  overflow: hidden;
 }
 
 /* Keep form controls visually consistent with the app's typography/colors. */

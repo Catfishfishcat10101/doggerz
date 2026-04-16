@@ -118,7 +118,6 @@ import {
   SETTINGS_STORAGE_KEY,
 } from "../store/settingsSlice.js";
 import PageShell from "../components/layout/PageShell.jsx";
-import { PageHeader } from "@/components/layout/PageSections.jsx";
 import { APP_VERSION } from "../utils/assetUtils.js";
 import { useToast } from "@/state/toastContext.js";
 import {
@@ -157,38 +156,42 @@ function formatTimestamp(ts) {
 function Switch({ id, checked, onChange, label, description }) {
   const tooltip = description || label;
   return (
-    <div className="flex items-start justify-between gap-4 rounded-2xl border border-white/8 bg-black/15 px-3 py-3">
-      <div className="min-w-0">
+    <div className="flex items-center gap-3 px-4 py-3.5">
+      <div className="min-w-0 flex-1">
         <label
           htmlFor={id}
-          className="text-sm font-semibold text-doggerz-bone"
+          className="block text-[14px] font-normal leading-5 text-white"
           title={tooltip}
         >
           {label}
         </label>
         {description ? (
-          <p className="mt-1 text-xs text-doggerz-paw/70">{description}</p>
+          <p className="mt-1 text-[11px] leading-4 text-zinc-400">
+            {description}
+          </p>
         ) : null}
       </div>
-
-      <div className="shrink-0">
-        <input
-          id={id}
-          type="checkbox"
-          className="peer sr-only dz-native-toggle-input"
-          checked={!!checked}
-          onChange={(e) => onChange(e.target.checked)}
-          title={tooltip}
+      <input
+        id={id}
+        type="checkbox"
+        className="peer sr-only"
+        checked={!!checked}
+        onChange={(e) => onChange(e.target.checked)}
+        title={tooltip}
+      />
+      <label
+        htmlFor={id}
+        title={tooltip}
+        className={`relative h-6 w-10 shrink-0 cursor-pointer rounded-full transition ${
+          checked ? "bg-emerald-500/80" : "bg-zinc-700/95"
+        }`}
+      >
+        <span
+          className={`absolute top-1 h-4 w-4 rounded-full bg-white transition ${
+            checked ? "left-5" : "left-1"
+          }`}
         />
-        <label
-          htmlFor={id}
-          title={tooltip}
-          className="dz-native-toggle relative inline-flex h-7 w-[52px] cursor-pointer items-center rounded-full peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-doggerz-leaf/80 peer-focus-visible:outline-offset-2"
-        >
-          <span className="sr-only">{label}</span>
-          <span className="dz-native-toggle__thumb inline-block h-5 w-5 rounded-full bg-white shadow transition" />
-        </label>
-      </div>
+      </label>
     </div>
   );
 }
@@ -196,17 +199,19 @@ function Switch({ id, checked, onChange, label, description }) {
 function SelectRow({ id, label, description = "", value, onChange, options }) {
   const tooltip = description || label;
   return (
-    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-      <div className="min-w-0">
+    <div className="flex items-start gap-3 px-4 py-3.5">
+      <div className="min-w-0 flex-1">
         <label
           htmlFor={id}
-          className="text-sm font-semibold text-doggerz-bone"
+          className="block text-[14px] font-normal leading-5 text-white"
           title={tooltip}
         >
           {label}
         </label>
         {description ? (
-          <p className="mt-1 text-xs text-doggerz-paw/70">{description}</p>
+          <p className="mt-1 text-[11px] leading-4 text-zinc-400">
+            {description}
+          </p>
         ) : null}
       </div>
       <select
@@ -214,7 +219,7 @@ function SelectRow({ id, label, description = "", value, onChange, options }) {
         value={value}
         onChange={(e) => onChange(e.target.value)}
         title={tooltip}
-        className="w-full sm:w-56 rounded-xl border border-doggerz-mange/55 bg-black/30 px-3 py-2 text-sm text-doggerz-bone focus:border-doggerz-leaf/70 focus:outline-none"
+        className="w-[138px] shrink-0 rounded-xl border border-white/10 bg-[#1a211d] px-2 py-1.5 text-right text-[12px] font-normal text-zinc-300 outline-none focus:border-emerald-300/40"
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>
@@ -249,22 +254,24 @@ function SliderRow({
         )
       : 0;
   return (
-    <div className="flex flex-col gap-2 rounded-2xl border border-white/8 bg-black/15 px-3 py-3">
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
+    <div className="px-4 py-3.5">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
           <label
             htmlFor={id}
-            className="text-sm font-semibold text-doggerz-bone"
+            className="block text-[14px] font-normal leading-5 text-white"
             title={tooltip}
           >
             {label}
           </label>
           {description ? (
-            <p className="mt-1 text-xs text-doggerz-paw/70">{description}</p>
+            <p className="mt-1 text-[11px] leading-4 text-zinc-400">
+              {description}
+            </p>
           ) : null}
         </div>
         {rightLabel ? (
-          <div className="shrink-0 text-xs text-doggerz-paw/70">
+          <div className="shrink-0 pl-2 text-[11px] text-zinc-300">
             {rightLabel}
           </div>
         ) : null}
@@ -278,7 +285,7 @@ function SliderRow({
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
         title={tooltip}
-        className="dz-native-slider w-full"
+        className="dz-native-slider mt-2 w-full"
         style={{
           background: `linear-gradient(90deg, var(--energy-color) 0%, var(--energy-color) ${pct}%, var(--bar-bg) ${pct}%, var(--bar-bg) 100%)`,
         }}
@@ -295,16 +302,20 @@ function Card({
   bodyClassName = "",
 }) {
   return (
-    <section
-      className={`rounded-2xl border border-doggerz-mange/45 bg-black/45 p-5 shadow-lg shadow-black/25 ${className}`}
-    >
-      <div className="mb-4">
-        <h2 className="text-lg font-semibold text-doggerz-bone">{title}</h2>
+    <section className={className}>
+      <div className="px-1 pb-1.5">
+        <h2 className="text-[11px] font-medium uppercase tracking-[0.14em] text-emerald-300/80">
+          {title}
+        </h2>
         {subtitle ? (
-          <p className="mt-1 text-sm text-doggerz-paw/70">{subtitle}</p>
+          <p className="mt-1 text-[11px] leading-4 text-zinc-500">{subtitle}</p>
         ) : null}
       </div>
-      <div className={`space-y-4 ${bodyClassName}`}>{children}</div>
+      <div className="overflow-hidden rounded-[14px] bg-[#121815] ring-1 ring-white/5">
+        <div className={`${bodyClassName || "divide-y divide-white/6"}`}>
+          {children}
+        </div>
+      </div>
     </section>
   );
 }
@@ -600,19 +611,24 @@ export default function Settings() {
   }
 
   return (
-    <PageShell>
-      <div className="mx-auto max-w-5xl space-y-8">
-        <PageHeader>
-          <h1 className="text-4xl font-black tracking-tight text-doggerz-bone">
-            Settings
-          </h1>
-          <p className="text-sm text-doggerz-paw/70 max-w-2xl">
-            Customize your Doggerz experience on this device. Most settings save
-            automatically.
-          </p>
-        </PageHeader>
+    <PageShell
+      useSurface={false}
+      mainClassName="px-0 py-0"
+      containerClassName="w-full max-w-md mx-auto"
+    >
+      <div className="min-h-[100dvh] bg-[#0a100d] text-white">
+        <header className="sticky top-0 z-20 border-b border-white/8 bg-[#0a100d]/96 backdrop-blur-xl">
+          <div className="px-3 pb-2.5 pt-3.5">
+            <h1 className="text-[20px] font-semibold tracking-tight text-white">
+              Settings
+            </h1>
+            <p className="mt-0.5 text-[11px] leading-4 text-zinc-500">
+              Doggerz preferences and account controls.
+            </p>
+          </div>
+        </header>
 
-        <div className="grid gap-6 lg:grid-cols-2">
+        <main className="flex flex-col gap-4 px-3 pb-8 pt-3">
           <Card
             title="Account & cloud"
             subtitle="Optional cloud features (Firebase). Offline play works without an account."
@@ -878,6 +894,58 @@ export default function Settings() {
               step={0.05}
               rightLabel={`${pct(settings?.roamIntensity ?? 1)}%`}
             />
+          </Card>
+
+          <Card
+            title="Care journey"
+            subtitle="Shortcuts into the realistic-sim support screens"
+            bodyClassName="grid gap-3 p-4 sm:grid-cols-2"
+          >
+            <Link
+              to={PATHS.POTTY}
+              className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 transition hover:border-emerald-300/40 hover:bg-black/30"
+            >
+              <div className="text-sm font-semibold text-white">
+                Potty routine
+              </div>
+              <div className="mt-1 text-xs text-zinc-400">
+                Log accidents, review routine pressure, and track house manners.
+              </div>
+            </Link>
+
+            <Link
+              to={PATHS.SKILL_TREE}
+              className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 transition hover:border-emerald-300/40 hover:bg-black/30"
+            >
+              <div className="text-sm font-semibold text-white">
+                Training roadmap
+              </div>
+              <div className="mt-1 text-xs text-zinc-400">
+                See what unlocks next and how perks fit after the basics.
+              </div>
+            </Link>
+
+            <Link
+              to={PATHS.MEMORIES}
+              className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 transition hover:border-emerald-300/40 hover:bg-black/30"
+            >
+              <div className="text-sm font-semibold text-white">
+                Memory reel
+              </div>
+              <div className="mt-1 text-xs text-zinc-400">
+                Review care history, milestones, and the emotional story so far.
+              </div>
+            </Link>
+
+            <Link
+              to={PATHS.STORE}
+              className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 transition hover:border-emerald-300/40 hover:bg-black/30"
+            >
+              <div className="text-sm font-semibold text-white">Store</div>
+              <div className="mt-1 text-xs text-zinc-400">
+                Accessories, enrichment items, and yard upgrades in one place.
+              </div>
+            </Link>
           </Card>
 
           <Card
@@ -1852,8 +1920,7 @@ export default function Settings() {
           <Card
             title="About this build"
             subtitle="Handy details for support and release checks"
-            className="self-start p-4"
-            bodyClassName="space-y-2"
+            bodyClassName="space-y-2 p-4"
           >
             <div className="text-sm text-doggerz-paw">
               Version: <span className="font-semibold">{APP_VERSION}</span>
@@ -1917,7 +1984,7 @@ export default function Settings() {
               part of the main app flow.
             </p>
           </Card>
-        </div>
+        </main>
       </div>
     </PageShell>
   );

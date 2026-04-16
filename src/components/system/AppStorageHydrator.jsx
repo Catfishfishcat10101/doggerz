@@ -13,6 +13,38 @@ import {
   getDogStorageKey,
   hydrateDog,
 } from "@/store/dogSlice.js";
+import {
+  hydrateProgression,
+  resetProgression,
+} from "@/features/preogression/progressionSlice.js";
+
+function splitPersistedDogRecord(raw) {
+  if (!raw || typeof raw !== "object") {
+    return { dogPayload: null, progressionPayload: null };
+  }
+
+  if (raw.dog && typeof raw.dog === "object") {
+    return {
+      dogPayload: raw.dog,
+      progressionPayload:
+        raw.progression && typeof raw.progression === "object"
+          ? raw.progression
+          : null,
+    };
+  }
+
+  const dogPayload = { ...raw };
+  const progressionPayload =
+    dogPayload.progression && typeof dogPayload.progression === "object"
+      ? dogPayload.progression
+      : null;
+  delete dogPayload.progression;
+
+  return {
+    dogPayload,
+    progressionPayload,
+  };
+}
 
 function parseStoredJson(raw, label) {
   if (!raw) return null;
@@ -52,9 +84,16 @@ export default function AppStorageHydrator() {
 
       const dogParsed = parseStoredJson(dogRaw, getDogStorageKey(null));
       const dogLegacyParsed = parseStoredJson(dogLegacyRaw, DOG_STORAGE_KEY);
-      const dogPayload = dogParsed || dogLegacyParsed;
+      const persistedRecord = dogParsed || dogLegacyParsed;
+      const { dogPayload, progressionPayload } =
+        splitPersistedDogRecord(persistedRecord);
       if (dogPayload && typeof dogPayload === "object") {
         dispatch(hydrateDog(dogPayload));
+        if (progressionPayload) {
+          dispatch(hydrateProgression(progressionPayload));
+        } else {
+          dispatch(resetProgression());
+        }
       }
     };
 
