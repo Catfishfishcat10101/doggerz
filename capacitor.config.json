@@ -3,7 +3,21 @@
   "appName": "Doggerz",
   "webDir": "dist",
   "bundledWebRuntime": false,
+  "ios": {
+    "scrollEnabled": false,
+    "contentInset": "never"
+  },
   "plugins": {
+    "StatusBar": {
+      "overlaysWebView": true,
+      "style": "DEFAULT"
+    },
+    "SplashScreen": {
+      "launchAutoHide": false,
+      "launchFadeOutDuration": 220,
+      "backgroundColor": "#090a0fff",
+      "showSpinner": false
+    },
     "AdMob": {
       "appId": "ca-app-pub-3940256099942544~3347511713"
     }

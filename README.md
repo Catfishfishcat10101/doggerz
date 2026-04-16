@@ -228,6 +228,7 @@ Android workflow:
 npm run android:sync
 npm run android:open
 npm run android:run
+npm run release:android:build
 ```
 
 Preflight and verification:
@@ -265,6 +266,28 @@ npm run android:open
 ```
 
 4. Build or run from Android Studio.
+
+## Play Store release flow
+
+Doggerz now includes a guarded Android release builder that validates:
+
+- required icons and manifest files
+- Android signing configuration
+- AAB output location
+- optional Google Play upload parameters
+
+Recommended commands:
+
+```bash
+npm run release:android:build
+npm run release:android:bump
+npm run release:android:internal
+```
+
+Supporting docs:
+
+- [PLAY_STORE_RELEASE.md](./PLAY_STORE_RELEASE.md)
+- [FINAL_QA_CHECKLIST.md](./FINAL_QA_CHECKLIST.md)
 
 ## Deployment Notes
 

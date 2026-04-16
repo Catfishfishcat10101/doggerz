@@ -4,8 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
+import HeroDog from "@/components/dog/renderers/HeroDog.jsx";
 import PageShell from "@/components/layout/PageShell.jsx";
-import SpriteSheetDog from "@/components/dog/renderers/SpriteSheetDog.jsx";
 import { PATHS } from "@/app/routes.js";
 import { adoptPup } from "@/store/dogThunks.js";
 import {
@@ -262,7 +262,8 @@ export default function AdoptPage() {
                   with your UI when bored. This is not a calm dog.
                 </p>
                 <div className="mt-5 rounded-2xl border border-amber-300/20 bg-amber-400/10 p-4 text-left text-sm text-amber-50/90">
-                  Good care keeps the chaos charming. Neglect makes it loud.
+                  Good care keeps the chaos charming. Neglect makes it loud —
+                  but the sim is built to feel honest, not cruel.
                 </div>
               </div>
 
@@ -333,18 +334,60 @@ export default function AdoptPage() {
                     <ul className="mt-2 space-y-2 text-sm text-zinc-300">
                       <li>Real-time weather and day/night cycles.</li>
                       <li>Potty training comes first, tricks later.</li>
+                      <li>
+                        A full 180-day life arc, with late-life care carrying
+                        more emotional weight.
+                      </li>
                     </ul>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <div className="rounded-2xl border border-white/10 bg-white/6 p-4">
+                      <div className="text-[11px] uppercase tracking-[0.18em] text-zinc-400">
+                        House manners
+                      </div>
+                      <div className="mt-2 font-bold text-emerald-100">
+                        Routine before tricks
+                      </div>
+                      <p className="mt-2 text-xs leading-5 text-zinc-300">
+                        Early progress is about food, water, rest, potty, and
+                        affection actually changing behavior.
+                      </p>
+                    </div>
+                    <div className="rounded-2xl border border-white/10 bg-white/6 p-4">
+                      <div className="text-[11px] uppercase tracking-[0.18em] text-zinc-400">
+                        Memory
+                      </div>
+                      <div className="mt-2 font-bold text-sky-100">
+                        Little moments add up
+                      </div>
+                      <p className="mt-2 text-xs leading-5 text-zinc-300">
+                        The journal tracks milestones, funny moments, and care
+                        patterns instead of treating time together like filler.
+                      </p>
+                    </div>
+                    <div className="rounded-2xl border border-white/10 bg-white/6 p-4">
+                      <div className="text-[11px] uppercase tracking-[0.18em] text-zinc-400">
+                        Growth
+                      </div>
+                      <div className="mt-2 font-bold text-amber-100">
+                        Temperament over grind
+                      </div>
+                      <p className="mt-2 text-xs leading-5 text-zinc-300">
+                        Later perks shape resilience and personality; they do
+                        not replace daily care.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
             <div className="mt-6 flex items-center justify-center">
-              <SpriteSheetDog
+              <HeroDog
                 stage="PUPPY"
+                variant="promo"
                 anim="idle"
-                facing={1}
-                size={160}
+                animationPreset="idle-paw"
                 className="select-none drop-shadow-[0_18px_30px_rgba(0,0,0,0.45)]"
               />
             </div>
@@ -375,7 +418,7 @@ export default function AdoptPage() {
 
           <div className="mt-3 text-center text-xs text-zinc-400">
             Your pup lives in the yard, not on a server. Adoption is just the
-            start.
+            start of a 180-day story.
           </div>
         </div>
       </div>

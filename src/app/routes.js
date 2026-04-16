@@ -156,6 +156,31 @@ export const MENU_DESTINATIONS = Object.freeze([
     label: "Settings",
     detail: "Preferences and care tuning",
   },
+  {
+    path: PATHS.POTTY,
+    label: "Potty",
+    detail: "House-training progress and accident log",
+  },
+  {
+    path: PATHS.SKILL_TREE,
+    label: "Training Roadmap",
+    detail: "Potty-first growth path and long-term perks",
+  },
+  {
+    path: PATHS.MEMORIES,
+    label: "Memory Reel",
+    detail: "Moments, milestones, and care history",
+  },
+  {
+    path: PATHS.DREAMS,
+    label: "Dream Journal",
+    detail: "Night thoughts and dream motifs",
+  },
+  {
+    path: PATHS.STORE,
+    label: "Store",
+    detail: "Accessories, yard themes, and care support",
+  },
 ]);
 
 export const MENU_CATEGORIES = Object.freeze([
@@ -179,9 +204,19 @@ export const MENU_CATEGORIES = Object.freeze([
         detail: "How Doggerz works",
       },
       {
+        path: PATHS.CONTACT,
+        label: "Contact",
+        detail: "Email support, bug reports, and feedback",
+      },
+      {
         path: PATHS.PRIVACY,
         label: "Privacy",
         detail: "How data is handled",
+      },
+      {
+        path: PATHS.LEGAL,
+        label: "Legal",
+        detail: "Terms, policies, and account deletion info",
       },
       {
         path: PATHS.DEVELOPERS,
@@ -192,8 +227,19 @@ export const MENU_CATEGORIES = Object.freeze([
   },
   {
     key: "app",
-    title: "App",
+    title: "Care & Growth",
     items: MENU_DESTINATIONS,
+  },
+  {
+    key: "legacy",
+    title: "Legacy & remembrance",
+    items: [
+      {
+        path: PATHS.RAINBOW_BRIDGE,
+        label: "Rainbow Bridge",
+        detail: "Memorial scene and six-month journey finale",
+      },
+    ],
   },
 ]);
 

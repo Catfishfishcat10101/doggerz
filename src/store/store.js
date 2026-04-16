@@ -5,8 +5,14 @@
 import { configureStore } from "@reduxjs/toolkit";
 
 import dogReducer from "@/store/dogSlice.js";
+import { setAdoptedAt } from "@/store/dogSlice.js";
 import { dogTickMiddleware } from "@/store/middleware/dogTick.js";
 import { trainingReactionMiddleware } from "@/store/middleware/trainingReactionMiddleware.js";
+import progressionReducer, {
+  recordProgressionEvent,
+  resetProgression,
+} from "@/features/preogression/progressionSlice.js";
+import resolveProgressionEvent from "@/features/preogression/resolveProgressionEvent.js";
 import userReducer from "@/store/userSlice.js";
 import settingsReducer from "@/store/settingsSlice.js";
 import weatherReducer from "@/store/weatherSlice.js";
@@ -18,6 +24,41 @@ import {
 } from "@/utils/debugLogger.js";
 
 const isProd = import.meta.env.PROD;
+
+const progressionEventMiddleware = (storeApi) => (next) => (action) => {
+  if (!action?.type || action.type.startsWith("progression/")) {
+    return next(action);
+  }
+
+  const prevState = storeApi.getState();
+  const prevAdoptedAt = prevState?.dog?.adoptedAt || null;
+  const result = next(action);
+
+  const nextDogState = storeApi.getState()?.dog || {};
+  const nextAdoptedAt = nextDogState?.adoptedAt || null;
+  if (
+    action.type === setAdoptedAt.type &&
+    nextAdoptedAt &&
+    nextAdoptedAt !== prevAdoptedAt
+  ) {
+    storeApi.dispatch(resetProgression());
+  }
+
+  const nextState = storeApi.getState();
+  const events = resolveProgressionEvent({
+    action,
+    prevState,
+    nextState,
+  });
+
+  if (Array.isArray(events) && events.length > 0) {
+    for (const event of events) {
+      storeApi.dispatch(recordProgressionEvent(event));
+    }
+  }
+
+  return result;
+};
 
 const createDebugLoggingMiddleware = () => (storeApi) => (next) => (action) => {
   const enabled =
@@ -52,6 +93,7 @@ const createDebugLoggingMiddleware = () => (storeApi) => (next) => (action) => {
 export const store = configureStore({
   reducer: {
     dog: dogReducer,
+    progression: progressionReducer,
     user: userReducer,
     settings: settingsReducer,
     weather: weatherReducer,
@@ -67,6 +109,7 @@ export const store = configureStore({
     }).concat(
       dogTickMiddleware,
       trainingReactionMiddleware,
+      progressionEventMiddleware,
       createDebugLoggingMiddleware()
     ),
   devTools: !isProd,

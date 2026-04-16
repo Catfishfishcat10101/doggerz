@@ -3,6 +3,19 @@ import { clamp, toPercent } from "./sceneTokens.js";
 import "./DogMoodFxLayer.css";
 
 const DIRTY_CONDITIONS = new Set(["dirty", "fleas", "mange"]);
+const STATUS_ICON_META = Object.freeze({
+  tired: { icon: "😴", label: "Sleepy" },
+  hungry: { icon: "🍖", label: "Hungry" },
+  thirsty: { icon: "💧", label: "Thirsty" },
+  potty: { icon: "🌿", label: "Potty" },
+  dirty: { icon: "🧼", label: "Dirty" },
+  itchy: { icon: "🪳", label: "Itchy" },
+  lonely: { icon: "🫶", label: "Lonely" },
+  bored: { icon: "🧠", label: "Bored" },
+  sick: { icon: "🤒", label: "Unwell" },
+  sore: { icon: "🦴", label: "Sore" },
+  uneasy: { icon: "⚠️", label: "Uneasy" },
+});
 
 function normalizeKey(value) {
   return String(value || "")
@@ -82,6 +95,10 @@ export default function DogMoodFxLayer({
   const energy = Number(dog?.stats?.energy ?? 100);
   const hunger = Number(dog?.stats?.hunger ?? 0);
   const happiness = Number(dog?.stats?.happiness ?? 0);
+  const moodlets = useMemo(
+    () => (Array.isArray(dog?.moodlets) ? dog.moodlets : []),
+    [dog?.moodlets]
+  );
   const lastAction = normalizeKey(dog?.lastAction || dog?.last_action || "");
   const mood = normalizeKey(dog?.mood || "");
   const condition = normalizeKey(
@@ -105,15 +122,48 @@ export default function DogMoodFxLayer({
     lastAction === "speak";
 
   const statusIcons = useMemo(() => {
-    const items = [];
+    const urgentMoodlets = moodlets
+      .filter((entry) => {
+        const type = normalizeKey(entry?.type || "");
+        return type && type !== "happy" && STATUS_ICON_META[type];
+      })
+      .sort(
+        (left, right) =>
+          Number(right?.intensity || 0) - Number(left?.intensity || 0)
+      )
+      .slice(0, 3)
+      .map((entry) => {
+        const type = normalizeKey(entry?.type || "");
+        const meta = STATUS_ICON_META[type] || { icon: "✨", label: type };
+        return {
+          id: type,
+          icon: meta.icon,
+          label: meta.label,
+          urgent: Number(entry?.intensity || 0) >= 3,
+        };
+      });
+
+    if (urgentMoodlets.length) return urgentMoodlets;
+
+    const fallback = [];
     if (sleepyActive) {
-      items.push({ id: "sleepy", icon: "😴", label: "Sleepy" });
+      fallback.push({
+        id: "sleepy",
+        icon: "😴",
+        label: "Sleepy",
+        urgent: energy <= 15,
+      });
     }
     if (hungerActive) {
-      items.push({ id: "hungry", icon: "🍖", label: "Hungry" });
+      fallback.push({
+        id: "hungry",
+        icon: "🍖",
+        label: "Hungry",
+        urgent: hunger >= 88,
+      });
     }
-    return items;
-  }, [hungerActive, sleepyActive]);
+    return fallback;
+  }, [energy, hunger, hungerActive, moodlets, sleepyActive]);
 
   useEffect(() => {
     if (reduceMotion || !heartMode) {
@@ -212,7 +262,11 @@ export default function DogMoodFxLayer({
           }}
         >
           {statusIcons.map((item) => (
-            <span key={item.id} className="dg-dog-fx-badge" title={item.label}>
+            <span
+              key={item.id}
+              className={`dg-dog-fx-badge${item.urgent ? " dg-dog-fx-badge--urgent" : ""}`}
+              title={item.label}
+            >
               {item.icon}
             </span>
           ))}

@@ -17,6 +17,11 @@ import {
   getDogStorageKey,
 } from "@/store/dogSlice.js";
 import {
+  hydrateProgression,
+  resetProgression,
+} from "@/features/preogression/progressionSlice.js";
+import { selectProgression } from "@/features/preogression/progressionSelectors.js";
+import {
   setWeatherError,
   setWeatherLoading,
   setWeatherSnapshot,
@@ -117,6 +122,34 @@ function normalizeZipCode(value) {
   return /^\d{5}$/.test(raw) ? raw : null;
 }
 
+function splitPersistedDogRecord(raw) {
+  if (!raw || typeof raw !== "object") {
+    return { dogPayload: null, progressionPayload: null };
+  }
+
+  if (raw.dog && typeof raw.dog === "object") {
+    return {
+      dogPayload: raw.dog,
+      progressionPayload:
+        raw.progression && typeof raw.progression === "object"
+          ? raw.progression
+          : null,
+    };
+  }
+
+  const dogPayload = { ...raw };
+  const progressionPayload =
+    dogPayload.progression && typeof dogPayload.progression === "object"
+      ? dogPayload.progression
+      : null;
+  delete dogPayload.progression;
+
+  return {
+    dogPayload,
+    progressionPayload,
+  };
+}
+
 export default function DogAIEngine({
   enableAudio = true,
   enableWeather = true,
@@ -124,6 +157,7 @@ export default function DogAIEngine({
   const dispatch = useDispatch();
   const location = useLocation();
   const { dog: dogState, renderModel } = useDogEngineState();
+  const progressionState = useSelector(selectProgression);
   const zip = useSelector(selectUserZip);
   const settings = useSelector(selectSettings);
   const isFounder = useSelector(selectUserIsFounder);
@@ -370,6 +404,7 @@ export default function DogAIEngine({
   };
 
   const dogRef = useRef(dogState);
+  const progressionRef = useRef(progressionState);
   const zipRef = useRef(zip);
   const userIdRef = useRef(/** @type {string | null} */ (null));
   const lastHydratedUserIdRef = useRef(
@@ -379,10 +414,12 @@ export default function DogAIEngine({
 
   const flushLocalSave = useCallback(() => {
     const ds = dogRef.current;
+    const ps = progressionRef.current;
     if (!ds) return;
     try {
       const persisted = {
         ...ds,
+        ...(ps && typeof ps === "object" ? { progression: ps } : {}),
         meta: {
           ...(ds.meta || {}),
           schemaVersion: DOG_SAVE_SCHEMA_VERSION,
@@ -530,6 +567,10 @@ export default function DogAIEngine({
   useEffect(() => {
     dogRef.current = dogState;
   }, [dogState]);
+
+  useEffect(() => {
+    progressionRef.current = progressionState;
+  }, [progressionState]);
 
   // 2b. Flush local save when leaving/backgrounding (makes refresh/close feel safe)
   useEffect(() => {
@@ -740,7 +781,15 @@ export default function DogAIEngine({
           });
           parsed = migration?.data || null;
         }
-        if (parsed) parsed = reviveDogDates(parsed);
+        if (parsed) {
+          const splitRecord = splitPersistedDogRecord(parsed);
+          parsed = {
+            dogPayload: splitRecord.dogPayload
+              ? reviveDogDates(splitRecord.dogPayload)
+              : null,
+            progressionPayload: splitRecord.progressionPayload,
+          };
+        }
       } catch (err) {
         debugWarn("DogAI", "load from switched storage key failed", err);
         console.warn("[Doggerz] Failed to load dog from new storage key", err);
@@ -748,12 +797,16 @@ export default function DogAIEngine({
 
       if (cancelled) return;
       dispatch(resetDogState());
-      if (parsed) {
+      dispatch(resetProgression());
+      if (parsed?.dogPayload) {
         debugLog("DogAI", "hydrating from switched storage key", {
           storageKey: nextKey,
-          adoptedAt: parsed?.adoptedAt || null,
+          adoptedAt: parsed?.dogPayload?.adoptedAt || null,
         });
-        dispatch(hydrateDog(parsed));
+        dispatch(hydrateDog(parsed.dogPayload));
+        if (parsed.progressionPayload) {
+          dispatch(hydrateProgression(parsed.progressionPayload));
+        }
       }
     };
 
@@ -794,11 +847,20 @@ export default function DogAIEngine({
           }
 
           if (!cancelled && parsed) {
+            const { dogPayload, progressionPayload } =
+              splitPersistedDogRecord(parsed);
             debugLog("DogAI", "hydrating from local save", {
               storageKey: activeKey,
-              adoptedAt: parsed?.adoptedAt || null,
+              adoptedAt: dogPayload?.adoptedAt || null,
             });
-            dispatch(hydrateDog(reviveDogDates(parsed)));
+            if (dogPayload) {
+              dispatch(hydrateDog(reviveDogDates(dogPayload)));
+            }
+            if (progressionPayload) {
+              dispatch(hydrateProgression(progressionPayload));
+            } else {
+              dispatch(resetProgression());
+            }
           }
         } catch (err) {
           debugError("DogAI", "dog hydrate parse failed", err);
@@ -906,21 +968,6 @@ export default function DogAIEngine({
     }
   }, [cloudAuthUserId, dispatch]);
 
-  // Daily reward availability check (runs after hydration and whenever claim changes).
-  useEffect(() => {
-    if (!dogState?.adoptedAt) return;
-
-    const lastClaim = Number(dogState?.lastRewardClaimedAt || 0);
-    const today = new Date().setHours(0, 0, 0, 0);
-    const lastClaimDate = lastClaim
-      ? new Date(lastClaim).setHours(0, 0, 0, 0)
-      : 0;
-
-    if (today > lastClaimDate) {
-      // TODO: dispatch(openModal("DAILY_REWARD"));
-    }
-  }, [dogState?.adoptedAt, dogState?.lastRewardClaimedAt]);
-
   // 2. Debounced save to storage (Preferences + localStorage fallback).
   useEffect(() => {
     if (!dogState) return;
@@ -933,6 +980,9 @@ export default function DogAIEngine({
       try {
         const persisted = {
           ...dogState,
+          ...(progressionState && typeof progressionState === "object"
+            ? { progression: progressionState }
+            : {}),
           meta: {
             ...(dogState.meta || {}),
             schemaVersion: DOG_SAVE_SCHEMA_VERSION,
@@ -957,7 +1007,7 @@ export default function DogAIEngine({
         localSaveTimeoutRef.current = null;
       }
     };
-  }, [dogState]);
+  }, [dogState, progressionState]);
 
   // 3. Debounced cloud save whenever dogState changes while logged in
   useEffect(() => {
@@ -986,7 +1036,7 @@ export default function DogAIEngine({
         clearTimeout(cloudSaveTimeoutRef.current);
       }
     };
-  }, [cloudAuthUserId, dispatch, dogState]);
+  }, [cloudAuthUserId, dispatch, dogState, progressionState]);
 
   useEffect(() => {
     return () => {

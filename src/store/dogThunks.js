@@ -14,6 +14,10 @@ import {
   setAdoptedAt,
   setDogName as setDogProfileName,
 } from "./dogSlice.js";
+import {
+  hydrateProgression,
+  resetProgression,
+} from "@/features/preogression/progressionSlice.js";
 import { setDogName as setUserDogName, setUser } from "./userSlice.js";
 
 function toMs(value) {
@@ -86,8 +90,12 @@ function buildCloudSummary(state) {
 
 function buildCloudDogPayload(state) {
   const dogState = state?.dog || {};
+  const progressionState = state?.progression || null;
   return {
     ...dogState,
+    ...(progressionState && typeof progressionState === "object"
+      ? { progression: progressionState }
+      : {}),
     cloudSchemaVersion: 1,
     cloudSummary: buildCloudSummary(state),
     lastCloudSyncAt: Date.now(),
@@ -100,6 +108,14 @@ function sanitizeAdoptedName(value) {
     .trim()
     .replace(/\s+/g, " ");
   return trimmed.slice(0, 24) || "Fireball";
+}
+
+function setCloudSyncStatus(dispatch, cloudSync = {}) {
+  dispatch(
+    setUser({
+      cloudSync,
+    })
+  );
 }
 
 export const adoptPup = createAsyncThunk(
@@ -144,57 +160,64 @@ export const loadDogFromCloud = createAsyncThunk(
   async (_, { dispatch, getState, rejectWithValue }) => {
     try {
       if (!db) {
-        dispatch(
-          setUser({ cloudSync: { status: "local", errorMessage: null } })
-        );
+        setCloudSyncStatus(dispatch, {
+          status: "local",
+          errorMessage: null,
+        });
         return rejectWithValue("Cloud sync unavailable");
       }
       const user = await ensureAnonSignIn();
       const userId = user?.uid || auth?.currentUser?.uid;
       if (isAnonymousFirebaseUser(user)) {
-        dispatch(
-          setUser({ cloudSync: { status: "local", errorMessage: null } })
-        );
+        setCloudSyncStatus(dispatch, {
+          status: "local",
+          errorMessage: null,
+        });
         return rejectWithValue("Cloud sync disabled for anonymous session");
       }
       if (!userId) {
-        dispatch(
-          setUser({ cloudSync: { status: "local", errorMessage: null } })
-        );
+        setCloudSyncStatus(dispatch, {
+          status: "local",
+          errorMessage: null,
+        });
         return rejectWithValue("User not logged in");
       }
-      dispatch(
-        setUser({
-          cloudSync: {
-            status: "syncing",
-            lastAttemptAt: Date.now(),
-            errorMessage: null,
-          },
-        })
-      );
+      setCloudSyncStatus(dispatch, {
+        status: "syncing",
+        lastAttemptAt: Date.now(),
+        errorMessage: null,
+      });
+
+      const localDog = getState().dog;
 
       const docRef = dogMainDoc(userId);
       if (!docRef) return rejectWithValue("Cloud document unavailable");
       const snap = await getDoc(docRef);
 
       if (!snap.exists()) {
-        dispatch(
-          setUser({
-            cloudSync: {
-              status: "saved",
-              lastSuccessAt: Date.now(),
-              errorMessage: null,
-            },
-          })
-        );
+        if (localDog?.adoptedAt) {
+          await dispatch(saveDogToCloud()).unwrap();
+          return { hydrated: false, reason: "uploaded_local_seed" };
+        }
+
+        setCloudSyncStatus(dispatch, {
+          status: "saved",
+          lastAttemptAt: Date.now(),
+          lastSuccessAt: null,
+          errorMessage: null,
+        });
         return { hydrated: false, reason: "no_cloud_save" };
       }
 
       const cloudData = { ...(snap.data() || {}) };
+      const progressionPayload =
+        cloudData.progression && typeof cloudData.progression === "object"
+          ? cloudData.progression
+          : null;
+      delete cloudData.progression;
       delete cloudData.cloudSummary;
       delete cloudData.cloudSchemaVersion;
       const cloudDogState = cloudData;
-      const localDog = getState().dog;
 
       const localTs = getDogTimestamp(localDog);
       const cloudTs = getDogTimestamp(cloudDogState);
@@ -202,35 +225,32 @@ export const loadDogFromCloud = createAsyncThunk(
       // Only hydrate if cloud is significantly newer (1s buffer)
       if (cloudTs > localTs + 1000) {
         dispatch(hydrateDog(cloudDogState));
-        dispatch(
-          setUser({
-            cloudSync: {
-              status: "saved",
-              lastSuccessAt: Date.now(),
-              errorMessage: null,
-            },
-          })
-        );
+        if (progressionPayload) {
+          dispatch(hydrateProgression(progressionPayload));
+        } else {
+          dispatch(resetProgression());
+        }
+        setCloudSyncStatus(dispatch, {
+          status: "saved",
+          lastSuccessAt: Date.now(),
+          errorMessage: null,
+        });
         return { hydrated: true, cloudTs };
       }
 
       // Local is newer: push it to cloud to keep the server in sync.
-      dispatch(saveDogToCloud());
+      await dispatch(saveDogToCloud()).unwrap();
       return { hydrated: false, reason: "local_is_newer" };
     } catch (err) {
       const permissionDenied = isFirestorePermissionError(err);
-      dispatch(
-        setUser({
-          cloudSync: {
-            status: permissionDenied ? "local" : "error",
-            lastAttemptAt: Date.now(),
-            errorMessage: permissionDenied
-              ? null
-              : err?.message || "Cloud load failed",
-          },
-        })
-      );
-      return rejectWithValue(err.message);
+      setCloudSyncStatus(dispatch, {
+        status: permissionDenied ? "local" : "error",
+        lastAttemptAt: Date.now(),
+        errorMessage: permissionDenied
+          ? null
+          : err?.message || "Cloud load failed",
+      });
+      return rejectWithValue(err?.message || "Cloud load failed");
     }
   }
 );
@@ -243,9 +263,10 @@ export const saveDogToCloud = createAsyncThunk(
   async (_, { dispatch, getState, rejectWithValue }) => {
     try {
       if (!db) {
-        dispatch(
-          setUser({ cloudSync: { status: "local", errorMessage: null } })
-        );
+        setCloudSyncStatus(dispatch, {
+          status: "local",
+          errorMessage: null,
+        });
         return rejectWithValue("Cloud sync unavailable");
       }
       const user = await ensureAnonSignIn();
@@ -253,24 +274,21 @@ export const saveDogToCloud = createAsyncThunk(
       const state = getState();
       const dogState = state.dog;
       if (isAnonymousFirebaseUser(user)) {
-        dispatch(
-          setUser({ cloudSync: { status: "local", errorMessage: null } })
-        );
+        setCloudSyncStatus(dispatch, {
+          status: "local",
+          errorMessage: null,
+        });
         return rejectWithValue("Cloud sync disabled for anonymous session");
       }
 
       if (!userId || !dogState?.adoptedAt)
         return rejectWithValue("No dog to sync");
 
-      dispatch(
-        setUser({
-          cloudSync: {
-            status: "syncing",
-            lastAttemptAt: Date.now(),
-            errorMessage: null,
-          },
-        })
-      );
+      setCloudSyncStatus(dispatch, {
+        status: "syncing",
+        lastAttemptAt: Date.now(),
+        errorMessage: null,
+      });
 
       const docRef = dogMainDoc(userId);
       if (!docRef) return rejectWithValue("Cloud document unavailable");
@@ -278,30 +296,22 @@ export const saveDogToCloud = createAsyncThunk(
       const payload = buildCloudDogPayload(state);
 
       await setDoc(docRef, payload, { merge: true });
-      dispatch(
-        setUser({
-          cloudSync: {
-            status: "saved",
-            lastSuccessAt: Date.now(),
-            errorMessage: null,
-          },
-        })
-      );
+      setCloudSyncStatus(dispatch, {
+        status: "saved",
+        lastSuccessAt: Date.now(),
+        errorMessage: null,
+      });
       return { success: true };
     } catch (err) {
       const permissionDenied = isFirestorePermissionError(err);
-      dispatch(
-        setUser({
-          cloudSync: {
-            status: permissionDenied ? "local" : "error",
-            lastAttemptAt: Date.now(),
-            errorMessage: permissionDenied
-              ? null
-              : err?.message || "Cloud save failed",
-          },
-        })
-      );
-      return rejectWithValue(err.message);
+      setCloudSyncStatus(dispatch, {
+        status: permissionDenied ? "local" : "error",
+        lastAttemptAt: Date.now(),
+        errorMessage: permissionDenied
+          ? null
+          : err?.message || "Cloud save failed",
+      });
+      return rejectWithValue(err?.message || "Cloud save failed");
     }
   }
 );

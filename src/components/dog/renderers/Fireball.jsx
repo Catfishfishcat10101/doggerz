@@ -1,11 +1,8 @@
 // Developer demo-only renderer. Not used by Landing, Adopt, Game, or Store.
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import {
-  getJrSpriteSheet,
-  getJrSpriteFramePosition,
-  normalizeJrLifeStage,
-} from "@/components/dog/manifests/jrManifest.js";
+import { normalizeJrLifeStage } from "@/components/dog/manifests/jrManifest.js";
+import HeroDog from "@/components/dog/renderers/HeroDog.jsx";
 import "./Fireball.css";
 
 const DEFAULTS = Object.freeze({
@@ -77,8 +74,6 @@ export default function Fireball({
     idleTimer: null,
     frameId: null,
     lastFrameTime: 0,
-    currentSpriteFrame: 0,
-    lastSpriteTick: 0,
   });
 
   const [animState, setAnimState] = useState("idle");
@@ -99,30 +94,14 @@ export default function Fireball({
       : animState === "interact"
         ? interactAction
         : idleAction;
-
-  const currentEntry = useMemo(
-    () => getJrSpriteSheet(resolvedLifeStage, currentAction),
-    [currentAction, resolvedLifeStage]
+  const safeRenderSize = useMemo(
+    () => Math.max(24, Number(renderSize) || DEFAULTS.renderSize),
+    [renderSize]
   );
-
-  const spriteStyle = useMemo(() => {
-    const safeRenderSize = Math.max(
-      24,
-      Number(renderSize) || DEFAULTS.renderSize
-    );
-    const scale = safeRenderSize / currentEntry.frameHeight;
-
-    return {
-      "--fireball-sprite-src": `url('${currentEntry.url}')`,
-      "--fireball-frame-width": `${currentEntry.frameWidth}px`,
-      "--fireball-frame-height": `${currentEntry.frameHeight}px`,
-      "--fireball-sheet-width": `${currentEntry.sheetWidth}px`,
-      "--fireball-sheet-height": `${currentEntry.sheetHeight}px`,
-      "--fireball-render-size": `${safeRenderSize}px`,
-      "--fireball-scale": String(scale),
-      "--fireball-z-index": String(zIndex),
-    };
-  }, [currentEntry, renderSize, zIndex]);
+  const fireballStage = useMemo(
+    () => String(resolvedLifeStage || "pup").toUpperCase(),
+    [resolvedLifeStage]
+  );
 
   useEffect(() => {
     brain.current.speed = Number(speed) || DEFAULTS.speed;
@@ -143,13 +122,6 @@ export default function Fireball({
     const syncDomPosition = () => {
       if (!containerRef.current) return;
       containerRef.current.style.transform = `translate3d(${brainState.x}px, ${brainState.y}px, 0)`;
-    };
-
-    const syncSpriteFrame = (frameIndex) => {
-      const spriteNode = spriteRef.current;
-      if (!spriteNode) return;
-      const position = getJrSpriteFramePosition(currentEntry, frameIndex);
-      spriteNode.style.backgroundPosition = `${position.x}px ${position.y}px`;
     };
 
     const clampPointToBounds = (x, y) => {
@@ -200,9 +172,6 @@ export default function Fireball({
 
     const changeState = (nextState) => {
       brainState.currentState = nextState;
-      brainState.currentSpriteFrame = 0;
-      brainState.lastSpriteTick = 0;
-      syncSpriteFrame(0);
       clearIdleTimer();
 
       if (nextState === "idle") {
@@ -314,29 +283,10 @@ export default function Fireball({
         }
       }
 
-      const canAnimateSprite =
-        !(paused || reduceMotion) || brainState.currentState === "interact";
-      const spriteFrames = Math.max(1, Number(currentEntry.frames || 1));
-
-      if (canAnimateSprite && spriteFrames > 1) {
-        const msPerSpriteFrame =
-          1000 / Math.max(1, Number(currentEntry.fps || 1));
-        if (!brainState.lastSpriteTick) {
-          brainState.lastSpriteTick = timestamp;
-        }
-        if (timestamp - brainState.lastSpriteTick >= msPerSpriteFrame) {
-          brainState.currentSpriteFrame =
-            (brainState.currentSpriteFrame + 1) % spriteFrames;
-          brainState.lastSpriteTick = timestamp;
-          syncSpriteFrame(brainState.currentSpriteFrame);
-        }
-      }
-
       brainState.frameId = window.requestAnimationFrame(gameLoop);
     };
 
     centerSprite();
-    syncSpriteFrame(0);
     changeState("idle");
     brainState.lastFrameTime = 0;
     brainState.frameId = window.requestAnimationFrame(gameLoop);
@@ -361,18 +311,19 @@ export default function Fireball({
     minIdleMs,
     padding,
     paused,
-    currentEntry,
     reduceMotion,
     speed,
-    animState,
-    isFlipped,
   ]);
 
   return (
     <div
       ref={containerRef}
       className={`fireball-container ${className}`.trim()}
-      style={spriteStyle}
+      style={{
+        width: `${safeRenderSize}px`,
+        height: `${safeRenderSize}px`,
+        zIndex,
+      }}
       aria-label="Interactive dog sprite"
       role="button"
       tabIndex={0}
@@ -381,14 +332,22 @@ export default function Fireball({
         ref={spriteRef}
         className={[
           "fireball-sprite",
-          isFlipped ? "fireball-flip" : "",
           (paused || reduceMotion) && animState !== "interact"
             ? "fireball-paused"
             : "",
         ]
           .filter(Boolean)
           .join(" ")}
-      />
+      >
+        <HeroDog
+          stage={fireballStage}
+          anim={currentAction}
+          facing={isFlipped ? -1 : 1}
+          size={safeRenderSize}
+          reduceMotion={(paused || reduceMotion) && animState !== "interact"}
+          className="fireball-sprite-renderer"
+        />
+      </div>
     </div>
   );
 }

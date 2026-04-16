@@ -89,6 +89,7 @@ const DOG_SPRITE_FILE_ALIASES = Object.freeze({
   sniff: "sniff",
   spin: "dance",
   stay: "bark",
+  walk_right: "sniff",
   territorial_bark: "bark",
   thrashing: "dance",
   wag: "wag",

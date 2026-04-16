@@ -78,9 +78,14 @@ function resolveBaseLoopAction({
   renderModel,
   sleeping,
   moving,
+  preferredFacing,
 }) {
   if (sleeping) return DOG_ACTIONS.sleep;
-  if (moving) return DOG_ACTIONS.walk;
+  if (moving) {
+    if (preferredFacing === "left") return "walk_left";
+    if (preferredFacing === "right") return "walk_right";
+    return DOG_ACTIONS.walk;
+  }
 
   return (
     resolveLoopingAction(brainState?.desiredAction) ||
@@ -138,7 +143,13 @@ export function resolveDogAnimationSelection({
 }) {
   const sleeping = isSleepingState(dog, brainState, renderModel);
   const moving = isMovingState(dog, brainState);
-  const preferredFacing = resolveRequestedFacing(requestedFacing);
+  const preferredFacing = resolveRequestedFacing(
+    requestedFacing ||
+      brainState?.facing ||
+      dog?.facing ||
+      renderModel?.facing ||
+      ""
+  );
   const requestedLoopAction = resolveLoopingAction(requestedAction);
   const baseAction =
     requestedLoopAction ||
@@ -148,6 +159,7 @@ export function resolveDogAnimationSelection({
       renderModel,
       sleeping,
       moving,
+      preferredFacing,
     });
   const requestedInterrupt = resolveRequestedInterrupt(requestedAction);
   const stateInterruptAllowed = !sleeping && !requestedInterrupt;

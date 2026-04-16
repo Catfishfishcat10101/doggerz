@@ -6,7 +6,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useToast } from "@/state/toastContext.js";
 import BackPill from "@/components/layout/BackPill.jsx";
 import { preloadJackRussellSheets } from "@/components/dog/assets/jrAtlasAssets.js";
-import SpriteSheetDog from "@/components/dog/renderers/SpriteSheetDog.jsx";
+import HeroDog from "@/components/dog/renderers/HeroDog.jsx";
 import DogCosmeticsOverlay from "@/components/dog/DogCosmeticsOverlay.jsx";
 import Tooltip from "@/components/ui/Tooltip.jsx";
 import { PageHeader } from "@/components/layout/PageSections.jsx";
@@ -1241,11 +1241,10 @@ export default function Store() {
                           className="relative"
                           style={{ width: 360, height: 360 }}
                         >
-                          <SpriteSheetDog
+                          <HeroDog
                             stage={stageId}
+                            variant="showcase"
                             anim={"idle"}
-                            facing={1}
-                            size={360}
                             reduceMotion={false}
                             fallbackSrc={fallbackSprite}
                             className="select-none"

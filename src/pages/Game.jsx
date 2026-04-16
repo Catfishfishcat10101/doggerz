@@ -363,7 +363,7 @@ export default function GamePage() {
 
   return (
     <div
-      className="dz-safe-area relative min-h-dvh overflow-hidden pb-24 md:pb-0"
+      className="dz-safe-area relative h-dvh min-h-0 overflow-hidden pb-24 md:pb-0"
       style={{ ...dayNightStyle, "--weather-accent": weatherAccent }}
       data-weather={weatherKey}
     >
@@ -384,7 +384,7 @@ export default function GamePage() {
         className="z-0"
       />
 
-      <div className="relative z-10">
+      <div className="relative z-10 flex h-full min-h-0 flex-col">
         {shouldRedirectToAdopt ? (
           <Navigate to={PATHS.ADOPT} replace />
         ) : waitingForCloudAdoptionDecision ? (

@@ -3,7 +3,7 @@
 import { Link } from "react-router-dom";
 
 import { PATHS } from "@/app/routes.js";
-import SpriteSheetDog from "@/components/dog/renderers/SpriteSheetDog.jsx";
+import HeroDog from "@/components/dog/renderers/HeroDog.jsx";
 import PageShell from "@/components/layout/PageShell.jsx";
 import { PageHeader } from "@/components/layout/PageSections.jsx";
 
@@ -165,14 +165,11 @@ export default function AboutPage() {
               <div className="mt-4 flex items-center gap-4">
                 <div className="h-24 w-24 rounded-2xl border border-white/10 bg-black/40 p-2">
                   <div className="flex h-full w-full items-end justify-center rounded-xl">
-                    <SpriteSheetDog
+                    <HeroDog
                       stage="PUPPY"
+                      variant="card"
                       anim="idle"
-                      facing={1}
-                      size={80}
-                      groundYNorm={0.6}
-                      maxWidthRatio={0.86}
-                      maxHeightRatio={0.86}
+                      animationPreset="idle-sniff"
                       className="select-none"
                     />
                   </div>

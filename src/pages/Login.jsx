@@ -8,6 +8,7 @@ import {
 } from "firebase/auth";
 
 import { auth, firebaseReady } from "@/lib/firebase/index.js";
+import { PATHS } from "@/app/routes.js";
 import { selectIsLoggedIn } from "@/store/userSlice.js";
 import {
   getStoredValue,
@@ -61,6 +62,7 @@ export default function LoginPage() {
   const [notice, setNotice] = useState(null);
   const [rememberEmail, setRememberEmail] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [resetState, setResetState] = useState("idle");
   const [storageHydrated, setStorageHydrated] = useState(false);
 
   useEffect(() => {
@@ -86,10 +88,15 @@ export default function LoginPage() {
     return <Navigate to={from} replace />;
   }
 
+  const handleContinueOffline = () => {
+    navigate(PATHS.GAME, { replace: true });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
     setNotice(null);
+    setResetState("idle");
 
     if (!firebaseReady || !auth) {
       setError(
@@ -136,8 +143,10 @@ export default function LoginPage() {
   const handleForgotPassword = async () => {
     setError(null);
     setNotice(null);
+    setResetState("idle");
 
     if (!firebaseReady || !auth) {
+      setResetState("error");
       setError(
         "Password reset requires cloud login. Add your Firebase config to .env.local, or continue in offline mode."
       );
@@ -146,13 +155,16 @@ export default function LoginPage() {
 
     const cleanEmail = String(email || "").trim();
     if (!cleanEmail) {
+      setResetState("error");
       setError("Enter your email first, then click ‘Forgot password?’");
       return;
     }
 
     try {
       setResetSending(true);
+      setResetState("sending");
       await sendPasswordResetEmail(auth, cleanEmail);
+      setResetState("sent");
       setNotice(
         "If an account exists for that email, a password reset link has been sent."
       );
@@ -160,6 +172,7 @@ export default function LoginPage() {
       console.error("[Login] password reset error:", err);
       let message =
         "Couldn’t send a reset email. Double-check your address and try again.";
+      let useNotice = false;
 
       if (err?.code === "auth/invalid-email") {
         message = "That email address doesn’t look valid.";
@@ -169,9 +182,16 @@ export default function LoginPage() {
         // Avoid account enumeration: show the same generic success message.
         message =
           "If an account exists for that email, a password reset link has been sent.";
+        useNotice = true;
       }
 
-      setNotice(message);
+      if (useNotice) {
+        setResetState("sent");
+        setNotice(message);
+      } else {
+        setResetState("error");
+        setError(message);
+      }
     } finally {
       setResetSending(false);
     }
@@ -180,27 +200,18 @@ export default function LoginPage() {
   return (
     <PageShell
       title="Log in"
-      subtitle="Sign in to keep your pup synced and unlock cloud features. Offline play still works."
+      subtitle="Sign in to keep your pup synced and unlock cloud features. Prefer staying local? You can still continue without an account."
       headerAlign="center"
     >
       <div className="flex flex-col items-center w-full h-full pt-2 pb-10">
         <div className="w-full max-w-md rounded-3xl border border-white/10 bg-white/80 p-6 shadow-[0_30px_80px_rgba(0,0,0,0.45)] backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/70">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
-                Welcome back
-              </h2>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                Continue your pup’s story.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => navigate("/game", { replace: true })}
-              className="rounded-full border border-white/10 bg-black/20 px-3 py-1 text-[11px] font-semibold text-zinc-100 hover:bg-black/30 transition"
-            >
-              Play offline
-            </button>
+          <div className="mb-4">
+            <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
+              Welcome back
+            </h2>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              Continue your pup’s story.
+            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -214,13 +225,6 @@ export default function LoginPage() {
                   <code>.env.local</code> (see <code>.env.example</code>). Until
                   then, you can still play in local-only mode.
                 </p>
-                <button
-                  type="button"
-                  onClick={() => navigate("/game", { replace: true })}
-                  className="mt-3 inline-flex items-center justify-center rounded-lg bg-amber-400 px-3 py-2 text-xs font-semibold text-black hover:bg-amber-300"
-                >
-                  Continue offline
-                </button>
               </div>
             )}
 
@@ -282,12 +286,18 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={handleForgotPassword}
-                  disabled={resetSending || !firebaseReady}
+                  disabled={resetSending}
                   className="font-medium text-emerald-400 hover:text-emerald-300 disabled:opacity-60"
+                  aria-busy={resetSending}
                 >
                   {resetSending ? "Sending reset link…" : "Forgot password?"}
                 </button>
               </div>
+              <p className="mt-2 text-[11px] text-zinc-500 dark:text-zinc-400">
+                {resetState === "sending"
+                  ? "Working on it — sending your reset link now."
+                  : "Enter your email above and we’ll send a reset link if there’s an account for it."}
+              </p>
             </div>
 
             {notice && (
@@ -313,22 +323,22 @@ export default function LoginPage() {
             {/* Always allow local-only play, even if Firebase is configured but auth fails. */}
             <button
               type="button"
-              onClick={() => navigate("/game", { replace: true })}
+              onClick={handleContinueOffline}
               className="w-full py-2.5 rounded-xl border border-white/10 bg-black/20 text-sm font-semibold text-zinc-100 hover:bg-black/30 transition"
             >
-              Continue offline
+              Continue in local-only mode
             </button>
           </form>
 
-          <div className="mt-4 text-xs text-zinc-600 dark:text-zinc-400 flex items-center justify-between">
-            <span>Don&apos;t have an account?</span>
+          <p className="mt-4 text-center text-xs text-zinc-600 dark:text-zinc-400">
+            Don&apos;t have an account?{" "}
             <Link
-              to="/signup"
+              to={PATHS.SIGNUP}
               className="text-emerald-400 hover:text-emerald-300 font-medium"
             >
               Sign up
             </Link>
-          </div>
+          </p>
         </div>
       </div>
     </PageShell>
