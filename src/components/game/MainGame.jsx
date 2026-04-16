@@ -111,8 +111,8 @@ import {
   selectPottyTrainingTrack,
   selectReliableCommandCount as selectProgressionReliableCommandCount,
   selectUnlockedFeatures,
-} from "@/features/preogression/progressionSelectors.js";
-import { dequeueProgressionMilestone } from "@/features/preogression/progressionSlice.js";
+} from "@/features/progression/progressionSelectors.js";
+import { dequeueProgressionMilestone } from "@/features/progression/progressionSlice.js";
 
 const SHARE_REWARD_COOLDOWN_MS = 12 * 60 * 60 * 1000;
 const BOTTOM_MENU_TABS = Object.freeze([

@@ -17,7 +17,7 @@ import {
 import {
   hydrateProgression,
   resetProgression,
-} from "@/features/preogression/progressionSlice.js";
+} from "@/features/progression/progressionSlice.js";
 import { setDogName as setUserDogName, setUser } from "./userSlice.js";
 
 function toMs(value) {

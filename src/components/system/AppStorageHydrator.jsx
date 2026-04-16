@@ -16,7 +16,7 @@ import {
 import {
   hydrateProgression,
   resetProgression,
-} from "@/features/preogression/progressionSlice.js";
+} from "@/features/progression/progressionSlice.js";
 
 function splitPersistedDogRecord(raw) {
   if (!raw || typeof raw !== "object") {

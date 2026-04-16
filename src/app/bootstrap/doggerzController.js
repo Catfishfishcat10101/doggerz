@@ -8,7 +8,7 @@ import {
 import {
   hydrateProgression,
   resetProgression,
-} from "@/features/preogression/progressionSlice.js";
+} from "@/features/progression/progressionSlice.js";
 import {
   hydrateSettings,
   selectSettings,

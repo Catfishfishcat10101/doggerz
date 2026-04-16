@@ -27,7 +27,7 @@ import {
   selectNextProgressionMilestone,
   selectPottyTrainingTrack,
   selectUnlockedFeatures,
-} from "@/features/preogression/progressionSelectors.js";
+} from "@/features/progression/progressionSelectors.js";
 import {
   buildPottyGuidanceModel,
   buildTrainingRoadmapModel,

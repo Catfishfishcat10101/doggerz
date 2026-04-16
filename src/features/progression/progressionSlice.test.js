@@ -3,8 +3,8 @@ import { describe, expect, it } from "vitest";
 import progressionReducer, {
   createInitialProgressionState,
   recordProgressionEvent,
-} from "@/features/preogression/progressionSlice.js";
-import { PROGRESSION_EVENT_TYPES } from "@/features/preogression/progressionConfig.js";
+} from "@/features/progression/progressionSlice.js";
+import { PROGRESSION_EVENT_TYPES } from "@/features/progression/progressionConfig.js";
 
 function buildSnapshot({
   successCount = 0,

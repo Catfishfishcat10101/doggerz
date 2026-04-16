@@ -15,9 +15,9 @@ import {
   resetDogState,
   getDogStorageKey,
   setVacationMode,
-} from "../store/dogSlice.js";
-import { USER_STORAGE_KEY } from "../store/userSlice.js";
-import { auth, firebaseReady } from "../lib/firebase/index.js";
+} from "@/store/dogSlice.js";
+import { USER_STORAGE_KEY } from "@/store/userSlice.js";
+import { auth, firebaseReady } from "@/lib/firebase/index.js";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import {
   hydrateSettings,
@@ -116,9 +116,9 @@ import {
   setTrainingShowDetails,
   setTrainingSortKey,
   SETTINGS_STORAGE_KEY,
-} from "../store/settingsSlice.js";
-import PageShell from "../components/layout/PageShell.jsx";
-import { APP_VERSION } from "../utils/assetUtils.js";
+} from "@/store/settingsSlice.js";
+import PageShell from "@/components/layout/PageShell.jsx";
+import { APP_VERSION } from "@/utils/assetUtils.js";
 import { useToast } from "@/state/toastContext.js";
 import {
   getStoredValue,
@@ -133,12 +133,12 @@ import {
   getNotificationPermission,
   requestNotificationsPermission,
   showDoggerzNotification,
-} from "../utils/notifications.js";
+} from "@/utils/notifications.js";
 import {
   getLastReminder,
   loadReminderStateAsync,
   REMINDER_EVENT,
-} from "../utils/reminders.js";
+} from "@/utils/reminders.js";
 
 function pct(n) {
   const v = Math.round(Number(n) * 100);

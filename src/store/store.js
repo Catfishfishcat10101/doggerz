@@ -11,8 +11,8 @@ import { trainingReactionMiddleware } from "@/store/middleware/trainingReactionM
 import progressionReducer, {
   recordProgressionEvent,
   resetProgression,
-} from "@/features/preogression/progressionSlice.js";
-import resolveProgressionEvent from "@/features/preogression/resolveProgressionEvent.js";
+} from "@/features/progression/progressionSlice.js";
+import resolveProgressionEvent from "@/features/progression/resolveProgressionEvent.js";
 import userReducer from "@/store/userSlice.js";
 import settingsReducer from "@/store/settingsSlice.js";
 import weatherReducer from "@/store/weatherSlice.js";

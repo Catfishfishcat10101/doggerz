@@ -30,7 +30,7 @@ import {
   selectPottyTrainingTrack,
   selectReliableCommandCount,
   selectUnlockedFeatures,
-} from "@/features/preogression/progressionSelectors.js";
+} from "@/features/progression/progressionSelectors.js";
 import { buildTrainingRoadmapModel } from "@/features/training/trainingRoadmap.js";
 
 const BRANCH_STYLES = {

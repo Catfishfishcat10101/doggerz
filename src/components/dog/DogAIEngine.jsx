@@ -19,8 +19,8 @@ import {
 import {
   hydrateProgression,
   resetProgression,
-} from "@/features/preogression/progressionSlice.js";
-import { selectProgression } from "@/features/preogression/progressionSelectors.js";
+} from "@/features/progression/progressionSlice.js";
+import { selectProgression } from "@/features/progression/progressionSelectors.js";
 import {
   setWeatherError,
   setWeatherLoading,
