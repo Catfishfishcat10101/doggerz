@@ -89,7 +89,7 @@ android {
         targetCompatibility JavaVersion.VERSION_21
     }
 
-    packagingOptions {
+    packaging {
         resources {
             excludes += [
                     'META-INF/DEPENDENCIES',
@@ -114,23 +114,13 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation project(':capacitor-android')
     implementation project(':capacitor-cordova-android-plugins')
-    implementation project(':capacitor-app')
-    implementation project(':capacitor-filesystem')
-    implementation project(':capacitor-geolocation')
-    implementation project(':capacitor-haptics')
-    implementation project(':capacitor-keyboard')
-    implementation project(':capacitor-local-notifications')
-    implementation project(':capacitor-preferences')
-    implementation project(':capacitor-push-notifications')
-    implementation project(':capacitor-share')
-    implementation project(':capacitor-splash-screen')
-    implementation project(':capacitor-status-bar')
-    implementation project(':capacitor-community-admob')
-    implementation project(':revenuecat-purchases-capacitor')
 
-    implementation "androidx.core:core-ktx:1.13.1"
-    implementation "androidx.appcompat:appcompat:1.7.0"
+    // Plugin dependencies are handled by capacitor.build.gradle
+
+    implementation "androidx.core:core-ktx:${rootProject.ext.androidxCoreVersion}"
+    implementation "androidx.appcompat:appcompat:${rootProject.ext.androidxAppCompatVersion}"
     implementation "com.google.android.material:material:1.12.0"
+    implementation "androidx.core:core-splashscreen:${rootProject.ext.coreSplashScreenVersion}"
 }
 
 apply from: 'capacitor.build.gradle'

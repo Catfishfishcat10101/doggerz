@@ -4,10 +4,9 @@ import { DOGS } from "@/app/config/assets.js";
 import { getManifestAnimMeta } from "@/components/dog/dogAnimationEngine.js";
 import DogRenderer from "@/features/game/rendering/DogRenderer.jsx";
 import {
-  DEFAULT_ANIMATION,
-  DOG_ANIMATIONS,
-  resolveRenderableActionKey,
-} from "@/features/game/rendering/animationMap.js";
+  DEFAULT_DOG_ACTION,
+  DOG_ANIMATION_MAP,
+} from "@/features/game/rendering/dogAnimationMap.js";
 import {
   resolveDogAnimationSrc,
   resolveDogRendererFallbackSrc,
@@ -53,7 +52,7 @@ function resolvePreviewConfig({
 
   if (String(src || "").trim()) {
     return {
-      sourceAction: resolvedState || DEFAULT_ANIMATION,
+      sourceAction: resolvedState || DEFAULT_DOG_ACTION,
       src: String(src || "").trim(),
       frameWidth:
         Number.isFinite(Number(frameWidth)) && Number(frameWidth) > 0
@@ -72,11 +71,9 @@ function resolvePreviewConfig({
   }
 
   const manifestMeta = getManifestAnimMeta(anim);
-  const sourceAction = resolveRenderableActionKey(
-    manifestMeta?.key || anim || "idle"
-  );
+  const sourceAction = manifestMeta?.key || anim || "idle";
   const baseConfig =
-    DOG_ANIMATIONS[sourceAction] || DOG_ANIMATIONS[DEFAULT_ANIMATION];
+    DOG_ANIMATION_MAP[sourceAction] || DOG_ANIMATION_MAP[DEFAULT_DOG_ACTION];
 
   return {
     sourceAction,
