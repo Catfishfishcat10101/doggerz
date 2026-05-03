@@ -1,3 +1,4 @@
+// _backup/old-src-conflicts/pages/TemperamentReveal.jsx
 // src/pages/TemperamentReveal.jsx
 import PageShell from "@/components/layout/PageShell.jsx";
 import { PageHeader } from "@/components/layout/PageSections.jsx";

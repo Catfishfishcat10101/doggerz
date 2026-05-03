@@ -1,3 +1,4 @@
+// src/features/dog/mood/getMoodPresentation.js
 const MOOD_PRESENTATION_BY_KEY = Object.freeze({
   calm: {
     label: "Calm",

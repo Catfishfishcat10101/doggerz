@@ -1,3 +1,4 @@
+// _backup/old-src-conflicts/components-game/MainGame.jsx
 // src/components/game/MainGame.jsx
 import { onAuthStateChanged } from "firebase/auth";
 import { useNavigate } from "react-router-dom";

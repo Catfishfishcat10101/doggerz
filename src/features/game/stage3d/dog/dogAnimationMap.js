@@ -1,16 +1,23 @@
-import { withBaseUrl } from "@/utils/assetUtils.js";
+// src/features/game/stage3d/dog/dogAnimationMap.js
+import { LEGACY_DOG_MODEL_PATH } from "./dogModelMap.js";
 
-export const DOG_MODEL_GLTF_PATH = withBaseUrl(
-  "/assets/models/dog/jackrussell-doggerz.glb"
-);
-export const DOG_MODEL_CLIPS = Object.freeze([
+export const DOG_MODEL_GLTF_PATH = LEGACY_DOG_MODEL_PATH;
+
+export const REQUIRED_DOG_MODEL_CLIPS = Object.freeze([
   "Idle",
+  "Walk",
   "Sit",
   "Bark",
   "Sleep",
-  "Walk",
   "Wag",
 ]);
+
+export const DOG_MODEL_CLIPS = REQUIRED_DOG_MODEL_CLIPS;
+
+export function hasPlayableDogModelClips(actions = {}) {
+  const actionNames = Object.keys(actions || {});
+  return REQUIRED_DOG_MODEL_CLIPS.some((clip) => actionNames.includes(clip));
+}
 
 export function resolveClipName(requestedClip = "Idle", actions = {}) {
   const actionNames = Object.keys(actions || {});

@@ -1,3 +1,4 @@
+// src/components/game/DailyRewardModal.jsx
 export default function DailyRewardModal({ streak, onClaim, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/68 p-4 backdrop-blur-sm">

@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 // src/pages/Landing.jsx
 
 import { useEffect, useState } from "react";
@@ -40,6 +41,43 @@ import { Link } from "react-router-dom";
 import DoggerzLogo from "../components/brand/DoggerzLogo.jsx";
 import DogAvatar from "../components/dog/DogAvatar.jsx";
 >>>>>>> 10f88903 (chore: remove committed backup folders)
+=======
+// src/pages/Landing.jsx
+
+import { useEffect, useState } from "react";
+import { Link, Navigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+
+import { SocialButton } from "@/components/base/buttons/social-button.jsx";
+import HeroDog from "@/components/dog/renderers/HeroDog.jsx";
+import PageShell from "@/components/layout/PageShell.jsx";
+import { PATHS } from "@/app/routes.js";
+import { selectIsLoggedIn } from "@/store/userSlice.js";
+import {
+  getStoredValue,
+  removeStoredValues,
+  setStoredValue,
+} from "@/utils/nativeStorage.js";
+
+const STORAGE_REMEMBER = "doggerz:loginRememberEmail";
+const STORAGE_EMAIL = "doggerz:loginEmail";
+
+function SocialButtonGroupBrandDemo() {
+  return (
+    <div className="flex w-full flex-col gap-3">
+      <SocialButton social="google" theme="brand">
+        Sign in with Google
+      </SocialButton>
+      <SocialButton social="facebook" theme="brand">
+        Sign in with Facebook
+      </SocialButton>
+      <SocialButton social="apple" theme="brand">
+        Sign in with Apple
+      </SocialButton>
+    </div>
+  );
+}
+>>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
 
 export default function Landing() {
   const isLoggedIn = useSelector(selectIsLoggedIn);
@@ -76,6 +114,9 @@ export default function Landing() {
 
   return (
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
     <PageShell useSurface={false}>
       <div className="relative isolate mx-auto flex min-h-[100dvh] w-full max-w-md flex-col overflow-hidden border-x border-white/10 bg-black shadow-2xl">
         {showBlurDecor && (
@@ -112,6 +153,7 @@ export default function Landing() {
           <p className="mt-4 max-w-xs text-sm leading-relaxed text-doggerz-paw/75">
             Your highly unpredictable AI companion.
           </p>
+<<<<<<< HEAD
         </div>
 
         <div className="relative z-20 flex w-full flex-col gap-4 p-6 pb-12">
@@ -123,24 +165,26 @@ export default function Landing() {
       <section className="doggerz-card rounded-[2.25rem] px-6 py-8 text-center">
         <div className="mx-auto mb-7 flex h-52 w-52 items-center justify-center rounded-full border border-emerald-400/20 bg-emerald-400/5 shadow-glow">
           <DogAvatar pose="idle" size="hero" />
+=======
+>>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
         </div>
 
-        <DoggerzLogo />
-
-        <p className="mx-auto mt-7 max-w-sm text-lg font-medium leading-8 text-slate-300">
-          Your highly unpredictable AI companion.
-        </p>
-
-        <div className="mt-10 grid gap-4">
+        <div className="relative z-20 flex w-full flex-col gap-4 p-6 pb-12">
           <Link
+<<<<<<< HEAD
             to="/adopt"
             className="doggerz-button doggerz-button-primary text-xl"
 >>>>>>> 10f88903 (chore: remove committed backup folders)
+=======
+            to={PATHS.ADOPT}
+            className="dz-touch-button touch-manipulation w-full rounded-2xl bg-doggerz-leaf py-4 text-center text-lg font-extrabold text-black shadow-lg transition-all hover:scale-[1.01] hover:bg-doggerz-neonSoft hover:shadow-[0_0_40px_rgba(34,197,94,0.5)]"
+>>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
           >
             Adopt Your Pup
           </Link>
 
           <Link
+<<<<<<< HEAD
 <<<<<<< HEAD
             to={PATHS.LOGIN}
             className="dz-touch-button touch-manipulation w-full rounded-2xl border border-doggerz-mange/50 bg-black/30 py-3 text-center text-sm font-semibold text-doggerz-paw transition hover:bg-white/10"
@@ -185,11 +229,48 @@ export default function Landing() {
             </span>
           </label>
         </div>
+=======
+            to={PATHS.LOGIN}
+            className="dz-touch-button touch-manipulation w-full rounded-2xl border border-doggerz-mange/50 bg-black/30 py-3 text-center text-sm font-semibold text-doggerz-paw transition hover:bg-white/10"
+          >
+            Login
+          </Link>
+>>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
 
-        <p className="mt-8 text-xs font-black uppercase tracking-[0.24em] text-slate-500">
-          One dog. One bond. One story.
-        </p>
-      </section>
-    </div>
+          <div className="flex items-center gap-3 pt-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-doggerz-paw/40">
+            <span className="h-px flex-1 bg-white/10" />
+            <span>or</span>
+            <span className="h-px flex-1 bg-white/10" />
+          </div>
+
+          <SocialButtonGroupBrandDemo />
+
+          <label className="mt-1 flex items-start gap-3 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-left transition hover:bg-black/25">
+            <span className="relative mt-0.5 inline-flex h-6 w-10 shrink-0 items-center">
+              <input
+                type="checkbox"
+                className="peer sr-only"
+                checked={rememberMe}
+                onChange={(event) => {
+                  handleRememberMeChange(event.target.checked);
+                }}
+                aria-label="Remember me"
+              />
+              <span className="absolute inset-0 rounded-full border border-white/10 bg-white/10 transition peer-checked:border-emerald-300/40 peer-checked:bg-emerald-400/25" />
+              <span className="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.3)] transition peer-checked:translate-x-4 peer-checked:bg-emerald-200" />
+            </span>
+
+            <span className="flex min-w-0 flex-col">
+              <span className="text-sm font-semibold text-zinc-100">
+                Remember me
+              </span>
+              <span className="text-xs leading-relaxed text-doggerz-paw/70">
+                Save my login details for next time.
+              </span>
+            </span>
+          </label>
+        </div>
+      </div>
+    </PageShell>
   );
 }

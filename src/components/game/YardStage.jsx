@@ -1,3 +1,4 @@
+// src/components/game/YardStage.jsx
 import DogAvatar from "../dog/DogAvatar.jsx";
 import StageProps from "./StageProps.jsx";
 import {

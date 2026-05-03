@@ -1,3 +1,4 @@
+// _backup/old-src-conflicts/components-game/MoodBadge.jsx
 function resolveToneClasses(tone = "emerald") {
   const key = String(tone || "emerald")
     .trim()

@@ -1,3 +1,4 @@
+// src/features/game/stage3d/DogCamera.jsx
 import { useEffect } from "react";
 import { useThree } from "@react-three/fiber";
 

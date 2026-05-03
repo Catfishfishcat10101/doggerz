@@ -1,3 +1,4 @@
+// src/store/settingsSlice.js
 /** @format */
 
 // src/redux/settingsSlice.js

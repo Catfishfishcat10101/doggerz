@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+// src/utils/statusBar.js
+>>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
 import { Capacitor } from "@capacitor/core";
 import { StatusBar, Style } from "@capacitor/status-bar";
 

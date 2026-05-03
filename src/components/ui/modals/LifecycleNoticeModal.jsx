@@ -1,3 +1,4 @@
+// src/components/ui/modals/LifecycleNoticeModal.jsx
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 

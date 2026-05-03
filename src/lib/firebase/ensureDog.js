@@ -1,3 +1,4 @@
+// src/lib/firebase/ensureDog.js
 import { serverTimestamp, setDoc, getDoc } from "firebase/firestore";
 import { dogMainDoc } from "./paths.js";
 import {

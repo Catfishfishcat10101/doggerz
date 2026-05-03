@@ -1,3 +1,4 @@
+// src/features/game/DogStage.jsx
 import {
   forwardRef,
   useCallback,
@@ -11,6 +12,7 @@ import {
   ModernStatusPill,
 } from "@/components/game/MainGamePanels.jsx";
 <<<<<<< HEAD
+<<<<<<< HEAD
 import DogMobileCanvas from "@/features/game/rendering/DogMobileCanvas.jsx";
 import AnimatedStageBackground from "@/features/game/rendering/AnimatedStageBackground.jsx";
 import GameViewportThreeLayer from "@/features/game/rendering/GameViewportThreeLayer.jsx";
@@ -21,6 +23,9 @@ import { getSceneLayout } from "@/features/game/rendering/sceneLayout.js";
 import { useDogGameView } from "@/hooks/useDogState.js";
 =======
 import DogStage3D from "@/features/game/stage3d/DogStage3D.jsx";
+=======
+import DogMobileCanvas from "@/features/game/rendering/DogMobileCanvas.jsx";
+>>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
 import SceneHud from "@/features/game/rendering/SceneHud.jsx";
 import { StageBackground } from "@/features/game/StageBackground.jsx";
 import { StageProps } from "@/features/game/StageProps.jsx";
@@ -102,8 +107,18 @@ const DogStage = forwardRef(function DogStage(
   {
     scene = null,
 <<<<<<< HEAD
+<<<<<<< HEAD
     environment = "yard",
 =======
+=======
+    dog = null,
+    brainState = null,
+    renderModel = null,
+    currentAction = "",
+    requestedAction = "",
+    requestedFacing = "",
+    dogScale = null,
+>>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
     environment: _environment = "yard",
 >>>>>>> 10f88903 (chore: remove committed backup folders)
     isNight = false,
@@ -333,6 +348,41 @@ const DogStage = forwardRef(function DogStage(
 =======
 
   const isNightScene = isNight || scene?.isNight === true;
+  const dogRenderProps = useMemo(
+    () => ({
+      dog: dog ?? scene?.dog ?? null,
+      brainState: brainState ?? scene?.brainState ?? null,
+      renderModel: renderModel ?? scene?.renderModel ?? null,
+      requestedAction:
+        requestedAction ||
+        currentAction ||
+        scene?.requestedAction ||
+        scene?.currentAction ||
+        "",
+      requestedFacing:
+        requestedFacing ||
+        scene?.requestedFacing ||
+        scene?.dog?.facing ||
+        scene?.renderModel?.facing ||
+        "",
+      mood: scene?.moodLabel || conditionLabel || "Content",
+      paused: Boolean(scene?.paused),
+      scale: dogScale ?? scene?.dogScale ?? scene?.renderModel?.scale ?? 1,
+      reduceMotion,
+    }),
+    [
+      brainState,
+      conditionLabel,
+      currentAction,
+      dog,
+      dogScale,
+      reduceMotion,
+      renderModel,
+      requestedAction,
+      requestedFacing,
+      scene,
+    ]
+  );
 
 >>>>>>> 10f88903 (chore: remove committed backup folders)
   return (
@@ -375,7 +425,7 @@ const DogStage = forwardRef(function DogStage(
 
         {/* Layer 3: Dog Renderer */}
         <div className="absolute inset-0 z-30 pointer-events-none">
-          <DogStage3D scene={scene} />
+          <DogMobileCanvas scene={scene} {...dogRenderProps} />
         </div>
 
         {/* Layer 4: UI / Interactions */}

@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+// src/components/dog/components/GrowthCelebration.jsx
+>>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
 // src/components/dog/GrowthCelebration.jsx
 
 import { useEffect, useMemo, useState } from "react";

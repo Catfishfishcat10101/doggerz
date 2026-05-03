@@ -1,3 +1,4 @@
+// vitest.setup.js
 import React from "react";
 import { format } from "node:util";
 import { expect, vi } from "vitest";

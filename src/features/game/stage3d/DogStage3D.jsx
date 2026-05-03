@@ -1,3 +1,4 @@
+// src/features/game/stage3d/DogStage3D.jsx
 import { Suspense, lazy } from "react";
 
 const Dog3DScene = lazy(() =>
@@ -16,12 +17,10 @@ function DogStage3DLoadingFallback() {
 }
 
 export default function DogStage3D({ scene = null, dogView = null }) {
-  void dogView;
-
   return (
     <div className="relative h-full w-full overflow-hidden bg-[#0b1320]">
       <Suspense fallback={<DogStage3DLoadingFallback />}>
-        <Dog3DScene scene={scene} />
+        <Dog3DScene scene={scene} dogView={dogView} />
       </Suspense>
     </div>
   );

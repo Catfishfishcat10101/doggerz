@@ -1,3 +1,4 @@
+// src/features/dog/memory/memoryEvents.js
 export const MEMORY_MOMENT_TYPES = Object.freeze({
   FIRST_LEVEL_UP: "first_level_up",
   FIRST_CARE_LOOP: "first_care_loop",

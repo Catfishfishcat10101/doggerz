@@ -1,3 +1,4 @@
+// src/features/game/stage3d/props/Tree.jsx
 /* eslint-disable react/no-unknown-property */
 export default function Tree({
   trunkColor = "#6e5037",

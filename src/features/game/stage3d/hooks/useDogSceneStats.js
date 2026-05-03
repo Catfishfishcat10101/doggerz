@@ -1,3 +1,4 @@
+// src/features/game/stage3d/hooks/useDogSceneStats.js
 import { useMemo } from "react";
 
 import { deriveBehaviorSceneProfile } from "@/features/dog/behaviorSceneProfile.js";

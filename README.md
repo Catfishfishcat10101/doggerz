@@ -1,3 +1,5 @@
+<!-- README.md -->
+
 # Doggerz
 
 Doggerz is a virtual pet dog game built with React, Vite, Redux, Firebase, and Capacitor. The project is aimed at a native mobile app workflow, with the web build serving as the bundled frontend for Android.

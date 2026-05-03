@@ -1,3 +1,4 @@
+// src/lib/firebase/analytics.js
 import { isSupported, getAnalytics, logEvent } from "firebase/analytics";
 import { app, firebaseReady } from "@/lib/firebase/index.js";
 

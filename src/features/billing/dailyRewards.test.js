@@ -1,3 +1,4 @@
+// src/features/billing/dailyRewards.test.js
 import { describe, expect, it } from "vitest";
 
 import { getDailyRewardState } from "@/features/billing/dailyRewards.js";

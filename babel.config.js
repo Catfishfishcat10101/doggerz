@@ -1,3 +1,4 @@
+// babel.config.js
 module.exports = function (api) {
   const isTest = api.env("test");
   api.cache(() => isTest);

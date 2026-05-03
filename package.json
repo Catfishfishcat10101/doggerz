@@ -33,7 +33,7 @@
     "preview": "vite preview",
     "preview:host": "vite preview --host 127.0.0.1 --port 4173",
     "check": "npm run format:check && npm run lint && npm run build",
-    "assets:verify": "node scripts/verify-web-assets.js",
+    "assets:verify": "node scripts/validate-dog-glb.js",
     "release:bump": "node scripts/bump-version.js",
     "build:aab": "node scripts/build-android-release.js --bump",
     "release:android:build": "node scripts/build-android-release.js",
@@ -60,12 +60,18 @@
     "@capacitor/splash-screen": "^8.0.1",
     "@capacitor/status-bar": "^8.0.2",
 <<<<<<< HEAD
+<<<<<<< HEAD
     "@langchain/openai": "^1.4.3",
     "@pixi/assets": "7.4.3",
     "@pixi/core": "7.4.3",
     "@pixi/react": "7.1.2",
 =======
 >>>>>>> 10f88903 (chore: remove committed backup folders)
+=======
+    "@pixi/assets": "^7.4.3",
+    "@pixi/core": "^7.4.3",
+    "@pixi/react": "^7.1.2",
+>>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
     "@react-three/drei": "^9.122.0",
     "@react-three/fiber": "^8.18.0",
     "@reduxjs/toolkit": "^2.10.1",
@@ -77,10 +83,14 @@
 <<<<<<< HEAD
     "framer-motion": "^11.18.2",
     "lucide-react": "^1.7.0",
+<<<<<<< HEAD
     "pixi.js": "7.4.3",
 =======
     "lucide-react": "^1.7.0",
 >>>>>>> 10f88903 (chore: remove committed backup folders)
+=======
+    "pixi.js": "^7.4.3",
+>>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
     "prop-types": "^15.8.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

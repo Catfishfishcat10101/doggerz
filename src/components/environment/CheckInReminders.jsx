@@ -1,3 +1,4 @@
+// src/components/environment/CheckInReminders.jsx
 /** @format */
 // src/components/CheckInReminders.jsx
 
@@ -32,10 +33,14 @@ const REMINDERS = DEFAULT_DOGGERZ_REMINDERS.map((item) => ({
   icon:
     item.key === "checkin-lonely"
 <<<<<<< HEAD
+<<<<<<< HEAD
       ? "/assets/sprites/jr/pup_idle.png"
 =======
       ? "/assets/icons/icon-192.png"
 >>>>>>> 10f88903 (chore: remove committed backup folders)
+=======
+      ? "/assets/sprites/jr/pup_idle.png"
+>>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
       : "/assets/icons/icon-192.png",
 }));
 

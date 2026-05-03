@@ -1,3 +1,4 @@
+// src/lib/perf/perfBudget.js
 const PERF_SAMPLES_MAX = 60;
 const PERF_STORAGE_KEY = "doggerz:perfSamples:v1";
 

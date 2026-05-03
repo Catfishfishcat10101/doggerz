@@ -1,10 +1,13 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+// src/pages/Adopt.jsx
 
-import DogAvatar from "../components/dog/DogAvatar.jsx";
-import { createAndSaveDog } from "../utils/storage.js";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
 import HeroDog from "@/components/dog/renderers/HeroDog.jsx";
 import PageShell from "@/components/layout/PageShell.jsx";
 import { PATHS } from "@/app/routes.js";
@@ -42,44 +45,194 @@ function StepDot({ active = false, done = false }) {
 
 export default function AdoptPage() {
   const dispatch = useDispatch();
+<<<<<<< HEAD
 =======
 export default function Adopt() {
 >>>>>>> 10f88903 (chore: remove committed backup folders)
+=======
+>>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
   const navigate = useNavigate();
+  const dog = useDog();
+  const lifecycleStatus = String(dog?.lifecycleStatus || "NONE").toUpperCase();
+  const alreadyAdopted =
+    Boolean(dog?.adoptedAt) &&
+    lifecycleStatus !== "FAREWELL" &&
+    lifecycleStatus !== "RESCUED" &&
+    lifecycleStatus !== "NONE";
+  const workflow = useSelector(selectWorkflowById(WORKFLOW_ID));
+  const stepIndex = workflow?.stepIndex ?? 0;
+  const name = String(workflow?.data?.name ?? "");
+  const trimmedName = useMemo(() => name.trim(), [name]);
+  const [error, setError] = useState(null);
+  const [adopting, setAdopting] = useState(false);
+  const nameInputRef = useRef(null);
 
-  const [dogName, setDogName] = useState("Odin");
-  const [ownerName, setOwnerName] = useState("Catfish");
+  useEffect(() => {
+    if (alreadyAdopted) {
+      if (workflow) dispatch(resetWorkflow({ id: WORKFLOW_ID }));
+      return;
+    }
 
-  function handleSubmit(event) {
-    event.preventDefault();
+    if (
+      !workflow ||
+      workflow.status === "idle" ||
+      workflow.status === "cancelled"
+    ) {
+      dispatch(
+        startWorkflow({
+          id: WORKFLOW_ID,
+          stepIndex: 0,
+          initialData: { name: dog?.name || "Fireball" },
+        })
+      );
+    }
+  }, [alreadyAdopted, dispatch, dog?.name, workflow]);
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
   useEffect(() => {
     if (!error) return;
     setError(null);
   }, [error, name, stepIndex]);
+<<<<<<< HEAD
 =======
     const cleanDogName = dogName.trim() || "Odin";
     const cleanOwnerName = ownerName.trim() || "Catfish";
 >>>>>>> 10f88903 (chore: remove committed backup folders)
+=======
+>>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
 
-    createAndSaveDog({
-      name: cleanDogName,
-      owner: cleanOwnerName,
-    });
+  useEffect(() => {
+    if (stepIndex !== 1) return;
+    const timer = window.setTimeout(() => {
+      nameInputRef.current?.focus?.();
+      nameInputRef.current?.select?.();
+    }, 140);
+    return () => window.clearTimeout(timer);
+  }, [stepIndex]);
 
-    navigate("/game");
+  const onCancel = () => {
+    dispatch(cancelWorkflow({ id: WORKFLOW_ID }));
+    dispatch(resetWorkflow({ id: WORKFLOW_ID }));
+    navigate(PATHS.HOME);
+  };
+
+  const onBack = () => {
+    if (stepIndex <= 0) return;
+    dispatch(prevStep({ id: WORKFLOW_ID }));
+  };
+
+  const onPrimary = async () => {
+    if (adopting) return;
+    setError(null);
+
+    if (stepIndex === 0) {
+      dispatch(nextStep({ id: WORKFLOW_ID, maxSteps: ADOPT_STEPS.length }));
+      return;
+    }
+
+    if (stepIndex === 1) {
+      if (!trimmedName) {
+        setError("Your pup needs a name, even if it is something weird.");
+        return;
+      }
+
+      dispatch(
+        setWorkflowData({ id: WORKFLOW_ID, patch: { name: trimmedName } })
+      );
+      dispatch(nextStep({ id: WORKFLOW_ID, maxSteps: ADOPT_STEPS.length }));
+      return;
+    }
+
+    if (!trimmedName) {
+      setError("Name is required.");
+      dispatch(goToStep({ id: WORKFLOW_ID, stepIndex: 1 }));
+      return;
+    }
+
+    try {
+      setAdopting(true);
+      await dispatch(
+        adoptPup({
+          name: trimmedName,
+          now: Date.now(),
+        })
+      ).unwrap();
+      dispatch(resetWorkflow({ id: WORKFLOW_ID }));
+      navigate(PATHS.GAME, { replace: true });
+    } catch (err) {
+      setError(err?.message || "Adoption hit a problem. Try again.");
+    } finally {
+      setAdopting(false);
+    }
+  };
+
+  const primaryLabel =
+    stepIndex === 2
+      ? "Adopt & play"
+      : stepIndex === 1
+        ? "Next"
+        : "Open the box";
+
+  const slideTitle =
+    stepIndex === 2
+      ? "It is official"
+      : stepIndex === 1
+        ? "Name your pup"
+        : "A box arrived";
+
+  const slideEyebrow =
+    stepIndex === 2
+      ? "Ready for the yard"
+      : stepIndex === 1
+        ? "Adoption step 2"
+        : "Adoption step 1";
+
+  if (alreadyAdopted) {
+    return (
+      <PageShell useSurface={false} mainClassName="px-4 py-8">
+        <div className="mx-auto flex min-h-[70vh] w-full max-w-md items-center">
+          <div className="w-full rounded-[28px] border border-white/10 bg-black/45 p-6 text-white shadow-[0_28px_90px_rgba(0,0,0,0.45)] backdrop-blur">
+            <div className="text-[11px] uppercase tracking-[0.24em] text-emerald-200/80">
+              Adoption locked
+            </div>
+            <h1 className="mt-2 text-2xl font-black text-emerald-200">
+              You already have a pup
+            </h1>
+            <p className="mt-3 text-sm text-zinc-300">
+              Your current dog is{" "}
+              <span className="font-semibold text-zinc-100">
+                {dog?.name || "your pup"}
+              </span>
+              . Doggerz is still a one-dog app right now.
+            </p>
+            <button
+              type="button"
+              onClick={() => navigate(PATHS.GAME)}
+              className="btn-squish mt-5 w-full rounded-2xl bg-emerald-400 px-4 py-3 text-sm font-extrabold text-black"
+            >
+              Back to the yard
+            </button>
+          </div>
+        </div>
+      </PageShell>
+    );
   }
 
   return (
-    <div className="mx-auto w-full max-w-2xl">
-      <section className="doggerz-card rounded-[2.25rem] p-5 sm:p-7">
-        <div className="mb-6 flex items-center justify-between gap-4">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.24em] text-emerald-300">
-              Adoption
-            </p>
+    <PageShell
+      useSurface={false}
+      mainClassName="px-0 py-0"
+      containerClassName="w-full max-w-none"
+    >
+      <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-md flex-col overflow-hidden border-x border-white/10 bg-[#07111f] text-white shadow-2xl">
+        <div className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-emerald-400/18 blur-[110px]" />
+        <div className="pointer-events-none absolute right-[-90px] top-[28%] h-64 w-64 rounded-full bg-sky-400/18 blur-[110px]" />
+        <div className="pointer-events-none absolute -bottom-24 left-10 h-72 w-72 rounded-full bg-amber-300/14 blur-[120px]" />
 
+<<<<<<< HEAD
             <h1 className="mt-2 text-3xl font-black tracking-tight text-white">
               Choose your first pup
             </h1>
@@ -298,50 +451,219 @@ export default function Adopt() {
               <p className="mt-1 text-lg font-black text-white">
                 Jack Russell Terrier
               </p>
+=======
+        <div className="relative z-10 flex flex-1 flex-col px-5 pb-6 pt-8">
+          <div className="flex items-center justify-between">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="btn-squish rounded-full border border-white/12 bg-white/8 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-200"
+            >
+              Skip
+            </button>
+            <div className="flex items-center gap-2">
+              {ADOPT_STEPS.map((_, idx) => (
+                <StepDot
+                  key={idx}
+                  active={idx === stepIndex}
+                  done={idx < stepIndex}
+                />
+              ))}
+            </div>
+            <div className="rounded-full border border-white/10 bg-black/20 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-zinc-300">
+              {stepIndex + 1}/{ADOPT_STEPS.length}
+>>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="grid gap-4">
-            <label className="grid gap-2">
-              <span className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">
-                Pup Name
-              </span>
+          <div className="mt-5 flex-1 rounded-[34px] border border-white/10 bg-[linear-gradient(180deg,rgba(5,10,20,0.9),rgba(7,14,27,0.92))] p-5 shadow-[0_28px_100px_rgba(0,0,0,0.45)]">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="text-[11px] font-bold uppercase tracking-[0.28em] text-emerald-200/80">
+                  {slideEyebrow}
+                </div>
+                <h1 className="mt-2 text-3xl font-black leading-tight text-white">
+                  {slideTitle}
+                </h1>
+              </div>
+              <div className="rounded-full border border-white/10 bg-white/6 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-300">
+                Jack Russell
+              </div>
+            </div>
 
-              <input
-                value={dogName}
-                onChange={(event) => setDogName(event.target.value)}
-                className="h-14 rounded-2xl border border-white/10 bg-slate-950/70 px-4 text-lg font-black text-white outline-none ring-emerald-300/40 focus:ring-4"
-                placeholder="Odin"
+            <div className="mt-6 overflow-hidden rounded-[28px] border border-white/8 bg-black/20 p-5">
+              <div
+                className={`onboard-slide ${stepIndex === 0 ? "active-slide" : ""}`}
+              >
+                <div className="text-6xl">📦</div>
+                <h2 className="mt-5 text-2xl font-black text-amber-100">
+                  A Jack Russell just showed up.
+                </h2>
+                <p className="mt-4 text-sm leading-7 text-zinc-300">
+                  High-energy, stubborn, fast, and absolutely capable of messing
+                  with your UI when bored. This is not a calm dog.
+                </p>
+                <div className="mt-5 rounded-2xl border border-amber-300/20 bg-amber-400/10 p-4 text-left text-sm text-amber-50/90">
+                  Good care keeps the chaos charming. Neglect makes it loud —
+                  but the sim is built to feel honest, not cruel.
+                </div>
+              </div>
+
+              <div
+                className={`onboard-slide ${stepIndex === 1 ? "active-slide" : ""}`}
+              >
+                <div className="text-6xl">🐶</div>
+                <h2 className="mt-5 text-2xl font-black text-emerald-100">
+                  What are you calling this troublemaker?
+                </h2>
+                <p className="mt-4 text-sm leading-7 text-zinc-300">
+                  Pick a name you will not regret seeing during accidents and 2
+                  a.m. zoomies.
+                </p>
+                <div className="mt-6 w-full max-w-sm">
+                  <input
+                    ref={nameInputRef}
+                    id="dog-name"
+                    type="text"
+                    value={name}
+                    onChange={(e) => {
+                      const value = e.target.value.slice(0, 24);
+                      dispatch(
+                        setWorkflowData({
+                          id: WORKFLOW_ID,
+                          patch: { name: value },
+                        })
+                      );
+                    }}
+                    className="w-full rounded-2xl border border-white/10 bg-white px-4 py-4 text-center text-xl font-black text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/20"
+                    placeholder="Fireball"
+                    maxLength={24}
+                    autoComplete="off"
+                    title="Choose your pup's name."
+                  />
+                  <div className="mt-2 flex items-center justify-between text-xs text-zinc-400">
+                    <span>{name.length}/24</span>
+                    <span>Default idea: Fireball</span>
+                  </div>
+                  {error ? (
+                    <p className="mt-3 text-sm text-red-300">{error}</p>
+                  ) : null}
+                </div>
+              </div>
+
+              <div
+                className={`onboard-slide ${stepIndex === 2 ? "active-slide" : ""}`}
+              >
+                <div className="text-6xl">🏠</div>
+                <h2 className="mt-5 text-2xl font-black text-emerald-100">
+                  {trimmedName || "Fireball"} is ready.
+                </h2>
+                <p className="mt-4 text-sm leading-7 text-zinc-300">
+                  Keep energy up, watch health, and do not assume this dog will
+                  behave just because you asked nicely.
+                </p>
+                <div className="mt-6 grid w-full gap-3 text-left text-sm text-zinc-200">
+                  <div className="rounded-2xl border border-white/10 bg-white/6 p-4">
+                    <div className="text-[11px] uppercase tracking-[0.18em] text-zinc-400">
+                      Pup name
+                    </div>
+                    <div className="mt-1 text-xl font-black text-amber-100">
+                      {trimmedName || "Fireball"}
+                    </div>
+                  </div>
+                  <div className="rounded-2xl border border-white/10 bg-white/6 p-4">
+                    <div className="font-bold text-white">What to expect</div>
+                    <ul className="mt-2 space-y-2 text-sm text-zinc-300">
+                      <li>Real-time weather and day/night cycles.</li>
+                      <li>Potty training comes first, tricks later.</li>
+                      <li>
+                        A full 180-day life arc, with late-life care carrying
+                        more emotional weight.
+                      </li>
+                    </ul>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <div className="rounded-2xl border border-white/10 bg-white/6 p-4">
+                      <div className="text-[11px] uppercase tracking-[0.18em] text-zinc-400">
+                        House manners
+                      </div>
+                      <div className="mt-2 font-bold text-emerald-100">
+                        Routine before tricks
+                      </div>
+                      <p className="mt-2 text-xs leading-5 text-zinc-300">
+                        Early progress is about food, water, rest, potty, and
+                        affection actually changing behavior.
+                      </p>
+                    </div>
+                    <div className="rounded-2xl border border-white/10 bg-white/6 p-4">
+                      <div className="text-[11px] uppercase tracking-[0.18em] text-zinc-400">
+                        Memory
+                      </div>
+                      <div className="mt-2 font-bold text-sky-100">
+                        Little moments add up
+                      </div>
+                      <p className="mt-2 text-xs leading-5 text-zinc-300">
+                        The journal tracks milestones, funny moments, and care
+                        patterns instead of treating time together like filler.
+                      </p>
+                    </div>
+                    <div className="rounded-2xl border border-white/10 bg-white/6 p-4">
+                      <div className="text-[11px] uppercase tracking-[0.18em] text-zinc-400">
+                        Growth
+                      </div>
+                      <div className="mt-2 font-bold text-amber-100">
+                        Temperament over grind
+                      </div>
+                      <p className="mt-2 text-xs leading-5 text-zinc-300">
+                        Later perks shape resilience and personality; they do
+                        not replace daily care.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex items-center justify-center">
+              <HeroDog
+                stage="PUPPY"
+                variant="promo"
+                anim="idle"
+                animationPreset="idle-paw"
+                className="select-none drop-shadow-[0_18px_30px_rgba(0,0,0,0.45)]"
               />
-            </label>
+            </div>
+          </div>
 
-            <label className="grid gap-2">
-              <span className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">
-                Owner Name
-              </span>
-
-              <input
-                value={ownerName}
-                onChange={(event) => setOwnerName(event.target.value)}
-                className="h-14 rounded-2xl border border-white/10 bg-slate-950/70 px-4 text-lg font-black text-white outline-none ring-emerald-300/40 focus:ring-4"
-                placeholder="Catfish"
-              />
-            </label>
-
+          <div className="mt-4 flex items-center gap-3">
             <button
-              type="submit"
-              className="doggerz-button doggerz-button-primary mt-2 text-lg"
+              type="button"
+              onClick={stepIndex === 0 ? onCancel : onBack}
+              disabled={adopting}
+              className="btn-squish flex-1 rounded-2xl border border-white/12 bg-white/6 px-4 py-4 text-sm font-bold uppercase tracking-[0.14em] text-zinc-100"
             >
-              Adopt Pup
+              {stepIndex === 0 ? "Maybe later" : "Back"}
             </button>
+            <button
+              type="button"
+              onClick={onPrimary}
+              disabled={adopting || (stepIndex === 1 && !trimmedName)}
+              className={`btn-squish flex-[1.35] rounded-2xl px-4 py-4 text-sm font-black uppercase tracking-[0.16em] text-black shadow-[0_12px_30px_rgba(0,0,0,0.28)] transition ${
+                stepIndex === 2
+                  ? "bg-[var(--accent-green)]"
+                  : "bg-[var(--accent-gold)]"
+              } disabled:cursor-not-allowed disabled:opacity-50`}
+            >
+              {adopting ? "Adopting..." : primaryLabel}
+            </button>
+          </div>
 
-            <p className="text-sm font-medium leading-7 text-slate-400">
-              This saves locally first. Firebase comes later after the app
-              screen is clean and stable.
-            </p>
-          </form>
+          <div className="mt-3 text-center text-xs text-zinc-400">
+            Your pup lives in the yard, not on a server. Adoption is just the
+            start of a 180-day story.
+          </div>
         </div>
-      </section>
-    </div>
+      </div>
+    </PageShell>
   );
 }

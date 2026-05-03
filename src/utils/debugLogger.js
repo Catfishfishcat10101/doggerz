@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+// src/utils/debugLogger.js
+>>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
 const DEBUG_STORAGE_KEY = "doggerz:debugLogs";
 
 function readStorageFlag() {

@@ -1,3 +1,4 @@
+// src/lib/storage/LocalSaveManager.js
 // src/logic/LocalSaveManager.js
 import {
   getStoredValue,

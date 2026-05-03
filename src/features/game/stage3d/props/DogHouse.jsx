@@ -1,3 +1,4 @@
+// src/features/game/stage3d/props/DogHouse.jsx
 /* eslint-disable react/no-unknown-property */
 export default function DogHouse({
   bodyColor = "#86593d",

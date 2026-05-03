@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+// src/features/game/rendering/dogAssets.js
+>>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
 import { DOGS } from "@/app/config/assets.js";
 import {
   getDogAnimSpriteUrl,

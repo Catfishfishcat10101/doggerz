@@ -1,3 +1,4 @@
+// src/store/middleware/trainingReactionMiddleware.js
 import { simulationTick, tickDog, trainObedience } from "@/store/dogSlice.js";
 import { derivePersonalityProfile } from "@/features/dog/personalityProfile.js";
 

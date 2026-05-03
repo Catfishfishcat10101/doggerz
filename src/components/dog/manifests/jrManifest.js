@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+// src/components/dog/manifests/jrManifest.js
+>>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
 import baseManifest from "@/components/dog/manifests/jrManifest.json";
 import {
   getManifestAnimMeta,

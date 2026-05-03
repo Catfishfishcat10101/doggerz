@@ -1,3 +1,4 @@
+// src/lib/analytics/gameAnalytics.js
 import { trackDoggerzEvent } from "@/lib/firebase/analytics.js";
 
 export const GAME_ANALYTICS_EVENTS = Object.freeze({

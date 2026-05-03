@@ -1,3 +1,4 @@
+// src/store/middleware/dogTick.js
 import { tickDogPolls } from "@/store/dogSlice.js";
 
 export const DOG_ENGINE_START = "engine/START";

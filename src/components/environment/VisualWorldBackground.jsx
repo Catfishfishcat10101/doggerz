@@ -1,3 +1,4 @@
+// src/components/environment/VisualWorldBackground.jsx
 import { useSelector } from "react-redux";
 import { useDayNightBackground } from "@/hooks/environment/useDayNightBackground.js";
 import {

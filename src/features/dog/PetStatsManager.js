@@ -1,3 +1,4 @@
+// src/features/dog/PetStatsManager.js
 //src/logic/PetStatsManager.js
 import { getLevelDecayMultiplier } from "@/features/dog/ExperienceAndLeveling.js";
 

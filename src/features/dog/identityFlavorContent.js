@@ -1,3 +1,4 @@
+// src/features/dog/identityFlavorContent.js
 export const IDENTITY_FAVORITE_FOOD_LABELS = Object.freeze({
   regular_kibble: "Regular Bowl",
   premium_kibble: "Premium Bowl",

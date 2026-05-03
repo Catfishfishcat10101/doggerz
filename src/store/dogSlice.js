@@ -1,3 +1,4 @@
+// src/store/dogSlice.js
 // src/redux/dogSlice.js
 export const selectDogMoodlets = (state) => state.dog.moodlets;
 export const selectDogEmotionCue = (state) => state.dog.emotionCue;

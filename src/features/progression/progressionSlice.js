@@ -1,3 +1,4 @@
+// src/features/progression/progressionSlice.js
 import { createSlice } from "@reduxjs/toolkit";
 import { OBEDIENCE_COMMANDS } from "@/features/training/obedienceCommands.js";
 import {

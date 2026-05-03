@@ -1,3 +1,4 @@
+// src/lib/firebase/paths.js
 import { doc, collection } from "firebase/firestore";
 import { db } from "@/lib/firebase/index.js";
 

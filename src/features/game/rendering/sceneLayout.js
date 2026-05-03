@@ -1,3 +1,4 @@
+// src/features/game/rendering/sceneLayout.js
 import { SCENE_TOKENS, clamp } from "./sceneTokens.js";
 
 function resolveDogWidthRatio(width, height, sleeping) {

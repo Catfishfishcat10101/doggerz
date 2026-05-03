@@ -1,24 +1,22 @@
 #!/usr/bin/env node
+// scripts/validate-dog-glb.js
 /* eslint-disable no-console */
 const fs = require("node:fs");
 const path = require("node:path");
 
 const ROOT = process.cwd();
-const DEFAULT_GLB_PATH = path.join(
-  ROOT,
-  "public",
-  "assets",
-  "models",
-  "dog",
-  "jackrussell-doggerz.glb"
-);
-
+const MODEL_DIR = path.join(ROOT, "public", "assets", "models", "dog");
+const REQUIRED_STAGE_MODELS = Object.freeze([
+  "jackrussell-puppy.glb",
+  "jackrussell-adult.glb",
+  "jackrussell-senior.glb",
+]);
 const REQUIRED_CLIPS = Object.freeze([
   "Idle",
+  "Walk",
   "Sit",
   "Bark",
   "Sleep",
-  "Walk",
   "Wag",
 ]);
 
@@ -37,28 +35,40 @@ const JUNK_NAME_PATTERNS = [
   /\btemp\b/i,
 ];
 
-function fail(message) {
-  console.error(`[Dog GLB] ${message}`);
-  process.exit(1);
+function formatRelPath(absPath) {
+  return path.relative(ROOT, absPath).replace(/\\/g, "/");
 }
 
-function warn(message) {
-  console.warn(`[Dog GLB] Warning: ${message}`);
+function createError(filePath, message) {
+  return `[${formatRelPath(filePath)}] ${message}`;
 }
 
-function parseGlb(buffer) {
-  if (buffer.length < 20) fail("File is too small to be a valid GLB.");
+function parseGlb(buffer, filePath) {
+  if (buffer.length < 20) {
+    throw new Error(
+      createError(filePath, "File is too small to be a valid GLB.")
+    );
+  }
 
   const magic = buffer.toString("utf8", 0, 4);
-  if (magic !== "glTF") fail("Invalid GLB magic header.");
+  if (magic !== "glTF") {
+    throw new Error(createError(filePath, "Invalid GLB magic header."));
+  }
 
   const version = buffer.readUInt32LE(4);
-  if (version !== 2) fail(`Unsupported GLB version ${version}. Expected 2.`);
+  if (version !== 2) {
+    throw new Error(
+      createError(filePath, `Unsupported GLB version ${version}. Expected 2.`)
+    );
+  }
 
   const declaredLength = buffer.readUInt32LE(8);
   if (declaredLength !== buffer.length) {
-    fail(
-      `Declared GLB length ${declaredLength} does not match file size ${buffer.length}.`
+    throw new Error(
+      createError(
+        filePath,
+        `Declared GLB length ${declaredLength} does not match file size ${buffer.length}.`
+      )
     );
   }
 
@@ -71,7 +81,11 @@ function parseGlb(buffer) {
     const chunkStart = offset + 8;
     const chunkEnd = chunkStart + chunkLength;
 
-    if (chunkEnd > buffer.length) fail("GLB chunk length exceeds file size.");
+    if (chunkEnd > buffer.length) {
+      throw new Error(
+        createError(filePath, "GLB chunk length exceeds file size.")
+      );
+    }
 
     if (chunkType === "JSON") {
       jsonChunk = buffer
@@ -83,12 +97,16 @@ function parseGlb(buffer) {
     offset = chunkEnd;
   }
 
-  if (!jsonChunk) fail("Missing JSON chunk in GLB.");
+  if (!jsonChunk) {
+    throw new Error(createError(filePath, "Missing JSON chunk in GLB."));
+  }
 
   try {
     return JSON.parse(jsonChunk);
   } catch (error) {
-    fail(`Unable to parse GLB JSON chunk: ${error.message}`);
+    throw new Error(
+      createError(filePath, `Unable to parse GLB JSON chunk: ${error.message}`)
+    );
   }
 }
 
@@ -112,8 +130,13 @@ function collectNodes(documentJson) {
   }));
 }
 
-function validateDocument(documentJson) {
+function validateDocument(documentJson, filePath) {
+  const errors = [];
+  const warnings = [];
   const meshes = Array.isArray(documentJson.meshes) ? documentJson.meshes : [];
+  const materials = Array.isArray(documentJson.materials)
+    ? documentJson.materials
+    : [];
   const skins = Array.isArray(documentJson.skins) ? documentJson.skins : [];
   const animations = Array.isArray(documentJson.animations)
     ? documentJson.animations
@@ -123,30 +146,32 @@ function validateDocument(documentJson) {
     : [];
   const nodes = collectNodes(documentJson);
 
-  if (!meshes.length) fail("No meshes found.");
-  if (!skins.length) fail("No skin/rig found.");
-  if (!animations.length) fail("No animation clips found.");
-  if (cameras.length) fail("Cameras are exported. Remove them from the GLB.");
+  if (!meshes.length) errors.push("No meshes found.");
+  if (!materials.length) errors.push("No materials found.");
+  if (!skins.length) errors.push("No skin/rig found.");
+  if (!animations.length) errors.push("No animation clips found.");
+  if (cameras.length)
+    errors.push("Cameras are exported. Remove them from the GLB.");
   if (
     Array.isArray(documentJson.extensionsUsed) &&
     documentJson.extensionsUsed.includes("KHR_lights_punctual")
   ) {
-    fail(
+    errors.push(
       "Lights are exported via KHR_lights_punctual. Remove them from the GLB."
     );
   }
 
-  if (skins.length !== 1) {
-    warn(`Expected 1 skin/rig. Found ${skins.length}.`);
+  if (skins.length > 1) {
+    warnings.push(`Expected 1 primary skin/rig. Found ${skins.length}.`);
   }
 
   const primarySkin = skins[0] || {};
   const jointCount = Array.isArray(primarySkin.joints)
     ? primarySkin.joints.length
     : 0;
-  if (!jointCount) fail("Primary skin has no joints.");
+  if (skins.length && !jointCount) errors.push("Primary skin has no joints.");
   if (jointCount > 80) {
-    warn(
+    warnings.push(
       `Primary rig has ${jointCount} joints. This may be heavier than necessary.`
     );
   }
@@ -158,32 +183,40 @@ function validateDocument(documentJson) {
     (clip) => !clipNames.includes(clip)
   );
   if (missingClips.length) {
-    fail(`Missing required clips: ${missingClips.join(", ")}.`);
+    errors.push(`Missing required clips: ${missingClips.join(", ")}.`);
   }
 
   const unexpectedClips = clipNames.filter(
     (clip) => !REQUIRED_CLIPS.includes(clip)
   );
   if (unexpectedClips.length) {
-    warn(`Unexpected extra clips found: ${unexpectedClips.join(", ")}.`);
+    warnings.push(
+      `Unexpected extra clips found: ${unexpectedClips.join(", ")}.`
+    );
   }
 
   if (meshes.length > 3) {
-    warn(`Expected a minimal dog mesh set. Found ${meshes.length} meshes.`);
+    warnings.push(
+      `Expected a minimal dog mesh set. Found ${meshes.length} meshes.`
+    );
   }
 
   const skinnedMeshNodes = nodes.filter(
     ({ node }) => Number.isInteger(node?.mesh) && Number.isInteger(node?.skin)
   );
   if (!skinnedMeshNodes.length) {
-    fail("No node combines a mesh with a skin. Expected a skinned dog mesh.");
+    errors.push(
+      "No node combines a mesh with a skin. Expected a skinned dog mesh."
+    );
   }
 
   const suspiciousNames = nodes
     .map(({ name }) => name)
     .filter((name) => JUNK_NAME_PATTERNS.some((pattern) => pattern.test(name)));
   if (suspiciousNames.length) {
-    warn(`Suspicious exported node names: ${suspiciousNames.join(", ")}.`);
+    warnings.push(
+      `Suspicious exported node names: ${suspiciousNames.join(", ")}.`
+    );
   }
 
   const rootNodes = nodes.filter(({ index }) => {
@@ -199,47 +232,100 @@ function validateDocument(documentJson) {
     const translation = numberTriplet(node, "translation", [0, 0, 0]);
 
     if (magnitudeFromIdentity(scale, [1, 1, 1]) > 0.001) {
-      warn(`Root node "${name}" has non-identity scale ${scale.join(", ")}.`);
+      warnings.push(
+        `Root node "${name}" has non-identity scale ${scale.join(", ")}.`
+      );
     }
 
     if (Math.abs(translation[0]) > 0.25 || Math.abs(translation[2]) > 0.25) {
-      warn(
+      warnings.push(
         `Root node "${name}" is offset from origin on X/Z (${translation.join(", ")}).`
       );
     }
   });
 
   return {
-    meshCount: meshes.length,
-    skinCount: skins.length,
-    jointCount,
-    clipNames,
-    skinnedMeshNodeNames: skinnedMeshNodes.map(({ name }) => name),
+    errors: errors.map((message) => createError(filePath, message)),
+    warnings: warnings.map((message) =>
+      createError(filePath, `Warning: ${message}`)
+    ),
+    summary: {
+      filePath,
+      meshCount: meshes.length,
+      materialCount: materials.length,
+      skinCount: skins.length,
+      jointCount,
+      clipNames,
+      skinnedMeshNodeNames: skinnedMeshNodes.map(({ name }) => name),
+    },
   };
 }
 
-function main() {
-  const inputPath = process.argv[2]
-    ? path.resolve(ROOT, process.argv[2])
-    : DEFAULT_GLB_PATH;
-
-  if (!fs.existsSync(inputPath)) {
-    fail(`GLB not found at ${inputPath}`);
+function validateFile(filePath) {
+  if (!fs.existsSync(filePath)) {
+    return {
+      errors: [createError(filePath, "Required GLB is missing.")],
+      warnings: [],
+      summary: null,
+    };
   }
 
-  const buffer = fs.readFileSync(inputPath);
-  const documentJson = parseGlb(buffer);
-  const summary = validateDocument(documentJson);
+  try {
+    const buffer = fs.readFileSync(filePath);
+    const documentJson = parseGlb(buffer, filePath);
+    return validateDocument(documentJson, filePath);
+  } catch (error) {
+    return {
+      errors: [error.message],
+      warnings: [],
+      summary: null,
+    };
+  }
+}
+
+function resolveInputPaths() {
+  const explicitInputs = process.argv
+    .slice(2)
+    .filter((arg) => !arg.startsWith("-"));
+
+  if (explicitInputs.length) {
+    return explicitInputs.map((inputPath) => path.resolve(ROOT, inputPath));
+  }
+
+  return REQUIRED_STAGE_MODELS.map((fileName) =>
+    path.join(MODEL_DIR, fileName)
+  );
+}
+
+function main() {
+  const inputPaths = resolveInputPaths();
+  const results = inputPaths.map(validateFile);
+  const errors = results.flatMap((result) => result.errors);
+  const warnings = results.flatMap((result) => result.warnings);
+  const summaries = results
+    .map((result) => result.summary)
+    .filter((summary) => summary);
+
+  warnings.forEach((warning) => console.warn(`[Dog GLB] ${warning}`));
+
+  if (errors.length) {
+    console.error("[Dog GLB] Validation failed.");
+    errors.forEach((error) => console.error(`[Dog GLB] ${error}`));
+    process.exit(1);
+  }
 
   console.log("[Dog GLB] Validation passed.");
-  console.log(`[Dog GLB] File: ${inputPath}`);
-  console.log(`[Dog GLB] Meshes: ${summary.meshCount}`);
-  console.log(`[Dog GLB] Skins: ${summary.skinCount}`);
-  console.log(`[Dog GLB] Joints: ${summary.jointCount}`);
-  console.log(`[Dog GLB] Clips: ${summary.clipNames.join(", ")}`);
-  console.log(
-    `[Dog GLB] Skinned mesh nodes: ${summary.skinnedMeshNodeNames.join(", ")}`
-  );
+  summaries.forEach((summary) => {
+    console.log(`[Dog GLB] File: ${formatRelPath(summary.filePath)}`);
+    console.log(`[Dog GLB] Meshes: ${summary.meshCount}`);
+    console.log(`[Dog GLB] Materials: ${summary.materialCount}`);
+    console.log(`[Dog GLB] Skins: ${summary.skinCount}`);
+    console.log(`[Dog GLB] Joints: ${summary.jointCount}`);
+    console.log(`[Dog GLB] Clips: ${summary.clipNames.join(", ")}`);
+    console.log(
+      `[Dog GLB] Skinned mesh nodes: ${summary.skinnedMeshNodeNames.join(", ")}`
+    );
+  });
 }
 
 main();

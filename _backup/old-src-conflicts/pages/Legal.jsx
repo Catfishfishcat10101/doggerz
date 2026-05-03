@@ -1,3 +1,4 @@
+// _backup/old-src-conflicts/pages/Legal.jsx
 // src/pages/Legal.jsx
 import PageShell from "@/components/layout/PageShell.jsx";
 import { PageHeader } from "@/components/layout/PageSections.jsx";

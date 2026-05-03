@@ -1,3 +1,4 @@
+// src/utils/timeWeather.js
 export function getLocalTimePhase() {
   const hour = new Date().getHours();
 

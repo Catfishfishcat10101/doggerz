@@ -1,3 +1,4 @@
+// src/features/progression/progressionSelectors.js
 import { createSelector } from "@reduxjs/toolkit";
 
 export const selectProgression = (state) => state?.progression || null;

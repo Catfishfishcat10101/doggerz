@@ -1,3 +1,4 @@
+// src/features/training/jrtTrainingController.test.js
 import { describe, expect, it } from "vitest";
 
 import { resolveJrtTrainingReaction } from "@/features/training/jrtTrainingController.js";

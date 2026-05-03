@@ -1,3 +1,4 @@
+// src/features/progression/resolveProgressionEvent.js
 import {
   bathe,
   claimTreasureFind,

@@ -1,3 +1,4 @@
+// src/components/ui/EmptySlate.jsx
 // src/components/EmptySlate.jsx
 
 import { Link } from "react-router-dom";

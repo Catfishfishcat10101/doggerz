@@ -1,3 +1,4 @@
+// src/features/dog/personalityProfile.test.js
 import { describe, expect, it } from "vitest";
 
 import { derivePersonalityProfile } from "@/features/dog/personalityProfile.js";

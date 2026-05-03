@@ -1,3 +1,4 @@
+// src/components/game/ActionBar.jsx
 const ACTIONS = [
   {
     id: "feed",

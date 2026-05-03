@@ -1,3 +1,4 @@
+// src/lib/locationReality.js
 import { Geolocation } from "@capacitor/geolocation";
 
 function toFiniteNumber(value) {

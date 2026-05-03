@@ -1,3 +1,4 @@
+// src/data/defaultDog.js
 export const DEFAULT_DOG = Object.freeze({
   id: "doggerz-local-dog",
   name: "",

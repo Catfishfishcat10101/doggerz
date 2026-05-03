@@ -1,3 +1,4 @@
+// src/components/environment/WeatherFX.jsx
 // src/components/WeatherFXCanvas.jsx
 
 import * as React from "react";

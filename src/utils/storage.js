@@ -1,3 +1,4 @@
+// src/utils/storage.js
 import { createDefaultDog } from "@/data/defaultDog";
 
 const DOG_STORAGE_KEY = "doggerz:local-dog";

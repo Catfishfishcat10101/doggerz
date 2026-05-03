@@ -1,3 +1,4 @@
+// src/features/experiments/gameExperimentConfig.js
 import {
   getRemoteConfigNumber,
   getRemoteConfigString,

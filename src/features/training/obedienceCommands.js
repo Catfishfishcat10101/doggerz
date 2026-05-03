@@ -1,3 +1,4 @@
+// src/features/training/obedienceCommands.js
 // src/constants/obedienceCommands.js
 
 function freezeCommand(command) {

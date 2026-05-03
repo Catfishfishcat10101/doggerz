@@ -1,3 +1,4 @@
+// src/components/game/DogTopCard.jsx
 import { formatAge } from "../../utils/timeWeather.js";
 import StatPill from "./StatPill.jsx";
 

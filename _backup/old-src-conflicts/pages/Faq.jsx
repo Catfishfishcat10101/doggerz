@@ -1,3 +1,4 @@
+// _backup/old-src-conflicts/pages/Faq.jsx
 // src/pages/Faq.jsx
 import React from "react";
 import { Link } from "react-router-dom";

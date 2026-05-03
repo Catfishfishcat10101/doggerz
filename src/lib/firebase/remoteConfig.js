@@ -1,3 +1,4 @@
+// src/lib/firebase/remoteConfig.js
 import {
   fetchAndActivate,
   getRemoteConfig,

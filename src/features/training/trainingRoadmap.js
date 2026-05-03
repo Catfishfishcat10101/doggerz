@@ -1,3 +1,4 @@
+// src/features/training/trainingRoadmap.js
 const STATUS_META = Object.freeze({
   complete: Object.freeze({
     label: "Complete",

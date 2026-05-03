@@ -1,3 +1,4 @@
+// src/features/game/rendering/aliveDogBehavior.test.js
 import { describe, expect, it } from "vitest";
 
 import {

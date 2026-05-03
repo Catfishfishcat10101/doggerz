@@ -1,3 +1,4 @@
+// src/features/training/jrtTrainingController.js
 // src/logic/jrtTrainingController.js
 const clamp = (n, lo = 0, hi = 100) =>
   Math.max(lo, Math.min(hi, Number.isFinite(n) ? n : 0));

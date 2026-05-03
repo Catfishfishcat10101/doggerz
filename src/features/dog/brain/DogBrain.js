@@ -1,3 +1,4 @@
+// src/features/dog/brain/DogBrain.js
 import { getDogEnvironmentTargets } from "@/components/dog/DogEnvironmentTargets.js";
 import {
   DOG_WORLD_HEIGHT,

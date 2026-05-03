@@ -1,3 +1,4 @@
+// src/features/game/stage3d/DogLights.jsx
 function lightingPresetFor(timeOfDayBucket = "day", isNight = false) {
   const bucket = String(timeOfDayBucket || "day").toLowerCase();
 

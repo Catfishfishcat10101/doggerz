@@ -1,3 +1,4 @@
+// src/components/system/CrashFallback.jsx
 // src/components/CrashFallback.jsx
 
 export default function CrashFallback({

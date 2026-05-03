@@ -1,3 +1,4 @@
+// src/components/brand/DoggerzLogo.jsx
 export default function DoggerzLogo({ size = "large" }) {
   const isLarge = size === "large";
 

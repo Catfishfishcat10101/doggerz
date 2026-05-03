@@ -1,3 +1,4 @@
+// src/features/game/stage3d/dog/resolveDogStageBehavior.js
 const clamp = (value, min = 0, max = 100) => {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) return min;

@@ -1,3 +1,4 @@
+// src/features/game/rendering/YardScene.jsx
 import { clamp, toPercent } from "./sceneTokens.js";
 
 function getHotspotKind(id = "") {

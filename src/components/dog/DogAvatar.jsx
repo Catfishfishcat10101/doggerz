@@ -1,3 +1,4 @@
+// src/components/dog/DogAvatar.jsx
 import { useEffect, useMemo, useState } from "react";
 
 function CssDog({ pose = "idle" }) {

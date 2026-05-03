@@ -1,3 +1,4 @@
+// src/utils/dogCosmeticLayers.js
 import { normalizeDogStageShort } from "@/utils/dogSpritePaths.js";
 
 function toDataUrl(svg) {

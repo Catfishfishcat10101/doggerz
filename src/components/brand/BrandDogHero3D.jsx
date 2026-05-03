@@ -2,7 +2,7 @@
 /* eslint-disable react/no-unknown-property */
 import PropTypes from "prop-types";
 import { Suspense, useEffect, useMemo, useRef } from "react";
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
 import {
   Environment,
   PerspectiveCamera,
@@ -13,6 +13,7 @@ import { clone as cloneSkeleton } from "three/examples/jsm/utils/SkeletonUtils.j
 
 import {
   DOG_MODEL_GLTF_PATH,
+  hasPlayableDogModelClips,
   resolveClipName,
 } from "@/features/game/stage3d/dog/dogAnimationMap.js";
 
@@ -111,6 +112,23 @@ function BrandDogHeroModel({
   const { scene, animations } = useGLTF(DOG_MODEL_GLTF_PATH);
   const modelScene = useMemo(() => cloneSkeleton(scene), [scene]);
   const { actions } = useAnimations(animations, rootRef);
+  const hasModelClips = useMemo(
+    () => hasPlayableDogModelClips(actions),
+    [actions]
+  );
+
+  useFrame((state) => {
+    if (hasModelClips) return;
+
+    const root = rootRef.current;
+    if (!root) return;
+
+    const t = state.clock.getElapsedTime();
+    root.position.y = position[1] + Math.sin(t * 1.5) * 0.012;
+    root.rotation.x = rotation[0] + Math.sin(t * 0.9) * 0.01;
+    root.rotation.y = rotation[1] + Math.sin(t * 0.36) * 0.06;
+    root.rotation.z = rotation[2] || 0;
+  });
 
   useEffect(() => {
     modelScene.traverse((node) => {
@@ -121,6 +139,8 @@ function BrandDogHeroModel({
   }, [modelScene]);
 
   useEffect(() => {
+    if (!hasModelClips) return;
+
     const clipName = resolveClipName(anim, actions);
     if (!clipName || currentClipRef.current === clipName) return;
 
@@ -134,7 +154,7 @@ function BrandDogHeroModel({
     nextAction.reset().fadeIn(0.18).play();
     currentActionRef.current = nextAction;
     currentClipRef.current = clipName;
-  }, [actions, anim]);
+  }, [actions, anim, hasModelClips]);
 
   useEffect(
     () => () => {

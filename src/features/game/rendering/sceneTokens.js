@@ -1,3 +1,4 @@
+// src/features/game/rendering/sceneTokens.js
 export const SCENE_TOKENS = Object.freeze({
   viewport: {
     minHeight: 420,

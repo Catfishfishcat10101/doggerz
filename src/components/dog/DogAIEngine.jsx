@@ -1,4 +1,6 @@
 // src/components/dog/DogAIEngine.jsx
+// @ts-check
+
 import { useCallback, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "react-router-dom";
@@ -67,7 +69,15 @@ let lastHydratedCloudUserId = null;
 // Local persistence schema marker (kept here so we don't require dogSlice exports).
 const DOG_SAVE_SCHEMA_VERSION = 1;
 
+let pixiTickerPromise = null;
 let capacitorAppPromise = null;
+async function getPixiTicker() {
+  if (pixiTickerPromise) return pixiTickerPromise;
+  pixiTickerPromise = import("pixi.js")
+    .then((mod) => mod?.Ticker?.shared || null)
+    .catch(() => null);
+  return pixiTickerPromise;
+}
 
 async function getCapacitorApp() {
   const isNative =
@@ -517,6 +527,15 @@ export default function DogAIEngine({
           "appStateChange",
           async ({ isActive }) => {
             if (cancelled) return;
+            try {
+              const ticker = await getPixiTicker();
+              if (ticker) {
+                if (isActive) ticker.start();
+                else ticker.stop();
+              }
+            } catch {
+              // ignore ticker errors
+            }
 
             if (!isActive) {
               if (shouldRunReduxHeartbeat) {

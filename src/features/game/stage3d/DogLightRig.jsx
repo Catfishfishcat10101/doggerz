@@ -1,3 +1,4 @@
+// src/features/game/stage3d/DogLightRig.jsx
 /* eslint-disable react/no-unknown-property */
 import { Environment } from "@react-three/drei";
 

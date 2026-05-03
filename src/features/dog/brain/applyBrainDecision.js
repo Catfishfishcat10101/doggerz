@@ -1,3 +1,4 @@
+// src/features/dog/brain/applyBrainDecision.js
 import { getDogStateDurationMs } from "@/components/dog/DogAIStateMachine.js";
 import { chooseEnvironmentTarget } from "@/components/dog/DogEnvironmentTargets.js";
 import { chooseWanderTarget } from "@/components/dog/simulation/DogWanderBehavior.js";

@@ -1,3 +1,4 @@
+// _backup/old-src-conflicts/components-game/animatedEvents.js
 // src/components/game/animatedEvents.js
 
 export const ANIMATED_EVENTS = Object.freeze([

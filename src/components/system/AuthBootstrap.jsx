@@ -1,3 +1,4 @@
+// src/components/system/AuthBootstrap.jsx
 import { useEffect, useRef } from "react";
 import { useDispatch } from "react-redux";
 import { onAuthStateChanged, signOut } from "firebase/auth";

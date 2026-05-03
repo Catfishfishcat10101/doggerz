@@ -1,3 +1,4 @@
+// src/store/weatherSlice.js
 // src/redux/weatherSlice.js
 // Lightweight weather state (local, not persisted to cloud yet)
 // condition: 'sun' | 'cloud' | 'rain' | 'snow' | 'unknown'

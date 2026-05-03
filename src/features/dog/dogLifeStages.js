@@ -1,3 +1,4 @@
+// src/features/dog/dogLifeStages.js
 // src/logic/dogLifeStages.js
 export const LIFE_STAGES = Object.freeze({
   PUPPY: "PUPPY",

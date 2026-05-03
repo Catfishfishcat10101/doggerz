@@ -1,3 +1,4 @@
+// src/components/layout/GameTopBar.jsx
 import { Settings, Coins, Gem, Star } from "lucide-react";
 
 const DEFAULT_DOG_AVATAR =
@@ -20,10 +21,13 @@ export default function GameTopBar({
   xp = 72,
   xpMax = 100,
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
   healthPct = null,
   bondPct = null,
 >>>>>>> 10f88903 (chore: remove committed backup folders)
+=======
+>>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
   saveLabel = "Local save",
   saveDetail = "Saved on this device",
   saveTone = "muted",
@@ -57,6 +61,7 @@ export default function GameTopBar({
 
   return (
 <<<<<<< HEAD
+<<<<<<< HEAD
     <header className="sticky top-0 z-[60] px-3 pt-[max(env(safe-area-inset-top),10px)] pb-1">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-1.5 rounded-[22px] border border-white/10 bg-[#11161c]/95 px-3 py-3 shadow-[0_10px_28px_rgba(0,0,0,0.34)] backdrop-blur-md sm:px-4">
         <div className="flex min-w-0 items-center gap-2.5">
@@ -67,6 +72,12 @@ export default function GameTopBar({
         <div className="flex min-w-0 items-center gap-2.5">
           <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full border-2 border-lime-400/80 bg-[#1b232c] shadow-[0_0_0_3px_rgba(132,204,22,0.12)] sm:h-14 sm:w-14">
 >>>>>>> 10f88903 (chore: remove committed backup folders)
+=======
+    <header className="sticky top-0 z-[60] px-3 pt-[max(env(safe-area-inset-top),10px)] pb-1">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-1.5 rounded-[22px] border border-white/10 bg-[#11161c]/95 px-3 py-3 shadow-[0_10px_28px_rgba(0,0,0,0.34)] backdrop-blur-md sm:px-4">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full border-2 border-lime-400/80 bg-[#1b232c] shadow-[0_0_0_3px_rgba(132,204,22,0.12)]">
+>>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
             <img
               src={avatarSrc}
               alt={`${dogName} avatar`}
@@ -83,6 +94,7 @@ export default function GameTopBar({
           <div className="min-w-0 flex-1">
             <div className="flex min-w-0 flex-wrap items-center gap-1.5">
 <<<<<<< HEAD
+<<<<<<< HEAD
               <p className="min-w-0 truncate text-sm font-extrabold uppercase tracking-wide text-lime-300">
                 {dogName}
               </p>
@@ -93,24 +105,35 @@ export default function GameTopBar({
                 className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] ${conditionToneClass}`}
 =======
               <p className="min-w-0 truncate text-sm font-extrabold uppercase tracking-wide text-lime-300 sm:text-sm">
+=======
+              <p className="min-w-0 truncate text-sm font-extrabold uppercase tracking-wide text-lime-300">
+>>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
                 {dogName}
               </p>
-              <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.06] px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-white/72 sm:px-2.5 sm:py-1 sm:text-[10px]">
+              <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.06] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-white/72">
                 {dogStage}
               </span>
               <span
+<<<<<<< HEAD
                 className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] sm:px-2.5 sm:py-1 sm:text-[10px] ${conditionToneClass}`}
 >>>>>>> 10f88903 (chore: remove committed backup folders)
+=======
+                className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] ${conditionToneClass}`}
+>>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
               >
                 {conditionLabel}
               </span>
             </div>
             {conditionHint ? (
 <<<<<<< HEAD
+<<<<<<< HEAD
               <p className="mt-1 truncate text-[10px] font-semibold text-white/55">
 =======
               <p className="mt-0.5 max-w-[15rem] truncate text-[10px] font-semibold text-white/55 sm:mt-1 sm:max-w-none">
 >>>>>>> 10f88903 (chore: remove committed backup folders)
+=======
+              <p className="mt-1 truncate text-[10px] font-semibold text-white/55">
+>>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
                 {conditionHint}
               </p>
             ) : null}
@@ -121,10 +144,14 @@ export default function GameTopBar({
               type="button"
               onClick={onOpenSettings}
 <<<<<<< HEAD
+<<<<<<< HEAD
               className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-white transition hover:bg-white/10 active:scale-[0.98]"
 =======
               className="flex h-9 w-9 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-white transition hover:bg-white/10 active:scale-[0.98] sm:h-10 sm:w-10"
 >>>>>>> 10f88903 (chore: remove committed backup folders)
+=======
+              className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-white transition hover:bg-white/10 active:scale-[0.98]"
+>>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
               aria-label="Open settings"
             >
               <Settings className="h-[18px] w-[18px]" />
@@ -134,10 +161,14 @@ export default function GameTopBar({
               type="button"
               onClick={onOpenShop}
 <<<<<<< HEAD
+<<<<<<< HEAD
               className="inline-flex h-10 items-center justify-center rounded-2xl border border-lime-300/30 bg-gradient-to-b from-lime-400 to-lime-500 px-3.5 text-sm font-extrabold uppercase tracking-wide text-[#101510] shadow-[0_8px_20px_rgba(132,204,22,0.35)] transition hover:brightness-105 active:scale-[0.98]"
 =======
               className="inline-flex h-9 items-center justify-center rounded-2xl border border-lime-300/30 bg-gradient-to-b from-lime-400 to-lime-500 px-3 text-xs font-extrabold uppercase tracking-wide text-[#101510] shadow-[0_8px_20px_rgba(132,204,22,0.35)] transition hover:brightness-105 active:scale-[0.98] sm:h-10 sm:px-3.5 sm:text-sm"
 >>>>>>> 10f88903 (chore: remove committed backup folders)
+=======
+              className="inline-flex h-10 items-center justify-center rounded-2xl border border-lime-300/30 bg-gradient-to-b from-lime-400 to-lime-500 px-3.5 text-sm font-extrabold uppercase tracking-wide text-[#101510] shadow-[0_8px_20px_rgba(132,204,22,0.35)] transition hover:brightness-105 active:scale-[0.98]"
+>>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
             >
               Shop
             </button>
@@ -145,6 +176,7 @@ export default function GameTopBar({
         </div>
 
         <div className="flex flex-col gap-1.5">
+<<<<<<< HEAD
 <<<<<<< HEAD
           <div className="flex flex-wrap items-center gap-1.5">
 =======
@@ -168,14 +200,20 @@ export default function GameTopBar({
               }
             />
 >>>>>>> 10f88903 (chore: remove committed backup folders)
+=======
+          <div className="flex flex-wrap items-center gap-1.5">
+>>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
             <MiniStat
               icon={<Star className="h-3.5 w-3.5" />}
               label="Level"
               value={`Lv ${level}`}
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
               className="hidden sm:inline-flex"
 >>>>>>> 10f88903 (chore: remove committed backup folders)
+=======
+>>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
             />
             <MiniStat
               icon={<Coins className="h-3.5 w-3.5" />}
@@ -187,6 +225,7 @@ export default function GameTopBar({
               label="Gems"
               value={gems.toLocaleString()}
 <<<<<<< HEAD
+<<<<<<< HEAD
             />
             <span
               className={`inline-flex h-9 items-center rounded-full border px-3 text-[10px] font-bold uppercase tracking-[0.14em] ${saveToneClass}`}
@@ -196,33 +235,50 @@ export default function GameTopBar({
             <span
               className={`hidden h-9 items-center rounded-full border px-3 text-[10px] font-bold uppercase tracking-[0.14em] sm:inline-flex ${saveToneClass}`}
 >>>>>>> 10f88903 (chore: remove committed backup folders)
+=======
+            />
+            <span
+              className={`inline-flex h-9 items-center rounded-full border px-3 text-[10px] font-bold uppercase tracking-[0.14em] ${saveToneClass}`}
+>>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
             >
               {normalizedSaveLabel}
             </span>
             {showSaveDetail ? (
 <<<<<<< HEAD
+<<<<<<< HEAD
               <span className="inline-flex h-9 items-center rounded-full border border-white/10 bg-white/5 px-3 text-[10px] font-bold tracking-[0.08em] text-white/70">
 =======
               <span className="hidden h-9 items-center rounded-full border border-white/10 bg-white/5 px-3 text-[10px] font-bold tracking-[0.08em] text-white/70 sm:inline-flex">
 >>>>>>> 10f88903 (chore: remove committed backup folders)
+=======
+              <span className="inline-flex h-9 items-center rounded-full border border-white/10 bg-white/5 px-3 text-[10px] font-bold tracking-[0.08em] text-white/70">
+>>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
                 {normalizedSaveDetail}
               </span>
             ) : null}
             {saveHint ? (
 <<<<<<< HEAD
+<<<<<<< HEAD
               <span className="w-full pl-1 text-[10px] font-semibold text-white/55">
 =======
               <span className="hidden w-full pl-1 text-[10px] font-semibold text-white/55 sm:block">
 >>>>>>> 10f88903 (chore: remove committed backup folders)
+=======
+              <span className="w-full pl-1 text-[10px] font-semibold text-white/55">
+>>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
                 {saveHint}
               </span>
             ) : null}
           </div>
 <<<<<<< HEAD
+<<<<<<< HEAD
           <div className="rounded-[18px] border border-white/8 bg-black/25 px-2.5 py-2">
 =======
           <div className="hidden rounded-[18px] border border-white/8 bg-black/25 px-2.5 py-2 sm:block">
 >>>>>>> 10f88903 (chore: remove committed backup folders)
+=======
+          <div className="rounded-[18px] border border-white/8 bg-black/25 px-2.5 py-2">
+>>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
             <div className="flex items-center justify-between pb-1 text-[10px] font-bold uppercase tracking-wide text-white/70">
               <span>XP</span>
               <span>
@@ -244,6 +300,7 @@ export default function GameTopBar({
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 function MiniStat({ icon, label, value }) {
   return (
     <div className="inline-flex h-9 min-w-0 items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3">
@@ -256,20 +313,25 @@ function MiniStat({ icon, label, value }) {
       <p className="truncate text-sm font-extrabold text-white">{value}</p>
 =======
 function MiniStat({ icon, label, value, className = "" }) {
+=======
+function MiniStat({ icon, label, value }) {
+>>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
   return (
-    <div
-      className={`inline-flex h-9 min-w-0 items-center gap-1.5 rounded-2xl border border-white/10 bg-white/5 px-2 sm:gap-2 sm:rounded-full sm:px-3 ${className}`.trim()}
-    >
+    <div className="inline-flex h-9 min-w-0 items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3">
       <div className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full bg-lime-400/15 text-lime-300">
         {icon}
       </div>
-      <p className="hidden truncate text-[10px] font-bold uppercase tracking-[0.14em] text-white/55 sm:block">
+      <p className="truncate text-[10px] font-bold uppercase tracking-[0.14em] text-white/55">
         {label}
       </p>
+<<<<<<< HEAD
       <p className="min-w-0 truncate text-sm font-extrabold text-white">
         {value}
       </p>
 >>>>>>> 10f88903 (chore: remove committed backup folders)
+=======
+      <p className="truncate text-sm font-extrabold text-white">{value}</p>
+>>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
     </div>
   );
 }

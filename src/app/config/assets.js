@@ -1,3 +1,4 @@
+// src/app/config/assets.js
 // src/config/assets.js
 
 import { withBaseUrl } from "@/utils/assetUtils.js";

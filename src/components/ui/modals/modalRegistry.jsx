@@ -1,6 +1,7 @@
 // src/components/ui/modals/modalRegistry.jsx
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 import DailyRewardModal from "@/components/ui/modals/DailyRewardModal.jsx";
 import FounderBonusModal from "@/components/ui/modals/FounderBonusModal.jsx";
 import LifecycleNoticeModal from "@/components/ui/modals/LifecycleNoticeModal.jsx";
@@ -17,6 +18,11 @@ const LifecycleNoticeModal = lazy(
   () => import("@/components/ui/modals/LifecycleNoticeModal.jsx")
 );
 >>>>>>> 10f88903 (chore: remove committed backup folders)
+=======
+import DailyRewardModal from "@/components/ui/modals/DailyRewardModal.jsx";
+import FounderBonusModal from "@/components/ui/modals/FounderBonusModal.jsx";
+import LifecycleNoticeModal from "@/components/ui/modals/LifecycleNoticeModal.jsx";
+>>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
 
 export function renderModal(entry, { closeModal } = {}) {
   const id = entry?.id ? String(entry.id) : "";
@@ -25,42 +31,36 @@ export function renderModal(entry, { closeModal } = {}) {
 
   if (id === "dailyReward") {
     return (
-      <Suspense fallback={null}>
-        <DailyRewardModal
-          open
-          rewardState={props.rewardState || null}
-          onClose={() => closeModal?.()}
-        />
-      </Suspense>
+      <DailyRewardModal
+        open
+        rewardState={props.rewardState || null}
+        onClose={() => closeModal?.()}
+      />
     );
   }
 
   if (id === "founderBonus") {
     return (
-      <Suspense fallback={null}>
-        <FounderBonusModal
-          open
-          rewardAmount={props.rewardAmount}
-          onClaim={async () => {
-            const ok = props?.onClaim ? await props.onClaim() : false;
-            if (ok) closeModal?.();
-          }}
-          onClose={() => closeModal?.()}
-        />
-      </Suspense>
+      <FounderBonusModal
+        open
+        rewardAmount={props.rewardAmount}
+        onClaim={async () => {
+          const ok = props?.onClaim ? await props.onClaim() : false;
+          if (ok) closeModal?.();
+        }}
+        onClose={() => closeModal?.()}
+      />
     );
   }
 
   if (id === "lifecycleNotice") {
     return (
-      <Suspense fallback={null}>
-        <LifecycleNoticeModal
-          open
-          lifecycleStatus={props.lifecycleStatus}
-          dog={props.dog}
-          onClose={() => closeModal?.()}
-        />
-      </Suspense>
+      <LifecycleNoticeModal
+        open
+        lifecycleStatus={props.lifecycleStatus}
+        dog={props.dog}
+        onClose={() => closeModal?.()}
+      />
     );
   }
 

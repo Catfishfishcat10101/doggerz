@@ -1,3 +1,5 @@
+<!-- docs/jackrussell-doggerz-asset-spec.md -->
+
 # Jack Russell GLB Asset Spec
 
 Canonical asset path:

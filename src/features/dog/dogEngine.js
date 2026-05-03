@@ -1,3 +1,4 @@
+// src/features/dog/dogEngine.js
 import { getLifeStageForAge } from "@/utils/lifecycle.js";
 
 const clamp = (n, lo = 0, hi = 100) =>

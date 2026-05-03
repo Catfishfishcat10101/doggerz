@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+// src/components/dog/renderers/Fireball.jsx
+>>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
 // Developer demo-only renderer. Not used by Landing, Adopt, Game, or Store.
 import { useEffect, useMemo, useRef, useState } from "react";
 

@@ -1,3 +1,4 @@
+// _backup/old-src-conflicts/components-game/ShareMomentCard.jsx
 function resolveAccentClasses(accent = "emerald") {
   const key = String(accent || "emerald")
     .trim()

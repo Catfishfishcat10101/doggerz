@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// scripts/check-ts-nocheck.js
 /* eslint-disable no-console */
 const fs = require("node:fs");
 const path = require("node:path");

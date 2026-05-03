@@ -1,3 +1,4 @@
+// src/features/game/StageBackground.jsx
 function getStageMood({ isNight, weather, scene }) {
   const weatherKey = String(
     scene?.weatherKey || scene?.weather || weather || "clear"

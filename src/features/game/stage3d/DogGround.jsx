@@ -1,3 +1,4 @@
+// src/features/game/stage3d/DogGround.jsx
 /* eslint-disable react/no-unknown-property */
 const DOG_STAGE_GROUND = Object.freeze({
   id: "yard-ground-plane",

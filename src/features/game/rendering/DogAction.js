@@ -1,3 +1,4 @@
+// src/features/game/rendering/DogAction.js
 /**
  * @typedef {(
  *   | "idle"

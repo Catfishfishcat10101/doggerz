@@ -1,3 +1,4 @@
+// src/features/game/stage3d/DogShadowPlane.jsx
 /* eslint-disable react/no-unknown-property */
 export default function DogShadowPlane({ opacity = 0.22 }) {
   return (

@@ -1,3 +1,4 @@
+// src/components/dog/DogCosmeticsOverlay.jsx
 // src/components/DogCosmeticsOverlay.jsx
 //
 // Layered cosmetic renderer for collar/tag overlays.

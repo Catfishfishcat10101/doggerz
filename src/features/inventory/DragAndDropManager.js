@@ -1,3 +1,4 @@
+// src/features/inventory/DragAndDropManager.js
 // src/logic/DragAndDropManager.js
 function toFiniteNumber(value, fallback = 0) {
   const n = Number(value);

@@ -1,3 +1,4 @@
+// _backup/old-src-conflicts/pages/Settings.jsx
 // src/pages/Settings.jsx
 /** @format */
 import { useEffect, useRef, useState } from "react";

@@ -1,3 +1,4 @@
+// _backup/old-src-conflicts/pages/Store.jsx
 // src/pages/Store.jsx
 // Store: buy + preview cosmetics, themes, and doghouse styles.
 import { useEffect, useMemo, useRef, useState } from "react";

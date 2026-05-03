@@ -1,3 +1,4 @@
+// src/features/dog/memory/memoryFormatter.js
 import { getMemoryMomentMeta, MEMORY_MOMENT_TYPES } from "./memoryEvents.js";
 
 function titleize(value, fallback = "Memory moment") {

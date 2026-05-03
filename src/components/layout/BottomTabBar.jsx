@@ -1,3 +1,4 @@
+// src/components/layout/BottomTabBar.jsx
 // src/cpomponents/layout/BottomTabBar.jsx
 import { NavLink, useLocation } from "react-router-dom";
 

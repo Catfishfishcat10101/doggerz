@@ -1,4 +1,4 @@
-//src/components/dog/shells/DogRouteShell.jsx
+// src/components/dog/shells/DogRouteShell.jsx
 import { Outlet } from "react-router-dom";
 import DogAIEngine from "@/components/dog/DogAIEngine.jsx";
 

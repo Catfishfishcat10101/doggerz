@@ -1,3 +1,4 @@
+// _backup/old-src-conflicts/mobile-yard/main.js
 import { Capacitor } from "@capacitor/core";
 import { Haptics, ImpactStyle } from "@capacitor/haptics";
 import { LocalNotifications } from "@capacitor/local-notifications";

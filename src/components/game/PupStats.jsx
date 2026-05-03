@@ -1,3 +1,4 @@
+// src/components/game/PupStats.jsx
 const STAT_LABELS = [
   ["hunger", "Hunger"],
   ["thirst", "Thirst"],

@@ -1,3 +1,4 @@
+// _backup/old-src-conflicts/components-game/MainGamePanels.jsx
 import { useEffect, useState } from "react";
 import Tooltip from "@/components/ui/Tooltip.jsx";
 import useCountdown from "@/hooks/useCountdown.js";

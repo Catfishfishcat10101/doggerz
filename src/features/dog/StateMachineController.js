@@ -1,3 +1,4 @@
+// src/features/dog/StateMachineController.js
 import {
   DOG_FSM_DEFAULT,
   advanceDogFsm,

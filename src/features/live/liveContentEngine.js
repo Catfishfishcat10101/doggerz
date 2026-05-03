@@ -1,5 +1,9 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+// src/features/live/liveContentEngine.js
+>>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
 import { getMorningGloryLiveOp } from "@/features/dog/behaviorSceneProfile.js";
 
 >>>>>>> 10f88903 (chore: remove committed backup folders)

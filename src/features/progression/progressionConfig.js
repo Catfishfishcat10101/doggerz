@@ -1,3 +1,4 @@
+// src/features/progression/progressionConfig.js
 import { createSelector } from "@reduxjs/toolkit";
 
 const clamp = (value, min = 0, max = 100) => {

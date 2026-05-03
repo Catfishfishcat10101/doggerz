@@ -1,3 +1,4 @@
+// src/components/dog/dogAnimationEngine.js
 import jrManifest from "@/components/dog/manifests/jrManifest.json";
 import {
   isKnownDogAnimation,

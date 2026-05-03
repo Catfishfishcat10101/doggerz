@@ -1,3 +1,4 @@
+// src/features/dog/memory/memoryJournalModel.js
 const STORY_CATEGORY_IDS = Object.freeze({
   FIRSTS: "firsts",
   MILESTONES: "milestones",

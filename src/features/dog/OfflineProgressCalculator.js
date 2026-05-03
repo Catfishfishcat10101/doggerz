@@ -1,3 +1,4 @@
+// src/features/dog/OfflineProgressCalculator.js
 const MS_PER_HOUR = 1000 * 60 * 60;
 export const HUNGER_FULLNESS_BUFFER_HOURS = 4;
 export const HUNGER_INCREASE_PER_HOUR = 10;

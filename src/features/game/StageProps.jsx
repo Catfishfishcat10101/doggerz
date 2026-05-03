@@ -1,3 +1,4 @@
+// src/features/game/StageProps.jsx
 import { toPercent } from "./rendering/sceneTokens.js";
 
 function getWeatherState(weather) {

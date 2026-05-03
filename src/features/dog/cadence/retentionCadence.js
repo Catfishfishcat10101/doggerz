@@ -1,3 +1,4 @@
+// src/features/dog/cadence/retentionCadence.js
 function clamp(value, min, max) {
   const n = Number(value);
   if (!Number.isFinite(n)) return min;

@@ -1,3 +1,4 @@
+// vitest.config.mjs
 /** @format */
 
 import path from "node:path";

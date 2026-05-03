@@ -1,3 +1,4 @@
+// src/features/game/rendering/SceneHud.jsx
 function getToneClasses(tone = "neutral") {
   const key = String(tone || "neutral")
     .trim()

@@ -1,3 +1,4 @@
+// src/features/training/skillTree.js
 // src/constants/skillTree.js
 
 function freezePerk(perk, index = 0) {

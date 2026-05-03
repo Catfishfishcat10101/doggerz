@@ -1,3 +1,4 @@
+// src/features/dog/personalityProfile.js
 /** @format */
 // src/logic/personalityProfile.js
 
