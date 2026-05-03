@@ -65,11 +65,81 @@ function HotspotButton({ item, active = false, onTap }) {
   );
 }
 
+<<<<<<< HEAD
 function PawPrintLayer({ pawPrints = [] }) {
   if (!Array.isArray(pawPrints) || !pawPrints.length) return null;
 
   return (
     <div className="pointer-events-none absolute inset-0 z-[21] overflow-hidden">
+=======
+export function InteractionOverlay({
+  investigationProps,
+  activePropId,
+  onPropTap,
+  pawPrints,
+  showBowlHint,
+}) {
+  return (
+    <div className="absolute inset-0 z-[60]">
+      {Array.isArray(investigationProps) &&
+        investigationProps.map((item) => (
+          <HotspotButton
+            key={item.id}
+            item={item}
+            active={item.id === activePropId}
+            onTap={onPropTap}
+          />
+        ))}
+      {showBowlHint && (
+        <div className="pointer-events-none absolute bottom-3 left-1/2 z-[28] -translate-x-1/2 rounded-full border border-white/12 bg-black/45 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white/78 backdrop-blur-sm">
+          Tap the grass to place the bowl
+        </div>
+      )}
+      <PawPrintLayer pawPrints={pawPrints} />
+    </div>
+  );
+}
+
+export function ForegroundOverlay({ isNight, weather }) {
+  const weatherKey = String(weather || "clear").toLowerCase();
+  const isRainy = weatherKey.includes("rain") || weatherKey.includes("storm");
+  const isSnowy = weatherKey.includes("snow") || weatherKey.includes("sleet");
+
+  const filters = [];
+  if (isNight) {
+    // Deep night tint: darker and colder (blue/purple shift)
+    filters.push(
+      "brightness(0.55) saturate(0.7) sepia(0.2) hue-rotate(190deg)"
+    );
+  }
+  if (isRainy) {
+    // Overcast/Rainy: greyish and muted
+    filters.push("brightness(0.8) saturate(0.6) contrast(1.05)");
+  } else if (isSnowy) {
+    // Snowy: bright reflection and very cold/desaturated
+    filters.push("brightness(1.1) saturate(0.4)");
+  }
+
+  const filterStyle = filters.length > 0 ? filters.join(" ") : "none";
+
+  return (
+    <div
+      className="absolute inset-x-0 bottom-0 h-[12%] pointer-events-none z-50 opacity-90 transition-[filter] duration-1000"
+      style={{
+        background:
+          "linear-gradient(180deg, rgba(88,170,78,0), rgba(45,112,50,0.82) 38%, rgba(27,77,36,0.96) 100%)",
+        filter: filterStyle,
+      }}
+    />
+  );
+}
+
+export function PawPrintLayer({ pawPrints = [] }) {
+  if (!Array.isArray(pawPrints) || !pawPrints.length) return null;
+
+  return (
+    <div className="pointer-events-none absolute inset-0 z-[21] overflow-hidden opacity-60">
+>>>>>>> 10f88903 (chore: remove committed backup folders)
       {pawPrints.slice(-12).map((print) => (
         <span
           key={print.id}

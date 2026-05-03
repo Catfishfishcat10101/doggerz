@@ -93,3 +93,6 @@ public/sprites/puppy/
 public/sprites/_tmp/
 tmp-phone-screen*.png
 
+
+# Local backup folders
+.backups/

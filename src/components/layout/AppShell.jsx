@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 // src/layout/AppShell.jsx
 import { Outlet, useLocation } from "react-router-dom";
 import BottomTabBar from "@/components/layout/BottomTabBar.jsx";
@@ -36,5 +37,12 @@ export default function AppShell() {
         {!hideBottomTabBar ? <BottomTabBar /> : null}
       </div>
     </AppShellContext.Provider>
+=======
+export default function AppShell({ children }) {
+  return (
+    <main className="safe-screen flex min-h-screen items-center justify-center">
+      {children}
+    </main>
+>>>>>>> 10f88903 (chore: remove committed backup folders)
   );
 }

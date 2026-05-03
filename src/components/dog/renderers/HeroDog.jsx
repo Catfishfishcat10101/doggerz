@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 
@@ -61,6 +62,23 @@ const HERO_DOG_VARIANTS = Object.freeze({
     size: 360,
     layoutPreset: "showcase",
   }),
+=======
+//src/components/dpg/renderers/HeroDog.jsx
+
+import { Suspense, lazy, useMemo } from "react";
+
+const BrandDogHero3D = lazy(
+  () => import("@/components/brand/BrandDogHero3D.jsx")
+);
+
+const HERO_DOG_VARIANTS = Object.freeze({
+  default: "card",
+  card: "card",
+  promo: "promo",
+  landing: "landing",
+  adopt: "adopt",
+  showcase: "showcase",
+>>>>>>> 10f88903 (chore: remove committed backup folders)
 });
 
 function normalizeKey(value, fallback = "default") {
@@ -71,6 +89,7 @@ function normalizeKey(value, fallback = "default") {
   return key || fallback;
 }
 
+<<<<<<< HEAD
 function resolveReduceMotionOverride(value) {
   if (typeof value === "boolean") return value;
   const normalized = String(value || "")
@@ -287,3 +306,58 @@ export default function HeroDog({
     />
   );
 }
+=======
+function resolveHeroVariant(variant) {
+  const key = normalizeKey(variant, "default");
+  return HERO_DOG_VARIANTS[key] || HERO_DOG_VARIANTS.default;
+}
+
+function resolveHeroAnim(anim, animationPreset) {
+  const preset = normalizeKey(animationPreset, "none");
+  if (preset === "idle_wag") return "Wag";
+  if (preset === "idle_rest") return "Sleep";
+
+  const normalized = String(anim || "")
+    .trim()
+    .toLowerCase();
+
+  if (normalized.includes("sleep")) return "Sleep";
+  if (normalized.includes("walk")) return "Walk";
+  if (normalized.includes("wag")) return "Wag";
+  if (normalized.includes("bark")) return "Bark";
+  if (normalized.includes("sit")) return "Sit";
+  return "Idle";
+}
+
+function HeroDogFallback({ className = "" }) {
+  return (
+    <div
+      className={`relative overflow-hidden rounded-[1.75rem] border border-emerald-300/18 bg-[radial-gradient(circle_at_50%_32%,rgba(16,185,129,0.18),rgba(2,6,23,0.86)_64%)] ${className}`.trim()}
+      aria-hidden="true"
+    />
+  );
+}
+
+export default function HeroDog({
+  variant = "default",
+  animationPreset = "none",
+  anim = "idle",
+  className = "",
+}) {
+  const resolvedVariant = useMemo(() => resolveHeroVariant(variant), [variant]);
+  const resolvedAnim = useMemo(
+    () => resolveHeroAnim(anim, animationPreset),
+    [anim, animationPreset]
+  );
+
+  return (
+    <Suspense fallback={<HeroDogFallback className={className} />}>
+      <BrandDogHero3D
+        variant={resolvedVariant}
+        anim={resolvedAnim}
+        className={className}
+      />
+    </Suspense>
+  );
+}
+>>>>>>> 10f88903 (chore: remove committed backup folders)

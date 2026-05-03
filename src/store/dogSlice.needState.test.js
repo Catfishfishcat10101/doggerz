@@ -1,9 +1,20 @@
 import { describe, expect, it } from "vitest";
 
 import dogReducer, {
+<<<<<<< HEAD
   hydrateDog,
   petDog,
   setAdoptedAt,
+=======
+  feed,
+  giveWater,
+  goPotty,
+  hydrateDog,
+  petDog,
+  play,
+  setAdoptedAt,
+  trainObedience,
+>>>>>>> 10f88903 (chore: remove committed backup folders)
 } from "@/store/dogSlice.js";
 
 function buildActiveDogState(overrides = {}) {
@@ -98,4 +109,50 @@ describe("dogSlice need-state consequences", () => {
     expect(nextState.memory.neglectStrikes).toBe(2);
     expect(nextState.stats.affection).toBeGreaterThan(12);
   });
+<<<<<<< HEAD
+=======
+
+  it("forms a daily relationship memory from feed, water, potty, and bond care", () => {
+    const { state, now } = buildActiveDogState({
+      stats: {
+        hunger: 82,
+        thirst: 78,
+        energy: 78,
+        happiness: 58,
+      },
+      pottyLevel: 92,
+    });
+
+    let nextState = dogReducer(
+      state,
+      feed({ now, foodType: "regular_kibble" })
+    );
+    nextState = dogReducer(nextState, giveWater({ now: now + 1_000 }));
+    nextState = dogReducer(
+      nextState,
+      goPotty({ now: now + 2_000, forceSuccess: true })
+    );
+    nextState = dogReducer(nextState, play({ now: now + 3_000 }));
+
+    expect(nextState.memory.dailyCareLoop.categories).toEqual(
+      expect.arrayContaining(["feed", "water", "potty", "bond"])
+    );
+    expect(
+      nextState.memories.some((memory) => memory.type === "daily_care_loop")
+    ).toBe(true);
+    expect(nextState.lastCareResponse?.message).toMatch(/play|bond/i);
+  });
+
+  it("keeps trick training locked behind potty training", () => {
+    const { state, now } = buildActiveDogState();
+
+    const nextState = dogReducer(
+      state,
+      trainObedience({ now, commandId: "sit" })
+    );
+
+    expect(nextState.lastAction).toBe("trainBlocked");
+    expect(nextState.lastCareResponse?.message).toMatch(/potty training/i);
+  });
+>>>>>>> 10f88903 (chore: remove committed backup folders)
 });

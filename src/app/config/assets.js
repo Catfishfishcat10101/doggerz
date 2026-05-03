@@ -16,9 +16,15 @@ export const BACKGROUNDS = Object.freeze({
 });
 
 export const DOGS = Object.freeze({
+<<<<<<< HEAD
   staticFallback: withBaseUrl("/assets/sprites/jr/pup_idle.png"),
   walkLeft: withBaseUrl("/assets/sprites/jr/pup_walk_left.png"),
   walkLeftAlt: withBaseUrl("/assets/sprites/jr/pup_walk_right.png"),
+=======
+  staticFallback: withBaseUrl("/assets/icons/DoggerIcon.png"),
+  walkLeft: withBaseUrl("/assets/icons/DoggerIcon.png"),
+  walkLeftAlt: withBaseUrl("/assets/icons/DoggerIcon.png"),
+>>>>>>> 10f88903 (chore: remove committed backup folders)
 });
 
 export function getAsset(map, key, fallback = "") {

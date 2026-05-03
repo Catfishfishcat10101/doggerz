@@ -31,7 +31,11 @@ const REMINDERS = DEFAULT_DOGGERZ_REMINDERS.map((item) => ({
         : 18 * 60 * 60 * 1000,
   icon:
     item.key === "checkin-lonely"
+<<<<<<< HEAD
       ? "/assets/sprites/jr/pup_idle.png"
+=======
+      ? "/assets/icons/icon-192.png"
+>>>>>>> 10f88903 (chore: remove committed backup folders)
       : "/assets/icons/icon-192.png",
 }));
 

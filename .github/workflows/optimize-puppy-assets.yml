@@ -1,3 +1,5 @@
+# .github/workflows/optimize-puppy-assets.yml
+
 name: Optimize Puppy Assets
 on:
   push:

@@ -1,12 +1,6 @@
-// src/pages/Login.jsx
-import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
-import { Navigate, useNavigate, Link, useLocation } from "react-router-dom";
-import {
-  signInWithEmailAndPassword,
-  sendPasswordResetEmail,
-} from "firebase/auth";
+import { Link, useNavigate } from "react-router-dom";
 
+<<<<<<< HEAD
 import { auth, firebaseReady } from "@/lib/firebase/index.js";
 import { PATHS } from "@/app/routes.js";
 import { selectIsLoggedIn } from "@/store/userSlice.js";
@@ -15,45 +9,21 @@ import {
   removeStoredValues,
   setStoredValue,
 } from "@/utils/nativeStorage.js";
+=======
+import DoggerzLogo from "../components/brand/DoggerzLogo.jsx";
+import { hasDog } from "../utils/storage.js";
+>>>>>>> 10f88903 (chore: remove committed backup folders)
 
-import PageShell from "@/components/layout/PageShell.jsx";
+export default function Login() {
+  const navigate = useNavigate();
 
-const STORAGE_REMEMBER = "doggerz:loginRememberEmail";
-const STORAGE_EMAIL = "doggerz:loginEmail";
-
-async function loadRememberedEmail() {
-  try {
-    const remember = (await getStoredValue(STORAGE_REMEMBER)) === "1";
-    const email = remember ? (await getStoredValue(STORAGE_EMAIL)) || "" : "";
-    return { remember, email };
-  } catch {
-    return { remember: false, email: "" };
-  }
-}
-
-async function persistRememberedEmail({ remember, email }) {
-  try {
-    if (remember) {
-      await Promise.all([
-        setStoredValue(STORAGE_REMEMBER, "1"),
-        setStoredValue(STORAGE_EMAIL, String(email || "")),
-      ]);
+  function handleLocalLogin() {
+    if (hasDog()) {
+      navigate("/game");
       return;
     }
-    await removeStoredValues([STORAGE_REMEMBER, STORAGE_EMAIL]);
-  } catch {
-    // ignore
-  }
-}
 
-export default function LoginPage() {
-  const isLoggedIn = useSelector(selectIsLoggedIn);
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  // So we can send them back where they came from later if needed
-  const from = location.state?.from || "/game";
-
+<<<<<<< HEAD
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -227,28 +197,31 @@ export default function LoginPage() {
                 </p>
               </div>
             )}
+=======
+    navigate("/adopt");
+  }
 
-            <div>
-              <label
-                htmlFor="login-email"
-                className="block text-sm font-medium text-zinc-800 dark:text-zinc-200 mb-1"
-              >
-                Email
-              </label>
-              <input
-                id="login-email"
-                type="email"
-                inputMode="email"
-                autoCapitalize="none"
-                autoCorrect="off"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-white border border-zinc-300 text-zinc-900 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm dark:bg-zinc-950 dark:border-zinc-700 dark:text-white dark:placeholder:text-zinc-500"
-                autoComplete="email"
-                placeholder="you@example.com"
-              />
-            </div>
+  return (
+    <div className="mx-auto w-full max-w-md">
+      <section className="doggerz-card rounded-[2.25rem] p-6 text-center">
+        <DoggerzLogo size="small" />
 
+        <p className="mx-auto mt-5 max-w-sm text-sm font-medium leading-7 text-slate-300">
+          Local login is enabled for the clean rebuild. Google/Firebase login
+          gets added back after this version is stable.
+        </p>
+>>>>>>> 10f88903 (chore: remove committed backup folders)
+
+        <div className="mt-8 grid gap-4">
+          <button
+            type="button"
+            onClick={handleLocalLogin}
+            className="doggerz-button doggerz-button-primary text-lg"
+          >
+            Continue Locally
+          </button>
+
+<<<<<<< HEAD
             <div>
               <label
                 htmlFor="login-password"
@@ -339,8 +312,13 @@ export default function LoginPage() {
               Sign up
             </Link>
           </p>
+=======
+          <Link to="/" className="doggerz-button doggerz-button-ghost text-lg">
+            Back
+          </Link>
+>>>>>>> 10f88903 (chore: remove committed backup folders)
         </div>
-      </div>
-    </PageShell>
+      </section>
+    </div>
   );
 }

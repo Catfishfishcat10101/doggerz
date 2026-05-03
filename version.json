@@ -1,4 +1,9 @@
 {
+<<<<<<< HEAD
   "versionName": "3.0.1",
   "versionCode": 301
+=======
+  "versionName": "3.3.5",
+  "versionCode": 335
+>>>>>>> 10f88903 (chore: remove committed backup folders)
 }

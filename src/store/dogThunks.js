@@ -1,7 +1,7 @@
 //src/store/dogThunks.js
 
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { deleteDoc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase/index.js";
 import { dogMainDoc } from "@/lib/firebase/paths.js";
 import {
@@ -312,6 +312,61 @@ export const saveDogToCloud = createAsyncThunk(
           : err?.message || "Cloud save failed",
       });
       return rejectWithValue(err?.message || "Cloud save failed");
+<<<<<<< HEAD
+=======
+    }
+  }
+);
+
+export const deleteDogFromCloud = createAsyncThunk(
+  "dog/deleteDogFromCloud",
+  async (_, { dispatch, rejectWithValue }) => {
+    try {
+      if (!db) {
+        setCloudSyncStatus(dispatch, {
+          status: "local",
+          errorMessage: null,
+        });
+        return rejectWithValue("Cloud sync unavailable");
+      }
+      const user = await ensureAnonSignIn();
+      const userId = user?.uid || auth?.currentUser?.uid;
+      if (isAnonymousFirebaseUser(user)) {
+        setCloudSyncStatus(dispatch, {
+          status: "local",
+          errorMessage: null,
+        });
+        return rejectWithValue("Cloud sync disabled for anonymous session");
+      }
+      if (!userId) return rejectWithValue("User not logged in");
+
+      setCloudSyncStatus(dispatch, {
+        status: "syncing",
+        lastAttemptAt: Date.now(),
+        errorMessage: null,
+      });
+
+      const docRef = dogMainDoc(userId);
+      if (!docRef) return rejectWithValue("Cloud document unavailable");
+      await deleteDoc(docRef);
+
+      setCloudSyncStatus(dispatch, {
+        status: "saved",
+        lastSuccessAt: Date.now(),
+        errorMessage: null,
+      });
+      return { success: true };
+    } catch (err) {
+      const permissionDenied = isFirestorePermissionError(err);
+      setCloudSyncStatus(dispatch, {
+        status: permissionDenied ? "local" : "error",
+        lastAttemptAt: Date.now(),
+        errorMessage: permissionDenied
+          ? null
+          : err?.message || "Cloud delete failed",
+      });
+      return rejectWithValue(err?.message || "Cloud delete failed");
+>>>>>>> 10f88903 (chore: remove committed backup folders)
     }
   }
 );

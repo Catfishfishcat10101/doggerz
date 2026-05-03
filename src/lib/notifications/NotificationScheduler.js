@@ -1,12 +1,10 @@
 /** @format */
 
-import {
-  cancelLifeLoopNotifications,
-  ensureNotificationsEnabled,
-  scheduleLifeLoopNotifications,
-  showDoggerzNotification,
-} from "@/utils/notifications.js";
 import { CHECK_IN_THRESHOLDS } from "@/utils/checkIn.js";
+
+async function loadNotificationRuntime() {
+  return import("@/utils/notifications.js");
+}
 
 export const DEFAULT_DOGGERZ_REMINDERS = Object.freeze([
   {
@@ -51,6 +49,8 @@ export async function scheduleDogNotifications({
   baseByKey = {},
   reminders = DEFAULT_DOGGERZ_REMINDERS,
 } = {}) {
+  const { ensureNotificationsEnabled, scheduleLifeLoopNotifications } =
+    await loadNotificationRuntime();
   const permission = await ensureNotificationsEnabled();
   if (permission !== "granted") return false;
 
@@ -69,6 +69,8 @@ export async function sendDogNotification({
   tag = "doggerz",
   data = null,
 } = {}) {
+  const { ensureNotificationsEnabled, showDoggerzNotification } =
+    await loadNotificationRuntime();
   const permission = await ensureNotificationsEnabled();
   if (permission !== "granted") return false;
   return showDoggerzNotification({ title, body, tag, data });
@@ -87,4 +89,7 @@ export async function sendDogNeedsNotification(kind = "hungry") {
   });
 }
 
-export { cancelLifeLoopNotifications as cancelDogNotifications };
+export async function cancelDogNotifications() {
+  const { cancelLifeLoopNotifications } = await loadNotificationRuntime();
+  return cancelLifeLoopNotifications();
+}

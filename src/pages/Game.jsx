@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 //src/pages/Game.jsx
 import { useMemo, useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
@@ -37,30 +38,32 @@ import {
   trackSessionDuration,
 } from "@/lib/analytics/gameAnalytics.js";
 import { startPerfBudgetMonitor } from "@/lib/perf/perfBudget.js";
+=======
+import { useEffect, useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
-function titleCase(s) {
-  const str = String(s || "").trim();
-  if (!str) return "";
-  return str.charAt(0).toUpperCase() + str.slice(1);
-}
+import ActionBar from "../components/game/ActionBar.jsx";
+import DailyRewardModal from "../components/game/DailyRewardModal.jsx";
+import DogTopCard from "../components/game/DogTopCard.jsx";
+import PupStats from "../components/game/PupStats.jsx";
+import YardStage from "../components/game/YardStage.jsx";
+import { clearDog, loadDog, patchDogStats, saveDog } from "../utils/storage.js";
+import {
+  calculateNextStreak,
+  getTodayKey,
+  wasRewardClaimedToday,
+} from "../utils/timeWeather.js";
+>>>>>>> 10f88903 (chore: remove committed backup folders)
 
-function shouldReduceEffects(perfMode) {
-  const mode = String(perfMode || "auto").toLowerCase();
-  if (mode === "on") return true;
-  if (mode === "off") return false;
-  if (typeof window === "undefined") return false;
-  try {
-    if (navigator?.connection?.saveData) return true;
-    const mem = Number(navigator?.deviceMemory || 0);
-    if (mem && mem <= 4) return true;
-    const cores = Number(navigator?.hardwareConcurrency || 0);
-    if (cores && cores <= 4) return true;
-  } catch {
-    // ignore
+function getPoseForAction(actionId) {
+  if (actionId === "sleep") {
+    return "sleep";
   }
-  return false;
+
+  return "idle";
 }
 
+<<<<<<< HEAD
 export default function GamePage() {
   const { active: activeModal, openOnce, closeModalById } = useModal();
   const dog = useDog();
@@ -111,20 +114,26 @@ export default function GamePage() {
     enableImages: showBackgroundPhotos,
     usePreciseLocation: usePreciseDayNightLocation,
   });
+=======
+function getConditionFromStats(stats) {
+  if (stats.hunger < 35) return "Hungry";
+  if (stats.energy < 35) return "Tired";
+  if (stats.happiness < 35) return "Lonely";
+  if (stats.cleanliness < 35) return "Dirty";
+  if (stats.health < 45) return "Unwell";
 
-  const reduceMotion =
-    settings?.reduceMotion === "on" ||
-    (settings?.reduceMotion !== "off" &&
-      typeof window !== "undefined" &&
-      window.matchMedia &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  return "Good";
+}
+>>>>>>> 10f88903 (chore: remove committed backup folders)
 
-  const reduceTransparency = settings?.reduceTransparency === true;
-  const showWeatherFx = settings?.showWeatherFx !== false && !perfReduced;
-  const showVignette = settings?.showSceneVignette !== false && !perfReduced;
-  const showGrain =
-    settings?.showSceneGrain !== false && !perfReduced && !reduceTransparency;
+export default function Game() {
+  const navigate = useNavigate();
 
+  const [dog, setDog] = useState(() => loadDog());
+  const [pose, setPose] = useState("idle");
+  const [showReward, setShowReward] = useState(false);
+
+<<<<<<< HEAD
   const weatherKey = useMemo(
     () => normalizeWeatherCondition(weather),
     [weather]
@@ -239,129 +248,146 @@ export default function GamePage() {
     if (dog?.adoptedAt) {
       setAdoptionGateReady(false);
       return undefined;
+=======
+  const nextStreak = useMemo(() => {
+    if (!dog) {
+      return 1;
+>>>>>>> 10f88903 (chore: remove committed backup folders)
     }
 
-    if (!isLoggedIn) {
-      setAdoptionGateReady(true);
+    return calculateNextStreak(dog.lastRewardDate, dog.streak);
+  }, [dog]);
+
+  useEffect(() => {
+    if (!dog) {
+      navigate("/adopt", { replace: true });
+      return;
+    }
+
+    setShowReward(!wasRewardClaimedToday(dog.lastRewardDate));
+  }, [dog, navigate]);
+
+  useEffect(() => {
+    if (pose === "idle") {
       return undefined;
     }
 
-    setAdoptionGateReady(false);
-    const timer = window.setTimeout(() => {
-      setAdoptionGateReady(true);
-    }, 1600);
-    return () => window.clearTimeout(timer);
-  }, [dog?.adoptedAt, isLoggedIn]);
+    const timeout = window.setTimeout(() => {
+      setPose("idle");
+    }, 2400);
 
-  const scene = useMemo(
-    () => ({
-      label:
-        String(dog?.yard?.environment || "yard").toLowerCase() === "apartment"
-          ? "Apartment"
-          : "Backyard",
-      timeOfDay: titleCase(timeOfDayBucket || (isNight ? "night" : "day")),
-      timeOfDayBucket,
-      isNight,
-      sunriseProgress,
-      dayNightSource,
-      weather: weatherLabel,
-      weatherKey,
-      weatherAccent,
-    }),
-    [
-      dayNightSource,
-      dog?.yard?.environment,
-      isNight,
-      sunriseProgress,
-      timeOfDayBucket,
-      weatherLabel,
-      weatherKey,
-      weatherAccent,
-    ]
-  );
+    return () => window.clearTimeout(timeout);
+  }, [pose]);
 
-  const dailyRewardState = useMemo(
-    () =>
-      getDailyRewardState({
-        lastRewardClaimedAt: dog?.lastRewardClaimedAt,
-        consecutiveDays: dog?.consecutiveDays,
-        now: rewardNow,
-      }),
-    [dog?.lastRewardClaimedAt, dog?.consecutiveDays, rewardNow]
-  );
+  if (!dog) {
+    return null;
+  }
 
-  useEffect(() => {
-    if (!dog?.adoptedAt) return;
-    if (activeModal) return;
-    if (!dailyRewardState?.canClaim) return;
-    const todayMs = Number(dailyRewardState?.todayMs || 0);
-    openOnce(
-      `dailyReward:${todayMs || "unknown"}`,
-      "dailyReward",
-      { rewardState: dailyRewardState },
-      { replace: false }
-    );
-  }, [activeModal, dailyRewardState, dog?.adoptedAt, openOnce]);
+  function commitDog(nextDog) {
+    const savedDog = saveDog(nextDog);
+    setDog(savedDog);
+  }
 
-  useEffect(() => {
-    if (lifecycleStatus !== "RESCUED" && lifecycleStatus !== "FAREWELL") {
-      if (activeModalId === "lifecycleNotice") {
-        closeModalById("lifecycleNotice");
-      }
-      return;
+  function handleAction(actionId) {
+    setPose(getPoseForAction(actionId));
+
+    let nextDog = dog;
+
+    if (actionId === "feed") {
+      nextDog = patchDogStats(dog, {
+        hunger: 22,
+        happiness: 4,
+        energy: -3,
+      });
+
+      nextDog = {
+        ...nextDog,
+        condition: getConditionFromStats(nextDog.stats),
+      };
     }
-    if (!dog) return;
-    openOnce(
-      lifecycleNoticeKey,
-      "lifecycleNotice",
-      {
-        lifecycleStatus,
-        dog,
-      },
-      { replace: true }
-    );
-  }, [
-    activeModalId,
-    closeModalById,
-    dog,
-    lifecycleNoticeKey,
-    lifecycleStatus,
-    openOnce,
-  ]);
 
-  useEffect(() => {
-    if (!dogInteractive || founderBonusLoading) return;
-    if (activeModal) return;
-    if (!isFounderBonusEligible || founderBonusClaimed) return;
-    openOnce("founderBonus", "founderBonus", {
-      rewardAmount: founderBonusAmount,
-      onClaim: async () => claimFounderBonus(),
-    });
-  }, [
-    activeModal,
-    claimFounderBonus,
-    dogInteractive,
-    founderBonusAmount,
-    founderBonusClaimed,
-    founderBonusLoading,
-    isFounderBonusEligible,
-    openOnce,
-  ]);
+    if (actionId === "pet") {
+      nextDog = patchDogStats(dog, {
+        happiness: 12,
+        bond: 6,
+        energy: -2,
+      });
 
-  const waitingForCloudAdoptionDecision =
-    !dog?.adoptedAt &&
-    (!isAuthResolved ||
-      (isLoggedIn &&
-        (!adoptionGateReady ||
-          (cloudSync?.status === "syncing" && !cloudSync?.lastSuccessAt))));
+      nextDog = {
+        ...nextDog,
+        condition: getConditionFromStats(nextDog.stats),
+      };
+    }
 
-  const shouldRedirectToAdopt =
-    !dog?.adoptedAt &&
-    isAuthResolved &&
-    adoptionGateReady &&
-    (!isLoggedIn || cloudSync?.status !== "syncing");
+    if (actionId === "care") {
+      nextDog = patchDogStats(dog, {
+        cleanliness: 12,
+        health: 5,
+        happiness: 3,
+      });
+
+      nextDog = {
+        ...nextDog,
+        condition: getConditionFromStats(nextDog.stats),
+      };
+    }
+
+    if (actionId === "train") {
+      const currentProgress = Number(dog.pottyProgress || 0);
+      const nextProgress = Math.min(10, currentProgress + 1);
+      const pottyComplete = nextProgress >= 10;
+
+      nextDog = patchDogStats(dog, {
+        energy: -6,
+        happiness: pottyComplete ? 6 : 2,
+        bond: 4,
+      });
+
+      nextDog = {
+        ...nextDog,
+        pottyProgress: nextProgress,
+        xp: dog.xp + 10,
+        condition: pottyComplete ? "Learning" : "Potty Training",
+      };
+    }
+
+    if (actionId === "sleep") {
+      nextDog = patchDogStats(dog, {
+        energy: 20,
+        health: 3,
+        hunger: -5,
+      });
+
+      nextDog = {
+        ...nextDog,
+        condition: "Resting",
+      };
+    }
+
+    commitDog(nextDog);
+  }
+
+  function handleClaimReward() {
+    const today = getTodayKey();
+
+    const nextDog = {
+      ...dog,
+      coins: Number(dog.coins || 0) + 100,
+      streak: nextStreak,
+      lastRewardDate: today,
+    };
+
+    commitDog(nextDog);
+    setShowReward(false);
+  }
+
+  function handleResetDog() {
+    clearDog();
+    navigate("/adopt", { replace: true });
+  }
 
   return (
+<<<<<<< HEAD
     <div
       className="dz-safe-area relative h-dvh min-h-0 overflow-hidden pb-24 md:pb-0"
       style={{ ...dayNightStyle, "--weather-accent": weatherAccent }}
@@ -375,15 +401,19 @@ export default function GamePage() {
       {showGrain ? (
         <div className="pointer-events-none absolute inset-0 opacity-[0.05] mix-blend-overlay bg-[radial-gradient(circle_at_20%_15%,rgba(255,255,255,0.6),transparent_55%)]" />
       ) : null}
+=======
+    <div className="mx-auto grid w-full max-w-6xl gap-4">
+      <DogTopCard dog={dog} />
+>>>>>>> 10f88903 (chore: remove committed backup folders)
 
-      <WeatherFXCanvas
-        mode={showWeatherFx ? weatherKey : "none"}
-        intensity={weatherIntensity}
-        reduceMotion={reduceMotion}
-        reduceTransparency={reduceTransparency}
-        className="z-0"
-      />
+      <section className="doggerz-card rounded-[2rem] p-4">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-full border border-white/15 bg-white/[0.04] px-3 py-2 text-xs font-black uppercase tracking-[0.18em] text-white">
+              Time Local
+            </span>
 
+<<<<<<< HEAD
       <div className="relative z-10 flex h-full min-h-0 flex-col">
         {shouldRedirectToAdopt ? (
           <Navigate to={PATHS.ADOPT} replace />
@@ -437,6 +467,49 @@ export default function GamePage() {
         </div>
       ) : null}
       <GrowthCelebration />
+=======
+            <span className="rounded-full border border-white/15 bg-white/[0.04] px-3 py-2 text-xs font-black uppercase tracking-[0.18em] text-white">
+              Weather Local
+            </span>
+
+            <span className="rounded-full border border-amber-300/25 bg-amber-400/10 px-3 py-2 text-xs font-black uppercase tracking-[0.18em] text-amber-100">
+              Cloud Ready · Waiting for first sync
+            </span>
+          </div>
+
+          <div className="flex gap-2">
+            <Link
+              to="/"
+              className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-black text-white"
+            >
+              Home
+            </Link>
+
+            <button
+              type="button"
+              onClick={handleResetDog}
+              className="rounded-2xl border border-red-300/20 bg-red-500/10 px-4 py-2 text-sm font-black text-red-100"
+            >
+              Reset
+            </button>
+          </div>
+        </div>
+
+        <YardStage dog={dog} pose={pose} />
+      </section>
+
+      <ActionBar onAction={handleAction} />
+
+      <PupStats dog={dog} />
+
+      {showReward && (
+        <DailyRewardModal
+          streak={nextStreak}
+          onClaim={handleClaimReward}
+          onClose={() => setShowReward(false)}
+        />
+      )}
+>>>>>>> 10f88903 (chore: remove committed backup folders)
     </div>
   );
 }

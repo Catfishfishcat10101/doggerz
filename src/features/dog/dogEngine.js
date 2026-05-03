@@ -207,7 +207,7 @@ export function buildDreamFromState(state = {}, now = Date.now()) {
   if (kind === "NIGHTMARE") {
     title = "A worried dream";
     summary =
-      "The yard feels too big and too quiet. Footsteps echo, and you keep looking for your hooman.";
+      "The yard feels too big and too quiet. Footsteps echo, and your pup keeps looking for you.";
     motifs = ["empty yard", "distant thunder", "lost leash"];
   } else if (kind === "LUCID") {
     title = "A lucid dream";
@@ -217,18 +217,18 @@ export function buildDreamFromState(state = {}, now = Date.now()) {
   }
 
   if (playedRecently || lastAction === "play") {
-    title = kind === "NIGHTMARE" ? "Chasing shadows" : "Chasing squirrels";
+    title = kind === "NIGHTMARE" ? "Chasing shadows" : "Chasing a scent";
     summary =
       kind === "NIGHTMARE"
-        ? "You sprint, but the squeak keeps slipping away-like it's hiding behind the wind."
-        : "You chase a legendary squirrel wearing a tiny crown. It squeaks like a tennis ball.";
-    motifs = ["squirrels", "tennis balls", "zoomies"];
+        ? "Your pup runs, but the sound keeps slipping away in the dark."
+        : "Your pup follows a fast scent trail across the yard and wakes up ready to play.";
+    motifs = ["scent trail", "tennis balls", "zoomies"];
   } else if (fedRecently || lastAction === "feed") {
     title = kind === "NIGHTMARE" ? "Empty bowl" : "Treat buffet";
     summary =
       kind === "NIGHTMARE"
-        ? "The bowl is there... but it's just out of reach, like a polite ghost."
-        : "Biscuits drift like snowflakes. Every chomp makes a happy little *ding*.";
+        ? "The bowl is there, but it stays just out of reach."
+        : "Biscuits drift through the dream like a calm reward after a good day.";
     motifs = ["biscuits", "bowls", "crunchy stars"];
   } else if (trainedRecently || lastAction === "train") {
     title = kind === "NIGHTMARE" ? "Commands in a maze" : "Graduation day";

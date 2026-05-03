@@ -1057,7 +1057,10 @@ function applyFeedEffect(state, payload = {}, opts = {}) {
   }
 
   const sweetBondMultiplier = hasTemperamentTag(state, "SWEET") ? 1.25 : 1;
-  applyBondGain(state, 0.7 * sweetBondMultiplier, now);
+  const hungerRelief = getNeedDelta(hungerBefore, state.stats.hunger);
+  const careTimingMultiplier =
+    hungerBefore >= 70 ? 1.35 : hungerBefore >= 45 ? 1 : 0.45;
+  applyBondGain(state, 0.7 * sweetBondMultiplier * careTimingMultiplier, now);
   gainPottyNeed(state, 25);
 
   applyPersonalityShift(state, {
@@ -1089,6 +1092,26 @@ function applyFeedEffect(state, payload = {}, opts = {}) {
     timestamp: now,
     happiness: isHumanFood ? 5 : usePremiumKibble ? 4 : 2,
     hunger: Number(state.stats.hunger || 0),
+  });
+
+  markDailyCareCategory(state, "feed", now);
+  setCareResponse(state, {
+    key: "feed",
+    label: usePremiumKibble
+      ? "Premium meal"
+      : isHumanFood
+        ? "Treat choice"
+        : "Meal",
+    message: usePremiumKibble
+      ? "They settled after a full meal and looked visibly satisfied."
+      : isHumanFood
+        ? "They loved it, but too much human food will cost health."
+        : hungerRelief >= 30
+          ? "The bowl mattered. Hunger dropped and their body language softened."
+          : "They ate a little, but they were not very hungry yet.",
+    tone: isHumanFood ? "amber" : usePremiumKibble ? "emerald" : "amber",
+    icon: "food",
+    now,
   });
 
   const date = getIsoDate(now);
@@ -1267,6 +1290,10 @@ function deriveEmotionCue(state) {
   const affection = Number(stats.affection || 0);
   const mentalStimulation = Number(stats.mentalStimulation || 0);
   const pottyLevel = Number(state.pottyLevel || 0);
+<<<<<<< HEAD
+=======
+  const pottyPhase = String(state?.potty?.sequence?.phase || "").toLowerCase();
+>>>>>>> 10f88903 (chore: remove committed backup folders)
   const neglectStrikes = Number(state.memory?.neglectStrikes || 0);
   const parasiteLoad = Number(state?.healthSilo?.parasiteLoad || 0);
   const jointStiffness = Number(state?.healthSilo?.jointStiffness || 0);
@@ -1284,7 +1311,16 @@ function deriveEmotionCue(state) {
   if (health <= 18) return "sick";
   if (jointStiffness >= 85) return "sore";
   if (energy <= 12) return "sleepy";
+<<<<<<< HEAD
   if (pottyLevel >= 92) return "potty";
+=======
+  if (
+    pottyPhase === POTTY_SEQUENCE.CUED ||
+    pottyPhase === POTTY_SEQUENCE.ANXIOUS_SNIFFING ||
+    pottyLevel >= 92
+  )
+    return "potty";
+>>>>>>> 10f88903 (chore: remove committed backup folders)
   if (thirst >= 88) return "thirsty";
   if (hunger >= 88) return "hungry";
   if (energy <= 20) return "sleepy";
@@ -1331,6 +1367,15 @@ const POTTY_TRAINING_GOAL = 10;
 const REAL_DAY_MS = 24 * 60 * 60 * 1000;
 const RUNAWAY_LOCKOUT_MS = RUNAWAY_LOCKOUT_HOURS * 60 * 60 * 1000;
 const POTTY_TRAINED_POTTY_GAIN_MULTIPLIER = 0.65;
+const POTTY_SEQUENCE = Object.freeze({
+  NONE: "none",
+  RISING: "rising",
+  SNIFFING: "sniffing",
+  ANXIOUS_SNIFFING: "anxious_sniffing",
+  CUED: "cued",
+  MISSED: "missed",
+  RELIEVED: "relieved",
+});
 const CLEANLINESS_THRESHOLDS = {
   FRESH: 70,
   DIRTY: 40,
@@ -1490,6 +1535,11 @@ const initialMemory = {
   lastTreasureFoundId: null,
   runawayEndTimestamp: null,
   lastRunawayTriggeredAt: null,
+  dailyCareLoop: {
+    dayKey: null,
+    categories: [],
+    completedAt: null,
+  },
   commandBuffer: [],
 };
 
@@ -2058,6 +2108,15 @@ const initialState = {
     lastAccidentAt: null,
     totalSuccesses: 0,
     totalAccidents: 0,
+    ignoredCueCount: 0,
+    sequence: {
+      phase: POTTY_SEQUENCE.NONE,
+      phaseStartedAt: null,
+      cueIssuedAt: null,
+      cueExpiresAt: null,
+      lastMissedAt: null,
+      playerRespondedAt: null,
+    },
   },
 
   stats: { ...DEFAULT_STATS },
@@ -2084,6 +2143,7 @@ const initialState = {
 
   // Used by UI renderers/selectors to derive simple animation hints
   lastAction: null,
+  lastCareResponse: null,
   yard: {
     environment: YARD_ENVIRONMENT,
     holes: [],
@@ -2207,6 +2267,100 @@ function pushStructuredMemory(state, memory) {
   });
 }
 
+function setCareResponse(
+  state,
+  { key, label, message, tone = "emerald", icon = "*", now = nowMs() } = {}
+) {
+  const safeMessage = String(message || "").trim();
+  const safeKey = String(key || "care")
+    .trim()
+    .toLowerCase();
+  if (!safeMessage || !safeKey) return;
+
+  state.lastCareResponse = {
+    id: `${safeKey}:${now}`,
+    key: safeKey,
+    label: String(label || "Care").trim() || "Care",
+    message: safeMessage,
+    tone:
+      String(tone || "emerald")
+        .trim()
+        .toLowerCase() || "emerald",
+    icon: String(icon || "*").trim() || "*",
+    createdAt: now,
+  };
+}
+
+function getNeedDelta(before, after) {
+  return Math.max(0, Math.round(Number(before || 0) - Number(after || 0)));
+}
+
+function ensureDailyCareLoop(memory) {
+  if (!memory.dailyCareLoop || typeof memory.dailyCareLoop !== "object") {
+    memory.dailyCareLoop = {
+      dayKey: null,
+      categories: [],
+      completedAt: null,
+    };
+  }
+  memory.dailyCareLoop.categories = Array.isArray(
+    memory.dailyCareLoop.categories
+  )
+    ? memory.dailyCareLoop.categories.map((entry) => String(entry || ""))
+    : [];
+  memory.dailyCareLoop.dayKey = memory.dailyCareLoop.dayKey
+    ? String(memory.dailyCareLoop.dayKey)
+    : null;
+  memory.dailyCareLoop.completedAt = Number.isFinite(
+    Number(memory.dailyCareLoop.completedAt)
+  )
+    ? Number(memory.dailyCareLoop.completedAt)
+    : null;
+  return memory.dailyCareLoop;
+}
+
+function markDailyCareCategory(state, category, now = nowMs()) {
+  const key = String(category || "")
+    .trim()
+    .toLowerCase();
+  if (!key) return;
+
+  const memory = ensureMemoryState(state);
+  const loop = ensureDailyCareLoop(memory);
+  const dayKey = getIsoDate(now);
+  if (loop.dayKey !== dayKey) {
+    loop.dayKey = dayKey;
+    loop.categories = [];
+    loop.completedAt = null;
+  }
+
+  if (!loop.categories.includes(key)) {
+    loop.categories.push(key);
+  }
+
+  const coreDone =
+    loop.categories.includes("feed") &&
+    loop.categories.includes("water") &&
+    loop.categories.includes("potty") &&
+    loop.categories.includes("bond");
+
+  if (!coreDone || loop.completedAt) return;
+
+  loop.completedAt = now;
+  pushStructuredMemory(state, {
+    id: `daily_care_loop:${dayKey}`,
+    type: "daily_care_loop",
+    category: "MEMORY",
+    moodTag: "SECURE",
+    summary: "Daily care rhythm completed.",
+    body: "Food, water, potty, and connection all happened in one day. That is the loop your dog learns to trust.",
+    timestamp: now,
+    happiness: Number(state.stats?.happiness || 0),
+    energy: Number(state.stats?.energy || 0),
+    hunger: Number(state.stats?.hunger || 0),
+  });
+}
+
 function ensureLifecycleStatus(state) {
   const valid = new Set(Object.values(DOG_LIFECYCLE_STATUS));
   const current = String(state.lifecycleStatus || "").toUpperCase();
@@ -2289,6 +2443,8 @@ function ensureMemoryState(state) {
         .filter((entry) => entry.commandId && entry.kind && entry.createdAt)
         .slice(0, 8)
     : [];
+
+  ensureDailyCareLoop(state.memory);
 
   return state.memory;
 }
@@ -2465,11 +2621,46 @@ function computeDangerScore(state) {
 
   const neglect = clamp(Number(state.memory?.neglectStrikes || 0) * 9, 0, 32);
   const accidents = clamp(Number(state.potty?.totalAccidents || 0) * 2, 0, 20);
+  const ignoredCues = clamp(
+    Number(state?.potty?.ignoredCueCount || 0) * 4,
+    0,
+    20
+  );
   const cleanlinessTier = String(state.cleanlinessTier || "").toUpperCase();
   const tierPenalty =
     cleanlinessTier === "MANGE" ? 16 : cleanlinessTier === "FLEAS" ? 8 : 0;
+  const profile =
+    state?.personalityProfile && typeof state.personalityProfile === "object"
+      ? state.personalityProfile
+      : null;
+  const dynamicState = profile?.dynamicState || profile?.dynamicStates || {};
+  const anxiety = clamp(Number(dynamicState?.anxiety || 0), 0, 100);
+  const frustration = clamp(Number(dynamicState?.frustration || 0), 0, 100);
+  const trustScore = clamp(
+    Number(profile?.trust?.score || state?.bond?.value || 0),
+    0,
+    100
+  );
+  const welfarePenalty = clamp(
+    Math.round(
+      Math.max(0, anxiety - 72) * 0.08 +
+        Math.max(0, frustration - 78) * 0.08 +
+        Math.max(0, 38 - trustScore) * 0.22
+    ),
+    0,
+    18
+  );
 
-  return clamp(Math.round(pressure * 0.62 + neglect + accidents + tierPenalty));
+  return clamp(
+    Math.round(
+      pressure * 0.56 +
+        neglect +
+        accidents +
+        ignoredCues +
+        tierPenalty +
+        welfarePenalty
+    )
+  );
 }
 
 function pushDearHoomanRunawayLetter(state, now, score) {
@@ -4026,6 +4217,7 @@ function finalizeDerivedState(state, now = nowMs()) {
   evaluateObedienceUnlocks(state, now);
   advanceDogFsm(state, now, { allowAutonomy: false });
   state.moodlets = computeMoodlets(state);
+  syncPottySequenceState(state, now);
   state.emotionCue = deriveEmotionCue(state);
   state.personalityProfile = derivePersonalityProfile(state);
 
@@ -4396,19 +4588,142 @@ function ensurePottyMeta(state) {
       lastAccidentAt: null,
       totalSuccesses: 0,
       totalAccidents: 0,
+      ignoredCueCount: 0,
+      sequence: {
+        phase: POTTY_SEQUENCE.NONE,
+        phaseStartedAt: null,
+        cueIssuedAt: null,
+        cueExpiresAt: null,
+        lastMissedAt: null,
+        playerRespondedAt: null,
+      },
     };
   }
   if (typeof state.potty.totalSuccesses !== "number")
     state.potty.totalSuccesses = 0;
   if (typeof state.potty.totalAccidents !== "number")
     state.potty.totalAccidents = 0;
+  if (typeof state.potty.ignoredCueCount !== "number")
+    state.potty.ignoredCueCount = 0;
+  if (!state.potty.sequence || typeof state.potty.sequence !== "object") {
+    state.potty.sequence = {
+      phase: POTTY_SEQUENCE.NONE,
+      phaseStartedAt: null,
+      cueIssuedAt: null,
+      cueExpiresAt: null,
+      lastMissedAt: null,
+      playerRespondedAt: null,
+    };
+  }
   return state.potty;
+}
+
+function setPottySequencePhase(state, phase, now = nowMs(), extra = {}) {
+  const potty = ensurePottyMeta(state);
+  const previous = potty.sequence || {};
+  const nextPhase = String(phase || POTTY_SEQUENCE.NONE).toLowerCase();
+  potty.sequence = {
+    ...previous,
+    ...extra,
+    phase: nextPhase,
+    phaseStartedAt:
+      String(previous.phase || POTTY_SEQUENCE.NONE).toLowerCase() === nextPhase
+        ? previous.phaseStartedAt || now
+        : now,
+  };
+}
+
+function syncPottySequenceState(state, now = nowMs()) {
+  const potty = ensurePottyMeta(state);
+  const sequence = potty.sequence || {};
+  const pottyLevel = clamp(Number(state.pottyLevel || 0), 0, 100);
+  const currentPhase = String(
+    sequence.phase || POTTY_SEQUENCE.NONE
+  ).toLowerCase();
+
+  if (currentPhase === POTTY_SEQUENCE.RELIEVED && pottyLevel <= 10) {
+    setPottySequencePhase(state, POTTY_SEQUENCE.NONE, now, {
+      cueIssuedAt: null,
+      cueExpiresAt: null,
+    });
+    return;
+  }
+
+  if (currentPhase === POTTY_SEQUENCE.MISSED && pottyLevel <= 10) {
+    setPottySequencePhase(state, POTTY_SEQUENCE.NONE, now, {
+      cueIssuedAt: null,
+      cueExpiresAt: null,
+    });
+    return;
+  }
+
+  if (currentPhase === POTTY_SEQUENCE.CUED) {
+    const cueExpiresAt = Number(sequence.cueExpiresAt || 0);
+    if (cueExpiresAt > 0 && now >= cueExpiresAt) {
+      potty.ignoredCueCount = Math.min(
+        Number(potty.ignoredCueCount || 0) + 1,
+        999
+      );
+      setPottySequencePhase(state, POTTY_SEQUENCE.MISSED, now, {
+        cueIssuedAt: sequence.cueIssuedAt || now,
+        cueExpiresAt,
+        lastMissedAt: now,
+      });
+    }
+    return;
+  }
+
+  if (pottyLevel >= 90) {
+    setPottySequencePhase(state, POTTY_SEQUENCE.CUED, now, {
+      cueIssuedAt: Number(sequence.cueIssuedAt || now) || now,
+      cueExpiresAt:
+        Number(sequence.cueExpiresAt || 0) > now
+          ? Number(sequence.cueExpiresAt)
+          : now + 2 * 60 * 1000,
+    });
+    return;
+  }
+
+  if (pottyLevel >= 78) {
+    setPottySequencePhase(state, POTTY_SEQUENCE.ANXIOUS_SNIFFING, now, {
+      cueIssuedAt: null,
+      cueExpiresAt: null,
+    });
+    return;
+  }
+
+  if (pottyLevel >= 58) {
+    setPottySequencePhase(state, POTTY_SEQUENCE.SNIFFING, now, {
+      cueIssuedAt: null,
+      cueExpiresAt: null,
+    });
+    return;
+  }
+
+  if (pottyLevel >= 35) {
+    setPottySequencePhase(state, POTTY_SEQUENCE.RISING, now, {
+      cueIssuedAt: null,
+      cueExpiresAt: null,
+    });
+    return;
+  }
+
+  setPottySequencePhase(state, POTTY_SEQUENCE.NONE, now, {
+    cueIssuedAt: null,
+    cueExpiresAt: null,
+  });
 }
 
 function applyAccidentInternal(state, now = nowMs()) {
   const potty = ensurePottyMeta(state);
   potty.totalAccidents += 1;
   potty.lastAccidentAt = now;
+  potty.ignoredCueCount = Math.min(Number(potty.ignoredCueCount || 0) + 1, 999);
+  setPottySequencePhase(state, POTTY_SEQUENCE.MISSED, now, {
+    cueIssuedAt: potty.sequence?.cueIssuedAt || now,
+    cueExpiresAt: potty.sequence?.cueExpiresAt || now,
+    lastMissedAt: now,
+  });
 
   // Accidents leave a mess and hurt morale a bit.
   state.poopCount = Math.max(0, Number(state.poopCount || 0)) + 1;
@@ -5111,15 +5426,16 @@ const dogSlice = createSlice({
       ensureMemoryState(state);
       applyDecay(state, now);
       wakeForInteraction(state);
+      const hungerBefore = Number(state.stats.hunger || 0);
 
       state.stats.hunger = clamp(
         Math.max(0, Number(state.stats.hunger || 0) - 60),
         0,
         100
       );
-      state.stats.energy = 100;
+      state.stats.energy = clamp(Number(state.stats.energy || 0) + 16, 0, 100);
       state.stats.happiness = clamp(
-        Number(state.stats.happiness || 0) + 6,
+        Number(state.stats.happiness || 0) + (hungerBefore >= 50 ? 5 : 2),
         0,
         100
       );
@@ -5133,8 +5449,8 @@ const dogSlice = createSlice({
       state.lastAction = resolveActionOverride(payload, "feed_quick");
       applyFsmAction(state, "feed", now);
 
-      applyBondGain(state, 0.8, now);
-      applyXp(state, 4);
+      applyBondGain(state, hungerBefore >= 50 ? 0.8 : 0.35, now);
+      applyXp(state, hungerBefore >= 50 ? 4 : 2);
       maybeSampleMood(state, now, "FEED");
       pushStructuredMemory(state, {
         type: "ate_food",
@@ -5146,6 +5462,18 @@ const dogSlice = createSlice({
         happiness: 3,
         hunger: Number(state.stats.hunger || 0),
         energy: Number(state.stats.energy || 0),
+      });
+      markDailyCareCategory(state, "feed", now);
+      setCareResponse(state, {
+        key: "quick-feed",
+        label: "Quick feed",
+        message:
+          hungerBefore >= 50
+            ? "Fast meal handled the real need without turning care into grinding."
+            : "They took a few bites, but it was more check-in than meal.",
+        tone: "amber",
+        icon: "food",
+        now,
       });
       updateTemperamentReveal(state, now);
       finalizeDerivedState(state, now);
@@ -5182,10 +5510,19 @@ const dogSlice = createSlice({
       const now = payload?.now ?? nowMs();
       applyDecay(state, now);
       wakeForInteraction(state);
+      const thirstBefore = Number(state.stats.thirst || 0);
 
       const amount = payload?.amount ?? 100;
       state.stats.thirst = clamp(state.stats.thirst - amount, 0, 100);
+<<<<<<< HEAD
       state.stats.happiness = clamp(state.stats.happiness + 2, 0, 100);
+=======
+      state.stats.happiness = clamp(
+        state.stats.happiness + (thirstBefore >= 45 ? 3 : 1),
+        0,
+        100
+      );
+>>>>>>> 10f88903 (chore: remove committed backup folders)
       restoreAffectionAndTrust(state, 3);
       relieveNeglectWithCare(state, 1);
 
@@ -5195,11 +5532,40 @@ const dogSlice = createSlice({
       applyFsmAction(state, "water", now);
 
       const sweetBondMultiplier = hasTemperamentTag(state, "SWEET") ? 1.25 : 1;
-      applyBondGain(state, 0.6 * sweetBondMultiplier, now);
+      applyBondGain(
+        state,
+        (thirstBefore >= 55 ? 0.75 : 0.3) * sweetBondMultiplier,
+        now
+      );
       gainPottyNeed(state, 18);
 
-      applyXp(state, 3);
+      applyXp(state, thirstBefore >= 45 ? 3 : 1);
       maybeSampleMood(state, now, "WATER");
+      pushStructuredMemory(state, {
+        type: "drank_water",
+        category: "CARE",
+        moodTag: thirstBefore >= 55 ? "RELIEVED" : "CONTENT",
+        summary: "Fresh water offered.",
+        body:
+          thirstBefore >= 55
+            ? "Fresh water clearly helped. Your pup drank and settled."
+            : "They checked the bowl and took a small drink.",
+        timestamp: now,
+        happiness: thirstBefore >= 55 ? 2 : 1,
+        energy: Number(state.stats.energy || 0),
+      });
+      markDailyCareCategory(state, "water", now);
+      setCareResponse(state, {
+        key: "water",
+        label: "Water",
+        message:
+          thirstBefore >= 55
+            ? "They drank like they needed it. Hydration helped mood and health."
+            : "Water was available before it became a problem.",
+        tone: "sky",
+        icon: "water",
+        now,
+      });
       const date = getIsoDate(now);
       updateStreak(state.streak, date);
       updateTemperamentReveal(state, now);
@@ -5232,6 +5598,46 @@ const dogSlice = createSlice({
       const zoomiesMultiplier = payload?.timeOfDay === "MORNING" ? 2 : 1;
       const careerMultiplier =
         state.career.perks?.happinessGainMultiplier || 1.0;
+      const energyBefore = Number(state.stats.energy || 0);
+      const hungerBefore = Number(state.stats.hunger || 0);
+      const thirstBefore = Number(state.stats.thirst || 0);
+      const isCareReady =
+        energyBefore >= 25 && hungerBefore < 80 && thirstBefore < 82;
+      if (!isCareReady) {
+        state.stats.happiness = clamp(state.stats.happiness + 1, 0, 100);
+        state.stats.energy = clamp(state.stats.energy - 2, 0, 100);
+        state.memory.lastSeenAt = now;
+        state.lastAction = "play_declined";
+        applyFsmAction(state, energyBefore < 25 ? "rest" : "idle", now);
+        maybeSampleMood(state, now, "PLAY_DECLINED");
+        pushStructuredMemory(state, {
+          type: "play_declined",
+          category: "CARE",
+          moodTag: energyBefore < 25 ? "SLEEPY" : "UNEASY",
+          summary: "Play did not land.",
+          body:
+            energyBefore < 25
+              ? "Your pup was too tired for a real play session and needed rest instead."
+              : "Basic needs were too loud for play to feel fun yet.",
+          timestamp: now,
+          happiness: 1,
+          energy: Number(state.stats.energy || 0),
+        });
+        setCareResponse(state, {
+          key: "play",
+          label: "Play",
+          message:
+            energyBefore < 25
+              ? "They tried to engage, then faded. Rest matters before play."
+              : "They could not fully play while hunger or thirst was pulling focus.",
+          tone: "amber",
+          icon: "play",
+          now,
+        });
+        updateTemperamentReveal(state, now);
+        finalizeDerivedState(state, now);
+        return;
+      }
 
       const perks = getPersonalityPerks(state);
       const toyObsessed = getTemperamentTraitIntensity(state, "toyObsessed");
@@ -5340,6 +5746,19 @@ const dogSlice = createSlice({
         energy: Number(state.stats.energy || 0),
       });
 
+      markDailyCareCategory(state, "bond", now);
+      setCareResponse(state, {
+        key: "play",
+        label: "Play",
+        message:
+          energyBefore >= 70
+            ? "They met you with real play energy. Bond grew because the timing was right."
+            : "A short play burst helped mood without overworking them.",
+        tone: "emerald",
+        icon: "play",
+        now,
+      });
+
       const date = getIsoDate(now);
       updateStreak(state.streak, date);
       updateTemperamentReveal(state, now);
@@ -5356,6 +5775,8 @@ const dogSlice = createSlice({
       const energy = Number(state.stats?.energy || 0);
       const happiness = Number(state.stats?.happiness || 0);
       const isSpicy = hasTemperamentTag(state, "SPICY");
+      const isAdoptOnboarding =
+        String(payload?.source || "") === "adopt_onboarding";
 
       const dozeChance = energy <= 30 ? 0.3 : energy <= 55 ? 0.18 : 0.08;
       const zoomiesChance = happiness >= 75 ? 0.24 : 0.14;
@@ -5439,16 +5860,18 @@ const dogSlice = createSlice({
             : outcome === "PET_DOZE"
               ? "CALM"
               : "AFFECTIONATE",
-        summary:
-          outcome === "PET_ZOOMIES"
+        summary: isAdoptOnboarding
+          ? "First hello in the yard."
+          : outcome === "PET_ZOOMIES"
             ? "Petted into zoomies."
             : outcome === "PET_SIDE_EYE"
               ? "Got a little side-eye."
               : outcome === "PET_DOZE"
                 ? "Petted into a dozy calm."
                 : "Shared a good petting moment.",
-        body:
-          outcome === "PET_ZOOMIES"
+        body: isAdoptOnboarding
+          ? "Your first gentle touch helped your pup settle in."
+          : outcome === "PET_ZOOMIES"
             ? "The attention turned into instant play energy and a burst of happy movement."
             : outcome === "PET_SIDE_EYE"
               ? "Your pup accepted the attention, but with a classic terrier opinion attached."
@@ -5465,6 +5888,23 @@ const dogSlice = createSlice({
                 ? 2
                 : 3,
         energy: Number(state.stats.energy || 0),
+      });
+      markDailyCareCategory(state, "bond", now);
+      setCareResponse(state, {
+        key: "pet",
+        label: "Affection",
+        message: isAdoptOnboarding
+          ? "They leaned in. The first bond memory is saved."
+          : outcome === "PET_SIDE_EYE"
+            ? "They accepted it on their terms. Trust still moved, just quietly."
+            : outcome === "PET_DOZE"
+              ? "They relaxed into your touch and started to settle."
+              : outcome === "PET_ZOOMIES"
+                ? "The attention sparked happy movement instead of routine points."
+                : "They leaned into the attention. This is where bond starts to feel real.",
+        tone: outcome === "PET_SIDE_EYE" ? "amber" : "rose",
+        icon: "bond",
+        now,
       });
 
       maybeSampleMood(state, now, outcome);
@@ -5485,6 +5925,15 @@ const dogSlice = createSlice({
         state.memory.lastSeenAt = now;
         state.lastAction = resolveActionOverride(payload, "rest");
         applyFsmAction(state, "rest", now);
+        setCareResponse(state, {
+          key: "rest",
+          label: "Rest",
+          message:
+            "They are already asleep. You protected the quiet instead of poking for rewards.",
+          tone: "sky",
+          icon: "rest",
+          now,
+        });
         finalizeDerivedState(state, now);
         return;
       }
@@ -5509,6 +5958,7 @@ const dogSlice = createSlice({
       applyBondGain(state, 0.5 * sweetBondMultiplier, now);
 
       maybeGenerateDream(state, now);
+      markDailyCareCategory(state, "rest", now);
 
       applyPersonalityShift(state, {
         now,
@@ -5523,6 +5973,25 @@ const dogSlice = createSlice({
 
       applyXp(state, 3);
       maybeSampleMood(state, now, "REST");
+      pushStructuredMemory(state, {
+        type: "rested",
+        category: "CARE",
+        moodTag: "CALM",
+        summary: "Settled down to rest.",
+        body: "You let your pup recover instead of pushing another action.",
+        timestamp: now,
+        happiness: 2,
+        energy: Number(state.stats.energy || 0),
+      });
+      setCareResponse(state, {
+        key: "rest",
+        label: "Rest",
+        message:
+          "They settled down. Recovery is part of care, not a skipped turn.",
+        tone: "sky",
+        icon: "rest",
+        now,
+      });
       updateTemperamentReveal(state, now);
       finalizeDerivedState(state, now);
     },
@@ -5659,15 +6128,19 @@ const dogSlice = createSlice({
       wakeForInteraction(state);
 
       const perks = getPersonalityPerks(state);
+      const cleanlinessBefore = Number(state.stats.cleanliness || 0);
 
       state.stats.cleanliness = clamp(state.stats.cleanliness + 30, 0, 100);
       state.stats.health = clampHealthForState(
         state,
         Number(state.stats.health || 0) + 5
       );
+      const bathNeeded = cleanlinessBefore <= 70;
       state.stats.happiness = clamp(
-        state.stats.happiness -
-          5 * Math.max(0.6, perks.bathHappinessPenaltyMultiplier),
+        state.stats.happiness +
+          (bathNeeded
+            ? -3 * Math.max(0.6, perks.bathHappinessPenaltyMultiplier)
+            : -6 * Math.max(0.6, perks.bathHappinessPenaltyMultiplier)),
         0,
         100
       );
@@ -5690,6 +6163,31 @@ const dogSlice = createSlice({
 
       applyXp(state, 4);
       maybeSampleMood(state, now, "BATHE");
+      pushStructuredMemory(state, {
+        type: "bathed",
+        category: "CARE",
+        moodTag: bathNeeded ? "RELIEVED" : "SASSY",
+        summary: bathNeeded
+          ? "Cleaned up after getting grimy."
+          : "Bath was a bit unnecessary.",
+        body: bathNeeded
+          ? "The bath was not their favorite, but the cleanup clearly helped."
+          : "They were already clean enough and had opinions about the extra bath.",
+        timestamp: now,
+        happiness: bathNeeded ? -1 : -3,
+        energy: Number(state.stats.energy || 0),
+      });
+      markDailyCareCategory(state, "clean", now);
+      setCareResponse(state, {
+        key: "bath",
+        label: "Bath",
+        message: bathNeeded
+          ? "Not glamorous, but the cleanup helped comfort and health."
+          : "They were already clean, so this felt fussy instead of caring.",
+        tone: bathNeeded ? "sky" : "amber",
+        icon: "clean",
+        now,
+      });
       updateTemperamentReveal(state, now);
       finalizeDerivedState(state, now);
     },
@@ -5702,14 +6200,32 @@ const dogSlice = createSlice({
       const now = payload?.now ?? nowMs();
       applyDecay(state, now);
       wakeForInteraction(state);
+      syncPottySequenceState(state, now);
+      const pottyMeta = ensurePottyMeta(state);
+      const pottySequence = pottyMeta.sequence || {};
+      const activeCue =
+        String(pottySequence.phase || "").toLowerCase() === POTTY_SEQUENCE.CUED;
       const forceSuccess = payload?.forceSuccess === true;
-      if (!forceSuccess && Math.random() <= 0.18) {
+      const pottyNeedBefore = Number(state.pottyLevel || 0);
+      const tooSoon = pottyNeedBefore < 35 && !activeCue;
+      const fakeoutChance = tooSoon ? 0.72 : activeCue ? 0.06 : 0.18;
+      if (!forceSuccess && Math.random() <= fakeoutChance) {
         state.stats.energy = clamp(state.stats.energy - 1, 0, 100);
         state.stats.happiness = clamp(state.stats.happiness + 1, 0, 100);
         state.memory.lastSeenAt = now;
         state.lastAction = "potty_fakeout";
         applyFsmAction(state, "sit", now);
         maybeSampleMood(state, now, "POTTY_FAKEOUT");
+        setCareResponse(state, {
+          key: "potty",
+          label: "Potty",
+          message: tooSoon
+            ? "They sniffed around, but did not need to go yet. Timing matters."
+            : "They tried, got distracted, and need another calm cue soon.",
+          tone: "amber",
+          icon: "potty",
+          now,
+        });
         updateTemperamentReveal(state, now);
         finalizeDerivedState(state, now);
         return;
@@ -5725,7 +6241,8 @@ const dogSlice = createSlice({
       applyFsmAction(state, "potty", now);
 
       const sweetBondMultiplier = hasTemperamentTag(state, "SWEET") ? 1.25 : 1;
-      applyBondGain(state, 0.8 * sweetBondMultiplier, now);
+      const cueResponseBonus = activeCue ? 0.45 : 0;
+      applyBondGain(state, (0.8 + cueResponseBonus) * sweetBondMultiplier, now);
 
       applyXp(state, 2);
       const guiltyTriggered = maybeTriggerGuiltyPaws(state, now, "potty");
@@ -5740,9 +6257,21 @@ const dogSlice = createSlice({
         );
         state.potty.training = clamp(pct, 0, 100);
       }
-      const pottyMeta = ensurePottyMeta(state);
       pottyMeta.totalSuccesses += 1;
       pottyMeta.lastSuccessAt = now;
+      if (activeCue) {
+        pottyMeta.ignoredCueCount = Math.max(
+          0,
+          Number(pottyMeta.ignoredCueCount || 0) - 1
+        );
+        state.stats.happiness = clamp(state.stats.happiness + 2, 0, 100);
+        state.stats.affection = clamp(state.stats.affection + 4, 0, 100);
+      }
+      setPottySequencePhase(state, POTTY_SEQUENCE.RELIEVED, now, {
+        cueIssuedAt: activeCue ? pottySequence.cueIssuedAt || now : null,
+        cueExpiresAt: null,
+        playerRespondedAt: now,
+      });
       pushStructuredMemory(state, {
         type: "potty_success",
         category: "CARE",
@@ -5753,6 +6282,17 @@ const dogSlice = createSlice({
         happiness: 3,
         hunger: Number(state.stats.hunger || 0),
         energy: Number(state.stats.energy || 0),
+      });
+      markDailyCareCategory(state, "potty", now);
+      setCareResponse(state, {
+        key: "potty",
+        label: "Potty",
+        message: activeCue
+          ? "They answered the cue. House training grew because the routine was clear."
+          : "Clean potty win. That consistency is what unlocks real training later.",
+        tone: "emerald",
+        icon: "potty",
+        now,
       });
       finalizeDerivedState(state, now);
     },
@@ -5772,6 +6312,15 @@ const dogSlice = createSlice({
         hunger: Number(state.stats.hunger || 0),
         energy: Number(state.stats.energy || 0),
       });
+      setCareResponse(state, {
+        key: "accident",
+        label: "Accident",
+        message:
+          "No scolding. Reset the routine, clean up, and watch the potty cue sooner.",
+        tone: "rose",
+        icon: "potty",
+        now,
+      });
       finalizeDerivedState(state, now);
     },
 
@@ -5786,6 +6335,26 @@ const dogSlice = createSlice({
         applyBondGain(state, 0.25, now);
         applyXp(state, 2);
         maybeSampleMood(state, now, "SCOOP");
+        markDailyCareCategory(state, "clean", now);
+        setCareResponse(state, {
+          key: "scoop",
+          label: "Cleanup",
+          message:
+            "The yard feels cared for. Clean space supports comfort and health.",
+          tone: "emerald",
+          icon: "clean",
+          now,
+        });
+      } else {
+        setCareResponse(state, {
+          key: "scoop",
+          label: "Cleanup",
+          message:
+            "Nothing needed cleanup right now. Good maintenance is quiet.",
+          tone: "sky",
+          icon: "clean",
+          now,
+        });
       }
       state.memory.lastSeenAt = now;
       state.lastAction = "scoop";
@@ -6197,6 +6766,15 @@ const dogSlice = createSlice({
       const pottyDone = !!training?.potty?.completedAt;
       if (!pottyDone) {
         state.lastAction = "trainBlocked";
+        setCareResponse(state, {
+          key: "train",
+          label: "Training",
+          message:
+            "Tricks wait until potty training is mastered. Trust starts with house rhythm.",
+          tone: "amber",
+          icon: "train",
+          now: nowMs(),
+        });
         return;
       }
       const commandId = payload?.commandId
@@ -6220,6 +6798,15 @@ const dogSlice = createSlice({
         state.memory.lastTrainedCommandId = commandId;
         state.memory.lastSeenAt = now;
         state.lastAction = "trainLocked";
+        setCareResponse(state, {
+          key: "train",
+          label: "Training",
+          message:
+            "That cue is not ready yet. Keep the routine focused and short.",
+          tone: "amber",
+          icon: "train",
+          now,
+        });
         finalizeDerivedState(state, now);
         return;
       }
@@ -6331,6 +6918,15 @@ const dogSlice = createSlice({
           body: `You cued "${commandLabel}", but your pup detonated into zoomies instead.`,
           timestamp: now,
         });
+        setCareResponse(state, {
+          key: "train",
+          label: "Training",
+          message:
+            "They chose movement over obedience. Needs and mood still matter during lessons.",
+          tone: "amber",
+          icon: "train",
+          now,
+        });
 
         updateTemperamentReveal(state, now);
         finalizeDerivedState(state, now);
@@ -6363,6 +6959,15 @@ const dogSlice = createSlice({
             ignoreBodyByReason[jrtReaction.reasonId] ||
             `You asked for "${commandLabel}", but your pup ignored the cue.`,
           timestamp: now,
+        });
+        setCareResponse(state, {
+          key: "train",
+          label: "Training",
+          message:
+            "They heard you, but trust and focus were not there yet. End on calm.",
+          tone: "amber",
+          icon: "train",
+          now,
         });
 
         updateTemperamentReveal(state, now);
@@ -6402,6 +7007,15 @@ const dogSlice = createSlice({
           summary: `Asked for ${commandLabel}. Got ${performedLabel}.`,
           body: `You cued "${commandLabel}", but your pup decided "${performedLabel}" was a better idea and showed off instead.`,
           timestamp: now,
+        });
+        setCareResponse(state, {
+          key: "train",
+          label: "Training",
+          message:
+            "They improvised, but stayed connected. That still builds shared language.",
+          tone: "sky",
+          icon: "train",
+          now,
         });
 
         updateTemperamentReveal(state, now);
@@ -6445,6 +7059,15 @@ const dogSlice = createSlice({
           now
         );
         maybeSampleMood(state, now, "TRAINING_FAIL");
+        setCareResponse(state, {
+          key: "train",
+          label: "Training",
+          message:
+            "The cue missed. Keep sessions short so training feels like trust, not pressure.",
+          tone: "amber",
+          icon: "train",
+          now,
+        });
         updateTemperamentReveal(state, now);
         finalizeDerivedState(state, now);
         return;
@@ -6482,6 +7105,14 @@ const dogSlice = createSlice({
           summary: `Dozed off during ${commandLabel}`,
           body: `You started "${commandLabel}" practice, but your pup rolled over and fell asleep mid-session.`,
           timestamp: now,
+        });
+        setCareResponse(state, {
+          key: "train",
+          label: "Training",
+          message: "They dozed off during practice. Rest was the real need.",
+          tone: "sky",
+          icon: "train",
+          now,
         });
 
         updateTemperamentReveal(state, now);
@@ -6595,6 +7226,17 @@ const dogSlice = createSlice({
             ? `Your pup executed "${commandLabel}" perfectly on cue. Big training win.`
             : `We worked on "${commandLabel}" today. I think I'm getting the hang of it!`,
         timestamp: now,
+      });
+      setCareResponse(state, {
+        key: "train",
+        label: "Training",
+        message:
+          trainingOutcome === "PERFECT"
+            ? "Clear cue, good timing, strong trust. That is real progress."
+            : "Good short session. Obedience grows from consistency, not tapping.",
+        tone: trainingOutcome === "PERFECT" ? "emerald" : "sky",
+        icon: "train",
+        now,
       });
 
       if (skillProgress?.mastered) {

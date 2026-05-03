@@ -144,7 +144,11 @@ export function buildShareMomentCard(momentLike, context = {}) {
       ...base,
       eyebrow: "Funny Moment",
       title: `${dogName} dug up ${rewardName}`,
+<<<<<<< HEAD
       body: "One of those weird little yard moments that only makes sense once you love this dog.",
+=======
+      body: "A small yard discovery that feels personal because it came from your dog.",
+>>>>>>> 10f88903 (chore: remove committed backup folders)
       accent: "amber",
       stats: [
         { label: "Find", value: rewardName },
@@ -159,9 +163,15 @@ export function buildShareMomentCard(momentLike, context = {}) {
   if (type === "midnight_zoomies") {
     return {
       ...base,
+<<<<<<< HEAD
       eyebrow: "Funny Moment",
       title: `${dogName} got midnight zoomies`,
       body: "A perfect small chaos moment. Brief, dramatic, and very on-brand.",
+=======
+      eyebrow: "Late Moment",
+      title: `${dogName} got midnight zoomies`,
+      body: "A brief burst of late-night energy before settling again.",
+>>>>>>> 10f88903 (chore: remove committed backup folders)
       accent: "rose",
       stats: [
         { label: "Mood", value: "Zoomies" },
@@ -169,7 +179,11 @@ export function buildShareMomentCard(momentLike, context = {}) {
         { label: "Energy", value: `${energyPct}%` },
       ],
       shareTitle: `${dogName} got the midnight zoomies`,
+<<<<<<< HEAD
       shareText: `${dogName} just hit a midnight zoomies burst in Doggerz. Calm game, occasional chaos.`,
+=======
+      shareText: `${dogName} just had a midnight zoomies burst in Doggerz. Calm care, sudden energy.`,
+>>>>>>> 10f88903 (chore: remove committed backup folders)
     };
   }
 
@@ -178,7 +192,11 @@ export function buildShareMomentCard(momentLike, context = {}) {
       ...base,
       eyebrow: "Cozy Moment",
       title: `${dogName} picked the doghouse tonight`,
+<<<<<<< HEAD
       body: "One of those quiet little pet-game moments that makes the dog feel real.",
+=======
+      body: "A quiet little moment that makes the routine feel real.",
+>>>>>>> 10f88903 (chore: remove committed backup folders)
       accent: "emerald",
       stats: [
         { label: "Stage", value: stageLabel },
@@ -186,7 +204,11 @@ export function buildShareMomentCard(momentLike, context = {}) {
         { label: "Mood", value: "Cozy" },
       ],
       shareTitle: `${dogName} had a cozy Doggerz moment`,
+<<<<<<< HEAD
       shareText: `${dogName} curled up in the doghouse in Doggerz and it was unreasonably wholesome.`,
+=======
+      shareText: `${dogName} curled up in the doghouse in Doggerz. A quiet care moment.`,
+>>>>>>> 10f88903 (chore: remove committed backup folders)
     };
   }
 

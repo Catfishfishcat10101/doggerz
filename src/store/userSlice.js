@@ -5,7 +5,7 @@ import { removeStoredValue, setStoredValue } from "@/utils/nativeStorage.js";
 
 export const USER_STORAGE_KEY = "doggerz:userState";
 
-export const DOG_RENDER_MODES = Object.freeze(["sprite", "realistic"]);
+export const DOG_RENDER_MODES = Object.freeze(["realistic"]);
 
 const DEFAULT_USER_STATE = {
   id: null,
@@ -22,7 +22,7 @@ const DEFAULT_USER_STATE = {
   },
 
   // Dog visuals
-  dogRenderMode: "sprite", // 'sprite' | 'realistic'
+  dogRenderMode: "realistic",
   dogName: null,
   preferredScene: "auto",
   reduceVfx: false,
@@ -63,6 +63,8 @@ function normalizeUserState(raw) {
     .trim()
     .toLowerCase();
   const renderMode = String(raw.dogRenderMode || "").toLowerCase();
+  const normalizedRenderMode =
+    renderMode === "sprite" ? "realistic" : renderMode;
   const cloudSync =
     raw.cloudSync && typeof raw.cloudSync === "object" ? raw.cloudSync : {};
 
@@ -90,8 +92,8 @@ function normalizeUserState(raw) {
           ? cloudSync.errorMessage.trim()
           : null,
     },
-    dogRenderMode: DOG_RENDER_MODES.includes(renderMode)
-      ? renderMode
+    dogRenderMode: DOG_RENDER_MODES.includes(normalizedRenderMode)
+      ? normalizedRenderMode
       : DEFAULT_USER_STATE.dogRenderMode,
     dogName:
       typeof raw.dogName === "string" && raw.dogName.trim()

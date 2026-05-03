@@ -8,7 +8,7 @@ const clamp = (n, lo = 0, hi = 100) =>
 
 const normalizeSigned = (v) => clamp(Math.round((Number(v) + 100) / 2), 0, 100);
 
-export const PERSONALITY_MODEL_VERSION = 2;
+export const PERSONALITY_MODEL_VERSION = 4;
 
 const TRUST_TIERS = Object.freeze({
   STANDOFF: 20,
@@ -69,14 +69,15 @@ function getPottyTrainingPct(dog) {
 
 function computeCoreTemperament(traits = {}) {
   const socialDrive = normalizeSigned(traits.social || 0);
-  const energyCeiling = normalizeSigned(traits.energetic || 0);
+  const energy = normalizeSigned(traits.energetic || 0);
   const inquisitiveness = normalizeSigned(
     Number(traits.adventurous || 0) * 0.7 + Number(traits.playful || 0) * 0.3
   );
 
   return {
     socialDrive,
-    energyCeiling,
+    energy,
+    energyCeiling: energy,
     inquisitiveness,
   };
 }
@@ -214,11 +215,33 @@ function computeDynamicStates(dog) {
   );
 
   const affection = clamp(stats.affection ?? 0, 0, 100);
+  const anxiety = clamp(
+    Math.round(
+      frustration * 0.52 +
+        needPressure * 0.18 +
+        (100 - bond) * 0.14 +
+        negativeMoodletsScore * 0.16
+    ),
+    0,
+    100
+  );
+  const focus = clamp(
+    Math.round(
+      confidence * 0.38 +
+        (100 - frustration) * 0.24 +
+        Number(stats.mentalStimulation ?? 50) * 0.22 +
+        (100 - anxiety) * 0.16
+    ),
+    0,
+    100
+  );
 
   return {
     frustration,
     confidence,
     affection,
+    anxiety,
+    focus,
     needPressure: clamp(Math.round(needPressure), 0, 100),
     negativeMoodletsScore,
     positiveMoodletsScore: clamp(Math.round(positiveLoad * 12.5), 0, 100),
@@ -228,7 +251,8 @@ function computeDynamicStates(dog) {
 function computeLearnedTraits(dog, coreTemperament, dynamicStates) {
   const obedienceLevel = getAvgObedienceLevel(dog?.skills?.obedience || {});
   const obedience = clamp(Math.round(obedienceLevel * 10), 0, 100);
-  const houseManners = clamp(getPottyTrainingPct(dog), 0, 100);
+  const pottyTraining = clamp(getPottyTrainingPct(dog), 0, 100);
+  const houseManners = pottyTraining;
 
   const temperament = dog?.temperament || {};
   const isSpicy =
@@ -254,7 +278,7 @@ function computeLearnedTraits(dog, coreTemperament, dynamicStates) {
     isSpicy,
     foodMotivated,
     fedRecently,
-    focus: dynamicStates?.confidence ?? 50,
+    focus: dynamicStates?.focus ?? dynamicStates?.confidence ?? 50,
     trust: clamp((Number(dog?.bond?.value || 0) + houseManners) / 2, 0, 100),
     stress: dynamicStates?.frustration ?? 30,
     distraction: coreTemperament?.inquisitiveness ?? 25,
@@ -277,7 +301,9 @@ function computeLearnedTraits(dog, coreTemperament, dynamicStates) {
   return {
     obedience,
     reliability,
+    obedienceReliability: reliability,
     houseManners,
+    pottyTraining,
   };
 }
 
@@ -399,11 +425,7 @@ function computeInstinctEngine(
   bigFive = {}
 ) {
   const socialDrive = clamp(Number(coreTemperament.socialDrive || 0), 0, 100);
-  const energyCeiling = clamp(
-    Number(coreTemperament.energyCeiling || 0),
-    0,
-    100
-  );
+  const energy = clamp(Number(coreTemperament.energy || 0), 0, 100);
   const inquisitiveness = clamp(
     Number(coreTemperament.inquisitiveness || 0),
     0,
@@ -472,7 +494,7 @@ function computeInstinctEngine(
     Math.round(
       frustration * 0.36 +
         (100 - mentalStimulation) * 0.34 +
-        energyCeiling * 0.12 +
+        energy * 0.12 +
         inquisitiveness * 0.1 +
         (100 - trustScore) * 0.08
     ),
@@ -503,11 +525,15 @@ function computeBehaviorTendencies(
     0,
     100
   );
+<<<<<<< HEAD
   const energyCeiling = clamp(
     Number(coreTemperament.energyCeiling || 0),
     0,
     100
   );
+=======
+  const energy = clamp(Number(coreTemperament.energy || 0), 0, 100);
+>>>>>>> 10f88903 (chore: remove committed backup folders)
   const houseManners = clamp(Number(learnedTraits.houseManners || 0), 0, 100);
   const trustScore = clamp(Number(trust.score || 0), 0, 100);
   const confidence = clamp(Number(dynamicStates.confidence || 0), 0, 100);
@@ -564,14 +590,22 @@ function computeBehaviorTendencies(
     if (memoryVoice === "steady") memoryVoice = "orderly";
   }
 
+<<<<<<< HEAD
   if (energyCeiling >= 70 && frustration < 55) {
+=======
+  if (energy >= 70 && frustration < 55) {
+>>>>>>> 10f88903 (chore: remove committed backup folders)
     tendencies.push({
       id: "playful",
       label: "Playful",
       summary: "Prefers short, spirited bursts over passive downtime.",
     });
     if (memoryVoice === "steady") memoryVoice = "playful";
+<<<<<<< HEAD
   } else if (energyCeiling <= 38 || dog?.lifeStage?.stage === "SENIOR") {
+=======
+  } else if (energy <= 38 || dog?.lifeStage?.stage === "SENIOR") {
+>>>>>>> 10f88903 (chore: remove committed backup folders)
     tendencies.push({
       id: "cozy",
       label: "Cozy",
@@ -618,15 +652,63 @@ export function derivePersonalityProfile(dog) {
   );
 
   return {
-    modelVersion: 3,
+    modelVersion: PERSONALITY_MODEL_VERSION,
+    temperament: {
+      socialDrive: coreTemperament.socialDrive,
+      energy: coreTemperament.energy,
+      inquisitiveness: coreTemperament.inquisitiveness,
+    },
+    corePersonality: {
+      openness: bigFive.openness,
+      conscientiousness: bigFive.conscientiousness,
+      neuroticism: bigFive.neuroticism,
+      agreeableness: bigFive.agreeableness,
+      extroversion: bigFive.extroversion,
+    },
+    personalityBias: {
+      openness: bigFive.openness,
+      conscientiousness: bigFive.conscientiousness,
+      neuroticism: bigFive.neuroticism,
+      agreeableness: bigFive.agreeableness,
+      extroversion: bigFive.extroversion,
+    },
+    dynamicState: {
+      frustration: dynamicStates.frustration,
+      confidence: dynamicStates.confidence,
+      affection: dynamicStates.affection,
+      anxiety: dynamicStates.anxiety,
+      focus: dynamicStates.focus,
+    },
+    learnedTraits: {
+      obedienceReliability:
+        learnedTraits.obedienceReliability ?? learnedTraits.reliability,
+      houseManners: learnedTraits.houseManners,
+      pottyTraining: learnedTraits.pottyTraining,
+      obedience: learnedTraits.obedience,
+      reliability: learnedTraits.reliability,
+    },
     coreTemperament,
     bigFive,
     dynamicStates: {
       frustration: dynamicStates.frustration,
       confidence: dynamicStates.confidence,
       affection: dynamicStates.affection,
+      anxiety: dynamicStates.anxiety,
+      focus: dynamicStates.focus,
     },
-    learnedTraits,
+    currentState: {
+      frustration: dynamicStates.frustration,
+      confidence: dynamicStates.confidence,
+      affection: dynamicStates.affection,
+      anxiety: dynamicStates.anxiety,
+      focus: dynamicStates.focus,
+    },
+    learnedHabits: {
+      obedienceReliability:
+        learnedTraits.obedienceReliability ?? learnedTraits.reliability,
+      houseManners: learnedTraits.houseManners,
+      pottyTraining: learnedTraits.pottyTraining,
+    },
     instinctEngine,
     trust,
     stressSignals,

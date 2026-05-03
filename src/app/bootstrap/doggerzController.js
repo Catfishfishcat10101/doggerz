@@ -1,5 +1,6 @@
-// src/bootstrap/doggerzController.js
+// src/app/bootstrap/doggerzController.js
 import store from "@/store/store.js";
+import { resolveDogAnimation } from "@/animation/dogAnimationMap.js";
 import {
   DOG_STORAGE_KEY,
   getDogStorageKey,
@@ -39,7 +40,10 @@ import {
   getDogPixiSheetUrl,
 } from "@/utils/dogSpritePaths.js";
 import { configureStatusBar } from "@/utils/statusBar.js";
+<<<<<<< HEAD
 // This module orchestrates the startup sequence of the Doggerz application, handling local data hydration, asset preloading, Firebase synchronization, and weather reality matching. It includes robust error handling to ensure a smooth user experience even when certain services are unavailable.
+=======
+>>>>>>> 10f88903 (chore: remove committed backup folders)
 
 const STARTUP_ASSET_TIMEOUT_MS = 5000;
 
@@ -102,7 +106,7 @@ export function buildFallbackWeatherSnapshot(zip, error) {
 export function buildStartupAssetList(state) {
   const renderModel = selectDogRenderModel(state || {});
   const stage = renderModel?.stage || "PUPPY";
-  const anim = renderModel?.anim || "idle";
+  const anim = resolveDogAnimation(renderModel?.anim || "idle");
 
   return [
     ...new Set(

@@ -3,7 +3,6 @@
 import * as React from "react";
 import { useSelector } from "react-redux";
 import { selectSettings } from "@/store/settingsSlice.js";
-import { ensureDogAlertsChannel } from "@/utils/notifications.js";
 
 function getSystemTheme() {
   if (typeof window === "undefined") return "dark";
@@ -46,7 +45,9 @@ export default function AppPreferencesEffects() {
   const settings = useSelector(selectSettings);
 
   React.useEffect(() => {
-    ensureDogAlertsChannel();
+    import("@/utils/notifications.js")
+      .then((mod) => mod.ensureDogAlertsChannel())
+      .catch(() => {});
   }, []);
 
   React.useEffect(() => {

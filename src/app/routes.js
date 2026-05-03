@@ -1,7 +1,4 @@
-/** @format */
-
-// src/routes.js
-// Centralized path constants + route metadata (kept JSX-free so it can be imported anywhere).
+// src/app/routes.js
 
 export const PATHS = Object.freeze({
   HOME: "/",
@@ -33,10 +30,6 @@ export const PATHS = Object.freeze({
   NOT_FOUND: "/404",
 });
 
-/**
- * Route metadata for UI (menus, document titles, etc).
- * This file is intentionally JSX-free so it can be imported anywhere.
- */
 export const routes = Object.freeze([
   { path: PATHS.HOME, name: "Home", meta: { title: "Doggerz" } },
   { path: PATHS.GAME, name: "Game", meta: { title: "Your Yard" } },

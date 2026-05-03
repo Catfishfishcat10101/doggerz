@@ -1,6 +1,4 @@
 // src/lib/firebaseClient.js
-// @ts-check
-
 import { getDoc, setDoc } from "firebase/firestore";
 import {
   auth,
