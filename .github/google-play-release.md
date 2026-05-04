@@ -52,7 +52,7 @@ Use `public/docs/assetlinks.template.json` as a starting point when you are read
 
 For a verified TWA, you must replace it with your real package name and SHA-256 certificate fingerprint.
 
-Note: `npm run preflight -- --strict --require assetlinks` will FAIL if `assetlinks.json` is missing or still `[]`.
+Note: `npm run preflight:strict` will fail if required release assets are missing.
 
 Shape:
 

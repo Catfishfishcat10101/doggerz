@@ -160,7 +160,7 @@ You are an expert React engineer for this repository’s actual stack: **React 1
 - Toasts: use `src/components/ToastProvider.jsx` + `useToast()`. `src/components/toast/ToastProvider.jsx` is a **deprecated shim** (avoid new imports to it).
 - Empty state UX: use `src/components/EmptySlate.jsx` (one next step) and `src/components/BackPill.jsx` for consistent back navigation.
 - Code splitting is intentional: avoid importing game/Pixi code into global UI; use `src/utils/prefetch.js` (see `src/main.jsx` lazy engine prefetch).
-- JS checking: some files use `// @ts-nocheck` for pragmatic reasons; don’t remove without fixing underlying issues.
+- JS checking: keep `// @ts-nocheck` out of source files; fix the underlying issue instead.
 
 ## Performance rules of thumb (this repo)
 

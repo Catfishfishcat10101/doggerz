@@ -34,7 +34,7 @@
 - Code-splitting is intentional; don’t pull heavy game code into global UI (use `src/utils/prefetch.js`).
 - Toasts: canonical provider/hooks are `src/components/ToastProvider.jsx` (`useToast()`). `src/components/toast/ToastProvider.jsx` is a **deprecated shim**.
 - “Reduce decision fatigue” patterns: use `src/components/EmptySlate.jsx` for empty states (one next step) and `src/components/BackPill.jsx` for consistent back navigation.
-- Some large files opt out of JS checking with `// @ts-nocheck`; don’t remove without fixing underlying issues.
+- Keep `// @ts-nocheck` out of source files; fix the underlying JS checking issue instead.
 
 ## Sprite, lifecycle, and JRT art constraints
 
