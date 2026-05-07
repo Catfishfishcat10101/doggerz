@@ -363,7 +363,9 @@ export default function AdoptPage() {
                 stage="PUPPY"
                 variant="landing"
                 anim="idle"
-                animationPreset="idle-paw"
+                animationPreset="none"
+                fallbackSrc="/assets/sprites/jr/pup_preview.png"
+                reduceMotion
                 className="select-none drop-shadow-[0_18px_30px_rgba(0,0,0,0.45)]"
               />
             </div>

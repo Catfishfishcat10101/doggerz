@@ -99,7 +99,8 @@ function PreviewDogRenderer({
   }, [clipKey, src]);
 
   useEffect(() => {
-    if (!src || !frameWidth || !frameHeight) {
+    if (!src) {
+      imageRef.current = null;
       setNaturalSize(null);
       return undefined;
     }

@@ -37,6 +37,8 @@ function resolvePreviewConfig({
   anim,
   speedMultiplier,
   src,
+  fallbackSrc,
+  preferFallbackSrc,
   frameWidth,
   frameHeight,
   columns,
@@ -50,6 +52,21 @@ function resolvePreviewConfig({
   const resolvedState = normalizeKey(
     currentAnimationState || animationState || anim
   );
+  const resolvedFallbackSrc = String(fallbackSrc || "").trim();
+
+  if (preferFallbackSrc && resolvedFallbackSrc) {
+    return {
+      sourceAction: "static_preview",
+      src: resolvedFallbackSrc,
+      frameWidth: undefined,
+      frameHeight: undefined,
+      columns: 1,
+      rows: 1,
+      frameCount: 1,
+      fps: 1,
+      loop: false,
+    };
+  }
 
   if (String(src || "").trim()) {
     return {
@@ -100,6 +117,7 @@ function SpriteSheetDog({
   reduceMotion = false,
   speedMultiplier = 1,
   fallbackSrc,
+  preferFallbackSrc = false,
   className = "",
   src,
   frameWidth,
@@ -159,6 +177,14 @@ function SpriteSheetDog({
   const resolvedXNorm = Number.isFinite(Number(xNorm))
     ? clamp(Number(xNorm), 0.02, 0.98)
     : 0.5;
+  const resolvedFallbackSrc = useMemo(
+    () =>
+      resolveDogRendererFallbackSrc({
+        stage,
+        staticSpriteUrl: fallbackSrc,
+      }) || DOGS.staticFallback,
+    [fallbackSrc, stage]
+  );
   const previewConfig = useMemo(
     () =>
       resolvePreviewConfig({
@@ -166,6 +192,8 @@ function SpriteSheetDog({
         anim,
         speedMultiplier,
         src,
+        fallbackSrc: resolvedFallbackSrc,
+        preferFallbackSrc,
         frameWidth,
         frameHeight,
         columns,
@@ -185,20 +213,14 @@ function SpriteSheetDog({
       frameHeight,
       frameWidth,
       loop,
+      preferFallbackSrc,
+      resolvedFallbackSrc,
       rows,
       speedMultiplier,
       src,
       stage,
       totalFrames,
     ]
-  );
-  const resolvedFallbackSrc = useMemo(
-    () =>
-      resolveDogRendererFallbackSrc({
-        stage,
-        staticSpriteUrl: fallbackSrc,
-      }) || DOGS.staticFallback,
-    [fallbackSrc, stage]
   );
   const animationCatalog = useMemo(
     () =>
@@ -325,6 +347,7 @@ function arePropsEqual(prev, next) {
     prev.speedMultiplier === next.speedMultiplier &&
     prev.smoothing === next.smoothing &&
     prev.fallbackSrc === next.fallbackSrc &&
+    prev.preferFallbackSrc === next.preferFallbackSrc &&
     prev.className === next.className &&
     prev.src === next.src &&
     prev.frameWidth === next.frameWidth &&

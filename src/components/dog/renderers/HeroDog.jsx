@@ -211,6 +211,10 @@ export default function HeroDog({
     () => buildAnimationSequence(anim, animationPreset),
     [anim, animationPreset]
   );
+  const shouldPreferFallbackSrc =
+    Boolean(fallbackSrc) &&
+    resolvedReduceMotion &&
+    normalizeKey(animationPreset, "none") === "none";
   const [resolvedAnim, setResolvedAnim] = useState(anim);
   const resolvedSize = useMemo(
     () =>
@@ -261,6 +265,7 @@ export default function HeroDog({
       size={resolvedSize}
       reduceMotion={resolvedReduceMotion}
       fallbackSrc={resolvedFallbackSrc}
+      preferFallbackSrc={shouldPreferFallbackSrc}
       groundYNorm={
         Number.isFinite(Number(groundYNorm))
           ? Number(groundYNorm)

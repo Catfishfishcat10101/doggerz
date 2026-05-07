@@ -105,7 +105,9 @@ export default function Landing() {
                 stage="PUPPY"
                 variant="landing"
                 anim="idle"
-                animationPreset="idle-wag"
+                animationPreset="none"
+                fallbackSrc="/assets/sprites/jr/pup_preview.png"
+                reduceMotion
                 className="select-none"
               />
             </div>
