@@ -1,7 +1,6 @@
 // src/components/layout/AppShell.jsx
 import { Outlet } from "react-router-dom";
 
-import BottomTabBar from "@/components/layout/BottomTabBar.jsx";
 import Header from "@/components/layout/Header.jsx";
 import { AppShellContext } from "./AppShellContext.js";
 
@@ -23,8 +22,6 @@ export default function AppShell() {
         <main id="app-main" tabIndex={-1} className="flex-1 pb-28">
           <Outlet />
         </main>
-
-        <BottomTabBar />
       </div>
     </AppShellContext.Provider>
   );
