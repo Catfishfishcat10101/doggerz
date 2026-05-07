@@ -1,7 +1,4 @@
-<<<<<<< HEAD
-=======
 // src/components/game/MainGamePanels.jsx
->>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
 import { useEffect, useState } from "react";
 import Tooltip from "@/components/ui/Tooltip.jsx";
 import useCountdown from "@/hooks/useCountdown.js";

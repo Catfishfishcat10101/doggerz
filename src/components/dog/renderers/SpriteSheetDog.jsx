@@ -1,7 +1,4 @@
-<<<<<<< HEAD
-=======
 // src/components/dog/renderers/SpriteSheetDog.jsx
->>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
 import { memo, useEffect, useMemo } from "react";
 
 import { DOGS } from "@/app/config/assets.js";

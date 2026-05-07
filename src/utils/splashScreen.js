@@ -1,7 +1,4 @@
-<<<<<<< HEAD
-=======
 // src/utils/splashScreen.js
->>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
 import { Capacitor } from "@capacitor/core";
 import { SplashScreen } from "@capacitor/splash-screen";
 

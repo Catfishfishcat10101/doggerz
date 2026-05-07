@@ -7,10 +7,6 @@ import {
   sendPasswordResetEmail,
 } from "firebase/auth";
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
 import { auth, firebaseReady } from "@/lib/firebase/index.js";
 import { PATHS } from "@/app/routes.js";
 import { selectIsLoggedIn } from "@/store/userSlice.js";
@@ -19,18 +15,18 @@ import {
   removeStoredValues,
   setStoredValue,
 } from "@/utils/nativeStorage.js";
-<<<<<<< HEAD
-=======
-import DoggerzLogo from "../components/brand/DoggerzLogo.jsx";
-import { hasDog } from "../utils/storage.js";
->>>>>>> 10f88903 (chore: remove committed backup folders)
-=======
->>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
 
 import PageShell from "@/components/layout/PageShell.jsx";
 
 const STORAGE_REMEMBER = "doggerz:loginRememberEmail";
 const STORAGE_EMAIL = "doggerz:loginEmail";
+const EXPECTED_SIGN_IN_ERROR_CODES = new Set([
+  "auth/invalid-credential",
+  "auth/invalid-login-credentials",
+  "auth/user-not-found",
+  "auth/wrong-password",
+  "auth/too-many-requests",
+]);
 
 async function loadRememberedEmail() {
   try {
@@ -62,7 +58,6 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // So we can send them back where they came from later if needed
   const from = location.state?.from || "/game";
 
   const [email, setEmail] = useState("");
@@ -95,7 +90,6 @@ export default function LoginPage() {
   }, [rememberEmail, email, storageHydrated]);
 
   if (isLoggedIn) {
-    // Already logged in? Don’t even show the screen.
     return <Navigate to={from} replace />;
   }
 
@@ -116,61 +110,6 @@ export default function LoginPage() {
       return;
     }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [resetSending, setResetSending] = useState(false);
-  const [error, setError] = useState(null);
-  const [notice, setNotice] = useState(null);
-  const [rememberEmail, setRememberEmail] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [resetState, setResetState] = useState("idle");
-  const [storageHydrated, setStorageHydrated] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    loadRememberedEmail().then((remembered) => {
-      if (cancelled) return;
-      setRememberEmail(Boolean(remembered.remember));
-      setEmail(String(remembered.email || ""));
-      setStorageHydrated(true);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!storageHydrated) return;
-    persistRememberedEmail({ remember: rememberEmail, email });
-  }, [rememberEmail, email, storageHydrated]);
-
-  if (isLoggedIn) {
-    // Already logged in? Don’t even show the screen.
-    return <Navigate to={from} replace />;
-  }
-
-  const handleContinueOffline = () => {
-    navigate(PATHS.GAME, { replace: true });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError(null);
-    setNotice(null);
-    setResetState("idle");
-
-    if (!firebaseReady || !auth) {
-      setError(
-        "Firebase is not configured. Add your VITE_FIREBASE_* keys to .env.local to enable login, or continue in offline mode."
-      );
-      return;
-    }
-
-=======
->>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
     if (!email.trim() || !password) {
       setError("Email and password are both required.");
       return;
@@ -182,7 +121,9 @@ export default function LoginPage() {
       persistRememberedEmail({ remember: rememberEmail, email });
       navigate(from, { replace: true });
     } catch (err) {
-      console.error("[Login] signIn error:", err);
+      if (!EXPECTED_SIGN_IN_ERROR_CODES.has(err?.code)) {
+        console.error("[Login] signIn error:", err);
+      }
       let message = "Login failed. Double-check your email and password.";
 
       if (err.code === "auth/user-not-found") {
@@ -194,10 +135,9 @@ export default function LoginPage() {
         err?.code === "auth/invalid-login-credentials"
       ) {
         message =
-          "Incorrect email or password. If you’re not sure, use ‘Forgot password?’";
+          "No matching account found for that email and password. Use Forgot password, sign up, or continue in local-only mode.";
       } else if (err.code === "auth/too-many-requests") {
-        message =
-          "Too many attempts. Take a breath, wait a bit, and try again.";
+        message = "Too many attempts. Wait a bit, then try again.";
       }
 
       setError(message);
@@ -222,7 +162,7 @@ export default function LoginPage() {
     const cleanEmail = String(email || "").trim();
     if (!cleanEmail) {
       setResetState("error");
-      setError("Enter your email first, then click ‘Forgot password?’");
+      setError("Enter your email first, then click Forgot password.");
       return;
     }
 
@@ -237,15 +177,14 @@ export default function LoginPage() {
     } catch (err) {
       console.error("[Login] password reset error:", err);
       let message =
-        "Couldn’t send a reset email. Double-check your address and try again.";
+        "Could not send a reset email. Double-check your address and try again.";
       let useNotice = false;
 
       if (err?.code === "auth/invalid-email") {
-        message = "That email address doesn’t look valid.";
+        message = "That email address does not look valid.";
       } else if (err?.code === "auth/too-many-requests") {
         message = "Too many requests. Please wait a bit and try again.";
       } else if (err?.code === "auth/user-not-found") {
-        // Avoid account enumeration: show the same generic success message.
         message =
           "If an account exists for that email, a password reset link has been sent.";
         useNotice = true;
@@ -262,7 +201,6 @@ export default function LoginPage() {
       setResetSending(false);
     }
   };
-<<<<<<< HEAD
 
   return (
     <PageShell
@@ -277,7 +215,7 @@ export default function LoginPage() {
               Welcome back
             </h2>
             <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              Continue your pup’s story.
+              Continue your pup&apos;s story.
             </p>
           </div>
 
@@ -294,50 +232,6 @@ export default function LoginPage() {
                 </p>
               </div>
             )}
-=======
-    navigate("/adopt");
-  }
-=======
->>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
-
-  return (
-    <PageShell
-      title="Log in"
-      subtitle="Sign in to keep your pup synced and unlock cloud features. Prefer staying local? You can still continue without an account."
-      headerAlign="center"
-    >
-      <div className="flex flex-col items-center w-full h-full pt-2 pb-10">
-        <div className="w-full max-w-md rounded-3xl border border-white/10 bg-white/80 p-6 shadow-[0_30px_80px_rgba(0,0,0,0.45)] backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/70">
-          <div className="mb-4">
-            <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
-              Welcome back
-            </h2>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              Continue your pup’s story.
-            </p>
-          </div>
-
-<<<<<<< HEAD
-        <p className="mx-auto mt-5 max-w-sm text-sm font-medium leading-7 text-slate-300">
-          Local login is enabled for the clean rebuild. Google/Firebase login
-          gets added back after this version is stable.
-        </p>
->>>>>>> 10f88903 (chore: remove committed backup folders)
-=======
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {!firebaseReady && (
-              <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-200">
-                <p className="font-medium">
-                  Cloud login is currently disabled.
-                </p>
-                <p className="mt-1 text-amber-200/80">
-                  To enable it, set your Firebase web config in{" "}
-                  <code>.env.local</code> (see <code>.env.example</code>). Until
-                  then, you can still play in local-only mode.
-                </p>
-              </div>
-            )}
->>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
 
             <div>
               <label
@@ -360,10 +254,6 @@ export default function LoginPage() {
               />
             </div>
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
             <div>
               <label
                 htmlFor="login-password"
@@ -379,7 +269,7 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full px-3 py-2 rounded-lg bg-white border border-zinc-300 text-zinc-900 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm dark:bg-zinc-950 dark:border-zinc-700 dark:text-white dark:placeholder:text-zinc-500"
                   autoComplete="current-password"
-                  placeholder="••••••••"
+                  placeholder="password"
                 />
                 <button
                   type="button"
@@ -405,13 +295,13 @@ export default function LoginPage() {
                   className="font-medium text-emerald-400 hover:text-emerald-300 disabled:opacity-60"
                   aria-busy={resetSending}
                 >
-                  {resetSending ? "Sending reset link…" : "Forgot password?"}
+                  {resetSending ? "Sending reset link..." : "Forgot password?"}
                 </button>
               </div>
               <p className="mt-2 text-[11px] text-zinc-500 dark:text-zinc-400">
                 {resetState === "sending"
-                  ? "Working on it — sending your reset link now."
-                  : "Enter your email above and we’ll send a reset link if there’s an account for it."}
+                  ? "Working on it. Sending your reset link now."
+                  : "Enter your email above and we will send a reset link if there is an account for it."}
               </p>
             </div>
 
@@ -432,10 +322,9 @@ export default function LoginPage() {
               disabled={submitting || !firebaseReady}
               className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-sm font-semibold shadow-lg"
             >
-              {submitting ? "Logging in…" : "Log in"}
+              {submitting ? "Logging in..." : "Log in"}
             </button>
 
-            {/* Always allow local-only play, even if Firebase is configured but auth fails. */}
             <button
               type="button"
               onClick={handleContinueOffline}
@@ -454,14 +343,6 @@ export default function LoginPage() {
               Sign up
             </Link>
           </p>
-<<<<<<< HEAD
-=======
-          <Link to="/" className="doggerz-button doggerz-button-ghost text-lg">
-            Back
-          </Link>
->>>>>>> 10f88903 (chore: remove committed backup folders)
-=======
->>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
         </div>
       </div>
     </PageShell>

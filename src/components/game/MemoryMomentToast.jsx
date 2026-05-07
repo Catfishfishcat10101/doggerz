@@ -1,7 +1,4 @@
-<<<<<<< HEAD
-=======
 // src/components/game/MemoryMomentToast.jsx
->>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
 function resolveToneClasses(tone = "emerald") {
   const key = String(tone || "emerald")
     .trim()

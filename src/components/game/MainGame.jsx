@@ -4031,7 +4031,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
           {
             key: "play",
             label: "Play",
-            detail: toysIgnored ? "Toys ignored right now" : "Boost happiness",
+            detail: toysIgnored ? "Toys ignored right now" : "Build trust",
             icon: "🎾",
             progress: dockNeedMetrics.play,
             progressTone: "emerald",

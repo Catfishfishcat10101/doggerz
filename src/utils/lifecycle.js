@@ -112,20 +112,9 @@ export function getLifeStageProgressLabel(ageInfo) {
 }
 
 export function getSpriteForLifeStage(stageId) {
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
   const key = String(stageId || "PUPPY")
     .trim()
     .toUpperCase();
   const stage = key === "ADULT" ? "adult" : key === "SENIOR" ? "senior" : "pup";
   return withBaseUrl(`/assets/sprites/jr/${stage}_clean.png`);
-<<<<<<< HEAD
-=======
-  void stageId;
-  return withBaseUrl("/assets/icons/DoggerIcon.png");
->>>>>>> 10f88903 (chore: remove committed backup folders)
-=======
->>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
 }

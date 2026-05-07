@@ -40,10 +40,6 @@ import {
   getDogPixiSheetUrl,
 } from "@/utils/dogSpritePaths.js";
 import { configureStatusBar } from "@/utils/statusBar.js";
-<<<<<<< HEAD
-// This module orchestrates the startup sequence of the Doggerz application, handling local data hydration, asset preloading, Firebase synchronization, and weather reality matching. It includes robust error handling to ensure a smooth user experience even when certain services are unavailable.
-=======
->>>>>>> 10f88903 (chore: remove committed backup folders)
 
 const STARTUP_ASSET_TIMEOUT_MS = 5000;
 

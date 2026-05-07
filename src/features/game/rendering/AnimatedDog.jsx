@@ -1,79 +1,3 @@
-<<<<<<< HEAD
-import { useMemo, useRef } from "react";
-import DogRenderer from "./DogRenderer.jsx";
-import { getDogAnimationCatalog } from "./dogAnimationMap.js";
-import { useDogAnimationController } from "./useDogAnimationController.js";
-import { useDogMotionController } from "./useDogMotionController.js";
-
-function resolveDirectionalFacing(actionLike, fallbackFacing = "right") {
-  const normalized = String(actionLike || "")
-    .trim()
-    .toLowerCase();
-
-  if (normalized.includes("left")) return "left";
-  if (normalized.includes("right")) return "right";
-  return fallbackFacing === "left" ? "left" : "right";
-}
-
-export default function AnimatedDog({
-  dog,
-  brainState,
-  renderModel,
-  requestedAction = "",
-  sceneLayout,
-  dogScaleBias = 0.95,
-  dogSleepingInDoghouse = false,
-  idleAnimationIntensity = "calm",
-  animationSpeedMultiplier = 1,
-  className = "",
-  minHeight,
-}) {
-  const stableFacingRef = useRef("right");
-
-  const motion = useDogMotionController({
-    brainState,
-    sceneLayout,
-    dogScaleBias,
-    dogSleepingInDoghouse,
-  });
-  const animationCatalog = useMemo(
-    () => getDogAnimationCatalog(renderModel?.stage || "PUPPY"),
-    [renderModel?.stage]
-  );
-
-  const { animationClip, resolvedAction, preferredFacing } =
-    useDogAnimationController({
-      dog,
-      brainState,
-      renderModel,
-      requestedAction,
-    });
-
-  const resolvedFacing = useMemo(() => {
-    const loopAction = String(resolvedAction || "")
-      .trim()
-      .toLowerCase();
-    const motionFacing = resolveDirectionalFacing(
-      requestedAction,
-      motion.facing || motion.orientation
-    );
-
-    let nextFacing = stableFacingRef.current || motionFacing || "right";
-    if (preferredFacing) {
-      nextFacing = preferredFacing;
-    } else if (loopAction === "walk") {
-      nextFacing = motionFacing;
-    }
-
-    stableFacingRef.current = nextFacing;
-    return nextFacing;
-  }, [
-    motion.facing,
-    motion.orientation,
-    preferredFacing,
-    requestedAction,
-    resolvedAction,
-=======
 // src/features/game/rendering/AnimatedDog.jsx
 import { useMemo } from "react";
 import DogRenderer from "./DogRenderer.jsx";
@@ -119,6 +43,8 @@ function resolveFacingRotation(facing = "") {
     .toLowerCase();
   if (key === "left") return [0, Math.PI * -0.16, 0];
   if (key === "right") return [0, Math.PI * 0.16, 0];
+  if (key === "front") return [0, 0, 0];
+  if (key === "back") return [0, Math.PI, 0];
   return [0, Math.PI * 0.15, 0];
 }
 
@@ -176,29 +102,10 @@ export default function AnimatedDog({
     renderModel?.scaleMultiplier,
     requestedFacing,
     scale,
->>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
   ]);
 
   return (
     <DogRenderer
-<<<<<<< HEAD
-      animationCatalog={animationCatalog}
-      action={resolvedAction || animationClip?.key || "idle"}
-      mood={brainState?.primarySignal || renderModel?.anim || ""}
-      animationClip={animationClip}
-      facing={resolvedFacing}
-      xNorm={motion.xNorm}
-      groundYNorm={motion.groundYNorm}
-      maxWidthRatio={motion.maxWidthRatio}
-      maxHeightRatio={motion.maxHeightRatio}
-      scaleBias={motion.scaleBias}
-      idleIntensity={idleAnimationIntensity}
-      speedMultiplier={
-        animationSpeedMultiplier || renderModel?.animationSpeedMultiplier || 1
-      }
-      className={className}
-      minHeight={minHeight}
-=======
       scene={scene}
       dog={dog}
       action={resolved.action}
@@ -212,7 +119,6 @@ export default function AnimatedDog({
       paused={paused}
       reduceMotion={reduceMotion}
       ghost={ghost}
->>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
     />
   );
 }

@@ -356,7 +356,7 @@ export default function BrandDogHero3D({
       <div className="absolute inset-[1px] rounded-[calc(2rem-1px)] border border-white/6" />
       <Canvas
         className="h-full w-full"
-        shadows
+        shadows="percentage"
         dpr={[1, 1.6]}
         gl={{
           antialias: true,

@@ -1,7 +1,4 @@
-<<<<<<< HEAD
-=======
 // src/components/base/buttons/social-button.jsx
->>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
 const SOCIAL_META = Object.freeze({
   google: Object.freeze({
     label: "Google",

@@ -1,8 +1,8 @@
 {
   "name": "doggerz",
-  "version": "3.0.0",
-  "main": "src/app/main.jsx",
-  "private": true,
+  "version": "3.3.3",
+  "main": "src/main.jsx",
+  "private": false,
   "engines": {
     "node": ">=22.0.0"
   },
@@ -52,19 +52,9 @@
     "@capacitor/share": "^8.0.1",
     "@capacitor/splash-screen": "^8.0.1",
     "@capacitor/status-bar": "^8.0.2",
-<<<<<<< HEAD
-<<<<<<< HEAD
-    "@langchain/openai": "^1.4.3",
-    "@pixi/assets": "7.4.3",
-    "@pixi/core": "7.4.3",
-    "@pixi/react": "7.1.2",
-=======
->>>>>>> 10f88903 (chore: remove committed backup folders)
-=======
     "@pixi/assets": "^7.4.3",
     "@pixi/core": "^7.4.3",
     "@pixi/react": "^7.1.2",
->>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
     "@react-three/drei": "^9.122.0",
     "@react-three/fiber": "^8.18.0",
     "@reduxjs/toolkit": "^2.10.1",
@@ -73,27 +63,14 @@
     "deepagents": "^1.9.0",
     "docker": "^1.0.0",
     "firebase": "^11.10.0",
-<<<<<<< HEAD
     "framer-motion": "^11.18.2",
     "lucide-react": "^1.7.0",
-<<<<<<< HEAD
-    "pixi.js": "7.4.3",
-=======
-    "lucide-react": "^1.7.0",
->>>>>>> 10f88903 (chore: remove committed backup folders)
-=======
     "pixi.js": "^7.4.3",
->>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
     "prop-types": "^15.8.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-redux": "^9.2.0",
     "react-router-dom": "^6.30.2",
-<<<<<<< HEAD
-    "replace": "^0.2.2",
-    "rg": "^0.0.2",
-=======
->>>>>>> 10f88903 (chore: remove committed backup folders)
     "suncalc": "^1.9.0",
     "three": "^0.183.2"
   },
@@ -131,10 +108,6 @@
     "patch-package": "^8.0.1",
     "postcss": "^8.4.47",
     "prettier": "^3.8.2",
-<<<<<<< HEAD
-    "rollup": "^4.56.0",
-=======
->>>>>>> 10f88903 (chore: remove committed backup folders)
     "rollup-plugin-visualizer": "^5.14.0",
     "tailwindcss": "^3.4.13",
     "typescript": "^5.9.3",

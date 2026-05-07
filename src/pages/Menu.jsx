@@ -1,7 +1,4 @@
-<<<<<<< HEAD
-=======
 // src/pages/Menu.jsx
->>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
 import { Link } from "react-router-dom";
 
 import PageShell from "@/components/layout/PageShell.jsx";

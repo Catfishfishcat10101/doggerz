@@ -312,8 +312,6 @@ export const saveDogToCloud = createAsyncThunk(
           : err?.message || "Cloud save failed",
       });
       return rejectWithValue(err?.message || "Cloud save failed");
-<<<<<<< HEAD
-=======
     }
   }
 );
@@ -366,7 +364,6 @@ export const deleteDogFromCloud = createAsyncThunk(
           : err?.message || "Cloud delete failed",
       });
       return rejectWithValue(err?.message || "Cloud delete failed");
->>>>>>> 10f88903 (chore: remove committed backup folders)
     }
   }
 );

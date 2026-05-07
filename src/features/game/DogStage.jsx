@@ -1,4 +1,3 @@
-// src/features/game/DogStage.jsx
 import {
   forwardRef,
   useCallback,
@@ -11,8 +10,6 @@ import {
   DogStatusBubble,
   ModernStatusPill,
 } from "@/components/game/MainGamePanels.jsx";
-<<<<<<< HEAD
-<<<<<<< HEAD
 import DogMobileCanvas from "@/features/game/rendering/DogMobileCanvas.jsx";
 import AnimatedStageBackground from "@/features/game/rendering/AnimatedStageBackground.jsx";
 import GameViewportThreeLayer from "@/features/game/rendering/GameViewportThreeLayer.jsx";
@@ -21,17 +18,6 @@ import SceneHud from "@/features/game/rendering/SceneHud.jsx";
 import YardScene from "@/features/game/rendering/YardScene.jsx";
 import { getSceneLayout } from "@/features/game/rendering/sceneLayout.js";
 import { useDogGameView } from "@/hooks/useDogState.js";
-=======
-import DogStage3D from "@/features/game/stage3d/DogStage3D.jsx";
-=======
-import DogMobileCanvas from "@/features/game/rendering/DogMobileCanvas.jsx";
->>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
-import SceneHud from "@/features/game/rendering/SceneHud.jsx";
-import { StageBackground } from "@/features/game/StageBackground.jsx";
-import { StageProps } from "@/features/game/StageProps.jsx";
-import { InteractionOverlay } from "@/features/game/rendering/YardScene.jsx";
-import { getSceneLayout } from "@/features/game/rendering/sceneLayout.js";
->>>>>>> 10f88903 (chore: remove committed backup folders)
 
 const FALLBACK_VIEWPORT_MIN_HEIGHT = 420;
 
@@ -106,21 +92,7 @@ function StageFeedbackPill({ feedback }) {
 const DogStage = forwardRef(function DogStage(
   {
     scene = null,
-<<<<<<< HEAD
-<<<<<<< HEAD
     environment = "yard",
-=======
-=======
-    dog = null,
-    brainState = null,
-    renderModel = null,
-    currentAction = "",
-    requestedAction = "",
-    requestedFacing = "",
-    dogScale = null,
->>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
-    environment: _environment = "yard",
->>>>>>> 10f88903 (chore: remove committed backup folders)
     isNight = false,
     weather = "clear",
     reduceMotion = false,
@@ -140,7 +112,6 @@ const DogStage = forwardRef(function DogStage(
     activePropId = "",
     onPropTap = undefined,
     pawPrints = [],
-<<<<<<< HEAD
     fireflySeeds = [],
     showFireflies = false,
     placingBowl = false,
@@ -152,13 +123,6 @@ const DogStage = forwardRef(function DogStage(
     containerClassName = "",
     rendererClassName = "",
     rendererMinHeight = undefined,
-=======
-    fireflySeeds: _fireflySeeds = [],
-    showFireflies: _showFireflies = false,
-    placingBowl = false,
-    dogSleepingInDoghouse = false,
-    containerClassName = "",
->>>>>>> 10f88903 (chore: remove committed backup folders)
     viewportMinHeight = FALLBACK_VIEWPORT_MIN_HEIGHT,
     onPointerDown,
     onPointerMove,
@@ -168,10 +132,7 @@ const DogStage = forwardRef(function DogStage(
   },
   forwardedRef
 ) {
-<<<<<<< HEAD
   const { dog, renderModel } = useDogGameView();
-=======
->>>>>>> 10f88903 (chore: remove committed backup folders)
   const localRef = useRef(null);
   const [viewportSize, setViewportSize] = useState({ width: 960, height: 540 });
   const resolvedViewportMinHeight = useMemo(() => {
@@ -302,7 +263,6 @@ const DogStage = forwardRef(function DogStage(
 
   const sectionClassName =
     containerClassName || "relative isolate w-full h-full overflow-hidden";
-<<<<<<< HEAD
   const dogRendererClassName =
     rendererClassName || "absolute inset-0 pointer-events-none";
   const sectionStyle = useMemo(
@@ -324,67 +284,10 @@ const DogStage = forwardRef(function DogStage(
     resolvedViewportMinHeight,
     Number(viewportSize?.height || 0)
   );
-=======
-  const sectionStyle = useMemo(
-    () => ({
-      height: "460px",
-      width: "100%",
-      position: "relative",
-      overflow: "hidden",
-      background: "#0a120e",
-    }),
-    []
-  );
-
-  const stageWeather =
-    scene?.weatherLabel || scene?.weatherKey || scene?.weather || weather;
-
->>>>>>> 10f88903 (chore: remove committed backup folders)
   const hasStatusBubble = Boolean(dogName || stageLabel || conditionLabel);
   const visibleStatusPills = Array.isArray(statusPills)
     ? statusPills.filter((pill) => pill && pill.label && pill.value)
     : [];
-<<<<<<< HEAD
-=======
-
-  const isNightScene = isNight || scene?.isNight === true;
-  const dogRenderProps = useMemo(
-    () => ({
-      dog: dog ?? scene?.dog ?? null,
-      brainState: brainState ?? scene?.brainState ?? null,
-      renderModel: renderModel ?? scene?.renderModel ?? null,
-      requestedAction:
-        requestedAction ||
-        currentAction ||
-        scene?.requestedAction ||
-        scene?.currentAction ||
-        "",
-      requestedFacing:
-        requestedFacing ||
-        scene?.requestedFacing ||
-        scene?.dog?.facing ||
-        scene?.renderModel?.facing ||
-        "",
-      mood: scene?.moodLabel || conditionLabel || "Content",
-      paused: Boolean(scene?.paused),
-      scale: dogScale ?? scene?.dogScale ?? scene?.renderModel?.scale ?? 1,
-      reduceMotion,
-    }),
-    [
-      brainState,
-      conditionLabel,
-      currentAction,
-      dog,
-      dogScale,
-      reduceMotion,
-      renderModel,
-      requestedAction,
-      requestedFacing,
-      scene,
-    ]
-  );
-
->>>>>>> 10f88903 (chore: remove committed backup folders)
   return (
     <section
       ref={setViewportRef}
@@ -392,7 +295,6 @@ const DogStage = forwardRef(function DogStage(
       className={sectionClassName}
       style={sectionStyle}
     >
-<<<<<<< HEAD
       <AnimatedStageBackground
         backgroundSrc={scene?.backgroundSrc || ""}
         weather={stageWeather}
@@ -405,53 +307,21 @@ const DogStage = forwardRef(function DogStage(
 
         <div
           className="absolute inset-0 z-[20]"
-=======
-      <div className="absolute inset-0 overflow-hidden rounded-[inherit]">
-        {/* Layer 1: Sky & Ground Plane */}
-        <StageBackground
-          isNight={isNightScene}
-          weather={stageWeather}
-          scene={scene}
-          reduceMotion={reduceMotion}
-        />
-
-        {/* Layer 2: Props, Trees, House, Fence, Shadow, Foreground Overlay */}
-        <StageProps
-          layout={sceneLayout}
-          isNight={isNightScene}
-          weather={stageWeather}
-          reduceMotion={reduceMotion}
-        />
-
-        {/* Layer 3: Dog Renderer */}
-        <div className="absolute inset-0 z-30 pointer-events-none">
-          <DogMobileCanvas scene={scene} {...dogRenderProps} />
-        </div>
-
-        {/* Layer 4: UI / Interactions */}
-        <div
-          className="absolute inset-0 z-50"
->>>>>>> 10f88903 (chore: remove committed backup folders)
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
           onPointerCancel={onPointerCancel}
         >
-<<<<<<< HEAD
           <YardScene
             layout={sceneLayout}
             environment={environment}
             isNight={isNight || scene?.isNight === true}
             weather={weather || scene?.weatherKey || scene?.weather || "clear"}
             reduceMotion={reduceMotion}
-=======
-          <InteractionOverlay
->>>>>>> 10f88903 (chore: remove committed backup folders)
             investigationProps={investigationProps}
             activePropId={activePropId}
             onPropTap={onPropTap}
             pawPrints={pawPrints}
-<<<<<<< HEAD
             fireflySeeds={fireflySeeds}
             showFireflies={showFireflies}
             showBowlHint={placingBowl}
@@ -519,58 +389,6 @@ const DogStage = forwardRef(function DogStage(
           </div>
         ) : null}
       </AnimatedStageBackground>
-=======
-            showBowlHint={placingBowl}
-          />
-        </div>
-      </div>
-
-      <SceneHud leftItems={sceneHudLeft} rightItems={sceneHudRight} />
-
-      {hasStatusBubble || visibleStatusPills.length ? (
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[34] px-3 pb-3 sm:px-4 sm:pb-4">
-          <div className="mx-auto flex w-full max-w-3xl flex-col gap-3">
-            {hasStatusBubble || visibleStatusPills.length ? (
-              <div className="flex flex-wrap items-end justify-between gap-2.5">
-                {hasStatusBubble ? (
-                  <div className="pointer-events-auto max-w-full">
-                    <DogStatusBubble
-                      name={dogName}
-                      stageLabel={stageLabel}
-                      ageValue={ageValue}
-                      moodLabel={conditionLabel}
-                      energyPct={energyPct}
-                    />
-                  </div>
-                ) : (
-                  <div />
-                )}
-
-                {visibleStatusPills.length ? (
-                  <div className="pointer-events-auto flex max-w-full flex-wrap justify-end gap-2">
-                    {visibleStatusPills.map((pill) => (
-                      <ModernStatusPill
-                        key={`${pill.label}-${pill.value}`}
-                        label={pill.label}
-                        value={pill.value}
-                        detail={pill.detail}
-                        tone={pill.tone}
-                      />
-                    ))}
-                  </div>
-                ) : null}
-              </div>
-            ) : null}
-
-            {stageFeedback?.message ? (
-              <div className="pointer-events-none">
-                <StageFeedbackPill feedback={stageFeedback} />
-              </div>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
->>>>>>> 10f88903 (chore: remove committed backup folders)
     </section>
   );
 });

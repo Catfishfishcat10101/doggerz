@@ -526,15 +526,7 @@ function computeBehaviorTendencies(
     0,
     100
   );
-<<<<<<< HEAD
-  const energyCeiling = clamp(
-    Number(coreTemperament.energyCeiling || 0),
-    0,
-    100
-  );
-=======
   const energy = clamp(Number(coreTemperament.energy || 0), 0, 100);
->>>>>>> 10f88903 (chore: remove committed backup folders)
   const houseManners = clamp(Number(learnedTraits.houseManners || 0), 0, 100);
   const trustScore = clamp(Number(trust.score || 0), 0, 100);
   const confidence = clamp(Number(dynamicStates.confidence || 0), 0, 100);
@@ -591,22 +583,14 @@ function computeBehaviorTendencies(
     if (memoryVoice === "steady") memoryVoice = "orderly";
   }
 
-<<<<<<< HEAD
-  if (energyCeiling >= 70 && frustration < 55) {
-=======
   if (energy >= 70 && frustration < 55) {
->>>>>>> 10f88903 (chore: remove committed backup folders)
     tendencies.push({
       id: "playful",
       label: "Playful",
       summary: "Prefers short, spirited bursts over passive downtime.",
     });
     if (memoryVoice === "steady") memoryVoice = "playful";
-<<<<<<< HEAD
-  } else if (energyCeiling <= 38 || dog?.lifeStage?.stage === "SENIOR") {
-=======
   } else if (energy <= 38 || dog?.lifeStage?.stage === "SENIOR") {
->>>>>>> 10f88903 (chore: remove committed backup folders)
     tendencies.push({
       id: "cozy",
       label: "Cozy",

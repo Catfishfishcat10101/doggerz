@@ -154,9 +154,12 @@ export default function DogAIEngine({
   enableAudio = true,
   enableWeather = true,
 } = {}) {
+  /** @type {any} Redux Toolkit thunks return enhanced promises in this JS module. */
   const dispatch = useDispatch();
   const location = useLocation();
-  const { dog: dogState, renderModel } = useDogEngineState();
+  /** @type {{ dog?: any, renderModel?: any }} */
+  const engineState = useDogEngineState() || {};
+  const { dog: dogState, renderModel } = engineState;
   const progressionState = useSelector(selectProgression);
   const zip = useSelector(selectUserZip);
   const settings = useSelector(selectSettings);
@@ -236,7 +239,10 @@ export default function DogAIEngine({
 
   useDogActionSfx({
     anim: renderModel?.anim,
+    frameIndex: renderModel?.frameIndex ?? null,
+    frameCount: renderModel?.frameCount ?? null,
     energy: dogState?.stats?.energy,
+    tier: renderModel?.tier || dogState?.tier || null,
     audio: settings?.audio,
     enabled: enableAudio,
     hapticsEnabled: settings?.hapticsEnabled !== false,
@@ -449,7 +455,8 @@ export default function DogAIEngine({
     queryKey: ["weather", weatherZip || "unset"],
     queryFn: ({ queryKey, signal }) => {
       const [, zipKey] = queryKey || [];
-      return fetchRealTimeWeather({ zip: zipKey, signal });
+      const fetchWeather = /** @type {any} */ (fetchRealTimeWeather);
+      return fetchWeather({ zip: zipKey, signal });
     },
     enabled: enableWeather && Boolean(weatherZip),
     refetchInterval: WEATHER_POLL_INTERVAL_MS,

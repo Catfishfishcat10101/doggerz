@@ -2,11 +2,7 @@
 import { describe, expect, it } from "vitest";
 
 import dogReducer, {
-<<<<<<< HEAD
-  hydrateDog,
-  petDog,
-  setAdoptedAt,
-=======
+  addMemories,
   feed,
   giveWater,
   goPotty,
@@ -15,7 +11,6 @@ import dogReducer, {
   play,
   setAdoptedAt,
   trainObedience,
->>>>>>> 10f88903 (chore: remove committed backup folders)
 } from "@/store/dogSlice.js";
 
 function buildActiveDogState(overrides = {}) {
@@ -110,8 +105,6 @@ describe("dogSlice need-state consequences", () => {
     expect(nextState.memory.neglectStrikes).toBe(2);
     expect(nextState.stats.affection).toBeGreaterThan(12);
   });
-<<<<<<< HEAD
-=======
 
   it("forms a daily relationship memory from feed, water, potty, and bond care", () => {
     const { state, now } = buildActiveDogState({
@@ -144,6 +137,54 @@ describe("dogSlice need-state consequences", () => {
     expect(nextState.lastCareResponse?.message).toMatch(/play|bond/i);
   });
 
+  it("derives emotional state from treatment memories instead of raw happiness edits", () => {
+    const { state, now } = buildActiveDogState({
+      stats: {
+        happiness: 20,
+      },
+    });
+
+    expect(state.memory.treatment.score).toBe(60);
+    expect(state.stats.happiness).toBe(60);
+
+    const caredFor = dogReducer(
+      state,
+      addMemories([
+        {
+          type: "petted",
+          category: "CARE",
+          moodTag: "AFFECTIONATE",
+          summary: "Shared calm attention.",
+          timestamp: now + 1_000,
+          happiness: 4,
+        },
+      ])
+    );
+
+    expect(caredFor.memory.treatment.score).toBeGreaterThan(60);
+    expect(caredFor.stats.happiness).toBe(caredFor.memory.treatment.score);
+    expect(caredFor.memory.treatment.positiveCareCount).toBeGreaterThan(0);
+
+    const routineSlipped = dogReducer(
+      caredFor,
+      addMemories([
+        {
+          type: "accident",
+          category: "NEGLECT",
+          moodTag: "UNEASY",
+          summary: "Routine slipped.",
+          timestamp: now + 2_000,
+          happiness: -3,
+        },
+      ])
+    );
+
+    expect(routineSlipped.memory.treatment.score).toBeLessThan(
+      caredFor.memory.treatment.score
+    );
+    expect(routineSlipped.memory.treatment.negativeCareCount).toBeGreaterThan(0);
+  });
+
   it("keeps trick training locked behind potty training", () => {
     const { state, now } = buildActiveDogState();
 
@@ -155,5 +196,4 @@ describe("dogSlice need-state consequences", () => {
     expect(nextState.lastAction).toBe("trainBlocked");
     expect(nextState.lastCareResponse?.message).toMatch(/potty training/i);
   });
->>>>>>> 10f88903 (chore: remove committed backup folders)
 });

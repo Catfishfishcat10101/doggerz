@@ -1,7 +1,4 @@
-<<<<<<< HEAD
-=======
 // src/components/dog/manifests/jrManifest.test.js
->>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";

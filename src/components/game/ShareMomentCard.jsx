@@ -1,7 +1,4 @@
-<<<<<<< HEAD
-=======
 // src/components/game/ShareMomentCard.jsx
->>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
 function resolveAccentClasses(accent = "emerald") {
   const key = String(accent || "emerald")
     .trim()

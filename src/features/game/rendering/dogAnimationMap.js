@@ -33,14 +33,11 @@ const ROWS = [
 const EXPLICIT_LOOP_CLIPS = new Set([
   "idle",
   "walk",
-<<<<<<< HEAD
-=======
   "walk_left",
   "walk_right",
   "turn_walk_left",
   "turn_walk_right",
   "sit",
->>>>>>> 10f88903 (chore: remove committed backup folders)
   "sleep",
   "eat",
   "drink",

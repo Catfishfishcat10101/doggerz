@@ -7,12 +7,13 @@ import AnimatedDog from "@/features/game/rendering/AnimatedDog.jsx";
 import DOG_STAGE_CAMERA, {
   DogCameraRig,
 } from "@/features/game/stage3d/DogCamera.jsx";
-import DogGroundPlane from "@/features/game/stage3d/DogGround.jsx";
+import { DogGroundPlane } from "@/features/game/stage3d/DogGround.jsx";
 import DogLightRig from "@/features/game/stage3d/DogLightRig.jsx";
 import resolveDogStageLighting from "@/features/game/stage3d/DogLights.jsx";
 import DogShadowPlane from "@/features/game/stage3d/DogShadowPlane.jsx";
 import DogHouse from "@/features/game/stage3d/props/DogHouse.jsx";
 import Tree from "@/features/game/stage3d/props/Tree.jsx";
+import { useDogYardMovement } from "@/features/game/rendering/useDogYardMovement.js";
 
 function clamp(value, min, max) {
   const numeric = Number(value);
@@ -141,13 +142,23 @@ function StageBackdrop({ lighting }) {
 
 function DogLayer({ scene, dogView, art }) {
   const ghost = scene?.behavior?.ghost;
+  const yardDog = useDogYardMovement({
+    scene,
+    basePosition: DOG_STAGE_CAMERA.dogAnchor,
+    requestedAction: dogView?.requestedAction,
+    requestedFacing: dogView?.requestedFacing,
+    paused: dogView?.paused,
+    reduceMotion: dogView?.reduceMotion,
+  });
 
   return (
     <DogRenderBoundary fallback={<DogModelFallback art={art} />}>
       <AnimatedDog
         scene={scene}
-        position={DOG_STAGE_CAMERA.dogAnchor}
+        position={yardDog.position}
         {...dogView}
+        requestedAction={yardDog.requestedAction}
+        requestedFacing={yardDog.facing}
       />
       {ghost?.present ? (
         <>
@@ -185,7 +196,7 @@ export function Dog3DScene({ scene = null, dogView = {} }) {
       }}
     >
       <Canvas
-        shadows
+        shadows="percentage"
         gl={{
           antialias: true,
           alpha: false,

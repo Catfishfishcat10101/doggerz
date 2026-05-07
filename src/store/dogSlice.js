@@ -1291,10 +1291,7 @@ function deriveEmotionCue(state) {
   const affection = Number(stats.affection || 0);
   const mentalStimulation = Number(stats.mentalStimulation || 0);
   const pottyLevel = Number(state.pottyLevel || 0);
-<<<<<<< HEAD
-=======
   const pottyPhase = String(state?.potty?.sequence?.phase || "").toLowerCase();
->>>>>>> 10f88903 (chore: remove committed backup folders)
   const neglectStrikes = Number(state.memory?.neglectStrikes || 0);
   const parasiteLoad = Number(state?.healthSilo?.parasiteLoad || 0);
   const jointStiffness = Number(state?.healthSilo?.jointStiffness || 0);
@@ -1312,16 +1309,12 @@ function deriveEmotionCue(state) {
   if (health <= 18) return "sick";
   if (jointStiffness >= 85) return "sore";
   if (energy <= 12) return "sleepy";
-<<<<<<< HEAD
-  if (pottyLevel >= 92) return "potty";
-=======
   if (
     pottyPhase === POTTY_SEQUENCE.CUED ||
     pottyPhase === POTTY_SEQUENCE.ANXIOUS_SNIFFING ||
     pottyLevel >= 92
   )
     return "potty";
->>>>>>> 10f88903 (chore: remove committed backup folders)
   if (thirst >= 88) return "thirsty";
   if (hunger >= 88) return "hungry";
   if (energy <= 20) return "sleepy";
@@ -1540,6 +1533,15 @@ const initialMemory = {
     dayKey: null,
     categories: [],
     completedAt: null,
+  },
+  treatment: {
+    score: 60,
+    tone: "steady",
+    lastPositiveAt: null,
+    lastNegativeAt: null,
+    positiveCareCount: 0,
+    negativeCareCount: 0,
+    recentEvents: [],
   },
   commandBuffer: [],
 };
@@ -2227,7 +2229,7 @@ function pushStructuredMemory(state, memory) {
     state.memories = [];
   }
 
-  state.memories.unshift({
+  const entry = {
     id: memory.id || `${Date.now()}-${state.memories.length + 1}`,
     type: memory.type || "memory",
     timestamp: Number(memory.timestamp || nowMs()),
@@ -2253,11 +2255,18 @@ function pushStructuredMemory(state, memory) {
     energy: Number.isFinite(Number(memory.energy))
       ? Number(memory.energy)
       : null,
-  });
+    treatmentImpact: Number.isFinite(Number(memory.treatmentImpact))
+      ? Number(memory.treatmentImpact)
+      : null,
+  };
+
+  state.memories.unshift(entry);
 
   if (state.memories.length > 500) {
     state.memories.length = 500;
   }
+
+  syncTreatmentMemory(state, entry.timestamp);
 
   pushJournalEntry(state, {
     timestamp: memory.timestamp,
@@ -2294,6 +2303,109 @@ function setCareResponse(
 
 function getNeedDelta(before, after) {
   return Math.max(0, Math.round(Number(before || 0) - Number(after || 0)));
+}
+
+const TREATMENT_MEMORY_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+const TREATMENT_TYPES = Object.freeze({
+  ate_food: 1.2,
+  drank_water: 1.1,
+  played_with_toy: 1.4,
+  petted: 1.3,
+  rested: 0.8,
+  potty_success: 0.9,
+  trained: 0.7,
+  daily_care_loop: 2.2,
+  bathed: 0.4,
+  accident: -1.1,
+  junk_food_binge: -2.6,
+  chewing_incident: -1.4,
+});
+
+function normalizeTreatmentEvent(memory, now = nowMs()) {
+  if (!memory || typeof memory !== "object") return null;
+  const timestamp = Number(memory.timestamp || 0);
+  if (!timestamp || now - timestamp > TREATMENT_MEMORY_WINDOW_MS) return null;
+
+  const type = String(memory.type || "")
+    .trim()
+    .toLowerCase();
+  const category = String(memory.category || "")
+    .trim()
+    .toUpperCase();
+  const moodTag = String(memory.moodTag || "")
+    .trim()
+    .toUpperCase();
+  const happinessDelta = Number(memory.happiness);
+  const explicitImpact = Number(memory.treatmentImpact);
+  let impact = Number.isFinite(explicitImpact)
+    ? explicitImpact
+    : Number.isFinite(happinessDelta)
+      ? happinessDelta
+      : Number(TREATMENT_TYPES[type] || 0);
+
+  if (category === "CARE" && !impact) impact = 0.5;
+  if (moodTag === "SASSY" || moodTag === "RESTLESS") impact -= 0.4;
+  if (moodTag === "SECURE" || moodTag === "AFFECTIONATE") impact += 0.7;
+
+  const ageWeight = clamp(1 - (now - timestamp) / TREATMENT_MEMORY_WINDOW_MS, 0, 1);
+  return {
+    type: type || "memory",
+    timestamp,
+    impact,
+    weightedImpact: impact * ageWeight,
+  };
+}
+
+function getTreatmentTone(score) {
+  if (score >= 82) return "secure";
+  if (score >= 65) return "connected";
+  if (score >= 45) return "steady";
+  if (score >= 28) return "uncertain";
+  return "hurt";
+}
+
+function summarizeTreatmentFromMemories(state, now = nowMs()) {
+  const memories = Array.isArray(state.memories) ? state.memories : [];
+  const events = memories
+    .slice(0, 120)
+    .map((memory) => normalizeTreatmentEvent(memory, now))
+    .filter(Boolean);
+  const positiveCareCount = events.filter((event) => event.impact > 0).length;
+  const negativeCareCount = events.filter((event) => event.impact < 0).length;
+  const weightedTotal = events.reduce(
+    (total, event) => total + event.weightedImpact,
+    0
+  );
+  const neglectPenalty = Math.min(
+    32,
+    Math.max(0, Number(state.memory?.neglectStrikes || 0)) * 8
+  );
+  const score = clamp(Math.round(60 + weightedTotal * 4 - neglectPenalty), 0, 100);
+  const lastPositive = events.find((event) => event.impact > 0);
+  const lastNegative = events.find((event) => event.impact < 0);
+
+  return {
+    score,
+    tone: getTreatmentTone(score),
+    lastPositiveAt: lastPositive?.timestamp || null,
+    lastNegativeAt: lastNegative?.timestamp || null,
+    positiveCareCount,
+    negativeCareCount,
+    recentEvents: events.slice(0, 8).map((event) => ({
+      type: event.type,
+      timestamp: event.timestamp,
+      impact: Number(event.impact.toFixed(2)),
+    })),
+  };
+}
+
+function syncTreatmentMemory(state, now = nowMs()) {
+  const memory = ensureMemoryState(state);
+  memory.treatment = summarizeTreatmentFromMemories(state, now);
+  if (state.stats && typeof state.stats === "object") {
+    state.stats.happiness = memory.treatment.score;
+  }
+  return memory.treatment;
 }
 
 function ensureDailyCareLoop(memory) {
@@ -2446,6 +2558,27 @@ function ensureMemoryState(state) {
     : [];
 
   ensureDailyCareLoop(state.memory);
+  if (!state.memory.treatment || typeof state.memory.treatment !== "object") {
+    state.memory.treatment = { ...initialMemory.treatment };
+  } else {
+    state.memory.treatment = {
+      ...initialMemory.treatment,
+      ...state.memory.treatment,
+      score: clamp(Number(state.memory.treatment.score || 60), 0, 100),
+      tone: String(state.memory.treatment.tone || "steady"),
+      positiveCareCount: Math.max(
+        0,
+        Math.floor(Number(state.memory.treatment.positiveCareCount || 0))
+      ),
+      negativeCareCount: Math.max(
+        0,
+        Math.floor(Number(state.memory.treatment.negativeCareCount || 0))
+      ),
+      recentEvents: Array.isArray(state.memory.treatment.recentEvents)
+        ? state.memory.treatment.recentEvents.slice(0, 8)
+        : [],
+    };
+  }
 
   return state.memory;
 }
@@ -4215,6 +4348,7 @@ function finalizeDerivedState(state, now = nowMs()) {
   ensureLegacyJourneyState(state);
   syncLifecycleState(state, now);
   const tier = syncCleanlinessTier(state, now);
+  syncTreatmentMemory(state, now);
   evaluateObedienceUnlocks(state, now);
   advanceDogFsm(state, now, { allowAutonomy: false });
   state.moodlets = computeMoodlets(state);
@@ -5515,15 +5649,11 @@ const dogSlice = createSlice({
 
       const amount = payload?.amount ?? 100;
       state.stats.thirst = clamp(state.stats.thirst - amount, 0, 100);
-<<<<<<< HEAD
-      state.stats.happiness = clamp(state.stats.happiness + 2, 0, 100);
-=======
       state.stats.happiness = clamp(
         state.stats.happiness + (thirstBefore >= 45 ? 3 : 1),
         0,
         100
       );
->>>>>>> 10f88903 (chore: remove committed backup folders)
       restoreAffectionAndTrust(state, 3);
       relieveNeglectWithCare(state, 1);
 

@@ -15,17 +15,10 @@ export const IDENTITY_NAP_SPOT_LABELS = Object.freeze({
 export const DAILY_IDENTITY_FLAVOR_TEMPLATES = Object.freeze({
   puppy: Object.freeze([
     {
-<<<<<<< HEAD
-      id: "puppy-chaos",
-      tone: "playful",
-      title: "Today your dog is tiny chaos.",
-      body: "Everything feels new, exciting, and slightly dramatic.",
-=======
       id: "puppy-energy",
       tone: "playful",
       title: "Today your puppy is extra alert.",
       body: "Everything feels new, exciting, and worth investigating.",
->>>>>>> 10f88903 (chore: remove committed backup folders)
     },
     {
       id: "puppy-clingy",

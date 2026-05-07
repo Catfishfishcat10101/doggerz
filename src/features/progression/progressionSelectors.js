@@ -1,6 +1,9 @@
 // src/features/progression/progressionSelectors.js
 import { createSelector } from "@reduxjs/toolkit";
 
+const EMPTY_ARRAY = Object.freeze([]);
+const EMPTY_OBJECT = Object.freeze({});
+
 export const selectProgression = (state) => state?.progression || null;
 
 export const selectOwnerProgression = createSelector(
@@ -25,7 +28,7 @@ export const selectTrainingProgression = createSelector(
 
 export const selectProgressionTracks = createSelector(
   [selectTrainingProgression],
-  (training) => training?.tracks || {}
+  (training) => training?.tracks || EMPTY_OBJECT
 );
 
 export const selectProgressionTrackById = (state, trackId) => {
@@ -45,27 +48,27 @@ export const selectProgressionUnlocks = createSelector(
 
 export const selectUnlockedFeatures = createSelector(
   [selectProgressionUnlocks],
-  (unlocks) => unlocks?.features || []
+  (unlocks) => unlocks?.features || EMPTY_ARRAY
 );
 
 export const selectUnlockedItems = createSelector(
   [selectProgressionUnlocks],
-  (unlocks) => unlocks?.items || []
+  (unlocks) => unlocks?.items || EMPTY_ARRAY
 );
 
 export const selectUnlockedInteractions = createSelector(
   [selectProgressionUnlocks],
-  (unlocks) => unlocks?.interactions || []
+  (unlocks) => unlocks?.interactions || EMPTY_ARRAY
 );
 
 export const selectUnlockedMemories = createSelector(
   [selectProgression],
-  (progression) => progression?.memories || []
+  (progression) => progression?.memories || EMPTY_ARRAY
 );
 
 export const selectProgressionMilestoneQueue = createSelector(
   [selectProgression],
-  (progression) => progression?.milestoneQueue || []
+  (progression) => progression?.milestoneQueue || EMPTY_ARRAY
 );
 
 export const selectNextProgressionMilestone = createSelector(

@@ -1,6 +1,6 @@
 /* eslint-disable react/no-unknown-property */
 // src/components/dog/Dog3D.jsx
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useAnimations, useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { Box3, Vector3 } from "three";
@@ -11,8 +11,8 @@ import {
   hasPlayableDogModelClips,
   resolveClipName,
 } from "@/features/game/stage3d/dog/dogAnimationMap.js";
+import { DOG_MODEL_PATH_BY_STAGE } from "@/features/game/stage3d/dog/dogModelMap.js";
 import { resolveDogModelProfile } from "@/features/game/stage3d/dog/dogModelResolver.js";
-import { resolveDogStageBehavior } from "@/features/game/stage3d/dog/resolveDogStageBehavior.js";
 
 function applyMaterialState(node, { ghost, opacity }) {
   if (!node?.material) return;
@@ -25,11 +25,6 @@ function applyMaterialState(node, { ghost, opacity }) {
     node.material.emissive.set("#b7dcff");
     node.material.emissiveIntensity = 0.24;
   }
-}
-
-function resolveStageClip(scene, ghost) {
-  if (ghost) return "Idle";
-  return resolveDogStageBehavior(scene, Date.now()).clip || "Idle";
 }
 
 function resolveStaticMotion(
@@ -135,7 +130,6 @@ export function Dog3D({
   const rootRef = useRef(null);
   const currentActionRef = useRef(null);
   const currentClipRef = useRef("");
-  const [behaviorTick, setBehaviorTick] = useState(0);
   const dogModelProfile = useMemo(
     () =>
       resolveDogModelProfile({
@@ -143,7 +137,7 @@ export function Dog3D({
         dog,
         action,
         mood: scene?.moodLabel || scene?.mood,
-        useStageModels: scene?.useStageDogModels === true,
+        useStageModels: scene?.useStageDogModels !== false,
       }),
     [action, dog, scene]
   );
@@ -201,54 +195,40 @@ export function Dog3D({
     [actions]
   );
 
-  const behavior = useMemo(() => {
-    void behaviorTick;
-    if (forcedClip && !ghost) {
-      return {
-        id: String(forcedClip).toLowerCase(),
-        clip: forcedClip,
-        loop: forcedClip !== "Bark",
-        lookAround: forcedClip === "Idle" || forcedClip === "Wag",
-        blink: forcedClip !== "Bark" && forcedClip !== "Walk",
-        intensity: forcedClip === "Bark" ? 1 : 0.5,
-      };
-    }
-    return ghost ? null : resolveDogStageBehavior(scene, Date.now());
-  }, [behaviorTick, forcedClip, ghost, scene]);
-
   const desiredClip = ghost
-    ? resolveStageClip(scene, ghost)
-    : behavior?.clip || forcedClip || animationClip?.key || "Idle";
-  const weather = scene?.behavior?.weather || {};
+    ? "Idle"
+    : forcedClip || animationClip?.key || "Idle";
+  const renderMotion = useMemo(
+    () => ({
+      id: String(desiredClip || "Idle").toLowerCase(),
+      lookAround: desiredClip === "Idle" || desiredClip === "Wag",
+      blink: desiredClip !== "Bark" && desiredClip !== "Walk",
+    }),
+    [desiredClip]
+  );
   const opacity = ghost ? Number(scene?.behavior?.ghost?.opacity || 0) : 1;
 
   const effectivePosition = useMemo(() => {
     if (ghost) return [-1.45, -1, -0.95];
-    if (weather?.shelterSeeking) return [1.45, -1, -1.15];
     return position;
-  }, [ghost, position, weather?.shelterSeeking]);
+  }, [ghost, position]);
 
   const effectiveRotation = useMemo(() => {
     if (ghost) return [0, Math.PI * -0.08, 0];
-    if (weather?.shelterSeeking) return [0, Math.PI * -0.22, 0];
     if (facing === "left" || dog?.facing === "left") {
       return [rotation[0], Math.PI * -0.16, rotation[2] || 0];
     }
     if (facing === "right" || dog?.facing === "right") {
       return [rotation[0], Math.PI * 0.16, rotation[2] || 0];
     }
+    if (facing === "front" || dog?.facing === "front") {
+      return [rotation[0], 0, rotation[2] || 0];
+    }
+    if (facing === "back" || dog?.facing === "back") {
+      return [rotation[0], Math.PI, rotation[2] || 0];
+    }
     return rotation;
-  }, [dog?.facing, facing, ghost, rotation, weather?.shelterSeeking]);
-
-  useEffect(() => {
-    if (ghost) return undefined;
-
-    const intervalId = window.setInterval(() => {
-      setBehaviorTick((value) => value + 1);
-    }, 2200);
-
-    return () => window.clearInterval(intervalId);
-  }, [ghost]);
+  }, [dog?.facing, facing, ghost, rotation]);
 
   useFrame((state) => {
     const root = rootRef.current;
@@ -257,13 +237,19 @@ export function Dog3D({
     const t = state.clock.getElapsedTime();
     const baseScale = scale * fit.scale;
     const motionPaused = paused || reduceMotion;
-    const blinkPhase = behavior?.blink && !motionPaused ? (t * 0.55) % 6.2 : 3;
+    const blinkPhase =
+      renderMotion?.blink && !motionPaused ? (t * 0.55) % 6.2 : 3;
     const blinkScale = blinkPhase > 0.04 && blinkPhase < 0.11 ? 0.988 : 1;
 
     if (!hasModelClips) {
       const motion = motionPaused
         ? { x: 0, y: 0, z: 0, xRot: 0, yRot: 0, zRot: 0 }
-        : resolveStaticMotion(desiredClip, t, behavior || resolution, action);
+        : resolveStaticMotion(
+            desiredClip,
+            t,
+            renderMotion || resolution,
+            action
+          );
       const squashX = motion.squashX || 1;
       const squashY = motion.squashY || 1;
       const squashZ = motion.squashZ || 1;
@@ -299,12 +285,12 @@ export function Dog3D({
     const breath = ghost ? 0.012 : desiredClip === "Sleep" ? 0.018 : 0.02;
 
     const lookYaw =
-      behavior?.lookAround && desiredClip !== "Sleep"
+      renderMotion?.lookAround && desiredClip !== "Sleep"
         ? Math.sin(t * 0.34) * 0.11 + Math.sin(t * 0.13) * 0.05
         : 0;
 
     const wanderSway =
-      behavior?.id?.includes("wander") || desiredClip === "Walk"
+      renderMotion?.id?.includes("wander") || desiredClip === "Walk"
         ? Math.sin(t * 1.2) * 0.035
         : 0;
 
@@ -376,5 +362,8 @@ export function Dog3D({
 }
 
 useGLTF.preload(DOG_MODEL_GLTF_PATH);
+Object.values(DOG_MODEL_PATH_BY_STAGE).forEach((modelPath) => {
+  useGLTF.preload(modelPath);
+});
 
 export default Dog3D;

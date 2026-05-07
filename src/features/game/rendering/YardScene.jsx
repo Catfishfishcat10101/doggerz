@@ -66,13 +66,6 @@ function HotspotButton({ item, active = false, onTap }) {
   );
 }
 
-<<<<<<< HEAD
-function PawPrintLayer({ pawPrints = [] }) {
-  if (!Array.isArray(pawPrints) || !pawPrints.length) return null;
-
-  return (
-    <div className="pointer-events-none absolute inset-0 z-[21] overflow-hidden">
-=======
 export function InteractionOverlay({
   investigationProps,
   activePropId,
@@ -140,7 +133,6 @@ export function PawPrintLayer({ pawPrints = [] }) {
 
   return (
     <div className="pointer-events-none absolute inset-0 z-[21] overflow-hidden opacity-60">
->>>>>>> 10f88903 (chore: remove committed backup folders)
       {pawPrints.slice(-12).map((print) => (
         <span
           key={print.id}

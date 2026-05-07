@@ -1,12 +1,7 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
 //src/pages/Game.jsx
 import { useMemo, useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
-<<<<<<< HEAD
 
 import DogAIEngine from "@/components/dog/DogAIEngine.jsx";
 import MainGame from "@/components/game/MainGame.jsx";
@@ -42,54 +37,6 @@ import {
   trackSessionDuration,
 } from "@/lib/analytics/gameAnalytics.js";
 import { startPerfBudgetMonitor } from "@/lib/perf/perfBudget.js";
-=======
-import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-=======
->>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
-
-import DogAIEngine from "@/components/dog/DogAIEngine.jsx";
-import MainGame from "@/components/game/MainGame.jsx";
-import GrowthCelebration from "@/components/dog/components/GrowthCelebration.jsx";
-import { preloadJackRussellSheets } from "@/components/dog/assets/jrAtlasAssets.js";
-import { getDailyRewardState } from "@/features/billing/dailyRewards.js";
-import usePreRegistration from "@/hooks/usePreRegistration.js";
-import useModal from "@/hooks/useModal.js";
-import {
-<<<<<<< HEAD
-  calculateNextStreak,
-  getTodayKey,
-  wasRewardClaimedToday,
-} from "../utils/timeWeather.js";
->>>>>>> 10f88903 (chore: remove committed backup folders)
-=======
-  selectWeatherCondition,
-  selectWeatherIntensity,
-} from "@/store/weatherSlice.js";
-import {
-  selectCloudSyncState,
-  selectIsAuthResolved,
-  selectIsLoggedIn,
-  selectUserZip,
-} from "@/store/userSlice.js";
-import { selectSettings } from "@/store/settingsSlice.js";
-import { useDayNight } from "@/hooks/useDayNight.js";
-import WeatherFXCanvas from "@/components/environment/WeatherFXCanvas.jsx";
-import { useDog } from "@/hooks/useDogState.js";
-import { PATHS } from "@/app/routes.js";
-import {
-  getWeatherAccent,
-  getWeatherLabel,
-  normalizeWeatherCondition,
-} from "@/utils/weather.js";
-import {
-  getPlayerSegmentationSnapshot,
-  trackEnterGame,
-  trackPlayerSegmentSnapshot,
-  trackSessionDuration,
-} from "@/lib/analytics/gameAnalytics.js";
-import { startPerfBudgetMonitor } from "@/lib/perf/perfBudget.js";
->>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
 
 function titleCase(s) {
   const str = String(s || "").trim();
@@ -114,10 +61,6 @@ function shouldReduceEffects(perfMode) {
   return false;
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
 export default function GamePage() {
   const { active: activeModal, openOnce, closeModalById } = useModal();
   const dog = useDog();
@@ -151,7 +94,6 @@ export default function GamePage() {
   } = usePreRegistration({
     enabled: dogInteractive,
   });
-<<<<<<< HEAD
 
   const perfReduced =
     shouldReduceEffects(settings?.perfMode) || runtimePerfReduced;
@@ -169,36 +111,6 @@ export default function GamePage() {
     enableImages: showBackgroundPhotos,
     usePreciseLocation: usePreciseDayNightLocation,
   });
-=======
-function getConditionFromStats(stats) {
-  if (stats.hunger < 35) return "Hungry";
-  if (stats.energy < 35) return "Tired";
-  if (stats.happiness < 35) return "Lonely";
-  if (stats.cleanliness < 35) return "Dirty";
-  if (stats.health < 45) return "Unwell";
-
-  return "Good";
-}
->>>>>>> 10f88903 (chore: remove committed backup folders)
-=======
-
-  const perfReduced =
-    shouldReduceEffects(settings?.perfMode) || runtimePerfReduced;
-  const showBackgroundPhotos = settings?.showBackgroundPhotos !== false;
-  const usePreciseDayNightLocation =
-    settings?.usePreciseDayNightLocation === true;
-  const {
-    isNight,
-    source: dayNightSource,
-    sunriseProgress,
-    timeOfDayBucket,
-    style: dayNightStyle,
-  } = useDayNight({
-    zip,
-    enableImages: showBackgroundPhotos,
-    usePreciseLocation: usePreciseDayNightLocation,
-  });
->>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
 
   const reduceMotion =
     settings?.reduceMotion === "on" ||
@@ -213,10 +125,6 @@ function getConditionFromStats(stats) {
   const showGrain =
     settings?.showSceneGrain !== false && !perfReduced && !reduceTransparency;
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
   const weatherKey = useMemo(
     () => normalizeWeatherCondition(weather),
     [weather]
@@ -232,117 +140,6 @@ function getConditionFromStats(stats) {
     hasDog: Boolean(dog?.adoptedAt),
     lifecycleStatus: String(dog?.lifecycleStatus || "NONE").toLowerCase(),
   });
-<<<<<<< HEAD
-
-  useEffect(() => {
-    gameSessionMetaRef.current = {
-      hasDog: Boolean(dog?.adoptedAt),
-      lifecycleStatus: String(dog?.lifecycleStatus || "NONE").toLowerCase(),
-    };
-  }, [dog?.adoptedAt, dog?.lifecycleStatus]);
-
-  useEffect(() => {
-    preloadJackRussellSheets().catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    const shouldShowPerfOverlay = import.meta.env.DEV;
-    const stopMonitor = startPerfBudgetMonitor({
-      sampleIntervalMs: 60_000,
-      onSample: (sample) => {
-        if (shouldShowPerfOverlay) setPerfSample(sample);
-        if (sample?.overBudget) {
-          perfHealthyStreakRef.current = 0;
-          setRuntimePerfReduced(true);
-          return;
-        }
-        perfHealthyStreakRef.current += 1;
-        if (perfHealthyStreakRef.current >= 3) {
-          setRuntimePerfReduced(false);
-        }
-      },
-    });
-    return () => {
-      stopMonitor();
-    };
-  }, []);
-
-  useEffect(() => {
-    gameSessionStartedAtRef.current = Date.now();
-    gameSessionLoggedRef.current = false;
-
-    const sessionMeta = gameSessionMetaRef.current;
-    trackEnterGame({
-      hasDog: sessionMeta.hasDog,
-      lifecycleStatus: sessionMeta.lifecycleStatus,
-    });
-    const segmentSnapshot = getPlayerSegmentationSnapshot();
-    trackPlayerSegmentSnapshot({
-      snapshot: segmentSnapshot,
-      source: "game_enter",
-    });
-
-    const flushSessionDuration = () => {
-      if (gameSessionLoggedRef.current) return;
-      const durationMs = Math.max(
-        0,
-        Date.now() - gameSessionStartedAtRef.current
-      );
-      const durationSeconds = Math.round(durationMs / 1000);
-
-      gameSessionLoggedRef.current = true;
-      const latestMeta = gameSessionMetaRef.current;
-      trackSessionDuration({
-        durationSeconds,
-        hasDog: latestMeta.hasDog,
-        lifecycleStatus: latestMeta.lifecycleStatus,
-        sessionStartedAt: gameSessionStartedAtRef.current,
-      });
-    };
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "hidden") {
-        flushSessionDuration();
-      }
-    };
-
-    window.addEventListener("pagehide", flushSessionDuration);
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    return () => {
-      window.removeEventListener("pagehide", flushSessionDuration);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-      flushSessionDuration();
-    };
-  }, []);
-
-  useEffect(() => {
-    const updateNow = () => setRewardNow(Date.now());
-    const interval = setInterval(updateNow, 60 * 1000);
-    window.addEventListener("focus", updateNow);
-    document.addEventListener("visibilitychange", updateNow);
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener("focus", updateNow);
-      document.removeEventListener("visibilitychange", updateNow);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (dog?.adoptedAt) {
-      setAdoptionGateReady(false);
-      return undefined;
-=======
-  const nextStreak = useMemo(() => {
-    if (!dog) {
-      return 1;
->>>>>>> 10f88903 (chore: remove committed backup folders)
-    }
-
-    return calculateNextStreak(dog.lastRewardDate, dog.streak);
-  }, [dog]);
-=======
->>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
 
   useEffect(() => {
     gameSessionMetaRef.current = {
@@ -565,10 +362,6 @@ function getConditionFromStats(stats) {
     (!isLoggedIn || cloudSync?.status !== "syncing");
 
   return (
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
     <div
       className="dz-safe-area relative h-dvh min-h-0 overflow-hidden pb-24 md:pb-0"
       style={{ ...dayNightStyle, "--weather-accent": weatherAccent }}
@@ -582,13 +375,6 @@ function getConditionFromStats(stats) {
       {showGrain ? (
         <div className="pointer-events-none absolute inset-0 opacity-[0.05] mix-blend-overlay bg-[radial-gradient(circle_at_20%_15%,rgba(255,255,255,0.6),transparent_55%)]" />
       ) : null}
-<<<<<<< HEAD
-=======
-    <div className="mx-auto grid w-full max-w-6xl gap-4">
-      <DogTopCard dog={dog} />
->>>>>>> 10f88903 (chore: remove committed backup folders)
-=======
->>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
 
       <WeatherFXCanvas
         mode={showWeatherFx ? weatherKey : "none"}
@@ -598,10 +384,6 @@ function getConditionFromStats(stats) {
         className="z-0"
       />
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
       <div className="relative z-10 flex h-full min-h-0 flex-col">
         {shouldRedirectToAdopt ? (
           <Navigate to={PATHS.ADOPT} replace />
@@ -619,7 +401,6 @@ function getConditionFromStats(stats) {
                 you into the yard.
               </p>
             </div>
-<<<<<<< HEAD
           </div>
         ) : (
           <MainGame scene={scene} dogInteractive={dogInteractive} />
@@ -656,71 +437,6 @@ function getConditionFromStats(stats) {
         </div>
       ) : null}
       <GrowthCelebration />
-=======
-            <span className="rounded-full border border-white/15 bg-white/[0.04] px-3 py-2 text-xs font-black uppercase tracking-[0.18em] text-white">
-              Weather Local
-            </span>
-
-            <span className="rounded-full border border-amber-300/25 bg-amber-400/10 px-3 py-2 text-xs font-black uppercase tracking-[0.18em] text-amber-100">
-              Cloud Ready · Waiting for first sync
-            </span>
-=======
->>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
-          </div>
-        ) : (
-          <MainGame scene={scene} dogInteractive={dogInteractive} />
-        )}
-      </div>
-      {import.meta.env.DEV && perfSample ? (
-        <div className="pointer-events-none fixed bottom-2 right-2 z-[90] rounded-xl border border-white/20 bg-black/65 px-2.5 py-2 text-[10px] font-semibold text-white/90 backdrop-blur">
-          <div className="uppercase tracking-[0.12em] text-emerald-200/90">
-            Perf
-          </div>
-          <div>FPS: {Math.round(Number(perfSample?.fps || 0))}</div>
-          <div>
-            Long tasks/min:{" "}
-            {Math.round(Number(perfSample?.longTasksPerMinute || 0))}
-          </div>
-          <div>
-            Heap:{" "}
-            {Number.isFinite(Number(perfSample?.heapUsedMb))
-              ? `${Math.round(Number(perfSample.heapUsedMb))}MB`
-              : "n/a"}
-          </div>
-          <div
-            className={
-              perfSample?.overBudget
-                ? "text-amber-200 font-bold"
-                : "text-emerald-200"
-            }
-          >
-            {perfSample?.overBudget ? "Over budget" : "Within budget"}
-          </div>
-          <div className="text-white/70">
-            Scene mode: {runtimePerfReduced ? "scaled-down" : "full"}
-          </div>
-        </div>
-<<<<<<< HEAD
-
-        <YardStage dog={dog} pose={pose} />
-      </section>
-
-      <ActionBar onAction={handleAction} />
-
-      <PupStats dog={dog} />
-
-      {showReward && (
-        <DailyRewardModal
-          streak={nextStreak}
-          onClaim={handleClaimReward}
-          onClose={() => setShowReward(false)}
-        />
-      )}
->>>>>>> 10f88903 (chore: remove committed backup folders)
-=======
-      ) : null}
-      <GrowthCelebration />
->>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
     </div>
   );
 }

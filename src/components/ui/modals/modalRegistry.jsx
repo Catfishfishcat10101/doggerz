@@ -1,28 +1,8 @@
 // src/components/ui/modals/modalRegistry.jsx
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 import DailyRewardModal from "@/components/ui/modals/DailyRewardModal.jsx";
 import FounderBonusModal from "@/components/ui/modals/FounderBonusModal.jsx";
 import LifecycleNoticeModal from "@/components/ui/modals/LifecycleNoticeModal.jsx";
-=======
-import { Suspense, lazy } from "react";
-
-const DailyRewardModal = lazy(
-  () => import("@/components/ui/modals/DailyRewardModal.jsx")
-);
-const FounderBonusModal = lazy(
-  () => import("@/components/ui/modals/FounderBonusModal.jsx")
-);
-const LifecycleNoticeModal = lazy(
-  () => import("@/components/ui/modals/LifecycleNoticeModal.jsx")
-);
->>>>>>> 10f88903 (chore: remove committed backup folders)
-=======
-import DailyRewardModal from "@/components/ui/modals/DailyRewardModal.jsx";
-import FounderBonusModal from "@/components/ui/modals/FounderBonusModal.jsx";
-import LifecycleNoticeModal from "@/components/ui/modals/LifecycleNoticeModal.jsx";
->>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
 
 export function renderModal(entry, { closeModal } = {}) {
   const id = entry?.id ? String(entry.id) : "";

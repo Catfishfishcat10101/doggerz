@@ -13,17 +13,10 @@
       "style": "DEFAULT"
     },
     "SplashScreen": {
-<<<<<<< HEAD
-      "launchAutoHide": false,
-      "launchFadeOutDuration": 220,
-      "backgroundColor": "#090a0fff",
-      "showSpinner": false
-=======
       "launchAutoHide": true,
       "launchFadeOutDuration": 220,
       "backgroundColor": "#090a0fff",
       "showSpinner": true
->>>>>>> 10f88903 (chore: remove committed backup folders)
     },
     "AdMob": {
       "appId": "ca-app-pub-3940256099942544~3347511713"

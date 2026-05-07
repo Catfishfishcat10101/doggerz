@@ -1,7 +1,4 @@
-<<<<<<< HEAD
-=======
 // src/utils/debugLogger.js
->>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
 const DEBUG_STORAGE_KEY = "doggerz:debugLogs";
 
 function readStorageFlag() {
@@ -22,9 +19,7 @@ export function isDebugLoggingEnabled(explicit = null) {
     typeof window !== "undefined" &&
     Boolean(window.__DOGGERZ_DEBUG__?.enabled === true);
 
-  return Boolean(
-    import.meta.env.DEV || envEnabled || runtimeEnabled || readStorageFlag()
-  );
+  return Boolean(envEnabled || runtimeEnabled || readStorageFlag());
 }
 
 export function setDebugLoggingEnabled(enabled) {

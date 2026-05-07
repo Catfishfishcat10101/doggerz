@@ -1,12 +1,3 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-=======
-// src/features/live/liveContentEngine.js
->>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
-import { getMorningGloryLiveOp } from "@/features/dog/behaviorSceneProfile.js";
-
->>>>>>> 10f88903 (chore: remove committed backup folders)
 function clampIndex(index, total) {
   if (!Number.isFinite(index) || total <= 0) return 0;
   return Math.max(0, Math.min(total - 1, Math.floor(index)));
@@ -161,21 +152,6 @@ export function getLiveContentSnapshot({
   const seasonalItems = seasonalDrop.cosmeticIds
     .map((id) => catalogById.get(id))
     .filter(Boolean);
-<<<<<<< HEAD
-=======
-  const timeWindowOffer = getMorningGloryLiveOp(now);
-  const bulletin = timeWindowOffer.active
-    ? {
-        eyebrow: "Live This Morning",
-        title: timeWindowOffer.label,
-        body: `A limited treat window is active from ${timeWindowOffer.windowLabel}. Check in before it closes.`,
-      }
-    : {
-        eyebrow: "Live This Week",
-        title: weeklyRotation.label,
-        body: weeklyRotation.summary,
-      };
->>>>>>> 10f88903 (chore: remove committed backup folders)
 
   return {
     seasonKey,
@@ -183,23 +159,15 @@ export function getLiveContentSnapshot({
     weeklyRotation,
     weeklyItems,
     seasonalItems,
-<<<<<<< HEAD
-=======
-    timeWindowOffer,
->>>>>>> 10f88903 (chore: remove committed backup folders)
     liveCatalogIds: new Set([
       ...weeklyRotation.cosmeticIds,
       ...seasonalDrop.cosmeticIds,
     ]),
-<<<<<<< HEAD
     bulletin: {
       eyebrow: "Live This Week",
       title: weeklyRotation.label,
       body: weeklyRotation.summary,
     },
-=======
-    bulletin,
->>>>>>> 10f88903 (chore: remove committed backup folders)
   };
 }
 

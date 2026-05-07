@@ -1,7 +1,4 @@
-<<<<<<< HEAD
-=======
 // src/components/dog/components/DogToy.jsx
->>>>>>> 0a405bd4 (Fix Doggerz index boot markup)
 import { useEffect, useRef, useState } from "react";
 
 const DRAG_START_THRESHOLD_PX = 10;

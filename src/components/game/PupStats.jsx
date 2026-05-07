@@ -3,7 +3,7 @@ const STAT_LABELS = [
   ["hunger", "Hunger"],
   ["thirst", "Thirst"],
   ["energy", "Energy"],
-  ["happiness", "Happiness"],
+  ["happiness", "Treatment"],
   ["cleanliness", "Cleanliness"],
   ["health", "Health"],
   ["bond", "Bond"],
