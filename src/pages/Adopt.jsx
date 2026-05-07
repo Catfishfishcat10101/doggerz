@@ -247,7 +247,9 @@ export default function AdoptPage() {
 
             <div className="mt-6 overflow-hidden rounded-[28px] border border-white/8 bg-black/20 p-5">
               <div
-                className={`onboard-slide ${stepIndex === 0 ? "active-slide" : ""}`}
+                className={
+                  stepIndex === 0 ? "onboard-slide active-slide" : "hidden"
+                }
               >
                 <div className="text-6xl">📦</div>
                 <h2 className="mt-5 text-2xl font-black text-amber-100">
@@ -264,7 +266,9 @@ export default function AdoptPage() {
               </div>
 
               <div
-                className={`onboard-slide ${stepIndex === 1 ? "active-slide" : ""}`}
+                className={
+                  stepIndex === 1 ? "onboard-slide active-slide" : "hidden"
+                }
               >
                 <div className="text-6xl">🐶</div>
                 <h2 className="mt-5 text-2xl font-black text-emerald-100">
@@ -306,7 +310,9 @@ export default function AdoptPage() {
               </div>
 
               <div
-                className={`onboard-slide ${stepIndex === 2 ? "active-slide" : ""}`}
+                className={
+                  stepIndex === 2 ? "onboard-slide active-slide" : "hidden"
+                }
               >
                 <div className="text-6xl">🏠</div>
                 <h2 className="mt-5 text-2xl font-black text-emerald-100">
