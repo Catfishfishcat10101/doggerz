@@ -91,11 +91,17 @@ export default function Landing() {
             </div>
           </div>
 
-          <h1 className="text-5xl font-extrabold tracking-tight">
-            <span className="bg-gradient-to-r from-doggerz-leaf to-doggerz-sky bg-clip-text text-transparent">
-              Doggerz
-            </span>
-          </h1>
+          <div className="flex justify-center">
+            <div className="relative inline-flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full bg-doggerz-leaf/25 blur-2xl" />
+
+              <div className="relative rounded-full border border-doggerz-leaf/60 bg-black/70 px-8 py-3 shadow-[0_0_42px_rgba(34,197,94,0.35)] sm:px-10 sm:py-4">
+                <span className="block text-4xl font-black uppercase tracking-[0.22em] text-doggerz-bone drop-shadow-[0_0_16px_rgba(134,239,172,0.85)] sm:text-5xl">
+                  DOGGERZ
+                </span>
+              </div>
+            </div>
+          </div>
 
           <h2 className="mt-2 text-xl font-bold tracking-widest text-white/90">
             ADOPT. TRAIN. BOND.
