@@ -362,7 +362,7 @@ export default function AdoptPage() {
             <div className="mt-6 flex items-center justify-center">
               <HeroDog
                 stage="PUPPY"
-                variant="promo"
+                variant="landing"
                 anim="idle"
                 animationPreset="idle-paw"
                 className="select-none drop-shadow-[0_18px_30px_rgba(0,0,0,0.45)]"
