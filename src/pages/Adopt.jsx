@@ -146,7 +146,7 @@ export default function AdoptPage() {
 
   const primaryLabel =
     stepIndex === 2
-      ? "Adopt & play"
+      ? "Enter the yard"
       : stepIndex === 1
         ? "Next"
         : "Open the box";
@@ -313,8 +313,8 @@ export default function AdoptPage() {
                   {trimmedName || "Fireball"} is ready.
                 </h2>
                 <p className="mt-4 text-sm leading-7 text-zinc-300">
-                  Keep energy up, watch health, and do not assume this dog will
-                  behave just because you asked nicely.
+                  Start simple: settle them in, learn their care meters, and
+                  build the first clean routine before chasing tricks.
                 </p>
                 <div className="mt-6 grid w-full gap-3 text-left text-sm text-zinc-200">
                   <div className="rounded-2xl border border-white/10 bg-white/6 p-4">
@@ -326,51 +326,26 @@ export default function AdoptPage() {
                     </div>
                   </div>
                   <div className="rounded-2xl border border-white/10 bg-white/6 p-4">
-                    <div className="font-bold text-white">What to expect</div>
+                    <div className="font-bold text-white">
+                      First three moves
+                    </div>
                     <ul className="mt-2 space-y-2 text-sm text-zinc-300">
-                      <li>Real-time weather and day/night cycles.</li>
-                      <li>Potty training comes first, tricks later.</li>
-                      <li>
-                        A full 180-day life arc, with late-life care carrying
-                        more emotional weight.
-                      </li>
+                      <li>Check food and water.</li>
+                      <li>Take the first potty trip seriously.</li>
+                      <li>Use play or affection to start the bond.</li>
                     </ul>
                   </div>
-                  <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="grid gap-3">
                     <div className="rounded-2xl border border-white/10 bg-white/6 p-4">
                       <div className="text-[11px] uppercase tracking-[0.18em] text-zinc-400">
-                        House manners
+                        First goal
                       </div>
                       <div className="mt-2 font-bold text-emerald-100">
-                        Routine before tricks
+                        Potty before tricks
                       </div>
                       <p className="mt-2 text-xs leading-5 text-zinc-300">
-                        Early progress is about food, water, rest, potty, and
-                        affection actually changing behavior.
-                      </p>
-                    </div>
-                    <div className="rounded-2xl border border-white/10 bg-white/6 p-4">
-                      <div className="text-[11px] uppercase tracking-[0.18em] text-zinc-400">
-                        Memory
-                      </div>
-                      <div className="mt-2 font-bold text-sky-100">
-                        Little moments add up
-                      </div>
-                      <p className="mt-2 text-xs leading-5 text-zinc-300">
-                        The journal tracks milestones, funny moments, and care
-                        patterns instead of treating time together like filler.
-                      </p>
-                    </div>
-                    <div className="rounded-2xl border border-white/10 bg-white/6 p-4">
-                      <div className="text-[11px] uppercase tracking-[0.18em] text-zinc-400">
-                        Growth
-                      </div>
-                      <div className="mt-2 font-bold text-amber-100">
-                        Temperament over grind
-                      </div>
-                      <p className="mt-2 text-xs leading-5 text-zinc-300">
-                        Later perks shape resilience and personality; they do
-                        not replace daily care.
+                        Doggerz opens with house training because the first
+                        routine should feel practical, readable, and earned.
                       </p>
                     </div>
                   </div>

@@ -78,19 +78,6 @@ export default function Landing() {
         )}
 
         <div className="z-10 mt-10 flex flex-1 flex-col items-center justify-center p-8 text-center">
-          <div className="pointer-events-none relative mb-8 aspect-square w-48 shrink-0 overflow-hidden rounded-full border border-doggerz-leaf/35 bg-black/35 p-1 shadow-[0_0_60px_rgba(34,197,94,0.2)]">
-            <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_35%_30%,rgba(74,222,128,0.12),rgba(0,0,0,0)_60%)]" />
-            <div className="absolute inset-0 grid place-items-center">
-              <HeroDog
-                stage="PUPPY"
-                variant="landing"
-                anim="idle"
-                animationPreset="idle-wag"
-                className="select-none"
-              />
-            </div>
-          </div>
-
           <div className="flex justify-center">
             <div className="relative inline-flex items-center justify-center">
               <div className="absolute inset-0 rounded-full bg-doggerz-leaf/25 blur-2xl" />
@@ -110,6 +97,19 @@ export default function Landing() {
           <p className="mt-4 max-w-xs text-sm leading-relaxed text-doggerz-paw/75">
             Your highly unpredictable AI companion.
           </p>
+
+          <div className="pointer-events-none relative mt-8 aspect-square w-44 shrink-0 overflow-hidden rounded-full border border-doggerz-leaf/35 bg-black/35 p-1 shadow-[0_0_60px_rgba(34,197,94,0.2)] sm:w-48">
+            <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_35%_30%,rgba(74,222,128,0.12),rgba(0,0,0,0)_60%)]" />
+            <div className="absolute inset-0 grid place-items-center">
+              <HeroDog
+                stage="PUPPY"
+                variant="landing"
+                anim="idle"
+                animationPreset="idle-wag"
+                className="select-none"
+              />
+            </div>
+          </div>
         </div>
 
         <div className="relative z-20 flex w-full flex-col gap-4 p-6 pb-12">
@@ -119,6 +119,10 @@ export default function Landing() {
           >
             Adopt Your Pup
           </Link>
+
+          <div className="-mt-2 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-doggerz-paw/55">
+            No account required
+          </div>
 
           <Link
             to={PATHS.LOGIN}
