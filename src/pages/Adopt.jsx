@@ -78,7 +78,6 @@ export default function AdoptPage() {
     }
   }, [alreadyAdopted, dispatch, dog?.name, workflow]);
 
-
   useEffect(() => {
     if (stepIndex !== 1) return;
     const timer = window.setTimeout(() => {
@@ -383,11 +382,11 @@ export default function AdoptPage() {
               type="button"
               onClick={onPrimary}
               disabled={adopting || (stepIndex === 1 && !trimmedName)}
-              className={`btn-squish flex-[1.35] rounded-2xl px-4 py-4 text-sm font-black uppercase tracking-[0.16em] text-black shadow-[0_12px_30px_rgba(0,0,0,0.28)] transition ${
+              className={`btn-squish flex-[1.35] rounded-2xl px-4 py-4 text-sm font-black uppercase tracking-[0.16em] text-black shadow-[0_12px_30px_rgba(0,0,0,0.28)] transition disabled:border disabled:border-white/18 disabled:bg-white/12 disabled:text-zinc-200 disabled:shadow-none ${
                 stepIndex === 2
                   ? "bg-[var(--accent-green)]"
                   : "bg-[var(--accent-gold)]"
-              } disabled:cursor-not-allowed disabled:opacity-50`}
+              } disabled:cursor-not-allowed`}
             >
               {adopting ? "Adopting..." : primaryLabel}
             </button>
