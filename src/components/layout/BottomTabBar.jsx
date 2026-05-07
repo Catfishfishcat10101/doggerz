@@ -1,29 +1,14 @@
 // src/components/layout/BottomTabBar.jsx
-// src/cpomponents/layout/BottomTabBar.jsx
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 
-import { getPrimaryTabForPath, PATHS, PRIMARY_TABS } from "@/app/routes.js";
-
-const HIDDEN_PATHS = new Set([
-  PATHS.HOME,
-  PATHS.ADOPT,
-  PATHS.LOGIN,
-  PATHS.SIGNUP,
-  PATHS.NOT_FOUND,
-  PATHS.GAME,
-]);
+import { PRIMARY_TABS } from "@/app/routes.js";
 
 function TabIcon({ name, active }) {
   const stroke = active ? "currentColor" : "rgba(244,244,245,0.78)";
 
   if (name === "yard") {
     return (
-      <svg
-        viewBox="0 0 24 24"
-        className="h-5 w-5"
-        fill="none"
-        aria-hidden="true"
-      >
+      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
         <path
           d="M4 18h16M6 18V9l6-4 6 4v9"
           stroke={stroke}
@@ -34,14 +19,10 @@ function TabIcon({ name, active }) {
       </svg>
     );
   }
+
   if (name === "train") {
     return (
-      <svg
-        viewBox="0 0 24 24"
-        className="h-5 w-5"
-        fill="none"
-        aria-hidden="true"
-      >
+      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
         <path
           d="M12 4v16M5 11l7-7 7 7M7 20h10"
           stroke={stroke}
@@ -52,14 +33,10 @@ function TabIcon({ name, active }) {
       </svg>
     );
   }
+
   if (name === "store") {
     return (
-      <svg
-        viewBox="0 0 24 24"
-        className="h-5 w-5"
-        fill="none"
-        aria-hidden="true"
-      >
+      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
         <path
           d="M5 9h14l-1 10H6L5 9Zm2-4h10l2 4H5l2-4Z"
           stroke={stroke}
@@ -70,14 +47,10 @@ function TabIcon({ name, active }) {
       </svg>
     );
   }
+
   if (name === "memories") {
     return (
-      <svg
-        viewBox="0 0 24 24"
-        className="h-5 w-5"
-        fill="none"
-        aria-hidden="true"
-      >
+      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
         <path
           d="M7 5h10a2 2 0 0 1 2 2v12l-3-2-3 2-3-2-3 2V7a2 2 0 0 1 2-2Z"
           stroke={stroke}
@@ -88,6 +61,7 @@ function TabIcon({ name, active }) {
       </svg>
     );
   }
+
   return (
     <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
       <path
@@ -101,44 +75,40 @@ function TabIcon({ name, active }) {
 }
 
 export default function BottomTabBar() {
-  const location = useLocation();
-  const pathname = location.pathname;
-  const activeTab = getPrimaryTabForPath(pathname);
-
-  if (HIDDEN_PATHS.has(pathname) || !activeTab) return null;
-
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-[85] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.6rem)] md:hidden">
+    <nav
+      aria-label="Primary navigation"
+      className="fixed inset-x-0 bottom-0 z-[85] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.6rem)]"
+    >
       <div className="mx-auto grid max-w-md grid-cols-5 gap-1 rounded-[28px] border border-white/10 bg-zinc-950/92 p-2 shadow-[0_18px_48px_rgba(2,6,23,0.48)] backdrop-blur-xl">
-        {PRIMARY_TABS.map((tab) => {
-          return (
-            <NavLink
-              key={tab.path}
-              to={tab.path}
-              className={({ isActive }) =>
-                [
-                  "relative flex min-h-[62px] flex-col items-center justify-center rounded-2xl px-2 py-2 text-[11px] font-semibold transition active:scale-[0.98]",
-                  isActive
-                    ? "bg-[color:var(--dz-accent-soft)] text-[color:var(--dz-accent)] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
-                    : "text-zinc-400",
-                ].join(" ")
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  <span
-                    className={`mb-1 h-1 w-7 rounded-full transition ${
-                      isActive ? "bg-current opacity-100" : "opacity-0"
-                    }`}
-                    aria-hidden="true"
-                  />
-                  <TabIcon name={tab.icon} active={isActive} />
-                  <span className="mt-1">{tab.label}</span>
-                </>
-              )}
-            </NavLink>
-          );
-        })}
+        {PRIMARY_TABS.map((tab) => (
+          <NavLink
+            key={tab.path}
+            to={tab.path}
+            end={tab.path === "/"}
+            className={({ isActive }) =>
+              [
+                "relative flex min-h-[62px] flex-col items-center justify-center rounded-2xl px-2 py-2 text-[11px] font-semibold transition active:scale-[0.98]",
+                isActive
+                  ? "bg-[color:var(--dz-accent-soft)] text-[color:var(--dz-accent)] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+                  : "text-zinc-400 hover:bg-white/5 hover:text-zinc-100",
+              ].join(" ")
+            }
+          >
+            {({ isActive }) => (
+              <>
+                <span
+                  className={`mb-1 h-1 w-7 rounded-full transition ${
+                    isActive ? "bg-current opacity-100" : "opacity-0"
+                  }`}
+                  aria-hidden="true"
+                />
+                <TabIcon name={tab.icon} active={isActive} />
+                <span className="mt-1">{tab.label}</span>
+              </>
+            )}
+          </NavLink>
+        ))}
       </div>
     </nav>
   );

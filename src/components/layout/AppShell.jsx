@@ -20,7 +20,7 @@ export default function AppShell() {
 
         <Header />
 
-        <main id="app-main" tabIndex={-1} className="flex-1 pb-28 md:pb-0">
+        <main id="app-main" tabIndex={-1} className="flex-1 pb-28">
           <Outlet />
         </main>
 
