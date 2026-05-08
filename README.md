@@ -143,7 +143,7 @@ In the yard, the dog can:
 Main source folders:
 
 - `src/app` app bootstrap, routing, providers, app shell
-- `src/components` game UI, dog systems, renderers, shared components
+- `src/components` game UI, dog systems, shared components
 - `src/features` gameplay systems such as training, audio, weather, and dog progression
 - `src/store` Redux store, slices, selectors, and thunks
 - `src/lib` shared runtime helpers and integrations

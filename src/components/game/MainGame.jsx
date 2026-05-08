@@ -1159,11 +1159,11 @@ export default function MainGame({ scene, dogInteractive = true }) {
   );
   const goldenYearsActive =
     dogInteractive && Boolean(life?.isFinalStretchImmune);
-  const renderStageForSprites = goldenYearsActive
+  const renderStageForModel = goldenYearsActive
     ? "SENIOR"
     : renderModel?.stage;
-  const curatedSpriteAnim = useMemo(() => {
-    const stageKey = String(renderStageForSprites || life?.stage || "PUPPY")
+  const curatedModelAnim = useMemo(() => {
+    const stageKey = String(renderStageForModel || life?.stage || "PUPPY")
       .trim()
       .toUpperCase();
     const animKey = String(effectiveAnim || "idle")
@@ -1209,9 +1209,9 @@ export default function MainGame({ scene, dogInteractive = true }) {
     effectiveDogSleeping,
     goldenYearsActive,
     life?.stage,
-    renderStageForSprites,
+    renderStageForModel,
   ]);
-  const syncedSpriteAnim = activeHudAnimationId || curatedSpriteAnim;
+  const syncedModelAnim = activeHudAnimationId || curatedModelAnim;
   const lifecycleTone = String(life?.tone || "fresh").toLowerCase();
   const lifecycleCardToneClass =
     lifecycleTone === "warm"
@@ -1916,6 +1916,10 @@ export default function MainGame({ scene, dogInteractive = true }) {
       stopDogSimulation();
     };
   }, [dogInteractive, store]);
+
+  useEffect(() => {
+    dispatch(simulationTick({ now: liveNow })); // Ensure simulation tick runs on liveNow update
+  }, [dispatch, liveNow]);
 
   useEffect(() => {
     if (!dog?.adoptedAt || !dogInteractive || !runawayState.shouldTrigger) {
@@ -4896,7 +4900,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
                         _effectiveAnimationSpeedMultiplier
                       }
                       idleAnimationIntensity={idleAnimationIntensity}
-                      requestedAnimation={syncedSpriteAnim}
+                        requestedModelAnimation={syncedModelAnim}
                       containerClassName={`yard-viewport ${visualNight ? "yard-night" : "yard-day"} relative w-full h-full min-h-0 overflow-hidden`}
                       rendererClassName="absolute inset-0 z-[22] pointer-events-none contrast-[1.03] saturate-[1.05]"
                       rendererMinHeight={null}

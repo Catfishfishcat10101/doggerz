@@ -5,7 +5,7 @@ import { Link, Navigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 
 import { SocialButton } from "@/components/base/buttons/social-button.jsx";
-import HeroDog from "@/components/dog/renderers/HeroDog.jsx";
+import HeroDog3D from "../../HeroDog3D.jsx";
 import PageShell from "@/components/layout/PageShell.jsx";
 import { PATHS } from "@/app/routes.js";
 import { selectIsLoggedIn } from "@/store/userSlice.js";
@@ -101,14 +101,9 @@ export default function Landing() {
           <div className="pointer-events-none relative mt-8 aspect-square w-44 shrink-0 overflow-hidden rounded-full border border-doggerz-leaf/35 bg-black/35 p-1 shadow-[0_0_60px_rgba(34,197,94,0.2)] sm:w-48">
             <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_35%_30%,rgba(74,222,128,0.12),rgba(0,0,0,0)_60%)]" />
             <div className="absolute inset-0 grid place-items-center">
-              <HeroDog
+              <HeroDog3D
                 stage="PUPPY"
-                variant="landing"
-                anim="idle"
-                animationPreset="none"
-                fallbackSrc="/assets/sprites/jr/pup_preview.png"
-                reduceMotion
-                className="select-none"
+                mood="happy"
               />
             </div>
           </div>

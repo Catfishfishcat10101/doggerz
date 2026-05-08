@@ -52,6 +52,7 @@
     "@capacitor/share": "^8.0.1",
     "@capacitor/splash-screen": "^8.0.1",
     "@capacitor/status-bar": "^8.0.2",
+    "@emotion/is-prop-valid": "^1.4.0",
     "@pixi/assets": "^7.4.3",
     "@pixi/core": "^7.4.3",
     "@pixi/react": "^7.1.2",

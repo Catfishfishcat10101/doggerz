@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
-import HeroDog from "@/components/dog/renderers/HeroDog.jsx";
+import HeroDog3D from "../../HeroDog3D.jsx";
 import PageShell from "@/components/layout/PageShell.jsx";
 import { PATHS } from "@/app/routes.js";
 import { adoptPup } from "@/store/dogThunks.js";
@@ -39,11 +39,12 @@ function StepDot({ active = false, done = false }) {
   );
 }
 
+// Assuming useDog hook provides dog.adoptedAt and lifecycleStatus
 export default function AdoptPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const dog = useDog();
-  const lifecycleStatus = String(dog?.lifecycleStatus || "NONE").toUpperCase();
+  const lifecycleStatus = String(dog?.lifecycleStatus || "NONE").toUpperCase(); // This would come from dogSlice
   const alreadyAdopted =
     Boolean(dog?.adoptedAt) &&
     lifecycleStatus !== "FAREWELL" &&
@@ -129,7 +130,7 @@ export default function AdoptPage() {
     try {
       setAdopting(true);
       await dispatch(
-        adoptPup({
+        adoptPup({ // Dispatch the new thunk
           name: trimmedName,
           now: Date.now(),
         })
@@ -359,14 +360,11 @@ export default function AdoptPage() {
             </div>
 
             <div className="mt-6 flex items-center justify-center">
-              <HeroDog
+              <HeroDog3D
                 stage="PUPPY"
-                variant="landing"
-                anim="idle"
-                animationPreset="none"
-                fallbackSrc="/assets/sprites/jr/pup_preview.png"
-                reduceMotion
-                className="select-none drop-shadow-[0_18px_30px_rgba(0,0,0,0.45)]"
+                mood={stepIndex === 2 ? "happy" : "neutral"}
+                isSleeping={stepIndex === 0}
+                className="drop-shadow-[0_18px_30px_rgba(0,0,0,0.45)]"
               />
             </div>
           </div>
