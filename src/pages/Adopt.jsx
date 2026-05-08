@@ -341,18 +341,6 @@ export default function AdoptPage() {
                       <li>Use play or affection to start the bond.</li>
                     </ul>
                   </div>
-                  <div className="grid gap-3">
-                    <div className="rounded-2xl border border-white/10 bg-white/6 p-4">
-                      <div className="text-[11px] uppercase tracking-[0.18em] text-zinc-400">
-                        First goal
-                      </div>
-                      <div className="mt-2 font-bold text-emerald-100">
-                        Potty before tricks
-                      </div>
-                      <p className="mt-2 text-xs leading-5 text-zinc-300">
-                        Doggerz opens with house training because the first
-                        routine should feel practical, readable, and earned.
-                      </p>
                     </div>
                   </div>
                 </div>
@@ -395,9 +383,7 @@ export default function AdoptPage() {
           <div className="mt-3 text-center text-xs text-zinc-400">
             Your pup lives in the yard, not on a server. Adoption is just the
             start of a 180-day story.
-          </div>
-        </div>
       </div>
     </PageShell>
   );
-}
+};

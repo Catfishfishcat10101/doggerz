@@ -1,3 +1,4 @@
+//DogStage3D.jsx
 import React, { useRef, useEffect, useMemo, Suspense } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { useGLTF, useAnimations, Environment } from '@react-three/drei';

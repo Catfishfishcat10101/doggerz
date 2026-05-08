@@ -1,4 +1,4 @@
-import React, { Suspense, useEffect, useMemo } from 'react';
+import React, { Suspense, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { useGLTF, useAnimations, OrbitControls, Environment, ContactShadows } from '@react-three/drei';
 import { useSelector } from 'react-redux';
