@@ -1,6 +1,15 @@
 // src/pages/Adopt.jsx
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  ArrowLeft,
+  Check,
+  Heart,
+  Home,
+  PawPrint,
+  Shield,
+  Sparkles,
+} from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
@@ -20,39 +29,127 @@ import {
   startWorkflow,
 } from "@/store/workflowSlice.js";
 
-const WORKFLOW_ID = "adopt";
-const ADOPT_STEPS = ["Arrival", "Name", "Yard"];
+/*
+  LEARNING MODE
 
-function StepDot({ active = false, done = false }) {
+  This page is the adoption flow.
+
+  Product goal:
+  Make adoption feel emotional and important, not like filling out a form.
+
+  Technical goal:
+  Keep the existing Redux workflow system, but improve layout, copy,
+  visual hierarchy, and mobile readability.
+
+  Flow:
+  Step 1: Welcome the pup
+  Step 2: Name the pup
+  Step 3: Confirm and enter yard
+*/
+
+const WORKFLOW_ID = "adopt";
+
+const ADOPT_STEPS = Object.freeze([
+  {
+    id: "arrival",
+    label: "Meet",
+    title: "A Jack Russell is waiting for you.",
+    eyebrow: "Step 1 of 3",
+  },
+  {
+    id: "name",
+    label: "Name",
+    title: "Give your dog a name.",
+    eyebrow: "Step 2 of 3",
+  },
+  {
+    id: "yard",
+    label: "Home",
+    title: "Bring your dog home.",
+    eyebrow: "Step 3 of 3",
+  },
+]);
+
+const FIRST_ROUTINE = Object.freeze([
+  "Check food and water",
+  "Take the first potty trip",
+  "Build bond with play or affection",
+]);
+
+function StepDot({ active = false, done = false, label = "" }) {
   return (
-    <span
-      className={[
-        "h-2.5 rounded-full transition-all",
-        active
-          ? "w-8 bg-emerald-300 shadow-[0_0_18px_rgba(52,211,153,0.45)]"
-          : done
-            ? "w-2.5 bg-emerald-300/80"
-            : "w-2.5 bg-white/18",
-      ].join(" ")}
-      aria-hidden="true"
-    />
+    <div className="flex items-center gap-2">
+      <span
+        className={[
+          "grid h-7 w-7 place-items-center rounded-full border text-[10px] font-black transition-all",
+          active
+            ? "border-emerald-200 bg-emerald-300 text-slate-950 shadow-[0_0_22px_rgba(52,211,153,0.35)]"
+            : done
+              ? "border-emerald-300/40 bg-emerald-300/20 text-emerald-100"
+              : "border-white/12 bg-white/[0.05] text-zinc-400",
+        ].join(" ")}
+        aria-hidden="true"
+      >
+        {done ? <Check size={13} strokeWidth={3} /> : null}
+      </span>
+
+      <span
+        className={[
+          "hidden text-[10px] font-black uppercase tracking-[0.18em] sm:inline",
+          active
+            ? "text-emerald-100"
+            : done
+              ? "text-emerald-200/70"
+              : "text-zinc-500",
+        ].join(" ")}
+      >
+        {label}
+      </span>
+    </div>
+  );
+}
+
+function AdoptionBenefit({ icon: Icon, title, body }) {
+  return (
+    <article className="rounded-2xl border border-white/10 bg-white/[0.045] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+      <div className="flex items-start gap-3">
+        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl border border-emerald-300/20 bg-emerald-300/10 text-emerald-100">
+          <Icon size={18} />
+        </div>
+        <div>
+          <h2 className="text-sm font-black text-white">{title}</h2>
+          <p className="mt-1 text-xs leading-5 text-zinc-400">{body}</p>
+        </div>
+      </div>
+    </article>
   );
 }
 
 export default function AdoptPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
   const dog = useDog();
+  const workflow = useSelector(selectWorkflowById(WORKFLOW_ID));
+  const settings = useSelector((state) => state.settings || {});
+  const reduceMotion = Boolean(settings.reduceMotion || settings.batterySaver);
+
   const lifecycleStatus = String(dog?.lifecycleStatus || "NONE").toUpperCase();
   const alreadyAdopted =
     Boolean(dog?.adoptedAt) &&
     lifecycleStatus !== "FAREWELL" &&
     lifecycleStatus !== "RESCUED" &&
     lifecycleStatus !== "NONE";
-  const workflow = useSelector(selectWorkflowById(WORKFLOW_ID));
-  const stepIndex = workflow?.stepIndex ?? 0;
+
+  const stepIndex = Math.min(
+    Math.max(Number(workflow?.stepIndex ?? 0), 0),
+    ADOPT_STEPS.length - 1
+  );
+
+  const currentStep = ADOPT_STEPS[stepIndex];
   const name = String(workflow?.data?.name ?? "");
   const trimmedName = useMemo(() => name.trim(), [name]);
+
   const [error, setError] = useState(null);
   const [adopting, setAdopting] = useState(false);
   const nameInputRef = useRef(null);
@@ -80,10 +177,12 @@ export default function AdoptPage() {
 
   useEffect(() => {
     if (stepIndex !== 1) return;
+
     const timer = window.setTimeout(() => {
       nameInputRef.current?.focus?.();
       nameInputRef.current?.select?.();
     }, 140);
+
     return () => window.clearTimeout(timer);
   }, [stepIndex]);
 
@@ -94,12 +193,18 @@ export default function AdoptPage() {
   };
 
   const onBack = () => {
-    if (stepIndex <= 0) return;
+    if (stepIndex <= 0) {
+      onCancel();
+      return;
+    }
+
+    setError(null);
     dispatch(prevStep({ id: WORKFLOW_ID }));
   };
 
   const onPrimary = async () => {
     if (adopting) return;
+
     setError(null);
 
     if (stepIndex === 0) {
@@ -128,12 +233,14 @@ export default function AdoptPage() {
 
     try {
       setAdopting(true);
+
       await dispatch(
         adoptPup({
           name: trimmedName,
           now: Date.now(),
         })
       ).unwrap();
+
       dispatch(resetWorkflow({ id: WORKFLOW_ID }));
       navigate(PATHS.GAME, { replace: true });
     } catch (err) {
@@ -145,44 +252,34 @@ export default function AdoptPage() {
 
   const primaryLabel =
     stepIndex === 2
-      ? "Enter yard"
+      ? "Enter the yard"
       : stepIndex === 1
         ? "Continue"
         : "Meet your pup";
-
-  const slideTitle =
-    stepIndex === 2
-      ? "Ready for the first yard check"
-      : stepIndex === 1
-        ? "Name your pup"
-        : "A Jack Russell is ready to come home";
-
-  const slideEyebrow =
-    stepIndex === 2
-      ? "Step 3 of 3"
-      : stepIndex === 1
-        ? "Step 2 of 3"
-        : "Step 1 of 3";
 
   if (alreadyAdopted) {
     return (
       <PageShell useSurface={false} mainClassName="px-4 py-8">
         <div className="mx-auto flex min-h-[70vh] w-full max-w-md items-center">
-          <div className="w-full rounded-[28px] border border-white/10 bg-black/45 p-6 text-white shadow-[0_28px_90px_rgba(0,0,0,0.45)] backdrop-blur">
-            <div className="text-[11px] font-bold uppercase tracking-[0.24em] text-emerald-200/80">
+          <div className="doggerz-card w-full p-6 text-white">
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-100">
+              <Home size={14} />
               Adoption complete
             </div>
-            <h1 className="mt-2 text-2xl font-black text-emerald-200">
-              {dog?.name || "Your dog"} is already home
+
+            <h1 className="mt-4 text-3xl font-black leading-tight text-emerald-100">
+              {dog?.name || "Your dog"} is already home.
             </h1>
-            <p className="mt-3 text-sm leading-6 text-zinc-300">
+
+            <p className="mt-3 text-sm leading-7 text-zinc-300">
               Doggerz currently supports one dog per user. Continue from the
               yard to check care, training, and daily progress.
             </p>
+
             <button
               type="button"
               onClick={() => navigate(PATHS.GAME)}
-              className="btn-squish mt-5 min-h-12 w-full rounded-2xl bg-emerald-400 px-4 py-3 text-sm font-extrabold text-black"
+              className="doggerz-button doggerz-button-primary mt-6 w-full text-sm uppercase tracking-[0.14em]"
             >
               Back to yard
             </button>
@@ -198,82 +295,84 @@ export default function AdoptPage() {
       mainClassName="px-0 py-0"
       containerClassName="w-full max-w-none"
     >
-      <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-md flex-col overflow-hidden border-x border-white/10 bg-[#07111f] text-white shadow-2xl">
-        <div className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-emerald-400/18 blur-[110px]" />
-        <div className="pointer-events-none absolute right-[-90px] top-[28%] h-64 w-64 rounded-full bg-sky-400/14 blur-[110px]" />
-
-        <div className="relative z-10 flex flex-1 flex-col px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))]">
-          <div className="flex items-center justify-between gap-4">
+      <main className="relative min-h-[100dvh] overflow-hidden bg-[#040a14] text-white">
+        <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-6xl flex-col px-5 py-[calc(env(safe-area-inset-top,0px)+22px)] sm:px-8 lg:px-10">
+          <nav className="flex items-center justify-between gap-4">
             <button
               type="button"
-              onClick={onCancel}
-              className="btn-squish min-h-10 rounded-full border border-white/12 bg-white/8 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-200"
+              onClick={onBack}
+              disabled={adopting}
+              className="inline-flex min-h-11 items-center gap-2 rounded-full border border-white/12 bg-white/[0.06] px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-zinc-100 backdrop-blur transition hover:bg-white/10 disabled:opacity-60"
             >
-              Later
+              <ArrowLeft size={15} />
+              {stepIndex === 0 ? "Later" : "Back"}
             </button>
-            <div className="flex items-center gap-2">
-              {ADOPT_STEPS.map((step, idx) => (
+
+            <div className="flex items-center gap-3">
+              {ADOPT_STEPS.map((step, index) => (
                 <StepDot
-                  key={step}
-                  active={idx === stepIndex}
-                  done={idx < stepIndex}
+                  key={step.id}
+                  label={step.label}
+                  active={index === stepIndex}
+                  done={index < stepIndex}
                 />
               ))}
             </div>
-            <div className="rounded-full border border-white/10 bg-black/20 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-300">
-              {stepIndex + 1}/{ADOPT_STEPS.length}
-            </div>
-          </div>
+          </nav>
 
-          <div className="mt-5 flex flex-1 flex-col rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(5,10,20,0.9),rgba(7,14,27,0.92))] p-5 shadow-[0_28px_100px_rgba(0,0,0,0.45)]">
-            <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                <div className="text-[11px] font-bold uppercase tracking-[0.24em] text-emerald-200/80">
-                  {slideEyebrow}
-                </div>
-                <h1 className="mt-2 text-3xl font-black leading-tight text-white">
-                  {slideTitle}
-                </h1>
+          <section className="grid flex-1 items-center gap-8 py-8 md:grid-cols-[0.92fr_1.08fr] lg:gap-12">
+            <div className="order-2 md:order-1">
+              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-emerald-100">
+                <Sparkles size={14} />
+                {currentStep.eyebrow}
               </div>
-              <div className="shrink-0 rounded-full border border-white/10 bg-white/6 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.14em] text-zinc-300">
-                Terrier
-              </div>
-            </div>
 
-            <div className="mt-5 rounded-[26px] border border-white/8 bg-black/24 p-5">
+              <h1 className="mt-5 max-w-[12ch] text-[clamp(2.75rem,7vw,5.4rem)] font-black leading-[0.94] text-white">
+                {currentStep.title}
+              </h1>
+
               {stepIndex === 0 ? (
-                <div className="space-y-4">
-                  <h2 className="text-xl font-black text-amber-100">
-                    Small frame. Huge drive.
-                  </h2>
-                  <p className="text-sm leading-7 text-zinc-300">
-                    Your dog will need steady food, water, rest, potty breaks,
-                    training, and attention. Care choices affect mood, needs,
-                    and progression over time.
+                <div className="mt-5 max-w-xl space-y-5">
+                  <p className="text-[1.05rem] leading-8 text-zinc-300 sm:text-lg">
+                    This is not a pet collection. Doggerz gives you one dog, one
+                    bond, and one long companion journey shaped by how you care
+                    for it.
                   </p>
-                  <div className="grid grid-cols-3 gap-2 text-center text-[11px] font-bold uppercase tracking-[0.12em] text-zinc-300">
-                    <div className="rounded-2xl border border-white/10 bg-white/6 px-2 py-3">
-                      Needs
-                    </div>
-                    <div className="rounded-2xl border border-white/10 bg-white/6 px-2 py-3">
-                      Training
-                    </div>
-                    <div className="rounded-2xl border border-white/10 bg-white/6 px-2 py-3">
-                      Routine
-                    </div>
+
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <AdoptionBenefit
+                      icon={Heart}
+                      title="Bond"
+                      body="Care choices shape trust, mood, and behavior."
+                    />
+                    <AdoptionBenefit
+                      icon={PawPrint}
+                      title="Routine"
+                      body="Food, water, potty, rest, play, and training."
+                    />
+                    <AdoptionBenefit
+                      icon={Shield}
+                      title="Memory"
+                      body="Your pup keeps growing between sessions."
+                    />
                   </div>
                 </div>
               ) : null}
 
               {stepIndex === 1 ? (
-                <div className="space-y-4">
-                  <h2 className="text-xl font-black text-emerald-100">
-                    Pick the name you want to see every day.
-                  </h2>
-                  <p className="text-sm leading-7 text-zinc-300">
-                    This name appears across the yard, care prompts, and
-                    training progress.
+                <div className="mt-6 max-w-xl">
+                  <p className="text-[1.05rem] leading-8 text-zinc-300 sm:text-lg">
+                    Pick the name you want to see every day in the yard,
+                    memories, and training progress.
                   </p>
+
+                  <label
+                    htmlFor="dog-name"
+                    className="mt-6 block text-[11px] font-black uppercase tracking-[0.2em] text-emerald-100"
+                  >
+                    Dog name
+                  </label>
+
                   <input
                     ref={nameInputRef}
                     id="dog-name"
@@ -288,17 +387,19 @@ export default function AdoptPage() {
                         })
                       );
                     }}
-                    className="min-h-14 w-full rounded-2xl border border-white/10 bg-white px-4 py-4 text-center text-xl font-black text-slate-950 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/20"
+                    className="mt-3 min-h-16 w-full rounded-3xl border border-white/10 bg-white px-5 py-4 text-center text-2xl font-black text-slate-950 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/20"
                     placeholder="Fireball"
                     maxLength={24}
                     autoComplete="off"
                   />
-                  <div className="flex items-center justify-between text-xs text-zinc-400">
+
+                  <div className="mt-2 flex items-center justify-between text-xs text-zinc-400">
                     <span>{name.length}/24</span>
                     <span>Default: Fireball</span>
                   </div>
+
                   {error ? (
-                    <p className="text-sm font-semibold text-red-300">
+                    <p className="mt-4 rounded-2xl border border-rose-300/20 bg-rose-400/10 px-4 py-3 text-sm font-semibold text-rose-100">
                       {error}
                     </p>
                   ) : null}
@@ -306,73 +407,115 @@ export default function AdoptPage() {
               ) : null}
 
               {stepIndex === 2 ? (
-                <div className="space-y-4">
-                  <h2 className="text-xl font-black text-emerald-100">
-                    {trimmedName || "Fireball"} is ready.
-                  </h2>
-                  <p className="text-sm leading-7 text-zinc-300">
-                    Start with the basics: check needs, take the first potty
-                    trip, and build a clean routine before pushing training.
+                <div className="mt-6 max-w-xl">
+                  <p className="text-[1.05rem] leading-8 text-zinc-300 sm:text-lg">
+                    Start with the basics. Your first few minutes should build
+                    routine before you push training.
                   </p>
-                  <div className="grid gap-3 text-sm text-zinc-200">
-                    <div className="rounded-2xl border border-white/10 bg-white/6 p-4">
-                      <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-zinc-400">
-                        Dog name
-                      </div>
-                      <div className="mt-1 text-xl font-black text-amber-100">
-                        {trimmedName || "Fireball"}
-                      </div>
+
+                  <div className="mt-6 rounded-[1.5rem] border border-white/10 bg-white/[0.045] p-5">
+                    <div className="text-[11px] font-black uppercase tracking-[0.2em] text-zinc-400">
+                      Bringing home
                     </div>
-                    <div className="rounded-2xl border border-white/10 bg-white/6 p-4">
-                      <div className="font-bold text-white">
+                    <div className="mt-2 text-3xl font-black text-amber-100">
+                      {trimmedName || "Fireball"}
+                    </div>
+
+                    <div className="mt-5 border-t border-white/10 pt-5">
+                      <div className="text-sm font-black text-white">
                         First three moves
                       </div>
-                      <ul className="mt-2 space-y-2 text-zinc-300">
-                        <li>Check food and water.</li>
-                        <li>Take the first potty trip.</li>
-                        <li>Use play or affection to start bonding.</li>
+                      <ul className="mt-3 space-y-2 text-sm leading-6 text-zinc-300">
+                        {FIRST_ROUTINE.map((item) => (
+                          <li key={item} className="flex gap-2">
+                            <span className="mt-2 h-1.5 w-1.5 rounded-full bg-emerald-300" />
+                            <span>{item}</span>
+                          </li>
+                        ))}
                       </ul>
                     </div>
                   </div>
+
                   {error ? (
-                    <p className="text-sm font-semibold text-red-300">
+                    <p className="mt-4 rounded-2xl border border-rose-300/20 bg-rose-400/10 px-4 py-3 text-sm font-semibold text-rose-100">
                       {error}
                     </p>
                   ) : null}
                 </div>
               ) : null}
+
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={onPrimary}
+                  disabled={adopting || (stepIndex === 1 && !trimmedName)}
+                  className="doggerz-button doggerz-hero-button min-w-[13rem] px-6 py-4 text-sm uppercase tracking-[0.15em] disabled:border disabled:border-white/18 disabled:bg-white/12 disabled:text-zinc-300 disabled:shadow-none"
+                >
+                  {adopting ? "Adopting..." : primaryLabel}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={onBack}
+                  disabled={adopting}
+                  className="doggerz-button doggerz-button-ghost px-6 py-4 text-sm uppercase tracking-[0.15em]"
+                >
+                  {stepIndex === 0 ? "Not now" : "Back"}
+                </button>
+              </div>
             </div>
 
-            <div className="mt-5 flex min-h-[170px] items-center justify-center">
-              <HeroDog3D
-                stage="PUPPY"
-                mood={stepIndex === 2 ? "happy" : "neutral"}
-                isSleeping={stepIndex === 0}
-                className="drop-shadow-[0_18px_30px_rgba(0,0,0,0.45)]"
-              />
-            </div>
-          </div>
+            <div className="order-1 flex min-h-[23rem] items-center justify-center md:order-2">
+              <div className="relative w-full max-w-[31rem]">
+                <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.94),rgba(2,6,23,0.96))] shadow-[0_30px_110px_rgba(0,0,0,0.58)]">
+                  <div className="relative h-[23rem] overflow-hidden sm:h-[27rem]">
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_28%,rgba(134,239,172,0.2),transparent_34%),linear-gradient(180deg,rgba(56,189,248,0.08),transparent_48%,rgba(34,197,94,0.12))]" />
 
-          <div className="mt-4 flex items-center gap-3">
-            <button
-              type="button"
-              onClick={stepIndex === 0 ? onCancel : onBack}
-              disabled={adopting}
-              className="btn-squish min-h-14 flex-1 rounded-2xl border border-white/12 bg-white/6 px-4 py-4 text-sm font-bold uppercase tracking-[0.12em] text-zinc-100 disabled:opacity-60"
-            >
-              {stepIndex === 0 ? "Not now" : "Back"}
-            </button>
-            <button
-              type="button"
-              onClick={onPrimary}
-              disabled={adopting || (stepIndex === 1 && !trimmedName)}
-              className="btn-squish min-h-14 flex-[1.35] rounded-2xl bg-emerald-400 px-4 py-4 text-sm font-black uppercase tracking-[0.14em] text-black shadow-[0_12px_30px_rgba(52,211,153,0.22)] transition disabled:border disabled:border-white/18 disabled:bg-white/12 disabled:text-zinc-200 disabled:shadow-none"
-            >
-              {adopting ? "Adopting..." : primaryLabel}
-            </button>
-          </div>
+                    <HeroDog3D
+                      className="absolute inset-0"
+                      stage="PUPPY"
+                      mood={
+                        stepIndex === 2 && !reduceMotion ? "happy" : "neutral"
+                      }
+                      isSleeping={stepIndex === 0 && reduceMotion}
+                      actionOverride={
+                        reduceMotion ? "Idle" : stepIndex === 2 ? "Wag" : "Idle"
+                      }
+                      timeOfDay="sunset"
+                      weather="sunny"
+                    />
+
+                    <div className="pointer-events-none absolute inset-x-8 bottom-16 h-10 rounded-full bg-black/30 blur-xl" />
+                  </div>
+
+                  <div className="border-t border-white/10 bg-black/38 p-5 backdrop-blur-xl">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <div className="text-[10px] font-black uppercase tracking-[0.24em] text-amber-100">
+                          {stepIndex === 2
+                            ? "Ready for the yard"
+                            : stepIndex === 1
+                              ? "Name preview"
+                              : "Adoption preview"}
+                        </div>
+                        <p className="mt-1 text-base font-black leading-6 text-white">
+                          {stepIndex === 2
+                            ? `${trimmedName || "Fireball"} is ready to come home.`
+                            : "Lively, stubborn, and waiting for a routine."}
+                        </p>
+                      </div>
+
+                      <div className="rounded-full border border-emerald-300/25 bg-emerald-300/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-emerald-100">
+                        Puppy stage
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              </div>
+            </div>
+          </section>
         </div>
-      </div>
+      </main>
     </PageShell>
   );
 }
