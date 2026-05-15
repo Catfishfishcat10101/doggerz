@@ -1,10 +1,60 @@
 /* src/index.css */
+
+/*
+  DOGGERZ GLOBAL CSS
+  ------------------
+  Learning mode notes:
+
+  CSS has 4 major jobs in this file:
+
+  1. Tailwind setup:
+     @tailwind base;
+     @tailwind components;
+     @tailwind utilities;
+
+  2. Design tokens:
+     :root variables like --dz-accent and --dz-bg-950.
+     These let you reuse colors, shadows, and border-radius values.
+
+  3. Base app polish:
+     html/body/#root sizing, mobile safe area, scroll behavior,
+     focus states, buttons, images, and accessibility.
+
+  4. Reusable Doggerz classes:
+     .doggerz-card
+     .doggerz-button
+     .neon-surface
+     .game-card
+     .yard-stage
+     .css-dog
+
+  This file does not replace Tailwind.
+  It gives Doggerz a global visual identity so the app feels less random.
+*/
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* =========================================================
+   1. DESIGN TOKENS
+   ========================================================= */
+
+/*
+  :root means "global variables for the whole app".
+
+  Example:
+  --dz-accent: #86efac;
+
+  Then later you can use:
+  color: var(--dz-accent);
+
+  This is better than hardcoding the same color everywhere.
+*/
+
 :root {
   color-scheme: dark;
+
   font-family:
     Inter,
     ui-sans-serif,
@@ -12,21 +62,91 @@
     -apple-system,
     BlinkMacSystemFont,
     "Segoe UI",
+    Roboto,
+    Helvetica,
+    Arial,
     sans-serif;
-  background: #020617;
-  color: #f8fafc;
+
+  /* Background colors */
+  --dz-bg-950: #020617;
+  --dz-bg-925: #030712;
+  --dz-bg-900: #07111f;
+  --dz-bg-850: #0b1220;
+  --dz-bg-800: #0f172a;
+
+  /* Text colors */
+  --dz-bone: #f4f1e8;
+  --dz-bone-bright: #fffaf0;
+  --dz-bone-soft: rgba(244, 241, 232, 0.78);
+  --dz-muted: rgba(244, 241, 232, 0.62);
+  --dz-faint: rgba(244, 241, 232, 0.42);
+
+  /* Brand colors */
   --dz-accent: #86efac;
+  --dz-accent-bright: #bbf7d0;
   --dz-accent-strong: #22c55e;
+  --dz-accent-deep: #15803d;
   --dz-accent-soft: rgba(34, 197, 94, 0.16);
-  --text-main: #f4f1e8;
-  --text-muted: rgba(244, 241, 232, 0.68);
-  --accent-gold: #fbbf24;
-  --energy-color: #fbbf24;
-  --health-color: #22c55e;
+  --dz-accent-ring: rgba(134, 239, 172, 0.35);
+
+  /* Support colors */
+  --dz-sky: #38bdf8;
+  --dz-sky-soft: rgba(56, 189, 248, 0.16);
+  --dz-gold: #fbbf24;
+  --dz-gold-soft: rgba(251, 191, 36, 0.16);
+  --dz-rose: #fb7185;
+  --dz-rose-soft: rgba(251, 113, 133, 0.14);
+
+  /* Compatibility variables already used by parts of Doggerz */
+  --dz-accent-soft-old: rgba(34, 197, 94, 0.16);
+  --text-main: var(--dz-bone);
+  --text-muted: var(--dz-muted);
+  --accent-gold: var(--dz-gold);
+  --energy-color: var(--dz-gold);
+  --health-color: var(--dz-accent-strong);
   --bar-bg: rgba(255, 255, 255, 0.1);
+
+  /* Border radius system */
+  --dz-radius-sm: 0.75rem;
+  --dz-radius-md: 1rem;
+  --dz-radius-lg: 1.35rem;
+  --dz-radius-xl: 1.75rem;
+  --dz-radius-2xl: 2rem;
+  --dz-radius-pill: 999px;
+
+  /* Shadows */
+  --dz-shadow-soft: 0 18px 50px rgba(0, 0, 0, 0.3);
+  --dz-shadow-card: 0 24px 80px rgba(0, 0, 0, 0.42);
+  --dz-shadow-green: 0 18px 48px rgba(34, 197, 94, 0.24);
+  --dz-inner-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+
+  /* Motion */
+  --dz-fast: 150ms;
+  --dz-med: 240ms;
+  --dz-slow: 420ms;
+  --dz-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  background: var(--dz-bg-950);
+  color: var(--dz-bone);
 }
 
-* {
+/* =========================================================
+   2. BASE RESET
+   ========================================================= */
+
+/*
+  box-sizing: border-box makes sizing easier.
+
+  Without it:
+  width + padding + border can overflow.
+
+  With it:
+  width includes padding and border.
+*/
+
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
@@ -37,23 +157,37 @@ body,
   height: 100%;
 }
 
+html {
+  text-rendering: optimizeLegibility;
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0;
   overflow-x: hidden;
   overscroll-behavior: none;
   -webkit-tap-highlight-color: transparent;
   background:
-    radial-gradient(circle at top, rgba(20, 184, 166, 0.16), transparent 34rem),
-    linear-gradient(180deg, #07111f 0%, #020617 55%, #000 100%);
+    radial-gradient(circle at 50% -10%, rgba(34, 197, 94, 0.18), transparent 34rem),
+    radial-gradient(circle at 5% 20%, rgba(56, 189, 248, 0.1), transparent 24rem),
+    linear-gradient(180deg, #07111f 0%, #020617 56%, #000 100%);
+  color: var(--dz-bone);
 }
 
-.dz-safe-area {
-  padding-right: env(safe-area-inset-right, 0px);
-  padding-left: env(safe-area-inset-left, 0px);
+/*
+  Selection is the color users see when they highlight text.
+*/
+
+::selection {
+  background: rgba(34, 197, 94, 0.35);
+  color: #ffffff;
 }
 
 button,
-input {
+input,
+textarea,
+select {
   font: inherit;
 }
 
@@ -62,54 +196,156 @@ button {
   touch-action: manipulation;
 }
 
-img {
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+img,
+svg,
+canvas,
+video {
   max-width: 100%;
   display: block;
 }
 
+a {
+  color: inherit;
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.18em;
+}
+
+/*
+  :focus-visible helps keyboard and accessibility users.
+  This is important for forms and Play Store review quality.
+*/
+
+:focus-visible {
+  outline: 3px solid rgba(134, 239, 172, 0.8);
+  outline-offset: 3px;
+}
+
+/* =========================================================
+   3. MOBILE HELPERS
+   ========================================================= */
+
+/*
+  env(safe-area-inset-*) protects content from notches,
+  rounded device corners, and Android/iOS system bars.
+*/
+
+.dz-safe-area {
+  padding-right: env(safe-area-inset-right, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+}
+
+.safe-screen {
+  min-height: 100svh;
+  min-height: 100vh;
+  padding:
+    max(1rem, env(safe-area-inset-top))
+    max(1rem, env(safe-area-inset-right))
+    max(1rem, env(safe-area-inset-bottom))
+    max(1rem, env(safe-area-inset-left));
+}
+
+.dz-scroll {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Desktop/dev scrollbar polish */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(134, 239, 172, 0.35) rgba(2, 6, 23, 0.8);
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: rgba(2, 6, 23, 0.8);
+}
+
+*::-webkit-scrollbar-thumb {
+  border: 2px solid rgba(2, 6, 23, 0.8);
+  border-radius: 999px;
+  background: rgba(134, 239, 172, 0.38);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(134, 239, 172, 0.58);
+}
+
+/* =========================================================
+   4. REUSABLE COMPONENT CLASSES
+   ========================================================= */
+
+/*
+  @layer components is Tailwind-friendly.
+
+  It tells Tailwind:
+  "These are reusable component classes."
+*/
+
 @layer components {
   .neon-surface {
-    border: 1px solid rgba(34, 197, 94, 0.16);
-    border-radius: 24px;
+    border: 1px solid rgba(134, 239, 172, 0.16);
+    border-radius: var(--dz-radius-xl);
     background:
-      radial-gradient(
-        circle at 12% 0%,
-        rgba(34, 197, 94, 0.1),
-        transparent 30rem
-      ),
-      linear-gradient(180deg, rgba(8, 13, 24, 0.92), rgba(2, 6, 23, 0.9));
+      radial-gradient(circle at 12% 0%, rgba(34, 197, 94, 0.14), transparent 30rem),
+      radial-gradient(circle at 92% 8%, rgba(56, 189, 248, 0.08), transparent 22rem),
+      linear-gradient(180deg, rgba(8, 13, 24, 0.94), rgba(2, 6, 23, 0.9));
     box-shadow:
-      0 24px 70px rgba(0, 0, 0, 0.36),
-      inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      var(--dz-shadow-card),
+      var(--dz-inner-highlight);
     backdrop-filter: blur(18px);
   }
 
   .pup-card {
-    border: 1px solid rgba(134, 239, 172, 0.14);
+    border: 1px solid rgba(134, 239, 172, 0.16);
+    border-radius: var(--dz-radius-xl);
     background:
-      radial-gradient(
-        circle at 20% 0%,
-        rgba(34, 197, 94, 0.13),
-        transparent 28rem
-      ),
-      linear-gradient(180deg, rgba(10, 16, 28, 0.86), rgba(2, 6, 23, 0.78));
+      radial-gradient(circle at 20% 0%, rgba(34, 197, 94, 0.14), transparent 28rem),
+      linear-gradient(180deg, rgba(10, 16, 28, 0.88), rgba(2, 6, 23, 0.8));
     box-shadow:
-      0 24px 70px rgba(0, 0, 0, 0.35),
-      inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      var(--dz-shadow-card),
+      var(--dz-inner-highlight);
     backdrop-filter: blur(18px);
   }
 
   .game-card {
     border: 1px solid rgba(255, 255, 255, 0.1);
-    background: linear-gradient(
-      180deg,
-      rgba(15, 23, 42, 0.7),
-      rgba(2, 6, 23, 0.58)
-    );
+    border-radius: var(--dz-radius-lg);
+    background:
+      linear-gradient(180deg, rgba(15, 23, 42, 0.72), rgba(2, 6, 23, 0.6));
     box-shadow:
       0 14px 32px rgba(2, 6, 23, 0.24),
-      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      var(--dz-inner-highlight);
     backdrop-filter: blur(14px);
+  }
+
+  .doggerz-card {
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: var(--dz-radius-xl);
+    background:
+      linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(2, 6, 23, 0.96)),
+      radial-gradient(circle at top left, rgba(52, 211, 153, 0.12), transparent 18rem);
+    box-shadow: var(--dz-shadow-card);
+  }
+
+  .doggerz-panel {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--dz-radius-xl);
+    background:
+      radial-gradient(circle at 50% 0%, rgba(34, 197, 94, 0.1), transparent 22rem),
+      rgba(2, 6, 23, 0.72);
+    box-shadow:
+      0 18px 64px rgba(0, 0, 0, 0.34),
+      var(--dz-inner-highlight);
+    backdrop-filter: blur(18px);
   }
 
   .event-card {
@@ -127,11 +363,7 @@ img {
     border-color: rgba(251, 191, 36, 0.36);
     box-shadow:
       0 14px 32px rgba(251, 191, 36, 0.1),
-      inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  }
-
-  .stat-pop {
-    animation: dzStatPop 220ms ease-out;
+      var(--dz-inner-highlight);
   }
 
   .env-label {
@@ -147,15 +379,23 @@ img {
     margin-top: 0.45rem;
     height: 0.55rem;
     overflow: hidden;
-    border-radius: 999px;
+    border-radius: var(--dz-radius-pill);
     background: var(--bar-bg);
   }
 
   .stat-bar-fill {
     height: 100%;
-    border-radius: 999px;
-    transition: width 240ms ease;
+    border-radius: var(--dz-radius-pill);
+    transition: width var(--dz-med) var(--dz-ease);
     box-shadow: 0 0 18px currentColor;
+  }
+
+  .stat-pop {
+    animation: dzStatPop 220ms ease-out;
+  }
+
+  .btn-feedback-pop {
+    animation: dzStatPop 180ms ease-out;
   }
 
   .dz-touch-button {
@@ -164,18 +404,168 @@ img {
 
   .dz-touch-hover {
     transition:
-      transform 160ms ease,
-      border-color 160ms ease,
-      background-color 160ms ease,
-      filter 160ms ease;
+      transform var(--dz-fast) var(--dz-ease),
+      border-color var(--dz-fast) var(--dz-ease),
+      background-color var(--dz-fast) var(--dz-ease),
+      filter var(--dz-fast) var(--dz-ease);
   }
 
   .dz-touch-hover:active {
     transform: translateY(1px) scale(0.985);
   }
 
-  .btn-feedback-pop {
-    animation: dzStatPop 180ms ease-out;
+  .doggerz-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 3.75rem;
+    border-radius: 1.35rem;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 0.9rem 1.1rem;
+    font-weight: 900;
+    letter-spacing: -0.025em;
+    transition:
+      transform var(--dz-fast) var(--dz-ease),
+      filter var(--dz-fast) var(--dz-ease),
+      background var(--dz-fast) var(--dz-ease),
+      box-shadow var(--dz-fast) var(--dz-ease);
+  }
+
+  .doggerz-button:active {
+    transform: translateY(1px) scale(0.99);
+  }
+
+  .doggerz-button-primary {
+    background: linear-gradient(135deg, #22c55e, #34d399);
+    color: #03130a;
+    box-shadow: var(--dz-shadow-green);
+  }
+
+  .doggerz-button-primary:hover {
+    filter: brightness(1.05);
+    box-shadow:
+      0 20px 54px rgba(34, 197, 94, 0.32),
+      0 0 0 1px rgba(134, 239, 172, 0.2);
+  }
+
+  .doggerz-button-ghost {
+    background: rgba(2, 6, 23, 0.82);
+    color: #f8fafc;
+  }
+
+  .doggerz-button-ghost:hover {
+    background: rgba(15, 23, 42, 0.95);
+  }
+
+  .doggerz-hero-button {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    border-radius: 1.5rem;
+    background: linear-gradient(135deg, #bef264, #34d399 48%, #22c55e);
+    color: #03130a;
+    box-shadow:
+      0 18px 54px rgba(34, 197, 94, 0.28),
+      inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  }
+
+  .doggerz-hero-button::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    transform: translateX(-110%);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.42),
+      transparent
+    );
+    transition: transform 700ms var(--dz-ease);
+  }
+
+  .doggerz-hero-button:hover::before {
+    transform: translateX(110%);
+  }
+
+  .doggerz-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-height: 2rem;
+    border-radius: var(--dz-radius-pill);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(2, 6, 23, 0.55);
+    padding: 0.4rem 0.72rem;
+    color: rgba(244, 241, 232, 0.86);
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    backdrop-filter: blur(12px);
+  }
+
+  .doggerz-chip-good {
+    border-color: rgba(134, 239, 172, 0.24);
+    background: rgba(34, 197, 94, 0.12);
+    color: #dcfce7;
+  }
+
+  .doggerz-chip-warn {
+    border-color: rgba(251, 191, 36, 0.28);
+    background: rgba(251, 191, 36, 0.12);
+    color: #fef3c7;
+  }
+
+  .doggerz-chip-danger {
+    border-color: rgba(251, 113, 133, 0.28);
+    background: rgba(251, 113, 133, 0.12);
+    color: #ffe4e6;
+  }
+
+  .doggerz-sheet {
+    border-radius: 1.75rem 1.75rem 0 0;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-bottom: 0;
+    background:
+      radial-gradient(circle at 50% 0%, rgba(34, 197, 94, 0.1), transparent 20rem),
+      rgba(2, 6, 23, 0.92);
+    box-shadow: 0 -24px 70px rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(22px);
+  }
+
+  .doggerz-list-row {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    min-height: 3.5rem;
+    border-radius: 1.15rem;
+    padding: 0.85rem 0.95rem;
+    transition:
+      background-color var(--dz-fast) var(--dz-ease),
+      transform var(--dz-fast) var(--dz-ease);
+  }
+
+  .doggerz-list-row:hover {
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .doggerz-list-row:active {
+    transform: scale(0.99);
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .doggerz-icon-tile {
+    display: grid;
+    place-items: center;
+    width: 2.45rem;
+    height: 2.45rem;
+    flex: 0 0 auto;
+    border-radius: 0.95rem;
+    border: 1px solid rgba(134, 239, 172, 0.18);
+    background:
+      radial-gradient(circle at 30% 18%, rgba(134, 239, 172, 0.24), transparent 60%),
+      rgba(34, 197, 94, 0.1);
+    color: #bbf7d0;
   }
 
   .doggerz-yard-region {
@@ -191,75 +581,14 @@ img {
   }
 }
 
-@keyframes dzStatPop {
-  0% {
-    transform: scale(0.985);
-  }
-  60% {
-    transform: scale(1.018);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
+/* =========================================================
+   5. YARD / STAGE POLISH
+   ========================================================= */
 
-.safe-screen {
-  min-height: 100svh;
-  min-height: 100vh;
-  padding: max(1rem, env(safe-area-inset-top))
-    max(1rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom))
-    max(1rem, env(safe-area-inset-left));
-}
-
-.doggerz-card {
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  background:
-    linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(2, 6, 23, 0.96)),
-    radial-gradient(
-      circle at top left,
-      rgba(52, 211, 153, 0.12),
-      transparent 18rem
-    );
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.42);
-}
-
-.doggerz-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 3.75rem;
-  border-radius: 1.35rem;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  font-weight: 900;
-  letter-spacing: -0.025em;
-  transition:
-    transform 160ms ease,
-    filter 160ms ease,
-    background 160ms ease;
-}
-
-.doggerz-button:active {
-  transform: translateY(1px) scale(0.99);
-}
-
-.doggerz-button-primary {
-  background: linear-gradient(135deg, #22c55e, #34d399);
-  color: #03130a;
-  box-shadow: 0 18px 48px rgba(34, 197, 94, 0.24);
-}
-
-.doggerz-button-primary:hover {
-  filter: brightness(1.05);
-}
-
-.doggerz-button-ghost {
-  background: rgba(2, 6, 23, 0.82);
-  color: #f8fafc;
-}
-
-.doggerz-button-ghost:hover {
-  background: rgba(15, 23, 42, 0.95);
-}
+/*
+  These classes are useful for fallback scenes, preview scenes,
+  and any page that needs a fast CSS yard.
+*/
 
 .yard-stage {
   position: relative;
@@ -268,21 +597,16 @@ img {
   border-radius: 1.75rem;
   border: 1px solid rgba(125, 211, 252, 0.28);
   background:
-    radial-gradient(
-      circle at 50% 18%,
-      rgba(125, 211, 252, 0.2),
-      transparent 16rem
-    ),
+    radial-gradient(circle at 50% 18%, rgba(125, 211, 252, 0.2), transparent 16rem),
     linear-gradient(180deg, #38bdf8 0%, #5eead4 48%, #22c55e 49%, #15803d 100%);
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
 }
 
 .yard-stage.night {
   background:
-    radial-gradient(
-      circle at 50% 18%,
-      rgba(147, 197, 253, 0.12),
-      transparent 16rem
-    ),
+    radial-gradient(circle at 50% 18%, rgba(147, 197, 253, 0.12), transparent 16rem),
     linear-gradient(180deg, #0f172a 0%, #1e3a5f 48%, #064e3b 49%, #052e16 100%);
 }
 
@@ -292,10 +616,20 @@ img {
   inset: 0;
   pointer-events: none;
   background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px) 0
-      78% / 18px 48px,
+    linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px) 0 78% / 18px 48px,
     linear-gradient(180deg, transparent, rgba(2, 6, 23, 0.28));
   opacity: 0.85;
+}
+
+.yard-stage::after {
+  content: "";
+  position: absolute;
+  inset: auto 8% 5% 8%;
+  height: 2.5rem;
+  border-radius: 999px;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.24), transparent 70%);
+  filter: blur(4px);
 }
 
 .yard-fence {
@@ -392,6 +726,37 @@ img {
   background: #31223c;
 }
 
+.doggerz-scene-vignette {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 35%, transparent 0 45%, rgba(0, 0, 0, 0.32) 100%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(0, 0, 0, 0.18));
+}
+
+.doggerz-scene-glow {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 62%, rgba(134, 239, 172, 0.16), transparent 28rem),
+    radial-gradient(circle at 20% 20%, rgba(56, 189, 248, 0.12), transparent 18rem);
+  mix-blend-mode: screen;
+  opacity: 0.75;
+}
+
+/* =========================================================
+   6. CSS DOG FALLBACK
+   ========================================================= */
+
+/*
+  This is not your main 3D dog.
+
+  This is a lightweight CSS fallback dog.
+  It can be used for loading screens, placeholders, or simple previews.
+*/
+
 .css-dog {
   position: relative;
   width: 13.75rem;
@@ -415,7 +780,7 @@ img {
   border-radius: 4rem 4.3rem 3rem 3rem;
   background:
     radial-gradient(circle at 62% 30%, #f59e0b 0 0.9rem, transparent 0.95rem),
-    linear-gradient(180deg, #fff, #f8fafc);
+    linear-gradient(180deg, #ffffff, #f8fafc);
   border: 1px solid rgba(15, 23, 42, 0.12);
 }
 
@@ -428,7 +793,7 @@ img {
   border-radius: 48% 52% 45% 55%;
   background:
     radial-gradient(circle at 35% 35%, #d97706 0 1.35rem, transparent 1.4rem),
-    linear-gradient(160deg, #fff 0 48%, #f8fafc 49% 100%);
+    linear-gradient(160deg, #ffffff 0 48%, #f8fafc 49% 100%);
   border: 1px solid rgba(15, 23, 42, 0.12);
 }
 
@@ -497,7 +862,7 @@ img {
   border-radius: 999px;
   transform-origin: bottom center;
   transform: rotate(38deg);
-  background: linear-gradient(180deg, #fff 0 65%, #f59e0b 66%);
+  background: linear-gradient(180deg, #ffffff 0 65%, #f59e0b 66%);
   animation: tail-wag 0.6s ease-in-out infinite alternate;
 }
 
@@ -559,6 +924,29 @@ img {
   border-radius: 999px;
 }
 
+/* =========================================================
+   7. ANIMATIONS
+   ========================================================= */
+
+/*
+  Keyframes define an animation.
+  Classes or elements call those animations with animation: name duration timing.
+*/
+
+@keyframes dzStatPop {
+  0% {
+    transform: scale(0.985);
+  }
+
+  60% {
+    transform: scale(1.018);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
 @keyframes dog-breathe {
   0%,
   100% {
@@ -588,5 +976,119 @@ img {
 
   to {
     transform: rotate(50deg);
+  }
+}
+
+@keyframes doggerz-soft-pulse {
+  0%,
+  100% {
+    opacity: 0.78;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.015);
+  }
+}
+
+@keyframes doggerz-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes doggerz-shimmer {
+  0% {
+    transform: translateX(-120%);
+  }
+
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+.doggerz-soft-pulse {
+  animation: doggerz-soft-pulse 2.2s ease-in-out infinite;
+}
+
+.doggerz-float {
+  animation: doggerz-float 3.2s ease-in-out infinite;
+}
+
+/* =========================================================
+   8. RESPONSIVE / ACCESSIBILITY
+   ========================================================= */
+
+@media (max-width: 420px) {
+  :root {
+    --dz-radius-xl: 1.35rem;
+  }
+
+  .doggerz-button {
+    min-height: 3.35rem;
+    border-radius: 1.15rem;
+  }
+
+  .yard-stage {
+    min-height: 16.5rem;
+    border-radius: 1.35rem;
+  }
+
+  .css-dog {
+    transform-origin: center bottom;
+    scale: 0.88;
+  }
+}
+
+/*
+  Reduced motion matters.
+  Some users get headaches or nausea from too much animation.
+*/
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+
+  .css-dog,
+  .css-dog.sleep,
+  .css-dog .dog-tail,
+  .doggerz-soft-pulse,
+  .doggerz-float {
+    animation: none !important;
+  }
+}
+
+/*
+  High contrast mode improves readability.
+*/
+
+@media (prefers-contrast: more) {
+  :root {
+    --dz-bone: #ffffff;
+    --dz-muted: rgba(255, 255, 255, 0.82);
+    --dz-accent: #bbf7d0;
+  }
+
+  .game-card,
+  .pup-card,
+  .neon-surface,
+  .doggerz-card,
+  .doggerz-panel {
+    border-color: rgba(255, 255, 255, 0.28);
   }
 }
