@@ -7,18 +7,39 @@ const path = require("node:path");
 const ROOT = process.cwd();
 const MODEL_DIR = path.join(ROOT, "public", "assets", "models", "dog");
 const REQUIRED_STAGE_MODELS = Object.freeze([
+  "jackrussell-doggerz.glb",
   "jackrussell-puppy.glb",
   "jackrussell-adult.glb",
   "jackrussell-senior.glb",
 ]);
-const REQUIRED_CLIPS = Object.freeze([
-  "Idle",
-  "Walk",
-  "Sit",
+const REQUIRED_CLIPS = Object.freeze(["Idle", "Walk", "Sit", "Sleep", "Wag"]);
+
+const OPTIONAL_CLIPS = Object.freeze([
+  "Walk_Left",
+  "Walk_Right",
+  "Turn_Walk_Left",
+  "Turn_Walk_Right",
   "Bark",
-  "Sleep",
-  "Wag",
+  "Scratch",
+  "Eat",
+  "Lay_Down",
+  "Jump",
+  "Fetch",
+  "Beg",
+  "Paw",
+  "Shake",
+  "HighFive",
+  "Dance",
+  "GateWatch",
+  "Idle_Resting",
+  "Light_Sleep",
+  "Deep_Rem_Sleep",
+  "Drink",
+  "Sniff",
+  "Lethargic_Lay",
 ]);
+
+const KNOWN_CLIPS = Object.freeze([...REQUIRED_CLIPS, ...OPTIONAL_CLIPS]);
 
 const JUNK_NAME_PATTERNS = [
   /\bcamera\b/i,
@@ -186,8 +207,17 @@ function validateDocument(documentJson, filePath) {
     errors.push(`Missing required clips: ${missingClips.join(", ")}.`);
   }
 
+  const missingOptionalClips = OPTIONAL_CLIPS.filter(
+    (clip) => !clipNames.includes(clip)
+  );
+  if (missingOptionalClips.length) {
+    warnings.push(
+      `Missing optional clips: ${missingOptionalClips.join(", ")}.`
+    );
+  }
+
   const unexpectedClips = clipNames.filter(
-    (clip) => !REQUIRED_CLIPS.includes(clip)
+    (clip) => !KNOWN_CLIPS.includes(clip)
   );
   if (unexpectedClips.length) {
     warnings.push(

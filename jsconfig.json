@@ -7,9 +7,9 @@
     "allowJs": true,
     "checkJs": false,
     "noEmit": true,
+    "baseUrl": ".",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "baseUrl": ".",
     "types": [],
     "paths": {
       "@/*": ["src/*"]

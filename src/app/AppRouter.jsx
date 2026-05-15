@@ -18,6 +18,7 @@ import ModalHost from "@/components/ui/modals/ModalHost.jsx";
 import { selectIsAuthResolved } from "@/store/userSlice.js";
 
 // Keep Landing fast; lazy-load everything else.
+import StartScreen from "@/components/screens/StartScreen.jsx";
 import Landing from "@/pages/Landing.jsx";
 
 const DogRouteShell = React.lazy(
@@ -56,7 +57,7 @@ const dogRoutes = Object.freeze([
         <SkillTreePage />
       </ProtectedRoute>
     ),
-    label: "Loading skill tree…",
+    label: "Loading skill tree...",
   },
   {
     path: PATHS.STORE,
@@ -65,7 +66,7 @@ const dogRoutes = Object.freeze([
         <StorePage />
       </ProtectedRoute>
     ),
-    label: "Loading store…",
+    label: "Loading store...",
   },
   {
     path: PATHS.MEMORIES,
@@ -74,19 +75,19 @@ const dogRoutes = Object.freeze([
         <MemoryReelPage />
       </ProtectedRoute>
     ),
-    label: "Loading memories…",
+    label: "Loading memories...",
   },
-  { path: PATHS.DREAMS, node: <DreamsPage />, label: "Loading dreams…" },
-  { path: PATHS.POTTY, node: <PottyPage />, label: "Loading potty…" },
+  { path: PATHS.DREAMS, node: <DreamsPage />, label: "Loading dreams..." },
+  { path: PATHS.POTTY, node: <PottyPage />, label: "Loading potty..." },
   {
     path: PATHS.TEMPERAMENT_REVEAL,
     node: <TemperamentRevealPage />,
-    label: "Loading temperament…",
+    label: "Loading temperament...",
   },
   {
     path: PATHS.RAINBOW_BRIDGE,
     node: <RainbowBridgePage />,
-    label: "Loading rainbow bridge…",
+    label: "Loading rainbow bridge...",
   },
 ]);
 
@@ -98,31 +99,31 @@ const utilityRoutes = Object.freeze([
         <MenuPage />
       </ProtectedRoute>
     ),
-    label: "Loading menu…",
+    label: "Loading menu...",
   },
-  { path: PATHS.ADOPT, node: <AdoptPage />, label: "Loading adoption…" },
-  { path: PATHS.LOGIN, node: <LoginPage />, label: "Loading login…" },
-  { path: PATHS.SIGNUP, node: <SignupPage />, label: "Loading sign up…" },
-  { path: PATHS.ABOUT, node: <AboutPage />, label: "Loading about…" },
+  { path: PATHS.ADOPT, node: <AdoptPage />, label: "Loading adoption..." },
+  { path: PATHS.LOGIN, node: <LoginPage />, label: "Loading login..." },
+  { path: PATHS.SIGNUP, node: <SignupPage />, label: "Loading sign up..." },
+  { path: PATHS.ABOUT, node: <AboutPage />, label: "Loading about..." },
   {
     path: PATHS.FAQ,
     node: <FaqPage />,
-    label: "Loading FAQs…",
+    label: "Loading FAQs...",
   },
-  { path: PATHS.CONTACT, node: <ContactPage />, label: "Loading contact…" },
-  { path: PATHS.HELP, node: <HelpPage />, label: "Loading help…" },
+  { path: PATHS.CONTACT, node: <ContactPage />, label: "Loading contact..." },
+  { path: PATHS.HELP, node: <HelpPage />, label: "Loading help..." },
   {
     path: PATHS.DEVELOPERS,
     node: <DevelopersPage />,
-    label: "Loading developers…",
+    label: "Loading developers...",
   },
   {
     path: PATHS.SETTINGS,
     node: <SettingsPage />,
-    label: "Loading settings…",
+    label: "Loading settings...",
   },
-  { path: PATHS.LEGAL, node: <LegalPage />, label: "Loading legal…" },
-  { path: PATHS.PRIVACY, node: <PrivacyPage />, label: "Loading privacy…" },
+  { path: PATHS.LEGAL, node: <LegalPage />, label: "Loading legal..." },
+  { path: PATHS.PRIVACY, node: <PrivacyPage />, label: "Loading privacy..." },
 ]);
 
 function makeCrashFallback(title, subtitle) {
@@ -211,7 +212,7 @@ function RouteFallback({ label = "Loading." }) {
   );
 }
 
-function AuthReadyGate({ children, label = "Connecting dog data…" }) {
+function AuthReadyGate({ children, label = "Connecting dog data..." }) {
   const isAuthResolved = useSelector(selectIsAuthResolved);
   if (!isAuthResolved) {
     return <RouteFallback label={label} />;
@@ -253,12 +254,12 @@ const router = createBrowserRouter(
           path: PATHS.GAME,
           element: suspenseWithLabel(
             withCrashBoundary(
-              <AuthReadyGate label="Connecting yard…">
+              <AuthReadyGate label="Connecting yard...">
                 <GamePage />
               </AuthReadyGate>,
               GameCrashFallback
             ),
-            "Loading yard…"
+            "Loading yard..."
           ),
         },
 
@@ -266,10 +267,10 @@ const router = createBrowserRouter(
           path: PATHS.HOME,
           element: <AppShell />,
           children: [
-            { index: true, element: <Landing /> },
+            { index: true, element: <StartScreen /> },
             {
               path: "landing",
-              element: <Navigate to={PATHS.HOME} replace />,
+              element: <Landing />,
             },
             {
               path: "homegate",
@@ -305,11 +306,11 @@ const router = createBrowserRouter(
             {
               element: suspenseWithLabel(
                 withCrashBoundary(
-                  <AuthReadyGate label="Connecting dog data…">
+                  <AuthReadyGate label="Connecting dog data...">
                     <DogRouteShell />
                   </AuthReadyGate>
                 ),
-                "Loading dog data…"
+                "Loading dog data..."
               ),
               children: dogRoutes.map((route) => ({
                 path: stripLeadingSlash(route.path),

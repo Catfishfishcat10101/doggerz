@@ -555,7 +555,7 @@ export default function Settings() {
         dispatch(hydrateSettings(data.settings));
       }
 
-      setLocalActionStatus("Import successful. Reloading…");
+      setLocalActionStatus("Import successful. Reloading...");
       window.location.reload();
     } catch (e) {
       console.error(e);
@@ -1654,7 +1654,10 @@ export default function Settings() {
             </div>
           </Card>
 
-          <Card title="Audio" subtitle="Controls are saved; wiring is ongoing">
+          <Card
+            title="Audio"
+            subtitle="Volume, music, SFX, haptics, and sleep ambience"
+          >
             <Switch
               id="audioEnabled"
               label="Enable audio"

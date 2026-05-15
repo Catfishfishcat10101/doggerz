@@ -363,7 +363,7 @@ export default function GamePage() {
 
   return (
     <div
-      className="dz-safe-area relative h-dvh min-h-0 overflow-hidden pb-24 md:pb-0"
+      className="dz-safe-area relative h-dvh min-h-dvh overflow-hidden"
       style={{ ...dayNightStyle, "--weather-accent": weatherAccent }}
       data-weather={weatherKey}
     >

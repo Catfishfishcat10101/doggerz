@@ -1134,14 +1134,14 @@ export default function MainGame({ scene, dogInteractive = true }) {
     .trim()
     .toLowerCase();
   const statsStackClassName = compactHudLayout
-    ? "order-3 min-h-0 flex-[0.92_1_0%] space-y-3 overflow-y-auto overscroll-contain touch-pan-y pr-1"
-    : "order-3 min-h-0 flex-[0.88_1_0%] space-y-4 overflow-y-auto overscroll-contain touch-pan-y pr-1";
-  const yardRegionClassName = `order-1 relative -mx-3 sm:-mx-6 w-full min-h-0 overflow-hidden ${
+    ? "order-3 min-h-0 flex-[0.92_1_0%] space-y-3 overflow-y-auto overscroll-contain touch-pan-y pr-1 pb-2"
+    : "order-3 min-h-0 flex-[0.88_1_0%] space-y-4 overflow-y-auto overscroll-contain touch-pan-y pr-1 pb-2";
+  const yardRegionClassName = `doggerz-yard-region order-1 relative -mx-3 sm:-mx-6 w-full min-h-0 overflow-hidden ${
     expandedYardLayout
-      ? "flex-[1.18_1_0%] min-h-[420px]"
+      ? "doggerz-yard-region--expanded flex-[1.18_1_0%]"
       : compactHudLayout
-        ? "flex-[1.08_1_0%] min-h-[412px]"
-        : "flex-1 min-h-[404px]"
+        ? "doggerz-yard-region--compact flex-[1.08_1_0%]"
+        : "flex-1"
   }`;
   const _dogBaseScale = 0.4 + clamp(ageDays / 365, 0, 1) * 0.4;
   const stageHeadline = String(life?.headline || "Tiny chaos era");
@@ -1159,9 +1159,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
   );
   const goldenYearsActive =
     dogInteractive && Boolean(life?.isFinalStretchImmune);
-  const renderStageForModel = goldenYearsActive
-    ? "SENIOR"
-    : renderModel?.stage;
+  const renderStageForModel = goldenYearsActive ? "SENIOR" : renderModel?.stage;
   const curatedModelAnim = useMemo(() => {
     const stageKey = String(renderStageForModel || life?.stage || "PUPPY")
       .trim()
@@ -4459,7 +4457,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
 
   return (
     <div className="relative flex h-full min-h-0 flex-col overflow-hidden">
-      <div className="main-scroll-container relative z-20 mx-auto flex h-full min-h-0 w-full max-w-6xl flex-1 flex-col gap-3 pb-[calc(env(safe-area-inset-bottom,0px)+124px)] sm:gap-4">
+      <div className="main-scroll-container relative z-20 mx-auto flex h-full min-h-0 w-full max-w-6xl flex-1 flex-col gap-2.5 pb-[calc(env(safe-area-inset-bottom,0px)+112px)] sm:gap-4 sm:pb-[calc(env(safe-area-inset-bottom,0px)+124px)]">
         <GameTopBar
           dogName={dog?.name || "Doggerz Pup"}
           dogStage={stageLabel || "Puppy"}
@@ -4479,8 +4477,8 @@ export default function MainGame({ scene, dogInteractive = true }) {
           onOpenSettings={() => setBottomMenuCategory("settings")}
           onOpenShop={() => navigate(PATHS.STORE)}
         />
-        <div className="pup-card flex min-h-0 flex-1 flex-col rounded-[28px] px-3 pb-4 sm:px-6 sm:pb-6">
-          <div className="flex min-h-0 flex-1 flex-col gap-4">
+        <div className="pup-card flex min-h-0 flex-1 flex-col rounded-[28px] px-3 pb-3 sm:px-6 sm:pb-6">
+          <div className="flex min-h-0 flex-1 flex-col gap-3 sm:gap-4">
             <div className={statsStackClassName}>
               {activeAnimatedEventMeta || actionOutcomeLabel ? (
                 <div className="game-card event-card">
@@ -4900,7 +4898,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
                         _effectiveAnimationSpeedMultiplier
                       }
                       idleAnimationIntensity={idleAnimationIntensity}
-                        requestedModelAnimation={syncedModelAnim}
+                      requestedModelAnimation={syncedModelAnim}
                       containerClassName={`yard-viewport ${visualNight ? "yard-night" : "yard-day"} relative w-full h-full min-h-0 overflow-hidden`}
                       rendererClassName="absolute inset-0 z-[22] pointer-events-none contrast-[1.03] saturate-[1.05]"
                       rendererMinHeight={null}

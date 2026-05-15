@@ -7,11 +7,10 @@
     "scrollEnabled": false,
     "contentInset": "never"
   },
+  "android": {
+    "adjustMarginsForEdgeToEdge": true
+  },
   "plugins": {
-    "StatusBar": {
-      "overlaysWebView": true,
-      "style": "DEFAULT"
-    },
     "SplashScreen": {
       "launchAutoHide": true,
       "launchFadeOutDuration": 220,

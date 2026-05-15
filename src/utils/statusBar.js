@@ -1,6 +1,5 @@
 // src/utils/statusBar.js
 import { Capacitor } from "@capacitor/core";
-import { StatusBar, Style } from "@capacitor/status-bar";
 
 function isNativePlatform() {
   try {
@@ -13,36 +12,13 @@ function isNativePlatform() {
 }
 
 export async function configureStatusBar() {
-  if (!isNativePlatform() || !StatusBar) return false;
-
-  try {
-    await Promise.allSettled([
-      StatusBar.setOverlaysWebView({ overlay: true }),
-      StatusBar.setStyle({ style: Style.Default }),
-      StatusBar.hide?.(),
-    ]);
-    return true;
-  } catch {
-    return false;
-  }
+  return isNativePlatform();
 }
 
 export async function hideStatusBar() {
-  if (!isNativePlatform() || !StatusBar?.hide) return false;
-  try {
-    await StatusBar.hide();
-    return true;
-  } catch {
-    return false;
-  }
+  return false;
 }
 
 export async function showStatusBar() {
-  if (!isNativePlatform() || !StatusBar?.show) return false;
-  try {
-    await StatusBar.show();
-    return true;
-  } catch {
-    return false;
-  }
+  return false;
 }

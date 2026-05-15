@@ -109,7 +109,7 @@ export default function Potty() {
           <EmptySlate
             kicker="Potty Training"
             title="No pup yet"
-            description="You’ll need to adopt a Dog before you can start potty training."
+            description="You'll need to adopt a dog before you can start potty training."
             primaryLabel="Adopt your pup"
             onPrimary={() => navigate(PATHS.ADOPT)}
             backTo={PATHS.HOME}
@@ -188,7 +188,7 @@ export default function Potty() {
       ];
     }
     toast.reward(
-      `Potty trip logged (+2 XP) • ${guidance.phaseMeta.shortLabel}`
+      `Potty trip logged (+2 XP) - ${guidance.phaseMeta.shortLabel}`
     );
 
     if (autoReturn) {
@@ -350,8 +350,8 @@ export default function Potty() {
 
             {lastAccidentAgo ? (
               <div className="rounded-xl border border-rose-400/20 bg-rose-500/10 p-3 text-xs text-rose-900 dark:text-rose-100">
-                Last accident {lastAccidentAgo}. Reset the routine; don’t punish
-                the dog.
+                Last accident {lastAccidentAgo}. Reset the routine; don&apos;t
+                punish the dog.
               </div>
             ) : null}
           </aside>
@@ -384,7 +384,7 @@ export default function Potty() {
               onClick={onPottyWalk}
               className="rounded-full border border-emerald-400/35 bg-emerald-500/10 px-4 py-2 text-xs font-semibold text-emerald-100 transition hover:bg-emerald-500/15"
             >
-              Potty Walk (Success) • +2 XP
+              Potty walk success +2 XP
             </button>
 
             <button

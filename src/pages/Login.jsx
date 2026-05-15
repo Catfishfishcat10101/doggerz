@@ -105,7 +105,7 @@ export default function LoginPage() {
 
     if (!firebaseReady || !auth) {
       setError(
-        "Firebase is not configured. Add your VITE_FIREBASE_* keys to .env.local to enable login, or continue in offline mode."
+        "Cloud login is not available in this build. You can keep playing in local-only mode."
       );
       return;
     }
@@ -205,17 +205,16 @@ export default function LoginPage() {
   return (
     <PageShell
       title="Log in"
-      subtitle="Sign in to keep your pup synced and unlock cloud features. Prefer staying local? You can still continue without an account."
+      subtitle="Sign in to sync your dog and continue on another device, or play locally on this device."
       headerAlign="center"
+      useSurface={false}
     >
-      <div className="flex flex-col items-center w-full h-full pt-2 pb-10">
-        <div className="w-full max-w-md rounded-3xl border border-white/10 bg-white/80 p-6 shadow-[0_30px_80px_rgba(0,0,0,0.45)] backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/70">
+      <div className="flex min-h-[70dvh] w-full flex-col items-center px-4 pb-10 pt-2">
+        <div className="w-full max-w-md rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(9,19,34,0.92),rgba(3,8,16,0.94))] p-6 shadow-[0_30px_80px_rgba(0,0,0,0.45)] backdrop-blur">
           <div className="mb-4">
-            <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
-              Welcome back
-            </h2>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              Continue your pup&apos;s story.
+            <h2 className="text-xl font-black text-zinc-100">Welcome back</h2>
+            <p className="mt-1 text-sm text-zinc-400">
+              Continue your dog&apos;s care, training, and progress.
             </p>
           </div>
 
@@ -226,9 +225,7 @@ export default function LoginPage() {
                   Cloud login is currently disabled.
                 </p>
                 <p className="mt-1 text-amber-200/80">
-                  To enable it, set your Firebase web config in{" "}
-                  <code>.env.local</code> (see <code>.env.example</code>). Until
-                  then, you can still play in local-only mode.
+                  You can still play and save locally on this device.
                 </p>
               </div>
             )}
@@ -236,7 +233,7 @@ export default function LoginPage() {
             <div>
               <label
                 htmlFor="login-email"
-                className="block text-sm font-medium text-zinc-800 dark:text-zinc-200 mb-1"
+                className="mb-1 block text-sm font-bold text-zinc-200"
               >
                 Email
               </label>
@@ -248,7 +245,7 @@ export default function LoginPage() {
                 autoCorrect="off"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-white border border-zinc-300 text-zinc-900 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm dark:bg-zinc-950 dark:border-zinc-700 dark:text-white dark:placeholder:text-zinc-500"
+                className="min-h-12 w-full rounded-2xl border border-white/10 bg-black/35 px-4 py-3 text-sm text-white placeholder:text-zinc-500 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/15"
                 autoComplete="email"
                 placeholder="you@example.com"
               />
@@ -257,7 +254,7 @@ export default function LoginPage() {
             <div>
               <label
                 htmlFor="login-password"
-                className="block text-sm font-medium text-zinc-800 dark:text-zinc-200 mb-1"
+                className="mb-1 block text-sm font-bold text-zinc-200"
               >
                 Password
               </label>
@@ -267,19 +264,19 @@ export default function LoginPage() {
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-white border border-zinc-300 text-zinc-900 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm dark:bg-zinc-950 dark:border-zinc-700 dark:text-white dark:placeholder:text-zinc-500"
+                  className="min-h-12 w-full rounded-2xl border border-white/10 bg-black/35 px-4 py-3 pr-20 text-sm text-white placeholder:text-zinc-500 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/15"
                   autoComplete="current-password"
-                  placeholder="password"
+                  placeholder="Your password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full border border-white/10 bg-black/20 px-2 py-1 text-[10px] font-semibold text-zinc-100 hover:bg-black/30 transition"
+                  className="absolute right-2 top-1/2 min-h-9 -translate-y-1/2 rounded-full border border-white/10 bg-white/8 px-3 py-1 text-[11px] font-bold text-zinc-100 transition hover:bg-white/12"
                 >
                   {showPassword ? "Hide" : "Show"}
                 </button>
               </div>
-              <div className="mt-2 flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400">
+              <div className="mt-3 flex items-center justify-between gap-3 text-xs text-zinc-400">
                 <label className="inline-flex items-center gap-2">
                   <input
                     type="checkbox"
@@ -320,7 +317,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={submitting || !firebaseReady}
-              className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-sm font-semibold shadow-lg"
+              className="min-h-12 w-full rounded-2xl bg-emerald-400 py-3 text-sm font-black text-black shadow-[0_12px_30px_rgba(52,211,153,0.18)] transition hover:bg-emerald-300 disabled:bg-white/12 disabled:text-zinc-400 disabled:shadow-none"
             >
               {submitting ? "Logging in..." : "Log in"}
             </button>
@@ -328,13 +325,13 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={handleContinueOffline}
-              className="w-full py-2.5 rounded-xl border border-white/10 bg-black/20 text-sm font-semibold text-zinc-100 hover:bg-black/30 transition"
+              className="min-h-12 w-full rounded-2xl border border-white/10 bg-white/8 py-3 text-sm font-bold text-zinc-100 transition hover:bg-white/12"
             >
               Continue in local-only mode
             </button>
           </form>
 
-          <p className="mt-4 text-center text-xs text-zinc-600 dark:text-zinc-400">
+          <p className="mt-4 text-center text-xs text-zinc-400">
             Don&apos;t have an account?{" "}
             <Link
               to={PATHS.SIGNUP}

@@ -97,7 +97,7 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-[90] border-b border-white/8 bg-zinc-950/88 backdrop-blur-xl">
-      <div className="mx-auto flex h-[70px] w-full max-w-5xl items-center gap-3 px-3 pb-2 pt-[max(env(safe-area-inset-top,0px),0.5rem)] sm:px-4">
+      <div className="mx-auto flex min-h-[64px] w-full max-w-5xl items-center gap-3 px-3 pb-2 pt-[max(env(safe-area-inset-top,0px),0.5rem)] sm:px-4">
         <button
           type="button"
           onClick={() => {

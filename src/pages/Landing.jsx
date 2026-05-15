@@ -5,7 +5,7 @@ import { Link, Navigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 
 import { SocialButton } from "@/components/base/buttons/social-button.jsx";
-import HeroDog3D from "../../HeroDog3D.jsx";
+import HeroDog3D from "@/components/brand/HeroDog3D.jsx";
 import PageShell from "@/components/layout/PageShell.jsx";
 import { PATHS } from "@/app/routes.js";
 import { selectIsLoggedIn } from "@/store/userSlice.js";

@@ -4,9 +4,9 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 
-import { auth, firebaseReady } from "@/lib/firebase/index.js";
-import PageShell from "@/components/layout/PageShell.jsx";
 import { PATHS } from "@/app/routes.js";
+import PageShell from "@/components/layout/PageShell.jsx";
+import { auth, firebaseReady } from "@/lib/firebase/index.js";
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -22,7 +22,7 @@ export default function Signup() {
 
     if (!firebaseReady || !auth) {
       setError(
-        "Cloud signup is disabled because Firebase isn't configured. You can still play in offline mode."
+        "Cloud signup is not available in this build. You can still play in local-only mode."
       );
       return;
     }
@@ -50,7 +50,6 @@ export default function Signup() {
         }
       }
 
-      // New accounts should name and adopt their pup before entering the yard.
       navigate(PATHS.ADOPT, { replace: true });
     } catch (err) {
       console.error("[Signup] signup error:", err);
@@ -58,7 +57,7 @@ export default function Signup() {
       if (err?.code === "auth/email-already-in-use") {
         message = "That email is already in use. Try logging in instead.";
       } else if (err?.code === "auth/invalid-email") {
-        message = "That email address doesn’t look valid.";
+        message = "That email address does not look valid.";
       } else if (err?.code === "auth/weak-password") {
         message = "Password is too weak. Try at least 6 characters.";
       }
@@ -69,26 +68,33 @@ export default function Signup() {
   };
 
   return (
-    <PageShell>
-      <div className="min-h-[60vh] flex items-center">
-        <div className="container mx-auto px-4 max-w-md">
-          <h1 className="text-3xl font-bold mb-2">Create your account</h1>
-          <p className="text-zinc-600 dark:text-zinc-300 mb-6">
-            Save your pup, your streaks, and your Doggerz coins across devices.
-          </p>
+    <PageShell useSurface={false}>
+      <div className="flex min-h-[70dvh] items-center px-4 pb-10">
+        <div className="container mx-auto max-w-md">
+          <div className="mb-6">
+            <div className="text-[11px] font-bold uppercase tracking-[0.28em] text-emerald-300/80">
+              Doggerz account
+            </div>
+            <h1 className="mt-2 text-3xl font-black text-zinc-100">
+              Create your account
+            </h1>
+            <p className="mt-3 text-sm leading-6 text-zinc-400">
+              Sync your dog, care history, and progress across devices when
+              cloud save is available.
+            </p>
+          </div>
 
           {!firebaseReady ? (
-            <div className="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-200">
-              <p className="font-medium">Cloud signup is currently disabled.</p>
+            <div className="mb-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-200">
+              <p className="font-bold">Cloud signup is currently disabled.</p>
               <p className="mt-1 text-amber-200/80">
-                To enable it, set your Firebase web config in{" "}
-                <code>.env.local</code> (see <code>.env.example</code>). Until
-                then, you can still play in local-only mode.
+                You can still adopt a dog and play in local-only mode on this
+                device.
               </p>
               <button
                 type="button"
                 onClick={() => navigate(PATHS.ADOPT, { replace: true })}
-                className="mt-3 inline-flex items-center justify-center rounded-lg bg-amber-400 px-3 py-2 text-xs font-semibold text-black hover:bg-amber-300"
+                className="mt-3 inline-flex min-h-10 items-center justify-center rounded-xl bg-amber-400 px-4 py-2 text-xs font-bold text-black hover:bg-amber-300"
               >
                 Continue offline
               </button>
@@ -97,12 +103,12 @@ export default function Signup() {
 
           <form
             onSubmit={handleSubmit}
-            className="space-y-4 rounded-xl bg-white/80 p-6 border border-zinc-200 dark:bg-zinc-900/70 dark:border-zinc-800"
+            className="space-y-4 rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(9,19,34,0.92),rgba(3,8,16,0.94))] p-6 shadow-[0_30px_80px_rgba(0,0,0,0.45)]"
           >
             <div className="space-y-2">
               <label
                 htmlFor="displayName"
-                className="block text-sm font-medium text-zinc-800 dark:text-zinc-200"
+                className="block text-sm font-bold text-zinc-200"
               >
                 Display name
               </label>
@@ -112,15 +118,15 @@ export default function Signup() {
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
                 maxLength={32}
-                className="w-full rounded-md bg-white border border-zinc-300 px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-zinc-950 dark:border-zinc-700 dark:text-zinc-50 dark:placeholder:text-zinc-500"
-                placeholder="William"
+                className="min-h-12 w-full rounded-2xl border border-white/10 bg-black/35 px-4 py-3 text-sm text-white placeholder:text-zinc-500 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/15"
+                placeholder="Your name"
               />
             </div>
 
             <div className="space-y-2">
               <label
                 htmlFor="email"
-                className="block text-sm font-medium text-zinc-800 dark:text-zinc-200"
+                className="block text-sm font-bold text-zinc-200"
               >
                 Email
               </label>
@@ -130,7 +136,7 @@ export default function Signup() {
                 autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-md bg-white border border-zinc-300 px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-zinc-950 dark:border-zinc-700 dark:text-zinc-50 dark:placeholder:text-zinc-500"
+                className="min-h-12 w-full rounded-2xl border border-white/10 bg-black/35 px-4 py-3 text-sm text-white placeholder:text-zinc-500 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/15"
                 placeholder="you@example.com"
               />
             </div>
@@ -138,7 +144,7 @@ export default function Signup() {
             <div className="space-y-2">
               <label
                 htmlFor="password"
-                className="block text-sm font-medium text-zinc-800 dark:text-zinc-200"
+                className="block text-sm font-bold text-zinc-200"
               >
                 Password
               </label>
@@ -148,33 +154,33 @@ export default function Signup() {
                 autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-md bg-white border border-zinc-300 px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-zinc-950 dark:border-zinc-700 dark:text-zinc-50 dark:placeholder:text-zinc-500"
+                className="min-h-12 w-full rounded-2xl border border-white/10 bg-black/35 px-4 py-3 text-sm text-white placeholder:text-zinc-500 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/15"
               />
             </div>
 
             <button
               type="submit"
               disabled={submitting || !firebaseReady}
-              className="w-full rounded-full bg-emerald-500 hover:bg-emerald-400 disabled:opacity-60 text-black font-semibold text-sm py-2.5 transition"
+              className="min-h-12 w-full rounded-2xl bg-emerald-400 py-3 text-sm font-black text-black shadow-[0_12px_30px_rgba(52,211,153,0.18)] transition hover:bg-emerald-300 disabled:bg-white/12 disabled:text-zinc-400 disabled:shadow-none"
             >
-              {submitting ? "Creating account…" : "Sign up"}
+              {submitting ? "Creating account..." : "Sign up"}
             </button>
 
             <button
               type="button"
               onClick={() => navigate(PATHS.ADOPT, { replace: true })}
-              className="w-full rounded-full border border-zinc-300 bg-white px-3 py-2.5 text-sm font-semibold text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-black/30 dark:text-zinc-100 dark:hover:bg-black/40 transition"
+              className="min-h-12 w-full rounded-2xl border border-white/10 bg-white/8 px-3 py-3 text-sm font-bold text-zinc-100 transition hover:bg-white/12"
             >
               Continue offline
             </button>
 
             {error ? <p className="text-xs text-red-400">{error}</p> : null}
 
-            <p className="text-xs text-zinc-600 dark:text-zinc-400 text-center">
+            <p className="text-center text-xs text-zinc-400">
               Already have an account?{" "}
               <Link
-                to="/login"
-                className="text-emerald-400 hover:text-emerald-300"
+                to={PATHS.LOGIN}
+                className="font-semibold text-emerald-400 hover:text-emerald-300"
               >
                 Log in
               </Link>

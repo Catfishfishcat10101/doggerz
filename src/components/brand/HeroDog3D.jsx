@@ -1,4 +1,5 @@
-import React, { Suspense, useEffect, useMemo, useRef } from "react";
+/* eslint-disable react/no-unknown-property */
+import { Suspense, useEffect, useMemo, useRef } from "react";
 import { Canvas } from "@react-three/fiber";
 import {
   ContactShadows,
@@ -8,7 +9,7 @@ import {
   useGLTF,
 } from "@react-three/drei";
 import { useSelector } from "react-redux";
-import { SkeletonUtils } from "three-stdlib";
+import { clone as cloneSkeleton } from "three/examples/jsm/utils/SkeletonUtils.js";
 
 import { useDayNight } from "@/hooks/useDayNight.js";
 
@@ -70,7 +71,7 @@ function DogModel({
   const group = useRef();
   const { scene, animations } = useGLTF(MODEL_PATH);
 
-  const clonedScene = useMemo(() => SkeletonUtils.clone(scene), [scene]);
+  const clonedScene = useMemo(() => cloneSkeleton(scene), [scene]);
   const { actions } = useAnimations(animations, group);
 
   const activeClip = resolveActiveClip({

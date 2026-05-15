@@ -11,6 +11,7 @@ import { DogGroundPlane } from "@/features/game/stage3d/DogGround.jsx";
 import DogLightRig from "@/features/game/stage3d/DogLightRig.jsx";
 import resolveDogStageLighting from "@/features/game/stage3d/DogLights.jsx";
 import DogShadowPlane from "@/features/game/stage3d/DogShadowPlane.jsx";
+import DogStageFx from "@/features/game/stage3d/DogStageFx.jsx";
 import DogHouse from "@/features/game/stage3d/props/DogHouse.jsx";
 import Tree from "@/features/game/stage3d/props/Tree.jsx";
 import { useDogYardMovement } from "@/features/game/rendering/useDogYardMovement.js";
@@ -230,6 +231,7 @@ export function Dog3DScene({ scene = null, dogView = {} }) {
           />
         ) : null}
         <DogLayer scene={scene} dogView={dogView} art={art} />
+        <DogStageFx scene={scene} dogView={dogView} lighting={lighting} />
       </Canvas>
     </div>
   );

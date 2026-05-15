@@ -1,10 +1,3 @@
-import React from "react";
-import ReactDOM from "react-dom/client";
-import AppRouter from "./app/AppRouter.jsx";
-import "./index.css";
-
-ReactDOM.createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
-    <AppRouter />
-  </React.StrictMode>
-);
+// src/main.jsx
+// Compatibility entry. The active Vite entry is /src/app/main.jsx.
+import "./app/main.jsx";

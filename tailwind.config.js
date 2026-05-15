@@ -15,6 +15,13 @@ export default {
           cyan: "#38bdf8",
           gold: "#fbbf24",
           danger: "#ef4444",
+          bone: "#f4f1e8",
+          paw: "#a8b3a7",
+          leaf: "#22c55e",
+          neon: "#2dd4bf",
+          neonSoft: "#86efac",
+          sky: "#38bdf8",
+          mange: "#475569",
         },
       },
 

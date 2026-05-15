@@ -4,14 +4,13 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const ROOT = process.cwd();
-const OUT_PATH = path.join(
-  ROOT,
-  "public",
-  "assets",
-  "models",
-  "dog",
-  "jackrussell-puppy.glb"
-);
+const OUT_DIR = path.join(ROOT, "public", "assets", "models", "dog");
+const OUT_FILES = Object.freeze([
+  "jackrussell-doggerz.glb",
+  "jackrussell-puppy.glb",
+  "jackrussell-adult.glb",
+  "jackrussell-senior.glb",
+]);
 
 const COMPONENT = Object.freeze({
   FLOAT: 5126,
@@ -218,6 +217,11 @@ function pad4(buffer) {
   return pad ? Buffer.concat([buffer, Buffer.alloc(pad)]) : buffer;
 }
 
+function padJson4(buffer) {
+  const pad = (4 - (buffer.length % 4)) % 4;
+  return pad ? Buffer.concat([buffer, Buffer.alloc(pad, 0x20)]) : buffer;
+}
+
 class BinaryBuilder {
   constructor() {
     this.chunks = [];
@@ -291,6 +295,19 @@ function createAnimation(builder, name, tracks) {
   }
 
   return { name, samplers, channels };
+}
+
+function cloneAnimation(builder, name, sourceName, animations) {
+  const source = animations.find((animation) => animation.name === sourceName);
+  if (!source) throw new Error(`Missing source animation "${sourceName}".`);
+  return {
+    name,
+    samplers: source.samplers.map((sampler) => ({ ...sampler })),
+    channels: source.channels.map((channel) => ({
+      ...channel,
+      target: { ...channel.target },
+    })),
+  };
 }
 
 function main() {
@@ -690,7 +707,301 @@ function main() {
         ],
       },
     ]),
+    createAnimation(builder, "Sniff", [
+      {
+        node: rootNode(JOINTS.BODY),
+        path: "translation",
+        times: [0, 0.5, 1, 1.5, 2],
+        values: [
+          0, 0.7, 0.02, 0.02, 0.68, 0.04, 0, 0.7, 0.02, -0.02, 0.68,
+          0.04, 0, 0.7, 0.02,
+        ],
+      },
+      {
+        node: rootNode(JOINTS.HEAD),
+        path: "rotation",
+        times: [0, 0.5, 1, 1.5, 2],
+        values: [
+          ...quatFromEuler(0.22, 0.16, 0),
+          ...quatFromEuler(0.3, -0.12, 0.04),
+          ...quatFromEuler(0.26, 0.1, 0),
+          ...quatFromEuler(0.34, -0.16, -0.04),
+          ...quatFromEuler(0.22, 0.16, 0),
+        ],
+      },
+      {
+        node: rootNode(JOINTS.TAIL),
+        path: "rotation",
+        times: [0, 1, 2],
+        values: [
+          ...quatFromEuler(0, 0.08, -0.03),
+          ...quatFromEuler(0, -0.08, 0.03),
+          ...quatFromEuler(0, 0.08, -0.03),
+        ],
+      },
+    ]),
+    createAnimation(builder, "Scratch", [
+      {
+        node: rootNode(JOINTS.BODY),
+        path: "rotation",
+        times: [0, 0.18, 0.36, 0.54, 0.72],
+        values: [
+          ...quatFromEuler(0.08, 0, 0.02),
+          ...quatFromEuler(0.14, 0, -0.03),
+          ...quatFromEuler(0.08, 0, 0.02),
+          ...quatFromEuler(0.14, 0, -0.03),
+          ...quatFromEuler(0.08, 0, 0.02),
+        ],
+      },
+      {
+        node: rootNode(JOINTS.FRONT_LEFT_LEG),
+        path: "rotation",
+        times: [0, 0.18, 0.36, 0.54, 0.72],
+        values: [
+          ...quatFromEuler(0.8, 0, 0),
+          ...quatFromEuler(-0.45, 0, 0.08),
+          ...quatFromEuler(0.8, 0, 0),
+          ...quatFromEuler(-0.45, 0, 0.08),
+          ...quatFromEuler(0.8, 0, 0),
+        ],
+      },
+      {
+        node: rootNode(JOINTS.FRONT_RIGHT_LEG),
+        path: "rotation",
+        times: [0, 0.18, 0.36, 0.54, 0.72],
+        values: [
+          ...quatFromEuler(-0.45, 0, -0.08),
+          ...quatFromEuler(0.8, 0, 0),
+          ...quatFromEuler(-0.45, 0, -0.08),
+          ...quatFromEuler(0.8, 0, 0),
+          ...quatFromEuler(-0.45, 0, -0.08),
+        ],
+      },
+      {
+        node: rootNode(JOINTS.HEAD),
+        path: "rotation",
+        times: [0, 0.36, 0.72],
+        values: [
+          ...quatFromEuler(0.24, 0, 0.02),
+          ...quatFromEuler(0.32, 0, -0.04),
+          ...quatFromEuler(0.24, 0, 0.02),
+        ],
+      },
+    ]),
+    createAnimation(builder, "Eat", [
+      {
+        node: rootNode(JOINTS.HEAD),
+        path: "rotation",
+        times: [0, 0.28, 0.56, 0.84],
+        values: [
+          ...quatFromEuler(0.24, 0, 0),
+          ...quatFromEuler(0.42, 0, 0.03),
+          ...quatFromEuler(0.24, 0, 0),
+          ...quatFromEuler(0.42, 0, -0.03),
+        ],
+      },
+    ]),
+    createAnimation(builder, "Drink", [
+      {
+        node: rootNode(JOINTS.HEAD),
+        path: "rotation",
+        times: [0, 0.24, 0.48, 0.72],
+        values: [
+          ...quatFromEuler(0.28, 0.02, 0),
+          ...quatFromEuler(0.5, -0.02, 0.02),
+          ...quatFromEuler(0.28, 0.02, 0),
+          ...quatFromEuler(0.5, -0.02, -0.02),
+        ],
+      },
+    ]),
+    createAnimation(builder, "Jump", [
+      {
+        node: rootNode(JOINTS.BODY),
+        path: "translation",
+        times: [0, 0.18, 0.42, 0.7, 1],
+        values: [0, 0.72, 0, 0, 0.64, 0, 0, 1.12, 0, 0, 0.8, 0, 0, 0.72, 0],
+      },
+      {
+        node: rootNode(JOINTS.BODY),
+        path: "rotation",
+        times: [0, 0.42, 1],
+        values: [
+          ...quatFromEuler(0, 0, 0),
+          ...quatFromEuler(-0.16, 0, 0),
+          ...quatFromEuler(0, 0, 0),
+        ],
+      },
+    ]),
+    createAnimation(builder, "Beg", [
+      {
+        node: rootNode(JOINTS.BODY),
+        path: "rotation",
+        times: [0, 0.5, 1.5, 2],
+        values: [
+          ...quatFromEuler(0, 0, 0),
+          ...quatFromEuler(-0.58, 0, 0),
+          ...quatFromEuler(-0.58, 0, 0),
+          ...quatFromEuler(0, 0, 0),
+        ],
+      },
+      ...[JOINTS.FRONT_LEFT_LEG, JOINTS.FRONT_RIGHT_LEG].map((joint, index) => ({
+        node: rootNode(joint),
+        path: "rotation",
+        times: [0, 0.5, 1.5, 2],
+        values: [
+          ...quatFromEuler(0, 0, 0),
+          ...quatFromEuler(-1.0, 0, index ? -0.12 : 0.12),
+          ...quatFromEuler(-1.0, 0, index ? -0.12 : 0.12),
+          ...quatFromEuler(0, 0, 0),
+        ],
+      })),
+    ]),
+    createAnimation(builder, "Paw", [
+      {
+        node: rootNode(JOINTS.FRONT_LEFT_LEG),
+        path: "rotation",
+        times: [0, 0.32, 0.64, 1],
+        values: [
+          ...quatFromEuler(0, 0, 0),
+          ...quatFromEuler(-1.15, 0.12, 0.2),
+          ...quatFromEuler(-0.9, 0.05, 0.14),
+          ...quatFromEuler(0, 0, 0),
+        ],
+      },
+    ]),
+    createAnimation(builder, "Shake", [
+      {
+        node: rootNode(JOINTS.HEAD),
+        path: "rotation",
+        times: [0, 0.12, 0.24, 0.36, 0.48],
+        values: [
+          ...quatFromEuler(0, -0.32, 0.08),
+          ...quatFromEuler(0, 0.32, -0.08),
+          ...quatFromEuler(0, -0.32, 0.08),
+          ...quatFromEuler(0, 0.32, -0.08),
+          ...quatFromEuler(0, -0.32, 0.08),
+        ],
+      },
+      {
+        node: rootNode(JOINTS.LEFT_EAR),
+        path: "rotation",
+        times: [0, 0.24, 0.48],
+        values: [
+          ...quatFromEuler(0.3, 0.1, 0.4),
+          ...quatFromEuler(-0.4, -0.1, 0.65),
+          ...quatFromEuler(0.3, 0.1, 0.4),
+        ],
+      },
+    ]),
+    createAnimation(builder, "Dance", [
+      {
+        node: rootNode(JOINTS.BODY),
+        path: "rotation",
+        times: [0, 0.32, 0.64, 0.96, 1.28],
+        values: [
+          ...quatFromEuler(0, 0, 0.18),
+          ...quatFromEuler(0, 0, -0.18),
+          ...quatFromEuler(0, 0, 0.18),
+          ...quatFromEuler(0, 0, -0.18),
+          ...quatFromEuler(0, 0, 0.18),
+        ],
+      },
+      {
+        node: rootNode(JOINTS.TAIL),
+        path: "rotation",
+        times: [0, 0.16, 0.32, 0.48, 0.64],
+        values: [
+          ...quatFromEuler(0, 0.6, 0.1),
+          ...quatFromEuler(0, -0.6, -0.1),
+          ...quatFromEuler(0, 0.6, 0.1),
+          ...quatFromEuler(0, -0.6, -0.1),
+          ...quatFromEuler(0, 0.6, 0.1),
+        ],
+      },
+    ]),
+    createAnimation(builder, "GateWatch", [
+      {
+        node: rootNode(JOINTS.HEAD),
+        path: "rotation",
+        times: [0, 0.9, 1.8, 2.7, 3.6],
+        values: [
+          ...quatFromEuler(0.02, -0.3, 0),
+          ...quatFromEuler(-0.04, 0.22, 0),
+          ...quatFromEuler(0.02, -0.24, 0),
+          ...quatFromEuler(-0.04, 0.28, 0),
+          ...quatFromEuler(0.02, -0.3, 0),
+        ],
+      },
+    ]),
+    createAnimation(builder, "Light_Sleep", [
+      {
+        node: rootNode(JOINTS.BODY),
+        path: "translation",
+        times: [0, 1.2, 2.4],
+        values: [0, 0.54, 0, 0, 0.565, 0, 0, 0.54, 0],
+      },
+      {
+        node: rootNode(JOINTS.HEAD),
+        path: "rotation",
+        times: [0, 1.2, 2.4],
+        values: [
+          ...quatFromEuler(0, 0, 0.35),
+          ...quatFromEuler(0.02, 0.02, 0.32),
+          ...quatFromEuler(0, 0, 0.35),
+        ],
+      },
+    ]),
+    createAnimation(builder, "Deep_Rem_Sleep", [
+      {
+        node: rootNode(JOINTS.BODY),
+        path: "translation",
+        times: [0, 1.6, 3.2],
+        values: [0, 0.515, 0, 0, 0.55, 0, 0, 0.515, 0],
+      },
+      {
+        node: rootNode(JOINTS.FRONT_LEFT_LEG),
+        path: "rotation",
+        times: [0, 0.18, 0.36, 2.2, 3.2],
+        values: [
+          ...quatFromEuler(0, 0, 0),
+          ...quatFromEuler(0.18, 0, 0),
+          ...quatFromEuler(0, 0, 0),
+          ...quatFromEuler(0.12, 0, 0),
+          ...quatFromEuler(0, 0, 0),
+        ],
+      },
+    ]),
+    createAnimation(builder, "Lethargic_Lay", [
+      {
+        node: rootNode(JOINTS.BODY),
+        path: "translation",
+        times: [0, 0.8, 2.4, 3.2],
+        values: [0, 0.72, 0, 0, 0.52, 0, 0, 0.52, 0, 0, 0.72, 0],
+      },
+      {
+        node: rootNode(JOINTS.HEAD),
+        path: "rotation",
+        times: [0, 0.8, 2.4, 3.2],
+        values: [
+          ...quatFromEuler(0, 0, 0),
+          ...quatFromEuler(0.1, 0, 0.4),
+          ...quatFromEuler(0.1, 0, 0.4),
+          ...quatFromEuler(0, 0, 0),
+        ],
+      },
+    ]),
   ];
+
+  animations.push(
+    cloneAnimation(builder, "Walk_Left", "Walk", animations),
+    cloneAnimation(builder, "Walk_Right", "Walk", animations),
+    cloneAnimation(builder, "Turn_Walk_Left", "Walk", animations),
+    cloneAnimation(builder, "Turn_Walk_Right", "Walk", animations),
+    cloneAnimation(builder, "Lay_Down", "Lethargic_Lay", animations),
+    cloneAnimation(builder, "Fetch", "Jump", animations),
+    cloneAnimation(builder, "HighFive", "Paw", animations),
+    cloneAnimation(builder, "Idle_Resting", "Light_Sleep", animations)
+  );
 
   const nodes = JOINT_NODE_NAMES.map((name, index) => {
     const node = {
@@ -740,7 +1051,7 @@ function main() {
   const binary = builder.build();
   json.buffers[0].byteLength = binary.length;
 
-  const jsonBuffer = pad4(Buffer.from(JSON.stringify(json), "utf8"));
+  const jsonBuffer = padJson4(Buffer.from(JSON.stringify(json), "utf8"));
   const binBuffer = pad4(binary);
   const totalLength = 12 + 8 + jsonBuffer.length + 8 + binBuffer.length;
   const header = Buffer.alloc(12);
@@ -756,19 +1067,21 @@ function main() {
   binChunkHeader.writeUInt32LE(binBuffer.length, 0);
   binChunkHeader.write("BIN\0", 4, 4, "utf8");
 
-  fs.mkdirSync(path.dirname(OUT_PATH), { recursive: true });
-  fs.writeFileSync(
-    OUT_PATH,
-    Buffer.concat([
-      header,
-      jsonChunkHeader,
-      jsonBuffer,
-      binChunkHeader,
-      binBuffer,
-    ])
-  );
+  const glbBuffer = Buffer.concat([
+    header,
+    jsonChunkHeader,
+    jsonBuffer,
+    binChunkHeader,
+    binBuffer,
+  ]);
 
-  console.log(`Wrote ${path.relative(ROOT, OUT_PATH).replace(/\\/g, "/")}`);
+  fs.mkdirSync(OUT_DIR, { recursive: true });
+  OUT_FILES.forEach((fileName) => {
+    const outPath = path.join(OUT_DIR, fileName);
+    fs.writeFileSync(outPath, glbBuffer);
+    console.log(`Wrote ${path.relative(ROOT, outPath).replace(/\\/g, "/")}`);
+  });
+
   console.log(
     `Animations: ${animations.map((animation) => animation.name).join(", ")}`
   );

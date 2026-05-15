@@ -89,6 +89,36 @@ function resolveStaticMotion(
     };
   }
 
+  if (key === "Sniff" || actionKey.includes("sniff")) {
+    return {
+      y: -0.018 + Math.sin(t * 2.6) * 0.01,
+      xRot: 0.08 + Math.sin(t * 5.4) * 0.018,
+      yRot: Math.sin(t * 1.6) * 0.08,
+      zRot: Math.sin(t * 2.2) * 0.012,
+      x: Math.sin(t * 0.9) * 0.018,
+      z: 0.04 + Math.sin(t * 1.3) * 0.018,
+      squashY: 0.97,
+      squashZ: 1.03,
+    };
+  }
+
+  if (
+    key === "Scratch" ||
+    actionKey.includes("scratch") ||
+    actionKey.includes("dig")
+  ) {
+    return {
+      y: Math.abs(Math.sin(t * 9.2)) * 0.018,
+      xRot: 0.06 + Math.sin(t * 9.2) * 0.028,
+      yRot: Math.sin(t * 2.5) * 0.045,
+      zRot: Math.sin(t * 9.2) * 0.02,
+      x: 0,
+      z: 0.035,
+      squashY: 0.96 + Math.abs(Math.sin(t * 9.2)) * 0.025,
+      squashZ: 1.04,
+    };
+  }
+
   if (key === "Wag" || actionKey.includes("wag")) {
     return {
       y: Math.sin(t * 2.4) * 0.018,
@@ -273,7 +303,9 @@ export function Dog3D({
     const idleLike =
       desiredClip === "Idle" ||
       desiredClip === "Wag" ||
-      desiredClip === "Sleep";
+      desiredClip === "Sleep" ||
+      desiredClip === "Sniff" ||
+      desiredClip === "Scratch";
 
     if (!idleLike || motionPaused) {
       root.position.y = effectivePosition[1];
@@ -283,6 +315,14 @@ export function Dog3D({
     }
 
     const breath = ghost ? 0.012 : desiredClip === "Sleep" ? 0.018 : 0.02;
+    const actionDip =
+      desiredClip === "Sniff" ? -0.018 : desiredClip === "Scratch" ? -0.01 : 0;
+    const actionPitch =
+      desiredClip === "Sniff"
+        ? 0.07 + Math.sin(t * 5.4) * 0.014
+        : desiredClip === "Scratch"
+          ? 0.045 + Math.sin(t * 9.2) * 0.02
+          : 0;
 
     const lookYaw =
       renderMotion?.lookAround && desiredClip !== "Sleep"
@@ -296,10 +336,12 @@ export function Dog3D({
 
     root.position.y =
       effectivePosition[1] +
+      actionDip +
       Math.sin(t * (desiredClip === "Sleep" ? 1.1 : 1.8)) * breath;
 
     root.rotation.x =
       effectiveRotation[0] +
+      actionPitch +
       Math.sin(t * 0.8) * (desiredClip === "Sleep" ? 0.018 : 0.01);
 
     root.rotation.y = effectiveRotation[1] + lookYaw + wanderSway;
