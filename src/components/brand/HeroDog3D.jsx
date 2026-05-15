@@ -1,22 +1,37 @@
 /* eslint-disable react/no-unknown-property */
+// src/components/brand/HeroDog3D.jsx
+
 import { Suspense, useEffect, useMemo, useRef } from "react";
 import { Canvas } from "@react-three/fiber";
 import {
   ContactShadows,
   Environment,
-  OrbitControls,
   useAnimations,
   useGLTF,
 } from "@react-three/drei";
 import { useSelector } from "react-redux";
+import { Box3, Vector3 } from "three";
 import { clone as cloneSkeleton } from "three/examples/jsm/utils/SkeletonUtils.js";
 
 import { useDayNight } from "@/hooks/useDayNight.js";
 
-/**
- * HeroDog3D
- * Premium 3D Doggerz brand dog component for landing/adopt/marketing surfaces.
- */
+/*
+  LEARNING MODE
+
+  This file controls the small marketing/landing-page 3D dog.
+
+  Important:
+  This is not the main yard dog renderer.
+  This is the "first impression" dog shown on landing/adopt style screens.
+
+  The old version had the dog too zoomed/cropped.
+  This version:
+  1. Fits the model into the camera using its bounding box.
+  2. Keeps the dog centered.
+  3. Stops auto-rotation so the dog does not randomly face away.
+  4. Uses softer lighting.
+  5. Makes the preview look intentional instead of like a raw 3D test.
+*/
 
 const MODEL_PATH = "/assets/models/dog/jackrussell-doggerz.glb";
 
@@ -40,6 +55,12 @@ function selectUserZipSafe(state) {
   );
 }
 
+function normalizeClipName(value) {
+  return String(value || "")
+    .trim()
+    .replace(/\s+/g, "_");
+}
+
 function resolveActiveClip({
   animationName,
   mood,
@@ -47,17 +68,65 @@ function resolveActiveClip({
   actionOverride,
   happiness,
 }) {
-  if (actionOverride) return actionOverride;
+  const override = normalizeClipName(actionOverride);
+  if (override) return override;
 
   if (isSleeping) {
     return happiness < 30 ? "Deep_Rem_Sleep" : "Sleep";
   }
 
-  if (mood === "happy") return "Wag";
-  if (mood === "sad") return "Idle_Resting";
-  if (mood === "sick") return "Lethargic_Lay";
+  const moodKey = String(mood || "")
+    .trim()
+    .toLowerCase();
 
-  return animationName || "Idle";
+  if (moodKey === "happy") return "Wag";
+  if (moodKey === "sad") return "Idle_Resting";
+  if (moodKey === "sick") return "Lethargic_Lay";
+
+  return normalizeClipName(animationName) || "Idle";
+}
+
+function getModelFit(object, stage) {
+  try {
+    const box = new Box3().setFromObject(object);
+    const size = new Vector3();
+    const center = new Vector3();
+
+    box.getSize(size);
+    box.getCenter(center);
+
+    const height = Math.max(0.0001, Number(size.y || 0.0001));
+    const stageKey = String(stage || "ADULT").toUpperCase();
+
+    /*
+      The target height is the visual height inside the hero card.
+      Smaller target = dog fits better and does not crop.
+    */
+    const targetHeight =
+      stageKey === "PUPPY" ? 1.55 : stageKey === "SENIOR" ? 1.62 : 1.68;
+
+    return {
+      scale: targetHeight / height,
+      offset: [-center.x, -box.min.y, -center.z],
+    };
+  } catch {
+    return {
+      scale: 1,
+      offset: [0, 0, 0],
+    };
+  }
+}
+
+function getAvailableClip(actions, requestedClip) {
+  const actionNames = Object.keys(actions || {});
+  if (!actionNames.length) return null;
+
+  if (requestedClip && actionNames.includes(requestedClip)) {
+    return requestedClip;
+  }
+
+  if (actionNames.includes("Idle")) return "Idle";
+  return actionNames[0];
 }
 
 function DogModel({
@@ -68,13 +137,17 @@ function DogModel({
   actionOverride = null,
   happiness = 50,
 }) {
-  const group = useRef();
+  const groupRef = useRef(null);
   const { scene, animations } = useGLTF(MODEL_PATH);
 
   const clonedScene = useMemo(() => cloneSkeleton(scene), [scene]);
-  const { actions } = useAnimations(animations, group);
+  const fit = useMemo(
+    () => getModelFit(clonedScene, stage),
+    [clonedScene, stage]
+  );
+  const { actions } = useAnimations(animations, groupRef);
 
-  const activeClip = resolveActiveClip({
+  const requestedClip = resolveActiveClip({
     animationName,
     mood,
     isSleeping,
@@ -82,42 +155,46 @@ function DogModel({
     happiness,
   });
 
-  const isPuppy = String(stage).toUpperCase() === "PUPPY";
-  const modelScale = isPuppy ? 1.2 : 1.8;
-  const modelY = isPuppy ? -0.5 : -0.8;
-
   useEffect(() => {
-    const action = actions?.[activeClip] || actions?.Idle;
+    const clipName = getAvailableClip(actions, requestedClip);
+    if (!clipName) return undefined;
 
-    if (!action) {
-      console.warn(
-        `[HeroDog3D] Animation clip "${activeClip}" was not found. Available clips:`,
-        Object.keys(actions || {})
-      );
-      return undefined;
-    }
+    const nextAction = actions?.[clipName];
+    if (!nextAction) return undefined;
 
     Object.values(actions || {}).forEach((existingAction) => {
-      if (existingAction !== action) existingAction.fadeOut(0.25);
+      if (existingAction && existingAction !== nextAction) {
+        existingAction.fadeOut(0.2);
+      }
     });
 
-    action.reset().fadeIn(0.35).play();
+    nextAction.reset().fadeIn(0.25).play();
 
     return () => {
-      action.fadeOut(0.25);
+      nextAction.fadeOut(0.2);
     };
-  }, [actions, activeClip]);
+  }, [actions, requestedClip]);
 
   return (
     <group
-      ref={group}
-      scale={modelScale}
-      position={[0, modelY, 0]}
-      rotation={[0, -0.4, 0]}
+      ref={groupRef}
+      position={[0, -1.18, 0]}
+      rotation={[0, 0.22, 0]}
+      scale={fit.scale}
       dispose={null}
     >
-      <primitive object={clonedScene} />
+      <group position={fit.offset}>
+        <primitive object={clonedScene} />
+      </group>
     </group>
+  );
+}
+
+function HeroFallback() {
+  return (
+    <div className="grid h-full w-full place-items-center">
+      <div className="h-24 w-36 rounded-[50%] bg-emerald-300/15 blur-2xl" />
+    </div>
   );
 }
 
@@ -134,7 +211,6 @@ export default function HeroDog3D({
 }) {
   const reduxWeather = useSelector(selectWeatherConditionSafe);
   const zip = useSelector(selectUserZipSafe);
-
   const { timeOfDayBucket } = useDayNight({ zip });
 
   const weather = propWeather || reduxWeather || "sunny";
@@ -152,52 +228,53 @@ export default function HeroDog3D({
   );
   const isCloudy = ["cloud", "cloudy", "overcast"].includes(normalizedWeather);
 
-  let envPreset = "studio";
-
-  if (isNight) envPreset = "night";
-  else if (isSunset) envPreset = "sunset";
-  else if (isRainy) envPreset = "warehouse";
-  else if (isCloudy) envPreset = "city";
+  const envPreset = isNight
+    ? "night"
+    : isSunset
+      ? "sunset"
+      : isRainy
+        ? "warehouse"
+        : isCloudy
+          ? "city"
+          : "studio";
 
   const ambientColor = isNight
-    ? "#202040"
+    ? "#dbeafe"
     : isSunset
-      ? "#ffaa88"
+      ? "#fff1d6"
       : isRainy
-        ? "#94a3b8"
+        ? "#e2e8f0"
         : "#ffffff";
 
-  const ambientIntensity = isNight
-    ? 0.2
-    : isRainy
-      ? 0.35
-      : isCloudy
-        ? 0.5
-        : 0.8;
-
-  const modelY = String(stage).toUpperCase() === "PUPPY" ? -0.5 : -0.8;
+  const ambientIntensity = isNight ? 0.65 : isRainy ? 0.72 : 0.88;
 
   return (
     <div
-      className={`relative w-full aspect-square max-w-sm mx-auto pointer-events-none sm:pointer-events-auto ${className}`}
+      className={`relative h-full w-full overflow-hidden pointer-events-none ${className}`}
+      data-doggerz-hero-dog="3d"
     >
       <Canvas
         shadows
-        camera={{ position: [0, 1, 4], fov: 35 }}
-        dpr={[1, 2]}
+        camera={{ position: [0, 0.82, 4.9], fov: 38 }}
+        dpr={[1, 1.75]}
         gl={{ antialias: true, alpha: true }}
       >
         <ambientLight intensity={ambientIntensity} color={ambientColor} />
 
-        <spotLight
-          position={[5, 5, 5]}
-          angle={0.15}
-          penumbra={1}
-          intensity={isNight ? 0.5 : isRainy ? 0.6 : 1}
+        <directionalLight
+          position={[3.5, 4.5, 4]}
+          intensity={isNight ? 1.2 : 1.75}
+          color={isSunset ? "#fff0d6" : "#ffffff"}
           castShadow
         />
 
-        <Suspense fallback={null}>
+        <pointLight
+          position={[-2.4, 1.4, 2.8]}
+          intensity={isNight ? 1.2 : 0.7}
+          color={isNight ? "#93c5fd" : "#bbf7d0"}
+        />
+
+        <Suspense fallback={<HeroFallback />}>
           <DogModel
             mood={mood}
             isSleeping={isSleeping}
@@ -210,30 +287,20 @@ export default function HeroDog3D({
           <Environment preset={envPreset} />
 
           <ContactShadows
-            position={[0, modelY, 0]}
-            opacity={0.35}
-            scale={8}
-            blur={2}
-            far={4}
+            position={[0, -1.2, 0]}
+            opacity={0.28}
+            scale={5}
+            blur={2.4}
+            far={3.5}
           />
         </Suspense>
-
-        <OrbitControls
-          enableZoom={false}
-          enablePan={false}
-          minPolarAngle={Math.PI / 2.2}
-          maxPolarAngle={Math.PI / 2.2}
-          autoRotate
-          autoRotateSpeed={0.8}
-          makeDefault
-        />
       </Canvas>
 
       <div
-        className="absolute inset-0 -z-10 rounded-full blur-3xl"
+        className="absolute inset-0 -z-10"
         style={{
           background:
-            "radial-gradient(circle, rgba(16,185,129,0.16), transparent 65%)",
+            "radial-gradient(circle at 50% 58%, rgba(134,239,172,0.16), transparent 42%), radial-gradient(circle at 28% 18%, rgba(56,189,248,0.12), transparent 35%)",
         }}
       />
     </div>
