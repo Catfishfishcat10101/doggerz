@@ -96,3 +96,27 @@ tmp-phone-screen*.png
 
 # Local backup folders
 .backups/
+
+# Paid 3D source assets - do not commit
+_source-assets/
+*.rar
+*.blend
+*.fbx
+*.obj
+*.mtl
+
+# Paid 3D source assets - do not commit
+_source-assets/
+*.rar
+*.blend
+*.fbx
+*.obj
+*.mtl
+
+# Paid 3D source assets - keep private
+_source-assets/
+*.rar
+*.blend
+*.fbx
+*.obj
+*.mtl

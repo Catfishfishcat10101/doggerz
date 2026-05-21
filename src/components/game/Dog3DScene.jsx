@@ -1,6 +1,6 @@
 // src/components/game/Dog3DScene.jsx
 /* eslint-disable react/no-unknown-property */
-import React, { useMemo } from "react";
+import React, { Suspense, useMemo } from "react";
 import { Canvas } from "@react-three/fiber";
 
 import AnimatedDog from "@/features/game/rendering/AnimatedDog.jsx";
@@ -230,7 +230,9 @@ export function Dog3DScene({ scene = null, dogView = {} }) {
             distance={5.2}
           />
         ) : null}
-        <DogLayer scene={scene} dogView={dogView} art={art} />
+        <Suspense fallback={<DogModelFallback art={art} />}>
+          <DogLayer scene={scene} dogView={dogView} art={art} />
+        </Suspense>
         <DogStageFx scene={scene} dogView={dogView} lighting={lighting} />
       </Canvas>
     </div>

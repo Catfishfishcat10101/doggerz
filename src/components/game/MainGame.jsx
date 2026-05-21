@@ -17,6 +17,7 @@ import {
 import DogToy from "@/components/dog/components/DogToy.jsx";
 import GameTopBar from "@/components/layout/GameTopBar.jsx";
 import DogStage from "@/features/game/DogStage.jsx";
+import DogStage3D from "@/features/game/stage3d/DogStage3D.jsx";
 import MoodBadge from "@/components/game/MoodBadge.jsx";
 import MemoryMomentToast from "@/components/game/MemoryMomentToast.jsx";
 import ShareMomentCard from "@/components/game/ShareMomentCard.jsx";
@@ -115,6 +116,9 @@ import {
 import { dequeueProgressionMilestone } from "@/features/progression/progressionSlice.js";
 
 const SHARE_REWARD_COOLDOWN_MS = 12 * 60 * 60 * 1000;
+const USE_3D_STAGE =
+  String(import.meta.env.VITE_DOGGERZ_USE_3D_STAGE || "").toLowerCase() ===
+  "true";
 const BOTTOM_MENU_TABS = Object.freeze([
   { id: "interact", label: "Interact", icon: "✨" },
   { id: "train", label: "Train", icon: "🎯" },
@@ -1265,6 +1269,28 @@ export default function MainGame({ scene, dogInteractive = true }) {
   const displayMoodTone = moodPresentation?.tone || "emerald";
   const displayMoodHint = moodPresentation?.hint || "";
   const displayMoodAccent = moodPresentation?.accent || "Easygoing";
+  const temporaryYard3DDogView = useMemo(
+    () => ({
+      dog,
+      renderModel,
+      requestedAction: syncedModelAnim,
+      requestedFacing: renderModel?.facing || dog?.facing || "",
+      mood: displayMoodLabel || vitals?.moodLabel || "content",
+      paused: !dogInteractive,
+      reduceMotion,
+      scale: sceneDogScaleBias,
+    }),
+    [
+      displayMoodLabel,
+      dog,
+      dogInteractive,
+      reduceMotion,
+      renderModel,
+      sceneDogScaleBias,
+      syncedModelAnim,
+      vitals?.moodLabel,
+    ]
+  );
   const energyCritical = energyPct < 20;
   const healthCritical = healthPct < 20;
   const dockNeedMetrics = useMemo(
@@ -4840,73 +4866,82 @@ export default function MainGame({ scene, dogInteractive = true }) {
                     </div>
                   </div>
                   <div className="relative min-h-0 flex-1 overflow-hidden">
-                    <DogStage
-                      ref={dogViewportRef}
-                      id="backyard"
-                      scene={scene}
-                      environment={environmentMode}
-                      isNight={visualNight}
-                      weather={scene?.weatherKey || weatherCondition || "clear"}
-                      reduceMotion={reduceMotion}
-                      dogName={dog?.name || "Your pup"}
-                      stageLabel={stageLabel}
-                      ageValue={agePillValue}
-                      energyPct={energyPct}
-                      conditionLabel={displayMoodLabel}
-                      conditionTone={displayMoodTone}
-                      syncLabel={cloudSyncUi.label}
-                      syncDetail={
-                        cloudSyncUi.detail ||
-                        (isLoggedIn ? "Cloud save" : "Local save")
-                      }
-                      syncTone={cloudSyncUi.tone}
-                      statusPills={stageStatusPills}
-                      stageFeedback={stageFeedback}
-                      dogPositionNorm={{
-                        xNorm: clamp(
-                          Number(
-                            (sleepPositionOverride?.x ??
-                              dog?.position?.x ??
-                              DOG_WORLD_WIDTH * 0.5) / DOG_WORLD_WIDTH
+                    {USE_3D_STAGE ? (
+                      <DogStage3D
+                        scene={scene}
+                        dogView={temporaryYard3DDogView}
+                      />
+                    ) : (
+                      <DogStage
+                        ref={dogViewportRef}
+                        id="backyard"
+                        scene={scene}
+                        environment={environmentMode}
+                        isNight={visualNight}
+                        weather={
+                          scene?.weatherKey || weatherCondition || "clear"
+                        }
+                        reduceMotion={reduceMotion}
+                        dogName={dog?.name || "Your pup"}
+                        stageLabel={stageLabel}
+                        ageValue={agePillValue}
+                        energyPct={energyPct}
+                        conditionLabel={displayMoodLabel}
+                        conditionTone={displayMoodTone}
+                        syncLabel={cloudSyncUi.label}
+                        syncDetail={
+                          cloudSyncUi.detail ||
+                          (isLoggedIn ? "Cloud save" : "Local save")
+                        }
+                        syncTone={cloudSyncUi.tone}
+                        statusPills={stageStatusPills}
+                        stageFeedback={stageFeedback}
+                        dogPositionNorm={{
+                          xNorm: clamp(
+                            Number(
+                              (sleepPositionOverride?.x ??
+                                dog?.position?.x ??
+                                DOG_WORLD_WIDTH * 0.5) / DOG_WORLD_WIDTH
+                            ),
+                            0,
+                            1
                           ),
-                          0,
-                          1
-                        ),
-                        yNorm: clamp(
-                          Number(
-                            (sleepPositionOverride?.y ??
-                              dog?.position?.y ??
-                              DOG_WORLD_HEIGHT * 0.74) / DOG_WORLD_HEIGHT
+                          yNorm: clamp(
+                            Number(
+                              (sleepPositionOverride?.y ??
+                                dog?.position?.y ??
+                                DOG_WORLD_HEIGHT * 0.74) / DOG_WORLD_HEIGHT
+                            ),
+                            0,
+                            1
                           ),
-                          0,
-                          1
-                        ),
-                        moving: Boolean(isDogMoving),
-                      }}
-                      investigationProps={investigationProps}
-                      activePropId={activeInvestigationId}
-                      onPropTap={handlePropTap}
-                      pawPrints={pawPrints}
-                      fireflySeeds={fireflySeeds}
-                      showFireflies={isSummerNight}
-                      placingBowl={placingBowl}
-                      dogSleepingInDoghouse={
-                        sleepInDogHouse && effectiveDogSleeping
-                      }
-                      dogScaleBias={sceneDogScaleBias}
-                      animationSpeedMultiplier={
-                        _effectiveAnimationSpeedMultiplier
-                      }
-                      idleAnimationIntensity={idleAnimationIntensity}
-                      requestedModelAnimation={syncedModelAnim}
-                      containerClassName={`yard-viewport ${visualNight ? "yard-night" : "yard-day"} relative w-full h-full min-h-0 overflow-hidden`}
-                      rendererClassName="absolute inset-0 z-[22] pointer-events-none contrast-[1.03] saturate-[1.05]"
-                      rendererMinHeight={null}
-                      onPointerDown={handleViewportPointerDown}
-                      onPointerMove={handleViewportPointerMove}
-                      onPointerUp={handleViewportPointerUp}
-                      onPointerCancel={handleViewportPointerCancel}
-                    />
+                          moving: Boolean(isDogMoving),
+                        }}
+                        investigationProps={investigationProps}
+                        activePropId={activeInvestigationId}
+                        onPropTap={handlePropTap}
+                        pawPrints={pawPrints}
+                        fireflySeeds={fireflySeeds}
+                        showFireflies={isSummerNight}
+                        placingBowl={placingBowl}
+                        dogSleepingInDoghouse={
+                          sleepInDogHouse && effectiveDogSleeping
+                        }
+                        dogScaleBias={sceneDogScaleBias}
+                        animationSpeedMultiplier={
+                          _effectiveAnimationSpeedMultiplier
+                        }
+                        idleAnimationIntensity={idleAnimationIntensity}
+                        requestedModelAnimation={syncedModelAnim}
+                        containerClassName={`yard-viewport ${visualNight ? "yard-night" : "yard-day"} relative w-full h-full min-h-0 overflow-hidden`}
+                        rendererClassName="absolute inset-0 z-[22] pointer-events-none contrast-[1.03] saturate-[1.05]"
+                        rendererMinHeight={null}
+                        onPointerDown={handleViewportPointerDown}
+                        onPointerMove={handleViewportPointerMove}
+                        onPointerUp={handleViewportPointerUp}
+                        onPointerCancel={handleViewportPointerCancel}
+                      />
+                    )}
                     {!effectiveDogSleeping && !placingBowl ? (
                       <>
                         <DogToy
