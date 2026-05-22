@@ -1,13 +1,8 @@
 // src/features/game/rendering/dogAnimationMap.js
-import jrManifest from "@/components/dog/manifests/jrManifest.json";
 import {
   isKnownDogAnimation as isKnownLegacyDogAnimation,
   resolveDogAnimation as resolveLegacyDogAnimation,
 } from "@/animation/dogAnimationMap.js";
-import {
-  getDogAnimSpriteUrl,
-  normalizeDogStageId,
-} from "@/utils/dogSpritePaths.js";
 import { DOG_ACTIONS } from "./DogAction.js";
 
 const STABLE_DOG_LAYOUT = Object.freeze({
@@ -18,17 +13,43 @@ const STABLE_DOG_LAYOUT = Object.freeze({
 });
 
 const DEFAULT_FRAME = Object.freeze({
-  width: Math.max(1, Number(jrManifest?.frame?.width || 256)),
-  height: Math.max(1, Number(jrManifest?.frame?.height || 256)),
+  width: 1,
+  height: 1,
 });
-const DEFAULT_COLUMNS = Math.max(1, Number(jrManifest?.columns || 4));
-const DEFAULT_FPS = Math.max(1, Number(jrManifest?.defaultFps || 8));
+const DEFAULT_COLUMNS = 1;
+const DEFAULT_FPS = 8;
 const DEFAULT_DOG_STAGE = "PUPPY";
 const DEFAULT_DOG_ACTION = DOG_ACTIONS.idle;
 const ROWS = [
-  ...(Array.isArray(jrManifest?.rows) ? jrManifest.rows : []),
-  ...(Array.isArray(jrManifest?.customRows) ? jrManifest.customRows : []),
-];
+  "idle",
+  "idle_resting",
+  "walk",
+  "walk_left",
+  "walk_right",
+  "turn_walk_left",
+  "turn_walk_right",
+  "sit",
+  "sleep",
+  "eat",
+  "drink",
+  "scratch",
+  "wag",
+  "sniff",
+  "gate_watch",
+  "light_sleep",
+  "deep_rem_sleep",
+  "lethargic_lay",
+  "bark",
+  "dig",
+  "jump",
+  "fetch",
+  "beg",
+  "paw",
+  "shake",
+  "highfive",
+  "dance",
+  "lay_down",
+].map((anim) => ({ anim }));
 
 const EXPLICIT_LOOP_CLIPS = new Set([
   "idle",
@@ -128,7 +149,6 @@ function isLoopClip(clipKey) {
 
 function createAnimationContract(clipKey, stageId = DEFAULT_DOG_STAGE) {
   const normalizedClipKey = normalizeActionKey(clipKey) || DEFAULT_DOG_ACTION;
-  const resolvedStage = normalizeDogStageId(stageId || DEFAULT_DOG_STAGE);
   const sheetName = getSheetNameForClip(normalizedClipKey);
   const meta = getRowMeta(sheetName);
   const loop = isLoopClip(normalizedClipKey);
@@ -136,7 +156,7 @@ function createAnimationContract(clipKey, stageId = DEFAULT_DOG_STAGE) {
   return Object.freeze({
     action: normalizedClipKey,
     sheetName,
-    src: getDogAnimSpriteUrl(resolvedStage, sheetName),
+    stageId: String(stageId || DEFAULT_DOG_STAGE).toUpperCase(),
     fps: meta.fps,
     loop,
     oneShot: !loop,
@@ -174,7 +194,7 @@ export function resolveDogAnimationClipKey(
 }
 
 export function getDogAnimationCatalog(stageLike = DEFAULT_DOG_STAGE) {
-  const stageId = normalizeDogStageId(stageLike || DEFAULT_DOG_STAGE);
+  const stageId = String(stageLike || DEFAULT_DOG_STAGE).toUpperCase();
   const cached = CATALOG_CACHE.get(stageId);
   if (cached) return cached;
 
@@ -228,7 +248,7 @@ export function resolveDogAnimationContract(
   actionLike,
   stageLike = DEFAULT_DOG_STAGE
 ) {
-  const stageId = normalizeDogStageId(stageLike || DEFAULT_DOG_STAGE);
+  const stageId = String(stageLike || DEFAULT_DOG_STAGE).toUpperCase();
   const catalog = getDogAnimationCatalog(stageId);
   const clipKey = resolveDogAnimationClipKey(actionLike, DEFAULT_DOG_ACTION);
   return catalog[clipKey] || catalog[DEFAULT_DOG_ACTION];

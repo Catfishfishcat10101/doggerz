@@ -1,9 +1,14 @@
 // src/pages/About.jsx
+/* eslint-disable react/no-unknown-property */
 
+import { Suspense } from "react";
 import { Link } from "react-router-dom";
+import * as THREE from "three";
+import { Canvas } from "@react-three/fiber";
+import { ContactShadows } from "@react-three/drei";
 
 import { PATHS } from "@/app/routes.js";
-import HeroDog from "@/components/dog/renderers/HeroDog.jsx";
+import JackRussellModel from "@/components/dog/three/JackRussellModel.jsx";
 import PageShell from "@/components/layout/PageShell.jsx";
 import { PageHeader } from "@/components/layout/PageSections.jsx";
 
@@ -45,6 +50,51 @@ const TOUR_STATS = [
   { label: "Temperament", value: "Shaped by choices" },
   { label: "Training", value: "Unlocked by care" },
 ];
+
+function AboutDogPreview3D() {
+  return (
+    <Canvas
+      shadows
+      dpr={[1, 1.5]}
+      camera={{ position: [0.08, 1.05, 4.6], fov: 30, near: 0.1, far: 100 }}
+      gl={{
+        antialias: true,
+        alpha: true,
+        powerPreference: "high-performance",
+        toneMapping: THREE.ACESFilmicToneMapping,
+        outputColorSpace: THREE.SRGBColorSpace,
+      }}
+    >
+      <ambientLight intensity={1.3} />
+      <hemisphereLight
+        skyColor="#d7f7ff"
+        groundColor="#0f172a"
+        intensity={1.4}
+      />
+      <directionalLight position={[3.5, 5, 4]} intensity={2.5} castShadow />
+      <pointLight position={[-2.5, 1.75, 3]} intensity={0.8} color="#9fffea" />
+
+      <Suspense fallback={null}>
+        <JackRussellModel
+          autoCenter
+          animationName="Idle_1"
+          animationSpeed={0.85}
+          scale={2.35}
+          position={[0, -0.84, 0]}
+          rotation={[0, Math.PI * 0.02, 0]}
+        />
+      </Suspense>
+
+      <ContactShadows
+        position={[0, -0.86, 0]}
+        opacity={0.34}
+        scale={4.4}
+        blur={2.6}
+        far={2.2}
+      />
+    </Canvas>
+  );
+}
 
 export default function AboutPage() {
   return (
@@ -164,14 +214,8 @@ export default function AboutPage() {
               </div>
               <div className="mt-4 flex items-center gap-4">
                 <div className="h-24 w-24 rounded-2xl border border-white/10 bg-black/40 p-2">
-                  <div className="flex h-full w-full items-end justify-center rounded-xl">
-                    <HeroDog
-                      stage="PUPPY"
-                      variant="card"
-                      anim="idle"
-                      animationPreset="idle-sniff"
-                      className="select-none"
-                    />
+                  <div className="h-full w-full overflow-hidden rounded-xl bg-[radial-gradient(circle_at_50%_28%,rgba(134,239,172,0.18),transparent_42%),linear-gradient(180deg,rgba(15,23,42,0.82),rgba(2,6,23,0.96))]">
+                    <AboutDogPreview3D />
                   </div>
                 </div>
                 <div>

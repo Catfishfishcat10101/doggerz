@@ -112,9 +112,6 @@ export function getLifeStageProgressLabel(ageInfo) {
 }
 
 export function getSpriteForLifeStage(stageId) {
-  const key = String(stageId || "PUPPY")
-    .trim()
-    .toUpperCase();
-  const stage = key === "ADULT" ? "adult" : key === "SENIOR" ? "senior" : "pup";
-  return withBaseUrl(`/assets/sprites/jr/${stage}_clean.png`);
+  void stageId;
+  return withBaseUrl("/assets/icons/icon-192.png");
 }

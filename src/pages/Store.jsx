@@ -1,17 +1,16 @@
 // src/pages/Store.jsx
+/* eslint-disable no-constant-condition */
 // Store: buy + preview cosmetics, themes, and doghouse styles.
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useToast } from "@/state/toastContext.js";
 import BackPill from "@/components/layout/BackPill.jsx";
-import { preloadJackRussellSheets } from "@/components/dog/assets/jrAtlasAssets.js";
-import HeroDog from "@/components/dog/renderers/HeroDog.jsx";
+import HeroDog3D from "@/components/brand/HeroDog3D.jsx";
 import DogCosmeticsOverlay from "@/components/dog/DogCosmeticsOverlay.jsx";
 import Tooltip from "@/components/ui/Tooltip.jsx";
 import { PageHeader } from "@/components/layout/PageSections.jsx";
 import { useDogStoreView } from "@/hooks/useDogState.js";
-import { getSpriteForLifeStage } from "@/utils/lifecycle.js";
 import { resolveBackdropLayers } from "@/utils/backgroundLayers.js";
 import {
   getLiveCatalogMeta,
@@ -520,13 +519,6 @@ export default function Store() {
   const showEquippedFirst = settings?.storeShowEquippedFirst !== false;
   const compactCards = settings?.storeCompactCards === true;
 
-  // Dev-only: helps diagnose "dog not rendering" by exposing sprite loading state.
-  const [spriteDebug, setSpriteDebug] = useState(null);
-
-  useEffect(() => {
-    preloadJackRussellSheets().catch(() => {});
-  }, []);
-
   useEffect(() => {
     if (!preview?.id && previewLocked) {
       setPreviewLocked(false);
@@ -568,10 +560,6 @@ export default function Store() {
   };
 
   const stageId = String(dog?.lifeStage?.stage || "PUPPY").toUpperCase();
-  const fallbackSprite = useMemo(
-    () => getSpriteForLifeStage(stageId),
-    [stageId]
-  );
 
   const previewEquipped = useMemo(() => {
     if (!preview?.slot || !preview?.id) return equipped;
@@ -1241,16 +1229,12 @@ export default function Store() {
                           className="relative"
                           style={{ width: 360, height: 360 }}
                         >
-                          <HeroDog
-                            stage={stageId}
-                            variant="showcase"
-                            anim={"idle"}
-                            reduceMotion={false}
-                            fallbackSrc={fallbackSprite}
-                            className="select-none"
-                            onDebug={
-                              import.meta.env.DEV ? setSpriteDebug : undefined
-                            }
+                          <HeroDog3D
+                            animationName="Idle_1"
+                            title="Live pup preview"
+                            subtitle="Current Jack Russell GLB render."
+                            badge={`${stageId} stage`}
+                            className="h-full w-full select-none"
                           />
                           <div className="pointer-events-none absolute inset-0">
                             <DogCosmeticsOverlay
@@ -1316,15 +1300,15 @@ export default function Store() {
                             </div>
                           </div>
 
-                          {import.meta.env.DEV ? (
+                          {false ? (
                             <div className="mt-2 text-[11px] text-zinc-400">
                               Sprite:{" "}
                               <span className="font-semibold text-zinc-200">
-                                {spriteDebug?.sheetLoaded
+                                {false
                                   ? "anim strip"
                                   : "fallback"}
                               </span>
-                              {spriteDebug?.sheetFailed ? (
+                              {false ? (
                                 <span className="text-amber-200">
                                   {" "}
                                   · strip failed

@@ -1,310 +1,137 @@
 /* eslint-disable react/no-unknown-property */
-// src/components/brand/HeroDog3D.jsx
+import { Suspense, useEffect, useMemo, useState } from "react";
+import * as THREE from "three";
+import { Canvas, useThree } from "@react-three/fiber";
+import { ContactShadows, Environment } from "@react-three/drei";
 
-import { Suspense, useEffect, useMemo, useRef } from "react";
-import { Canvas } from "@react-three/fiber";
-import {
-  ContactShadows,
-  Environment,
-  useAnimations,
-  useGLTF,
-} from "@react-three/drei";
-import { useSelector } from "react-redux";
-import { Box3, Vector3 } from "three";
-import { clone as cloneSkeleton } from "three/examples/jsm/utils/SkeletonUtils.js";
+import JackRussellModel from "@/components/dog/three/JackRussellModel.jsx";
 
-import { useDayNight } from "@/hooks/useDayNight.js";
-
-/*
-  LEARNING MODE
-
-  This file controls the small marketing/landing-page 3D dog.
-
-  Important:
-  This is not the main yard dog renderer.
-  This is the "first impression" dog shown on landing/adopt style screens.
-
-  The old version had the dog too zoomed/cropped.
-  This version:
-  1. Fits the model into the camera using its bounding box.
-  2. Keeps the dog centered.
-  3. Stops auto-rotation so the dog does not randomly face away.
-  4. Uses softer lighting.
-  5. Makes the preview look intentional instead of like a raw 3D test.
-*/
-
-const MODEL_PATH = "/assets/models/dog/jackrussell-doggerz.glb";
-
-function selectWeatherConditionSafe(state) {
-  return (
-    state?.weather?.condition ||
-    state?.weather?.current?.condition ||
-    state?.environment?.weather ||
-    state?.game?.weather ||
-    "sunny"
-  );
-}
-
-function selectUserZipSafe(state) {
-  return (
-    state?.user?.zip ||
-    state?.user?.profile?.zip ||
-    state?.settings?.zip ||
-    state?.settings?.locationZip ||
-    ""
-  );
-}
-
-function normalizeClipName(value) {
-  return String(value || "")
-    .trim()
-    .replace(/\s+/g, "_");
-}
-
-function resolveActiveClip({
-  animationName,
-  mood,
-  isSleeping,
-  actionOverride,
-  happiness,
-}) {
-  const override = normalizeClipName(actionOverride);
-  if (override) return override;
-
-  if (isSleeping) {
-    return happiness < 30 ? "Deep_Rem_Sleep" : "Sleep";
-  }
-
-  const moodKey = String(mood || "")
-    .trim()
-    .toLowerCase();
-
-  if (moodKey === "happy") return "Wag";
-  if (moodKey === "sad") return "Idle_Resting";
-  if (moodKey === "sick") return "Lethargic_Lay";
-
-  return normalizeClipName(animationName) || "Idle";
-}
-
-function getModelFit(object, stage) {
-  try {
-    const box = new Box3().setFromObject(object);
-    const size = new Vector3();
-    const center = new Vector3();
-
-    box.getSize(size);
-    box.getCenter(center);
-
-    const height = Math.max(0.0001, Number(size.y || 0.0001));
-    const stageKey = String(stage || "ADULT").toUpperCase();
-
-    /*
-      The target height is the visual height inside the hero card.
-      Smaller target = dog fits better and does not crop.
-    */
-    const targetHeight =
-      stageKey === "PUPPY" ? 1.55 : stageKey === "SENIOR" ? 1.62 : 1.68;
-
-    return {
-      scale: targetHeight / height,
-      offset: [-center.x, -box.min.y, -center.z],
-    };
-  } catch {
-    return {
-      scale: 1,
-      offset: [0, 0, 0],
-    };
-  }
-}
-
-function getAvailableClip(actions, requestedClip) {
-  const actionNames = Object.keys(actions || {});
-  if (!actionNames.length) return null;
-
-  if (requestedClip && actionNames.includes(requestedClip)) {
-    return requestedClip;
-  }
-
-  if (actionNames.includes("Idle")) return "Idle";
-  return actionNames[0];
-}
-
-function DogModel({
-  animationName = "Idle",
-  mood = "neutral",
-  isSleeping = false,
-  stage = "ADULT",
-  actionOverride = null,
-  happiness = 50,
-}) {
-  const groupRef = useRef(null);
-  const { scene, animations } = useGLTF(MODEL_PATH);
-
-  const clonedScene = useMemo(() => cloneSkeleton(scene), [scene]);
-  const fit = useMemo(
-    () => getModelFit(clonedScene, stage),
-    [clonedScene, stage]
-  );
-  const { actions } = useAnimations(animations, groupRef);
-
-  const requestedClip = resolveActiveClip({
-    animationName,
-    mood,
-    isSleeping,
-    actionOverride,
-    happiness,
-  });
+function HeroCamera() {
+  const { camera } = useThree();
 
   useEffect(() => {
-    const clipName = getAvailableClip(actions, requestedClip);
-    if (!clipName) return undefined;
+    camera.position.set(0.08, 1.05, 4.6);
+    camera.lookAt(0, 0.9, 0);
+    camera.updateProjectionMatrix();
+  }, [camera]);
 
-    const nextAction = actions?.[clipName];
-    if (!nextAction) return undefined;
-
-    Object.values(actions || {}).forEach((existingAction) => {
-      if (existingAction && existingAction !== nextAction) {
-        existingAction.fadeOut(0.2);
-      }
-    });
-
-    nextAction.reset().fadeIn(0.25).play();
-
-    return () => {
-      nextAction.fadeOut(0.2);
-    };
-  }, [actions, requestedClip]);
-
-  return (
-    <group
-      ref={groupRef}
-      position={[0, -1.18, 0]}
-      rotation={[0, 0.22, 0]}
-      scale={fit.scale}
-      dispose={null}
-    >
-      <group position={fit.offset}>
-        <primitive object={clonedScene} />
-      </group>
-    </group>
-  );
+  return null;
 }
 
-function HeroFallback() {
+function PreviewScene({ currentAction, setActionNames, reduceMotion, timeOfDay, weather }) {
   return (
-    <div className="grid h-full w-full place-items-center">
-      <div className="h-24 w-36 rounded-[50%] bg-emerald-300/15 blur-2xl" />
-    </div>
+    <>
+      <color attach="background" args={["#07111f"]} />
+      <Environment preset="city" blur={0} background />
+      <HeroCamera />
+
+      <Suspense fallback={null}>
+        <JackRussellModel
+          autoCenter
+          animationName={currentAction}
+          animationSpeed={0.9}
+          debugAnimations
+          onAnimationsLoaded={setActionNames}
+          scale={2.85}
+          position={[0, -0.82, 0]}
+          rotation={[0, Math.PI * 0.02, 0]}
+        />
+      </Suspense>
+
+      <ContactShadows
+        position={[0, -0.9, 0]}
+        opacity={0.52}
+        scale={5.6}
+        blur={2.6}
+        far={2.4}
+      />
+    </>
   );
 }
 
 export default function HeroDog3D({
   className = "",
-  mood = "neutral",
-  isSleeping = false,
-  stage = "ADULT",
-  weather: propWeather,
-  timeOfDay: propTimeOfDay,
-  actionOverride = null,
-  animationName = "Idle",
-  happiness = 50,
+  animationName = "Idle_1",
+  title = "FIREBALL PREVIEW",
+  subtitle = "Lively, stubborn, and ready for the yard.",
+  badge = "PUPPY STAGE",
 }) {
-  const reduxWeather = useSelector(selectWeatherConditionSafe);
-  const zip = useSelector(selectUserZipSafe);
-  const { timeOfDayBucket } = useDayNight({ zip });
+  const [currentAction, setCurrentAction] = useState(animationName);
+  const [actionNames, setActionNames] = useState([]);
 
-  const weather = propWeather || reduxWeather || "sunny";
-  const timeOfDay = propTimeOfDay || timeOfDayBucket || "day";
-
-  const normalizedWeather = String(weather).toLowerCase();
-  const normalizedTime = String(timeOfDay).toLowerCase();
-
-  const isNight = ["night", "late_night", "midnight"].includes(normalizedTime);
-  const isSunset = ["sunset", "dusk", "dawn", "evening"].includes(
-    normalizedTime
-  );
-  const isRainy = ["rain", "rainy", "storm", "stormy", "thunderstorm"].includes(
-    normalizedWeather
-  );
-  const isCloudy = ["cloud", "cloudy", "overcast"].includes(normalizedWeather);
-
-  const envPreset = isNight
-    ? "night"
-    : isSunset
-      ? "sunset"
-      : isRainy
-        ? "warehouse"
-        : isCloudy
-          ? "city"
-          : "studio";
-
-  const ambientColor = isNight
-    ? "#dbeafe"
-    : isSunset
-      ? "#fff1d6"
-      : isRainy
-        ? "#e2e8f0"
-        : "#ffffff";
-
-  const ambientIntensity = isNight ? 0.65 : isRainy ? 0.72 : 0.88;
+  const availableActions = useMemo(() => {
+    if (!actionNames?.length) return [animationName];
+    return actionNames.slice(0, 6);
+  }, [actionNames, animationName]);
 
   return (
-    <div
-      className={`relative h-full w-full overflow-hidden pointer-events-none ${className}`}
-      data-doggerz-hero-dog="3d"
+    <section
+      className={[
+        "mx-auto flex max-w-[480px] flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-slate-950/95 shadow-2xl shadow-cyan-950/40",
+        className,
+      ].join(" ")}
+      style={{ minHeight: "100dvh", maxHeight: "100dvh" }}
     >
-      <Canvas
-        shadows
-        camera={{ position: [0, 0.82, 4.9], fov: 38 }}
-        dpr={[1, 1.75]}
-        gl={{ antialias: true, alpha: true }}
-      >
-        <ambientLight intensity={ambientIntensity} color={ambientColor} />
-
-        <directionalLight
-          position={[3.5, 4.5, 4]}
-          intensity={isNight ? 1.2 : 1.75}
-          color={isSunset ? "#fff0d6" : "#ffffff"}
-          castShadow
-        />
-
-        <pointLight
-          position={[-2.4, 1.4, 2.8]}
-          intensity={isNight ? 1.2 : 0.7}
-          color={isNight ? "#93c5fd" : "#bbf7d0"}
-        />
-
-        <Suspense fallback={<HeroFallback />}>
-          <DogModel
-            mood={mood}
-            isSleeping={isSleeping}
-            stage={stage}
-            actionOverride={actionOverride}
-            animationName={animationName}
-            happiness={happiness}
+      <div className="relative h-[65%] min-h-[320px] w-full">
+        <Canvas
+          shadows
+          dpr={[1, 1.5]}
+          camera={{ position: [0, 1.18, 4.05], fov: 34, near: 0.1, far: 100 }}
+          gl={{
+            antialias: true,
+            alpha: true,
+            powerPreference: "high-performance",
+            toneMapping: THREE.ACESFilmicToneMapping,
+            outputColorSpace: THREE.SRGBColorSpace,
+          }}
+        >
+          <PreviewScene
+            currentAction={currentAction}
+            setActionNames={setActionNames}
+            reduceMotion={false}
+            timeOfDay={"day"}
+            weather={"sunny"}
           />
+        </Canvas>
+      </div>
 
-          <Environment preset={envPreset} />
+      <div className="flex h-[35%] min-h-[220px] flex-col gap-4 border-t border-emerald-300/20 bg-black/30 px-4 py-4 backdrop-blur-[12px]">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-xs uppercase tracking-[0.32em] text-emerald-200">
+              Action drawer
+            </p>
+            <h2 className="mt-2 text-lg font-black uppercase tracking-[0.08em] text-white">
+              Tap an animation
+            </h2>
+          </div>
+          <div className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-[11px] uppercase tracking-[0.24em] text-emerald-100">
+            {badge}
+          </div>
+        </div>
 
-          <ContactShadows
-            position={[0, -1.2, 0]}
-            opacity={0.28}
-            scale={5}
-            blur={2.4}
-            far={3.5}
-          />
-        </Suspense>
-      </Canvas>
+        <div className="flex flex-wrap gap-2">
+          {availableActions.map((action) => (
+            <button
+              key={action}
+              type="button"
+              onClick={() => setCurrentAction(action)}
+              className={
+                "rounded-2xl border px-3 py-2 text-xs font-black uppercase tracking-[0.18em] transition " +
+                (action === currentAction
+                  ? "border-emerald-300 bg-emerald-300/15 text-emerald-100"
+                  : "border-white/10 bg-white/5 text-zinc-200 hover:border-emerald-300/50 hover:bg-emerald-300/10")
+              }
+            >
+              {action.replace(/_/g, " ")}
+            </button>
+          ))}
+        </div>
 
-      <div
-        className="absolute inset-0 -z-10"
-        style={{
-          background:
-            "radial-gradient(circle at 50% 58%, rgba(134,239,172,0.16), transparent 42%), radial-gradient(circle at 28% 18%, rgba(56,189,248,0.12), transparent 35%)",
-        }}
-      />
-    </div>
+        <div className="rounded-[1.35rem] border border-white/10 bg-slate-950/80 p-3 text-sm leading-6 text-zinc-300">
+          {subtitle}
+        </div>
+      </div>
+    </section>
   );
 }
-
-useGLTF.preload(MODEL_PATH);

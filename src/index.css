@@ -1021,6 +1021,14 @@ a {
   animation: doggerz-float 3.2s ease-in-out infinite;
 }
 
+/* Animation delay utilities for staggered effects */
+.animation-delay-200 {
+  animation-delay: 200ms;
+}
+
+.animation-delay-400 {
+  animation-delay: 400ms;
+}
 /* =========================================================
    8. RESPONSIVE / ACCESSIBILITY
    ========================================================= */

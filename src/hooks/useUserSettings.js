@@ -2,6 +2,7 @@
 /** @format */
 
 import { createSelector } from "@reduxjs/toolkit";
+import { useMemo } from "react";
 import { shallowEqual } from "react-redux";
 import { useAppDispatch, useAppSelector } from "@/store/hooks.js";
 import {
@@ -120,13 +121,16 @@ export function useUserSettingsView() {
 
 export function useUserActions() {
   const dispatch = useAppDispatch();
-  return {
-    setZip: (payload) => dispatch(setZip(payload)),
-    setDogRenderMode: (payload) => dispatch(setDogRenderMode(payload)),
-    setDogName: (payload) => dispatch(setDogName(payload)),
-    setPreferredScene: (payload) => dispatch(setPreferredScene(payload)),
-    setReduceVfx: (payload) => dispatch(setReduceVfx(payload)),
-    setUiDensity: (payload) => dispatch(setUiDensity(payload)),
-    setLocale: (payload) => dispatch(setLocale(payload)),
-  };
+  return useMemo(
+    () => ({
+      setZip: (payload) => dispatch(setZip(payload)),
+      setDogRenderMode: (payload) => dispatch(setDogRenderMode(payload)),
+      setDogName: (payload) => dispatch(setDogName(payload)),
+      setPreferredScene: (payload) => dispatch(setPreferredScene(payload)),
+      setReduceVfx: (payload) => dispatch(setReduceVfx(payload)),
+      setUiDensity: (payload) => dispatch(setUiDensity(payload)),
+      setLocale: (payload) => dispatch(setLocale(payload)),
+    }),
+    [dispatch]
+  );
 }

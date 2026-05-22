@@ -1,11 +1,6 @@
 // src/components/dog/redux/dogSelectors.js
 
 import { createSelector } from "@reduxjs/toolkit";
-import {
-  getDogPixiSheetUrl,
-  getDogStageLabel,
-  getDogStaticSpriteUrl,
-} from "@/utils/dogSpritePaths.js";
 import { derivePersonalityAnimationHint } from "@/features/dog/dogEngine.js";
 import { derivePersonalityProfile } from "@/features/dog/personalityProfile.js";
 import {
@@ -47,6 +42,13 @@ function resolveDog(stateOrDog) {
   return selectDog(stateOrDog) || EMPTY_DOG;
 }
 
+function getDogStageLabel(stage) {
+  const key = String(stage || "").toLowerCase();
+  if (key.includes("senior")) return "Senior";
+  if (key.includes("adult")) return "Adult";
+  return "Puppy";
+}
+
 export function selectDogRenderParams(stateOrDog) {
   const dog = resolveDog(stateOrDog);
   return resolveDogAnimationState(dog);
@@ -69,9 +71,6 @@ function buildDogRenderModel(stateOrDog) {
     ? 1.55
     : 1;
 
-  const staticSpriteUrl = getDogStaticSpriteUrl(stage);
-  const pixiSheetUrl = getDogPixiSheetUrl(stage, condition);
-  const pixiSheetFallbackUrl = getDogPixiSheetUrl(stage, "clean");
   const identityProfile =
     dog?.identity && typeof dog.identity === "object" ? dog.identity : null;
 
@@ -94,9 +93,6 @@ function buildDogRenderModel(stateOrDog) {
     ghostSyncRate: Number(dog?.legacyJourney?.spiritSyncRate || 0),
     ghostMimicAction: dog?.legacyJourney?.ghostMimicAction || null,
     ghostMimicMatch: Boolean(dog?.legacyJourney?.ghostMimicMatch),
-    staticSpriteUrl,
-    pixiSheetUrl,
-    pixiSheetFallbackUrl,
   };
 }
 
@@ -141,5 +137,5 @@ export function selectDogSpriteHint(stateOrDog) {
     .replace(/\s+/g, "_")
     .replace(/[^a-z0-9_]/g, "");
 
-  return `${breed}_${stage}_${condition}.png`;
+  return `${breed}_${stage}_${condition}`;
 }

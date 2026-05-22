@@ -2,6 +2,7 @@
 /** @format */
 
 import { createSelector } from "@reduxjs/toolkit";
+import { useMemo } from "react";
 import { shallowEqual } from "react-redux";
 import { useAppDispatch, useAppSelector } from "@/store/hooks.js";
 import {
@@ -345,14 +346,17 @@ export function useDogVacation() {
 
 export function useDogActions() {
   const dispatch = useAppDispatch();
-  return {
-    quickFeed: (payload) => dispatch(quickFeed(payload)),
-    feed: (payload) => dispatch(feed(payload)),
-    play: (payload) => dispatch(play(payload)),
-    petDog: (payload) => dispatch(petDog(payload)),
-    bathe: (payload) => dispatch(bathe(payload)),
-    goPotty: (payload) => dispatch(goPotty(payload)),
-    giveWater: (payload) => dispatch(giveWater(payload)),
-    trainObedience: (payload) => dispatch(trainObedience(payload)),
-  };
+  return useMemo(
+    () => ({
+      quickFeed: (payload) => dispatch(quickFeed(payload)),
+      feed: (payload) => dispatch(feed(payload)),
+      play: (payload) => dispatch(play(payload)),
+      petDog: (payload) => dispatch(petDog(payload)),
+      bathe: (payload) => dispatch(bathe(payload)),
+      goPotty: (payload) => dispatch(goPotty(payload)),
+      giveWater: (payload) => dispatch(giveWater(payload)),
+      trainObedience: (payload) => dispatch(trainObedience(payload)),
+    }),
+    [dispatch]
+  );
 }

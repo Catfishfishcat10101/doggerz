@@ -5,12 +5,7 @@ const path = require("node:path");
 
 const ROOT = process.cwd();
 const OUT_DIR = path.join(ROOT, "public", "assets", "models", "dog");
-const OUT_FILES = Object.freeze([
-  "jackrussell-doggerz.glb",
-  "jackrussell-puppy.glb",
-  "jackrussell-adult.glb",
-  "jackrussell-senior.glb",
-]);
+const OUT_FILES = Object.freeze(["jackrussell-doggerz.glb"]);
 
 const COMPONENT = Object.freeze({
   FLOAT: 5126,

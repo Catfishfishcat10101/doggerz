@@ -6,37 +6,40 @@ const path = require("node:path");
 
 const ROOT = process.cwd();
 const MODEL_DIR = path.join(ROOT, "public", "assets", "models", "dog");
-const REQUIRED_STAGE_MODELS = Object.freeze([
-  "jackrussell-doggerz.glb",
-  "jackrussell-puppy.glb",
-  "jackrussell-adult.glb",
-  "jackrussell-senior.glb",
+const REQUIRED_STAGE_MODELS = Object.freeze(["jackrussell-doggerz.glb"]);
+const REQUIRED_CLIPS = Object.freeze([
+  "Idle_1",
+  "Walk_F_IP",
+  "Sitting_loop_1",
+  "Lie_Sleep_loop",
 ]);
-const REQUIRED_CLIPS = Object.freeze(["Idle", "Walk", "Sit", "Sleep", "Wag"]);
 
 const OPTIONAL_CLIPS = Object.freeze([
-  "Walk_Left",
-  "Walk_Right",
-  "Turn_Walk_Left",
-  "Turn_Walk_Right",
+  "Idle_2",
+  "Idle_3",
+  "Idle_4",
+  "Idle_5_loop",
+  "Idle_6",
+  "Idle_7",
   "Bark",
-  "Scratch",
-  "Eat",
-  "Lay_Down",
-  "Jump",
-  "Fetch",
-  "Beg",
-  "Paw",
-  "Shake",
-  "HighFive",
-  "Dance",
-  "GateWatch",
-  "Idle_Resting",
-  "Light_Sleep",
-  "Deep_Rem_Sleep",
-  "Drink",
-  "Sniff",
-  "Lethargic_Lay",
+  "Digging_loop",
+  "Drink_loop",
+  "Eat_loop",
+  "Jump_Place_IP",
+  "Lie_belly_loop_1",
+  "Lie_belly_sleep",
+  "Lie_loop_1",
+  "Run_F_IP",
+  "Scratching",
+  "Sitting_loop_2",
+  "Trot_F_IP",
+  "Trot_L_IP",
+  "Trot_R_IP",
+  "Turn_L_IP",
+  "Turn_R_IP",
+  "Walk_B_IP",
+  "Walk_L_IP",
+  "Walk_R_IP",
 ]);
 
 const KNOWN_CLIPS = Object.freeze([...REQUIRED_CLIPS, ...OPTIONAL_CLIPS]);

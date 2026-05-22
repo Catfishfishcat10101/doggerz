@@ -1,7 +1,7 @@
 /** @format */
 
 // src/utils/dogSpritePaths.js
-// Sprite asset path helpers for static renders and Pixi sheets.
+// Legacy stage normalization helpers kept for cosmetic metadata.
 
 import { withBaseUrl } from "@/utils/assetUtils.js";
 
@@ -14,87 +14,7 @@ export const DOG_CONDITION_IDS = Object.freeze([
   "mange",
 ]);
 
-const AVAILABLE_STAGE_CONDITION_FILES = Object.freeze({
-  adult: Object.freeze(new Set(["clean"])),
-  pup: Object.freeze(new Set(["clean"])),
-  senior: Object.freeze(new Set(["clean"])),
-});
-
-const AVAILABLE_STAGE_ANIMATION_FILES = Object.freeze({
-  adult: Object.freeze(new Set()),
-  pup: Object.freeze(
-    new Set([
-      "bark",
-      "beg",
-      "dance",
-      "deep_rem_sleep",
-      "drink",
-      "eat",
-      "fetch",
-      "gate_watch",
-      "highfive",
-      "idle",
-      "idle_resting",
-      "jump",
-      "lay_down",
-      "lethargic_lay",
-      "light_sleep",
-      "paw",
-      "scratch",
-      "shake",
-      "sit",
-      "sleep",
-      "sniff",
-      "turn_walk_left",
-      "turn_walk_right",
-      "wag",
-      "walk",
-      "walk_left",
-      "walk_right",
-    ])
-  ),
-  senior: Object.freeze(new Set()),
-});
-
-const DEFAULT_SPRITE_DIR = "/assets/sprites";
 const DEFAULT_ATLAS_DIR = "/assets/atlas";
-const DOG_SPRITE_REV = "2026-03-30-jrt-puppy-round-3";
-const DOG_SPRITE_FILE_ALIASES = Object.freeze({
-  bark: "bark",
-  beg: "beg",
-  bow: "bow",
-  crawl: "walk",
-  dance: "dance",
-  dig: "scratch",
-  digging: "scratch",
-  eat: "eat",
-  fetch: "fetch",
-  gate_watch: "gate_watch",
-  highfive: "highfive",
-  idle_resting: "idle_resting",
-  jump: "jump",
-  lay_down: "lay_down",
-  lethargic_lay: "lethargic_lay",
-  light_sleep: "light_sleep",
-  limping: "walk",
-  paw: "paw",
-  play_dead: "deep_rem_sleep",
-  point_position: "bark",
-  roll_over: "fetch",
-  scratch: "scratch",
-  shake: "shake",
-  shivering: "idle",
-  sit: "sit",
-  sleep: "sleep",
-  sniff: "sniff",
-  spin: "dance",
-  stay: "bark",
-  walk_right: "sniff",
-  territorial_bark: "bark",
-  thrashing: "dance",
-  wag: "wag",
-  wave: "bow",
-});
 
 export const DOG_STAGE_LABEL_BY_STAGE_ID = Object.freeze({
   PUPPY: "Puppy",
@@ -153,53 +73,21 @@ export function getDogStageLabel(stageLike) {
   return DOG_STAGE_LABEL_BY_STAGE_ID[id] || "Puppy";
 }
 
-/**
- * Static fallback sprite used while strips load (or if strips fail).
- */
 export function getDogStaticSpriteUrl(_stageLike) {
-  // Until the full staged sprite set is regenerated, use the authored puppy
-  // idle sheet as the single stable static fallback across the app.
-  return withBaseUrl(
-    `${DEFAULT_SPRITE_DIR}/jr/pup_idle.png?v=${DOG_SPRITE_REV}`
-  );
+  void _stageLike;
+  return withBaseUrl("/assets/icons/icon-192.png");
 }
 
-/**
- * Pixi sheet path: /assets/sprites/jr/<stage>_<condition>.png
- */
 export function getDogPixiSheetUrl(_stageLike, _conditionLike) {
-  const stage = normalizeDogStageShort(_stageLike);
-  const condition = normalizeDogConditionId(_conditionLike);
-  const stageConditions = AVAILABLE_STAGE_CONDITION_FILES[stage];
-  const routedCondition =
-    stageConditions?.has(condition) || !stageConditions?.has("clean")
-      ? condition
-      : "clean";
-  return withBaseUrl(
-    `${DEFAULT_SPRITE_DIR}/jr/${stage}_${routedCondition}.png?v=${DOG_SPRITE_REV}`
-  );
+  void _stageLike;
+  void _conditionLike;
+  return withBaseUrl("/assets/icons/icon-192.png");
 }
 
-/**
- * Preferred custom sprite sheets dropped in /public/assets/sprites/jr.
- * These are animation-specific files and are used before generic stage_condition sheets.
- */
 export function getDogAnimSpriteUrl(_stageLike, _animLike) {
-  const stage = normalizeDogStageShort(_stageLike);
-  const anim = String(_animLike || "idle")
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, "_")
-    .replace(/-+/g, "_");
-  const assetAnim = DOG_SPRITE_FILE_ALIASES[anim] || anim;
-  const routedStage = AVAILABLE_STAGE_ANIMATION_FILES[stage]?.has(assetAnim)
-    ? stage
-    : AVAILABLE_STAGE_ANIMATION_FILES.pup.has(assetAnim)
-      ? "pup"
-      : stage;
-  return withBaseUrl(
-    `${DEFAULT_SPRITE_DIR}/jr/${routedStage}_${assetAnim}.png?v=${DOG_SPRITE_REV}`
-  );
+  void _stageLike;
+  void _animLike;
+  return withBaseUrl("/assets/icons/icon-192.png");
 }
 
 /**

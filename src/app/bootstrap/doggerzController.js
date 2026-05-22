@@ -1,6 +1,5 @@
 // src/app/bootstrap/doggerzController.js
 import store from "@/store/store.js";
-import { resolveDogAnimation } from "@/animation/dogAnimationMap.js";
 import {
   DOG_STORAGE_KEY,
   getDogStorageKey,
@@ -33,12 +32,7 @@ import {
 } from "@/lib/firebaseClient.js";
 import { getGrantedLocationSnapshot } from "@/lib/locationReality.js";
 import { fetchRealTimeWeather } from "@/features/weather/RealTimeWeatherFetcher.js";
-import { DOGS } from "@/app/config/assets.js";
-import { selectDogRenderModel } from "@/components/dog/redux/dogSelectors.js";
-import {
-  getDogAnimSpriteUrl,
-  getDogPixiSheetUrl,
-} from "@/utils/dogSpritePaths.js";
+import { DOG_MODEL_GLTF_PATH } from "@/features/game/stage3d/dog/dogModelMap.js";
 import { configureStatusBar } from "@/utils/statusBar.js";
 
 const STARTUP_ASSET_TIMEOUT_MS = 5000;
@@ -100,33 +94,17 @@ export function buildFallbackWeatherSnapshot(zip, error) {
 // Constructs a prioritized list of assets to preload at startup, based on the current dog render model and static fallbacks.
 
 export function buildStartupAssetList(state) {
-  const renderModel = selectDogRenderModel(state || {});
-  const stage = renderModel?.stage || "PUPPY";
-  const anim = resolveDogAnimation(renderModel?.anim || "idle");
-
-  return [
-    ...new Set(
-      [
-        DOGS.staticFallback,
-        renderModel?.staticSpriteUrl,
-        getDogAnimSpriteUrl(stage, anim),
-        getDogAnimSpriteUrl(stage, "idle"),
-        renderModel?.pixiSheetUrl,
-        renderModel?.pixiSheetFallbackUrl,
-        getDogPixiSheetUrl(stage, "clean"),
-      ].filter(Boolean)
-    ),
-  ];
+  void state;
+  return [DOG_MODEL_GLTF_PATH].filter(Boolean);
 }
-// Preloads an image asset with a timeout, returning a result object indicating success or failure.
-function preloadImage(src, timeoutMs = STARTUP_ASSET_TIMEOUT_MS) {
+// Preloads a startup asset with a timeout, returning a result object indicating success or failure.
+function preloadAsset(src, timeoutMs = STARTUP_ASSET_TIMEOUT_MS) {
   return new Promise((resolve) => {
-    if (typeof window === "undefined" || typeof Image === "undefined") {
-      resolve({ src, loaded: false, reason: "image_unavailable" });
+    if (typeof fetch !== "function") {
+      resolve({ src, loaded: false, reason: "fetch_unavailable" });
       return;
     }
-    //
-    const img = new Image();
+
     let settled = false;
     const timeoutId = setTimeout(() => {
       if (settled) return;
@@ -141,18 +119,9 @@ function preloadImage(src, timeoutMs = STARTUP_ASSET_TIMEOUT_MS) {
       resolve({ src, loaded, reason });
     };
 
-    img.onload = () => {
-      if (typeof img.decode === "function") {
-        img
-          .decode()
-          .catch(() => {})
-          .finally(() => finish(true));
-        return;
-      }
-      finish(true);
-    };
-    img.onerror = () => finish(false, "error");
-    img.src = String(src || "");
+    fetch(String(src || ""), { cache: "force-cache" })
+      .then((response) => finish(Boolean(response?.ok), "loaded"))
+      .catch(() => finish(false, "error"));
   });
 }
 // Loads local fallback data for user, settings, and dog state from storage, and hydrates the Redux store accordingly. This allows the app to have a functional baseline state even if Firebase is unavailable at startup.
@@ -308,7 +277,7 @@ const Doggerz = {
       assets.forEach((asset) => Doggerz.registerAsset(asset));
 
       const results = await Promise.all(
-        assets.map((asset) => preloadImage(asset))
+        assets.map((asset) => preloadAsset(asset))
       );
       const loadedCount = results.filter((result) => result.loaded).length;
       console.info("[Doggerz] Renderer preload complete", {

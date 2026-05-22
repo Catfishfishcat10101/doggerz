@@ -30,10 +30,7 @@ const REMINDERS = DEFAULT_DOGGERZ_REMINDERS.map((item) => ({
       : item.key === "checkin-milestone"
         ? 24 * 60 * 60 * 1000
         : 18 * 60 * 60 * 1000,
-  icon:
-    item.key === "checkin-lonely"
-      ? "/assets/sprites/jr/pup_idle.png"
-      : "/assets/icons/icon-192.png",
+  icon: "/assets/icons/icon-192.png",
 }));
 
 export default function CheckInReminders() {

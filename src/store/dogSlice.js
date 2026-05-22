@@ -2409,26 +2409,29 @@ function syncTreatmentMemory(state, now = nowMs()) {
 }
 
 function ensureDailyCareLoop(memory) {
-  if (!memory.dailyCareLoop || typeof memory.dailyCareLoop !== "object") {
-    memory.dailyCareLoop = {
-      dayKey: null,
-      categories: [],
-      completedAt: null,
-    };
-  }
-  memory.dailyCareLoop.categories = Array.isArray(
-    memory.dailyCareLoop.categories
-  )
-    ? memory.dailyCareLoop.categories.map((entry) => String(entry || ""))
-    : [];
-  memory.dailyCareLoop.dayKey = memory.dailyCareLoop.dayKey
-    ? String(memory.dailyCareLoop.dayKey)
-    : null;
-  memory.dailyCareLoop.completedAt = Number.isFinite(
-    Number(memory.dailyCareLoop.completedAt)
-  )
-    ? Number(memory.dailyCareLoop.completedAt)
-    : null;
+  const existing =
+    memory.dailyCareLoop && typeof memory.dailyCareLoop === "object"
+      ? memory.dailyCareLoop
+      : {};
+
+  const safeDailyCareLoop = {
+    dayKey:
+      typeof existing.dayKey === "string" || existing.dayKey === null
+        ? existing.dayKey
+        : null,
+    categories: Array.isArray(existing.categories)
+      ? [...existing.categories]
+      : [],
+    completedAt:
+      typeof existing.completedAt === "number" ||
+      typeof existing.completedAt === "string" ||
+      existing.completedAt === null
+        ? existing.completedAt
+        : null,
+  };
+
+  memory.dailyCareLoop = safeDailyCareLoop;
+
   return memory.dailyCareLoop;
 }
 

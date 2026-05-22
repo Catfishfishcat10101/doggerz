@@ -10,7 +10,7 @@ import { getTimeOfDay } from "@/utils/weather.js";
 import { withBaseUrl } from "@/utils/assetUtils.js";
 
 const DAY_START_HOUR = 6;
-const NIGHT_START_HOUR = 19; // 7 PM → night visuals
+const NIGHT_START_HOUR = 19; // 7 PM starts night visuals
 const TWILIGHT_WINDOW_MS = 45 * 60 * 1000;
 
 function deriveIsNightFromHour(h) {

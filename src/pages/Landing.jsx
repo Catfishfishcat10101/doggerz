@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-
 import { SocialButton } from "@/components/base/buttons/social-button.jsx";
 import HeroDog3D from "@/components/brand/HeroDog3D.jsx";
 import PageShell from "@/components/layout/PageShell.jsx";
@@ -26,9 +25,6 @@ function SocialButtonGroupBrandDemo() {
       </SocialButton>
       <SocialButton social="facebook" theme="brand">
         Sign in with Facebook
-      </SocialButton>
-      <SocialButton social="apple" theme="brand">
-        Sign in with Apple
       </SocialButton>
     </div>
   );
@@ -83,7 +79,7 @@ export default function Landing() {
               <div className="absolute inset-0 rounded-full bg-doggerz-leaf/25 blur-2xl" />
 
               <div className="relative rounded-full border border-doggerz-leaf/60 bg-black/70 px-8 py-3 shadow-[0_0_42px_rgba(34,197,94,0.35)] sm:px-10 sm:py-4">
-                <span className="block text-4xl font-black uppercase tracking-[0.22em] text-doggerz-bone drop-shadow-[0_0_16px_rgba(134,239,172,0.85)] sm:text-5xl">
+                <span className="block text-4xl font-black uppercase tracking-[0.22em] text-doggerz-bone drop-shadow-[0_0_20px_rgba(134,239,172,0.85)] md:text-5xl">
                   DOGGERZ
                 </span>
               </div>
@@ -114,11 +110,11 @@ export default function Landing() {
             to={PATHS.ADOPT}
             className="dz-touch-button touch-manipulation w-full rounded-2xl bg-doggerz-leaf py-4 text-center text-lg font-extrabold text-black shadow-lg transition-all hover:scale-[1.01] hover:bg-doggerz-neonSoft hover:shadow-[0_0_40px_rgba(34,197,94,0.5)]"
           >
-            Adopt Your Pup
+            Adopt
           </Link>
 
           <div className="-mt-2 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-doggerz-paw/55">
-            No account required
+            Already have an account?
           </div>
 
           <Link
@@ -134,8 +130,8 @@ export default function Landing() {
             <span className="h-px flex-1 bg-white/10" />
           </div>
 
-          <SocialButtonGroupBrandDemo />
 
+ <SocialButtonGroupBrandDemo />
           <label className="mt-1 flex items-start gap-3 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-left transition hover:bg-black/25">
             <span className="relative mt-0.5 inline-flex h-6 w-10 shrink-0 items-center">
               <input
@@ -154,9 +150,6 @@ export default function Landing() {
             <span className="flex min-w-0 flex-col">
               <span className="text-sm font-semibold text-zinc-100">
                 Remember me
-              </span>
-              <span className="text-xs leading-relaxed text-doggerz-paw/70">
-                Save my login details for next time.
               </span>
             </span>
           </label>

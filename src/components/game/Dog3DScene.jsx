@@ -3,7 +3,7 @@
 import React, { Suspense, useMemo } from "react";
 import { Canvas } from "@react-three/fiber";
 
-import AnimatedDog from "@/features/game/rendering/AnimatedDog.jsx";
+import Dog3D from "@/components/dog/Dog3D.jsx";
 import DOG_STAGE_CAMERA, {
   DogCameraRig,
 } from "@/features/game/stage3d/DogCamera.jsx";
@@ -20,6 +20,46 @@ function clamp(value, min, max) {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) return min;
   return Math.max(min, Math.min(max, numeric));
+}
+
+function normalizeScale(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric <= 0) return 1;
+  return Math.max(0.72, Math.min(1.46, numeric));
+}
+
+function resolveFacingRotation(facing = "") {
+  const key = String(facing || "")
+    .trim()
+    .toLowerCase();
+  if (key === "left") return [0, Math.PI * -0.16, 0];
+  if (key === "right") return [0, Math.PI * 0.16, 0];
+  if (key === "front") return [0, 0, 0];
+  if (key === "back") return [0, Math.PI, 0];
+  return [0, Math.PI * 0.15, 0];
+}
+
+function resolveStableDogAction(scene, dogView) {
+  const renderModel = dogView?.renderModel || null;
+  const requested = String(
+    scene?.currentAction ||
+      scene?.requestedAction ||
+      dogView?.requestedAction ||
+      renderModel?.anim ||
+      ""
+  )
+    .trim()
+    .toLowerCase();
+  const sleeping = Boolean(
+    scene?.isSleeping ||
+      scene?.sleeping ||
+      dogView?.isSleeping ||
+      renderModel?.isSleeping ||
+      requested.includes("sleep") ||
+      requested.includes("rest")
+  );
+
+  return sleeping ? "sleep" : "idle";
 }
 
 function resolveSceneArt(scene, lighting) {
@@ -115,12 +155,12 @@ function StageBackdrop({ lighting }) {
         attach="fog"
         args={[lighting.fogColor, lighting.fogNear, lighting.fogFar]}
       />
-      <mesh position={[0, 2.85, -4.55]}>
-        <planeGeometry args={[14, 4.8]} />
+      <mesh position={[0, 3.15, -5.25]}>
+        <planeGeometry args={[28, 9]} />
         <meshBasicMaterial color={lighting.skyGlowColor} depthWrite={false} />
       </mesh>
-      <mesh position={[0, 0.95, -4.5]}>
-        <planeGeometry args={[14, 5.4]} />
+      <mesh position={[0, 0.72, -5.2]}>
+        <planeGeometry args={[28, 10]} />
         <meshBasicMaterial
           color={lighting.skyColor}
           transparent
@@ -128,8 +168,8 @@ function StageBackdrop({ lighting }) {
           depthWrite={false}
         />
       </mesh>
-      <mesh position={[0, -1.38, -3.9]}>
-        <planeGeometry args={[14, 2.1]} />
+      <mesh position={[0, -1.72, -4.8]}>
+        <planeGeometry args={[28, 5.2]} />
         <meshBasicMaterial
           color={lighting.groundColor}
           transparent
@@ -143,6 +183,13 @@ function StageBackdrop({ lighting }) {
 
 function DogLayer({ scene, dogView, art }) {
   const ghost = scene?.behavior?.ghost;
+  const {
+    dog = null,
+    renderModel = null,
+    paused = false,
+    reduceMotion = false,
+    scale = 1,
+  } = dogView || {};
   const yardDog = useDogYardMovement({
     scene,
     basePosition: DOG_STAGE_CAMERA.dogAnchor,
@@ -151,23 +198,43 @@ function DogLayer({ scene, dogView, art }) {
     paused: dogView?.paused,
     reduceMotion: dogView?.reduceMotion,
   });
+  const action = resolveStableDogAction(scene, dogView);
+  const facing = "right";
+  const resolvedScale = normalizeScale(
+    (scale || renderModel?.scaleMultiplier || 1) * 1.16
+  );
+  const stablePosition = DOG_STAGE_CAMERA.dogAnchor;
+
+  void yardDog;
 
   return (
     <DogRenderBoundary fallback={<DogModelFallback art={art} />}>
-      <AnimatedDog
+      <Dog3D
         scene={scene}
-        position={yardDog.position}
-        {...dogView}
-        requestedAction={yardDog.requestedAction}
-        requestedFacing={yardDog.facing}
+        dog={dog}
+        action={action}
+        facing={facing}
+        desiredClip={action}
+        position={stablePosition}
+        rotation={resolveFacingRotation(facing)}
+        scale={resolvedScale}
+        paused={paused}
+        reduceMotion={reduceMotion}
       />
       {ghost?.present ? (
         <>
-          <AnimatedDog
+          <Dog3D
             scene={scene}
+            dog={dog}
+            action="idle"
+            facing="left"
+            desiredClip="idle"
             position={[-1.45, -1, -0.95]}
+            rotation={resolveFacingRotation("left")}
+            scale={resolvedScale}
+            paused={paused}
+            reduceMotion={reduceMotion}
             ghost
-            {...dogView}
           />
           <pointLight
             position={[-1.45, -0.2, -0.9]}
@@ -197,13 +264,13 @@ export function Dog3DScene({ scene = null, dogView = {} }) {
       }}
     >
       <Canvas
-        shadows="percentage"
+        shadows={false}
         gl={{
           antialias: true,
           alpha: false,
-          powerPreference: "high-performance",
+          powerPreference: "default",
         }}
-        dpr={[1, 1.6]}
+        dpr={[1, 1.25]}
       >
         <DogCameraRig />
         <DogLightRig lighting={lighting} />

@@ -1,5 +1,4 @@
 // src/components/dog/dogAnimationEngine.js
-import jrManifest from "@/components/dog/manifests/jrManifest.json";
 import {
   isKnownDogAnimation,
   resolveDogAnimation,
@@ -11,20 +10,45 @@ import {
   getDogAnimationCategory,
 } from "@/utils/mapPoseToDogAction.js";
 
-const DEFAULT_COLUMNS = Math.max(1, Number(jrManifest?.columns || 8));
-const DEFAULT_ANIM = String(jrManifest?.defaultAnim || "idle").toLowerCase();
-const DEFAULT_FPS = Math.max(1, Number(jrManifest?.defaultFps || 8));
+const DEFAULT_COLUMNS = 1;
+const DEFAULT_ANIM = "idle";
+const DEFAULT_FPS = 8;
+const DEFAULT_FRAME_WIDTH = 1;
+const DEFAULT_FRAME_HEIGHT = 1;
 const ANIM_ROWS = [
-  ...(Array.isArray(jrManifest?.rows) ? jrManifest.rows : []),
-  ...(Array.isArray(jrManifest?.customRows) ? jrManifest.customRows : []),
-];
-const DEFAULT_FRAME = jrManifest?.frame || {};
-const DEFAULT_FRAME_WIDTH = Math.max(1, Number(DEFAULT_FRAME.width || 256));
-const DEFAULT_FRAME_HEIGHT = Math.max(1, Number(DEFAULT_FRAME.height || 256));
-const ANIM_ALIASES =
-  jrManifest?.aliases && typeof jrManifest.aliases === "object"
-    ? jrManifest.aliases
-    : {};
+  "idle",
+  "idle_resting",
+  "walk",
+  "walk_left",
+  "walk_right",
+  "turn_walk_left",
+  "turn_walk_right",
+  "sit",
+  "sleep",
+  "light_sleep",
+  "deep_rem_sleep",
+  "lethargic_lay",
+  "bark",
+  "beg",
+  "dance",
+  "drink",
+  "eat",
+  "fetch",
+  "gate_watch",
+  "highfive",
+  "jump",
+  "lay_down",
+  "paw",
+  "scratch",
+  "shake",
+  "sniff",
+  "wag",
+].map((anim) => ({ anim }));
+const ANIM_ALIASES = Object.freeze({
+  high_five: "highfive",
+  lie: "lay_down",
+  dig: "scratch",
+});
 
 const MANIFEST_ANIMS = new Set(
   ANIM_ROWS.map((row) => normalizeDogAnimKey(row?.anim || "")).filter(Boolean)

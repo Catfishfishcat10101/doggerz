@@ -1,5 +1,5 @@
 // src/hooks/audio/useAmbientSoundscape.js
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 
 import { selectSettings } from "@/store/settingsSlice.js";
@@ -113,7 +113,7 @@ export default function useAmbientSoundscape({ enabled = true } = {}) {
   const birdGainRef = useRef(null);
   const rainSourceRef = useRef(null);
   const birdTimerRef = useRef(null);
-  const unlockedRef = useRef(false);
+  const [unlocked, setUnlocked] = useState(false);
 
   const weatherKey = useMemo(() => normalizeWeatherKey(weather), [weather]);
   const intensityFactor = useMemo(
@@ -126,7 +126,7 @@ export default function useAmbientSoundscape({ enabled = true } = {}) {
     if (typeof window === "undefined") return undefined;
 
     const unlock = async () => {
-      unlockedRef.current = true;
+      setUnlocked(true);
       const context =
         contextRef.current ||
         new (window.AudioContext || window.webkitAudioContext)();
@@ -159,7 +159,7 @@ export default function useAmbientSoundscape({ enabled = true } = {}) {
 
   useEffect(() => {
     if (!enabled) return;
-    if (!unlockedRef.current) return;
+    if (!unlocked) return;
     if (typeof window === "undefined") return;
     if (
       contextRef.current ||
@@ -169,7 +169,7 @@ export default function useAmbientSoundscape({ enabled = true } = {}) {
 
     const context = new (window.AudioContext || window.webkitAudioContext)();
     contextRef.current = context;
-  }, [enabled]);
+  }, [enabled, unlocked]);
 
   useEffect(() => {
     const context = contextRef.current;
@@ -217,7 +217,7 @@ export default function useAmbientSoundscape({ enabled = true } = {}) {
         // ignore
       }
     };
-  }, []);
+  }, [unlocked]);
 
   useEffect(() => {
     const context = contextRef.current;
@@ -231,7 +231,7 @@ export default function useAmbientSoundscape({ enabled = true } = {}) {
     const masterVolume = clamp01(settings?.audio?.masterVolume ?? 0.8);
     const musicVolume = clamp01(settings?.audio?.musicVolume ?? 0.5);
     const soundscapeEnabled =
-      enabled && unlockedRef.current && audioEnabled && musicEnabled;
+      enabled && unlocked && audioEnabled && musicEnabled;
 
     const rainTarget =
       soundscapeEnabled && (weatherKey === "rain" || weatherKey === "storm")
@@ -286,6 +286,7 @@ export default function useAmbientSoundscape({ enabled = true } = {}) {
     settings?.audio?.masterVolume,
     settings?.audio?.musicEnabled,
     settings?.audio?.musicVolume,
+    unlocked,
     weatherKey,
   ]);
 

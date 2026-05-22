@@ -6,7 +6,6 @@ import { Navigate } from "react-router-dom";
 import DogAIEngine from "@/components/dog/DogAIEngine.jsx";
 import MainGame from "@/components/game/MainGame.jsx";
 import GrowthCelebration from "@/components/dog/components/GrowthCelebration.jsx";
-import { preloadJackRussellSheets } from "@/components/dog/assets/jrAtlasAssets.js";
 import { getDailyRewardState } from "@/features/billing/dailyRewards.js";
 import usePreRegistration from "@/hooks/usePreRegistration.js";
 import useModal from "@/hooks/useModal.js";
@@ -147,10 +146,6 @@ export default function GamePage() {
       lifecycleStatus: String(dog?.lifecycleStatus || "NONE").toLowerCase(),
     };
   }, [dog?.adoptedAt, dog?.lifecycleStatus]);
-
-  useEffect(() => {
-    preloadJackRussellSheets().catch(() => {});
-  }, []);
 
   useEffect(() => {
     const shouldShowPerfOverlay = import.meta.env.DEV;
@@ -397,8 +392,7 @@ export default function GamePage() {
                 Loading your adoption status
               </h1>
               <p className="mt-3 text-sm text-zinc-300">
-                Doggerz is checking local and cloud save data before dropping
-                you into the yard.
+                Doggerz is checking...
               </p>
             </div>
           </div>

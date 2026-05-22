@@ -225,13 +225,13 @@ function resolveAmbientCandidates(weatherKey) {
 }
 
 function useUserGestureGate(enabled = true) {
-  const readyRef = useRef(false);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     if (!enabled) return undefined;
-    if (readyRef.current) return;
+    if (ready) return undefined;
     const unlock = () => {
-      readyRef.current = true;
+      setReady(true);
     };
     window.addEventListener("pointerdown", unlock, {
       once: true,
@@ -247,9 +247,9 @@ function useUserGestureGate(enabled = true) {
       window.removeEventListener("keydown", unlock);
       window.removeEventListener("touchstart", unlock);
     };
-  }, [enabled]);
+  }, [enabled, ready]);
 
-  return useCallback(() => Boolean(enabled) && readyRef.current, [enabled]);
+  return useCallback(() => Boolean(enabled) && ready, [enabled, ready]);
 }
 
 export default function useDynamicMusic({ enabled = true } = {}) {
