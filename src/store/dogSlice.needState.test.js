@@ -13,6 +13,8 @@ import dogReducer, {
   trainObedience,
 } from "@/store/dogSlice.js";
 
+const MINUTE_MS = 60_000;
+
 function buildActiveDogState(overrides = {}) {
   const now = Number(overrides.now || Date.now());
   const adoptedAt = Math.max(1, now - 60_000);
@@ -195,5 +197,86 @@ describe("dogSlice need-state consequences", () => {
 
     expect(nextState.lastAction).toBe("trainBlocked");
     expect(nextState.lastCareResponse?.message).toMatch(/potty training/i);
+  });
+
+  it("records potty success timestamps and resets potty pressure", () => {
+    const { state, now } = buildActiveDogState({
+      pottyLevel: 96,
+    });
+
+    const nextState = dogReducer(
+      state,
+      goPotty({ now: now + 1_000, forceSuccess: true })
+    );
+
+    expect(["potty", "guilty_paws"]).toContain(nextState.lastAction);
+    expect(nextState.pottyLevel).toBe(0);
+    expect(nextState.potty.lastSuccessAt).toBe(now + 1_000);
+    expect(nextState.potty.lastPottySuccessAt).toBe(now + 1_000);
+    expect(nextState.potty.lastOutdoorTripAt).toBe(now + 1_000);
+    expect(nextState.potty.totalSuccesses).toBeGreaterThan(0);
+  });
+
+  it("prevents generated accidents for 90 minutes after potty success", () => {
+    const { state, now } = buildActiveDogState({
+      pottyLevel: 98,
+    });
+    const successAt = now + 1_000;
+    const afterSuccess = dogReducer(
+      state,
+      goPotty({ now: successAt, forceSuccess: true })
+    );
+    const pressuredState = {
+      ...afterSuccess,
+      pottyLevel: 99,
+      lastUpdatedAt: successAt,
+      potty: {
+        ...afterSuccess.potty,
+        lastAccidentAt: now - 15 * MINUTE_MS,
+      },
+    };
+
+    const nextState = dogReducer(
+      pressuredState,
+      feed({
+        now: successAt + 89 * MINUTE_MS,
+        foodType: "regular_kibble",
+      })
+    );
+
+    expect(nextState.lastAction).not.toBe("accident");
+    expect(nextState.potty.lastAccidentAt).toBe(now - 15 * MINUTE_MS);
+    expect(nextState.potty.totalAccidents).toBe(
+      pressuredState.potty.totalAccidents
+    );
+  });
+
+  it("keeps generated accident risk low for the next 90 minutes", () => {
+    const { state, now } = buildActiveDogState({
+      pottyLevel: 98,
+    });
+    const successAt = now + 1_000;
+    const afterSuccess = dogReducer(
+      state,
+      goPotty({ now: successAt, forceSuccess: true })
+    );
+    const pressuredState = {
+      ...afterSuccess,
+      pottyLevel: 99,
+      lastUpdatedAt: successAt,
+    };
+
+    const nextState = dogReducer(
+      pressuredState,
+      feed({
+        now: successAt + 120 * MINUTE_MS,
+        foodType: "regular_kibble",
+      })
+    );
+
+    expect(nextState.lastAction).not.toBe("accident");
+    expect(nextState.potty.totalAccidents).toBe(
+      pressuredState.potty.totalAccidents
+    );
   });
 });

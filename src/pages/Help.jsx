@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import PageShell from "@/components/layout/PageShell.jsx";
+import SubpageShell from "@/components/layout/SubpageShell.jsx";
 import { useToast } from "@/state/toastContext.js";
 import { DOG_STORAGE_KEY } from "@/store/dogSlice.js";
 import { SETTINGS_STORAGE_KEY } from "@/store/settingsSlice.js";
@@ -468,9 +468,9 @@ export default function HelpPage() {
   }, [diagnostics, setNoticeAuto, toast]);
 
   return (
-    <PageShell mainClassName="p-0" containerClassName="w-full max-w-none">
-      <div className="min-h-[calc(100dvh-120px)] w-full">
-        <div className="max-w-6xl mx-auto px-4 py-10">
+    <SubpageShell width="wide" useSurface={false}>
+      <div className="w-full">
+        <div className="mx-auto max-w-5xl">
           <div className={`${SURFACE} overflow-hidden`}>
             <div className="p-8 sm:p-10">
               <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-5">
@@ -651,6 +651,6 @@ export default function HelpPage() {
           </div>
         </div>
       </div>
-    </PageShell>
+    </SubpageShell>
   );
 }

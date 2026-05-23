@@ -1,15 +1,14 @@
 // src/pages/Contact.jsx
 // @ts-check
 
-import PageShell from "@/components/layout/PageShell.jsx";
+import SubpageShell from "@/components/layout/SubpageShell.jsx";
 import { PageHeader } from "@/components/layout/PageSections.jsx";
 import { SUPPORT_EMAIL_FEEDBACK_URL } from "@/app/config/links.js";
 
 export default function Contact() {
   return (
-    <PageShell containerClassName="w-full max-w-2xl">
-      <div className="flex justify-center px-4 py-10">
-        <div className="w-full max-w-2xl space-y-6">
+    <SubpageShell width="text">
+      <div className="w-full space-y-6">
           <PageHeader>
             <h1 className="text-2xl font-semibold tracking-tight">Contact</h1>
             <p className="text-sm text-zinc-400">
@@ -36,8 +35,7 @@ export default function Contact() {
               and short videos of bugs are extremely helpful.
             </p>
           </section>
-        </div>
       </div>
-    </PageShell>
+    </SubpageShell>
   );
 }

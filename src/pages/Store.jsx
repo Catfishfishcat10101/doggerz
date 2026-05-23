@@ -9,6 +9,7 @@ import BackPill from "@/components/layout/BackPill.jsx";
 import HeroDog3D from "@/components/brand/HeroDog3D.jsx";
 import DogCosmeticsOverlay from "@/components/dog/DogCosmeticsOverlay.jsx";
 import Tooltip from "@/components/ui/Tooltip.jsx";
+import SubpageShell from "@/components/layout/SubpageShell.jsx";
 import { PageHeader } from "@/components/layout/PageSections.jsx";
 import { useDogStoreView } from "@/hooks/useDogState.js";
 import { resolveBackdropLayers } from "@/utils/backgroundLayers.js";
@@ -800,7 +801,8 @@ export default function Store() {
   const canHoverPreview = previewOnHover && !previewLocked;
 
   return (
-    <div className="min-h-dvh bg-zinc-950 text-zinc-100">
+    <SubpageShell width="wide" useSurface={false}>
+      <div className="text-zinc-100">
       <PageHeader
         className="sticky top-0 z-30 border-b border-white/10 bg-black/45 px-4 py-3 backdrop-blur-md"
         unstyled
@@ -824,20 +826,26 @@ export default function Store() {
               <span className="text-sky-200">Gems</span>
               <span className="tabular-nums">{gems}</span>
             </span>
-            <BackPill to="/game" label="Back to Yard" />
+            <Link
+              to="/menu"
+              className="inline-flex items-center justify-center rounded-2xl border border-white/15 bg-black/25 px-3 py-2 text-xs font-semibold text-zinc-100 transition hover:bg-black/40"
+            >
+              Menu
+            </Link>
+            <BackPill to="/game" label="Back" />
           </div>
         </div>
       </PageHeader>
 
-      <main className="mx-auto w-full max-w-7xl px-4 sm:px-6 py-8">
+      <main className="mx-auto w-full px-0 py-5">
         {/* Hero */}
-        <section className="mb-6 rounded-3xl border border-white/10 bg-black/25 p-6 overflow-hidden">
+        <section className="mb-4 rounded-2xl border border-white/10 bg-black/25 p-4 overflow-hidden">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="min-w-0">
               <div className="text-xs uppercase tracking-[0.22em] text-zinc-400">
                 Doggerz Store
               </div>
-              <div className="mt-1 text-2xl sm:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-200 via-sky-200 to-violet-200">
+              <div className="mt-1 text-xl font-extrabold text-emerald-100 sm:text-2xl">
                 Build your pup&apos;s signature look.
               </div>
               <div className="mt-2 text-sm text-zinc-300 leading-relaxed max-w-2xl">
@@ -863,7 +871,7 @@ export default function Store() {
             </div>
           </div>
 
-          <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="mt-4 hidden grid-cols-1 gap-3 md:grid-cols-3 lg:grid">
             <div className="rounded-3xl border border-white/10 bg-black/20 p-4">
               <div className="text-xs uppercase tracking-[0.22em] text-zinc-400">
                 How to earn coins
@@ -902,7 +910,7 @@ export default function Store() {
           </div>
         </section>
 
-        <section className="mb-8 rounded-3xl border border-white/10 bg-black/25 p-5 sm:p-6">
+        <section className="mb-5 hidden rounded-3xl border border-white/10 bg-black/25 p-5 sm:p-6 lg:block">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <div className="text-xs uppercase tracking-[0.22em] text-zinc-400">
@@ -2151,6 +2159,7 @@ export default function Store() {
           </section>
         </div>
       </main>
-    </div>
+      </div>
+    </SubpageShell>
   );
 }

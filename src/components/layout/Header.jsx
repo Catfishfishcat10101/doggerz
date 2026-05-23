@@ -78,7 +78,7 @@ export default function Header() {
   const topLevelTab = primaryTab?.path === pathname ? primaryTab : null;
   const isPrimaryRoute = Boolean(primaryTab);
 
-  const sectionTitle = topLevelTab?.label || routeMeta?.title || "Doggerz";
+  const sectionTitle = routeMeta?.title || topLevelTab?.label || "Doggerz";
   const sectionSubtitle = isPrimaryRoute
     ? topLevelTab?.path === PATHS.MENU
       ? "Utilities"
@@ -92,8 +92,11 @@ export default function Header() {
     (navigationType !== "POP" ||
       (typeof window !== "undefined" && window.history.length > 1));
 
-  const backTarget =
-    topLevelTab?.path || (isLoggedIn ? PATHS.GAME : PATHS.MENU);
+  const backTarget = topLevelTab
+    ? PATHS.MENU
+    : isLoggedIn
+      ? PATHS.GAME
+      : PATHS.MENU;
 
   return (
     <header className="sticky top-0 z-[90] border-b border-white/8 bg-zinc-950/88 backdrop-blur-xl">

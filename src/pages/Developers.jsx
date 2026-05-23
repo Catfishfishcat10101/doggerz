@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { SOCIAL_LINKS } from "@/app/config/links.js";
 import DogAIEngine from "@/components/dog/DogAIEngine.jsx";
 import HeroDog3D from "@/components/brand/HeroDog3D.jsx";
-import PageShell from "@/components/layout/PageShell.jsx";
+import SubpageShell from "@/components/layout/SubpageShell.jsx";
 
 function asGithubRepoBase(url) {
   if (!url) return null;
@@ -188,7 +188,7 @@ export default function DevelopersPage() {
   const contributingUrl = repoBase ? `${repoBase}/blob/main/README.md` : null;
 
   return (
-    <PageShell mainClassName="px-6 py-10" containerClassName="w-full max-w-5xl">
+    <SubpageShell width="wide">
       <DogAIEngine enableAudio={false} enableWeather={false} />
       <div className="w-full space-y-10">
         {/* Hero */}
@@ -588,6 +588,6 @@ VITE_FIREBASE_MEASUREMENT_ID=`}
           </Link>
         </div>
       </div>
-    </PageShell>
+    </SubpageShell>
   );
 }

@@ -41,7 +41,7 @@ export const routes = Object.freeze([
   {
     path: PATHS.SKILL_TREE,
     name: "Skill Tree",
-    meta: { title: "Skill Tree", description: "Train lifelong perks." },
+    meta: { title: "Training Roadmap", description: "Train lifelong perks." },
   },
   { path: PATHS.ADOPT, name: "Adopt", meta: { title: "Adopt a Pup" } },
   { path: PATHS.LOGIN, name: "Login", meta: { title: "Login" } },

@@ -52,14 +52,15 @@ function resolveStableDogAction(scene, dogView) {
     .toLowerCase();
   const sleeping = Boolean(
     scene?.isSleeping ||
-      scene?.sleeping ||
-      dogView?.isSleeping ||
-      renderModel?.isSleeping ||
-      requested.includes("sleep") ||
-      requested.includes("rest")
+    scene?.sleeping ||
+    dogView?.isSleeping ||
+    renderModel?.isSleeping ||
+    requested.includes("sleep") ||
+    requested.includes("rest")
   );
 
-  return sleeping ? "sleep" : "idle";
+  if (sleeping) return "sleep";
+  return requested || "idle";
 }
 
 function resolveSceneArt(scene, lighting) {

@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 
 import { PATHS } from "@/app/routes.js";
 import { useDogMemoryState } from "@/hooks/useDogState.js";
-import PageShell from "@/components/layout/PageShell.jsx";
+import SubpageShell from "@/components/layout/SubpageShell.jsx";
 import EmptySlate from "@/components/ui/EmptySlate.jsx";
 import {
   buildMemoryJournalModel,
@@ -69,7 +69,7 @@ export default function MemoryReel() {
   }, [journalModel.entries, type]);
 
   return (
-    <PageShell mainClassName="px-4 py-10" containerClassName="w-full max-w-5xl">
+    <SubpageShell width="wide">
       <div className="w-full">
         <div className="rounded-[2rem] border border-white/10 bg-black/40 backdrop-blur-md shadow-[0_0_80px_rgba(0,0,0,0.55)] overflow-hidden">
           <div className="p-6 sm:p-8 border-b border-white/10">
@@ -303,6 +303,6 @@ export default function MemoryReel() {
           </div>
         </div>
       </div>
-    </PageShell>
+    </SubpageShell>
   );
 }

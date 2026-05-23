@@ -3,7 +3,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 
-import PageShell from "@/components/layout/PageShell.jsx";
+import SubpageShell from "@/components/layout/SubpageShell.jsx";
 import { PageFooter, PageHeader } from "@/components/layout/PageSections.jsx";
 import { selectSettings, setFaqCompactView } from "@/store/settingsSlice.js";
 
@@ -470,11 +470,11 @@ export default function FaqPage() {
   ];
 
   return (
-    <PageShell mainClassName="px-6 py-10" containerClassName="w-full max-w-4xl">
+    <SubpageShell width="text">
       <div className="w-full space-y-8">
-        <PageHeader id="top" className="space-y-3" unstyled>
+        <PageHeader id="top" className="space-y-3 text-center" unstyled>
           <h1 className="text-4xl font-black tracking-tight">FAQs</h1>
-          <p className="text-sm text-zinc-300 max-w-2xl">
+          <p className="mx-auto max-w-2xl text-sm text-zinc-300">
             Quick answers for curious humans. If you don’t see your question,
             hit up{" "}
             <Link
@@ -486,7 +486,7 @@ export default function FaqPage() {
             .
           </p>
 
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-4">
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-4 text-left">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0 flex-1">
                 <label htmlFor="faq-search" className="sr-only">
@@ -577,7 +577,7 @@ export default function FaqPage() {
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2 pt-1">
+          <div className="flex flex-wrap justify-center gap-2 pt-1">
             {(qn ? filteredSections : FAQ_SECTIONS).map((s) => (
               <a
                 key={s.id}
@@ -677,6 +677,6 @@ export default function FaqPage() {
           </div>
         </PageFooter>
       </div>
-    </PageShell>
+    </SubpageShell>
   );
 }

@@ -1029,6 +1029,148 @@ a {
 .animation-delay-400 {
   animation-delay: 400ms;
 }
+
+/* =========================================================
+   Pet sprite state machine
+   Sprite sheet contract:
+   - 128px square frames
+   - frames advance horizontally
+   - actions are stacked vertically in the order below
+   ========================================================= */
+
+.pet-sprite {
+  --pet-frame-size: 128px;
+  --pet-row-offset: 0px;
+  width: var(--pet-frame-size);
+  height: var(--pet-frame-size);
+  background-image: var(--pet-sprite-url);
+  background-size: auto;
+  background-position: 0 var(--pet-row-offset);
+  animation-name: petSpriteStep;
+  animation-duration: var(--pet-animation-duration, 1120ms);
+  animation-timing-function: steps(var(--pet-frame-count, 8));
+  animation-iteration-count: infinite;
+  animation-fill-mode: forwards;
+  will-change: background-position;
+  contain: layout paint style;
+}
+
+.pet-sprite[data-action="turn_walk_left"],
+.pet-sprite[data-action="turn_walk_right"],
+.pet-sprite[data-action="bark"],
+.pet-sprite[data-action="scratch"],
+.pet-sprite[data-action="sit"],
+.pet-sprite[data-action="wag"],
+.pet-sprite[data-action="eat"],
+.pet-sprite[data-action="drink"],
+.pet-sprite[data-action="gate_watch_light"],
+.pet-sprite[data-action="jump"],
+.pet-sprite[data-action="fetch_bag"],
+.pet-sprite[data-action="paw_shake"],
+.pet-sprite[data-action="high_five"],
+.pet-sprite[data-action="dance"] {
+  animation-iteration-count: 1;
+}
+
+.pet-sprite[data-action="idle"] {
+  --pet-row-offset: 0px;
+}
+
+.pet-sprite[data-action="idle_resting"] {
+  --pet-row-offset: -128px;
+}
+
+.pet-sprite[data-action="walk_left"] {
+  --pet-row-offset: -256px;
+}
+
+.pet-sprite[data-action="walk_right"] {
+  --pet-row-offset: -384px;
+}
+
+.pet-sprite[data-action="sleep"] {
+  --pet-row-offset: -512px;
+}
+
+.pet-sprite[data-action="deep_rem_sleep"] {
+  --pet-row-offset: -640px;
+}
+
+.pet-sprite[data-action="lethargic_lay"] {
+  --pet-row-offset: -768px;
+}
+
+.pet-sprite[data-action="lay_down"] {
+  --pet-row-offset: -896px;
+}
+
+.pet-sprite[data-action="turn_walk_left"] {
+  --pet-row-offset: -1024px;
+}
+
+.pet-sprite[data-action="turn_walk_right"] {
+  --pet-row-offset: -1152px;
+}
+
+.pet-sprite[data-action="bark"] {
+  --pet-row-offset: -1280px;
+}
+
+.pet-sprite[data-action="scratch"] {
+  --pet-row-offset: -1408px;
+}
+
+.pet-sprite[data-action="sit"] {
+  --pet-row-offset: -1536px;
+}
+
+.pet-sprite[data-action="wag"] {
+  --pet-row-offset: -1664px;
+}
+
+.pet-sprite[data-action="eat"] {
+  --pet-row-offset: -1792px;
+}
+
+.pet-sprite[data-action="drink"] {
+  --pet-row-offset: -1920px;
+}
+
+.pet-sprite[data-action="gate_watch_light"] {
+  --pet-row-offset: -2048px;
+}
+
+.pet-sprite[data-action="jump"] {
+  --pet-row-offset: -2176px;
+}
+
+.pet-sprite[data-action="fetch_bag"] {
+  --pet-row-offset: -2304px;
+}
+
+.pet-sprite[data-action="paw_shake"] {
+  --pet-row-offset: -2432px;
+}
+
+.pet-sprite[data-action="high_five"] {
+  --pet-row-offset: -2560px;
+}
+
+.pet-sprite[data-action="dance"] {
+  --pet-row-offset: -2688px;
+}
+
+@keyframes petSpriteStep {
+  from {
+    background-position: 0 var(--pet-row-offset);
+  }
+
+  to {
+    background-position:
+      calc(var(--pet-frame-size) * var(--pet-frame-count, 8) * -1)
+      var(--pet-row-offset);
+  }
+}
 /* =========================================================
    8. RESPONSIVE / ACCESSIBILITY
    ========================================================= */

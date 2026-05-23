@@ -3,7 +3,7 @@ import * as React from "react";
 import { Link } from "react-router-dom";
 import { useDispatch } from "react-redux";
 
-import PageShell from "@/components/layout/PageShell.jsx";
+import SubpageShell from "@/components/layout/SubpageShell.jsx";
 import { useDogLegacyView } from "@/hooks/useDogState.js";
 import { startRainbowBridge, completeRainbowBridge } from "@/store/dogSlice.js";
 
@@ -38,7 +38,7 @@ export default function RainbowBridge() {
   }, [showConfirm]);
 
   return (
-    <PageShell mainClassName="px-4 py-10" containerClassName="w-full max-w-4xl">
+    <SubpageShell width="text">
       <div className="w-full">
         <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-black/40 backdrop-blur-md shadow-[0_0_80px_rgba(0,0,0,0.55)]">
           <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-emerald-500/10 blur-3xl" />
@@ -207,6 +207,6 @@ export default function RainbowBridge() {
           </div>
         </div>
       ) : null}
-    </PageShell>
+    </SubpageShell>
   );
 }

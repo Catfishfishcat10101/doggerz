@@ -76,6 +76,16 @@ const EXPLICIT_LOOP_CLIPS = new Set([
   "golden_years_idle",
   "golden_years_sleeping",
 ]);
+const EXPLICIT_ONE_SHOT_CLIPS = new Set([
+  "handstand",
+  "speak",
+  "sit_pretty",
+  "roll_over",
+  "spin",
+  "crawl",
+  "play_dead",
+  "backflip",
+]);
 const CRITICAL_NEED_LOOP_CLIPS = new Set([
   DOG_ACTIONS.sleep,
   DOG_ACTIONS.eat,
@@ -98,6 +108,19 @@ const SHEET_NAME_OVERRIDES = Object.freeze({
   [DOG_ACTIONS.eat]: "eat",
   [DOG_ACTIONS.drink]: "drink",
   [DOG_ACTIONS.scratch]: "scratch",
+  puppy_idle_pack: "idle",
+  puppy_sleeping_pack: "sleep",
+  golden_years_idle: "idle_resting",
+  golden_years_sleeping: "deep_rem_sleep",
+  limping: "walk",
+  handstand: "beg",
+  speak: "bark",
+  sit_pretty: "beg",
+  roll_over: "lay_down",
+  spin: "walk",
+  crawl: "walk",
+  play_dead: "lay_down",
+  backflip: "jump",
 });
 
 function normalizeActionKey(value) {
@@ -116,6 +139,8 @@ const ROW_BY_ANIM = new Map(
 const KNOWN_DIRECT_CLIPS = new Set([
   ...Object.values(DOG_ACTIONS),
   ...ROW_BY_ANIM.keys(),
+  ...EXPLICIT_LOOP_CLIPS,
+  ...EXPLICIT_ONE_SHOT_CLIPS,
 ]);
 
 const CATALOG_CACHE = new Map();
@@ -201,6 +226,8 @@ export function getDogAnimationCatalog(stageLike = DEFAULT_DOG_STAGE) {
   const clipIds = new Set([
     ...Object.values(DOG_ACTIONS),
     ...ROW_BY_ANIM.keys(),
+    ...EXPLICIT_LOOP_CLIPS,
+    ...EXPLICIT_ONE_SHOT_CLIPS,
   ]);
   const catalog = Object.freeze(
     Object.fromEntries(

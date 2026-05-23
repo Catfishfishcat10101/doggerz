@@ -117,7 +117,7 @@ import {
   setTrainingSortKey,
   SETTINGS_STORAGE_KEY,
 } from "@/store/settingsSlice.js";
-import PageShell from "@/components/layout/PageShell.jsx";
+import SubpageShell from "@/components/layout/SubpageShell.jsx";
 import { APP_VERSION } from "@/utils/assetUtils.js";
 import { useToast } from "@/state/toastContext.js";
 import {
@@ -611,13 +611,13 @@ export default function Settings() {
   }
 
   return (
-    <PageShell
+    <SubpageShell
       useSurface={false}
-      mainClassName="px-0 py-0"
-      containerClassName="w-full max-w-md mx-auto"
+      mainClassName="px-4 pb-28 pt-4 sm:px-6 sm:pt-6"
+      containerClassName="mx-auto w-full max-w-md"
     >
-      <div className="min-h-[100dvh] bg-[#0a100d] text-white">
-        <header className="sticky top-0 z-20 border-b border-white/8 bg-[#0a100d]/96 backdrop-blur-xl">
+      <div className="text-white">
+        <header className="rounded-2xl border border-white/8 bg-[#0a100d]/96 backdrop-blur-xl">
           <div className="px-3 pb-2.5 pt-3.5">
             <h1 className="text-[20px] font-semibold tracking-tight text-white">
               Settings
@@ -628,7 +628,7 @@ export default function Settings() {
           </div>
         </header>
 
-        <main className="flex flex-col gap-4 px-3 pb-8 pt-3">
+        <main className="flex flex-col gap-4 px-0 pb-0 pt-3">
           <Card
             title="Account & cloud"
             subtitle="Optional cloud features (Firebase). Offline play works without an account."
@@ -1989,6 +1989,6 @@ export default function Settings() {
           </Card>
         </main>
       </div>
-    </PageShell>
+    </SubpageShell>
   );
 }

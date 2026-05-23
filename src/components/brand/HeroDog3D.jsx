@@ -18,7 +18,7 @@ function HeroCamera() {
   return null;
 }
 
-function PreviewScene({ currentAction, setActionNames, reduceMotion, timeOfDay, weather }) {
+function PreviewScene({ currentAction, setActionNames }) {
   return (
     <>
       <color attach="background" args={["#07111f"]} />
@@ -88,9 +88,6 @@ export default function HeroDog3D({
           <PreviewScene
             currentAction={currentAction}
             setActionNames={setActionNames}
-            reduceMotion={false}
-            timeOfDay={"day"}
-            weather={"sunny"}
           />
         </Canvas>
       </div>
@@ -102,7 +99,7 @@ export default function HeroDog3D({
               Action drawer
             </p>
             <h2 className="mt-2 text-lg font-black uppercase tracking-[0.08em] text-white">
-              Tap an animation
+              {title}
             </h2>
           </div>
           <div className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-[11px] uppercase tracking-[0.24em] text-emerald-100">

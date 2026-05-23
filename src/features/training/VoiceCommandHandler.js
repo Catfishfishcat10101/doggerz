@@ -4,7 +4,6 @@
 const COMMAND_KEYWORDS = Object.freeze({
   sit: ["sit", "sit down"],
   stay: ["stay", "wait"],
-  down: ["down", "lie down", "lay down"],
   come: ["come", "come here"],
   heel: ["heel", "with me"],
   rollOver: ["roll over", "rollover"],

@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch, useStore } from "react-redux";
 
 import { PATHS } from "@/app/routes.js";
-import PageShell from "@/components/layout/PageShell.jsx";
+import SubpageShell from "@/components/layout/SubpageShell.jsx";
 import { PageFooter, PageHeader } from "@/components/layout/PageSections.jsx";
 import EmptySlate from "@/components/ui/EmptySlate.jsx";
 import { useToast } from "@/state/toastContext.js";
@@ -104,7 +104,7 @@ export default function Potty() {
 
   if (!dog) {
     return (
-      <PageShell>
+      <SubpageShell width="text">
         <div className="mx-auto w-full max-w-lg">
           <EmptySlate
             kicker="Potty Training"
@@ -116,7 +116,7 @@ export default function Potty() {
             backLabel="Back to home"
           />
         </div>
-      </PageShell>
+      </SubpageShell>
     );
   }
 
@@ -131,8 +131,11 @@ export default function Potty() {
   const lastAccidentAt = dog.potty?.lastAccidentAt
     ? new Date(dog.potty.lastAccidentAt)
     : null;
+  const successIsLatestPottyEvent =
+    lastSuccessAt &&
+    (!lastAccidentAt || lastSuccessAt.getTime() >= lastAccidentAt.getTime());
   const lastSuccessAgo = lastSuccessAt ? formatRelativeTime(lastSuccessAt) : "";
-  const lastAccidentAgo = lastAccidentAt
+  const lastAccidentAgo = lastAccidentAt && !successIsLatestPottyEvent
     ? formatRelativeTime(lastAccidentAt)
     : "";
 
@@ -208,7 +211,7 @@ export default function Potty() {
   };
 
   return (
-    <PageShell>
+    <SubpageShell width="wide">
       <div className="mx-auto w-full max-w-4xl space-y-6">
         <PageHeader className="space-y-1" unstyled>
           <p className="text-[11px] uppercase tracking-[0.26em] text-emerald-700 dark:text-emerald-300/90">
@@ -352,6 +355,11 @@ export default function Potty() {
               <div className="rounded-xl border border-rose-400/20 bg-rose-500/10 p-3 text-xs text-rose-900 dark:text-rose-100">
                 Last accident {lastAccidentAgo}. Reset the routine; don&apos;t
                 punish the dog.
+              </div>
+            ) : lastSuccessAgo ? (
+              <div className="rounded-xl border border-emerald-400/20 bg-emerald-500/10 p-3 text-xs text-emerald-900 dark:text-emerald-100">
+                Last successful potty trip {lastSuccessAgo}. Accident risk is
+                paused after a clean outdoor trip.
               </div>
             ) : null}
           </aside>
@@ -572,6 +580,6 @@ export default function Potty() {
           </button>
         </PageFooter>
       </div>
-    </PageShell>
+    </SubpageShell>
   );
 }

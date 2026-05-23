@@ -29,8 +29,8 @@ function shouldReduceEffects(perfMode) {
 export default function PageShell({
   children,
   className = "",
-  mainClassName = "px-4 py-10",
-  containerClassName = "w-full max-w-5xl mx-auto",
+  mainClassName = "px-4 pb-28 pt-4 sm:px-6 sm:pt-6",
+  containerClassName = "mx-auto w-full max-w-5xl",
   disableBackground = false,
   useSurface = true,
 }) {
@@ -64,7 +64,7 @@ export default function PageShell({
     ? `${containerClassName} max-w-4xl`
     : containerClassName;
   const effectiveMainClass = compactSurface
-    ? "px-4 py-5 sm:px-4 sm:py-8"
+    ? "px-4 pb-28 pt-4 sm:px-6 sm:pt-6"
     : mainClassName;
 
   return (

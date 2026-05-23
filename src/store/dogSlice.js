@@ -155,6 +155,10 @@ const AUTO_SLEEP_THRESHOLD = 0;
 const AUTO_WAKE_THRESHOLD = 76;
 const POTTY_FILL_PER_HOUR = 7;
 const MAX_ACCIDENTS_PER_DECAY = 1;
+const POTTY_ACCIDENT_BLOCK_MS = 90 * 60 * 1000;
+const POTTY_ACCIDENT_LOW_RISK_MS = 90 * 60 * 1000;
+const POTTY_LOW_RISK_FILL_MULTIPLIER = 0.35;
+const POTTY_LOW_RISK_ACCIDENT_THRESHOLD = 125;
 const MOOD_SAMPLE_MINUTES = 60;
 const SENIOR_STAGE_START_DAY = 150;
 const SENIOR_STIFFNESS_WINDOW_DAYS = 40;
@@ -271,6 +275,15 @@ function normalizeTimestampMs(raw) {
 
 function parseAdoptedAt(raw) {
   return normalizeTimestampMs(raw);
+}
+
+function getDogAgeAnchorAt(state) {
+  return (
+    parseAdoptedAt(state?.adoptedAt) ||
+    parseAdoptedAt(state?.createdAt) ||
+    parseAdoptedAt(state?.identity?.createdAt) ||
+    parseAdoptedAt(state?.temperament?.adoptedAt)
+  );
 }
 
 function sanitizeDogName(value, fallback = "Pup") {
@@ -2108,6 +2121,8 @@ const initialState = {
   potty: {
     training: 0, // 0–100: how potty-trained overall (meta)
     lastSuccessAt: null,
+    lastPottySuccessAt: null,
+    lastOutdoorTripAt: null,
     lastAccidentAt: null,
     totalSuccesses: 0,
     totalAccidents: 0,
@@ -2335,8 +2350,14 @@ function normalizeTreatmentEvent(memory, now = nowMs()) {
   const moodTag = String(memory.moodTag || "")
     .trim()
     .toUpperCase();
-  const happinessDelta = Number(memory.happiness);
-  const explicitImpact = Number(memory.treatmentImpact);
+  const happinessDelta =
+    memory.happiness === null || memory.happiness === undefined
+      ? NaN
+      : Number(memory.happiness);
+  const explicitImpact =
+    memory.treatmentImpact === null || memory.treatmentImpact === undefined
+      ? NaN
+      : Number(memory.treatmentImpact);
   let impact = Number.isFinite(explicitImpact)
     ? explicitImpact
     : Number.isFinite(happinessDelta)
@@ -2604,10 +2625,10 @@ function getLifecycleWindowFlags(ageDays = 0) {
 }
 
 function getDerivedDogAgeProgress(dogState, now = nowMs()) {
-  const adoptedAt = parseAdoptedAt(dogState?.adoptedAt);
-  if (!adoptedAt) return null;
+  const ageAnchorAt = getDogAgeAnchorAt(dogState);
+  if (!ageAnchorAt) return null;
   const adjustedNow = getVacationAdjustedNow(dogState || {}, now);
-  return getDogAgeProgress(adoptedAt, adjustedNow);
+  return getDogAgeProgress(ageAnchorAt, adjustedNow);
 }
 
 function normalizeForcedTrainingReaction(reaction, commandId) {
@@ -3577,23 +3598,39 @@ function evaluateThresholdsStage(ctx) {
     const tierMultiplier = Number(effects?.pottyGainMultiplier || 1) || 1;
     const trainingMultiplier = getPottyTrainingMultiplier(ctx.state);
     const asleepMultiplier = ctx.state.isAsleep ? 0.75 : 1;
+    const accidentCooldown = getPottyAccidentCooldownState(ctx.state, ctx.now);
+    const cooldownMultiplier = accidentCooldown.lowRisk
+      ? POTTY_LOW_RISK_FILL_MULTIPLIER
+      : 1;
     const perHour =
       POTTY_FILL_PER_HOUR *
       tierMultiplier *
       trainingMultiplier *
-      Number(ctx.multipliers.potty || 1);
+      Number(ctx.multipliers.potty || 1) *
+      cooldownMultiplier;
     let pottyNeed =
       Number(ctx.state.pottyLevel || 0) +
       perHour * ctx.effectiveHours * asleepMultiplier;
+    const accidentThreshold = accidentCooldown.lowRisk
+      ? POTTY_LOW_RISK_ACCIDENT_THRESHOLD
+      : 100;
 
     let accidents = 0;
-    while (pottyNeed >= 100 && accidents < MAX_ACCIDENTS_PER_DECAY) {
+    while (
+      !accidentCooldown.blocked &&
+      pottyNeed >= accidentThreshold &&
+      accidents < MAX_ACCIDENTS_PER_DECAY
+    ) {
       accidents += 1;
       pottyNeed -= 100;
       applyAccidentInternal(ctx.state, ctx.now);
     }
 
-    ctx.state.pottyLevel = clamp(pottyNeed, 0, 100);
+    ctx.state.pottyLevel = clamp(
+      accidentCooldown.blocked ? Math.min(pottyNeed, 99) : pottyNeed,
+      0,
+      100
+    );
   }
 
   const severeNeglectHours = getSevereNeglectHours(ctx);
@@ -4274,7 +4311,7 @@ function resolveCleanlinessTierFromValue(value = 0) {
 
 function syncLifecycleState(state, now = nowMs()) {
   const previousStage = state.lifeStage?.stage || null;
-  const adoptedAt = state.adoptedAt || state.temperament?.adoptedAt || now;
+  const adoptedAt = getDogAgeAnchorAt(state) || now;
   const ageNow = getVacationAdjustedNow(state, now);
   const age = calculateDogAge(adoptedAt, ageNow);
   const nextStage = age.stageId || DEFAULT_LIFE_STAGE.stage;
@@ -4723,6 +4760,8 @@ function ensurePottyMeta(state) {
     state.potty = {
       training: 0,
       lastSuccessAt: null,
+      lastPottySuccessAt: null,
+      lastOutdoorTripAt: null,
       lastAccidentAt: null,
       totalSuccesses: 0,
       totalAccidents: 0,
@@ -4743,6 +4782,24 @@ function ensurePottyMeta(state) {
     state.potty.totalAccidents = 0;
   if (typeof state.potty.ignoredCueCount !== "number")
     state.potty.ignoredCueCount = 0;
+  const lastSuccessAt = Number(
+    state.potty.lastPottySuccessAt || state.potty.lastSuccessAt || 0
+  );
+  state.potty.lastSuccessAt = Number.isFinite(lastSuccessAt) && lastSuccessAt > 0
+    ? lastSuccessAt
+    : null;
+  state.potty.lastPottySuccessAt =
+    Number.isFinite(lastSuccessAt) && lastSuccessAt > 0 ? lastSuccessAt : null;
+  const lastOutdoorTripAt = Number(state.potty.lastOutdoorTripAt || 0);
+  state.potty.lastOutdoorTripAt =
+    Number.isFinite(lastOutdoorTripAt) && lastOutdoorTripAt > 0
+      ? lastOutdoorTripAt
+      : state.potty.lastPottySuccessAt;
+  const lastAccidentAt = Number(state.potty.lastAccidentAt || 0);
+  state.potty.lastAccidentAt =
+    Number.isFinite(lastAccidentAt) && lastAccidentAt > 0
+      ? lastAccidentAt
+      : null;
   if (!state.potty.sequence || typeof state.potty.sequence !== "object") {
     state.potty.sequence = {
       phase: POTTY_SEQUENCE.NONE,
@@ -4850,6 +4907,25 @@ function syncPottySequenceState(state, now = nowMs()) {
     cueIssuedAt: null,
     cueExpiresAt: null,
   });
+}
+
+function getPottyAccidentCooldownState(state, now = nowMs()) {
+  const potty = ensurePottyMeta(state);
+  const lastSuccessAt = Number(
+    potty.lastPottySuccessAt || potty.lastSuccessAt || potty.lastOutdoorTripAt || 0
+  );
+  if (!Number.isFinite(lastSuccessAt) || lastSuccessAt <= 0) {
+    return { blocked: false, lowRisk: false, elapsedMs: Infinity };
+  }
+
+  const elapsedMs = Math.max(0, Number(now || 0) - lastSuccessAt);
+  if (elapsedMs < POTTY_ACCIDENT_BLOCK_MS) {
+    return { blocked: true, lowRisk: true, elapsedMs };
+  }
+  if (elapsedMs < POTTY_ACCIDENT_BLOCK_MS + POTTY_ACCIDENT_LOW_RISK_MS) {
+    return { blocked: false, lowRisk: true, elapsedMs };
+  }
+  return { blocked: false, lowRisk: false, elapsedMs };
 }
 
 function applyAccidentInternal(state, now = nowMs()) {
@@ -5349,7 +5425,7 @@ const dogSlice = createSlice({
       }
 
       const ageNow = getVacationAdjustedNow(merged, now);
-      const age = calculateDogAge(adoptedAt, ageNow);
+      const age = calculateDogAge(getDogAgeAnchorAt(merged), ageNow);
       merged.lifeStage = {
         stage: age?.stageId || DEFAULT_LIFE_STAGE.stage,
         label: age?.stageLabel || DEFAULT_LIFE_STAGE.label,
@@ -6393,6 +6469,8 @@ const dogSlice = createSlice({
       }
       pottyMeta.totalSuccesses += 1;
       pottyMeta.lastSuccessAt = now;
+      pottyMeta.lastPottySuccessAt = now;
+      pottyMeta.lastOutdoorTripAt = now;
       if (activeCue) {
         pottyMeta.ignoredCueCount = Math.max(
           0,

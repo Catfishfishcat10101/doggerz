@@ -27,10 +27,6 @@
   },
   "aliases": {
     "flip": "front_flip",
-    "point_position": "bark",
-    "sit": "bark",
-    "stay": "bark",
-    "trick": "bark",
     "territorial": "territorial_bark"
   }
 }

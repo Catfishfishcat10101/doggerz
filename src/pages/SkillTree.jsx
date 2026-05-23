@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
-import PageShell from "@/components/layout/PageShell.jsx";
+import SubpageShell from "@/components/layout/SubpageShell.jsx";
 import { useDog, useDogSkillTreeState } from "@/hooks/useDogState.js";
 import { PATHS } from "@/app/routes.js";
 import {
@@ -155,27 +155,25 @@ export default function SkillTree() {
   }, [activeBranchId, branches]);
 
   return (
-    <PageShell
-      disableBackground
-      className="dz-skilltree relative overflow-hidden bg-[#f5ecd9] text-slate-900"
+    <SubpageShell
+      width="wide"
+      className="dz-skilltree relative overflow-hidden text-zinc-100"
     >
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-24 -left-24 h-80 w-80 rounded-full bg-amber-200/40 blur-3xl" />
-        <div className="absolute top-32 -right-24 h-80 w-80 rounded-full bg-rose-200/35 blur-3xl" />
-        <div className="absolute bottom-0 left-20 h-72 w-72 rounded-full bg-emerald-200/30 blur-3xl" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(255,255,255,0.8),_rgba(255,255,255,0))]" />
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute inset-x-0 top-0 h-64 bg-gradient-to-b from-emerald-500/10 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 h-72 bg-gradient-to-t from-sky-500/10 to-transparent" />
       </div>
 
-      <div className="absolute inset-0">
+      <div className="relative">
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div className="max-w-2xl">
             <div className="text-xs uppercase tracking-[0.4em] text-amber-700/70">
               Training roadmap
             </div>
-            <h1 className="mt-2 text-3xl font-semibold text-slate-900">
+            <h1 className="mt-2 text-3xl font-semibold text-zinc-100">
               Realistic growth before specialization.
             </h1>
-            <p className="mt-3 text-sm leading-6 text-slate-600">
+            <p className="mt-3 text-sm leading-6 text-zinc-300">
               House manners come first, reliable cues come second, and long-term
               perk branches come after the routine feels real. This page now
               frames the perk tree as temperament shaping, not a replacement for
@@ -602,6 +600,6 @@ export default function SkillTree() {
           ))}
         </div>
       </div>
-    </PageShell>
+    </SubpageShell>
   );
 }

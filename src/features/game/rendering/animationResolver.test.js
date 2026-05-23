@@ -56,6 +56,28 @@ describe("resolveDogAnimationSelection", () => {
     expect(selection.decisionSource).toBe("requested_interrupt");
   });
 
+  it.each([
+    "speak",
+    "sit_pretty",
+    "roll_over",
+    "spin",
+    "crawl",
+    "play_dead",
+    "backflip",
+  ])("treats trainable trick clip %s as a one-shot", (clipKey) => {
+    const selection = resolveDogAnimationSelection({
+      dog: {},
+      brainState: {},
+      renderModel: {},
+      requestedAction: clipKey,
+    });
+
+    expect(selection.interruptAction).toBe(clipKey);
+    expect(selection.finalAction).toBe(clipKey);
+    expect(selection.oneShot).toBe(true);
+    expect(selection.priorityBucket).toBe("one_shot");
+  });
+
   it("preserves richer state-driven reaction aliases", () => {
     const selection = resolveDogAnimationSelection({
       dog: { lastAction: "guilty_paws" },

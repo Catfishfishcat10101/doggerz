@@ -3870,29 +3870,10 @@ export default function MainGame({ scene, dogInteractive = true }) {
       setUiSpeedBoost(1);
     }, 1400);
 
-    const audioEnabled = settings?.audio?.enabled !== false;
-    const masterVolume = clamp(
-      Number(settings?.audio?.masterVolume ?? 0.8),
-      0,
-      1
-    );
-    const sfxVolume = clamp(Number(settings?.audio?.sfxVolume ?? 0.7), 0, 1);
-    if (!audioEnabled || masterVolume * sfxVolume <= 0) return;
-
-    try {
-      const bark = new Audio(withBaseUrl("/audio/bark.m4a"));
-      bark.volume = clamp(masterVolume * sfxVolume, 0, 1);
-      bark.play().catch(() => {});
-    } catch {
-      // Ignore audio playback failures on unsupported environments.
-    }
   }, [
     controlsDisabled,
     dispatch,
     life?.stage,
-    settings?.audio?.enabled,
-    settings?.audio?.masterVolume,
-    settings?.audio?.sfxVolume,
     triggerActionFeedback,
   ]);
 

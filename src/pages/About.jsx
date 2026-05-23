@@ -9,7 +9,7 @@ import { ContactShadows } from "@react-three/drei";
 
 import { PATHS } from "@/app/routes.js";
 import JackRussellModel from "@/components/dog/three/JackRussellModel.jsx";
-import PageShell from "@/components/layout/PageShell.jsx";
+import SubpageShell from "@/components/layout/SubpageShell.jsx";
 import { PageHeader } from "@/components/layout/PageSections.jsx";
 
 const CORE_LOOP = [
@@ -98,7 +98,7 @@ function AboutDogPreview3D() {
 
 export default function AboutPage() {
   return (
-    <PageShell>
+    <SubpageShell width="wide">
       <div
         className="relative mx-auto max-w-6xl space-y-10"
         style={{
@@ -289,6 +289,6 @@ export default function AboutPage() {
           </div>
         </div>
       </div>
-    </PageShell>
+    </SubpageShell>
   );
 }
