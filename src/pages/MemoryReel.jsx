@@ -15,6 +15,7 @@ const TYPE_OPTIONS = [
   "All",
   "CARE",
   "TRAINING",
+  "BOND",
   "LEVEL_UP",
   "NEGLECT",
   "UNLOCK",
@@ -34,8 +35,31 @@ function formatEntryDate(ts) {
   }
 }
 
+function formatDayLabel(dayKey) {
+  if (!dayKey) return "Unknown day";
+  try {
+    return new Date(`${dayKey}T12:00:00`).toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+    });
+  } catch {
+    return dayKey;
+  }
+}
+
+const CARE_LOG_KEYS = ["feed", "water", "play", "sleep", "clean", "potty"];
+const CARE_LOG_LABELS = {
+  feed: "Feed",
+  water: "Water",
+  play: "Play",
+  sleep: "Sleep",
+  clean: "Clean",
+  potty: "Potty",
+};
+
 export default function MemoryReel() {
-  const { name, journal, memories, memoryDrives } = useDogMemoryState();
+  const { name, journal, memories, memory, bond, memoryDrives } =
+    useDogMemoryState();
 
   const [query, setQuery] = useState("");
   const [type, setType] = useState("All");
@@ -50,11 +74,12 @@ export default function MemoryReel() {
       buildMemoryJournalModel({
         memories,
         journalEntries: journal?.entries,
+        memoryState: memory,
         query,
         categoryFilter: storyFilter,
         sortNewest,
       }),
-    [journal?.entries, memories, query, sortNewest, storyFilter]
+    [journal?.entries, memories, memory, query, sortNewest, storyFilter]
   );
 
   const entries = useMemo(() => {
@@ -99,10 +124,164 @@ export default function MemoryReel() {
               <span className="rounded-full border border-sky-400/30 bg-sky-500/10 px-3 py-1">
                 Restless drive {Math.round(Number(memoryDrives?.restless || 0))}
               </span>
+              <span className="rounded-full border border-rose-400/30 bg-rose-500/10 px-3 py-1">
+                Bond {Math.round(Number(bond?.value || 0))}
+              </span>
             </div>
           </div>
 
           <div className="p-6 sm:p-8">
+            <section className="mb-6 grid gap-3 xl:grid-cols-5">
+              <div className="xl:col-span-2 rounded-3xl border border-white/10 bg-black/25 p-4">
+                <div className="text-[11px] uppercase tracking-[0.2em] text-zinc-500">
+                  Daily care logs
+                </div>
+                <div className="mt-3 space-y-3">
+                  {journalModel.dailyCareLogs.length ? (
+                    journalModel.dailyCareLogs.slice(0, 3).map((log) => (
+                      <div
+                        key={log.dayKey}
+                        className="border-t border-white/10 pt-3"
+                      >
+                        <div className="flex items-center justify-between gap-2 text-xs text-zinc-300">
+                          <span className="font-semibold text-emerald-100">
+                            {formatDayLabel(log.dayKey)}
+                          </span>
+                          <span>{log.completedCount}/6 cared</span>
+                        </div>
+                        <div className="mt-2 grid grid-cols-3 gap-1.5">
+                          {CARE_LOG_KEYS.map((key) => {
+                            const done = log.categories.includes(key);
+                            return (
+                              <span
+                                key={key}
+                                className={`rounded-full border px-2 py-1 text-center text-[10px] font-semibold ${
+                                  done
+                                    ? "border-emerald-400/25 bg-emerald-500/10 text-emerald-100"
+                                    : "border-white/10 bg-white/[0.03] text-zinc-500"
+                                }`}
+                              >
+                                {CARE_LOG_LABELS[key]}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="mt-3 text-sm text-zinc-400">
+                      Care actions will start filling this log from the yard.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="rounded-3xl border border-white/10 bg-black/25 p-4">
+                <div className="text-[11px] uppercase tracking-[0.2em] text-zinc-500">
+                  Favorite actions
+                </div>
+                <div className="mt-3 space-y-2">
+                  {journalModel.favoriteActions.length ? (
+                    journalModel.favoriteActions.slice(0, 4).map((action) => (
+                      <div
+                        key={action.id}
+                        className="flex items-center justify-between gap-2 text-sm"
+                      >
+                        <span className="capitalize text-zinc-200">
+                          {action.label}
+                        </span>
+                        <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[11px] text-zinc-300">
+                          {action.count}
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-zinc-400">No favorite yet.</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="rounded-3xl border border-white/10 bg-black/25 p-4">
+                <div className="text-[11px] uppercase tracking-[0.2em] text-zinc-500">
+                  Bond history
+                </div>
+                <div className="mt-3 space-y-2">
+                  {journalModel.bondHistory.length ? (
+                    journalModel.bondHistory.slice(0, 4).map((entry) => (
+                      <div key={entry.id} className="text-sm">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="capitalize text-zinc-200">
+                            {entry.source}
+                          </span>
+                          <span className="text-emerald-200">
+                            +{Number(entry.delta || 0).toFixed(1)}
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-zinc-500">
+                          {formatEntryDate(entry.timestamp)}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-zinc-400">
+                      Bond gains will appear after care.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="rounded-3xl border border-white/10 bg-black/25 p-4">
+                <div className="text-[11px] uppercase tracking-[0.2em] text-zinc-500">
+                  Neglect history
+                </div>
+                <div className="mt-3 space-y-2">
+                  {journalModel.neglectHistory.length ? (
+                    journalModel.neglectHistory.slice(0, 3).map((entry) => (
+                      <div key={entry.id} className="text-sm">
+                        <div className="text-amber-100">{entry.summary}</div>
+                        <div className="text-[11px] text-zinc-500">
+                          {formatEntryDate(entry.timestamp)}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-emerald-200">
+                      No neglect memories recorded.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </section>
+
+            {journalModel.rememberedMoments.length > 0 ? (
+              <section className="mb-6 rounded-3xl border border-emerald-400/20 bg-emerald-500/10 p-4">
+                <div className="text-[11px] uppercase tracking-[0.2em] text-emerald-100/80">
+                  Your dog remembers this
+                </div>
+                <div className="mt-3 grid gap-3 md:grid-cols-2">
+                  {journalModel.rememberedMoments.map((moment) => (
+                    <article
+                      key={moment.id}
+                      className="rounded-2xl border border-white/10 bg-black/25 p-3"
+                    >
+                      <div className="flex items-center justify-between gap-2 text-[11px] text-zinc-400">
+                        <span>{moment.moodTag || "MEMORY"}</span>
+                        <span>{formatEntryDate(moment.timestamp)}</span>
+                      </div>
+                      <h2 className="mt-1 text-sm font-semibold text-emerald-50">
+                        {moment.summary}
+                      </h2>
+                      {moment.body ? (
+                        <p className="mt-1 line-clamp-2 text-xs leading-5 text-zinc-300">
+                          {moment.body}
+                        </p>
+                      ) : null}
+                    </article>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
             {journalModel.highlights.length > 0 ? (
               <div className="mb-6 grid gap-3 lg:grid-cols-3">
                 {journalModel.highlights.slice(0, 3).map((highlight) => (

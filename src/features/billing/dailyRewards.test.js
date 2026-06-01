@@ -1,7 +1,10 @@
 // src/features/billing/dailyRewards.test.js
 import { describe, expect, it } from "vitest";
 
-import { getDailyRewardState } from "@/features/billing/dailyRewards.js";
+import {
+  DAILY_REWARD_SCHEDULE,
+  getDailyRewardState,
+} from "@/features/billing/dailyRewards.js";
 
 describe("getDailyRewardState", () => {
   it("keeps a streak across the local DST spring-forward boundary", () => {
@@ -34,5 +37,24 @@ describe("getDailyRewardState", () => {
     expect(state.nextStreakDay).toBe(1);
     expect(state.reward?.day).toBe(1);
     expect(state.nextEligibleAt).toBe(now);
+  });
+
+  it("turns day seven into a relationship bundle with an accessory", () => {
+    const daySeven = DAILY_REWARD_SCHEDULE.find((reward) => reward.day === 7);
+
+    expect(daySeven).toMatchObject({
+      type: "BUNDLE",
+      value: 500,
+      accessoryId: "tag_star",
+    });
+
+    const state = getDailyRewardState({
+      lastRewardClaimedAt: new Date(2026, 2, 13, 9, 0, 0, 0).getTime(),
+      consecutiveDays: 6,
+      now: new Date(2026, 2, 14, 9, 0, 0, 0).getTime(),
+    });
+
+    expect(state.nextStreakDay).toBe(7);
+    expect(state.reward).toEqual(daySeven);
   });
 });

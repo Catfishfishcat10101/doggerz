@@ -639,6 +639,14 @@ export function TricksOverlay({
                   {clamp(command.masteryPct, 0, 100)}%
                 </span>
               </div>
+              <div className="mt-2 grid grid-cols-2 gap-1.5 text-[10px] font-bold uppercase tracking-[0.12em]">
+                <span className="rounded-full border border-sky-300/25 bg-sky-400/10 px-2 py-1 text-sky-100">
+                  Chance {clamp(command.successChancePct, 0, 100)}%
+                </span>
+                <span className="rounded-full border border-amber-300/25 bg-amber-400/10 px-2 py-1 text-amber-100">
+                  +{Math.max(1, Math.round(Number(command.xpReward || 1)))} XP
+                </span>
+              </div>
             </button>
           ))}
         </div>
@@ -736,6 +744,13 @@ export function TrainingLogOverlay({
                     <span>{command.group || "Trick"}</span>
                     <span>{command.difficultyStars}</span>
                     <span>{command.requirementLabel}</span>
+                    <span>
+                      Chance {clamp(command.successChancePct, 0, 100)}%
+                    </span>
+                    <span>
+                      XP{" "}
+                      {Math.max(1, Math.round(Number(command.xpReward || 1)))}
+                    </span>
                   </div>
                 </div>
                 <div className="text-right">

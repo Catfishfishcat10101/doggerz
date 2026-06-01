@@ -83,4 +83,53 @@ describe("memoryJournalModel", () => {
     expect(model.entries).toHaveLength(1);
     expect(model.entries[0].id).toBe("m1");
   });
+
+  it("summarizes daily care, bond, neglect, favorite actions, and remembered moments", () => {
+    const model = buildMemoryJournalModel({
+      memoryState: {
+        dailyCareLogs: [
+          {
+            dayKey: "2026-06-01",
+            updatedAt: 200,
+            categories: ["feed", "water", "play", "sleep", "clean", "potty"],
+            counts: { feed: 2, water: 1, play: 1 },
+          },
+        ],
+        bondHistory: [
+          {
+            id: "b1",
+            timestamp: 220,
+            delta: 1.4,
+            value: 34,
+            source: "play",
+          },
+        ],
+        neglectHistory: [
+          {
+            id: "n1",
+            timestamp: 150,
+            strikes: 1,
+            moodTag: "LONELY",
+            summary: "Long absence remembered.",
+          },
+        ],
+        favoriteActionCounts: { feed: 2, play: 4 },
+      },
+      memories: [
+        {
+          id: "m1",
+          timestamp: 210,
+          category: "TRAINING",
+          summary: "Sit mastered",
+          body: "A training milestone became part of the bond.",
+        },
+      ],
+    });
+
+    expect(model.dailyCareLogs[0].completedCount).toBe(6);
+    expect(model.bondHistory[0].delta).toBe(1.4);
+    expect(model.neglectHistory[0].summary).toBe("Long absence remembered.");
+    expect(model.favoriteActions[0].id).toBe("play");
+    expect(model.rememberedMoments[0].summary).toBe("Sit mastered");
+  });
 });

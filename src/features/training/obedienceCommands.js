@@ -16,6 +16,7 @@ const COMMANDS = [
     minLevel: 1,
     minBond: 0,
     unlockDelayMinutes: 0,
+    xpReward: 6,
     animationKey: "sit",
   },
   {
@@ -27,6 +28,7 @@ const COMMANDS = [
     minLevel: 1,
     minBond: 0,
     unlockDelayMinutes: 0,
+    xpReward: 6,
     animationKey: "speak",
   },
   {
@@ -39,7 +41,21 @@ const COMMANDS = [
     minLevel: 2,
     minBond: 10,
     unlockDelayMinutes: 10,
+    xpReward: 7,
     animationKey: "shake",
+  },
+  {
+    id: "highFive",
+    label: "High Five",
+    group: "Tier 1 Â· Basics",
+    difficulty: 1,
+    summary:
+      "A clean paw-up greeting. Sits, lifts a paw higher, and holds the cue.",
+    minLevel: 3,
+    minBond: 14,
+    unlockDelayMinutes: 12,
+    xpReward: 8,
+    animationKey: "high_five",
   },
   {
     id: "sitPretty",
@@ -50,6 +66,7 @@ const COMMANDS = [
     minLevel: 4,
     minBond: 18,
     unlockDelayMinutes: 15,
+    xpReward: 9,
     animationKey: "sit_pretty",
   },
   {
@@ -61,6 +78,7 @@ const COMMANDS = [
     minLevel: 5,
     minBond: 22,
     unlockDelayMinutes: 20,
+    xpReward: 10,
     animationKey: "roll_over",
   },
   {
@@ -72,6 +90,7 @@ const COMMANDS = [
     minLevel: 6,
     minBond: 24,
     unlockDelayMinutes: 25,
+    xpReward: 10,
     animationKey: "spin",
   },
   {
@@ -84,6 +103,7 @@ const COMMANDS = [
     minLevel: 8,
     minBond: 28,
     unlockDelayMinutes: 30,
+    xpReward: 12,
     animationKey: "crawl",
   },
   {
@@ -95,6 +115,7 @@ const COMMANDS = [
     minLevel: 9,
     minBond: 32,
     unlockDelayMinutes: 35,
+    xpReward: 13,
     animationKey: "play_dead",
   },
   {
@@ -106,6 +127,7 @@ const COMMANDS = [
     minLevel: 10,
     minBond: 36,
     unlockDelayMinutes: 60,
+    xpReward: 16,
     animationKey: "backflip",
   },
 ];
@@ -165,6 +187,14 @@ export function getObedienceCommand(commandId) {
   const token = normalizeCommandToken(commandId);
   if (!token) return null;
   return OBEDIENCE_COMMAND_BY_ID.get(token) || null;
+}
+
+export function getObedienceCommandDifficultyKey(command) {
+  const difficulty = Math.max(1, Number(command?.difficulty || 1));
+  if (difficulty >= 4) return "expert";
+  if (difficulty >= 3) return "hard";
+  if (difficulty <= 1) return "easy";
+  return "normal";
 }
 
 export function hasObedienceCommand(commandId) {

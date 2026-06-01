@@ -56,6 +56,16 @@ describe("dog 3D animation map", () => {
     expect(resolveFeedingClipName("loop", GLB_ACTIONS)).toBe(FEED_LOOP_CLIP);
   });
 
+  it.each([
+    ["return_greet", "Wag"],
+    ["return_annoyed", "Bark"],
+    ["return_sleeping", "Sleep"],
+    ["daily_reward", "Wag"],
+  ])("resolves retention reaction %s", (request, clipRequest) => {
+    expect(resolveDogModelClipRequest(request)).toBe(clipRequest);
+    expect(resolveClipName(request, GLB_ACTIONS)).toBeTruthy();
+  });
+
   it("falls back to neutral idle for feeding when eating clips are missing", () => {
     expect(resolveFeedingClipName("start", { Idle_1: {}, Wag: {} })).toBe(
       "Idle_1"

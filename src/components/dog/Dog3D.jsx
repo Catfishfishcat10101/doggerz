@@ -168,7 +168,17 @@ function normalizeMotionKey(value = "") {
 function resolveTrickRootMotion(clip = "Idle", action = "", localT = 0) {
   const requestKey = normalizeMotionKey(resolveDogModelClipRequest(clip));
   const actionKey = normalizeMotionKey(action);
-  const key = requestKey || actionKey;
+  const explicitTrickKey = [
+    "shake",
+    "paw",
+    "highfive",
+    "sit",
+    "speak",
+    "bark",
+  ].includes(actionKey)
+    ? actionKey
+    : "";
+  const key = explicitTrickKey || requestKey || actionKey;
   const seconds = Math.max(0, Number(localT) || 0);
   const phase = (seconds % 1.4) / 1.4;
   const loop = Math.sin(seconds * Math.PI * 2);
@@ -288,6 +298,20 @@ function resolveTrickRootMotion(clip = "Idle", action = "", localT = 0) {
       squashX: 0.99,
       squashY: key === "highfive" ? 1.02 : 0.96,
       squashZ: 1.03,
+    };
+  }
+
+  if (key === "sit") {
+    return {
+      y: -0.035 + Math.sin(seconds * 1.45) * 0.006,
+      xRot: -0.055 + Math.sin(seconds * 0.7) * 0.006,
+      yRot: Math.sin(seconds * 0.24) * 0.02,
+      zRot: 0,
+      x: 0,
+      z: 0.018,
+      squashX: 1,
+      squashY: 0.94,
+      squashZ: 1.04,
     };
   }
 
@@ -447,16 +471,18 @@ export function Dog3D({
 
   const effectiveRotation = useMemo(() => {
     if (ghost) return [0, Math.PI * -0.08, 0];
-    if (facing === "left" || dog?.facing === "left") {
+    const facingKey = String(facing || "").trim().toLowerCase();
+    const dogFacingKey = String(dog?.facing || "").trim().toLowerCase();
+    if (facingKey === "left" || dogFacingKey === "left") {
       return [rotation[0], Math.PI * -0.16, rotation[2] || 0];
     }
-    if (facing === "right" || dog?.facing === "right") {
+    if (facingKey === "right" || dogFacingKey === "right") {
       return [rotation[0], Math.PI * 0.16, rotation[2] || 0];
     }
-    if (facing === "front" || dog?.facing === "front") {
+    if (facingKey === "front" || dogFacingKey === "front") {
       return [rotation[0], 0, rotation[2] || 0];
     }
-    if (facing === "back" || dog?.facing === "back") {
+    if (facingKey === "back" || dogFacingKey === "back") {
       return [rotation[0], Math.PI, rotation[2] || 0];
     }
     return rotation;
@@ -582,10 +608,11 @@ export function Dog3D({
 
   useEffect(() => {
     modelScene.traverse((node) => {
-      if (!node?.isMesh) return;
+      if (!node?.isMesh && !node?.isSkinnedMesh) return;
 
       node.castShadow = !ghost;
       node.receiveShadow = true;
+      node.frustumCulled = false;
 
       applyMaterialState(node, { ghost, opacity });
     });

@@ -38,6 +38,7 @@ import {
   commandRequirementsMet,
   getObedienceActiveLearningLimit,
   getObedienceCommand,
+  getObedienceCommandDifficultyKey,
 } from "@/features/training/obedienceCommands.js";
 import {
   CORE_PET_STAT_DECAY_PER_HOUR,
@@ -1089,6 +1090,10 @@ function applyFeedEffect(state, payload = {}, opts = {}) {
     maybeSampleMood(state, now, isHumanFood ? "FEED_JUNK" : "FEED");
   }
 
+  const dogName = getDogDisplayName(state);
+  const firstFeedMemory = !Array.isArray(state.memories)
+    ? true
+    : !state.memories.some((memory) => memory?.type === "ate_food");
   pushStructuredMemory(state, {
     type: "ate_food",
     category: "CARE",
@@ -1117,12 +1122,14 @@ function applyFeedEffect(state, payload = {}, opts = {}) {
         ? "Treat choice"
         : "Meal",
     message: usePremiumKibble
-      ? "They settled after a full meal and looked visibly satisfied."
+      ? `${dogName} gobbled it up and looked visibly satisfied.`
       : isHumanFood
-        ? "They loved it, but too much human food will cost health."
-        : hungerRelief >= 30
-          ? "The bowl mattered. Hunger dropped and their body language softened."
-          : "They ate a little, but they were not very hungry yet.",
+        ? `${dogName} gobbled it up. Too much human food will still cost health.`
+        : firstFeedMemory
+          ? `${dogName} gobbled it up. ${dogName} will remember this.`
+          : hungerRelief >= 30
+            ? `${dogName} gobbled it up. Hunger dropped and trust nudged upward.`
+            : `${dogName} ate a little, but was not very hungry yet.`,
     tone: isHumanFood ? "amber" : usePremiumKibble ? "emerald" : "amber",
     icon: "food",
     now,
@@ -1534,7 +1541,10 @@ const initialMemory = {
   lastZoomiesAt: null,
   lastDreamWoofAt: null,
   lastGuiltyPawsAt: null,
+  lastReturnReactionAt: null,
+  lastReturnReaction: null,
   lastTrainingReaction: null,
+  lastTrainingOutcome: null,
   lastMasteredCommandId: null,
   lastMasteredCommandAt: null,
   lastTreasureHuntAt: null,
@@ -1547,6 +1557,10 @@ const initialMemory = {
     categories: [],
     completedAt: null,
   },
+  dailyCareLogs: [],
+  bondHistory: [],
+  neglectHistory: [],
+  favoriteActionCounts: {},
   treatment: {
     score: 60,
     tone: "steady",
@@ -2316,6 +2330,13 @@ function setCareResponse(
   };
 }
 
+function getDogDisplayName(state) {
+  return (
+    String(state?.name || state?.identity?.name || "Fireball").trim() ||
+    "Fireball"
+  );
+}
+
 function getNeedDelta(before, after) {
   return Math.max(0, Math.round(Number(before || 0) - Number(after || 0)));
 }
@@ -2368,7 +2389,11 @@ function normalizeTreatmentEvent(memory, now = nowMs()) {
   if (moodTag === "SASSY" || moodTag === "RESTLESS") impact -= 0.4;
   if (moodTag === "SECURE" || moodTag === "AFFECTIONATE") impact += 0.7;
 
-  const ageWeight = clamp(1 - (now - timestamp) / TREATMENT_MEMORY_WINDOW_MS, 0, 1);
+  const ageWeight = clamp(
+    1 - (now - timestamp) / TREATMENT_MEMORY_WINDOW_MS,
+    0,
+    1
+  );
   return {
     type: type || "memory",
     timestamp,
@@ -2401,7 +2426,11 @@ function summarizeTreatmentFromMemories(state, now = nowMs()) {
     32,
     Math.max(0, Number(state.memory?.neglectStrikes || 0)) * 8
   );
-  const score = clamp(Math.round(60 + weightedTotal * 4 - neglectPenalty), 0, 100);
+  const score = clamp(
+    Math.round(60 + weightedTotal * 4 - neglectPenalty),
+    0,
+    100
+  );
   const lastPositive = events.find((event) => event.impact > 0);
   const lastNegative = events.find((event) => event.impact < 0);
 
@@ -2456,6 +2485,99 @@ function ensureDailyCareLoop(memory) {
   return memory.dailyCareLoop;
 }
 
+function normalizeCareMemoryKey(category) {
+  const key = String(category || "")
+    .trim()
+    .toLowerCase();
+  if (key === "bond") return "play";
+  if (key === "bath") return "clean";
+  if (key === "rest") return "sleep";
+  return key;
+}
+
+function ensureMemoryLedgers(memory) {
+  memory.dailyCareLogs = Array.isArray(memory.dailyCareLogs)
+    ? memory.dailyCareLogs
+        .filter((entry) => entry && typeof entry === "object")
+        .slice(0, 21)
+    : [];
+  memory.bondHistory = Array.isArray(memory.bondHistory)
+    ? memory.bondHistory
+        .filter((entry) => entry && typeof entry === "object")
+        .slice(0, 80)
+    : [];
+  memory.neglectHistory = Array.isArray(memory.neglectHistory)
+    ? memory.neglectHistory
+        .filter((entry) => entry && typeof entry === "object")
+        .slice(0, 50)
+    : [];
+  memory.favoriteActionCounts =
+    memory.favoriteActionCounts &&
+    typeof memory.favoriteActionCounts === "object"
+      ? memory.favoriteActionCounts
+      : {};
+  return memory;
+}
+
+function recordDailyCareLog(state, category, now = nowMs()) {
+  const memory = ensureMemoryLedgers(ensureMemoryState(state));
+  const key = normalizeCareMemoryKey(category);
+  if (!key) return;
+
+  const dayKey = getIsoDate(now);
+  let log = memory.dailyCareLogs.find((entry) => entry?.dayKey === dayKey);
+  if (!log) {
+    log = {
+      dayKey,
+      startedAt: now,
+      updatedAt: now,
+      completedAt: null,
+      counts: {},
+      categories: [],
+    };
+    memory.dailyCareLogs.unshift(log);
+  }
+
+  log.updatedAt = now;
+  log.counts = log.counts && typeof log.counts === "object" ? log.counts : {};
+  log.counts[key] = Math.max(0, Math.floor(Number(log.counts[key] || 0))) + 1;
+  log.categories = Array.isArray(log.categories) ? log.categories : [];
+  if (!log.categories.includes(key)) {
+    log.categories.push(key);
+  }
+  const allCoreDone = [
+    "feed",
+    "water",
+    "play",
+    "sleep",
+    "clean",
+    "potty",
+  ].every((coreKey) => log.categories.includes(coreKey));
+  if (allCoreDone && !log.completedAt) {
+    log.completedAt = now;
+  }
+
+  memory.favoriteActionCounts[key] =
+    Math.max(0, Math.floor(Number(memory.favoriteActionCounts[key] || 0))) + 1;
+  memory.dailyCareLogs = memory.dailyCareLogs.slice(0, 21);
+}
+
+function recordNeglectMemory(
+  state,
+  { summary, body, moodTag, now = nowMs() } = {}
+) {
+  const memory = ensureMemoryLedgers(ensureMemoryState(state));
+  memory.neglectHistory.unshift({
+    id: `neglect:${now}:${memory.neglectHistory.length + 1}`,
+    timestamp: now,
+    strikes: Math.max(0, Math.floor(Number(memory.neglectStrikes || 0))),
+    moodTag: moodTag || "LONELY",
+    summary: String(summary || "Care gap remembered.").trim(),
+    body: String(body || "").trim(),
+  });
+  memory.neglectHistory = memory.neglectHistory.slice(0, 50);
+}
+
 function markDailyCareCategory(state, category, now = nowMs()) {
   const key = String(category || "")
     .trim()
@@ -2463,6 +2585,7 @@ function markDailyCareCategory(state, category, now = nowMs()) {
   if (!key) return;
 
   const memory = ensureMemoryState(state);
+  recordDailyCareLog(state, key, now);
   const loop = ensureDailyCareLoop(memory);
   const dayKey = getIsoDate(now);
   if (loop.dayKey !== dayKey) {
@@ -2582,6 +2705,7 @@ function ensureMemoryState(state) {
     : [];
 
   ensureDailyCareLoop(state.memory);
+  ensureMemoryLedgers(state.memory);
   if (!state.memory.treatment || typeof state.memory.treatment !== "object") {
     state.memory.treatment = { ...initialMemory.treatment };
   } else {
@@ -3867,6 +3991,12 @@ function runLegacyEventsStage(ctx) {
         "but I got pretty lonely while you were gone. Next time, can we play a little sooner?\n\n– your pup",
       timestamp: ctx.now,
     });
+    recordNeglectMemory(ctx.state, {
+      moodTag: "LONELY",
+      summary: "Long absence remembered.",
+      body: "Your pup logged a care gap after more than a day away.",
+      now: ctx.now,
+    });
   }
 }
 
@@ -3900,6 +4030,66 @@ function getOfflineCatchUpHours(lastTickAt, now = nowMs()) {
   return getOfflineProgressHours(lastTickAt, now, MAX_DECAY_HOURS);
 }
 
+function recordOfflineReturnReaction(state, hoursPassed = 0, now = nowMs()) {
+  const hours = Number(hoursPassed || 0);
+  if (hours < 2 || !state?.adoptedAt) return;
+
+  const memory = ensureMemoryState(state);
+  const lastReactionAt = Number(memory.lastReturnReactionAt || 0);
+  if (lastReactionAt && now - lastReactionAt < 30 * 60 * 1000) return;
+
+  const name = getDogDisplayName(state);
+  const hunger = Number(state.stats?.hunger || 0);
+  const energy = Number(state.stats?.energy || 0);
+  const neglect = Number(memory.neglectStrikes || 0);
+  let reaction = "greet";
+  let action = "return_greet";
+  let moodTag = "HAPPY";
+  let tone = "emerald";
+  let message = `${name} ran over like you had been gone forever.`;
+
+  if (neglect > 0 || hunger >= 82) {
+    reaction = "annoyed";
+    action = "return_annoyed";
+    moodTag = "LONELY";
+    tone = "amber";
+    message = `${name} noticed the gap and needed reassurance before anything else.`;
+  } else if (energy <= 24 || state.isAsleep) {
+    reaction = "sleeping";
+    action = "return_sleeping";
+    moodTag = "SLEEPY";
+    tone = "sky";
+    message = `${name} was asleep when you came back, but stirred at your voice.`;
+  }
+
+  memory.lastReturnReactionAt = now;
+  memory.lastReturnReaction = {
+    reaction,
+    hoursAway: Number(hours.toFixed(1)),
+    timestamp: now,
+  };
+  state.lastAction = action;
+  setCareResponse(state, {
+    key: "return",
+    label: "Welcome back",
+    message,
+    tone,
+    icon: "home",
+    now,
+  });
+  pushStructuredMemory(state, {
+    type: "return_moment",
+    category: "MEMORY",
+    moodTag,
+    summary: `${name} reacted when you came back.`,
+    body: message,
+    timestamp: now,
+    happiness: reaction === "annoyed" ? -1 : 2,
+    energy: Number(state.stats?.energy || 0),
+    hunger: Number(state.stats?.hunger || 0),
+  });
+}
+
 function applyOfflineCatchUp(state, now = nowMs()) {
   const hoursPassed = getOfflineCatchUpHours(state.lastUpdatedAt, now);
   if (!hoursPassed) {
@@ -3911,6 +4101,7 @@ function applyOfflineCatchUp(state, now = nowMs()) {
   }
 
   applyDecay(state, now);
+  recordOfflineReturnReaction(state, hoursPassed, now);
   normalizeStatsState(state);
   return hoursPassed;
 }
@@ -4049,8 +4240,24 @@ function applyBondGain(state, amount = 1, now = nowMs()) {
   if (!state.bond || typeof state.bond !== "object") {
     state.bond = { ...initialBond };
   }
+  const before = Number(state.bond.value || 0);
   state.bond.value = clamp((state.bond.value || 0) + gain, 0, 100);
   state.bond.updatedAt = now;
+  const memory = ensureMemoryLedgers(ensureMemoryState(state));
+  const appliedGain = Math.max(0, Number(state.bond.value || 0) - before);
+  if (appliedGain > 0) {
+    memory.bondHistory.unshift({
+      id: `bond:${now}:${memory.bondHistory.length + 1}`,
+      timestamp: now,
+      delta: Number(appliedGain.toFixed(2)),
+      value: Number(state.bond.value || 0),
+      source:
+        String(state.lastAction || "")
+          .trim()
+          .toLowerCase() || "care",
+    });
+    memory.bondHistory = memory.bondHistory.slice(0, 80);
+  }
 }
 
 function _applyBondLoss(state, amount = 1, now = nowMs()) {
@@ -4140,6 +4347,39 @@ function setLastTrainingReaction(state, reaction, now) {
       memory.commandBuffer.length = 8;
     }
   }
+}
+
+function setLastTrainingOutcome(
+  state,
+  {
+    commandId,
+    label,
+    outcome,
+    successChance,
+    xpGained = 0,
+    masteryBefore = 0,
+    masteryAfter = 0,
+    animationKey = null,
+    now = nowMs(),
+  } = {}
+) {
+  const memory = ensureMemoryState(state);
+  const safeOutcome = String(outcome || "unknown")
+    .trim()
+    .toLowerCase();
+  memory.lastTrainingOutcome = {
+    id: `training:${commandId || "command"}:${now}`,
+    commandId: commandId ? String(commandId) : null,
+    label: String(label || commandId || "Trick"),
+    outcome: safeOutcome,
+    success: safeOutcome === "success" || safeOutcome === "perfect",
+    successChance: clamp01(Number(successChance || 0)),
+    xpGained: Math.max(0, Math.round(Number(xpGained || 0))),
+    masteryBefore: clamp(Math.round(Number(masteryBefore || 0)), 0, 100),
+    masteryAfter: clamp(Math.round(Number(masteryAfter || 0)), 0, 100),
+    animationKey: animationKey ? String(animationKey) : null,
+    timestamp: now,
+  };
 }
 
 function updateStreak(streakState, isoDate) {
@@ -4785,9 +5025,8 @@ function ensurePottyMeta(state) {
   const lastSuccessAt = Number(
     state.potty.lastPottySuccessAt || state.potty.lastSuccessAt || 0
   );
-  state.potty.lastSuccessAt = Number.isFinite(lastSuccessAt) && lastSuccessAt > 0
-    ? lastSuccessAt
-    : null;
+  state.potty.lastSuccessAt =
+    Number.isFinite(lastSuccessAt) && lastSuccessAt > 0 ? lastSuccessAt : null;
   state.potty.lastPottySuccessAt =
     Number.isFinite(lastSuccessAt) && lastSuccessAt > 0 ? lastSuccessAt : null;
   const lastOutdoorTripAt = Number(state.potty.lastOutdoorTripAt || 0);
@@ -4912,7 +5151,10 @@ function syncPottySequenceState(state, now = nowMs()) {
 function getPottyAccidentCooldownState(state, now = nowMs()) {
   const potty = ensurePottyMeta(state);
   const lastSuccessAt = Number(
-    potty.lastPottySuccessAt || potty.lastSuccessAt || potty.lastOutdoorTripAt || 0
+    potty.lastPottySuccessAt ||
+      potty.lastSuccessAt ||
+      potty.lastOutdoorTripAt ||
+      0
   );
   if (!Number.isFinite(lastSuccessAt) || lastSuccessAt <= 0) {
     return { blocked: false, lowRisk: false, elapsedMs: Infinity };
@@ -5524,6 +5766,24 @@ const dogSlice = createSlice({
       ensureDogIdentityState(state, { adoptedAtFallback: adoptedAt });
       ensureIdentityContentState(state);
       applyLegacyAdoptionBonuses(state, adoptedAt);
+      pushStructuredMemory(state, {
+        id: `adoption:${adoptedAt}`,
+        type: "adoption_badge",
+        category: "MEMORY",
+        moodTag: "SECURE",
+        summary: `${getDogDisplayName(state)} came home.`,
+        body: "First badge earned: the yard is no longer empty.",
+        timestamp: adoptedAt,
+        happiness: 4,
+      });
+      setCareResponse(state, {
+        key: "adoption",
+        label: "First badge",
+        message: `${getDogDisplayName(state)} is home. First badge earned.`,
+        tone: "emerald",
+        icon: "badge",
+        now: adoptedAt,
+      });
 
       if (legacy.ghostPlayBowPending) {
         legacy.ghostPlayBowPending = false;
@@ -5683,8 +5943,8 @@ const dogSlice = createSlice({
         label: "Quick feed",
         message:
           hungerBefore >= 50
-            ? "Fast meal handled the real need without turning care into grinding."
-            : "They took a few bites, but it was more check-in than meal.",
+            ? `${getDogDisplayName(state)} gobbled it up. Fast care still builds trust.`
+            : `${getDogDisplayName(state)} took a few bites. It was more check-in than meal.`,
         tone: "amber",
         icon: "food",
         now,
@@ -6863,6 +7123,50 @@ const dogSlice = createSlice({
           Math.round(Number(state.coins || 0) + Number(reward.value || 0))
         );
       }
+      if (rewardType === "BUNDLE") {
+        state.coins = Math.max(
+          0,
+          Math.round(Number(state.coins || 0) + Number(reward.value || 0))
+        );
+      }
+      const accessoryId = String(reward?.accessoryId || "").trim();
+      if (accessoryId) {
+        if (!state.cosmetics) state.cosmetics = { ...initialCosmetics };
+        if (!Array.isArray(state.cosmetics.unlockedIds)) {
+          state.cosmetics.unlockedIds = [...initialCosmetics.unlockedIds];
+        }
+        if (!state.cosmetics.equipped) {
+          state.cosmetics.equipped = { ...initialCosmetics.equipped };
+        }
+        if (!state.cosmetics.unlockedIds.includes(accessoryId)) {
+          state.cosmetics.unlockedIds.push(accessoryId);
+        }
+        if (!state.cosmetics.equipped.tag) {
+          state.cosmetics.equipped.tag = accessoryId;
+        }
+      }
+      const dogName = getDogDisplayName(state);
+      state.lastAction = "daily_reward";
+      state.memory.lastSeenAt = now;
+      setCareResponse(state, {
+        key: "daily-reward",
+        label: "Daily reward",
+        message: `${dogName} noticed you came back. Streak ${state.consecutiveDays} is saved.`,
+        tone: "emerald",
+        icon: "streak",
+        now,
+      });
+      pushStructuredMemory(state, {
+        type: "daily_reward",
+        category: "MEMORY",
+        moodTag: "SECURE",
+        summary: `Daily streak ${state.consecutiveDays} claimed.`,
+        body: accessoryId
+          ? `${dogName} earned ${reward?.label || "a reward"} for the routine.`
+          : `${dogName} connected today and the streak continued.`,
+        timestamp: now,
+        happiness: 2,
+      });
     },
 
     rewardSocialShare(state, { payload }) {
@@ -6989,21 +7293,31 @@ const dogSlice = createSlice({
         });
         return;
       }
-      const commandId = payload?.commandId
+      let commandId = payload?.commandId
         ? String(payload.commandId).trim()
         : "";
       if (!commandId) return;
 
       const now = payload?.now ?? nowMs();
       const input = payload?.input || "button";
-      const xp = Number(payload?.xp ?? 6);
       applyDecay(state, now);
       wakeForInteraction(state);
       evaluateObedienceUnlocks(state, now);
 
       const unlocks = ensureObedienceUnlockState(state);
       const command = getObedienceCommand(commandId);
+      commandId = command?.id || commandId;
       const isUnlocked = unlocks.unlockedIds.includes(commandId);
+      const commandBaseXp = Math.max(
+        1,
+        Math.round(
+          Number(
+            payload?.xp ??
+              command?.xpReward ??
+              6 + Number(command?.difficulty || 1)
+          )
+        )
+      );
 
       if (!command || !isUnlocked) {
         state.memory.lastTrainedAt = now;
@@ -7082,6 +7396,7 @@ const dogSlice = createSlice({
           lastTrainingKind !== "ignore" &&
           lastTrainingKind !== "zoomies" &&
           lastTrainingKind !== "trainfailed",
+        difficulty: getObedienceCommandDifficultyKey(command),
       });
       const successChance = clamp01(
         (successChanceRaw + (commandMasteryPct / 100) * 0.22) /
@@ -7139,6 +7454,17 @@ const dogSlice = createSlice({
           icon: "train",
           now,
         });
+        setLastTrainingOutcome(state, {
+          commandId,
+          label: commandLabel,
+          outcome: "zoomies",
+          successChance,
+          xpGained: 0,
+          masteryBefore: commandMasteryPct,
+          masteryAfter: commandMasteryPct,
+          animationKey: "zoomies",
+          now,
+        });
 
         updateTemperamentReveal(state, now);
         finalizeDerivedState(state, now);
@@ -7181,6 +7507,17 @@ const dogSlice = createSlice({
           icon: "train",
           now,
         });
+        setLastTrainingOutcome(state, {
+          commandId,
+          label: commandLabel,
+          outcome: "ignore",
+          successChance,
+          xpGained: 0,
+          masteryBefore: commandMasteryPct,
+          masteryAfter: commandMasteryPct,
+          animationKey: jrtReaction.performedActionId,
+          now,
+        });
 
         updateTemperamentReveal(state, now);
         finalizeDerivedState(state, now);
@@ -7204,6 +7541,17 @@ const dogSlice = createSlice({
         applyBondGain(state, 0.45 * sweetBondMultiplier, now);
         applyXp(state, 4);
         maybeSampleMood(state, now, "TRAINING");
+        setLastTrainingOutcome(state, {
+          commandId,
+          label: commandLabel,
+          outcome: "reinterpret",
+          successChance,
+          xpGained: 0,
+          masteryBefore: commandMasteryPct,
+          masteryAfter: commandMasteryPct,
+          animationKey: jrtReaction.performedActionId,
+          now,
+        });
 
         const performedCommand = getObedienceCommand(
           jrtReaction.performedCommandId
@@ -7280,6 +7628,17 @@ const dogSlice = createSlice({
           icon: "train",
           now,
         });
+        setLastTrainingOutcome(state, {
+          commandId,
+          label: commandLabel,
+          outcome: "fail",
+          successChance,
+          xpGained: 0,
+          masteryBefore: commandMasteryPct,
+          masteryAfter: commandMasteryPct,
+          animationKey: null,
+          now,
+        });
         updateTemperamentReveal(state, now);
         finalizeDerivedState(state, now);
         return;
@@ -7326,6 +7685,17 @@ const dogSlice = createSlice({
           icon: "train",
           now,
         });
+        setLastTrainingOutcome(state, {
+          commandId,
+          label: commandLabel,
+          outcome: "doze_off",
+          successChance,
+          xpGained: 0,
+          masteryBefore: commandMasteryPct,
+          masteryAfter: commandMasteryPct,
+          animationKey: "sleep",
+          now,
+        });
 
         updateTemperamentReveal(state, now);
         finalizeDerivedState(state, now);
@@ -7336,7 +7706,7 @@ const dogSlice = createSlice({
         state.career.perks?.trainingXpMultiplier || 1.0;
       const spicyXpMultiplier = isSpicy ? 1.1 : 1;
       const baseAdjustedXp = Math.round(
-        xp *
+        commandBaseXp *
           trainingMultiplier *
           (skillMods.trainingSkillXpMultiplier || 1) *
           spicyXpMultiplier *
@@ -7374,6 +7744,17 @@ const dogSlice = createSlice({
         },
         now
       );
+      setLastTrainingOutcome(state, {
+        commandId,
+        label: commandLabel,
+        outcome: trainingOutcome === "PERFECT" ? "perfect" : "success",
+        successChance,
+        xpGained: adjustedXp,
+        masteryBefore: commandMasteryPct,
+        masteryAfter: masteryAfterTraining,
+        animationKey: command?.animationKey || commandId,
+        now,
+      });
       applyFsmAction(state, "train", now);
 
       const sweetBondMultiplier = hasTemperamentTag(state, "SWEET") ? 1.2 : 1;

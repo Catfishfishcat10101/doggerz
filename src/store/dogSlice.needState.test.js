@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import dogReducer, {
   addMemories,
+  claimDailyReward,
   feed,
   giveWater,
   goPotty,
@@ -146,8 +147,9 @@ describe("dogSlice need-state consequences", () => {
       },
     });
 
-    expect(state.memory.treatment.score).toBe(60);
-    expect(state.stats.happiness).toBe(60);
+    const baselineScore = state.memory.treatment.score;
+    expect(baselineScore).toBeGreaterThan(60);
+    expect(state.stats.happiness).toBe(baselineScore);
 
     const caredFor = dogReducer(
       state,
@@ -163,7 +165,7 @@ describe("dogSlice need-state consequences", () => {
       ])
     );
 
-    expect(caredFor.memory.treatment.score).toBeGreaterThan(60);
+    expect(caredFor.memory.treatment.score).toBeGreaterThan(baselineScore);
     expect(caredFor.stats.happiness).toBe(caredFor.memory.treatment.score);
     expect(caredFor.memory.treatment.positiveCareCount).toBeGreaterThan(0);
 
@@ -184,7 +186,9 @@ describe("dogSlice need-state consequences", () => {
     expect(routineSlipped.memory.treatment.score).toBeLessThan(
       caredFor.memory.treatment.score
     );
-    expect(routineSlipped.memory.treatment.negativeCareCount).toBeGreaterThan(0);
+    expect(routineSlipped.memory.treatment.negativeCareCount).toBeGreaterThan(
+      0
+    );
   });
 
   it("keeps trick training locked behind potty training", () => {
@@ -197,6 +201,124 @@ describe("dogSlice need-state consequences", () => {
 
     expect(nextState.lastAction).toBe("trainBlocked");
     expect(nextState.lastCareResponse?.message).toMatch(/potty training/i);
+  });
+
+  it("records trick xp, success chance, and animation outcome for obedience practice", () => {
+    const { state, now } = buildActiveDogState({
+      stats: {
+        energy: 78,
+        happiness: 76,
+        hunger: 18,
+        thirst: 18,
+      },
+    });
+    const readyState = dogReducer(
+      state,
+      hydrateDog({
+        level: 3,
+        bond: { value: 45, updatedAt: now },
+        training: {
+          potty: {
+            successCount: 5,
+            goal: 5,
+            completedAt: now - MINUTE_MS,
+          },
+        },
+      })
+    );
+
+    const nextState = dogReducer(
+      readyState,
+      trainObedience({
+        now,
+        commandId: "sit",
+        success: true,
+        forcedReaction: { kind: "obey" },
+      })
+    );
+
+    expect(["train", "train_perfect"]).toContain(nextState.lastAction);
+    expect(nextState.skills.obedience.sit.xp).toBeGreaterThan(0);
+    expect(nextState.memory.lastTrainingOutcome).toMatchObject({
+      commandId: "sit",
+      success: true,
+      animationKey: "sit",
+    });
+    expect(nextState.memory.lastTrainingOutcome.xpGained).toBeGreaterThan(0);
+    expect(nextState.memory.lastTrainingOutcome.successChance).toBeGreaterThan(
+      0
+    );
+  });
+
+  it("claims the day-seven reward as coins, accessory, streak memory, and dog reaction", () => {
+    const rewardNow = Date.now();
+    const { state, now } = buildActiveDogState({
+      now: rewardNow,
+      memory: {
+        lastSeenAt: rewardNow - 24 * 60 * MINUTE_MS,
+      },
+    });
+
+    const nextState = dogReducer(
+      state,
+      claimDailyReward({
+        now,
+        day: 7,
+        reward: {
+          day: 7,
+          type: "BUNDLE",
+          value: 500,
+          accessoryId: "tag_star",
+          label: "500 Coins + Star Tag",
+        },
+      })
+    );
+
+    expect(nextState.coins).toBeGreaterThanOrEqual(500);
+    expect(nextState.consecutiveDays).toBe(7);
+    expect(nextState.lastAction).toBe("daily_reward");
+    expect(nextState.cosmetics.unlockedIds).toContain("tag_star");
+    expect(nextState.cosmetics.equipped.tag).toBe("tag_star");
+    expect(nextState.lastCareResponse?.message).toMatch(/Streak 7 is saved/i);
+    expect(
+      nextState.memories.some((memory) => memory.type === "daily_reward")
+    ).toBe(true);
+  });
+
+  it("records an offline return reaction when Fireball was away for hours", () => {
+    const prior = Date.now() - 4 * 60 * MINUTE_MS;
+    const { state } = buildActiveDogState({
+      now: prior,
+      stats: {
+        hunger: 88,
+        energy: 42,
+      },
+      memory: {
+        lastSeenAt: prior,
+        lastFedAt: prior - 5 * 60 * MINUTE_MS,
+        neglectStrikes: 1,
+      },
+    });
+
+    const nextState = dogReducer(
+      state,
+      hydrateDog({
+        lastUpdatedAt: prior,
+        memory: {
+          ...state.memory,
+          lastReturnReactionAt: null,
+        },
+      })
+    );
+
+    expect(nextState.lastAction).toBe("return_annoyed");
+    expect(nextState.memory.lastReturnReaction).toMatchObject({
+      reaction: "annoyed",
+    });
+    expect(
+      nextState.memories.some((memory) => memory.type === "return_moment")
+    ).toBe(true);
+    expect(nextState.lastCareResponse?.message).toMatch(/gap|reassurance/i);
   });
 
   it("records potty success timestamps and resets potty pressure", () => {

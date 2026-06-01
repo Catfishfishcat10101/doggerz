@@ -1,7 +1,8 @@
 // src/components/game/Dog3DScene.jsx
 /* eslint-disable react/no-unknown-property */
-import React, { Suspense, useMemo } from "react";
+import React, { Suspense, useMemo, useRef } from "react";
 import { Canvas } from "@react-three/fiber";
+import { useFrame } from "@react-three/fiber";
 
 import Dog3D from "@/components/dog/Dog3D.jsx";
 import DOG_STAGE_CAMERA, {
@@ -28,6 +29,13 @@ function normalizeScale(value) {
   return Math.max(0.72, Math.min(1.46, numeric));
 }
 
+function normalizeActionKey(value = "") {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "");
+}
+
 function resolveFacingRotation(facing = "") {
   const key = String(facing || "")
     .trim()
@@ -39,9 +47,127 @@ function resolveFacingRotation(facing = "") {
   return [0, Math.PI * 0.15, 0];
 }
 
+const PHASE_ONE_ACTION_CLIPS = Object.freeze({
+  idle: "Idle",
+  idlepack: "Idle",
+  puppyidlepack: "Idle",
+  goldenyearsidle: "Idle",
+  wag: "Wag",
+  eat: "Eat",
+  feed: "Feed",
+  feedquick: "Feed",
+  quickfeed: "Feed",
+  food: "Feed",
+  drink: "Drink",
+  water: "Drink",
+  sleep: "Sleep",
+  sleeping: "Sleep",
+  puppysleepingpack: "Sleep",
+  goldenyearssleeping: "Sleep",
+  rest: "Sleep",
+  lightsleep: "Sleep",
+  bark: "Bark",
+  speak: "Bark",
+  sit: "Sit",
+  sitting: "Sit",
+  shake: "Shake",
+  paw: "Shake",
+  highfive: "High_Five",
+  highfived: "High_Five",
+  clean: "Scratch",
+  bath: "Scratch",
+  bathe: "Scratch",
+  scratch: "Scratch",
+  potty: "Sniff",
+  sniff: "Sniff",
+  play: "Wag",
+  returngreet: "Wag",
+  returnsleeping: "Sleep",
+  returnannoyed: "Bark",
+  dailyreward: "Wag",
+});
+
+function resolvePhaseOneAction(value = "") {
+  const key = normalizeActionKey(value);
+  if (!key) return "";
+  if (PHASE_ONE_ACTION_CLIPS[key]) return PHASE_ONE_ACTION_CLIPS[key];
+  if (key.includes("highfive")) return "High_Five";
+  if (key.includes("shake") || key.includes("paw")) return "Shake";
+  if (key.includes("sit")) return "Sit";
+  if (key.includes("bark") || key.includes("speak")) return "Bark";
+  if (key.includes("sleep") || key.includes("rest")) return "Sleep";
+  if (
+    key.includes("bath") ||
+    key.includes("clean") ||
+    key.includes("scratch")
+  ) {
+    return "Scratch";
+  }
+  if (key.includes("potty") || key.includes("sniff")) return "Sniff";
+  if (key.includes("play")) return "Wag";
+  if (key.includes("eat") || key.includes("feed") || key.includes("food")) {
+    return "Feed";
+  }
+  if (
+    key.includes("walk") ||
+    key.includes("run") ||
+    key.includes("trot") ||
+    key.includes("fetch") ||
+    key.includes("zoom")
+  ) {
+    return "Wag";
+  }
+  return "";
+}
+
+function isStationaryPhaseOneAction(value = "") {
+  const action = resolvePhaseOneAction(value);
+  return [
+    "Feed",
+    "Drink",
+    "Sleep",
+    "Bark",
+    "Sit",
+    "Shake",
+    "High_Five",
+    "Sniff",
+    "Scratch",
+  ].includes(action);
+}
+
+function shouldAllowDogWander(scene, dogView, action = "") {
+  if (dogView?.paused || dogView?.reduceMotion) return false;
+  if (scene?.allowDogWander === false) return false;
+  if (scene?.isSleeping || dogView?.renderModel?.isSleeping) return false;
+  if (isStationaryPhaseOneAction(action)) return false;
+
+  const dog = dogView?.dog || {};
+  const energy = clamp(dog?.stats?.energy ?? scene?.energyPct ?? 50, 0, 100);
+  const health = clamp(dog?.stats?.health ?? scene?.healthPct ?? 100, 0, 100);
+  const hunger = clamp(dog?.stats?.hunger ?? 0, 0, 100);
+  const thirst = clamp(dog?.stats?.thirst ?? 0, 0, 100);
+  const lastAction = normalizeActionKey(dog?.lastAction || scene?.lastAction);
+  const lastActionAt = Number(
+    dog?.careResponse?.createdAt || scene?.lastCareResponse?.createdAt || 0
+  );
+  const recentActionActive =
+    lastActionAt > 0 && Date.now() - lastActionAt < 6000;
+
+  if (
+    recentActionActive &&
+    lastAction &&
+    !["idle", "wag"].includes(lastAction)
+  ) {
+    return false;
+  }
+  if (energy < 42 || health < 45 || hunger > 78 || thirst > 78) return false;
+
+  return true;
+}
+
 function resolveStableDogAction(scene, dogView) {
   const renderModel = dogView?.renderModel || null;
-  const requested = String(
+  const rawRequested = String(
     scene?.currentAction ||
       scene?.requestedAction ||
       dogView?.requestedAction ||
@@ -50,6 +176,7 @@ function resolveStableDogAction(scene, dogView) {
   )
     .trim()
     .toLowerCase();
+  const requested = resolvePhaseOneAction(rawRequested) || rawRequested;
   const sleeping = Boolean(
     scene?.isSleeping ||
     scene?.sleeping ||
@@ -92,6 +219,7 @@ function resolveSceneArt(scene, lighting) {
       : snowy
         ? "#97a2a8"
         : lighting.groundColor,
+    grassColor: rainy ? "#45694a" : snowy ? "#8fa1a4" : "#496f3e",
     shadowOpacity: tired ? 0.14 : 0.24,
     treeScale: stageKey === "SENIOR" ? 0.76 : 0.72,
     treeLeafColors: strained
@@ -149,18 +277,33 @@ class DogRenderBoundary extends React.Component {
   }
 }
 
-function StageBackdrop({ lighting }) {
+function StageBackdrop({ lighting, reduceMotion = false }) {
+  const skyRef = useRef(null);
+  const glowRef = useRef(null);
+
+  useFrame((state) => {
+    if (reduceMotion) return;
+    const t = state.clock.elapsedTime;
+    if (skyRef.current) {
+      skyRef.current.position.x = Math.sin(t * 0.035) * 0.08;
+    }
+    if (glowRef.current) {
+      glowRef.current.position.x = Math.sin(t * 0.055) * 0.12;
+      glowRef.current.position.y = 3.15 + Math.sin(t * 0.04) * 0.035;
+    }
+  });
+
   return (
     <>
       <fog
         attach="fog"
         args={[lighting.fogColor, lighting.fogNear, lighting.fogFar]}
       />
-      <mesh position={[0, 3.15, -5.25]}>
+      <mesh ref={glowRef} position={[0, 3.15, -5.25]}>
         <planeGeometry args={[28, 9]} />
         <meshBasicMaterial color={lighting.skyGlowColor} depthWrite={false} />
       </mesh>
-      <mesh position={[0, 0.72, -5.2]}>
+      <mesh ref={skyRef} position={[0, 0.72, -5.2]}>
         <planeGeometry args={[28, 10]} />
         <meshBasicMaterial
           color={lighting.skyColor}
@@ -191,31 +334,41 @@ function DogLayer({ scene, dogView, art }) {
     reduceMotion = false,
     scale = 1,
   } = dogView || {};
+  const action = resolveStableDogAction(scene, dogView);
+  const canWander = shouldAllowDogWander(scene, dogView, action);
   const yardDog = useDogYardMovement({
     scene,
     basePosition: DOG_STAGE_CAMERA.dogAnchor,
-    requestedAction: dogView?.requestedAction,
+    requestedAction: canWander ? "idle" : action,
     requestedFacing: dogView?.requestedFacing,
-    paused: dogView?.paused,
-    reduceMotion: dogView?.reduceMotion,
+    paused: !canWander,
+    reduceMotion,
   });
-  const action = resolveStableDogAction(scene, dogView);
-  const facing = "right";
+  const facing =
+    canWander && yardDog?.moving
+      ? yardDog.facing
+      : dogView?.requestedFacing ||
+        renderModel?.facing ||
+        dog?.facing ||
+        scene?.facing ||
+        "right";
+  const renderAction = canWander && yardDog?.moving ? "Walk" : action;
   const resolvedScale = normalizeScale(
-    (scale || renderModel?.scaleMultiplier || 1) * 1.16
+    (scale || renderModel?.scaleMultiplier || 1) * 1.22
   );
-  const stablePosition = DOG_STAGE_CAMERA.dogAnchor;
-
-  void yardDog;
+  const stablePosition =
+    canWander && Array.isArray(yardDog?.position)
+      ? yardDog.position
+      : DOG_STAGE_CAMERA.dogAnchor;
 
   return (
     <DogRenderBoundary fallback={<DogModelFallback art={art} />}>
       <Dog3D
         scene={scene}
         dog={dog}
-        action={action}
+        action={renderAction}
         facing={facing}
-        desiredClip={action}
+        desiredClip={renderAction}
         position={stablePosition}
         rotation={resolveFacingRotation(facing)}
         scale={resolvedScale}
@@ -275,8 +428,14 @@ export function Dog3DScene({ scene = null, dogView = {} }) {
       >
         <DogCameraRig />
         <DogLightRig lighting={lighting} />
-        <StageBackdrop lighting={lighting} />
-        <DogGroundPlane color={art.groundAccentColor} />
+        <StageBackdrop
+          lighting={lighting}
+          reduceMotion={Boolean(dogView?.reduceMotion || dogView?.paused)}
+        />
+        <DogGroundPlane
+          color={art.groundAccentColor}
+          grassColor={art.grassColor}
+        />
         <DogShadowPlane opacity={art.shadowOpacity} />
         <Tree
           scale={art.treeScale}

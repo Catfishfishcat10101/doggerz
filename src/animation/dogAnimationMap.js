@@ -116,6 +116,10 @@ export const DOG_ANIMATION_ALIASES = Object.freeze({
   equip_toy: DOG_ANIMATIONS.wag,
   treasure_found: DOG_ANIMATIONS.sniff,
   session_start: DOG_ANIMATIONS.idle,
+  return_greet: DOG_ANIMATIONS.wag,
+  return_sleeping: DOG_ANIMATIONS.light_sleep,
+  return_annoyed: DOG_ANIMATIONS.bark,
+  daily_reward: DOG_ANIMATIONS.wag,
 
   rescued: DOG_ANIMATIONS.idle_resting,
   farewell: DOG_ANIMATIONS.idle_resting,

@@ -61,12 +61,18 @@ import {
   OBEDIENCE_COMMANDS,
   getObedienceActiveLearningLimit,
   getObedienceCommand,
+  getObedienceCommandDifficultyKey,
 } from "@/features/training/obedienceCommands.js";
 import { getObedienceSkillMasteryPct } from "@/features/training/jrtTrainingController.js";
+import {
+  computeTrainingSuccessChance,
+  formatChancePercent,
+} from "@/utils/trainingMath.js";
 import { createSwipeGestureRecognizer } from "@/utils/SwipeGestureRecognizer.js";
 import { createDragAndDropManager } from "@/features/inventory/DragAndDropManager.js";
 import { createVoiceCommandHandler } from "@/features/training/VoiceCommandHandler.js";
 import { useDogGameView, useDogIdentity } from "@/hooks/useDogState.js";
+import { useYardSfx } from "@/hooks/useYardSfx.js";
 import {
   startDogSimulation,
   stopDogSimulation,
@@ -123,6 +129,21 @@ const BOTTOM_MENU_TABS = Object.freeze([
   { id: "settings", label: "Settings", icon: "⚙️" },
 ]);
 
+const CORE_BOTTOM_MENU_ITEM_KEYS = Object.freeze({
+  interact: new Set([
+    "quick-feed",
+    "water",
+    "play",
+    "pet",
+    "bath",
+    "potty",
+    "care-sheet",
+  ]),
+  train: new Set(["tricks", "voice"]),
+  journey: new Set(["store", "memories"]),
+  settings: new Set(["settings"]),
+});
+
 const STAGE_FEEDBACK_META = Object.freeze({
   "quick-feed": {
     label: "Quick Feed",
@@ -159,6 +180,12 @@ const STAGE_FEEDBACK_META = Object.freeze({
     message: "Potty break queued.",
     icon: "🌿",
     tone: "emerald",
+  },
+  rest: {
+    label: "Sleep",
+    message: "Sleep routine started.",
+    icon: "Zz",
+    tone: "sky",
   },
   interact: {
     label: "Interactions",
@@ -535,6 +562,59 @@ function formatCloudSyncLabel(cloudSync, isLoggedIn, now = Date.now()) {
   };
 }
 
+function formatYardClock(now = Date.now()) {
+  try {
+    return new Intl.DateTimeFormat(undefined, {
+      hour: "numeric",
+      minute: "2-digit",
+    }).format(new Date(now));
+  } catch {
+    return "--:--";
+  }
+}
+
+function formatTimeOfDayLabel(bucket, isNight = false) {
+  const key = String(bucket || "")
+    .trim()
+    .toLowerCase();
+  if (key === "dawn" || key === "morning") return "Dawn";
+  if (key === "dusk" || key === "evening") return "Dusk";
+  if (key === "night" || isNight) return "Night";
+  return "Day";
+}
+
+function formatWeatherLabel(condition, details) {
+  const raw = String(
+    details?.label ||
+      details?.condition ||
+      details?.summary ||
+      condition ||
+      "clear"
+  ).trim();
+  if (!raw) return "Clear";
+  return toTitle(raw, "Clear");
+}
+
+function getDogTapReactionCopy(lastAction = "", stats = {}) {
+  const key = String(lastAction || "")
+    .trim()
+    .toLowerCase();
+  if (key.includes("zoom")) return "Zoomies!";
+  if (key.includes("side_eye")) return "Side eye";
+  if (key.includes("doze")) return "Cozy";
+  if (Number(stats?.hunger || 0) >= 75) return "Snack?";
+  if (Number(stats?.energy || 100) <= 25) return "Sleepy";
+  const options = [
+    "Tail wag",
+    "Bark!",
+    "Head tilt",
+    "Happy bounce",
+    "Sit?",
+    "Hmm?",
+  ];
+  return options[Math.floor(Math.random() * options.length)] || "Happy tap";
+}
+
 function isSummerMonth(ms = Date.now()) {
   const month = new Date(ms).getMonth();
   return month >= 5 && month <= 7;
@@ -743,6 +823,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
   const { dog, life, renderModel, vitals } = useDogGameView();
   const identity = useDogIdentity();
   const settings = useSelector(selectSettings);
+  const { playCareSound } = useYardSfx(settings);
   const cloudSync = useSelector(selectCloudSyncState);
   const isLoggedIn = useSelector(selectIsLoggedIn);
   const weatherCondition = useSelector(selectWeatherCondition);
@@ -778,6 +859,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
   const voiceCommandDispatchRef = useRef(() => false);
   const actionFeedbackTimeoutRef = useRef(0);
   const stageFeedbackTimeoutRef = useRef(0);
+  const dogTapReactionTimeoutRef = useRef(0);
   const uiAnimResetTimeoutRef = useRef(0);
   const trickAnimationTokenRef = useRef(0);
   const statFeedbackTimeoutsRef = useRef({});
@@ -835,6 +917,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
   const [shareMomentCard, setShareMomentCard] = useState(null);
   const [activeActionFeedbackKey, setActiveActionFeedbackKey] = useState("");
   const [stageFeedback, setStageFeedback] = useState(null);
+  const [dogTapReaction, setDogTapReaction] = useState(null);
   const [poppedStats, setPoppedStats] = useState({
     energy: false,
     health: false,
@@ -1135,14 +1218,14 @@ export default function MainGame({ scene, dogInteractive = true }) {
     .trim()
     .toLowerCase();
   const statsStackClassName = compactHudLayout
-    ? "order-3 min-h-0 flex-[0.92_1_0%] space-y-3 overflow-y-auto overscroll-contain touch-pan-y pr-1 pb-2"
-    : "order-3 min-h-0 flex-[0.88_1_0%] space-y-4 overflow-y-auto overscroll-contain touch-pan-y pr-1 pb-2";
+    ? "order-3 min-h-0 flex-[0.5_1_0%] space-y-3 overflow-y-auto overscroll-contain touch-pan-y pr-1 pb-2"
+    : "order-3 min-h-0 flex-[0.56_1_0%] space-y-4 overflow-y-auto overscroll-contain touch-pan-y pr-1 pb-2";
   const yardRegionClassName = `doggerz-yard-region order-1 relative -mx-3 sm:-mx-6 w-full min-h-0 overflow-hidden ${
     expandedYardLayout
-      ? "doggerz-yard-region--expanded flex-[1.18_1_0%]"
+      ? "doggerz-yard-region--expanded flex-[1.7_1_0%]"
       : compactHudLayout
-        ? "doggerz-yard-region--compact flex-[1.08_1_0%]"
-        : "flex-1"
+        ? "doggerz-yard-region--compact flex-[1.55_1_0%]"
+        : "flex-[1.62_1_0%]"
   }`;
   const _dogBaseScale = 0.4 + clamp(ageDays / 365, 0, 1) * 0.4;
   const stageHeadline = String(life?.headline || "Tiny chaos era");
@@ -1288,6 +1371,59 @@ export default function MainGame({ scene, dogInteractive = true }) {
       vitals?.moodLabel,
     ]
   );
+  const yardScene = useMemo(
+    () => ({
+      ...(scene || {}),
+      moodLabel: displayMoodLabel || vitals?.moodLabel || "Content",
+      stageKey: renderStageForModel || life?.stage || "PUPPY",
+      energyPct,
+      happinessPct,
+      healthPct,
+      cleanlinessPct,
+      bondPct,
+      pottyNeedPct,
+      careTone:
+        cleanlinessPct <= 25
+          ? "neglected"
+          : cleanlinessPct <= 45 || energyPct <= 30
+            ? "strained"
+            : bondPct >= 75 && happinessPct >= 70
+              ? "secure"
+              : "steady",
+      isSleeping: effectiveDogSleeping,
+      lastAction: dog?.lastAction || "",
+      lastCareResponse: dog?.careResponse || null,
+      allowDogWander:
+        dogInteractive &&
+        !placingBowl &&
+        !movementLocked &&
+        !trickAnimationBusy &&
+        !activeActionFeedbackKey &&
+        !bottomMenuCategory,
+    }),
+    [
+      activeActionFeedbackKey,
+      bondPct,
+      bottomMenuCategory,
+      cleanlinessPct,
+      displayMoodLabel,
+      dog?.careResponse,
+      dog?.lastAction,
+      dogInteractive,
+      effectiveDogSleeping,
+      energyPct,
+      happinessPct,
+      healthPct,
+      life?.stage,
+      movementLocked,
+      placingBowl,
+      pottyNeedPct,
+      renderStageForModel,
+      scene,
+      trickAnimationBusy,
+      vitals?.moodLabel,
+    ]
+  );
   const energyCritical = energyPct < 20;
   const healthCritical = healthPct < 20;
   const dockNeedMetrics = useMemo(
@@ -1339,6 +1475,22 @@ export default function MainGame({ scene, dogInteractive = true }) {
   const cloudSyncUi = useMemo(
     () => formatCloudSyncLabel(cloudSync, isLoggedIn, liveNow),
     [cloudSync, isLoggedIn, liveNow]
+  );
+  const yardHud = useMemo(
+    () => ({
+      mood: displayMoodLabel || "Content",
+      weather: formatWeatherLabel(weatherCondition, weatherDetails),
+      time: formatTimeOfDayLabel(resolvedTimeBucket, isNightScene),
+      clock: formatYardClock(liveNow),
+    }),
+    [
+      displayMoodLabel,
+      isNightScene,
+      liveNow,
+      resolvedTimeBucket,
+      weatherCondition,
+      weatherDetails,
+    ]
   );
   const levelProgress = useMemo(
     () =>
@@ -1580,6 +1732,69 @@ export default function MainGame({ scene, dogInteractive = true }) {
         const masteryPct = getObedienceSkillMasteryPct(
           dog?.skills?.obedience?.[id]
         );
+        const profile =
+          dog?.personalityProfile && typeof dog.personalityProfile === "object"
+            ? dog.personalityProfile
+            : {};
+        const temperamentTags = Array.isArray(dog?.temperament?.traits)
+          ? dog.temperament.traits
+          : [];
+        const isSpicy = temperamentTags.some(
+          (trait) => String(trait?.id || "").toUpperCase() === "SPICY"
+        );
+        const foodMotivated =
+          temperamentTags.find(
+            (trait) => String(trait?.id || "").toLowerCase() === "foodmotivated"
+          )?.intensity || 0;
+        const fedRecently =
+          dog?.memory?.lastFedAt &&
+          liveNow - Number(dog.memory.lastFedAt || 0) < 2 * 60 * 60 * 1000;
+        const lastTrainingKind = String(
+          dog?.memory?.lastTrainingReaction?.kind || dog?.lastAction || ""
+        )
+          .trim()
+          .toLowerCase();
+        const trainabilitySpeed = clamp(
+          Number(profile?.instinctEngine?.trainabilitySpeed || 1),
+          0.6,
+          2.2
+        );
+        const successChanceRaw = computeTrainingSuccessChance({
+          input: "button",
+          bond: Number(dog?.bond?.value || 0),
+          energy: energyPct,
+          hunger: hungerPct,
+          thirst: thirstPct,
+          happiness: happinessPct,
+          isSpicy,
+          foodMotivated,
+          fedRecently,
+          focus: profile?.dynamicStates?.confidence ?? 50,
+          trust: profile?.trust?.score ?? Number(dog?.bond?.value || 0),
+          stress: profile?.dynamicStates?.frustration ?? 30,
+          distraction: profile?.coreTemperament?.inquisitiveness ?? 25,
+          archetypeId: dog?.temperament?.archetype || "",
+          trainingStreak: Number(dog?.training?.adult?.streak || 0),
+          lastTrainingSuccess:
+            lastTrainingKind !== "fail" &&
+            lastTrainingKind !== "ignore" &&
+            lastTrainingKind !== "zoomies" &&
+            lastTrainingKind !== "trainfailed",
+          difficulty: getObedienceCommandDifficultyKey(command),
+        });
+        const successChancePct = formatChancePercent(
+          clamp(
+            (successChanceRaw + (masteryPct / 100) * 0.22) / trainabilitySpeed,
+            0,
+            0.98
+          )
+        );
+        const xpReward = Math.max(
+          1,
+          Math.round(
+            Number(command.xpReward || 6 + Number(command.difficulty || 1))
+          )
+        );
         const meetsLevel = Number(command.minLevel || 1) <= overallLevel;
         const meetsBond =
           Number(command.minBond || 0) <= Number(dog?.bond?.value || 0);
@@ -1630,6 +1845,8 @@ export default function MainGame({ scene, dogInteractive = true }) {
           unlocked,
           mastered,
           masteryPct,
+          successChancePct,
+          xpReward,
           difficultyStars: getDifficultyStars(command.difficulty),
           masteryRank: getMasteryRankMeta(masteryPct),
           pendingUnlock,
@@ -1642,12 +1859,22 @@ export default function MainGame({ scene, dogInteractive = true }) {
     [
       activeTrickLearningLimit,
       dog?.bond?.value,
+      dog?.lastAction,
+      dog?.memory?.lastFedAt,
+      dog?.memory?.lastTrainingReaction,
+      dog?.personalityProfile,
       dog?.skills?.obedience,
+      dog?.temperament,
+      dog?.training?.adult?.streak,
+      energyPct,
+      happinessPct,
+      hungerPct,
       liveNow,
       masteredTrickIds,
       overallLevel,
       pendingUnlockStartsById,
       pottyMasteryComplete,
+      thirstPct,
       unlockedTrickIds,
     ]
   );
@@ -1893,6 +2120,44 @@ export default function MainGame({ scene, dogInteractive = true }) {
       }, duration);
     },
     []
+  );
+
+  const triggerCareSatisfaction = useCallback(
+    (
+      careKey,
+      {
+        animation,
+        message,
+        toastType = "success",
+        duration = 1300,
+        speedBoost = 1.16,
+        stat,
+      } = {}
+    ) => {
+      const key = String(careKey || "")
+        .trim()
+        .toLowerCase();
+      if (!key) return;
+
+      playCareSound(key);
+      if (animation) {
+        playHudAnimation(animation, {
+          duration,
+          speedBoost,
+          lockControls: false,
+        });
+      }
+      if (stat) triggerStatPop(stat);
+      if (message) {
+        toast.show({
+          type: toastType,
+          message,
+          durationMs: 2200,
+          haptic: toastType === "success" || toastType === "reward",
+        });
+      }
+    },
+    [playCareSound, playHudAnimation, toast, triggerStatPop]
   );
 
   useEffect(() => {
@@ -2157,6 +2422,9 @@ export default function MainGame({ scene, dogInteractive = true }) {
       }
       if (uiAnimResetTimeoutRef.current) {
         window.clearTimeout(uiAnimResetTimeoutRef.current);
+      }
+      if (dogTapReactionTimeoutRef.current) {
+        window.clearTimeout(dogTapReactionTimeoutRef.current);
       }
       Object.values(statFeedbackTimeoutsRef.current).forEach((timerId) => {
         window.clearTimeout(timerId);
@@ -2810,6 +3078,33 @@ export default function MainGame({ scene, dogInteractive = true }) {
     triggerPropHaptic,
   ]);
 
+  const triggerDogTapReaction = useCallback(
+    ({ xNorm = 0.5, yNorm = 0.5, label = "Happy tap" } = {}) => {
+      const now = Date.now();
+      setDogTapReaction({
+        id: now,
+        xNorm: clamp(Number(xNorm || 0.5), 0.18, 0.82),
+        yNorm: clamp(Number(yNorm || 0.5), 0.2, 0.74),
+        label,
+      });
+      setUiAnimOverride("wag");
+      setUiSpeedBoost(1.18);
+
+      if (dogTapReactionTimeoutRef.current) {
+        window.clearTimeout(dogTapReactionTimeoutRef.current);
+      }
+      dogTapReactionTimeoutRef.current = window.setTimeout(
+        () => {
+          setDogTapReaction(null);
+          setUiAnimOverride("");
+          setUiSpeedBoost(1);
+        },
+        reduceMotion ? 900 : 1250
+      );
+    },
+    [reduceMotion]
+  );
+
   const handleDogPetTap = useCallback(() => {
     if (controlsDisabled) return;
     if (placingBowl) return;
@@ -2826,8 +3121,15 @@ export default function MainGame({ scene, dogInteractive = true }) {
     });
     triggerActionFeedback("pet");
     dispatch(petDog({ now, source: "tap_pet" }));
+    triggerDogTapReaction({
+      xNorm: Number(pos?.xNorm || 0.5),
+      yNorm: Number(pos?.yNorm || 0.64) - 0.12,
+      label: getDogTapReactionCopy(dog?.lastAction, dog?.stats),
+    });
   }, [
     controlsDisabled,
+    dog?.lastAction,
+    dog?.stats,
     dispatch,
     dogPositionNorm,
     effectiveDogSleeping,
@@ -2835,21 +3137,97 @@ export default function MainGame({ scene, dogInteractive = true }) {
     movementLocked,
     placingBowl,
     triggerActionFeedback,
+    triggerDogTapReaction,
   ]);
+
+  const handleYardDogTap = useCallback(
+    (event) => {
+      if (event?.target?.closest?.("[data-doggerz-yard-control='true']")) {
+        return;
+      }
+      const rect = dogViewportRef.current?.getBoundingClientRect?.();
+      const xNorm = rect
+        ? clamp((Number(event?.clientX || 0) - rect.left) / rect.width, 0, 1)
+        : dogPositionNormRef.current?.xNorm || 0.5;
+      const yNorm = rect
+        ? clamp((Number(event?.clientY || 0) - rect.top) / rect.height, 0, 1)
+        : dogPositionNormRef.current?.yNorm || 0.65;
+
+      handleDogPetTap();
+      triggerDogTapReaction({
+        xNorm,
+        yNorm: yNorm - 0.08,
+        label: getDogTapReactionCopy(dog?.lastAction, dog?.stats),
+      });
+    },
+    [dog?.lastAction, dog?.stats, handleDogPetTap, triggerDogTapReaction]
+  );
 
   const handleBathAction = useCallback(() => {
     if (controlsDisabled) return;
     if (isActionHijacked("bath")) return;
     triggerActionFeedback("bath");
     dispatch(bathe({ now: Date.now() }));
-  }, [controlsDisabled, dispatch, isActionHijacked, triggerActionFeedback]);
+    triggerCareSatisfaction("clean", {
+      animation: "scratch",
+      message: "Cleaned up. Comfort and health got a real lift.",
+      toastType: "success",
+      stat: "health",
+    });
+  }, [
+    controlsDisabled,
+    dispatch,
+    isActionHijacked,
+    triggerActionFeedback,
+    triggerCareSatisfaction,
+  ]);
 
   const handlePottyAction = useCallback(() => {
     if (controlsDisabled) return;
     if (isActionHijacked("potty")) return;
     triggerActionFeedback("potty");
     dispatch(goPotty({ now: Date.now() }));
-  }, [controlsDisabled, dispatch, isActionHijacked, triggerActionFeedback]);
+    triggerCareSatisfaction("potty", {
+      animation: "sniff",
+      message: "Potty cue sent. Routine and training rhythm improved.",
+      toastType: "success",
+      stat: "health",
+    });
+  }, [
+    controlsDisabled,
+    dispatch,
+    isActionHijacked,
+    triggerActionFeedback,
+    triggerCareSatisfaction,
+  ]);
+
+  const handleSleepAction = useCallback(() => {
+    if (controlsDisabled) return;
+    if (isActionHijacked("rest")) return;
+    triggerActionFeedback("rest");
+    dispatch(
+      rest({
+        now: Date.now(),
+        action: "sleep",
+        napSpotId: isApartmentEnvironment ? "apartment" : "yard",
+      })
+    );
+    triggerCareSatisfaction("sleep", {
+      animation: "sleep",
+      message: "Settled down to sleep. Energy recovery started.",
+      toastType: "success",
+      duration: 1600,
+      speedBoost: 1,
+      stat: "energy",
+    });
+  }, [
+    controlsDisabled,
+    dispatch,
+    isActionHijacked,
+    isApartmentEnvironment,
+    triggerActionFeedback,
+    triggerCareSatisfaction,
+  ]);
 
   const handleGiveWater = useCallback(() => {
     if (controlsDisabled) return;
@@ -2859,23 +3237,18 @@ export default function MainGame({ scene, dogInteractive = true }) {
     });
     triggerActionFeedback("water");
     dispatch(giveWater({ now: Date.now() }));
-    toast.once(
-      `habit:water:${getLocalDayKey()}`,
-      {
-        type: "success",
-        message: "Fresh water landed well. Small care still counts.",
-        durationMs: 2200,
-      },
-      90_000
-    );
-    triggerStatPop("health");
+    triggerCareSatisfaction("water", {
+      animation: "drink",
+      message: "Fresh water landed well. Hydration and mood improved.",
+      toastType: "success",
+      stat: "health",
+    });
   }, [
     controlsDisabled,
     dispatch,
     life?.stage,
-    toast,
     triggerActionFeedback,
-    triggerStatPop,
+    triggerCareSatisfaction,
   ]);
 
   const handleFeedAction = useCallback(
@@ -2899,25 +3272,20 @@ export default function MainGame({ scene, dogInteractive = true }) {
         })
       );
       triggerActionFeedback("quick-feed");
-      toast.once(
-        `habit:feed:${getLocalDayKey()}:${resolvedFoodType || "regular_kibble"}`,
-        {
-          type: "reward",
-          message: "Fed and settled. The routine is starting to stick.",
-          durationMs: 2200,
-        },
-        90_000
-      );
-      triggerStatPop("health");
+      triggerCareSatisfaction("feed", {
+        animation: "feed",
+        message: "Fed and settled. Hunger dropped and energy improved.",
+        toastType: "reward",
+        stat: "health",
+      });
       return true;
     },
     [
       controlsDisabled,
       dispatch,
       life?.stage,
-      toast,
       triggerActionFeedback,
-      triggerStatPop,
+      triggerCareSatisfaction,
     ]
   );
 
@@ -2931,19 +3299,15 @@ export default function MainGame({ scene, dogInteractive = true }) {
       });
       triggerActionFeedback("play");
       dispatch(play({ now, source }));
-      toast.once(
-        `habit:play:${getLocalDayKey()}`,
-        {
-          type: "reward",
-          message: "Good play burst. Mood and bond both got a lift.",
-          durationMs: 2200,
-        },
-        90_000
-      );
-      triggerStatPop("energy");
+      triggerCareSatisfaction("play", {
+        animation: "wag",
+        message: "Good play burst. Mood, bond, and stimulation improved.",
+        toastType: "reward",
+        stat: "energy",
+      });
       return now;
     },
-    [dispatch, life?.stage, toast, triggerActionFeedback, triggerStatPop]
+    [dispatch, life?.stage, triggerActionFeedback, triggerCareSatisfaction]
   );
 
   const handlePlayAction = useCallback(
@@ -3858,23 +4222,19 @@ export default function MainGame({ scene, dogInteractive = true }) {
     });
     triggerActionFeedback("quick-feed");
     dispatch(quickFeed({ now }));
-    setUiAnimOverride("wag");
-    setUiSpeedBoost(1.15);
     setAttentionTarget({ xNorm: 0.54, yNorm: 0.7, at: now });
-
-    if (quickFeedResetRef.current) {
-      window.clearTimeout(quickFeedResetRef.current);
-    }
-    quickFeedResetRef.current = window.setTimeout(() => {
-      setUiAnimOverride("");
-      setUiSpeedBoost(1);
-    }, 1400);
-
+    triggerCareSatisfaction("feed", {
+      animation: "feed",
+      message: "Quick feed landed. Hunger dropped and energy bumped up.",
+      toastType: "reward",
+      stat: "health",
+    });
   }, [
     controlsDisabled,
     dispatch,
     life?.stage,
     triggerActionFeedback,
+    triggerCareSatisfaction,
   ]);
 
   const buildBaseShareContext = useCallback(
@@ -3969,6 +4329,69 @@ export default function MainGame({ scene, dogInteractive = true }) {
       )
     );
   }, [buildBaseShareContext, identity?.profileId, identityDogName]);
+
+  const yardCareButtons = useMemo(
+    () => [
+      {
+        key: "feed",
+        label: "Feed",
+        value: `${hungerPct}%`,
+        onClick: handleQuickFeed,
+        disabled: controlsDisabled,
+      },
+      {
+        key: "water",
+        label: "Water",
+        value: `${thirstPct}%`,
+        onClick: handleGiveWater,
+        disabled: controlsDisabled,
+      },
+      {
+        key: "play",
+        label: "Play",
+        value: `${mentalStimulationPct}%`,
+        onClick: () => handlePlayAction("yard_quick"),
+        disabled: controlsDisabled || toysIgnored,
+      },
+      {
+        key: "sleep",
+        label: "Sleep",
+        value: `${energyPct}%`,
+        onClick: handleSleepAction,
+        disabled: controlsDisabled,
+      },
+      {
+        key: "clean",
+        label: "Clean",
+        value: `${cleanlinessPct}%`,
+        onClick: handleBathAction,
+        disabled: controlsDisabled,
+      },
+      {
+        key: "potty",
+        label: "Potty",
+        value: `${pottyNeedPct}%`,
+        onClick: handlePottyAction,
+        disabled: controlsDisabled,
+      },
+    ],
+    [
+      cleanlinessPct,
+      controlsDisabled,
+      energyPct,
+      handleBathAction,
+      handleGiveWater,
+      handlePlayAction,
+      handlePottyAction,
+      handleQuickFeed,
+      handleSleepAction,
+      hungerPct,
+      mentalStimulationPct,
+      pottyNeedPct,
+      thirstPct,
+      toysIgnored,
+    ]
+  );
 
   const funnyShareMoment = useMemo(() => {
     const key = String(dog?.lastAction || "")
@@ -4323,6 +4746,31 @@ export default function MainGame({ scene, dogInteractive = true }) {
     ]
   );
 
+  const coreBottomMenuSections = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(bottomMenuSections).map(([sectionId, section]) => {
+          const allowed = CORE_BOTTOM_MENU_ITEM_KEYS[sectionId];
+          return [
+            sectionId,
+            {
+              ...section,
+              subtitle:
+                sectionId === "journey"
+                  ? "Shop and shared memory."
+                  : section?.subtitle,
+              items: Array.isArray(section?.items)
+                ? section.items.filter(
+                    (item) => !allowed || allowed.has(item?.key)
+                  )
+                : [],
+            },
+          ];
+        })
+      ),
+    [bottomMenuSections]
+  );
+
   const handleBottomMenuSelect = useCallback(
     (tabId) => {
       const normalizedTabId = String(tabId || "")
@@ -4344,7 +4792,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
         openTricksPicker();
         return;
       }
-      const tabCopy = bottomMenuSections?.[normalizedTabId];
+      const tabCopy = coreBottomMenuSections?.[normalizedTabId];
       const closing = bottomMenuCategory === normalizedTabId;
       const stageMessage = closing
         ? "Dock collapsed."
@@ -4373,8 +4821,8 @@ export default function MainGame({ scene, dogInteractive = true }) {
     },
     [
       bottomMenuCategory,
-      bottomMenuSections,
       bottomMenuTabs,
+      coreBottomMenuSections,
       openTricksPicker,
       pottyMasteryComplete,
       triggerDockFeedback,
@@ -4821,36 +5269,75 @@ export default function MainGame({ scene, dogInteractive = true }) {
                   }
                 />
               ) : (
-                <div className="flex h-full min-h-0 flex-col gap-3">
-                  <div className="flex flex-col gap-3 px-3 pt-3 sm:px-6 sm:pt-4 lg:flex-row lg:items-start lg:justify-between">
-                    <MoodBadge
-                      label={displayMoodLabel || "Content"}
-                      tone={displayMoodTone}
-                      hint={displayMoodHint || "Comfortable right now."}
-                      accent={displayMoodAccent}
-                      badges={moodNeedBadges}
-                      className="w-full max-w-[228px]"
-                    />
-                    <div className="w-full lg:ml-auto lg:max-w-[244px]">
-                      <MemoryMomentToast
-                        moment={memoryMoment}
-                        onShare={
-                          memoryMoment && isShareableMemoryMoment(memoryMoment)
-                            ? handleShareMemoryMoment
-                            : undefined
-                        }
-                        shareLabel="Share"
-                      />
-                    </div>
-                  </div>
+                <div className="flex h-full min-h-0 flex-col">
                   <div
                     ref={dogViewportRef}
-                    className="relative min-h-0 flex-1 overflow-hidden"
+                    onClick={handleYardDogTap}
+                    className="yard-main-stage relative min-h-[430px] flex-1 overflow-hidden rounded-[26px] border border-white/10 bg-[#0b1320] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
                   >
                     <DogStage3D
-                      scene={scene}
+                      scene={yardScene}
                       dogView={temporaryYard3DDogView}
                     />
+                    <div
+                      data-doggerz-yard-control="true"
+                      className="pointer-events-none absolute inset-x-0 top-0 z-[32] flex flex-col gap-2 p-3 sm:p-4"
+                    >
+                      <div className="pointer-events-auto grid grid-cols-3 gap-2 rounded-[20px] border border-white/12 bg-black/45 p-2 text-white shadow-[0_10px_24px_rgba(0,0,0,0.24)] backdrop-blur-md">
+                        <div className="min-w-0 rounded-2xl bg-white/8 px-3 py-2">
+                          <div className="text-[9px] font-black uppercase tracking-[0.16em] text-white/55">
+                            Mood
+                          </div>
+                          <div className="mt-0.5 truncate text-sm font-black">
+                            {yardHud.mood}
+                          </div>
+                        </div>
+                        <div className="min-w-0 rounded-2xl bg-white/8 px-3 py-2">
+                          <div className="text-[9px] font-black uppercase tracking-[0.16em] text-white/55">
+                            Weather
+                          </div>
+                          <div className="mt-0.5 truncate text-sm font-black">
+                            {yardHud.weather}
+                          </div>
+                        </div>
+                        <div className="min-w-0 rounded-2xl bg-white/8 px-3 py-2">
+                          <div className="text-[9px] font-black uppercase tracking-[0.16em] text-white/55">
+                            Time
+                          </div>
+                          <div className="mt-0.5 truncate text-sm font-black">
+                            {yardHud.time}
+                          </div>
+                          <div className="mt-0.5 truncate text-[10px] font-bold text-white/55">
+                            {yardHud.clock}
+                          </div>
+                        </div>
+                      </div>
+                      {memoryMoment ? (
+                        <div className="pointer-events-auto ml-auto w-full max-w-[260px]">
+                          <MemoryMomentToast
+                            moment={memoryMoment}
+                            onShare={
+                              isShareableMemoryMoment(memoryMoment)
+                                ? handleShareMemoryMoment
+                                : undefined
+                            }
+                            shareLabel="Share"
+                          />
+                        </div>
+                      ) : null}
+                    </div>
+                    {dogTapReaction ? (
+                      <div
+                        key={dogTapReaction.id}
+                        className="dog-tap-reaction absolute z-[34] rounded-full border border-white/20 bg-black/55 px-3 py-1.5 text-xs font-black uppercase tracking-[0.12em] text-white shadow-[0_10px_24px_rgba(0,0,0,0.24)] backdrop-blur"
+                        style={{
+                          left: `${dogTapReaction.xNorm * 100}%`,
+                          top: `${dogTapReaction.yNorm * 100}%`,
+                        }}
+                      >
+                        {dogTapReaction.label}
+                      </div>
+                    ) : null}
                     {!effectiveDogSleeping && !placingBowl ? (
                       <>
                         <DogToy
@@ -4903,6 +5390,57 @@ export default function MainGame({ scene, dogInteractive = true }) {
                         </div>
                       </div>
                     ) : null}
+                    <div
+                      data-doggerz-yard-control="true"
+                      className="pointer-events-auto absolute inset-x-0 bottom-0 z-[35] px-3 pb-3 sm:px-4 sm:pb-4"
+                    >
+                      <div className="mx-auto flex w-full max-w-3xl flex-col gap-2 rounded-[22px] border border-white/12 bg-black/50 p-2 shadow-[0_14px_32px_rgba(0,0,0,0.28)] backdrop-blur-md">
+                        <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+                          {yardCareButtons.map((item) => (
+                            <button
+                              key={item.key}
+                              type="button"
+                              disabled={item.disabled}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                item.onClick();
+                              }}
+                              className="min-h-[54px] rounded-2xl border border-white/10 bg-white/10 px-2 py-2 text-center transition hover:bg-white/15 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              <span className="block text-sm font-black text-white">
+                                {item.label}
+                              </span>
+                              <span className="mt-0.5 block text-[10px] font-bold uppercase tracking-[0.12em] text-white/55">
+                                {item.value}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              openTricksPicker();
+                            }}
+                            disabled={tricksLocked}
+                            className="min-h-[46px] rounded-2xl border border-amber-200/25 bg-amber-300/18 px-3 py-2 text-sm font-black uppercase tracking-[0.12em] text-amber-50 transition hover:bg-amber-300/25 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            Training
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handleOpenRoute(PATHS.MEMORIES);
+                            }}
+                            className="min-h-[46px] rounded-2xl border border-sky-200/25 bg-sky-300/18 px-3 py-2 text-sm font-black uppercase tracking-[0.12em] text-sky-50 transition hover:bg-sky-300/25 active:scale-[0.98]"
+                          >
+                            Memory
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
@@ -4941,7 +5479,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
                     activeCategory={bottomMenuCategory}
                     onSelectCategory={handleBottomMenuSelect}
                     onSelectItem={handleBottomMenuItemPress}
-                    sections={bottomMenuSections}
+                    sections={coreBottomMenuSections}
                     tabs={bottomMenuTabs}
                     onPointerEnter={handleActionHoverAnticipation}
                   />
@@ -5104,6 +5642,24 @@ export default function MainGame({ scene, dogInteractive = true }) {
   0% { transform: translate3d(0, 0, 0) scale(1); }
   50% { transform: translate3d(0, 2px, 0) scale(0.965); }
   100% { transform: translate3d(0, 0, 0) scale(1); }
+}
+@keyframes dgDogTapReaction {
+  0% { transform: translate3d(-50%, 8px, 0) scale(0.92); opacity: 0; }
+  18% { opacity: 1; }
+  100% { transform: translate3d(-50%, -28px, 0) scale(1); opacity: 0; }
+}
+.yard-main-stage canvas {
+  cursor: pointer;
+}
+.dog-tap-reaction {
+  pointer-events: none;
+  transform: translate3d(-50%, 0, 0);
+  animation: dgDogTapReaction 1.15s ease-out forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .dog-tap-reaction {
+    animation-duration: 0.72s;
+  }
 }
 .yard-viewport.yard-day {
   box-shadow: inset 0 -36px 55px rgba(16, 185, 129, 0.14);

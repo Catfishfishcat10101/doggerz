@@ -6,9 +6,15 @@ export default function DogShadowPlane({ opacity = 0.22 }) {
       receiveShadow
       position={[0, -1.54, -0.05]}
       rotation={[-Math.PI / 2, 0, 0]}
+      scale={[1.8, 0.72, 1]}
     >
-      <planeGeometry args={[2.4, 1.4]} />
-      <shadowMaterial transparent opacity={opacity} />
+      <circleGeometry args={[0.72, 48]} />
+      <meshBasicMaterial
+        color="#08110b"
+        transparent
+        opacity={opacity}
+        depthWrite={false}
+      />
     </mesh>
   );
 }

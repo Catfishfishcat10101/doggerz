@@ -7,7 +7,7 @@ import { SUPPORT_EMAIL_FEEDBACK_URL } from "@/app/config/links.js";
 
 export default function Contact() {
   return (
-    <SubpageShell width="text">
+    <SubpageShell width="text" containerClassName="default-contact-class">
       <div className="w-full space-y-6">
           <PageHeader>
             <h1 className="text-2xl font-semibold tracking-tight">Contact</h1>

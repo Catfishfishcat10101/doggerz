@@ -57,6 +57,8 @@ export default function DailyRewardModal({
   const canClaim = resolvedRewardState?.canClaim === true;
   const reward = resolvedRewardState?.reward || null;
   const nextStreakDay = Number(resolvedRewardState?.nextStreakDay || 1);
+  const dogName = String(dog?.name || "Fireball").trim() || "Fireball";
+  const cloudReady = Boolean(dog?.adoptedAt);
 
   const handleClaim = (multiplier = 1) => {
     if (!canClaim || !reward) {
@@ -109,14 +111,15 @@ export default function DailyRewardModal({
       </div>
       <h2 className="mt-2 text-2xl font-black tracking-tight text-white">
         {streakDays > 0
-          ? `${streakDays}-day streak. Keep it going.`
-          : "First day bonus ready."}
+          ? `${dogName} remembers the routine.`
+          : `${dogName}'s first daily check-in.`}
       </h2>
       <p className="mt-2 text-sm leading-relaxed text-zinc-300">
         Day {nextStreakDay} reward:{" "}
         <span className="font-semibold text-emerald-200">
           {reward?.label || "Reward"}
         </span>
+        . Your return keeps the bond warm.
       </p>
 
       <div className="mt-5 rounded-2xl border border-white/10 bg-white/5 p-4">
@@ -126,6 +129,11 @@ export default function DailyRewardModal({
         <div className="mt-1 text-3xl font-black text-emerald-200">
           {streakDays} days
         </div>
+        <p className="mt-2 text-xs leading-5 text-zinc-400">
+          {cloudReady
+            ? "Cloud save will sync this progress after claim."
+            : "Local progress is ready to save once adoption finishes."}
+        </p>
       </div>
 
       <div className="mt-6 flex flex-col gap-3">

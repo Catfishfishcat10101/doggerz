@@ -20,6 +20,9 @@ describe("dog animation contract", () => {
   it("maps legacy state aliases into expressive clips", () => {
     expect(resolveDogAnimationContract("guilty_paws").action).toBe("paw");
     expect(resolveDogAnimationContract("pet_zoomies").action).toBe("walk");
+    expect(resolveDogAnimationContract("return_greet").action).toBe("wag");
+    expect(resolveDogAnimationContract("return_annoyed").action).toBe("bark");
+    expect(resolveDogAnimationContract("daily_reward").action).toBe("wag");
     expect(resolveDogAnimationContract("golden_years_sleeping").action).toBe(
       "golden_years_sleeping"
     );

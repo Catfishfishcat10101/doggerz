@@ -9,7 +9,13 @@ export const DAILY_REWARD_SCHEDULE = Object.freeze([
   { day: 4, type: "ENERGY", value: 25, label: "+25 Energy" },
   { day: 5, type: "COINS", value: 250, label: "250 Coins" },
   { day: 6, type: "ENERGY", value: 30, label: "+30 Energy" },
-  { day: 7, type: "COINS", value: 500, label: "500 Coins (Weekly Bonus)" },
+  {
+    day: 7,
+    type: "BUNDLE",
+    value: 500,
+    accessoryId: "tag_star",
+    label: "500 Coins + Star Tag",
+  },
 ]);
 
 function startOfLocalDayMs(ts) {
