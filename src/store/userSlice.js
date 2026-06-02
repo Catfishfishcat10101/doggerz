@@ -404,10 +404,9 @@ export const selectUserZip = (state) => state.user?.zip || null;
 export const selectCloudSyncState = (state) =>
   state.user?.cloudSync ?? DEFAULT_USER_STATE.cloudSync;
 
-// Authentication is considered "on" when we have an id (preferred) or an email.
-// This avoids treating the default local-only user object as authenticated.
-export const selectIsLoggedIn = (state) =>
-  Boolean(state.user?.id || state.user?.email);
+// Authentication is considered "on" only when Firebase has resolved a user id.
+// A remembered email is just form convenience, not an authenticated session.
+export const selectIsLoggedIn = (state) => Boolean(state.user?.id);
 
 export const selectDogRenderMode = (state) =>
   state.user?.dogRenderMode || DEFAULT_USER_STATE.dogRenderMode;

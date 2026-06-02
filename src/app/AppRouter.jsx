@@ -262,6 +262,18 @@ const router = createBrowserRouter(
             "Loading yard..."
           ),
         },
+        {
+          path: PATHS.CARE,
+          element: suspenseWithLabel(
+            withCrashBoundary(
+              <AuthReadyGate label="Connecting care...">
+                <GamePage />
+              </AuthReadyGate>,
+              GameCrashFallback
+            ),
+            "Loading care..."
+          ),
+        },
 
         {
           path: PATHS.HOME,

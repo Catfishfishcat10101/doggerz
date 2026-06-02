@@ -1,18 +1,17 @@
 // src/components/dog/DogAIEngine.jsx
-// @ts-check
-
 import { useCallback, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { Capacitor } from "@capacitor/core";
 import { onSnapshot, setDoc } from "firebase/firestore";
-import { auth, db, firebaseReady } from "@/lib/firebase/index.js";
+import { auth, db } from "@/lib/firebaseClient.js";
 import {
   grantFounderReward,
   hydrateDog,
   resetDogState,
   registerSessionStart,
+  DOG_SAVE_SCHEMA_VERSION,
   DOG_STORAGE_KEY,
   getDogStorageKey,
 } from "@/store/dogSlice.js";
@@ -44,7 +43,6 @@ import useDynamicMusic from "@/hooks/audio/useDynamicMusic.js";
 import useAmbientSoundscape from "@/hooks/audio/useAmbientSoundscape.js";
 import { useDogEngineState } from "@/hooks/useDogState.js";
 import { ensureDogMain } from "@/lib/firebase/ensureDog.js";
-import { userProfileDoc } from "@/lib/firebase/paths.js";
 import {
   loadLocalSave,
   migrateLegacySave,
@@ -54,6 +52,7 @@ import {
   isAnonymousFirebaseUser,
   isFirestorePermissionError,
 } from "@/lib/firebaseClient.js";
+import { userProfileDoc } from "@/lib/firebase/paths.js";
 import { fetchRealTimeWeather } from "@/features/weather/RealTimeWeatherFetcher.js";
 import { debugError, debugLog, debugWarn } from "@/utils/debugLogger.js";
 import { PATHS } from "@/app/routes.js";
@@ -65,9 +64,6 @@ const USER_PROFILE_SYNC_DEBOUNCE_MS = 600;
 const HYDRATE_ERROR_KEY = "doggerz:hydrateError";
 let hasBootstrappedDogSession = false;
 let lastHydratedCloudUserId = null;
-
-// Local persistence schema marker (kept here so we don't require dogSlice exports).
-const DOG_SAVE_SCHEMA_VERSION = 1;
 
 let pixiTickerPromise = null;
 let capacitorAppPromise = null;
@@ -173,6 +169,7 @@ export default function DogAIEngine({
     liveAuthUserId && !isAnonymousFirebaseUser(auth?.currentUser)
       ? liveAuthUserId
       : null;
+  const firebaseReady = Boolean(auth && db);
   const shouldRunReduxHeartbeat = location?.pathname !== PATHS.GAME;
 
   const hasHydratedRef = useRef(false);
@@ -233,7 +230,7 @@ export default function DogAIEngine({
       projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || null,
       appId: import.meta.env.VITE_FIREBASE_APP_ID || null,
       authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || null,
-      firebaseReady,
+      firebaseReady: Boolean(auth && db),
     });
   }, []);
 
@@ -627,7 +624,7 @@ export default function DogAIEngine({
       debugError("DogAI", "ensure cloud document failed", err);
       console.error("[Doggerz] Failed to ensure cloud document:", err);
     });
-  }, [cloudAuthUserId]);
+  }, [firebaseReady, cloudAuthUserId]);
 
   useEffect(() => {
     if (!firebaseReady || !db || !cloudAuthUserId) return undefined;
@@ -699,7 +696,7 @@ export default function DogAIEngine({
         // ignore
       }
     };
-  }, [cloudAuthUserId, dispatch]);
+  }, [cloudAuthUserId, dispatch, firebaseReady]);
 
   useEffect(() => {
     if (!firebaseReady || !db || !cloudAuthUserId) return undefined;
@@ -752,7 +749,7 @@ export default function DogAIEngine({
         profileSyncTimeoutRef.current = null;
       }
     };
-  }, [cloudAuthUserId, dispatch, zip]);
+  }, [cloudAuthUserId, dispatch, firebaseReady, zip]);
 
   useEffect(() => {
     if (!isFounder) return;

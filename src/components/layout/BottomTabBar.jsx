@@ -44,6 +44,25 @@ function TabIcon({ name, active }) {
     );
   }
 
+  if (name === "care") {
+    return (
+      <svg
+        viewBox="0 0 24 24"
+        className="h-5 w-5"
+        fill="none"
+        aria-hidden="true"
+      >
+        <path
+          d="M12 20s-7-4.35-7-9.2A4.05 4.05 0 0 1 12 8a4.05 4.05 0 0 1 7 2.8C19 15.65 12 20 12 20Z"
+          stroke={stroke}
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    );
+  }
+
   if (name === "store") {
     return (
       <svg
@@ -73,6 +92,25 @@ function TabIcon({ name, active }) {
       >
         <path
           d="M7 5h10a2 2 0 0 1 2 2v12l-3-2-3 2-3-2-3 2V7a2 2 0 0 1 2-2Z"
+          stroke={stroke}
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    );
+  }
+
+  if (name === "settings") {
+    return (
+      <svg
+        viewBox="0 0 24 24"
+        className="h-5 w-5"
+        fill="none"
+        aria-hidden="true"
+      >
+        <path
+          d="M12 8.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7Zm0-5v2M12 18.5v2M4.65 6.65l1.4 1.4M17.95 17.95l1.4 1.4M2.5 12h2M19.5 12h2M4.65 17.35l1.4-1.4M17.95 6.05l1.4-1.4"
           stroke={stroke}
           strokeWidth="1.8"
           strokeLinecap="round"

@@ -233,11 +233,18 @@ const selectDogDreamStateModel = createSelector(
 );
 
 const selectDogMemoryStateModel = createSelector(
-  [selectDogIdentityModel, selectDogJournal, selectDogMemories, selectDog],
-  (identity, journal, memories, dog) => ({
+  [
+    selectDogIdentityModel,
+    selectDogJournal,
+    selectDogMemories,
+    selectDogDreams,
+    selectDog,
+  ],
+  (identity, journal, memories, dreamsState, dog) => ({
     name: identity.name,
     journal,
     memories,
+    dreamsState,
     memory: dog?.memory || {},
     bond: dog?.bond || {},
     memoryDrives: scoreRecentMemoryDrives(memories),

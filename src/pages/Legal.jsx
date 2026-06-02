@@ -11,7 +11,7 @@ export default function LegalPage() {
           <h1 className="text-3xl font-black tracking-tight mb-2">
             Legal &amp; Terms
           </h1>
-          <p className="text-xs text-zinc-800">Last updated: 2026-01-02</p>
+          <p className="text-xs text-zinc-500">Last updated: 2026-01-02</p>
         </PageHeader>
 
         <section className="space-y-2">

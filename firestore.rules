@@ -12,12 +12,22 @@ service cloud.firestore {
       return signedIn() && request.auth.uid == uid;
     }
 
+    function isValidDogSave() {
+      return request.resource.data.schemaVersion == 2
+        && request.resource.data.dog is map
+        && request.resource.data.summary is map
+        && request.resource.data.meta is map
+        && request.resource.data.meta.savedAt is int;
+    }
+
     match /users/{userId} {
       allow read, write: if isOwner(userId);
     }
 
     match /users/{userId}/dog/{document=**} {
-      allow read, write: if isOwner(userId);
+      allow read: if isOwner(userId);
+      allow create, update: if isOwner(userId) && isValidDogSave();
+      allow delete: if isOwner(userId);
     }
   }
 }

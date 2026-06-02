@@ -38,9 +38,9 @@ const COMMANDS = [
     difficulty: 1,
     summary:
       "Polite paw greeting. Sits and lifts a front paw to meet your hand.",
-    minLevel: 2,
-    minBond: 10,
-    unlockDelayMinutes: 10,
+    minLevel: 1,
+    minBond: 0,
+    unlockDelayMinutes: 0,
     xpReward: 7,
     animationKey: "shake",
   },
@@ -144,7 +144,7 @@ export const MASTER_TRICKS = Object.freeze(
 
 export const OBEDIENCE_COMMANDS = MASTER_TRICKS;
 export const OBEDIENCE_ACTIVE_LEARNING_LIMITS = Object.freeze({
-  EARLY: 1,
+  EARLY: 3,
   STEADY: 2,
 });
 

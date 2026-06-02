@@ -1,5 +1,5 @@
 // src/pages/Privacy.jsx
-import PageShell from "@/components/layout/PageShell.jsx";
+import SubpageShell from "@/components/layout/SubpageShell.jsx";
 import { PageHeader } from "@/components/layout/PageSections.jsx";
 import {
   SUPPORT_EMAIL,
@@ -8,13 +8,13 @@ import {
 
 export default function PrivacyPage() {
   return (
-    <PageShell mainClassName="px-6 py-10" containerClassName="w-full max-w-3xl">
+    <SubpageShell width="text">
       <div className="space-y-8 text-sm text-zinc-300">
         <PageHeader unstyled>
           <h1 className="text-3xl font-black tracking-tight mb-2">
             Privacy Policy
           </h1>
-          <p className="text-xs text-zinc-500">Last updated: 2026-03-12</p>
+          <p className="text-xs text-zinc-500">Last updated: 2026-06-01</p>
         </PageHeader>
         <section className="space-y-2">
           <h2 className="font-semibold text-zinc-100 text-base">
@@ -75,6 +75,10 @@ export default function PrivacyPage() {
             is unavailable or misconfigured, Doggerz should still be playable
             locally.
           </p>
+          <p>
+            Signed-in users can delete their cloud save and request account
+            deletion from Settings.
+          </p>
         </section>
         <section className="space-y-2">
           <h2 className="font-semibold text-zinc-100 text-base">
@@ -101,8 +105,9 @@ export default function PrivacyPage() {
             6. Third-party services
           </h2>
           <p>
-            Doggerz may rely on third-party services (e.g. Firebase, app
-            stores). Their data handling is governed by their own policies.
+            Doggerz may rely on third-party services (e.g. Firebase, app stores,
+            weather providers, and optional Play Games services). Their data
+            handling is governed by their own policies.
           </p>
         </section>
         <section className="space-y-2">
@@ -126,6 +131,6 @@ export default function PrivacyPage() {
           </p>
         </section>
       </div>
-    </PageShell>
+    </SubpageShell>
   );
 }

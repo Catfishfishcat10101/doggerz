@@ -5,7 +5,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useToast } from "@/state/toastContext.js";
-import BackPill from "@/components/layout/BackPill.jsx";
 import HeroDog3D from "@/components/brand/HeroDog3D.jsx";
 import DogCosmeticsOverlay from "@/components/dog/DogCosmeticsOverlay.jsx";
 import Tooltip from "@/components/ui/Tooltip.jsx";
@@ -803,11 +802,8 @@ export default function Store() {
   return (
     <SubpageShell width="wide" useSurface={false}>
       <div className="text-zinc-100">
-      <PageHeader
-        className="sticky top-0 z-30 border-b border-white/10 bg-black/45 px-4 py-3 backdrop-blur-md"
-        unstyled
-      >
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3">
+      <PageHeader className="mb-4 rounded-2xl border border-white/10 bg-black/35 px-4 py-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
             <div className="text-xs uppercase tracking-[0.22em] text-zinc-400">
               Store
@@ -826,18 +822,11 @@ export default function Store() {
               <span className="text-sky-200">Gems</span>
               <span className="tabular-nums">{gems}</span>
             </span>
-            <Link
-              to="/menu"
-              className="inline-flex items-center justify-center rounded-2xl border border-white/15 bg-black/25 px-3 py-2 text-xs font-semibold text-zinc-100 transition hover:bg-black/40"
-            >
-              Menu
-            </Link>
-            <BackPill to="/game" label="Back" />
           </div>
         </div>
       </PageHeader>
 
-      <main className="mx-auto w-full px-0 py-5">
+      <main className="mx-auto w-full px-0 pb-2">
         {/* Hero */}
         <section className="mb-4 rounded-2xl border border-white/10 bg-black/25 p-4 overflow-hidden">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

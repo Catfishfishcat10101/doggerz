@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import dogReducer, {
   addMemories,
+  bathe,
   claimDailyReward,
   feed,
   giveWater,
@@ -10,6 +11,7 @@ import dogReducer, {
   hydrateDog,
   petDog,
   play,
+  quickFeed,
   setAdoptedAt,
   trainObedience,
 } from "@/store/dogSlice.js";
@@ -140,6 +142,62 @@ describe("dogSlice need-state consequences", () => {
     expect(nextState.lastCareResponse?.message).toMatch(/play|bond/i);
   });
 
+  it("makes every core care action change stats, animate, and respond", () => {
+    const { state, now } = buildActiveDogState({
+      stats: {
+        hunger: 86,
+        thirst: 82,
+        energy: 58,
+        happiness: 54,
+        cleanliness: 42,
+        affection: 44,
+      },
+      pottyLevel: 90,
+    });
+
+    let nextState = dogReducer(state, quickFeed({ now }));
+    expect(nextState.lastAction).toBe("feed_quick");
+    expect(nextState.stats.hunger).toBeLessThan(86);
+    expect(nextState.bond.value).toBeGreaterThan(state.bond.value);
+    expect(nextState.lastCareResponse?.message).toMatch(/gobbled it up/i);
+
+    const afterFeed = nextState;
+    nextState = dogReducer(nextState, giveWater({ now: now + 1_000 }));
+    expect(nextState.lastAction).toBe("water");
+    expect(nextState.stats.thirst).toBeLessThan(afterFeed.stats.thirst);
+    expect(nextState.lastCareResponse?.message).toMatch(/fresh water/i);
+
+    const afterWater = nextState;
+    nextState = dogReducer(nextState, play({ now: now + 2_000 }));
+    expect(nextState.lastAction).toBe("play");
+    expect(nextState.stats.happiness).toBeGreaterThan(
+      afterWater.stats.happiness
+    );
+    expect(nextState.lastCareResponse?.message).toMatch(/play|bond/i);
+
+    const afterPlay = nextState;
+    nextState = dogReducer(nextState, petDog({ now: now + 3_000 }));
+    expect(nextState.lastAction).toMatch(/^pet_|pet/);
+    expect(nextState.bond.value).toBeGreaterThanOrEqual(afterPlay.bond.value);
+    expect(nextState.lastCareResponse?.message).toBeTruthy();
+
+    const afterPet = nextState;
+    nextState = dogReducer(nextState, bathe({ now: now + 4_000 }));
+    expect(nextState.lastAction).toBe("bathe");
+    expect(nextState.stats.cleanliness).toBeGreaterThan(
+      afterPet.stats.cleanliness
+    );
+    expect(nextState.lastCareResponse?.message).toMatch(/cleaner|bath/i);
+
+    nextState = dogReducer(
+      nextState,
+      goPotty({ now: now + 5_000, forceSuccess: true })
+    );
+    expect(nextState.lastAction).toBe("potty");
+    expect(nextState.pottyLevel).toBe(0);
+    expect(nextState.lastCareResponse?.message).toMatch(/potty routine|cue/i);
+  });
+
   it("derives emotional state from treatment memories instead of raw happiness edits", () => {
     const { state, now } = buildActiveDogState({
       stats: {
@@ -225,6 +283,10 @@ describe("dogSlice need-state consequences", () => {
           },
         },
       })
+    );
+
+    expect(readyState.training.obedience.unlockedIds).toEqual(
+      expect.arrayContaining(["sit", "speak", "shake"])
     );
 
     const nextState = dogReducer(

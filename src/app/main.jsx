@@ -136,6 +136,9 @@ try {
   throw error;
 }
 
+const exposeRuntimeDebugHelpers =
+  import.meta.env.DEV || isDebugLoggingEnabled();
+
 if (typeof window !== "undefined") {
   initRemoteConfig().catch(() => {});
 
@@ -148,74 +151,76 @@ if (typeof window !== "undefined") {
         : "web",
   });
 
-  window.__DOGGERZ_DEBUG__ = {
-    ...(window.__DOGGERZ_DEBUG__ || {}),
-    enabled: isDebugLoggingEnabled(),
-    enable() {
-      setDebugLoggingEnabled(true);
-      debugLog("Debug", "enabled from window helper");
-    },
-    disable() {
-      debugLog("Debug", "disabled from window helper");
-      setDebugLoggingEnabled(false);
-    },
-    status() {
-      return {
-        enabled: isDebugLoggingEnabled(),
-        capturedErrors: getCapturedErrors().length,
-      };
-    },
-    errors() {
-      return getCapturedErrors();
-    },
-  };
-  debugLog("Boot", "Debug helper ready", window.__DOGGERZ_DEBUG__.status());
-
-  window.render_game_to_text = () => {
-    const state = store?.getState?.();
-    const renderModel = selectDogRenderModel(state || {});
-    const dog = state?.dog || {};
-    const stats = dog?.stats || {};
-    const moodlets = Array.isArray(dog?.moodlets) ? dog.moodlets : [];
-    const payload = {
-      mode: "doggerz",
-      route: window.location?.pathname || "/",
-      dog: {
-        name: dog?.name || null,
-        stage: renderModel?.stage || null,
-        condition: renderModel?.condition || null,
-        anim: renderModel?.anim || "idle",
-        isSleeping: Boolean(renderModel?.isSleeping),
+  if (exposeRuntimeDebugHelpers) {
+    window.__DOGGERZ_DEBUG__ = {
+      ...(window.__DOGGERZ_DEBUG__ || {}),
+      enabled: isDebugLoggingEnabled(),
+      enable() {
+        setDebugLoggingEnabled(true);
+        debugLog("Debug", "enabled from window helper");
       },
-      stats: {
-        hunger: stats?.hunger ?? null,
-        thirst: stats?.thirst ?? null,
-        happiness: stats?.happiness ?? null,
-        energy: stats?.energy ?? null,
-        cleanliness: stats?.cleanliness ?? null,
-        health: stats?.health ?? null,
-        affection: stats?.affection ?? null,
-        mentalStimulation: stats?.mentalStimulation ?? null,
+      disable() {
+        debugLog("Debug", "disabled from window helper");
+        setDebugLoggingEnabled(false);
       },
-      moodlets: moodlets.map((m) => ({
-        type: m?.type || null,
-        intensity: m?.intensity ?? null,
-      })),
-      coordSystem:
-        "Dog viewport origin top-left; units are CSS pixels. DogPixiView 420x320.",
+      status() {
+        return {
+          enabled: isDebugLoggingEnabled(),
+          capturedErrors: getCapturedErrors().length,
+        };
+      },
+      errors() {
+        return getCapturedErrors();
+      },
     };
-    return JSON.stringify(payload);
-  };
+    debugLog("Boot", "Debug helper ready", window.__DOGGERZ_DEBUG__.status());
 
-  window.advanceTime = (ms) =>
-    new Promise((resolve) => {
-      const start = performance.now();
-      const tick = (now) => {
-        if (now - start >= ms) return resolve();
-        window.requestAnimationFrame(tick);
+    window.render_game_to_text = () => {
+      const state = store?.getState?.();
+      const renderModel = selectDogRenderModel(state || {});
+      const dog = state?.dog || {};
+      const stats = dog?.stats || {};
+      const moodlets = Array.isArray(dog?.moodlets) ? dog.moodlets : [];
+      const payload = {
+        mode: "doggerz",
+        route: window.location?.pathname || "/",
+        dog: {
+          name: dog?.name || null,
+          stage: renderModel?.stage || null,
+          condition: renderModel?.condition || null,
+          anim: renderModel?.anim || "idle",
+          isSleeping: Boolean(renderModel?.isSleeping),
+        },
+        stats: {
+          hunger: stats?.hunger ?? null,
+          thirst: stats?.thirst ?? null,
+          happiness: stats?.happiness ?? null,
+          energy: stats?.energy ?? null,
+          cleanliness: stats?.cleanliness ?? null,
+          health: stats?.health ?? null,
+          affection: stats?.affection ?? null,
+          mentalStimulation: stats?.mentalStimulation ?? null,
+        },
+        moodlets: moodlets.map((m) => ({
+          type: m?.type || null,
+          intensity: m?.intensity ?? null,
+        })),
+        coordSystem:
+          "Dog viewport origin top-left; units are CSS pixels. DogPixiView 420x320.",
       };
-      window.requestAnimationFrame(tick);
-    });
+      return JSON.stringify(payload);
+    };
+
+    window.advanceTime = (ms) =>
+      new Promise((resolve) => {
+        const start = performance.now();
+        const tick = (now) => {
+          if (now - start >= ms) return resolve();
+          window.requestAnimationFrame(tick);
+        };
+        window.requestAnimationFrame(tick);
+      });
+  }
 }
 
 function mountApp() {

@@ -35,18 +35,18 @@ import { buildTrainingRoadmapModel } from "@/features/training/trainingRoadmap.j
 
 const BRANCH_STYLES = {
   companion: {
-    border: "border-rose-200/80",
-    badge: "border-rose-200/70 bg-rose-100/70 text-rose-700",
+    border: "border-rose-400/25",
+    badge: "border-rose-400/30 bg-rose-500/10 text-rose-100",
     line: "bg-rose-300/70",
   },
   guardian: {
-    border: "border-amber-200/80",
-    badge: "border-amber-200/70 bg-amber-100/70 text-amber-700",
+    border: "border-amber-400/25",
+    badge: "border-amber-400/30 bg-amber-500/10 text-amber-100",
     line: "bg-amber-300/70",
   },
   athlete: {
-    border: "border-emerald-200/80",
-    badge: "border-emerald-200/70 bg-emerald-100/70 text-emerald-700",
+    border: "border-emerald-400/25",
+    badge: "border-emerald-400/30 bg-emerald-500/10 text-emerald-100",
     line: "bg-emerald-300/70",
   },
 };
@@ -167,7 +167,7 @@ export default function SkillTree() {
       <div className="relative">
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div className="max-w-2xl">
-            <div className="text-xs uppercase tracking-[0.4em] text-amber-700/70">
+            <div className="text-xs uppercase tracking-[0.4em] text-emerald-300/80">
               Training roadmap
             </div>
             <h1 className="mt-2 text-3xl font-semibold text-zinc-100">
@@ -181,22 +181,22 @@ export default function SkillTree() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <div className="rounded-2xl border border-amber-200/70 bg-white/70 px-4 py-3 shadow-sm">
-              <div className="text-[11px] uppercase tracking-[0.24em] text-amber-700/70">
+            <div className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3">
+              <div className="text-[11px] uppercase tracking-[0.24em] text-emerald-300/80">
                 Level
               </div>
-              <div className="mt-1 text-2xl font-semibold text-slate-900">
+              <div className="mt-1 text-2xl font-semibold text-zinc-100">
                 {level}
               </div>
             </div>
-            <div className="rounded-2xl border border-amber-200/70 bg-white/70 px-4 py-3 shadow-sm">
-              <div className="text-[11px] uppercase tracking-[0.24em] text-amber-700/70">
+            <div className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3">
+              <div className="text-[11px] uppercase tracking-[0.24em] text-emerald-300/80">
                 Skill Points
               </div>
-              <div className="mt-1 text-2xl font-semibold text-slate-900">
+              <div className="mt-1 text-2xl font-semibold text-zinc-100">
                 {pointsAvailable}
               </div>
-              <div className="text-xs text-slate-500">
+              <div className="text-xs text-zinc-400">
                 {pointsEarned} earned, {pointsSpent} spent
               </div>
             </div>
@@ -204,7 +204,7 @@ export default function SkillTree() {
             <div className="flex flex-col gap-2">
               <Link
                 to={PATHS.GAME}
-                className="inline-flex items-center justify-center rounded-full border border-slate-300/80 bg-white/80 px-4 py-2 text-xs font-semibold text-slate-700 transition hover:bg-white"
+                className="inline-flex items-center justify-center rounded-full border border-emerald-400/30 bg-emerald-500/10 px-4 py-2 text-xs font-semibold text-emerald-100 transition hover:bg-emerald-500/15"
               >
                 Back to yard
               </Link>
@@ -212,7 +212,7 @@ export default function SkillTree() {
                 <button
                   type="button"
                   onClick={onRespec}
-                  className="inline-flex items-center justify-center rounded-full border border-slate-300/80 bg-white/60 px-4 py-2 text-xs font-semibold text-slate-600 transition hover:bg-white"
+                  className="inline-flex items-center justify-center rounded-full border border-white/15 bg-black/25 px-4 py-2 text-xs font-semibold text-zinc-100 transition hover:bg-black/35"
                 >
                   Reset perks
                 </button>
@@ -221,7 +221,7 @@ export default function SkillTree() {
                 <button
                   type="button"
                   onClick={onRespecBranch}
-                  className="inline-flex items-center justify-center rounded-full border border-slate-300/80 bg-white/60 px-4 py-2 text-xs font-semibold text-slate-600 transition hover:bg-white"
+                  className="inline-flex items-center justify-center rounded-full border border-white/15 bg-black/25 px-4 py-2 text-xs font-semibold text-zinc-100 transition hover:bg-black/35"
                 >
                   Reset branch
                 </button>
@@ -230,13 +230,13 @@ export default function SkillTree() {
           </div>
         </div>
 
-        <div className="mt-8 rounded-3xl border border-slate-200/80 bg-white/70 p-5 shadow-[0_20px_80px_rgba(60,35,10,0.12)]">
+        <div className="mt-8 rounded-3xl border border-white/10 bg-black/30 p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <div className="text-lg font-semibold text-slate-900">
+              <div className="text-lg font-semibold text-zinc-100">
                 Skill Points
               </div>
-              <p className="mt-1 text-md text-slate-600">
+              <p className="mt-1 text-sm text-zinc-400">
                 Spend points earned from leveling up to shape your pup&apos;s
                 journey.
               </p>
@@ -247,8 +247,8 @@ export default function SkillTree() {
                 onClick={() => dispatch(setSkillTreeBranch("all"))}
                 className={`rounded-full border px-3 py-1 font-semibold transition ${
                   activeBranchId === "all"
-                    ? "border-amber-300/80 bg-amber-100/70 text-amber-700"
-                    : "border-slate-200/80 bg-white/70 text-slate-600 hover:bg-white"
+                    ? "border-emerald-400/35 bg-emerald-500/15 text-emerald-100"
+                    : "border-white/15 bg-black/25 text-zinc-200 hover:bg-black/35"
                 }`}
               >
                 All branches
@@ -261,7 +261,7 @@ export default function SkillTree() {
                   className={`rounded-full border px-3 py-1 font-semibold transition ${
                     activeBranchId === b.id
                       ? b.badge
-                      : "border-slate-200/80 bg-white/70 text-slate-600 hover:bg-white"
+                      : "border-white/15 bg-black/25 text-zinc-200 hover:bg-black/35"
                   }`}
                 >
                   {b.name}
@@ -275,10 +275,10 @@ export default function SkillTree() {
                     if (!hasUnlocked) return;
                     dispatch(setSkillTreeShowUnlockedOnly(!showUnlockedOnly));
                   }}
-                  className={`rounded-full border px-3 py-1 text-slate-600 ${
+                  className={`rounded-full border px-3 py-1 text-zinc-200 ${
                     hasUnlocked
-                      ? "border-slate-200/80 bg-white/70 hover:bg-white"
-                      : "border-slate-200/60 bg-white/50 text-slate-400 cursor-not-allowed"
+                      ? "border-white/15 bg-black/25 hover:bg-black/35"
+                      : "border-white/10 bg-white/5 text-zinc-500 cursor-not-allowed"
                   }`}
                 >
                   {showUnlockedOnly ? "All perks" : "Unlocked only"}
@@ -288,7 +288,7 @@ export default function SkillTree() {
                   onClick={() =>
                     dispatch(setSkillTreeCompactCards(!compactCards))
                   }
-                  className="rounded-full border border-slate-200/80 bg-white/70 px-3 py-1 text-slate-600 hover:bg-white"
+                  className="rounded-full border border-white/15 bg-black/25 px-3 py-1 text-zinc-200 hover:bg-black/35"
                 >
                   {compactCards ? "Roomy cards" : "Compact cards"}
                 </button>
@@ -297,19 +297,19 @@ export default function SkillTree() {
           </div>
         </div>
 
-        <div className="mt-8 rounded-3xl border border-slate-200/80 bg-white/75 p-5 shadow-[0_20px_80px_rgba(60,35,10,0.1)]">
+        <div className="mt-8 rounded-3xl border border-white/10 bg-black/30 p-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <div className="text-[11px] uppercase tracking-[0.24em] text-amber-700/70">
+              <div className="text-[11px] uppercase tracking-[0.24em] text-emerald-300/80">
                 Roadmap first
               </div>
-              <div className="mt-1 text-xl font-semibold text-slate-900">
+              <div className="mt-1 text-xl font-semibold text-zinc-100">
                 Training should read like a believable life arc.
               </div>
             </div>
-            <div className="text-xs text-slate-500">
+            <div className="text-xs text-zinc-400">
               Potty status:{" "}
-              <span className="font-semibold text-slate-800">
+              <span className="font-semibold text-zinc-100">
                 {roadmap.pottyPhaseMeta.shortLabel}
               </span>
             </div>
@@ -319,10 +319,10 @@ export default function SkillTree() {
             {roadmap.steps.map((step) => (
               <article
                 key={step.id}
-                className="rounded-2xl border border-slate-200/80 bg-white/80 p-4"
+                className="rounded-2xl border border-white/10 bg-black/25 p-4"
               >
                 <div className="flex items-center justify-between gap-3">
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-zinc-500">
                     {step.eyebrow}
                   </div>
                   <span
@@ -331,16 +331,16 @@ export default function SkillTree() {
                     {step.statusMeta.label}
                   </span>
                 </div>
-                <h2 className="mt-2 text-lg font-semibold text-slate-900">
+                <h2 className="mt-2 text-lg font-semibold text-zinc-100">
                   {step.title}
                 </h2>
-                <p className="mt-2 text-sm leading-6 text-slate-600">
+                <p className="mt-2 text-sm leading-6 text-zinc-300">
                   {step.summary}
                 </p>
-                <p className="mt-2 text-xs leading-5 text-slate-500">
+                <p className="mt-2 text-xs leading-5 text-zinc-500">
                   {step.detail}
                 </p>
-                <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-200">
+                <div className="mt-4 h-2 overflow-hidden rounded-full bg-zinc-800">
                   <div
                     className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-sky-300 to-amber-300"
                     style={{
@@ -353,53 +353,53 @@ export default function SkillTree() {
           </div>
 
           <div className="mt-5 grid gap-4 lg:grid-cols-[1.2fr,0.8fr]">
-            <div className="rounded-2xl border border-slate-200/80 bg-white/80 p-4">
-              <div className="text-[11px] uppercase tracking-[0.22em] text-slate-500">
+            <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
+              <div className="text-[11px] uppercase tracking-[0.22em] text-zinc-500">
                 Next focus
               </div>
-              <div className="mt-2 text-lg font-semibold text-slate-900">
+              <div className="mt-2 text-lg font-semibold text-zinc-100">
                 {roadmap.nextFocus.title}
               </div>
-              <p className="mt-2 text-sm text-slate-600">
+              <p className="mt-2 text-sm text-zinc-300">
                 {roadmap.nextFocus.summary}
               </p>
-              <p className="mt-2 text-xs leading-5 text-slate-500">
+              <p className="mt-2 text-xs leading-5 text-zinc-500">
                 {roadmap.nextFocus.detail}
               </p>
               <div className="mt-4 flex flex-wrap gap-2">
                 <Link
                   to={PATHS.POTTY}
-                  className="inline-flex items-center justify-center rounded-full border border-emerald-300/80 bg-emerald-100/70 px-3 py-1.5 text-xs font-semibold text-emerald-800 transition hover:bg-emerald-100"
+                  className="inline-flex items-center justify-center rounded-full border border-emerald-400/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-100 transition hover:bg-emerald-500/15"
                 >
                   Potty routine
                 </Link>
                 <Link
                   to={PATHS.MEMORIES}
-                  className="inline-flex items-center justify-center rounded-full border border-slate-300/80 bg-white/80 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-white"
+                  className="inline-flex items-center justify-center rounded-full border border-white/15 bg-black/25 px-3 py-1.5 text-xs font-semibold text-zinc-100 transition hover:bg-black/35"
                 >
                   Memory reel
                 </Link>
               </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-200/80 bg-white/80 p-4">
-              <div className="text-[11px] uppercase tracking-[0.22em] text-slate-500">
+            <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
+              <div className="text-[11px] uppercase tracking-[0.22em] text-zinc-500">
                 Progression signal
               </div>
-              <div className="mt-2 text-base font-semibold text-slate-900">
+              <div className="mt-2 text-base font-semibold text-zinc-100">
                 {roadmap.milestoneLabel || "No queued milestone just now"}
               </div>
               {roadmap.milestoneBody ? (
-                <p className="mt-2 text-sm text-slate-600">
+                <p className="mt-2 text-sm text-zinc-300">
                   {roadmap.milestoneBody}
                 </p>
               ) : (
-                <p className="mt-2 text-sm text-slate-600">
+                <p className="mt-2 text-sm text-zinc-300">
                   Keep routine, bond, and short training sessions rolling. The
                   sim is designed to unlock meaningfully instead of all at once.
                 </p>
               )}
-              <div className="mt-4 rounded-2xl border border-amber-200/80 bg-amber-50/80 p-3 text-xs text-amber-800">
+              <div className="mt-4 rounded-2xl border border-amber-400/25 bg-amber-500/10 p-3 text-xs text-amber-100">
                 Reliable commands:{" "}
                 <span className="font-semibold">{roadmap.reliableCount}</span>
                 <br />
@@ -411,7 +411,7 @@ export default function SkillTree() {
         </div>
 
         <div className="mt-8 grid gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-3 rounded-3xl border border-slate-200/80 bg-white/65 px-5 py-4 text-sm text-slate-600 shadow-[0_12px_40px_rgba(60,35,10,0.08)]">
+          <div className="lg:col-span-3 rounded-3xl border border-white/10 bg-black/30 px-5 py-4 text-sm text-zinc-300">
             The cards below are long-term shaping perks. They complement the
             realistic care loop instead of replacing it — think resilience,
             comfort, and training tempo, not magic obedience buttons.
@@ -419,7 +419,7 @@ export default function SkillTree() {
           {filteredBranches.map((branch) => (
             <section
               key={branch.id}
-              className={`relative overflow-hidden rounded-3xl border ${branch.border} bg-white/70 p-6 shadow-[0_20px_70px_rgba(60,35,10,0.1)]`}
+              className={`relative overflow-hidden rounded-3xl border ${branch.border} bg-black/30 p-6`}
             >
               <div className="relative">
                 <div className="flex items-start justify-between gap-4">
@@ -429,7 +429,7 @@ export default function SkillTree() {
                     >
                       {branch.name}
                     </div>
-                    <h2 className="mt-3 text-2xl font-semibold text-slate-900">
+                    <h2 className="mt-3 text-2xl font-semibold text-zinc-100">
                       {branch.tagline}
                     </h2>
                   </div>
@@ -447,7 +447,7 @@ export default function SkillTree() {
                         </div>
                       ) : null}
 
-                      <div className="mb-2 text-center text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">
+                      <div className="mb-2 text-center text-[11px] font-semibold uppercase tracking-[0.24em] text-zinc-500">
                         Tier {tierRow.tier}
                       </div>
 
@@ -521,7 +521,7 @@ export default function SkillTree() {
                                 className={`dz-skill-node absolute left-1/2 top-5 h-3 w-3 -translate-x-1/2 rounded-full border ${
                                   isUnlocked
                                     ? "border-emerald-400/80 bg-emerald-200/70"
-                                    : "border-slate-300/80 bg-white"
+                                    : "border-zinc-600 bg-zinc-950"
                                 }`}
                               />
 
@@ -533,39 +533,39 @@ export default function SkillTree() {
                                 }
                                 className={`dz-perk-card rounded-2xl border transform transition hover:-translate-y-0.5 hover:shadow-lg ${
                                   isUnlocked
-                                    ? "border-emerald-300/70 bg-emerald-50/70 shadow-md shadow-emerald-200/70"
-                                    : "border-slate-200/80 bg-white/80"
+                                    ? "border-emerald-400/35 bg-emerald-500/10 shadow-md shadow-emerald-900/20"
+                                    : "border-white/10 bg-black/25"
                                 } ${!isUnlocked && !canUnlock ? "opacity-60 grayscale-[0.2]" : ""} ${
                                   compactCards ? "p-3" : "p-4"
                                 }`}
                               >
                                 <div className="flex items-start justify-between gap-3">
                                   <div>
-                                    <div className="text-lg font-semibold text-slate-900">
+                                    <div className="text-lg font-semibold text-zinc-100">
                                       {perk.name}
                                     </div>
-                                    <p className="mt-1 text-sm text-slate-600">
+                                    <p className="mt-1 text-sm text-zinc-300">
                                       {perk.effect}
                                     </p>
                                   </div>
-                                  <div className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
+                                  <div className="text-[11px] uppercase tracking-[0.2em] text-zinc-500">
                                     Cost {perkCost}
                                   </div>
                                 </div>
 
-                                <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                                  <span className="rounded-full border border-slate-200/80 bg-white/70 px-2.5 py-1">
+                                <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+                                  <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1">
                                     {perk.type}
                                   </span>
                                   {perk.unlocks ? (
-                                    <span className="rounded-full border border-slate-200/80 bg-white/70 px-2.5 py-1">
+                                    <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1">
                                       Unlocks: {perk.unlocks}
                                     </span>
                                   ) : null}
                                 </div>
 
                                 <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                                  <span className="text-xs text-slate-500">
+                                  <span className="text-xs text-zinc-500">
                                     {statusLabel}
                                   </span>
                                   <button
@@ -574,10 +574,10 @@ export default function SkillTree() {
                                     disabled={!canUnlock}
                                     className={`inline-flex items-center justify-center rounded-full border px-3 py-1 text-xs font-semibold transition ${
                                       isUnlocked
-                                        ? "border-emerald-300/70 bg-emerald-200/60 text-emerald-800"
+                                        ? "border-emerald-400/35 bg-emerald-500/10 text-emerald-100"
                                         : canUnlock
-                                          ? "border-slate-300/80 bg-white text-slate-800 hover:bg-slate-50"
-                                          : "border-slate-200/80 bg-slate-100 text-slate-400"
+                                          ? "border-emerald-400/30 bg-emerald-500/10 text-emerald-100 hover:bg-emerald-500/15"
+                                          : "border-white/10 bg-white/5 text-zinc-500"
                                     }`}
                                   >
                                     {isUnlocked

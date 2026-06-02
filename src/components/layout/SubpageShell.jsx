@@ -1,10 +1,5 @@
 import PageShell from "@/components/layout/PageShell.jsx";
 
-const WIDTH_CLASS = Object.freeze({
-  text: "mx-auto w-full max-w-3xl",
-  wide: "mx-auto w-full max-w-5xl",
-});
-
 export default function SubpageShell({
   children,
   width = "text",
@@ -17,8 +12,9 @@ export default function SubpageShell({
     <PageShell
       className={className}
       mainClassName={mainClassName}
-      containerClassName={containerClassName || WIDTH_CLASS[width] || width}
+      containerClassName={containerClassName}
       useSurface={useSurface}
+      width={width}
     >
       {children}
     </PageShell>

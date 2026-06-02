@@ -215,6 +215,12 @@ npm run ci:verify        # lint, typecheck, build, and preflight
 npm run check            # format check, lint, and build
 ```
 
+Test runner policy:
+
+- Vitest is the default runner for app, Redux, routing, cloud-sync, and utility tests. New tests should use `*.test.{js,jsx,ts,tsx}` and run through `npm run test`.
+- Jest is intentionally retained only for legacy React tests that still need the Babel/Jest harness. Those files must use `*.jest.test.jsx` and run through `npm run test:jest`.
+- Do not add new Jest tests unless a test cannot reasonably run under Vitest; document the reason in the test file if that exception is needed.
+
 ## Android Workflow
 
 Capacitor config is in `capacitor.config.json`.

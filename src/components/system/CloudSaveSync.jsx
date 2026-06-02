@@ -3,6 +3,10 @@ import { useDispatch, useSelector } from "react-redux";
 
 import { loadDogFromCloud, saveDogToCloud } from "@/store/dogThunks.js";
 import {
+  createDogPersistenceSnapshot,
+  getDogPersistenceSignature,
+} from "@/store/dog/persistenceSnapshot.js";
+import {
   selectIsAuthResolved,
   selectUserId,
   setUser,
@@ -45,26 +49,11 @@ export default function CloudSaveSync() {
     if (!authResolved || !userId || !dog?.adoptedAt) return undefined;
     if (loadedUserRef.current !== userId) return undefined;
 
-    const signature = JSON.stringify({
-      userId,
-      dogUpdatedAt: dog?.updatedAt || null,
-      dogLastUpdatedAt: dog?.lastUpdatedAt || null,
-      dogLastAction: dog?.lastAction || null,
-      dogStats: dog?.stats || null,
-      dogBond: dog?.bond || null,
-      dogCoins: dog?.coins || 0,
-      dogCosmetics: dog?.cosmetics || null,
-      dogMemory: dog?.memory || null,
-      dogCareResponse: dog?.lastCareResponse || dog?.careResponse || null,
-      dogTraining: dog?.training || null,
-      dogDailyReward: {
-        lastRewardClaimedAt: dog?.lastRewardClaimedAt || null,
-        consecutiveDays: dog?.consecutiveDays || 0,
-      },
-      dogLifecycleStatus: dog?.lifecycleStatus || null,
-      progressionUpdatedAt: progression?.updatedAt || null,
-      progression,
-    });
+    const snapshot = createDogPersistenceSnapshot(
+      { dog, progression },
+      { savedAt: 0 }
+    );
+    const signature = `${userId}:${getDogPersistenceSignature(snapshot)}`;
 
     if (signature === saveSignatureRef.current) return undefined;
 

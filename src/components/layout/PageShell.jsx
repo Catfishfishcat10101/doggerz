@@ -1,13 +1,17 @@
 // src/components/layout/PageShell.jsx
 
 import * as React from "react";
-import { useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { AppShellContext } from "@/components/layout/AppShellContext.js";
 import { selectSettings } from "@/store/settingsSlice.js";
-import { getPrimaryTabForPath } from "@/app/routes.js";
 import { selectUserZip } from "@/store/userSlice.js";
 import { useDayNight } from "@/hooks/useDayNight.js";
+
+const WIDTH_CLASS = Object.freeze({
+  text: "mx-auto w-full max-w-3xl",
+  wide: "mx-auto w-full max-w-5xl",
+  full: "mx-auto w-full",
+});
 
 function shouldReduceEffects(perfMode) {
   const mode = String(perfMode || "auto").toLowerCase();
@@ -30,14 +34,13 @@ export default function PageShell({
   children,
   className = "",
   mainClassName = "px-4 pb-28 pt-4 sm:px-6 sm:pt-6",
-  containerClassName = "mx-auto w-full max-w-5xl",
+  containerClassName,
   disableBackground = false,
   useSurface = true,
+  width = "text",
 }) {
   const shell = React.useContext(AppShellContext);
-  const location = useLocation();
   const withinShell = Boolean(shell?.withinAppShell);
-  const primaryTab = getPrimaryTabForPath(location.pathname);
   const settings = useSelector(selectSettings);
   const zip = useSelector(selectUserZip);
   const perfReduced = shouldReduceEffects(settings?.perfMode);
@@ -54,22 +57,16 @@ export default function PageShell({
   });
 
   const bgClass = disableBackground ? "" : "text-zinc-100";
-  const compactSurface = withinShell && !primaryTab;
   const surfaceClass = useSurface
-    ? compactSurface
-      ? "px-0 py-0 sm:neon-surface sm:p-6"
-      : "px-0 py-0 sm:neon-surface sm:p-6"
+    ? "px-0 py-0 sm:neon-surface sm:p-6"
     : "";
-  const effectiveContainerClass = compactSurface
-    ? `${containerClassName} max-w-4xl`
-    : containerClassName;
-  const effectiveMainClass = compactSurface
-    ? "px-4 pb-28 pt-4 sm:px-6 sm:pt-6"
-    : mainClassName;
+  const effectiveContainerClass =
+    containerClassName || WIDTH_CLASS[width] || width || WIDTH_CLASS.text;
+  const effectiveMainClass = mainClassName;
 
   return (
     <section
-      className={`relative ${bgClass} ${className}`.trim()}
+      className={`relative min-h-full ${bgClass} ${className}`.trim()}
       style={disableBackground ? undefined : dayNightStyle}
     >
       {!disableBackground ? (

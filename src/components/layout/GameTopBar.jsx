@@ -1,4 +1,4 @@
-import { Settings, Coins, Gem, Star } from "lucide-react";
+import { Settings, Coins, Gem, Star, LogOut } from "lucide-react";
 
 const DEFAULT_DOG_AVATAR =
   "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='bg' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23111c16'/%3E%3Cstop offset='100%25' stop-color='%23233722'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='32' fill='url(%23bg)'/%3E%3Cellipse cx='32' cy='38' rx='18' ry='14' fill='%23f4e7c8'/%3E%3Ccircle cx='23' cy='23' r='8' fill='%23f4e7c8'/%3E%3Ccircle cx='41' cy='23' r='8' fill='%238b5a3c'/%3E%3Cpath d='M18 16l4-9 6 8' fill='%23f4e7c8'/%3E%3Cpath d='M46 16l-4-9-6 8' fill='%238b5a3c'/%3E%3Ccircle cx='28' cy='34' r='2.2' fill='%2311171a'/%3E%3Ccircle cx='38' cy='34' r='2.2' fill='%2311171a'/%3E%3Cellipse cx='33' cy='40' rx='4' ry='3' fill='%2311171a'/%3E%3Cpath d='M28 45c3 3 7 3 10 0' stroke='%2311171a' stroke-width='2.4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E";
@@ -25,6 +25,7 @@ export default function GameTopBar({
   saveHint = "",
   onOpenSettings = () => {},
   onOpenShop = () => {},
+  onLogout = null,
 }) {
   const safeXp = Math.max(0, Number(xp) || 0);
   const safeXpMax = Math.max(1, Number(xpMax) || 1);
@@ -98,6 +99,18 @@ export default function GameTopBar({
             >
               <Settings className="h-[18px] w-[18px]" />
             </button>
+
+            {onLogout ? (
+              <button
+                type="button"
+                onClick={onLogout}
+                className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-white transition hover:bg-white/10 active:scale-[0.98]"
+                aria-label="Log out"
+                title="Log out"
+              >
+                <LogOut className="h-[18px] w-[18px]" />
+              </button>
+            ) : null}
 
             <button
               type="button"

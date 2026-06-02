@@ -15,89 +15,23 @@ import {
   setDogName as setDogProfileName,
 } from "./dogSlice.js";
 import {
+  createDogPersistenceSnapshot,
+  getPersistenceSnapshotTimestamp,
+  splitDogPersistenceSnapshot,
+} from "@/store/dog/persistenceSnapshot.js";
+import {
   hydrateProgression,
   resetProgression,
 } from "@/features/progression/progressionSlice.js";
 import { setDogName as setUserDogName, setUser } from "./userSlice.js";
 
-function toMs(value) {
-  if (!value) return 0;
-  if (typeof value === "number" && Number.isFinite(value)) return value;
-  if (value instanceof Date) return value.getTime();
-  if (typeof value?.toMillis === "function") {
-    const ms = Number(value.toMillis());
-    return Number.isFinite(ms) ? ms : 0;
-  }
-  if (typeof value === "object" && Number.isFinite(value?.seconds)) {
-    return Math.max(0, Math.floor(value.seconds * 1000));
-  }
-  const parsed = Date.parse(String(value));
-  return Number.isFinite(parsed) ? parsed : 0;
-}
-
 const getDogTimestamp = (dog) => {
-  return Math.max(
-    toMs(dog?.updatedAt),
-    toMs(dog?.lastCloudSyncAt),
-    toMs(dog?.meta?.savedAt),
-    toMs(dog?.lastUpdatedAt),
-    toMs(dog?.adoptedAt)
-  );
+  return getPersistenceSnapshotTimestamp(dog);
 };
 
-function clampPct(value) {
-  const n = Number(value || 0);
-  if (!Number.isFinite(n)) return 0;
-  return Math.max(0, Math.min(100, Math.round(n)));
-}
-
-function pickMoodLabel(dog) {
-  if (typeof dog?.mood === "string" && dog.mood.trim()) return dog.mood.trim();
-  if (typeof dog?.emotionCue === "string" && dog.emotionCue.trim()) {
-    return dog.emotionCue.trim();
-  }
-  return "Content";
-}
-
-function buildCloudSummary(state) {
-  const dog = state?.dog || {};
-  const user = state?.user || {};
-  const settings = state?.settings || {};
-  return {
-    schemaVersion: 1,
-    dog: {
-      name:
-        String(dog?.name || user?.dogName || "Fireball").trim() || "Fireball",
-      stage:
-        String(
-          dog?.lifeStage?.label || dog?.lifeStage?.stage || "Puppy"
-        ).trim() || "Puppy",
-      ageDays: Math.max(0, Math.round(Number(dog?.lifeStage?.days || 0))),
-      level: Math.max(1, Math.round(Number(dog?.level || 1))),
-    },
-    stats: {
-      energy: clampPct(dog?.stats?.energy),
-      health: clampPct(dog?.stats?.health),
-      mood: pickMoodLabel(dog),
-    },
-    settings: {
-      weatherNotifications: settings?.dailyRemindersEnabled !== false,
-      soundVolume: clampPct(Number(settings?.audio?.masterVolume ?? 0.8) * 100),
-      weatherFx: settings?.showWeatherFx !== false,
-    },
-  };
-}
-
 function buildCloudDogPayload(state) {
-  const dogState = state?.dog || {};
-  const progressionState = state?.progression || null;
   return {
-    ...dogState,
-    ...(progressionState && typeof progressionState === "object"
-      ? { progression: progressionState }
-      : {}),
-    cloudSchemaVersion: 1,
-    cloudSummary: buildCloudSummary(state),
+    ...createDogPersistenceSnapshot(state),
     lastCloudSyncAt: Date.now(),
     updatedAt: serverTimestamp(),
   };
@@ -107,7 +41,7 @@ function sanitizeAdoptedName(value) {
   const trimmed = String(value || "")
     .trim()
     .replace(/\s+/g, " ");
-  return trimmed.slice(0, 24) || "Fireball";
+  return trimmed.slice(0, 24) || "Your dog";
 }
 
 function setCloudSyncStatus(dispatch, cloudSync = {}) {
@@ -209,24 +143,24 @@ export const loadDogFromCloud = createAsyncThunk(
         return { hydrated: false, reason: "no_cloud_save" };
       }
 
-      const cloudData = { ...(snap.data() || {}) };
-      const progressionPayload =
-        cloudData.progression && typeof cloudData.progression === "object"
-          ? cloudData.progression
-          : null;
-      delete cloudData.progression;
-      delete cloudData.cloudSummary;
-      delete cloudData.cloudSchemaVersion;
-      const cloudDogState = cloudData;
+      const parsedCloud = splitDogPersistenceSnapshot(snap.data() || {});
+      if (!parsedCloud.ok) {
+        setCloudSyncStatus(dispatch, {
+          status: "error",
+          lastAttemptAt: Date.now(),
+          errorMessage: `Invalid cloud save: ${parsedCloud.reason}`,
+        });
+        return rejectWithValue(`Invalid cloud save: ${parsedCloud.reason}`);
+      }
 
       const localTs = getDogTimestamp(localDog);
-      const cloudTs = getDogTimestamp(cloudDogState);
+      const cloudTs = parsedCloud.timestamp;
 
       // Only hydrate if cloud is significantly newer (1s buffer)
       if (cloudTs > localTs + 1000) {
-        dispatch(hydrateDog(cloudDogState));
-        if (progressionPayload) {
-          dispatch(hydrateProgression(progressionPayload));
+        dispatch(hydrateDog(parsedCloud.dog));
+        if (parsedCloud.progression) {
+          dispatch(hydrateProgression(parsedCloud.progression));
         } else {
           dispatch(resetProgression());
         }

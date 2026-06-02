@@ -52,9 +52,10 @@ function PreviewScene({ currentAction, setActionNames }) {
 export default function HeroDog3D({
   className = "",
   animationName = "Idle_1",
-  title = "FIREBALL PREVIEW",
+  title = "DOG PREVIEW",
   subtitle = "Lively, stubborn, and ready for the yard.",
   badge = "PUPPY STAGE",
+  sceneOnly = false,
 }) {
   const [currentAction, setCurrentAction] = useState(animationName);
   const [actionNames, setActionNames] = useState([]);
@@ -67,12 +68,22 @@ export default function HeroDog3D({
   return (
     <section
       className={[
-        "mx-auto flex max-w-[480px] flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-slate-950/95 shadow-2xl shadow-cyan-950/40",
+        sceneOnly
+          ? "overflow-hidden"
+          : "mx-auto flex max-w-[480px] flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-slate-950/95 shadow-2xl shadow-cyan-950/40",
         className,
       ].join(" ")}
-      style={{ minHeight: "100dvh", maxHeight: "100dvh" }}
+      style={
+        sceneOnly ? undefined : { minHeight: "100dvh", maxHeight: "100dvh" }
+      }
     >
-      <div className="relative h-[65%] min-h-[320px] w-full">
+      <div
+        className={
+          sceneOnly
+            ? "relative h-full w-full"
+            : "relative h-[65%] min-h-[320px] w-full"
+        }
+      >
         <Canvas
           shadows
           dpr={[1, 1.5]}
@@ -92,43 +103,45 @@ export default function HeroDog3D({
         </Canvas>
       </div>
 
-      <div className="flex h-[35%] min-h-[220px] flex-col gap-4 border-t border-emerald-300/20 bg-black/30 px-4 py-4 backdrop-blur-[12px]">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-xs uppercase tracking-[0.32em] text-emerald-200">
-              Action drawer
-            </p>
-            <h2 className="mt-2 text-lg font-black uppercase tracking-[0.08em] text-white">
-              {title}
-            </h2>
+      {sceneOnly ? null : (
+        <div className="flex h-[35%] min-h-[220px] flex-col gap-4 border-t border-emerald-300/20 bg-black/30 px-4 py-4 backdrop-blur-[12px]">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-[0.32em] text-emerald-200">
+                Action drawer
+              </p>
+              <h2 className="mt-2 text-lg font-black uppercase tracking-[0.08em] text-white">
+                {title}
+              </h2>
+            </div>
+            <div className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-[11px] uppercase tracking-[0.24em] text-emerald-100">
+              {badge}
+            </div>
           </div>
-          <div className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-[11px] uppercase tracking-[0.24em] text-emerald-100">
-            {badge}
+
+          <div className="flex flex-wrap gap-2">
+            {availableActions.map((action) => (
+              <button
+                key={action}
+                type="button"
+                onClick={() => setCurrentAction(action)}
+                className={
+                  "rounded-2xl border px-3 py-2 text-xs font-black uppercase tracking-[0.18em] transition " +
+                  (action === currentAction
+                    ? "border-emerald-300 bg-emerald-300/15 text-emerald-100"
+                    : "border-white/10 bg-white/5 text-zinc-200 hover:border-emerald-300/50 hover:bg-emerald-300/10")
+                }
+              >
+                {action.replace(/_/g, " ")}
+              </button>
+            ))}
+          </div>
+
+          <div className="rounded-[1.35rem] border border-white/10 bg-slate-950/80 p-3 text-sm leading-6 text-zinc-300">
+            {subtitle}
           </div>
         </div>
-
-        <div className="flex flex-wrap gap-2">
-          {availableActions.map((action) => (
-            <button
-              key={action}
-              type="button"
-              onClick={() => setCurrentAction(action)}
-              className={
-                "rounded-2xl border px-3 py-2 text-xs font-black uppercase tracking-[0.18em] transition " +
-                (action === currentAction
-                  ? "border-emerald-300 bg-emerald-300/15 text-emerald-100"
-                  : "border-white/10 bg-white/5 text-zinc-200 hover:border-emerald-300/50 hover:bg-emerald-300/10")
-              }
-            >
-              {action.replace(/_/g, " ")}
-            </button>
-          ))}
-        </div>
-
-        <div className="rounded-[1.35rem] border border-white/10 bg-slate-950/80 p-3 text-sm leading-6 text-zinc-300">
-          {subtitle}
-        </div>
-      </div>
+      )}
     </section>
   );
 }

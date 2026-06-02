@@ -7,34 +7,34 @@ import { SUPPORT_EMAIL_FEEDBACK_URL } from "@/app/config/links.js";
 
 export default function Contact() {
   return (
-    <SubpageShell width="text" containerClassName="default-contact-class">
+    <SubpageShell width="text">
       <div className="w-full space-y-6">
-          <PageHeader>
-            <h1 className="text-2xl font-semibold tracking-tight">Contact</h1>
-            <p className="text-sm text-zinc-400">
-              Feedback, bug reports, and feature ideas are all welcome. This is
-              a living project.
-            </p>
-          </PageHeader>
+        <PageHeader>
+          <h1 className="text-2xl font-semibold tracking-tight">Contact</h1>
+          <p className="text-sm text-zinc-400">
+            Feedback, bug reports, and feature ideas are all welcome. This is a
+            living project.
+          </p>
+        </PageHeader>
 
-          <section className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-5 space-y-4 text-sm text-zinc-300">
-            <p>
-              The fastest way to reach the developer is by email. Describe what
-              you were doing, what happened, and what you expected to happen.
-            </p>
+        <section className="space-y-4 rounded-2xl border border-zinc-800 bg-zinc-900/80 p-5 text-sm text-zinc-300">
+          <p>
+            The fastest way to reach the developer is by email. Describe what
+            you were doing, what happened, and what you expected to happen.
+          </p>
 
-            <a
-              href={SUPPORT_EMAIL_FEEDBACK_URL}
-              className="inline-flex items-center justify-center rounded-full bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-400 transition"
-            >
-              Email the developer
-            </a>
+          <a
+            href={SUPPORT_EMAIL_FEEDBACK_URL}
+            className="inline-flex items-center justify-center rounded-full bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400"
+          >
+            Email the developer
+          </a>
 
-            <p className="text-xs text-zinc-500">
-              Please avoid sending sensitive personal information. Screenshots
-              and short videos of bugs are extremely helpful.
-            </p>
-          </section>
+          <p className="text-xs text-zinc-500">
+            Please avoid sending sensitive personal information. Screenshots and
+            short videos of bugs are extremely helpful.
+          </p>
+        </section>
       </div>
     </SubpageShell>
   );

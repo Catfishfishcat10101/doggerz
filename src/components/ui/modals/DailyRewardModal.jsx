@@ -1,9 +1,8 @@
 // src/components/ui/modals/DailyRewardModal.jsx
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useDispatch } from "react-redux";
 
 import ModalSurface from "@/components/ui/modals/ModalSurface.jsx";
-import { showRewardedAd } from "@/features/ads/AdManager.js";
 import { getDailyRewardState } from "@/features/billing/dailyRewards.js";
 import { claimDailyReward } from "@/store/dogSlice.js";
 import { useDog } from "@/hooks/useDogState.js";
@@ -37,7 +36,6 @@ export default function DailyRewardModal({
   const dispatch = useDispatch();
   const dog = useDog();
   const toast = useToast();
-  const [adBusy, setAdBusy] = useState(false);
   const runtimeLabel = getRuntimeContextLabel();
 
   const resolvedRewardState = useMemo(
@@ -57,7 +55,7 @@ export default function DailyRewardModal({
   const canClaim = resolvedRewardState?.canClaim === true;
   const reward = resolvedRewardState?.reward || null;
   const nextStreakDay = Number(resolvedRewardState?.nextStreakDay || 1);
-  const dogName = String(dog?.name || "Fireball").trim() || "Fireball";
+  const dogName = String(dog?.name || "your dog").trim() || "your dog";
   const cloudReady = Boolean(dog?.adoptedAt);
 
   const handleClaim = (multiplier = 1) => {
@@ -83,24 +81,6 @@ export default function DailyRewardModal({
       console.error("[DailyRewardModal] Failed to claim daily reward:", error);
       toast.error(`Claim failed (${runtimeLabel})`);
       return false;
-    }
-  };
-
-  const handleClaimDouble = async () => {
-    if (!canClaim || !reward || adBusy) return;
-    setAdBusy(true);
-    try {
-      const completed = await showRewardedAd();
-      if (completed) {
-        handleClaim(2);
-      } else {
-        toast.error(`Double claim canceled (${runtimeLabel})`);
-      }
-    } catch (error) {
-      console.error("[DailyRewardModal] Rewarded ad flow failed:", error);
-      toast.error(`Double claim failed (${runtimeLabel})`);
-    } finally {
-      setAdBusy(false);
     }
   };
 
@@ -140,18 +120,10 @@ export default function DailyRewardModal({
         <button
           type="button"
           onClick={() => handleClaim(1)}
-          disabled={!canClaim || adBusy}
+          disabled={!canClaim}
           className="dz-touch-button rounded-2xl bg-emerald-400 px-4 py-3 text-sm font-black text-black transition disabled:cursor-not-allowed disabled:opacity-60"
         >
           Claim
-        </button>
-        <button
-          type="button"
-          onClick={handleClaimDouble}
-          disabled={!canClaim || adBusy}
-          className="dz-touch-button rounded-2xl border border-amber-300/40 bg-amber-400/15 px-4 py-3 text-sm font-black text-amber-100 transition disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {adBusy ? "Loading Ad..." : "Claim DOUBLE (Ad)"}
         </button>
         <button
           type="button"

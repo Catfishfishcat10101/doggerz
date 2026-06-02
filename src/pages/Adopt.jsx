@@ -14,6 +14,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
 import { PATHS } from "@/app/routes.js";
+import DoggerzLogo from "@/components/brand/DoggerzLogo.jsx";
 import HeroDog3D from "@/components/brand/HeroDog3D.jsx";
 import PageShell from "@/components/layout/PageShell.jsx";
 import { useDog } from "@/hooks/useDogState.js";
@@ -169,7 +170,7 @@ export default function AdoptPage() {
         startWorkflow({
           id: WORKFLOW_ID,
           stepIndex: 0,
-          initialData: { name: dog?.name || "Fireball" },
+          initialData: { name: dog?.name || "" },
         })
       );
     }
@@ -308,6 +309,10 @@ export default function AdoptPage() {
               {stepIndex === 0 ? "Later" : "Back"}
             </button>
 
+            <div className="hidden sm:block">
+              <DoggerzLogo size="small" />
+            </div>
+
             <div className="flex items-center gap-3">
               {ADOPT_STEPS.map((step, index) => (
                 <StepDot
@@ -388,14 +393,14 @@ export default function AdoptPage() {
                       );
                     }}
                     className="mt-3 min-h-16 w-full rounded-3xl border border-white/10 bg-white px-5 py-4 text-center text-2xl font-black text-slate-950 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/20"
-                    placeholder="Fireball"
+                    placeholder="Name your dog"
                     maxLength={24}
                     autoComplete="off"
                   />
 
                   <div className="mt-2 flex items-center justify-between text-xs text-zinc-400">
                     <span>{name.length}/24</span>
-                    <span>Default: Fireball</span>
+                    <span>Choose the name you want in the yard</span>
                   </div>
 
                   {error ? (
@@ -418,7 +423,7 @@ export default function AdoptPage() {
                       Bringing home
                     </div>
                     <div className="mt-2 text-3xl font-black text-amber-100">
-                      {trimmedName || "Fireball"}
+                      {trimmedName || "Your dog"}
                     </div>
 
                     <div className="mt-5 border-t border-white/10 pt-5">
@@ -473,6 +478,7 @@ export default function AdoptPage() {
 
                     <HeroDog3D
                       className="absolute inset-0"
+                      sceneOnly
                       stage="PUPPY"
                       mood={
                         stepIndex === 2 && !reduceMotion ? "happy" : "neutral"
@@ -500,7 +506,7 @@ export default function AdoptPage() {
                         </div>
                         <p className="mt-1 text-base font-black leading-6 text-white">
                           {stepIndex === 2
-                            ? `${trimmedName || "Fireball"} is ready to come home.`
+                            ? `${trimmedName || "Your dog"} is ready to come home.`
                             : "Lively, stubborn, and waiting for a routine."}
                         </p>
                       </div>

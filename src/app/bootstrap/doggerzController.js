@@ -34,6 +34,7 @@ import { getGrantedLocationSnapshot } from "@/lib/locationReality.js";
 import { fetchRealTimeWeather } from "@/features/weather/RealTimeWeatherFetcher.js";
 import { DOG_MODEL_GLTF_PATH } from "@/features/game/stage3d/dog/dogModelMap.js";
 import { configureStatusBar } from "@/utils/statusBar.js";
+import { debugLog, isDebugLoggingEnabled } from "@/utils/debugLogger.js";
 
 const STARTUP_ASSET_TIMEOUT_MS = 5000;
 
@@ -280,7 +281,7 @@ const Doggerz = {
         assets.map((asset) => preloadAsset(asset))
       );
       const loadedCount = results.filter((result) => result.loaded).length;
-      console.info("[Doggerz] Renderer preload complete", {
+      debugLog("Boot", "Renderer preload complete", {
         requested: assets.length,
         loaded: loadedCount,
       });
@@ -303,7 +304,7 @@ const Doggerz = {
   },
 
   async init({ startGameLoop, onCriticalError } = {}) {
-    console.log("System Initializing...");
+    debugLog("Boot", "System initializing");
 
     try {
       await configureStatusBar();
@@ -329,7 +330,10 @@ const Doggerz = {
   },
 };
 
-if (typeof window !== "undefined") {
+if (
+  typeof window !== "undefined" &&
+  (import.meta.env.DEV || isDebugLoggingEnabled())
+) {
   window.Doggerz = Doggerz;
 }
 

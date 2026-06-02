@@ -4,6 +4,7 @@ export const PATHS = Object.freeze({
   HOME: "/",
   ADOPT: "/adopt",
   GAME: "/game",
+  CARE: "/care",
   MENU: "/menu",
   SKILL_TREE: "/skill-tree",
   LOGIN: "/login",
@@ -33,6 +34,7 @@ export const PATHS = Object.freeze({
 export const routes = Object.freeze([
   { path: PATHS.HOME, name: "Home", meta: { title: "Doggerz" } },
   { path: PATHS.GAME, name: "Game", meta: { title: "Your Yard" } },
+  { path: PATHS.CARE, name: "Care", meta: { title: "Care" } },
   {
     path: PATHS.MENU,
     name: "Menu",
@@ -137,10 +139,10 @@ export const routes = Object.freeze([
  */
 export const PRIMARY_TABS = Object.freeze([
   { path: PATHS.GAME, label: "Yard", icon: "yard" },
+  { path: PATHS.CARE, label: "Care", icon: "care" },
   { path: PATHS.SKILL_TREE, label: "Train", icon: "train" },
-  { path: PATHS.STORE, label: "Store", icon: "store" },
-  { path: PATHS.MEMORIES, label: "Memories", icon: "memories" },
-  { path: PATHS.MENU, label: "Menu", icon: "menu" },
+  { path: PATHS.STORE, label: "Shop", icon: "store" },
+  { path: PATHS.SETTINGS, label: "Settings", icon: "settings" },
 ]);
 
 export const MENU_DESTINATIONS = Object.freeze([
@@ -161,18 +163,8 @@ export const MENU_DESTINATIONS = Object.freeze([
   },
   {
     path: PATHS.MEMORIES,
-    label: "Memory Reel",
-    detail: "Moments, milestones, and care history",
-  },
-  {
-    path: PATHS.DREAMS,
-    label: "Dream Journal",
-    detail: "Night thoughts and dream motifs",
-  },
-  {
-    path: PATHS.STORE,
-    label: "Store",
-    detail: "Accessories, yard themes, and care support",
+    label: "Memory & Dreams",
+    detail: "Moments, milestones, care history, and dream notes",
   },
 ]);
 
@@ -222,17 +214,6 @@ export const MENU_CATEGORIES = Object.freeze([
     key: "app",
     title: "Care & Growth",
     items: MENU_DESTINATIONS,
-  },
-  {
-    key: "legacy",
-    title: "Legacy & remembrance",
-    items: [
-      {
-        path: PATHS.RAINBOW_BRIDGE,
-        label: "Rainbow Bridge",
-        detail: "Memorial scene and six-month journey finale",
-      },
-    ],
   },
 ]);
 

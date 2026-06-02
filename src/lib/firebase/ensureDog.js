@@ -13,7 +13,7 @@ function _defaultDogPayload() {
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
     stage: "PUPPY",
-    name: "Fireball",
+    name: "Your dog",
     stats: {
       hunger: 100,
       happiness: 80,

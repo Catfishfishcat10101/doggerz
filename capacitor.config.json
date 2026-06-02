@@ -16,9 +16,6 @@
       "launchFadeOutDuration": 220,
       "backgroundColor": "#090a0fff",
       "showSpinner": true
-    },
-    "AdMob": {
-      "appId": "ca-app-pub-3940256099942544~3347511713"
     }
   }
 }

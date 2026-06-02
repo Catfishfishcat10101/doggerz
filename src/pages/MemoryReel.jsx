@@ -58,7 +58,7 @@ const CARE_LOG_LABELS = {
 };
 
 export default function MemoryReel() {
-  const { name, journal, memories, memory, bond, memoryDrives } =
+  const { name, journal, memories, memory, dreamsState, bond, memoryDrives } =
     useDogMemoryState();
 
   const [query, setQuery] = useState("");
@@ -92,6 +92,13 @@ export default function MemoryReel() {
     });
     return filtered;
   }, [journalModel.entries, type]);
+  const dreamEntries = useMemo(() => {
+    const history = Array.isArray(dreamsState?.history)
+      ? dreamsState.history
+      : [];
+    const active = dreamsState?.active ? [dreamsState.active] : [];
+    return [...active, ...history].filter(Boolean).slice(0, 5);
+  }, [dreamsState?.active, dreamsState?.history]);
 
   return (
     <SubpageShell width="wide">
@@ -232,21 +239,30 @@ export default function MemoryReel() {
 
               <div className="rounded-3xl border border-white/10 bg-black/25 p-4">
                 <div className="text-[11px] uppercase tracking-[0.2em] text-zinc-500">
-                  Neglect history
+                  Dream journal
                 </div>
                 <div className="mt-3 space-y-2">
-                  {journalModel.neglectHistory.length ? (
-                    journalModel.neglectHistory.slice(0, 3).map((entry) => (
-                      <div key={entry.id} className="text-sm">
-                        <div className="text-amber-100">{entry.summary}</div>
+                  {dreamEntries.length ? (
+                    dreamEntries.slice(0, 3).map((dream, index) => (
+                      <div key={dream.id || index} className="text-sm">
+                        <div className="text-sky-100">
+                          {dream.title || dream.summary || "Dream"}
+                        </div>
+                        {dream.summary ? (
+                          <div className="line-clamp-2 text-[11px] text-zinc-400">
+                            {dream.summary}
+                          </div>
+                        ) : null}
                         <div className="text-[11px] text-zinc-500">
-                          {formatEntryDate(entry.timestamp)}
+                          {formatEntryDate(
+                            dream.timestamp || dream.createdAt || Date.now()
+                          )}
                         </div>
                       </div>
                     ))
                   ) : (
-                    <p className="text-sm text-emerald-200">
-                      No neglect memories recorded.
+                    <p className="text-sm text-zinc-400">
+                      Sleep moments and dream notes will appear here.
                     </p>
                   )}
                 </div>
@@ -470,12 +486,6 @@ export default function MemoryReel() {
                   className="inline-flex items-center justify-center rounded-2xl px-5 py-3 text-sm font-extrabold bg-emerald-400 text-black shadow-[0_0_35px_rgba(52,211,153,0.25)] hover:bg-emerald-300 transition"
                 >
                   Back to the yard
-                </Link>
-                <Link
-                  to={PATHS.RAINBOW_BRIDGE}
-                  className="inline-flex items-center justify-center rounded-2xl px-5 py-3 text-sm font-semibold border border-white/15 bg-black/30 text-zinc-100 hover:bg-black/45 transition"
-                >
-                  Visit Rainbow Bridge
                 </Link>
               </div>
             ) : null}

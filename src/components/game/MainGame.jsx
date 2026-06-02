@@ -1,6 +1,6 @@
 // src/components/game/MainGame.jsx
 /* eslint-disable no-unused-vars */
-import { onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { Capacitor } from "@capacitor/core";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -30,7 +30,11 @@ import {
 } from "@/components/game/animatedEvents.js";
 import { useToast } from "@/state/toastContext.js";
 import { selectSettings } from "@/store/settingsSlice.js";
-import { selectCloudSyncState, selectIsLoggedIn } from "@/store/userSlice.js";
+import {
+  clearUserAuth,
+  selectCloudSyncState,
+  selectIsLoggedIn,
+} from "@/store/userSlice.js";
 import {
   bathe,
   beginRunawayStrike,
@@ -140,7 +144,7 @@ const CORE_BOTTOM_MENU_ITEM_KEYS = Object.freeze({
     "care-sheet",
   ]),
   train: new Set(["tricks", "voice"]),
-  journey: new Set(["store", "memories"]),
+  journey: new Set(["memories"]),
   settings: new Set(["settings"]),
 });
 
@@ -604,14 +608,7 @@ function getDogTapReactionCopy(lastAction = "", stats = {}) {
   if (key.includes("doze")) return "Cozy";
   if (Number(stats?.hunger || 0) >= 75) return "Snack?";
   if (Number(stats?.energy || 100) <= 25) return "Sleepy";
-  const options = [
-    "Tail wag",
-    "Bark!",
-    "Head tilt",
-    "Happy bounce",
-    "Sit?",
-    "Hmm?",
-  ];
+  const options = ["Tail wag", "Bark!", "Head tilt", "Bounce", "Sit?", "Hmm?"];
   return options[Math.floor(Math.random() * options.length)] || "Happy tap";
 }
 
@@ -1479,12 +1476,20 @@ export default function MainGame({ scene, dogInteractive = true }) {
   const yardHud = useMemo(
     () => ({
       mood: displayMoodLabel || "Content",
+      health: `${healthPct}%`,
+      bond: `${bondPct}%`,
+      hunger: `${hungerPct}%`,
+      energy: `${energyPct}%`,
       weather: formatWeatherLabel(weatherCondition, weatherDetails),
       time: formatTimeOfDayLabel(resolvedTimeBucket, isNightScene),
       clock: formatYardClock(liveNow),
     }),
     [
+      bondPct,
       displayMoodLabel,
+      energyPct,
+      healthPct,
+      hungerPct,
       isNightScene,
       liveNow,
       resolvedTimeBucket,
@@ -3121,6 +3126,12 @@ export default function MainGame({ scene, dogInteractive = true }) {
     });
     triggerActionFeedback("pet");
     dispatch(petDog({ now, source: "tap_pet" }));
+    triggerCareSatisfaction("pet", {
+      animation: "wag",
+      message: `${identityDogName} leaned into your hand. Bond nudged upward.`,
+      toastType: "success",
+      stat: "bond",
+    });
     triggerDogTapReaction({
       xNorm: Number(pos?.xNorm || 0.5),
       yNorm: Number(pos?.yNorm || 0.64) - 0.12,
@@ -3133,10 +3144,12 @@ export default function MainGame({ scene, dogInteractive = true }) {
     dispatch,
     dogPositionNorm,
     effectiveDogSleeping,
+    identityDogName,
     isActionHijacked,
     movementLocked,
     placingBowl,
     triggerActionFeedback,
+    triggerCareSatisfaction,
     triggerDogTapReaction,
   ]);
 
@@ -3153,14 +3166,11 @@ export default function MainGame({ scene, dogInteractive = true }) {
         ? clamp((Number(event?.clientY || 0) - rect.top) / rect.height, 0, 1)
         : dogPositionNormRef.current?.yNorm || 0.65;
 
+      void xNorm;
+      void yNorm;
       handleDogPetTap();
-      triggerDogTapReaction({
-        xNorm,
-        yNorm: yNorm - 0.08,
-        label: getDogTapReactionCopy(dog?.lastAction, dog?.stats),
-      });
     },
-    [dog?.lastAction, dog?.stats, handleDogPetTap, triggerDogTapReaction]
+    [handleDogPetTap]
   );
 
   const handleBathAction = useCallback(() => {
@@ -3170,13 +3180,14 @@ export default function MainGame({ scene, dogInteractive = true }) {
     dispatch(bathe({ now: Date.now() }));
     triggerCareSatisfaction("clean", {
       animation: "scratch",
-      message: "Cleaned up. Comfort and health got a real lift.",
+      message: `${identityDogName} shook it off, but feels cleaner.`,
       toastType: "success",
       stat: "health",
     });
   }, [
     controlsDisabled,
     dispatch,
+    identityDogName,
     isActionHijacked,
     triggerActionFeedback,
     triggerCareSatisfaction,
@@ -3189,42 +3200,15 @@ export default function MainGame({ scene, dogInteractive = true }) {
     dispatch(goPotty({ now: Date.now() }));
     triggerCareSatisfaction("potty", {
       animation: "sniff",
-      message: "Potty cue sent. Routine and training rhythm improved.",
+      message: `${identityDogName} followed the potty routine.`,
       toastType: "success",
       stat: "health",
     });
   }, [
     controlsDisabled,
     dispatch,
+    identityDogName,
     isActionHijacked,
-    triggerActionFeedback,
-    triggerCareSatisfaction,
-  ]);
-
-  const handleSleepAction = useCallback(() => {
-    if (controlsDisabled) return;
-    if (isActionHijacked("rest")) return;
-    triggerActionFeedback("rest");
-    dispatch(
-      rest({
-        now: Date.now(),
-        action: "sleep",
-        napSpotId: isApartmentEnvironment ? "apartment" : "yard",
-      })
-    );
-    triggerCareSatisfaction("sleep", {
-      animation: "sleep",
-      message: "Settled down to sleep. Energy recovery started.",
-      toastType: "success",
-      duration: 1600,
-      speedBoost: 1,
-      stat: "energy",
-    });
-  }, [
-    controlsDisabled,
-    dispatch,
-    isActionHijacked,
-    isApartmentEnvironment,
     triggerActionFeedback,
     triggerCareSatisfaction,
   ]);
@@ -3239,13 +3223,14 @@ export default function MainGame({ scene, dogInteractive = true }) {
     dispatch(giveWater({ now: Date.now() }));
     triggerCareSatisfaction("water", {
       animation: "drink",
-      message: "Fresh water landed well. Hydration and mood improved.",
+      message: `${identityDogName} lapped up the fresh water.`,
       toastType: "success",
       stat: "health",
     });
   }, [
     controlsDisabled,
     dispatch,
+    identityDogName,
     life?.stage,
     triggerActionFeedback,
     triggerCareSatisfaction,
@@ -3274,15 +3259,16 @@ export default function MainGame({ scene, dogInteractive = true }) {
       triggerActionFeedback("quick-feed");
       triggerCareSatisfaction("feed", {
         animation: "feed",
-        message: "Fed and settled. Hunger dropped and energy improved.",
+        message: `${identityDogName} gobbled it up.`,
         toastType: "reward",
-        stat: "health",
+        stat: "hunger",
       });
       return true;
     },
     [
       controlsDisabled,
       dispatch,
+      identityDogName,
       life?.stage,
       triggerActionFeedback,
       triggerCareSatisfaction,
@@ -3301,13 +3287,19 @@ export default function MainGame({ scene, dogInteractive = true }) {
       dispatch(play({ now, source }));
       triggerCareSatisfaction("play", {
         animation: "wag",
-        message: "Good play burst. Mood, bond, and stimulation improved.",
+        message: `${identityDogName} bounced into play. Bond moved upward.`,
         toastType: "reward",
         stat: "energy",
       });
       return now;
     },
-    [dispatch, life?.stage, triggerActionFeedback, triggerCareSatisfaction]
+    [
+      dispatch,
+      identityDogName,
+      life?.stage,
+      triggerActionFeedback,
+      triggerCareSatisfaction,
+    ]
   );
 
   const handlePlayAction = useCallback(
@@ -4225,13 +4217,14 @@ export default function MainGame({ scene, dogInteractive = true }) {
     setAttentionTarget({ xNorm: 0.54, yNorm: 0.7, at: now });
     triggerCareSatisfaction("feed", {
       animation: "feed",
-      message: "Quick feed landed. Hunger dropped and energy bumped up.",
+      message: `${identityDogName} gobbled it up.`,
       toastType: "reward",
-      stat: "health",
+      stat: "hunger",
     });
   }, [
     controlsDisabled,
     dispatch,
+    identityDogName,
     life?.stage,
     triggerActionFeedback,
     triggerCareSatisfaction,
@@ -4330,6 +4323,23 @@ export default function MainGame({ scene, dogInteractive = true }) {
     );
   }, [buildBaseShareContext, identity?.profileId, identityDogName]);
 
+  const handleLogout = useCallback(async () => {
+    const { auth: initializedAuth } = initFirebase();
+    const auth = initializedAuth || firebaseAuth;
+    try {
+      if (auth?.currentUser) {
+        await signOut(auth);
+      }
+    } finally {
+      dispatch(clearUserAuth());
+      toast.show({
+        type: "info",
+        message: "Logged out. Local save stays on this device.",
+        durationMs: 2200,
+      });
+    }
+  }, [dispatch, toast]);
+
   const yardCareButtons = useMemo(
     () => [
       {
@@ -4354,10 +4364,10 @@ export default function MainGame({ scene, dogInteractive = true }) {
         disabled: controlsDisabled || toysIgnored,
       },
       {
-        key: "sleep",
-        label: "Sleep",
-        value: `${energyPct}%`,
-        onClick: handleSleepAction,
+        key: "pet",
+        label: "Pet",
+        value: `${affectionPct}%`,
+        onClick: handleDogPetTap,
         disabled: controlsDisabled,
       },
       {
@@ -4376,15 +4386,15 @@ export default function MainGame({ scene, dogInteractive = true }) {
       },
     ],
     [
+      affectionPct,
       cleanlinessPct,
       controlsDisabled,
-      energyPct,
       handleBathAction,
+      handleDogPetTap,
       handleGiveWater,
       handlePlayAction,
       handlePottyAction,
       handleQuickFeed,
-      handleSleepAction,
       hungerPct,
       mentalStimulationPct,
       pottyNeedPct,
@@ -4614,15 +4624,6 @@ export default function MainGame({ scene, dogInteractive = true }) {
             route: PATHS.MEMORIES,
           },
           {
-            key: "store",
-            label: "Store",
-            detail: "Cosmetics and rewards",
-            icon: "🛍️",
-            onClick: () => handleOpenRoute(PATHS.STORE),
-            feedbackMessage: "Opening store.",
-            route: PATHS.STORE,
-          },
-          {
             key: "memories",
             label: "Memories",
             detail: "Milestones and moments",
@@ -4757,7 +4758,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
               ...section,
               subtitle:
                 sectionId === "journey"
-                  ? "Shop and shared memory."
+                  ? "Memory, dreams, and progress."
                   : section?.subtitle,
               items: Array.isArray(section?.items)
                 ? section.items.filter(
@@ -4911,7 +4912,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
     <div className="relative flex h-full min-h-0 flex-col overflow-hidden">
       <div className="main-scroll-container relative z-20 mx-auto flex h-full min-h-0 w-full max-w-6xl flex-1 flex-col gap-2.5 pb-[calc(env(safe-area-inset-bottom,0px)+112px)] sm:gap-4 sm:pb-[calc(env(safe-area-inset-bottom,0px)+124px)]">
         <GameTopBar
-          dogName={dog?.name || "Doggerz Pup"}
+          dogName={identityDogName}
           dogStage={stageLabel || "Puppy"}
           conditionLabel={displayMoodLabel || "Content"}
           conditionTone={displayMoodTone}
@@ -4928,6 +4929,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
           saveHint={cloudSyncUi.reassurance}
           onOpenSettings={() => setBottomMenuCategory("settings")}
           onOpenShop={() => navigate(PATHS.STORE)}
+          onLogout={isLoggedIn ? handleLogout : null}
         />
         <div className="pup-card flex min-h-0 flex-1 flex-col rounded-[28px] px-3 pb-3 sm:px-6 sm:pb-6">
           <div className="flex min-h-0 flex-1 flex-col gap-3 sm:gap-4">
@@ -5283,34 +5285,33 @@ export default function MainGame({ scene, dogInteractive = true }) {
                       data-doggerz-yard-control="true"
                       className="pointer-events-none absolute inset-x-0 top-0 z-[32] flex flex-col gap-2 p-3 sm:p-4"
                     >
-                      <div className="pointer-events-auto grid grid-cols-3 gap-2 rounded-[20px] border border-white/12 bg-black/45 p-2 text-white shadow-[0_10px_24px_rgba(0,0,0,0.24)] backdrop-blur-md">
-                        <div className="min-w-0 rounded-2xl bg-white/8 px-3 py-2">
-                          <div className="text-[9px] font-black uppercase tracking-[0.16em] text-white/55">
-                            Mood
+                      <div className="pointer-events-auto grid grid-cols-4 gap-1.5 rounded-[20px] border border-white/12 bg-black/45 p-2 text-white shadow-[0_10px_24px_rgba(0,0,0,0.24)] backdrop-blur-md sm:grid-cols-7 sm:gap-2">
+                        {[
+                          ["Mood", yardHud.mood],
+                          ["Health", yardHud.health],
+                          ["Bond", yardHud.bond],
+                          ["Hunger", yardHud.hunger],
+                          ["Energy", yardHud.energy],
+                          ["Weather", yardHud.weather],
+                          ["Time", yardHud.time],
+                        ].map(([label, value]) => (
+                          <div
+                            key={label}
+                            className="min-w-0 rounded-2xl bg-white/8 px-2 py-2 text-center sm:px-3"
+                          >
+                            <div className="text-[8px] font-black uppercase tracking-[0.14em] text-white/55 sm:text-[9px]">
+                              {label}
+                            </div>
+                            <div className="mt-0.5 truncate text-xs font-black sm:text-sm">
+                              {value}
+                            </div>
+                            {label === "Time" ? (
+                              <div className="mt-0.5 truncate text-[9px] font-bold text-white/55 sm:text-[10px]">
+                                {yardHud.clock}
+                              </div>
+                            ) : null}
                           </div>
-                          <div className="mt-0.5 truncate text-sm font-black">
-                            {yardHud.mood}
-                          </div>
-                        </div>
-                        <div className="min-w-0 rounded-2xl bg-white/8 px-3 py-2">
-                          <div className="text-[9px] font-black uppercase tracking-[0.16em] text-white/55">
-                            Weather
-                          </div>
-                          <div className="mt-0.5 truncate text-sm font-black">
-                            {yardHud.weather}
-                          </div>
-                        </div>
-                        <div className="min-w-0 rounded-2xl bg-white/8 px-3 py-2">
-                          <div className="text-[9px] font-black uppercase tracking-[0.16em] text-white/55">
-                            Time
-                          </div>
-                          <div className="mt-0.5 truncate text-sm font-black">
-                            {yardHud.time}
-                          </div>
-                          <div className="mt-0.5 truncate text-[10px] font-bold text-white/55">
-                            {yardHud.clock}
-                          </div>
-                        </div>
+                        ))}
                       </div>
                       {memoryMoment ? (
                         <div className="pointer-events-auto ml-auto w-full max-w-[260px]">
@@ -5395,7 +5396,7 @@ export default function MainGame({ scene, dogInteractive = true }) {
                       className="pointer-events-auto absolute inset-x-0 bottom-0 z-[35] px-3 pb-3 sm:px-4 sm:pb-4"
                     >
                       <div className="mx-auto flex w-full max-w-3xl flex-col gap-2 rounded-[22px] border border-white/12 bg-black/50 p-2 shadow-[0_14px_32px_rgba(0,0,0,0.28)] backdrop-blur-md">
-                        <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+                        <div className="grid grid-cols-3 gap-2 sm:grid-cols-7">
                           {yardCareButtons.map((item) => (
                             <button
                               key={item.key}

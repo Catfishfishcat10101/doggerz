@@ -1,20 +1,9 @@
 // src/components/layout/Header.jsx
-import * as React from "react";
-import {
-  Link,
-  useLocation,
-  useNavigate,
-  useNavigationType,
-} from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 
 import { selectIsLoggedIn } from "@/store/userSlice.js";
-import {
-  getPrimaryTabForPath,
-  getRouteMeta,
-  PATHS,
-  PRIMARY_TABS,
-} from "@/app/routes.js";
+import { getPrimaryTabForPath, getRouteMeta, PATHS } from "@/app/routes.js";
 
 const HIDE_ON_PATHS = new Set([
   PATHS.HOME,
@@ -22,6 +11,7 @@ const HIDE_ON_PATHS = new Set([
   PATHS.LOGIN,
   PATHS.SIGNUP,
   PATHS.GAME,
+  PATHS.CARE,
 ]);
 
 function AppBarIcon({ kind = "menu" }) {
@@ -60,14 +50,7 @@ export default function Header() {
   const isLoggedIn = useSelector(selectIsLoggedIn);
   const location = useLocation();
   const navigate = useNavigate();
-  const navigationType = useNavigationType();
   const pathname = location.pathname;
-  const quickTabs = React.useMemo(() => {
-    return PRIMARY_TABS.filter((item) => {
-      if (item.path === PATHS.GAME) return isLoggedIn;
-      return item.path !== pathname;
-    }).slice(0, 2);
-  }, [isLoggedIn, pathname]);
 
   if (HIDE_ON_PATHS.has(pathname)) {
     return null;
@@ -76,27 +59,16 @@ export default function Header() {
   const primaryTab = getPrimaryTabForPath(pathname);
   const routeMeta = getRouteMeta(pathname);
   const topLevelTab = primaryTab?.path === pathname ? primaryTab : null;
-  const isPrimaryRoute = Boolean(primaryTab);
 
   const sectionTitle = routeMeta?.title || topLevelTab?.label || "Doggerz";
-  const sectionSubtitle = isPrimaryRoute
-    ? topLevelTab?.path === PATHS.MENU
-      ? "Utilities"
-      : topLevelTab?.label === "Yard"
-        ? "Your pup"
-        : "Main section"
-    : "Back to the app";
-
-  const canGoBack =
-    !isPrimaryRoute &&
-    (navigationType !== "POP" ||
-      (typeof window !== "undefined" && window.history.length > 1));
+  const sectionSubtitle = topLevelTab?.label || "Back to the app";
 
   const backTarget = topLevelTab
     ? PATHS.MENU
     : isLoggedIn
       ? PATHS.GAME
       : PATHS.MENU;
+  const menuTarget = isLoggedIn ? PATHS.MENU : PATHS.HOME;
 
   return (
     <header className="sticky top-0 z-[90] border-b border-white/8 bg-zinc-950/88 backdrop-blur-xl">
@@ -104,16 +76,16 @@ export default function Header() {
         <button
           type="button"
           onClick={() => {
-            if (canGoBack) {
+            if (typeof window !== "undefined" && window.history.length > 1) {
               navigate(-1);
               return;
             }
             navigate(backTarget);
           }}
           className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-white/10 bg-white/5 text-zinc-100 active:scale-[0.98]"
-          aria-label={canGoBack ? "Go back" : "Open main section"}
+          aria-label="Go back"
         >
-          <AppBarIcon kind={canGoBack ? "back" : "menu"} />
+          <AppBarIcon kind="back" />
         </button>
 
         <div className="min-w-0 flex-1">
@@ -125,26 +97,12 @@ export default function Header() {
           </div>
         </div>
 
-        {isPrimaryRoute ? (
-          <div className="flex items-center gap-2">
-            {quickTabs.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className="hidden rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-zinc-200 active:scale-[0.98] sm:block"
-              >
-                {item.label}
-              </Link>
-            ))}
-          </div>
-        ) : (
-          <Link
-            to={isLoggedIn ? PATHS.GAME : PATHS.MENU}
-            className="rounded-2xl border border-emerald-400/20 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-100 active:scale-[0.98]"
-          >
-            {isLoggedIn ? "Yard" : "Menu"}
-          </Link>
-        )}
+        <Link
+          to={menuTarget}
+          className="inline-flex min-h-10 items-center rounded-2xl border border-emerald-400/20 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-100 active:scale-[0.98]"
+        >
+          Menu
+        </Link>
       </div>
     </header>
   );

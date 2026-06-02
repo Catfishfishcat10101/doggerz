@@ -522,7 +522,7 @@ export default function HelpPage() {
                   <div className="space-y-4">
                     <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
                       <div className="text-sm font-extrabold text-amber-200">
-                        1. Keep Fireball active
+                        1. Keep your dog active
                       </div>
                       <p className="mt-2 text-sm text-zinc-300">
                         Watch Energy and Health. Feeding, play, sleep, and clean

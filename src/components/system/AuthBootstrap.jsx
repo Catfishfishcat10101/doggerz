@@ -12,7 +12,7 @@ export default function AuthBootstrap() {
   const clearingAnonSessionRef = useRef(false);
 
   useEffect(() => {
-    console.info("[Doggerz] Firebase runtime config", {
+    debugLog("Auth", "Firebase runtime config", {
       projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || null,
       appId: import.meta.env.VITE_FIREBASE_APP_ID || null,
       authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || null,
@@ -41,7 +41,7 @@ export default function AuthBootstrap() {
           if (cancelled) return;
           dispatch(clearUserAuth());
           debugLog("Auth", "auth state changed", { userId: null });
-          console.info("[Doggerz] Auth resolved", {
+          debugLog("Auth", "auth resolved", {
             uid: null,
             anonymous: false,
           });
@@ -72,7 +72,7 @@ export default function AuthBootstrap() {
           userId: user.uid,
           anonymous: Boolean(user.isAnonymous),
         });
-        console.info("[Doggerz] Auth resolved", {
+        debugLog("Auth", "auth resolved", {
           uid: user.uid,
           anonymous: Boolean(user.isAnonymous),
         });
@@ -82,7 +82,7 @@ export default function AuthBootstrap() {
       clearingAnonSessionRef.current = false;
       dispatch(clearUserAuth());
       debugLog("Auth", "auth state changed", { userId: null });
-      console.info("[Doggerz] Auth resolved", { uid: null, anonymous: false });
+      debugLog("Auth", "auth resolved", { uid: null, anonymous: false });
     });
 
     return () => {
