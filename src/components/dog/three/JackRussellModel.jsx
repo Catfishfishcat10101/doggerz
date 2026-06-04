@@ -1,4 +1,4 @@
-/* eslint-disable react/no-unknown-property */
+// src/components/dog/three/JackRussellModel.jsx
 import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import { useAnimations, useGLTF } from "@react-three/drei";
@@ -110,10 +110,7 @@ export default function JackRussellModel({
 
   return (
     <primitive
-      object={model}
       scale={scale}
-      position={position}
-      rotation={rotation}
     />
   );
 }

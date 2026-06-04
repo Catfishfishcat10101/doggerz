@@ -1,10 +1,37 @@
 // src/features/game/stage3d/dog/dogAnimationMap.js
-import { LEGACY_DOG_MODEL_PATH } from "./dogModelMap.js";
-
-export const DOG_MODEL_GLTF_PATH = LEGACY_DOG_MODEL_PATH;
+export { DOG_MODEL_GLTF_PATH } from "./dogModelMap.js";
 export const FEED_START_CLIP = "EatDrink_start";
 export const FEED_LOOP_CLIP = "Eat_loop";
 const NEUTRAL_FEED_FALLBACK_CLIP = "Idle_1";
+const DEFAULT_DOG_ANIMATION_CLIP = "Idle_1";
+
+export const DOG_ANIMATION_CLIPS = Object.freeze({
+  idle: "Idle_1",
+  idleAlt: "Idle_5_loop",
+  walk: "Walk_F_IP",
+  run: "Run_5_loop",
+  sit: "Sitting_loop_1",
+  stay: "Idle_5_loop",
+  speak: "Bark",
+  sleepStart: "Lie_Sleep_start",
+  sleepLoop: "Lie_Sleep_loop",
+  sleepEnd: "Lie_Sleep_end",
+  eat: "Eat_loop",
+  drink: "Drink_loop",
+  digStart: "Digging_start",
+  digLoop: "Digging_loop",
+  digEnd: "Digging_end",
+  potty: "Defecate",
+  sniff: "Idle_5_loop",
+});
+
+export const ONE_SHOT_DOG_ACTIONS = new Set([
+  "speak",
+  "sleepStart",
+  "sleepEnd",
+  "digStart",
+  "digEnd",
+]);
 
 export const REQUIRED_DOG_MODEL_CLIPS = Object.freeze([
   "Idle_1",
@@ -39,6 +66,7 @@ export const OPTIONAL_DOG_MODEL_CLIPS = Object.freeze([
   "EatDrink_start",
   "Eat_loop",
   "Eat_tear",
+  "Defecate",
   "JumpAir_high",
   "Jump_Place_IP",
   "JumpStart_Place",
@@ -48,6 +76,8 @@ export const OPTIONAL_DOG_MODEL_CLIPS = Object.freeze([
   "Lie_belly_loop_2",
   "Lie_belly_sleep",
   "Lie_belly_start",
+  "Lie_Sleep_start",
+  "Lie_Sleep_end",
   "Lie_start",
   "Lie_loop_1",
   "Lie_loop_2",
@@ -117,6 +147,81 @@ const CLIP_CANDIDATES_BY_REQUEST = Object.freeze({
   Play_Dead: ["Lie_belly_sleep", "Lie_belly_loop_1", "Lie_Sleep_loop"],
   Backflip: ["JumpStart_Up", "JumpAir_high", "Jump_Place_IP", "JumpLand_Place"],
 });
+
+const DOG_ANIMATION_CLIPS_BY_KEY = Object.freeze(
+  Object.fromEntries(
+    Object.entries(DOG_ANIMATION_CLIPS).map(([action, clip]) => [
+      normalizeClipName(action),
+      clip,
+    ])
+  )
+);
+
+const DOG_ANIMATION_CLIP_VALUES = new Set(Object.values(DOG_ANIMATION_CLIPS));
+
+const DOG_ANIMATION_ALIASES = Object.freeze({
+  bark: "speak",
+  bath: "idleAlt",
+  bathe: "idleAlt",
+  clean: "idleAlt",
+  digging: "digLoop",
+  dig: "digLoop",
+  drinkwater: "drink",
+  feed: "eat",
+  feeding: "eat",
+  food: "eat",
+  idlealt: "idleAlt",
+  lie: "sleepLoop",
+  pissing: "potty",
+  poop: "potty",
+  pee: "potty",
+  play: "idleAlt",
+  rest: "sleepLoop",
+  runfast: "RunFast_F_IP",
+  runfastfip: "RunFast_F_IP",
+  scratching: "idleAlt",
+  scratch: "idleAlt",
+  sleep: "sleepLoop",
+  sleeping: "sleepLoop",
+  sniff: "sniff",
+  stay: "stay",
+  sitdown: "sit",
+  sitting: "sit",
+  speakonce: "speak",
+  trot: "Trot_F_IP",
+  water: "drink",
+  wag: "idleAlt",
+});
+
+export function resolveDogAnimation(action) {
+  return resolveMappedDogAnimation(action) || DEFAULT_DOG_ANIMATION_CLIP;
+}
+
+function resolveMappedDogAnimation(action) {
+  const raw = String(action || "").trim();
+  if (!raw) return null;
+  if (DOG_ANIMATION_CLIP_VALUES.has(raw)) return raw;
+
+  const key = normalizeClipName(raw);
+  const alias = DOG_ANIMATION_ALIASES[key];
+  if (alias) return DOG_ANIMATION_CLIPS[alias] || alias;
+
+  return DOG_ANIMATION_CLIPS_BY_KEY[key] || null;
+}
+
+const warnedMissingDogAnimationClips = new Set();
+
+function warnMissingDogAnimationClip(requestedClip, fallbackClip, actionNames) {
+  const requested = String(requestedClip || "").trim();
+  if (!requested || warnedMissingDogAnimationClips.has(requested)) return;
+
+  warnedMissingDogAnimationClips.add(requested);
+  console.warn(
+    `[Doggerz 3D] Missing dog animation clip "${requested}". ` +
+      `Falling back to "${fallbackClip}".`,
+    { availableAnimations: actionNames }
+  );
+}
 
 function normalizeClipName(value = "") {
   return String(value || "")
@@ -216,6 +321,9 @@ export function resolveClipName(requestedClip = "Idle", actions = {}) {
   const normalizedRequest = String(requestedClip || "Idle").trim();
   if (actionNames.includes(normalizedRequest)) return normalizedRequest;
 
+  const dogAnimationClip = resolveMappedDogAnimation(normalizedRequest);
+  if (actionNames.includes(dogAnimationClip)) return dogAnimationClip;
+
   const requestKey = resolveDogModelClipRequest(normalizedRequest);
   if (actionNames.includes(requestKey)) return requestKey;
 
@@ -236,4 +344,43 @@ export function resolveClipName(requestedClip = "Idle", actions = {}) {
       actionNames.includes(clip)
     ) || actionNames[0]
   );
+}
+
+export function resolveAvailableDogAnimation(
+  requestedClip = "Idle",
+  actions = {},
+  { warn = false } = {}
+) {
+  const actionNames = Object.keys(actions || {});
+  if (!actionNames.length) return null;
+
+  const requested = String(requestedClip || DEFAULT_DOG_ANIMATION_CLIP).trim();
+  const mappedClip = resolveMappedDogAnimation(requested);
+  const fallbackClip = actionNames.includes(DEFAULT_DOG_ANIMATION_CLIP)
+    ? DEFAULT_DOG_ANIMATION_CLIP
+    : actionNames[0];
+
+  if (actionNames.includes(requested)) return requested;
+  if (mappedClip) {
+    if (actionNames.includes(mappedClip)) return mappedClip;
+
+    if (warn) {
+      warnMissingDogAnimationClip(
+        requested || mappedClip,
+        fallbackClip,
+        actionNames
+      );
+    }
+
+    return fallbackClip;
+  }
+
+  const legacyClip = resolveClipName(requested, actions);
+  if (legacyClip && actionNames.includes(legacyClip)) return legacyClip;
+
+  if (warn) {
+    warnMissingDogAnimationClip(requested, fallbackClip, actionNames);
+  }
+
+  return fallbackClip;
 }

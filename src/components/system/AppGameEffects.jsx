@@ -75,5 +75,6 @@ export default function AppGameEffects() {
     delete root.dataset.skillPulse;
   }, [showSkillPulse]);
 
+  // This component is headless and only manages global effect state (no UI rendered).
   return null;
 }

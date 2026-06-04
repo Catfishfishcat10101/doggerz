@@ -6,7 +6,6 @@ import { useMemo } from "react";
 import { shallowEqual } from "react-redux";
 import { useAppDispatch, useAppSelector } from "@/store/hooks.js";
 import {
-  selectDogRenderMode,
   selectPreferredScene,
   selectReduceVfx,
   selectUiDensity,
@@ -18,7 +17,6 @@ import {
   selectUserStreak,
   selectUserZip,
   setDogName,
-  setDogRenderMode,
   setLocale,
   setPreferredScene,
   setReduceVfx,
@@ -31,7 +29,6 @@ const selectUserProfileModel = createSelector(
   [
     selectUser,
     selectUserZip,
-    selectDogRenderMode,
     selectUserDogName,
     selectPreferredScene,
     selectReduceVfx,
@@ -44,7 +41,6 @@ const selectUserProfileModel = createSelector(
   (
     user,
     zip,
-    dogRenderMode,
     dogName,
     preferredScene,
     reduceVfx,
@@ -59,7 +55,6 @@ const selectUserProfileModel = createSelector(
     email: user?.email || null,
     avatarUrl: user?.avatarUrl || null,
     zip,
-    dogRenderMode,
     dogName,
     preferredScene,
     reduceVfx,
@@ -91,7 +86,6 @@ const selectUserSettingsViewModel = createSelector(
     settings,
     audio,
     currentZip: profile.zip,
-    dogRenderMode: profile.dogRenderMode,
   })
 );
 
@@ -124,7 +118,6 @@ export function useUserActions() {
   return useMemo(
     () => ({
       setZip: (payload) => dispatch(setZip(payload)),
-      setDogRenderMode: (payload) => dispatch(setDogRenderMode(payload)),
       setDogName: (payload) => dispatch(setDogName(payload)),
       setPreferredScene: (payload) => dispatch(setPreferredScene(payload)),
       setReduceVfx: (payload) => dispatch(setReduceVfx(payload)),

@@ -3,18 +3,21 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAnimations, useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
-import { Box3, Vector3 } from "three";
+import { Box3, LoopOnce, LoopRepeat, Vector3 } from "three";
 import { clone as cloneSkeleton } from "three/examples/jsm/utils/SkeletonUtils.js";
 
 import {
+  DOG_ANIMATION_CLIPS,
+  ONE_SHOT_DOG_ACTIONS,
   DOG_MODEL_GLTF_PATH,
   FEED_LOOP_CLIP,
   FEED_START_CLIP,
   hasPlayableDogModelClips,
   isFeedingDogAction,
+  resolveAvailableDogAnimation,
   resolveFeedingClipName,
+  resolveDogAnimation,
   resolveDogModelClipRequest,
-  resolveClipName,
 } from "@/features/game/stage3d/dog/dogAnimationMap.js";
 import { DOG_MODEL_PATH_BY_STAGE } from "@/features/game/stage3d/dog/dogModelMap.js";
 import { resolveDogModelProfile } from "@/features/game/stage3d/dog/dogModelResolver.js";
@@ -346,7 +349,7 @@ function resolveTrickRootMotion(clip = "Idle", action = "", localT = 0) {
   return null;
 }
 
-export function Dog3D({
+function Dog3D({
   dog = null,
   action = "",
   facing = "",
@@ -382,7 +385,10 @@ export function Dog3D({
   );
   const dogModelPath = dogModelProfile.modelPath;
 
-  const { scene: dogScene, animations } = useGLTF(dogModelPath);
+  // Call useGLTF directly as a hook (not inside useMemo)
+  const gltf = useGLTF(dogModelPath);
+  const dogScene = gltf.scene;
+  const animations = gltf.animations;
   const modelScene = useMemo(() => cloneSkeleton(dogScene), [dogScene]);
 
   const modelLooksRigged = useMemo(() => {
@@ -434,15 +440,17 @@ export function Dog3D({
     [actions]
   );
 
-  const desiredClip = ghost
-    ? "Idle"
-    : forcedClip || animationClip?.key || "Idle";
+  const animationClipName =
+    typeof animationClip === "string" ? animationClip : animationClip?.key;
+  const clipName = ghost
+    ? DOG_ANIMATION_CLIPS.idle
+    : animationClipName || forcedClip || resolveDogAnimation(action);
   const feedActionKey = useMemo(() => {
-    const requested = [desiredClip, action].find((value) =>
+    const requested = [clipName, action].find((value) =>
       isFeedingDogAction(value)
     );
     return requested ? String(requested).trim().toLowerCase() : "";
-  }, [action, desiredClip]);
+  }, [action, clipName]);
   const feedActionActive = Boolean(feedActionKey);
   const effectiveFeedPhase =
     feedActionActive &&
@@ -453,7 +461,7 @@ export function Dog3D({
   const playbackClip =
     feedActionActive && hasModelClips
       ? resolveFeedingClipName(effectiveFeedPhase, actions) || FEED_LOOP_CLIP
-      : desiredClip;
+      : clipName;
   const renderMotion = useMemo(
     () => ({
       id: String(playbackClip || "Idle").toLowerCase(),
@@ -471,8 +479,12 @@ export function Dog3D({
 
   const effectiveRotation = useMemo(() => {
     if (ghost) return [0, Math.PI * -0.08, 0];
-    const facingKey = String(facing || "").trim().toLowerCase();
-    const dogFacingKey = String(dog?.facing || "").trim().toLowerCase();
+    const facingKey = String(facing || "")
+      .trim()
+      .toLowerCase();
+    const dogFacingKey = String(dog?.facing || "")
+      .trim()
+      .toLowerCase();
     if (facingKey === "left" || dogFacingKey === "left") {
       return [rotation[0], Math.PI * -0.16, rotation[2] || 0];
     }
@@ -508,12 +520,7 @@ export function Dog3D({
     if (!hasModelClips) {
       const motion = motionPaused
         ? { x: 0, y: 0, z: 0, xRot: 0, yRot: 0, zRot: 0 }
-        : resolveStaticMotion(
-            desiredClip,
-            t,
-            renderMotion || resolution,
-            action
-          );
+        : resolveStaticMotion(clipName, t, renderMotion || resolution, action);
       const squashX = motion.squashX || 1;
       const squashY = motion.squashY || 1;
       const squashZ = motion.squashZ || 1;
@@ -598,15 +605,14 @@ export function Dog3D({
       actionDip +
       Math.sin(t * (playbackClip === "Sleep" ? 1.1 : 1.8)) * breath;
 
-    root.rotation.x =
-      effectiveRotation[0] +
-      actionPitch +
-      Math.sin(t * 0.8) * (playbackClip === "Sleep" ? 0.018 : 0.01);
-
-    root.rotation.y = effectiveRotation[1] + lookYaw + wanderSway;
+      root.rotation.x =
+        effectiveRotation[0] +
+        actionPitch +
+        Math.sin(t * 0.8) * (playbackClip === "Sleep" ? 0.018 : 0.01);
   });
 
   useEffect(() => {
+    const clonedMaterials = [];
     modelScene.traverse((node) => {
       if (!node?.isMesh && !node?.isSkinnedMesh) return;
 
@@ -614,8 +620,22 @@ export function Dog3D({
       node.receiveShadow = true;
       node.frustumCulled = false;
 
+      // Only clone and track if not already cloned
+      if (node.material && !node.material._dog3dCloned) {
+        const cloned = node.material.clone();
+        cloned._dog3dCloned = true;
+        clonedMaterials.push(cloned);
+        node.material = cloned;
+      }
+
       applyMaterialState(node, { ghost, opacity });
     });
+
+    return () => {
+      clonedMaterials.forEach((mat) => {
+        if (mat.dispose) mat.dispose();
+      });
+    };
   }, [modelScene, ghost, opacity]);
 
   useEffect(() => {
@@ -669,7 +689,7 @@ export function Dog3D({
 
     const clipName = feedActionActive
       ? resolveFeedingClipName(effectiveFeedPhase, actions)
-      : resolveClipName(playbackClip, actions);
+      : resolveAvailableDogAnimation(playbackClip, actions, { warn: true });
     if (!clipName || currentClipRef.current === clipName) return;
 
     const nextAction = actions?.[clipName];
@@ -679,12 +699,23 @@ export function Dog3D({
       currentActionRef.current.fadeOut(0.2);
     }
 
-    nextAction.reset().fadeIn(0.2).play();
+    const actionKey = normalizeMotionKey(action || playbackClip);
+    const oneShotAction = [...ONE_SHOT_DOG_ACTIONS].some(
+      (oneShotActionKey) => normalizeMotionKey(oneShotActionKey) === actionKey
+    );
+    nextAction.reset();
+    nextAction.setLoop(
+      oneShotAction ? LoopOnce : LoopRepeat,
+      oneShotAction ? 1 : Infinity
+    );
+    nextAction.clampWhenFinished = oneShotAction;
+    nextAction.fadeIn(0.2).play();
 
     currentActionRef.current = nextAction;
     currentClipRef.current = clipName;
   }, [
     actions,
+    action,
     effectiveFeedPhase,
     feedActionActive,
     hasModelClips,
@@ -709,18 +740,18 @@ export function Dog3D({
 
   return (
     <group
-      ref={rootRef}
       scale={scale * fit.scale}
-      position={effectivePosition}
       rotation={effectiveRotation}
     >
-      <group position={fit.offset}>
+      <group ref={rootRef} position={fit.offset}>
         <primitive object={modelScene} />
       </group>
     </group>
   );
 }
 
+// Intentionally preloading dog model GLTFs at module scope for performance.
+// This ensures models are cached before Dog3D is mounted.
 useGLTF.preload(DOG_MODEL_GLTF_PATH);
 Object.values(DOG_MODEL_PATH_BY_STAGE).forEach((modelPath) => {
   useGLTF.preload(modelPath);

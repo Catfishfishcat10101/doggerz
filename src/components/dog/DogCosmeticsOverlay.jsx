@@ -1,8 +1,4 @@
 // src/components/dog/DogCosmeticsOverlay.jsx
-// src/components/DogCosmeticsOverlay.jsx
-//
-// Layered cosmetic renderer for collar/tag overlays.
-// Asset-backed sprite layers can plug into the same interface later.
 
 import { useDispatch, useSelector } from "react-redux";
 import { useMemo } from "react";
@@ -13,7 +9,7 @@ import {
   setCosmeticsOverlayShowLabels,
   setCosmeticsOverlayShowPreviewTags,
 } from "@/store/settingsSlice.js";
-import { getDogCosmeticLayerSpecs } from "@/utils/dogCosmeticLayers.js";
+import { getDogCosmeticLayerSpecs } from "@/utils/dogCosmeticLayers";
 
 function labelFor(id) {
   return String(id || "")
@@ -22,6 +18,21 @@ function labelFor(id) {
     .trim();
 }
 
+/**
+ * @typedef {Object} DogCosmeticsOverlayProps
+ * @property {Object} equipped - Equipped cosmetic items (collar, tag, backdrop).
+ * @property {number} [size=360] - Overlay size in pixels.
+ * @property {string} [stage="PUPPY"] - Dog stage (e.g., "PUPPY", "ADULT").
+ * @property {number} [facing=1] - Dog facing direction.
+ * @property {"all"|"behind"|"front"} [layerMode="all"] - Which cosmetic layers to show.
+ * @property {boolean} [showLabels] - Whether to show labels.
+ * @property {boolean} [showPreviewTags] - Whether to show preview tags.
+ * @property {boolean} [showEditorUi=false] - Whether to show editor UI.
+ */
+
+/**
+ * @param {DogCosmeticsOverlayProps} props
+ */
 export default function DogCosmeticsOverlay({
   equipped,
   size = 360,
@@ -86,16 +97,13 @@ export default function DogCosmeticsOverlay({
     return null;
   }
 
-  const posClass =
-    position === "top-right"
-      ? "right-2 top-2 items-end"
-      : position === "bottom-left"
-        ? "left-2 bottom-2"
-        : position === "bottom-right"
-          ? "right-2 bottom-2 items-end"
-          : "left-2 top-2";
+  const posClass = {
+    "top-left": "top-0 left-0",
+    "top-right": "top-0 right-0",
+    "bottom-left": "bottom-0 left-0",
+    "bottom-right": "bottom-0 right-0",
+  }[position];
 
-  // Simple, non-asset overlay that won't break if images are missing.
   return (
     <div
       className={`dog-cosmetics-overlay dog-cosmetics-overlay--${layerMode} absolute inset-0 pointer-events-none`}

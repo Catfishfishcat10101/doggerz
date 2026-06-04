@@ -1,4 +1,5 @@
 {
+  "lang": "en",
   "id": "/",
   "name": "Doggerz",
   "short_name": "Doggerz",
@@ -6,9 +7,16 @@
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#090a0f",
-  "theme_color": "#10b981",
-  "icons": [
+  "categories": [
+    "game",
+    "pet",
+    "simulation",
+    "casual"
+  ],
+  
+   "icons": [
     {
       "src": "/assets/icons/icon-192.png",
       "sizes": "192x192",
@@ -18,6 +26,12 @@
       "src": "/assets/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
+    },
+    {
+      "src": "/assets/icons/icon-540.png",
+      "sizes": "540x720",
+      "type": "image/png"
     }
   ]
 }
+

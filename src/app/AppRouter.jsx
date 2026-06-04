@@ -1,4 +1,3 @@
-// src/app/AppRouter.jsx
 
 import * as React from "react";
 import {

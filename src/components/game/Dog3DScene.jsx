@@ -1,258 +1,212 @@
 // src/components/game/Dog3DScene.jsx
 /* eslint-disable react/no-unknown-property */
-import React, { Suspense, useMemo, useRef } from "react";
+import React, { Suspense, useMemo } from "react";
 import { Canvas } from "@react-three/fiber";
-import { useFrame } from "@react-three/fiber";
 
 import Dog3D from "@/components/dog/Dog3D.jsx";
 import DOG_STAGE_CAMERA, {
   DogCameraRig,
 } from "@/features/game/stage3d/DogCamera.jsx";
-import { DogGroundPlane } from "@/features/game/stage3d/DogGround.jsx";
-import DogLightRig from "@/features/game/stage3d/DogLightRig.jsx";
-import resolveDogStageLighting from "@/features/game/stage3d/DogLights.jsx";
 import DogShadowPlane from "@/features/game/stage3d/DogShadowPlane.jsx";
-import DogStageFx from "@/features/game/stage3d/DogStageFx.jsx";
-import DogHouse from "@/features/game/stage3d/props/DogHouse.jsx";
-import Tree from "@/features/game/stage3d/props/Tree.jsx";
-import { useDogYardMovement } from "@/features/game/rendering/useDogYardMovement.js";
-
-function clamp(value, min, max) {
-  const numeric = Number(value);
-  if (!Number.isFinite(numeric)) return min;
-  return Math.max(min, Math.min(max, numeric));
-}
-
-function normalizeScale(value) {
-  const numeric = Number(value);
-  if (!Number.isFinite(numeric) || numeric <= 0) return 1;
-  return Math.max(0.72, Math.min(1.46, numeric));
-}
-
-function normalizeActionKey(value = "") {
-  return String(value || "")
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "");
-}
 
 function resolveFacingRotation(facing = "") {
   const key = String(facing || "")
     .trim()
     .toLowerCase();
-  if (key === "left") return [0, Math.PI * -0.16, 0];
-  if (key === "right") return [0, Math.PI * 0.16, 0];
+
+  if (key === "left") return [0, Math.PI * -0.18, 0];
   if (key === "front") return [0, 0, 0];
   if (key === "back") return [0, Math.PI, 0];
-  return [0, Math.PI * 0.15, 0];
+
+  return [0, Math.PI * 0.18, 0];
 }
 
-const PHASE_ONE_ACTION_CLIPS = Object.freeze({
-  idle: "Idle",
-  idlepack: "Idle",
-  puppyidlepack: "Idle",
-  goldenyearsidle: "Idle",
-  wag: "Wag",
-  eat: "Eat",
-  feed: "Feed",
-  feedquick: "Feed",
-  quickfeed: "Feed",
-  food: "Feed",
-  drink: "Drink",
-  water: "Drink",
-  sleep: "Sleep",
-  sleeping: "Sleep",
-  puppysleepingpack: "Sleep",
-  goldenyearssleeping: "Sleep",
-  rest: "Sleep",
-  lightsleep: "Sleep",
-  bark: "Bark",
-  speak: "Bark",
-  sit: "Sit",
-  sitting: "Sit",
-  shake: "Shake",
-  paw: "Shake",
-  highfive: "High_Five",
-  highfived: "High_Five",
-  clean: "Scratch",
-  bath: "Scratch",
-  bathe: "Scratch",
-  scratch: "Scratch",
-  potty: "Sniff",
-  sniff: "Sniff",
-  play: "Wag",
-  returngreet: "Wag",
-  returnsleeping: "Sleep",
-  returnannoyed: "Bark",
-  dailyreward: "Wag",
-});
-
-function resolvePhaseOneAction(value = "") {
-  const key = normalizeActionKey(value);
-  if (!key) return "";
-  if (PHASE_ONE_ACTION_CLIPS[key]) return PHASE_ONE_ACTION_CLIPS[key];
-  if (key.includes("highfive")) return "High_Five";
-  if (key.includes("shake") || key.includes("paw")) return "Shake";
-  if (key.includes("sit")) return "Sit";
-  if (key.includes("bark") || key.includes("speak")) return "Bark";
-  if (key.includes("sleep") || key.includes("rest")) return "Sleep";
-  if (
-    key.includes("bath") ||
-    key.includes("clean") ||
-    key.includes("scratch")
-  ) {
-    return "Scratch";
-  }
-  if (key.includes("potty") || key.includes("sniff")) return "Sniff";
-  if (key.includes("play")) return "Wag";
-  if (key.includes("eat") || key.includes("feed") || key.includes("food")) {
-    return "Feed";
-  }
-  if (
-    key.includes("walk") ||
-    key.includes("run") ||
-    key.includes("trot") ||
-    key.includes("fetch") ||
-    key.includes("zoom")
-  ) {
-    return "Wag";
-  }
-  return "";
-}
-
-function isStationaryPhaseOneAction(value = "") {
-  const action = resolvePhaseOneAction(value);
-  return [
-    "Feed",
-    "Drink",
-    "Sleep",
-    "Bark",
-    "Sit",
-    "Shake",
-    "High_Five",
-    "Sniff",
-    "Scratch",
-  ].includes(action);
-}
-
-function shouldAllowDogWander(scene, dogView, action = "") {
-  if (dogView?.paused || dogView?.reduceMotion) return false;
-  if (scene?.allowDogWander === false) return false;
-  if (scene?.isSleeping || dogView?.renderModel?.isSleeping) return false;
-  if (isStationaryPhaseOneAction(action)) return false;
-
-  const dog = dogView?.dog || {};
-  const energy = clamp(dog?.stats?.energy ?? scene?.energyPct ?? 50, 0, 100);
-  const health = clamp(dog?.stats?.health ?? scene?.healthPct ?? 100, 0, 100);
-  const hunger = clamp(dog?.stats?.hunger ?? 0, 0, 100);
-  const thirst = clamp(dog?.stats?.thirst ?? 0, 0, 100);
-  const lastAction = normalizeActionKey(dog?.lastAction || scene?.lastAction);
-  const lastActionAt = Number(
-    dog?.careResponse?.createdAt || scene?.lastCareResponse?.createdAt || 0
-  );
-  const recentActionActive =
-    lastActionAt > 0 && Date.now() - lastActionAt < 6000;
-
-  if (
-    recentActionActive &&
-    lastAction &&
-    !["idle", "wag"].includes(lastAction)
-  ) {
-    return false;
-  }
-  if (energy < 42 || health < 45 || hunger > 78 || thirst > 78) return false;
-
-  return true;
-}
-
-function resolveStableDogAction(scene, dogView) {
-  const renderModel = dogView?.renderModel || null;
-  const rawRequested = String(
-    scene?.currentAction ||
-      scene?.requestedAction ||
-      dogView?.requestedAction ||
-      renderModel?.anim ||
-      ""
-  )
-    .trim()
-    .toLowerCase();
-  const requested = resolvePhaseOneAction(rawRequested) || rawRequested;
-  const sleeping = Boolean(
-    scene?.isSleeping ||
-    scene?.sleeping ||
-    dogView?.isSleeping ||
-    renderModel?.isSleeping ||
-    requested.includes("sleep") ||
-    requested.includes("rest")
-  );
-
-  if (sleeping) return "sleep";
-  return requested || "idle";
-}
-
-function resolveSceneArt(scene, lighting) {
-  const weatherKey = String(scene?.weatherKey || "clear").toLowerCase();
-  const moodKey = String(scene?.moodLabel || "content").toLowerCase();
-  const careTone = String(scene?.careTone || "steady").toLowerCase();
-  const stageKey = String(scene?.stageKey || "PUPPY").toUpperCase();
-  const energyPct = clamp(scene?.energyPct, 0, 100);
-  const happinessPct = clamp(scene?.happinessPct, 0, 100);
-  const cleanlinessPct = clamp(scene?.cleanlinessPct, 0, 100);
-  const bondPct = clamp(scene?.bondPct, 0, 100);
-  const tired =
-    scene?.isSleeping || moodKey.includes("tired") || energyPct < 30;
-  const strained =
-    careTone === "neglected" ||
-    cleanlinessPct <= 25 ||
-    moodKey.includes("uneasy");
-  const thriving =
-    careTone === "secure" || (happinessPct >= 75 && bondPct >= 70);
-  const rainy =
-    weatherKey.includes("rain") ||
-    weatherKey.includes("storm") ||
-    weatherKey.includes("drizzle");
-  const snowy = weatherKey.includes("snow") || weatherKey.includes("sleet");
-
-  return {
-    groundAccentColor: rainy
-      ? "#6d816d"
-      : snowy
-        ? "#97a2a8"
-        : lighting.groundColor,
-    grassColor: rainy ? "#45694a" : snowy ? "#8fa1a4" : "#496f3e",
-    shadowOpacity: tired ? 0.14 : 0.24,
-    treeScale: stageKey === "SENIOR" ? 0.76 : 0.72,
-    treeLeafColors: strained
-      ? ["#4f664e", "#5b7256", "#465b45"]
-      : thriving
-        ? ["#5b8755", "#6b955f", "#4f764a"]
-        : ["#53754f", "#62825a", "#486847"],
-    trunkColor: stageKey === "SENIOR" ? "#6b523d" : "#72553a",
-    houseBodyColor: strained ? "#7c5a45" : thriving ? "#906147" : "#855a41",
-    houseRoofColor: strained ? "#674433" : "#734d37",
-    houseTrimColor: strained ? "#4c3529" : "#52382a",
-    houseDoorwayColor: strained ? "#32241b" : "#3c2a1d",
-    houseGlow: lighting.isNight && tired ? 0.9 : 0,
-    auraColor: thriving ? "#baf6d7" : "#f6ddb5",
-    dogFocusGlow: bondPct >= 80 ? 0.22 : 0.12,
-  };
-}
-
-function DogModelFallback({ art }) {
+function SkyBackdrop() {
   return (
     <group>
-      <mesh
-        position={[DOG_STAGE_CAMERA.dogAnchor[0], -1.54, -0.88]}
-        rotation={[-Math.PI / 2, 0, 0]}
-      >
-        <ringGeometry args={[0.28, 0.42, 36]} />
-        <meshBasicMaterial
-          color={String(art?.auraColor || "#baf6d7")}
-          transparent
-          opacity={0.26}
-        />
+      <mesh position={[0, 1.95, -4.8]}>
+        <planeGeometry args={[18, 7]} />
+        <meshBasicMaterial color="#8fcbe6" depthWrite={false} />
       </mesh>
-      <DogShadowPlane opacity={0.22} />
+
+      <mesh position={[0, -0.25, -4.7]}>
+        <planeGeometry args={[18, 2.4]} />
+        <meshBasicMaterial color="#5f9b57" depthWrite={false} />
+      </mesh>
+
+      <mesh position={[-3.9, 2.5, -4.6]}>
+        <sphereGeometry args={[0.42, 18, 18]} />
+        <meshBasicMaterial color="#ffffff" transparent opacity={0.55} />
+      </mesh>
+
+      <mesh position={[-3.45, 2.58, -4.6]}>
+        <sphereGeometry args={[0.52, 18, 18]} />
+        <meshBasicMaterial color="#ffffff" transparent opacity={0.48} />
+      </mesh>
+
+      <mesh position={[-2.95, 2.48, -4.6]}>
+        <sphereGeometry args={[0.38, 18, 18]} />
+        <meshBasicMaterial color="#ffffff" transparent opacity={0.42} />
+      </mesh>
+    </group>
+  );
+}
+
+function BackyardFence() {
+  const boards = useMemo(() => {
+    return Array.from({ length: 17 }, (_, index) => index - 8);
+  }, []);
+
+  return (
+    <group position={[0, -0.55, -3.25]}>
+      <mesh position={[0, -0.48, -0.04]}>
+        <boxGeometry args={[11.8, 0.18, 0.14]} />
+        <meshStandardMaterial color="#7b573b" roughness={0.9} />
+      </mesh>
+
+      <mesh position={[0, 0.18, -0.04]}>
+        <boxGeometry args={[11.8, 0.18, 0.14]} />
+        <meshStandardMaterial color="#8b6341" roughness={0.88} />
+      </mesh>
+
+      {boards.map((x) => {
+        const isEven = Math.abs(x) % 2 === 0;
+
+        return (
+          <mesh key={x} position={[x * 0.68, -0.1, 0]}>
+            <boxGeometry args={[0.38, 1.8, 0.14]} />
+            <meshStandardMaterial
+              color={isEven ? "#946b47" : "#805b3d"}
+              roughness={0.92}
+            />
+          </mesh>
+        );
+      })}
+    </group>
+  );
+}
+
+function GrassGround() {
+  return (
+    <group>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.08, 0]}>
+        <planeGeometry args={[16, 12, 1, 1]} />
+        <meshStandardMaterial color="#4f8f45" roughness={0.96} />
+      </mesh>
+
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.075, 1.35]}>
+        <circleGeometry args={[3.8, 48]} />
+        <meshStandardMaterial color="#69a75a" roughness={0.98} />
+      </mesh>
+
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-2.7, -1.07, -0.55]}>
+        <circleGeometry args={[1.25, 32]} />
+        <meshStandardMaterial color="#3f7838" roughness={1} />
+      </mesh>
+
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[3.0, -1.07, -0.35]}>
+        <circleGeometry args={[1.45, 32]} />
+        <meshStandardMaterial color="#3f7838" roughness={1} />
+      </mesh>
+    </group>
+  );
+}
+
+function DogHouse() {
+  return (
+    <group position={[-3.35, -0.72, -2.05]} rotation={[0, 0.08, 0]}>
+      <mesh position={[0, 0.16, 0]}>
+        <boxGeometry args={[1.25, 0.9, 0.95]} />
+        <meshStandardMaterial color="#9a4f35" roughness={0.85} />
+      </mesh>
+
+      <mesh position={[0, 0.72, 0]} rotation={[0, 0, Math.PI / 4]}>
+        <boxGeometry args={[0.95, 0.95, 1.05]} />
+        <meshStandardMaterial color="#633322" roughness={0.88} />
+      </mesh>
+
+      <mesh position={[0, -0.1, 0.49]}>
+        <boxGeometry args={[0.42, 0.58, 0.08]} />
+        <meshStandardMaterial color="#20130f" roughness={0.9} />
+      </mesh>
+    </group>
+  );
+}
+
+function Tree() {
+  return (
+    <group position={[3.65, -0.72, -2.35]}>
+      <mesh position={[0, 0.35, 0]}>
+        <cylinderGeometry args={[0.16, 0.24, 1.25, 14]} />
+        <meshStandardMaterial color="#6b432b" roughness={0.92} />
+      </mesh>
+
+      <mesh position={[0, 1.25, 0]}>
+        <sphereGeometry args={[0.82, 22, 22]} />
+        <meshStandardMaterial color="#2f7a3c" roughness={0.96} />
+      </mesh>
+
+      <mesh position={[-0.42, 1.05, 0.05]}>
+        <sphereGeometry args={[0.55, 18, 18]} />
+        <meshStandardMaterial color="#3b8a45" roughness={0.96} />
+      </mesh>
+
+      <mesh position={[0.48, 1.02, -0.03]}>
+        <sphereGeometry args={[0.58, 18, 18]} />
+        <meshStandardMaterial color="#327e3d" roughness={0.96} />
+      </mesh>
+    </group>
+  );
+}
+
+function Bushes() {
+  return (
+    <group>
+      <mesh position={[-4.25, -0.93, -2.35]}>
+        <sphereGeometry args={[0.42, 18, 18]} />
+        <meshStandardMaterial color="#2f7d3b" roughness={1} />
+      </mesh>
+
+      <mesh position={[-3.82, -0.92, -2.42]}>
+        <sphereGeometry args={[0.34, 18, 18]} />
+        <meshStandardMaterial color="#3b8e46" roughness={1} />
+      </mesh>
+
+      <mesh position={[4.2, -0.93, -2.55]}>
+        <sphereGeometry args={[0.42, 18, 18]} />
+        <meshStandardMaterial color="#2f7d3b" roughness={1} />
+      </mesh>
+
+      <mesh position={[4.62, -0.92, -2.48]}>
+        <sphereGeometry args={[0.34, 18, 18]} />
+        <meshStandardMaterial color="#3b8e46" roughness={1} />
+      </mesh>
+    </group>
+  );
+}
+
+function BackyardScene() {
+  return (
+    <group>
+      <SkyBackdrop />
+      <BackyardFence />
+      <GrassGround />
+      <DogHouse />
+      <Tree />
+      <Bushes />
+    </group>
+  );
+}
+
+function DogFallback() {
+  return (
+    <group>
+      <DogShadowPlane opacity={0.2} />
+
+      <mesh position={[DOG_STAGE_CAMERA.dogAnchor[0], -0.82, -0.02]}>
+        <boxGeometry args={[0.9, 0.62, 0.48]} />
+        <meshStandardMaterial color="#f4f1e8" roughness={0.82} />
+      </mesh>
     </group>
   );
 }
@@ -277,190 +231,59 @@ class DogRenderBoundary extends React.Component {
   }
 }
 
-function StageBackdrop({ lighting, reduceMotion = false }) {
-  const skyRef = useRef(null);
-  const glowRef = useRef(null);
-
-  useFrame((state) => {
-    if (reduceMotion) return;
-    const t = state.clock.elapsedTime;
-    if (skyRef.current) {
-      skyRef.current.position.x = Math.sin(t * 0.035) * 0.08;
-    }
-    if (glowRef.current) {
-      glowRef.current.position.x = Math.sin(t * 0.055) * 0.12;
-      glowRef.current.position.y = 3.15 + Math.sin(t * 0.04) * 0.035;
-    }
-  });
+function StableDog({ scene, dogView }) {
+  const { dog = null, renderModel = null, paused = false } = dogView || {};
+  const facing = renderModel?.facing || dog?.facing || "right";
 
   return (
-    <>
-      <fog
-        attach="fog"
-        args={[lighting.fogColor, lighting.fogNear, lighting.fogFar]}
-      />
-      <mesh ref={glowRef} position={[0, 3.15, -5.25]}>
-        <planeGeometry args={[28, 9]} />
-        <meshBasicMaterial color={lighting.skyGlowColor} depthWrite={false} />
-      </mesh>
-      <mesh ref={skyRef} position={[0, 0.72, -5.2]}>
-        <planeGeometry args={[28, 10]} />
-        <meshBasicMaterial
-          color={lighting.skyColor}
-          transparent
-          opacity={0.72}
-          depthWrite={false}
-        />
-      </mesh>
-      <mesh position={[0, -1.72, -4.8]}>
-        <planeGeometry args={[28, 5.2]} />
-        <meshBasicMaterial
-          color={lighting.groundColor}
-          transparent
-          opacity={0.82}
-          depthWrite={false}
-        />
-      </mesh>
-    </>
-  );
-}
-
-function DogLayer({ scene, dogView, art }) {
-  const ghost = scene?.behavior?.ghost;
-  const {
-    dog = null,
-    renderModel = null,
-    paused = false,
-    reduceMotion = false,
-    scale = 1,
-  } = dogView || {};
-  const action = resolveStableDogAction(scene, dogView);
-  const canWander = shouldAllowDogWander(scene, dogView, action);
-  const yardDog = useDogYardMovement({
-    scene,
-    basePosition: DOG_STAGE_CAMERA.dogAnchor,
-    requestedAction: canWander ? "idle" : action,
-    requestedFacing: dogView?.requestedFacing,
-    paused: !canWander,
-    reduceMotion,
-  });
-  const facing =
-    canWander && yardDog?.moving
-      ? yardDog.facing
-      : dogView?.requestedFacing ||
-        renderModel?.facing ||
-        dog?.facing ||
-        scene?.facing ||
-        "right";
-  const renderAction = canWander && yardDog?.moving ? "Walk" : action;
-  const resolvedScale = normalizeScale(
-    (scale || renderModel?.scaleMultiplier || 1) * 1.22
-  );
-  const stablePosition =
-    canWander && Array.isArray(yardDog?.position)
-      ? yardDog.position
-      : DOG_STAGE_CAMERA.dogAnchor;
-
-  return (
-    <DogRenderBoundary fallback={<DogModelFallback art={art} />}>
+    <DogRenderBoundary fallback={<DogFallback />}>
       <Dog3D
         scene={scene}
         dog={dog}
-        action={renderAction}
+        action="idle"
+        desiredClip="idle"
         facing={facing}
-        desiredClip={renderAction}
-        position={stablePosition}
+        position={DOG_STAGE_CAMERA.dogAnchor}
         rotation={resolveFacingRotation(facing)}
-        scale={resolvedScale}
+        scale={1.12}
         paused={paused}
-        reduceMotion={reduceMotion}
+        reduceMotion
       />
-      {ghost?.present ? (
-        <>
-          <Dog3D
-            scene={scene}
-            dog={dog}
-            action="idle"
-            facing="left"
-            desiredClip="idle"
-            position={[-1.45, -1, -0.95]}
-            rotation={resolveFacingRotation("left")}
-            scale={resolvedScale}
-            paused={paused}
-            reduceMotion={reduceMotion}
-            ghost
-          />
-          <pointLight
-            position={[-1.45, -0.2, -0.9]}
-            color="#bedbff"
-            intensity={Number(ghost?.glowOpacity || 0)}
-            distance={3.4}
-          />
-        </>
-      ) : null}
     </DogRenderBoundary>
   );
 }
 
 export function Dog3DScene({ scene = null, dogView = {} }) {
-  const lighting = resolveDogStageLighting(scene);
-  const art = useMemo(
-    () => resolveSceneArt(scene, lighting),
-    [scene, lighting]
-  );
-
   return (
-    <div
-      style={{
-        width: "100%",
-        height: "100%",
-        background: `linear-gradient(180deg, ${lighting.skyGlowColor} 0%, ${lighting.skyColor} 60%, ${lighting.groundColor} 100%)`,
-      }}
-    >
+    <div className="h-full min-h-[520px] w-full overflow-hidden bg-[#8fcbe6]">
       <Canvas
         shadows={false}
+        dpr={[1, 1.25]}
         gl={{
           antialias: true,
           alpha: false,
           powerPreference: "default",
         }}
-        dpr={[1, 1.25]}
       >
-        <DogCameraRig />
-        <DogLightRig lighting={lighting} />
-        <StageBackdrop
-          lighting={lighting}
-          reduceMotion={Boolean(dogView?.reduceMotion || dogView?.paused)}
+        <color attach="background" args={["#8fcbe6"]} />
+
+        <DogCameraRig
+          position={[0, 0.88, 5.15]}
+          lookAt={[0, -0.62, -0.35]}
+          fov={34}
         />
-        <DogGroundPlane
-          color={art.groundAccentColor}
-          grassColor={art.grassColor}
-        />
-        <DogShadowPlane opacity={art.shadowOpacity} />
-        <Tree
-          scale={art.treeScale}
-          trunkColor={art.trunkColor}
-          leafColors={art.treeLeafColors}
-        />
-        <DogHouse
-          bodyColor={art.houseBodyColor}
-          roofColor={art.houseRoofColor}
-          trimColor={art.houseTrimColor}
-          doorwayColor={art.houseDoorwayColor}
-          windowGlow={art.houseGlow}
-        />
-        {art.dogFocusGlow > 0 ? (
-          <pointLight
-            position={[0, -0.15, 1.8]}
-            color={art.auraColor}
-            intensity={art.dogFocusGlow}
-            distance={5.2}
-          />
-        ) : null}
-        <Suspense fallback={<DogModelFallback art={art} />}>
-          <DogLayer scene={scene} dogView={dogView} art={art} />
+
+        <ambientLight intensity={0.92} />
+        <hemisphereLight args={["#f8fbff", "#597a42", 1.35]} />
+        <directionalLight position={[3.6, 5.4, 4.2]} intensity={1.35} />
+
+        <BackyardScene />
+
+        <DogShadowPlane opacity={0.22} />
+
+        <Suspense fallback={<DogFallback />}>
+          <StableDog scene={scene} dogView={dogView} />
         </Suspense>
-        <DogStageFx scene={scene} dogView={dogView} lighting={lighting} />
       </Canvas>
     </div>
   );

@@ -64,8 +64,8 @@ export default function Landing() {
   if (isLoggedIn) return <Navigate to={PATHS.GAME} replace />;
 
   return (
-    <PageShell useSurface={false}>
-      <div className="relative isolate mx-auto flex min-h-[100dvh] w-full max-w-md flex-col overflow-hidden border-x border-white/10 bg-black shadow-2xl">
+    <PageShell useSurface={false} width="full" mainClassName="px-0 py-0">
+      <div className="relative isolate mx-auto flex min-h-screen min-h-[100svh] w-full max-w-md flex-col overflow-hidden border-x border-white/10 bg-black shadow-2xl">
         {showBlurDecor && (
           <>
             <div className="pointer-events-none absolute -left-20 -top-20 h-72 w-72 rounded-full bg-doggerz-leaf/25 blur-[100px]" />
@@ -73,7 +73,7 @@ export default function Landing() {
           </>
         )}
 
-        <div className="z-10 mt-10 flex flex-1 flex-col items-center justify-center p-8 text-center">
+        <div className="z-10 flex flex-1 flex-col items-center justify-center px-8 pb-8 pt-[max(2.5rem,env(safe-area-inset-top))] text-center">
           <div className="flex justify-center">
             <div className="relative inline-flex items-center justify-center">
               <div className="absolute inset-0 rounded-full bg-doggerz-leaf/25 blur-2xl" />
@@ -98,14 +98,14 @@ export default function Landing() {
             <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_35%_30%,rgba(74,222,128,0.12),rgba(0,0,0,0)_60%)]" />
             <div className="absolute inset-0 grid place-items-center">
               <HeroDog3D
-                stage="PUPPY"
-                mood="happy"
+                sceneOnly
+                className="h-full w-full"
               />
             </div>
           </div>
         </div>
 
-        <div className="relative z-20 flex w-full flex-col gap-4 p-6 pb-12">
+        <div className="relative z-20 flex w-full flex-col gap-4 px-6 pb-[max(3rem,calc(env(safe-area-inset-bottom)+1.5rem))] pt-6">
           <Link
             to={PATHS.ADOPT}
             className="dz-touch-button touch-manipulation w-full rounded-2xl bg-doggerz-leaf py-4 text-center text-lg font-extrabold text-black shadow-lg transition-all hover:scale-[1.01] hover:bg-doggerz-neonSoft hover:shadow-[0_0_40px_rgba(34,197,94,0.5)]"

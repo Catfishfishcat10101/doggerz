@@ -64,16 +64,7 @@ const USER_PROFILE_SYNC_DEBOUNCE_MS = 600;
 const HYDRATE_ERROR_KEY = "doggerz:hydrateError";
 let hasBootstrappedDogSession = false;
 let lastHydratedCloudUserId = null;
-
-let pixiTickerPromise = null;
 let capacitorAppPromise = null;
-async function getPixiTicker() {
-  if (pixiTickerPromise) return pixiTickerPromise;
-  pixiTickerPromise = import("pixi.js")
-    .then((mod) => mod?.Ticker?.shared || null)
-    .catch(() => null);
-  return pixiTickerPromise;
-}
 
 async function getCapacitorApp() {
   const isNative =
@@ -531,15 +522,6 @@ export default function DogAIEngine({
           "appStateChange",
           async ({ isActive }) => {
             if (cancelled) return;
-            try {
-              const ticker = await getPixiTicker();
-              if (ticker) {
-                if (isActive) ticker.start();
-                else ticker.stop();
-              }
-            } catch {
-              // ignore ticker errors
-            }
 
             if (!isActive) {
               if (shouldRunReduxHeartbeat) {

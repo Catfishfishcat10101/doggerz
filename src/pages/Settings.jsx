@@ -92,19 +92,6 @@ import {
   setTraitImpactShowMeter,
   setTraitImpactShowTips,
   setTraitImpactShowHighlights,
-  setDogCanvasMotion,
-  setDogCanvasShadow,
-  setDogCanvasScale,
-  setDogPixiMotion,
-  setDogPixiScale,
-  setDogPixiQuality,
-  setSpriteSheetMotion,
-  setSpriteSheetUsePixelated,
-  setSpriteSheetSize,
-  setPixiDogMotion,
-  setPixiDogShowHearts,
-  setPixiDogShowShadow,
-  setPixiDogQuality,
   setGameFxSkillPulse,
   setGameFxStoryGlow,
   setGameFxBranchAccent,
@@ -322,8 +309,8 @@ function Card({
 
 export default function Settings() {
   const dispatch = useDispatch();
-  const { settings, currentZip, dogRenderMode } = useUserSettingsView();
-  const { setDogRenderMode, setZip } = useUserActions();
+  const { settings, currentZip } = useUserSettingsView();
+  const { setZip } = useUserActions();
   const vacation = /** @type {any} */ (useDogVacation());
   const toast = useToast();
 
@@ -836,18 +823,6 @@ export default function Settings() {
 
           <Card title="Game" subtitle="Controls and visuals">
             <SelectRow
-              id="dogRenderMode"
-              label="Dog render style"
-              description="Switch between pixel sprites and realistic assets."
-              value={dogRenderMode || "sprite"}
-              onChange={setDogRenderMode}
-              options={[
-                { value: "sprite", label: "Sprite (pixel)" },
-                { value: "realistic", label: "Realistic" },
-              ]}
-            />
-
-            <SelectRow
               id="trainingInputMode"
               label="Training input"
               description="Choose button training, voice training, or both."
@@ -1302,140 +1277,6 @@ export default function Settings() {
               description="Highlight strong/weak trait impacts."
               checked={settings?.traitImpactShowHighlights !== false}
               onChange={(v) => dispatch(setTraitImpactShowHighlights(v))}
-            />
-          </Card>
-
-          <Card
-            title="Dog rendering"
-            subtitle="Fine-tune visuals for sprites, Pixi, and canvases"
-          >
-            <Switch
-              id="dogCanvasMotion"
-              label="Canvas motion"
-              description="Enable subtle motion on canvas-based dog renders."
-              checked={settings?.dogCanvasMotion !== false}
-              onChange={(v) => dispatch(setDogCanvasMotion(v))}
-            />
-
-            <Switch
-              id="dogCanvasShadow"
-              label="Canvas shadow"
-              description="Show a soft shadow under the dog."
-              checked={settings?.dogCanvasShadow !== false}
-              onChange={(v) => dispatch(setDogCanvasShadow(v))}
-            />
-
-            <SelectRow
-              id="dogCanvasScale"
-              label="Canvas scale"
-              description="Size of the dog canvas renderer."
-              value={settings?.dogCanvasScale || "normal"}
-              onChange={(v) => dispatch(setDogCanvasScale(v))}
-              options={[
-                { value: "small", label: "Small" },
-                { value: "normal", label: "Normal" },
-                { value: "large", label: "Large" },
-              ]}
-            />
-
-            <Switch
-              id="dogPixiMotion"
-              label="Pixi motion"
-              description="Enable Pixi animation loops."
-              checked={settings?.dogPixiMotion !== false}
-              onChange={(v) => dispatch(setDogPixiMotion(v))}
-            />
-
-            <SelectRow
-              id="dogPixiScale"
-              label="Pixi scale"
-              description="Size of the Pixi renderer."
-              value={settings?.dogPixiScale || "normal"}
-              onChange={(v) => dispatch(setDogPixiScale(v))}
-              options={[
-                { value: "small", label: "Small" },
-                { value: "normal", label: "Normal" },
-                { value: "large", label: "Large" },
-              ]}
-            />
-
-            <SelectRow
-              id="dogPixiQuality"
-              label="Pixi quality"
-              description="Texture quality for Pixi renderer."
-              value={settings?.dogPixiQuality || "auto"}
-              onChange={(v) => dispatch(setDogPixiQuality(v))}
-              options={[
-                { value: "auto", label: "Auto" },
-                { value: "low", label: "Low" },
-                { value: "high", label: "High" },
-              ]}
-            />
-
-            <Switch
-              id="spriteSheetMotion"
-              label="Sprite sheet motion"
-              description="Enable sprite sheet animations."
-              checked={settings?.spriteSheetMotion !== false}
-              onChange={(v) => dispatch(setSpriteSheetMotion(v))}
-            />
-
-            <Switch
-              id="spriteSheetUsePixelated"
-              label="Pixelated sprites"
-              description="Use hard edges for sprite sheet rendering."
-              checked={settings?.spriteSheetUsePixelated}
-              onChange={(v) => dispatch(setSpriteSheetUsePixelated(v))}
-            />
-
-            <SelectRow
-              id="spriteSheetSize"
-              label="Sprite sheet size"
-              description="Scale for sprite sheet rendering."
-              value={settings?.spriteSheetSize || "normal"}
-              onChange={(v) => dispatch(setSpriteSheetSize(v))}
-              options={[
-                { value: "small", label: "Small" },
-                { value: "normal", label: "Normal" },
-                { value: "large", label: "Large" },
-              ]}
-            />
-
-            <Switch
-              id="pixiDogMotion"
-              label="PixiDog motion"
-              description="Enable animated PixiDog layers."
-              checked={settings?.pixiDogMotion !== false}
-              onChange={(v) => dispatch(setPixiDogMotion(v))}
-            />
-
-            <Switch
-              id="pixiDogShowHearts"
-              label="PixiDog hearts"
-              description="Show heart particles for PixiDog."
-              checked={settings?.pixiDogShowHearts !== false}
-              onChange={(v) => dispatch(setPixiDogShowHearts(v))}
-            />
-
-            <Switch
-              id="pixiDogShowShadow"
-              label="PixiDog shadow"
-              description="Show a shadow under PixiDog."
-              checked={settings?.pixiDogShowShadow !== false}
-              onChange={(v) => dispatch(setPixiDogShowShadow(v))}
-            />
-
-            <SelectRow
-              id="pixiDogQuality"
-              label="PixiDog quality"
-              description="Rendering quality for PixiDog."
-              value={settings?.pixiDogQuality || "auto"}
-              onChange={(v) => dispatch(setPixiDogQuality(v))}
-              options={[
-                { value: "auto", label: "Auto" },
-                { value: "low", label: "Low" },
-                { value: "high", label: "High" },
-              ]}
             />
           </Card>
 

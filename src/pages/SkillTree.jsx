@@ -4,6 +4,7 @@ import * as React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import SubpageShell from "@/components/layout/SubpageShell.jsx";
+import { SubpageHeader } from "@/components/layout/PageSections.jsx";
 import { useDog, useDogSkillTreeState } from "@/hooks/useDogState.js";
 import { PATHS } from "@/app/routes.js";
 import {
@@ -157,14 +158,23 @@ export default function SkillTree() {
   return (
     <SubpageShell
       width="wide"
-      className="dz-skilltree relative overflow-hidden text-zinc-100"
+      useSurface={false}
+      className="dz-skilltree text-zinc-100"
     >
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute inset-x-0 top-0 h-64 bg-gradient-to-b from-emerald-500/10 to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 h-72 bg-gradient-to-t from-sky-500/10 to-transparent" />
-      </div>
+      <div className="relative w-full space-y-6">
+        <SubpageHeader
+          label="MAIN SECTION"
+          title="Train"
+          backTo={PATHS.GAME}
+        />
 
-      <div className="relative">
+        <div className="relative overflow-hidden">
+          <div className="pointer-events-none absolute inset-0 overflow-hidden">
+            <div className="absolute inset-x-0 top-0 h-64 bg-gradient-to-b from-emerald-500/10 to-transparent" />
+            <div className="absolute inset-x-0 bottom-0 h-72 bg-gradient-to-t from-sky-500/10 to-transparent" />
+          </div>
+
+          <div className="relative">
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div className="max-w-2xl">
             <div className="text-xs uppercase tracking-[0.4em] text-emerald-300/80">
@@ -598,6 +608,8 @@ export default function SkillTree() {
               </div>
             </section>
           ))}
+        </div>
+          </div>
         </div>
       </div>
     </SubpageShell>

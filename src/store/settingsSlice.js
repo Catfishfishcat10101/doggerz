@@ -163,44 +163,6 @@ function normalizeLoadedSettings(raw) {
   next.traitImpactShowTips = next.traitImpactShowTips !== false;
   next.traitImpactShowHighlights = next.traitImpactShowHighlights !== false;
 
-  // Dog canvas UI
-  next.dogCanvasMotion = next.dogCanvasMotion !== false;
-  next.dogCanvasShadow = next.dogCanvasShadow !== false;
-  const dogCanvasScale = String(next.dogCanvasScale || "normal").toLowerCase();
-  next.dogCanvasScale = ["small", "normal", "large"].includes(dogCanvasScale)
-    ? dogCanvasScale
-    : "normal";
-
-  // Dog Pixi UI
-  next.dogPixiMotion = next.dogPixiMotion !== false;
-  const dogPixiScale = String(next.dogPixiScale || "normal").toLowerCase();
-  next.dogPixiScale = ["small", "normal", "large"].includes(dogPixiScale)
-    ? dogPixiScale
-    : "normal";
-  const dogPixiQuality = String(next.dogPixiQuality || "auto").toLowerCase();
-  next.dogPixiQuality = ["auto", "low", "high"].includes(dogPixiQuality)
-    ? dogPixiQuality
-    : "auto";
-
-  // Sprite sheet UI
-  next.spriteSheetMotion = next.spriteSheetMotion !== false;
-  next.spriteSheetUsePixelated = Boolean(next.spriteSheetUsePixelated);
-  const spriteSheetSize = String(
-    next.spriteSheetSize || "normal"
-  ).toLowerCase();
-  next.spriteSheetSize = ["small", "normal", "large"].includes(spriteSheetSize)
-    ? spriteSheetSize
-    : "normal";
-
-  // PixiDog UI
-  next.pixiDogMotion = next.pixiDogMotion !== false;
-  next.pixiDogShowHearts = next.pixiDogShowHearts !== false;
-  next.pixiDogShowShadow = next.pixiDogShowShadow !== false;
-  const pixiDogQuality = String(next.pixiDogQuality || "auto").toLowerCase();
-  next.pixiDogQuality = ["auto", "low", "high"].includes(pixiDogQuality)
-    ? pixiDogQuality
-    : "auto";
-
   // Game effects UI
   next.gameFxSkillPulse = next.gameFxSkillPulse !== false;
   next.gameFxStoryGlow = next.gameFxStoryGlow !== false;
@@ -355,27 +317,6 @@ const DEFAULT_SETTINGS_STATE = {
   traitImpactShowMeter: true,
   traitImpactShowTips: true,
   traitImpactShowHighlights: true,
-
-  // Dog canvas UI
-  dogCanvasMotion: true,
-  dogCanvasShadow: true,
-  dogCanvasScale: "normal",
-
-  // Dog Pixi UI
-  dogPixiMotion: true,
-  dogPixiScale: "normal",
-  dogPixiQuality: "auto",
-
-  // Sprite sheet UI
-  spriteSheetMotion: true,
-  spriteSheetUsePixelated: false,
-  spriteSheetSize: "normal",
-
-  // PixiDog UI
-  pixiDogMotion: true,
-  pixiDogShowHearts: true,
-  pixiDogShowShadow: true,
-  pixiDogQuality: "auto",
 
   // Game effects UI
   gameFxSkillPulse: true,
@@ -723,68 +664,6 @@ const settingsSlice = createSlice({
       state.traitImpactShowHighlights = Boolean(action.payload);
       saveToStorage(state);
     },
-    setDogCanvasMotion(state, action) {
-      state.dogCanvasMotion = Boolean(action.payload);
-      saveToStorage(state);
-    },
-    setDogCanvasShadow(state, action) {
-      state.dogCanvasShadow = Boolean(action.payload);
-      saveToStorage(state);
-    },
-    setDogCanvasScale(state, action) {
-      const value = String(action.payload || "").toLowerCase();
-      if (!["small", "normal", "large"].includes(value)) return;
-      state.dogCanvasScale = value;
-      saveToStorage(state);
-    },
-    setDogPixiMotion(state, action) {
-      state.dogPixiMotion = Boolean(action.payload);
-      saveToStorage(state);
-    },
-    setDogPixiScale(state, action) {
-      const value = String(action.payload || "").toLowerCase();
-      if (!["small", "normal", "large"].includes(value)) return;
-      state.dogPixiScale = value;
-      saveToStorage(state);
-    },
-    setDogPixiQuality(state, action) {
-      const value = String(action.payload || "").toLowerCase();
-      if (!["auto", "low", "high"].includes(value)) return;
-      state.dogPixiQuality = value;
-      saveToStorage(state);
-    },
-    setSpriteSheetMotion(state, action) {
-      state.spriteSheetMotion = Boolean(action.payload);
-      saveToStorage(state);
-    },
-    setSpriteSheetUsePixelated(state, action) {
-      state.spriteSheetUsePixelated = Boolean(action.payload);
-      saveToStorage(state);
-    },
-    setSpriteSheetSize(state, action) {
-      const value = String(action.payload || "").toLowerCase();
-      if (!["small", "normal", "large"].includes(value)) return;
-      state.spriteSheetSize = value;
-      saveToStorage(state);
-    },
-    setPixiDogMotion(state, action) {
-      state.pixiDogMotion = Boolean(action.payload);
-      saveToStorage(state);
-    },
-    setPixiDogShowHearts(state, action) {
-      state.pixiDogShowHearts = Boolean(action.payload);
-      saveToStorage(state);
-    },
-    setPixiDogShowShadow(state, action) {
-      state.pixiDogShowShadow = Boolean(action.payload);
-      saveToStorage(state);
-    },
-    setPixiDogQuality(state, action) {
-      const value = String(action.payload || "").toLowerCase();
-      if (!["auto", "low", "high"].includes(value)) return;
-      state.pixiDogQuality = value;
-      saveToStorage(state);
-    },
     setGameFxSkillPulse(state, action) {
       state.gameFxSkillPulse = Boolean(action.payload);
       saveToStorage(state);
@@ -981,19 +860,6 @@ const settingsSlice = createSlice({
       state.traitImpactShowTips = next.traitImpactShowTips !== false;
       state.traitImpactShowHighlights =
         next.traitImpactShowHighlights !== false;
-      state.dogCanvasMotion = next.dogCanvasMotion !== false;
-      state.dogCanvasShadow = next.dogCanvasShadow !== false;
-      state.dogCanvasScale = next.dogCanvasScale || "normal";
-      state.dogPixiMotion = next.dogPixiMotion !== false;
-      state.dogPixiScale = next.dogPixiScale || "normal";
-      state.dogPixiQuality = next.dogPixiQuality || "auto";
-      state.spriteSheetMotion = next.spriteSheetMotion !== false;
-      state.spriteSheetUsePixelated = Boolean(next.spriteSheetUsePixelated);
-      state.spriteSheetSize = next.spriteSheetSize || "normal";
-      state.pixiDogMotion = next.pixiDogMotion !== false;
-      state.pixiDogShowHearts = next.pixiDogShowHearts !== false;
-      state.pixiDogShowShadow = next.pixiDogShowShadow !== false;
-      state.pixiDogQuality = next.pixiDogQuality || "auto";
       state.gameFxSkillPulse = next.gameFxSkillPulse !== false;
       state.gameFxStoryGlow = next.gameFxStoryGlow !== false;
       state.gameFxBranchAccent = next.gameFxBranchAccent !== false;
@@ -1114,19 +980,6 @@ export const {
   setTraitImpactShowMeter,
   setTraitImpactShowTips,
   setTraitImpactShowHighlights,
-  setDogCanvasMotion,
-  setDogCanvasShadow,
-  setDogCanvasScale,
-  setDogPixiMotion,
-  setDogPixiScale,
-  setDogPixiQuality,
-  setSpriteSheetMotion,
-  setSpriteSheetUsePixelated,
-  setSpriteSheetSize,
-  setPixiDogMotion,
-  setPixiDogShowHearts,
-  setPixiDogShowShadow,
-  setPixiDogQuality,
   setGameFxSkillPulse,
   setGameFxStoryGlow,
   setGameFxBranchAccent,

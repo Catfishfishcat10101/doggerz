@@ -5,8 +5,6 @@ import { removeStoredValue, setStoredValue } from "@/utils/nativeStorage.js";
 
 export const USER_STORAGE_KEY = "doggerz:userState";
 
-export const DOG_RENDER_MODES = Object.freeze(["realistic"]);
-
 const DEFAULT_USER_STATE = {
   id: null,
   authResolved: false,
@@ -21,8 +19,6 @@ const DEFAULT_USER_STATE = {
     errorMessage: null,
   },
 
-  // Dog visuals
-  dogRenderMode: "realistic",
   dogName: null,
   preferredScene: "auto",
   reduceVfx: false,
@@ -62,9 +58,6 @@ function normalizeUserState(raw) {
   const preferredScene = String(raw.preferredScene || "")
     .trim()
     .toLowerCase();
-  const renderMode = String(raw.dogRenderMode || "").toLowerCase();
-  const normalizedRenderMode =
-    renderMode === "sprite" ? "realistic" : renderMode;
   const cloudSync =
     raw.cloudSync && typeof raw.cloudSync === "object" ? raw.cloudSync : {};
 
@@ -92,9 +85,6 @@ function normalizeUserState(raw) {
           ? cloudSync.errorMessage.trim()
           : null,
     },
-    dogRenderMode: DOG_RENDER_MODES.includes(normalizedRenderMode)
-      ? normalizedRenderMode
-      : DEFAULT_USER_STATE.dogRenderMode,
     dogName:
       typeof raw.dogName === "string" && raw.dogName.trim()
         ? raw.dogName.trim()
@@ -209,7 +199,6 @@ const userSlice = createSlice({
       state.avatarUrl = next.avatarUrl;
       state.zip = next.zip;
       state.cloudSync = { ...next.cloudSync };
-      state.dogRenderMode = next.dogRenderMode;
       state.dogName = next.dogName;
       state.preferredScene = next.preferredScene;
       state.reduceVfx = next.reduceVfx;
@@ -290,7 +279,6 @@ const userSlice = createSlice({
       state.coins = 0;
       state.streak = { ...DEFAULT_USER_STATE.streak };
       state.createdAt = null;
-      state.dogRenderMode = DEFAULT_USER_STATE.dogRenderMode;
       state.dogName = null;
       state.preferredScene = DEFAULT_USER_STATE.preferredScene;
       state.reduceVfx = DEFAULT_USER_STATE.reduceVfx;
@@ -339,14 +327,6 @@ const userSlice = createSlice({
       state.zip = valid;
       saveUserToStorage(state);
     },
-    setDogRenderMode(state, action) {
-      const raw = String(action.payload || "")
-        .trim()
-        .toLowerCase();
-      if (!DOG_RENDER_MODES.includes(raw)) return;
-      state.dogRenderMode = raw;
-      saveUserToStorage(state);
-    },
     setDogName(state, action) {
       const raw = String(action.payload || "").trim();
       state.dogName = raw || null;
@@ -388,7 +368,6 @@ export const {
   setCoins,
   updateStreak,
   setZip,
-  setDogRenderMode,
   setDogName,
   setPreferredScene,
   setReduceVfx,
@@ -408,8 +387,7 @@ export const selectCloudSyncState = (state) =>
 // A remembered email is just form convenience, not an authenticated session.
 export const selectIsLoggedIn = (state) => Boolean(state.user?.id);
 
-export const selectDogRenderMode = (state) =>
-  state.user?.dogRenderMode || DEFAULT_USER_STATE.dogRenderMode;
+export const selectDogRenderMode = (_state) => "realistic";
 export const selectUserDogName = (state) => state.user?.dogName || null;
 export const selectPreferredScene = (state) =>
   state.user?.preferredScene || "auto";
