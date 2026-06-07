@@ -15,8 +15,7 @@
     "simulation",
     "casual"
   ],
-  
-   "icons": [
+  "icons": [
     {
       "src": "/assets/icons/icon-192.png",
       "sizes": "192x192",
@@ -34,4 +33,3 @@
     }
   ]
 }
-

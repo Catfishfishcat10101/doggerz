@@ -6,6 +6,7 @@ import { useFrame } from "@react-three/fiber";
 import { Box3, LoopOnce, LoopRepeat, Vector3 } from "three";
 import { clone as cloneSkeleton } from "three/examples/jsm/utils/SkeletonUtils.js";
 
+import DogModelFallback from "@/components/dog/three/DogModelFallback.jsx";
 import {
   DOG_ANIMATION_CLIPS,
   ONE_SHOT_DOG_ACTIONS,
@@ -21,6 +22,10 @@ import {
 } from "@/features/game/stage3d/dog/dogAnimationMap.js";
 import { DOG_MODEL_PATH_BY_STAGE } from "@/features/game/stage3d/dog/dogModelMap.js";
 import { resolveDogModelProfile } from "@/features/game/stage3d/dog/dogModelResolver.js";
+
+function isRenderableObject3D(value) {
+  return Boolean(value && value.isObject3D === true);
+}
 
 function applyMaterialState(node, { ghost, opacity }) {
   if (!node?.material) return;
@@ -389,7 +394,10 @@ function Dog3D({
   const gltf = useGLTF(dogModelPath);
   const dogScene = gltf.scene;
   const animations = gltf.animations;
-  const modelScene = useMemo(() => cloneSkeleton(dogScene), [dogScene]);
+  const modelScene = useMemo(() => {
+    if (!isRenderableObject3D(dogScene)) return null;
+    return cloneSkeleton(dogScene);
+  }, [dogScene]);
 
   const modelLooksRigged = useMemo(() => {
     if (Array.isArray(animations) && animations.length > 0) return true;
@@ -397,6 +405,7 @@ function Dog3D({
     let hasSkinnedMesh = false;
 
     try {
+      if (!isRenderableObject3D(modelScene)) return false;
       modelScene.traverse((node) => {
         if (node?.isSkinnedMesh) hasSkinnedMesh = true;
       });
@@ -409,6 +418,10 @@ function Dog3D({
 
   const fit = useMemo(() => {
     try {
+      if (!isRenderableObject3D(modelScene)) {
+        return { scale: 1, offset: [0, 0, 0] };
+      }
+
       const box = new Box3().setFromObject(modelScene);
 
       if (!Number.isFinite(box.min.y) || !Number.isFinite(box.max.y)) {
@@ -612,6 +625,8 @@ function Dog3D({
   });
 
   useEffect(() => {
+    if (!isRenderableObject3D(modelScene)) return undefined;
+
     const clonedMaterials = [];
     modelScene.traverse((node) => {
       if (!node?.isMesh && !node?.isSkinnedMesh) return;
@@ -737,6 +752,17 @@ function Dog3D({
     },
     []
   );
+
+  if (!isRenderableObject3D(modelScene)) {
+    return (
+      <DogModelFallback
+        position={effectivePosition}
+        rotation={effectiveRotation}
+        scale={scale}
+        shadowOpacity={ghost ? 0.1 : 0.2}
+      />
+    );
+  }
 
   return (
     <group

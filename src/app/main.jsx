@@ -46,16 +46,37 @@ function renderFatalBootError(error) {
   const stack =
     error instanceof Error && error.stack ? error.stack : String(message);
 
-  root.innerHTML = `
-    <div style="min-height:100vh;display:grid;place-items:center;padding:24px;background:#090a0f;color:#e5e7eb;font-family:system-ui,sans-serif">
-      <div style="width:100%;max-width:720px;border:1px solid rgba(255,255,255,0.12);border-radius:24px;background:rgba(0,0,0,0.45);padding:24px;box-sizing:border-box">
-        <div style="font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:#86efac">Doggerz boot failure</div>
-        <h1 style="margin:12px 0 0;font-size:28px;line-height:1.1;color:#ecfccb">The app failed to start</h1>
-        <p style="margin:12px 0 0;color:rgba(229,231,235,0.8)">Doggerz hit a startup error before the main UI loaded.</p>
-        <pre style="margin:16px 0 0;padding:16px;border-radius:16px;background:rgba(255,255,255,0.05);overflow:auto;white-space:pre-wrap;word-break:break-word;color:#f4f4f5">${stack}</pre>
-      </div>
-    </div>
-  `;
+  const page = document.createElement("div");
+  page.style.cssText =
+    "min-height:100vh;display:grid;place-items:center;padding:24px;background:#090a0f;color:#e5e7eb;font-family:system-ui,sans-serif";
+
+  const panel = document.createElement("div");
+  panel.style.cssText =
+    "width:100%;max-width:720px;border:1px solid rgba(255,255,255,0.12);border-radius:24px;background:rgba(0,0,0,0.45);padding:24px;box-sizing:border-box";
+
+  const eyebrow = document.createElement("div");
+  eyebrow.style.cssText =
+    "font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:#86efac";
+  eyebrow.textContent = "Doggerz boot failure";
+
+  const title = document.createElement("h1");
+  title.style.cssText =
+    "margin:12px 0 0;font-size:28px;line-height:1.1;color:#ecfccb";
+  title.textContent = "The app failed to start";
+
+  const body = document.createElement("p");
+  body.style.cssText = "margin:12px 0 0;color:rgba(229,231,235,0.8)";
+  body.textContent =
+    "Doggerz hit a startup error before the main UI loaded.";
+
+  const details = document.createElement("pre");
+  details.style.cssText =
+    "margin:16px 0 0;padding:16px;border-radius:16px;background:rgba(255,255,255,0.05);overflow:auto;white-space:pre-wrap;word-break:break-word;color:#f4f4f5";
+  details.textContent = stack;
+
+  panel.append(eyebrow, title, body, details);
+  page.append(panel);
+  root.replaceChildren(page);
 }
 
 // Simple fallback UI for ErrorBoundary

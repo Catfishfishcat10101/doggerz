@@ -292,14 +292,38 @@ const Doggerz = {
   UI: {
     showErrorMessage(error) {
       if (typeof document === "undefined") return;
-      document.body.innerHTML = `
-        <div style="text-align:center; padding:50px 24px; font-family:system-ui,sans-serif; color:#e5e7eb; background:#090a0f; min-height:100vh; box-sizing:border-box;">
-          <h2 style="color:#a7f3d0; margin-bottom:12px;">Jack is taking a nap!</h2>
-          <p style="margin:0 0 16px; color:rgba(229,231,235,0.82);">We're having trouble connecting. Check your internet and try again?</p>
-          <button onclick="location.reload()" style="border-radius:999px; border:1px solid rgba(16,185,129,0.45); background:rgba(16,185,129,0.12); color:#ecfccb; padding:10px 18px; cursor:pointer;">Retry</button>
-          ${error ? `<pre style="max-width:720px; margin:24px auto 0; text-align:left; white-space:pre-wrap; background:rgba(255,255,255,0.05); border-radius:16px; padding:16px; overflow:auto;">${String(error?.stack || error?.message || error)}</pre>` : ""}
-        </div>
-      `;
+
+      const page = document.createElement("div");
+      page.style.cssText =
+        "text-align:center;padding:50px 24px;font-family:system-ui,sans-serif;color:#e5e7eb;background:#090a0f;min-height:100vh;box-sizing:border-box";
+
+      const title = document.createElement("h2");
+      title.style.cssText = "color:#a7f3d0;margin-bottom:12px";
+      title.textContent = "Jack is taking a nap!";
+
+      const body = document.createElement("p");
+      body.style.cssText = "margin:0 0 16px;color:rgba(229,231,235,0.82)";
+      body.textContent =
+        "We're having trouble connecting. Check your internet and try again?";
+
+      const retry = document.createElement("button");
+      retry.type = "button";
+      retry.style.cssText =
+        "border-radius:999px;border:1px solid rgba(16,185,129,0.45);background:rgba(16,185,129,0.12);color:#ecfccb;padding:10px 18px;cursor:pointer";
+      retry.textContent = "Retry";
+      retry.addEventListener("click", () => location.reload());
+
+      page.append(title, body, retry);
+
+      if (error) {
+        const details = document.createElement("pre");
+        details.style.cssText =
+          "max-width:720px;margin:24px auto 0;text-align:left;white-space:pre-wrap;background:rgba(255,255,255,0.05);border-radius:16px;padding:16px;overflow:auto";
+        details.textContent = String(error?.stack || error?.message || error);
+        page.append(details);
+      }
+
+      document.body.replaceChildren(page);
     },
   },
 

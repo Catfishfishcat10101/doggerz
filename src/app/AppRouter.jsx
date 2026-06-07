@@ -14,6 +14,7 @@ import CrashFallback from "@/components/system/CrashFallback.jsx";
 import ProtectedRoute from "@/components/system/ProtectedRoute.jsx";
 import AppShell from "@/components/layout/AppShell.jsx";
 import ModalHost from "@/components/ui/modals/ModalHost.jsx";
+import DoggerzLoadingScreen from "@/components/game/DoggerzLoadingScreen.jsx";
 import { selectIsAuthResolved } from "@/store/userSlice.js";
 
 // Keep Landing fast; lazy-load everything else.
@@ -153,8 +154,8 @@ function RouteFallback({ label = "Loading." }) {
   const tips = React.useMemo(
     () => [
       "Your pup remembers steady care.",
-      "Preparing the next screen.",
-      "If loading takes too long, refresh and return to the yard.",
+      "Getting the next yard view ready.",
+      "Your session is opening into Doggerz.",
     ],
     []
   );
@@ -167,47 +168,12 @@ function RouteFallback({ label = "Loading." }) {
   }, [tips.length]);
 
   return (
-    <div className="grid min-h-[64vh] place-items-center bg-[#030712] px-4 py-10 text-zinc-100">
-      <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-white/10 bg-black/55 shadow-[0_24px_70px_rgba(0,0,0,0.4)] backdrop-blur-md">
-        <div className="relative border-b border-white/10 px-6 py-5">
-          <div className="text-[11px] uppercase tracking-[0.28em] text-emerald-200/85">
-            Loading
-          </div>
-          <div className="mt-2 text-xl font-black tracking-tight text-zinc-100">
-            {label}
-          </div>
-          <div className="mt-1 text-xs text-zinc-400">
-            Preparing your pup data.
-          </div>
-        </div>
-
-        <div className="px-6 py-5">
-          <div className="h-2 w-full overflow-hidden rounded-full border border-white/10 bg-white/5">
-            <div className="h-full w-1/2 animate-pulse rounded-full bg-emerald-300" />
-          </div>
-
-          <p className="mt-4 min-h-5 text-xs text-zinc-300">{tips[tipIndex]}</p>
-          <div className="mt-5 flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => window.location.reload()}
-              className="rounded-xl border border-emerald-300/40 bg-emerald-500/15 px-3 py-2 text-xs font-semibold text-emerald-100 hover:bg-emerald-500/25"
-            >
-              Refresh
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                window.location.href = PATHS.HOME;
-              }}
-              className="rounded-xl border border-white/15 bg-black/35 px-3 py-2 text-xs font-semibold text-zinc-100 hover:bg-black/45"
-            >
-              Home
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <DoggerzLoadingScreen
+      title={label}
+      subtitle="Preparing your pup data and opening the yard."
+      tip={tips[tipIndex]}
+      className="min-h-[64vh]"
+    />
   );
 }
 

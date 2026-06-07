@@ -4,6 +4,7 @@ import { useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
 
 import DogAIEngine from "@/components/dog/DogAIEngine.jsx";
+import DoggerzLoadingScreen from "@/components/game/DoggerzLoadingScreen.jsx";
 import MainGame from "@/components/game/MainGame.jsx";
 import GrowthCelebration from "@/components/dog/components/GrowthCelebration.jsx";
 import { getDailyRewardState } from "@/features/billing/dailyRewards.js";
@@ -383,19 +384,11 @@ export default function GamePage() {
         {shouldRedirectToAdopt ? (
           <Navigate to={PATHS.ADOPT} replace />
         ) : waitingForCloudAdoptionDecision ? (
-          <div className="flex min-h-dvh items-center justify-center px-6 text-center text-zinc-100">
-            <div className="w-full max-w-md rounded-[30px] border border-white/10 bg-black/45 p-6 shadow-[0_28px_90px_rgba(0,0,0,0.45)] backdrop-blur">
-              <div className="text-[11px] uppercase tracking-[0.24em] text-emerald-200/80">
-                Checking your pup
-              </div>
-              <h1 className="mt-2 text-2xl font-black text-emerald-100">
-                Loading your adoption status
-              </h1>
-              <p className="mt-3 text-sm text-zinc-300">
-                Doggerz is checking...
-              </p>
-            </div>
-          </div>
+          <DoggerzLoadingScreen
+            title="Checking your pup"
+            subtitle="Opening the yard and syncing your adoption status."
+            tip="Doggerz is checking your saved pup before the yard opens."
+          />
         ) : (
           <MainGame scene={scene} dogInteractive={dogInteractive} />
         )}

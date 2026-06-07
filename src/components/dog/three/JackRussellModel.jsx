@@ -4,6 +4,7 @@ import * as THREE from "three";
 import { useAnimations, useGLTF } from "@react-three/drei";
 import { clone } from "three/examples/jsm/utils/SkeletonUtils.js";
 
+import DogModelFallback from "@/components/dog/three/DogModelFallback.jsx";
 import { DOG_MODEL_GLTF_PATH } from "@/features/game/stage3d/dog/dogModelMap.js";
 
 const DEFAULT_ANIMATION_CANDIDATES = [
@@ -40,6 +41,10 @@ function findBestAnimationName(animationNames, requestedName) {
   );
 }
 
+function isRenderableObject3D(value) {
+  return Boolean(value && value.isObject3D === true);
+}
+
 export default function JackRussellModel({
   animationName = "Idle_1",
   scale = 1,
@@ -48,10 +53,13 @@ export default function JackRussellModel({
   autoCenter = false,
   debugAnimations = false,
   animationSpeed = 1,
+  onAnimationsLoaded,
 }) {
   const { scene, animations } = useGLTF(DOG_MODEL_GLTF_PATH);
 
   const model = useMemo(() => {
+    if (!isRenderableObject3D(scene)) return null;
+
     const clonedScene = clone(scene);
 
     clonedScene.traverse((object) => {
@@ -84,6 +92,11 @@ export default function JackRussellModel({
   const { actions, names } = useAnimations(animations, model);
 
   useEffect(() => {
+    if (!Array.isArray(names) || !onAnimationsLoaded) return;
+    onAnimationsLoaded(names);
+  }, [names, onAnimationsLoaded]);
+
+  useEffect(() => {
     if (!names?.length) return undefined;
 
     const activeAnimationName = findBestAnimationName(names, animationName);
@@ -108,8 +121,22 @@ export default function JackRussellModel({
     };
   }, [actions, names, animationName, debugAnimations, animationSpeed]);
 
+  if (!isRenderableObject3D(model)) {
+    return (
+      <DogModelFallback
+        position={position}
+        rotation={rotation}
+        scale={scale}
+        shadowOpacity={0.16}
+      />
+    );
+  }
+
   return (
     <primitive
+      object={model}
+      position={position}
+      rotation={rotation}
       scale={scale}
     />
   );

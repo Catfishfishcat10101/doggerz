@@ -1,13 +1,18 @@
 // src/components/game/Dog3DScene.jsx
-/* eslint-disable react/no-unknown-property */
 import React, { Suspense, useMemo } from "react";
 import { Canvas } from "@react-three/fiber";
-
 import Dog3D from "@/components/dog/Dog3D.jsx";
 import DOG_STAGE_CAMERA, {
   DogCameraRig,
 } from "@/features/game/stage3d/DogCamera.jsx";
 import DogShadowPlane from "@/features/game/stage3d/DogShadowPlane.jsx";
+
+const NORMAL_YARD_DOG_SCALE = 0.72;
+const CLOSE_YARD_DOG_SCALE = 1.05;
+const PAW_GLASS_DOG_SCALE = 1.25;
+
+const NORMAL_YARD_POSITION = [0, -1, -0.85];
+const CLOSE_SCREEN_POSITION = [0, -1.05, 0.35];
 
 function resolveFacingRotation(facing = "") {
   const key = String(facing || "")
@@ -235,6 +240,9 @@ function StableDog({ scene, dogView }) {
   const { dog = null, renderModel = null, paused = false } = dogView || {};
   const facing = renderModel?.facing || dog?.facing || "right";
 
+  // TODO: Use CLOSE_YARD_DOG_SCALE for future high-bond close/front behavior.
+  // TODO: Use PAW_GLASS_DOG_SCALE temporarily for future paw-on-glass behavior.
+
   return (
     <DogRenderBoundary fallback={<DogFallback />}>
       <Dog3D
@@ -245,7 +253,7 @@ function StableDog({ scene, dogView }) {
         facing={facing}
         position={DOG_STAGE_CAMERA.dogAnchor}
         rotation={resolveFacingRotation(facing)}
-        scale={1.12}
+        scale={NORMAL_YARD_DOG_SCALE}
         paused={paused}
         reduceMotion
       />

@@ -46,14 +46,7 @@
     <title>Doggerz</title>
 
     <style>
-      /* Minimal boot UI so the app feels responsive before React mounts */
       :root {
-        --dg-bg: #090a0f;
-        --dg-fg: #e5e7eb;
-        --dg-muted: rgba(229, 231, 235, 0.65);
-        --dg-accent: #10b981;
-        --dg-accent2: #38bdf8;
-        --dg-ring: rgba(16, 185, 129, 0.55);
         color-scheme: dark;
       }
 
@@ -61,11 +54,12 @@
       body {
         height: 100%;
         margin: 0;
-        background: radial-gradient(
-          circle at top,
-          #1e293b 0,
-          #020617 55%,
-          #000 100%
+        background: linear-gradient(
+          180deg,
+          #0f3140 0%,
+          #123847 22%,
+          #14352f 58%,
+          #0b1a18 100%
         );
       }
 
@@ -74,160 +68,223 @@
       }
 
       ::selection {
-        background: rgba(14, 117, 20, 0.35);
+        background: rgba(22, 163, 74, 0.35);
       }
 
       .dg-boot {
+        position: relative;
         min-height: 100vh;
-        display: grid;
-        place-items: center;
-        gap: 14px;
-        padding: 24px;
-        color: var(--dg-fg);
+        overflow: hidden;
+        color: #f6f2e8;
         pointer-events: none;
         user-select: none;
         font-family:
+          Inter,
           ui-sans-serif,
           system-ui,
           -apple-system,
-          Segoe UI,
+          BlinkMacSystemFont,
+          "Segoe UI",
           Roboto,
           Helvetica,
           Arial,
-          "Apple Color Emoji",
-          "Segoe UI Emoji";
+          sans-serif;
       }
 
-      .dg-boot__card {
-        width: 100%;
-        max-width: 420px;
-        border-radius: 28px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        background: rgba(0, 0, 0, 0.35);
-        -webkit-backdrop-filter: blur(14px);
-        backdrop-filter: blur(14px);
-        box-shadow: 0 0 70px rgba(16, 185, 129, 0.12);
-        padding: 22px 20px;
+      .dg-boot__sky {
+        position: absolute;
+        inset: 0 0 auto;
+        height: 52%;
+        background:
+          radial-gradient(circle at 50% 10%, rgba(128, 214, 245, 0.3), transparent 44%),
+          radial-gradient(circle at 15% 18%, rgba(48, 124, 150, 0.26), transparent 30%),
+          radial-gradient(circle at 82% 20%, rgba(31, 88, 104, 0.22), transparent 28%);
       }
 
-      .dg-boot__row {
+      .dg-boot__horizon {
+        position: absolute;
+        inset: auto 0 27%;
+        height: 16%;
+        background: linear-gradient(
+          180deg,
+          rgba(103, 153, 115, 0.2),
+          rgba(50, 88, 58, 0.42)
+        );
+      }
+
+      .dg-boot__yard-glow {
+        position: absolute;
+        left: 50%;
+        top: 44%;
+        width: 11rem;
+        height: 11rem;
+        transform: translateX(-50%);
+        border-radius: 999px;
+        background: radial-gradient(
+          circle,
+          rgba(177, 242, 214, 0.42),
+          rgba(96, 198, 172, 0.16) 42%,
+          rgba(0, 0, 0, 0) 74%
+        );
+        filter: blur(28px);
+      }
+
+      .dg-boot__fence {
+        position: absolute;
+        inset: auto 0 23%;
+        height: 14%;
+        opacity: 0.45;
+        background: repeating-linear-gradient(
+          90deg,
+          rgba(113, 78, 53, 0.95) 0,
+          rgba(113, 78, 53, 0.95) 2.8%,
+          rgba(142, 101, 68, 0.95) 2.8%,
+          rgba(142, 101, 68, 0.95) 5.4%,
+          transparent 5.4%,
+          transparent 7.7%
+        );
+      }
+
+      .dg-boot__rail--top,
+      .dg-boot__rail--bottom {
+        position: absolute;
+        inset-inline: 0;
+      }
+
+      .dg-boot__rail--top {
+        bottom: 31%;
+        height: 0.55rem;
+        background: rgba(119, 83, 57, 0.86);
+      }
+
+      .dg-boot__rail--bottom {
+        bottom: 21%;
+        height: 0.65rem;
+        background: rgba(101, 71, 49, 0.9);
+      }
+
+      .dg-boot__ground {
+        position: absolute;
+        inset: auto -10% -10%;
+        height: 34%;
+        border-radius: 100% 100% 0 0;
+        background: linear-gradient(180deg, #4f8f45 0%, #2f6a37 42%, #163122 100%);
+      }
+
+      .dg-boot__shadow {
+        position: absolute;
+        inset: auto 18% 17%;
+        height: 1.25rem;
+        border-radius: 999px;
+        background: rgba(0, 0, 0, 0.25);
+        filter: blur(10px);
+      }
+
+      .dg-boot__content {
+        position: relative;
+        z-index: 1;
+        min-height: 100vh;
         display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 10px;
+        padding: 3rem 1.5rem 22vh;
+        text-align: center;
       }
 
       .dg-boot__logo {
-        width: 48px;
-        height: 48px;
-        border-radius: 14px;
-        border: 1px solid rgba(16, 185, 129, 0.35);
-        background: rgba(16, 185, 129, 0.1);
-        padding: 6px;
+        width: 4rem;
+        height: 4rem;
+        border-radius: 1.125rem;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        background: rgba(255, 255, 255, 0.08);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.22);
+        padding: 0.5rem;
         box-sizing: border-box;
-        object-fit: cover;
       }
 
-      .dg-boot__label {
-        font-size: 11px;
-        font-weight: 800;
-        letter-spacing: 0.2em;
+      .dg-boot__eyebrow {
+        margin-top: 1.25rem;
+        font-size: 0.76rem;
+        font-weight: 700;
+        letter-spacing: 0.42em;
         text-transform: uppercase;
-        color: rgba(255, 255, 255, 0.88);
-      }
-
-      .dg-boot__hero {
-        width: 192px;
-        aspect-ratio: 1 / 1;
-        margin: 18px auto 0;
-        overflow: hidden;
-        border-radius: 999px;
-        border: 1px solid rgba(16, 185, 129, 0.35);
-        background:
-          radial-gradient(
-            circle at 35% 28%,
-            rgba(16, 185, 129, 0.22),
-            rgba(0, 0, 0, 0) 58%
-          ),
-          rgba(0, 0, 0, 0.45);
-        box-shadow: 0 0 60px rgba(16, 185, 129, 0.16);
-        padding: 4px;
-        box-sizing: border-box;
-      }
-
-      .dg-boot__hero > img {
-        width: 100%;
-        height: 100%;
-        display: block;
-        border-radius: inherit;
-        object-fit: cover;
-        object-position: 74% 38%;
+        color: #dff4df;
       }
 
       .dg-boot__title {
-        margin: 18px 0 0;
-        font-size: 26px;
-        line-height: 1.05;
+        margin: 0.85rem 0 0;
+        font-size: clamp(2.4rem, 6vw, 3.6rem);
+        line-height: 0.98;
         font-weight: 900;
-        letter-spacing: 0.02em;
-        text-align: center;
-        color: rgba(167, 243, 208, 0.95);
-        text-shadow: 0 0 18px rgba(16, 185, 129, 0.55);
+        letter-spacing: 0.04em;
+        color: #fff8ea;
       }
 
-      .dg-boot__sub {
-        margin: 6px 0 0;
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 0.18em;
-        text-transform: uppercase;
-        text-align: center;
-        color: rgba(255, 255, 255, 0.9);
+      .dg-boot__subtitle {
+        margin: 0.9rem 0 0;
+        max-width: 34rem;
+        font-size: clamp(0.95rem, 2.4vw, 1.05rem);
+        line-height: 1.45;
+        font-weight: 500;
+        color: rgba(230, 240, 231, 0.84);
       }
 
-      .dg-boot__hint {
-        margin-top: 16px;
-        font-size: 13px;
-        text-align: center;
-        color: var(--dg-muted);
+      .dg-boot__dog-wrap {
+        position: relative;
+        width: min(100%, 40rem);
+        height: 10rem;
+        margin-top: 2rem;
       }
 
-      .dg-boot__bar {
-        width: min(420px, 100%);
-        height: 10px;
-        margin-top: 0;
-        border-radius: 999px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        background: rgba(255, 255, 255, 0.08);
+      .dg-boot__dog {
+        position: absolute;
+        left: 50%;
+        bottom: 0;
+        width: min(9rem, 36vw);
+        transform: translateX(-50%);
+        filter: drop-shadow(0 16px 28px rgba(0, 0, 0, 0.38));
+      }
+
+      .dg-boot__progress {
+        width: min(100%, 16rem);
+        height: 0.375rem;
+        margin-top: 1.5rem;
         overflow: hidden;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.12);
       }
 
-      .dg-boot__bar > span {
+      .dg-boot__progress > span {
         display: block;
         width: 42%;
         height: 100%;
-        border-radius: 999px;
-        background: linear-gradient(
-          90deg,
-          rgba(16, 185, 129, 0.25),
-          rgba(56, 189, 248, 0.3)
-        );
-        animation: dg-boot-load 1.15s ease-in-out infinite alternate;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #d0f2c5 0%, #7adfc6 55%, #6cc9ef 100%);
+        animation: dg-boot-load 1.2s ease-in-out infinite alternate;
+      }
+
+      .dg-boot__hint {
+        margin: 1rem 0 0;
+        max-width: 30rem;
+        font-size: 0.82rem;
+        line-height: 1.5;
+        font-weight: 500;
+        color: rgba(220, 231, 221, 0.74);
       }
 
       @keyframes dg-boot-load {
         0% {
-          transform: translateX(-40%);
+          transform: translateX(-30%);
         }
 
         100% {
-          transform: translateX(140%);
+          transform: translateX(135%);
         }
       }
 
       @media (prefers-reduced-motion: reduce) {
-        .dg-boot__bar > span {
-          width: 60%;
+        .dg-boot__progress > span {
           transform: translateX(0);
           animation: none;
         }
@@ -263,19 +320,32 @@
 
     <div id="root">
       <div class="dg-boot" aria-hidden="true">
-        <div class="dg-boot__card">
-          <div class="dg-boot__row">
-            <img
-              class="dg-boot__logo"
-              src="/assets/icons/icon-192.png"
-              alt=""
-              decoding="async"
-            />
-            <div class="dg-boot__label">DOGGERZ</div>
-          </div>
+        <div class="dg-boot__sky"></div>
+        <div class="dg-boot__horizon"></div>
+        <div class="dg-boot__yard-glow"></div>
+        <div class="dg-boot__fence"></div>
+        <div class="dg-boot__rail--top"></div>
+        <div class="dg-boot__rail--bottom"></div>
+        <div class="dg-boot__ground"></div>
+        <div class="dg-boot__shadow"></div>
 
-          <div class="dg-boot__hero" role="img" aria-label="Doggerz pup hero image">
+        <div class="dg-boot__content">
+          <img
+            class="dg-boot__logo"
+            src="/assets/icons/icon-192.png"
+            alt=""
+            width="72"
+            height="72"
+            decoding="async"
+          />
+          <div class="dg-boot__eyebrow">DOGGERZ</div>
+          <h1 class="dg-boot__title">Opening the backyard</h1>
+          <p class="dg-boot__subtitle">
+            Bringing your pup into a calmer, closer yard scene.
+          </p>
+          <div class="dg-boot__dog-wrap">
             <img
+              class="dg-boot__dog"
               src="/assets/sprites/jr/pup_idle.png"
               alt=""
               width="192"
@@ -284,9 +354,8 @@
               decoding="async"
             />
           </div>
-          </div>
-
-          <h1 class="dg-boot__title">Loading your pup..</h1>
+          <div class="dg-boot__progress"><span></span></div>
+          <p class="dg-boot__hint">Loading your pup and opening the yard.</p>
         </div>
       </div>
     </div>
