@@ -21,6 +21,8 @@
     "format:check": "prettier --check .",
     "lint:fix": "eslint . --fix",
     "build": "vite build",
+    "dog:animations": "node scripts/list-dog-animations.cjs",
+    "dog:validate-animations": "node scripts/validate-dog-animations.cjs",
     "android:sync": "npm run build && npx cap sync android",
     "android:open": "npx cap open android",
     "android:run": "npx cap run android",

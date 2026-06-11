@@ -13,6 +13,12 @@ import {
   DOG_MODEL_GLTF_PATH,
   FEED_LOOP_CLIP,
   FEED_START_CLIP,
+  IDLE_LIKE_DOG_CLIPS,
+  SIT_PRETTY_CLIP,
+  SLEEP_LIKE_DOG_CLIPS,
+  WALK_LIKE_DOG_CLIPS,
+  RUN_LIKE_DOG_CLIPS,
+  BARK_LIKE_DOG_CLIPS,
   hasPlayableDogModelClips,
   isFeedingDogAction,
   resolveAvailableDogAnimation,
@@ -66,7 +72,7 @@ function resolveStaticMotion(
     };
   }
 
-  if (key === "Sleep" || actionKey.includes("sleep")) {
+  if (SLEEP_LIKE_DOG_CLIPS.includes(key) || actionKey.includes("sleep")) {
     return {
       y: Math.sin(t * 1.1) * 0.012,
       xRot: -0.08 + Math.sin(t * 0.65) * 0.014,
@@ -79,7 +85,7 @@ function resolveStaticMotion(
     };
   }
 
-  if (key === "Walk" || actionKey.includes("walk")) {
+  if (WALK_LIKE_DOG_CLIPS.includes(key) || actionKey.includes("walk")) {
     return {
       y: Math.abs(Math.sin(t * 5.2)) * 0.032,
       xRot: Math.sin(t * 5.2) * 0.026,
@@ -90,7 +96,7 @@ function resolveStaticMotion(
     };
   }
 
-  if (key === "Bark" || actionKey.includes("bark")) {
+  if (BARK_LIKE_DOG_CLIPS.includes(key) || actionKey.includes("bark")) {
     return {
       y: Math.max(0, Math.sin(t * 8.5)) * 0.025,
       xRot: -0.045 + Math.sin(t * 8.5) * 0.02,
@@ -455,9 +461,10 @@ function Dog3D({
 
   const animationClipName =
     typeof animationClip === "string" ? animationClip : animationClip?.key;
+  const requestedClip = animationClipName || forcedClip || action;
   const clipName = ghost
     ? DOG_ANIMATION_CLIPS.idle
-    : animationClipName || forcedClip || resolveDogAnimation(action);
+    : resolveDogAnimation(requestedClip);
   const feedActionKey = useMemo(() => {
     const requested = [clipName, action].find((value) =>
       isFeedingDogAction(value)
@@ -478,8 +485,11 @@ function Dog3D({
   const renderMotion = useMemo(
     () => ({
       id: String(playbackClip || "Idle").toLowerCase(),
-      lookAround: playbackClip === "Idle" || playbackClip === "Wag",
-      blink: playbackClip !== "Bark" && playbackClip !== "Walk",
+      lookAround:
+        IDLE_LIKE_DOG_CLIPS.includes(playbackClip) || playbackClip === "Idle_6",
+      blink:
+        !BARK_LIKE_DOG_CLIPS.includes(playbackClip) &&
+        !WALK_LIKE_DOG_CLIPS.includes(playbackClip),
     }),
     [playbackClip]
   );
@@ -525,6 +535,9 @@ function Dog3D({
     }
     const localT = t - motionStartTimeRef.current;
     const baseScale = scale * fit.scale;
+    const baseX = effectivePosition[0] + fit.offset[0];
+    const baseY = effectivePosition[1] + fit.offset[1];
+    const baseZ = effectivePosition[2] + fit.offset[2];
     const motionPaused = paused || reduceMotion;
     const blinkPhase =
       renderMotion?.blink && !motionPaused ? (t * 0.55) % 6.2 : 3;
@@ -543,9 +556,9 @@ function Dog3D({
         baseScale * blinkScale * squashY,
         baseScale * blinkScale * squashZ
       );
-      root.position.x = effectivePosition[0] + (motion.x || 0);
-      root.position.y = effectivePosition[1] + motion.y;
-      root.position.z = effectivePosition[2] + (motion.z || 0);
+      root.position.x = baseX + (motion.x || 0);
+      root.position.y = baseY + motion.y;
+      root.position.z = baseZ + (motion.z || 0);
       root.rotation.x = effectiveRotation[0] + motion.xRot;
       root.rotation.y = effectiveRotation[1] + motion.yRot;
       root.rotation.z = effectiveRotation[2] + motion.zRot;
@@ -561,9 +574,9 @@ function Dog3D({
         baseScale * blinkScale * (trickMotion.squashY || 1),
         baseScale * blinkScale * (trickMotion.squashZ || 1)
       );
-      root.position.x = effectivePosition[0] + (trickMotion.x || 0);
-      root.position.y = effectivePosition[1] + (trickMotion.y || 0);
-      root.position.z = effectivePosition[2] + (trickMotion.z || 0);
+      root.position.x = baseX + (trickMotion.x || 0);
+      root.position.y = baseY + (trickMotion.y || 0);
+      root.position.z = baseZ + (trickMotion.z || 0);
       root.rotation.x = effectiveRotation[0] + (trickMotion.xRot || 0);
       root.rotation.y = effectiveRotation[1] + (trickMotion.yRot || 0);
       root.rotation.z = effectiveRotation[2] + (trickMotion.zRot || 0);
@@ -573,23 +586,28 @@ function Dog3D({
     root.scale.setScalar(baseScale * blinkScale);
 
     const idleLike =
-      playbackClip === "Idle" ||
-      playbackClip === "Wag" ||
-      playbackClip === "Sleep" ||
+      IDLE_LIKE_DOG_CLIPS.includes(playbackClip) ||
+      SLEEP_LIKE_DOG_CLIPS.includes(playbackClip) ||
+      WALK_LIKE_DOG_CLIPS.includes(playbackClip) ||
+      RUN_LIKE_DOG_CLIPS.includes(playbackClip) ||
+      BARK_LIKE_DOG_CLIPS.includes(playbackClip) ||
+      playbackClip === SIT_PRETTY_CLIP ||
       playbackClip === "Sniff" ||
       playbackClip === "Scratch";
 
     if (!idleLike || motionPaused) {
-      root.position.x = effectivePosition[0];
-      root.position.y = effectivePosition[1];
-      root.position.z = effectivePosition[2];
+      root.position.x = baseX;
+      root.position.y = baseY;
+      root.position.z = baseZ;
       root.rotation.x = effectiveRotation[0];
       root.rotation.y = effectiveRotation[1];
       root.rotation.z = effectiveRotation[2];
       return;
     }
 
-    const breath = ghost ? 0.012 : playbackClip === "Sleep" ? 0.018 : 0.02;
+    const isSleepClip = SLEEP_LIKE_DOG_CLIPS.includes(playbackClip);
+    const isWalkClip = WALK_LIKE_DOG_CLIPS.includes(playbackClip);
+    const breath = ghost ? 0.012 : isSleepClip ? 0.018 : 0.02;
     const actionDip =
       playbackClip === "Sniff"
         ? -0.018
@@ -604,24 +622,27 @@ function Dog3D({
           : 0;
 
     const lookYaw =
-      renderMotion?.lookAround && playbackClip !== "Sleep"
+      renderMotion?.lookAround && !isSleepClip
         ? Math.sin(t * 0.34) * 0.11 + Math.sin(t * 0.13) * 0.05
         : 0;
 
     const wanderSway =
-      renderMotion?.id?.includes("wander") || playbackClip === "Walk"
+      renderMotion?.id?.includes("wander") || isWalkClip
         ? Math.sin(t * 1.2) * 0.035
         : 0;
 
+    root.position.x = baseX + wanderSway;
     root.position.y =
-      effectivePosition[1] +
+      baseY +
       actionDip +
-      Math.sin(t * (playbackClip === "Sleep" ? 1.1 : 1.8)) * breath;
-
-      root.rotation.x =
-        effectiveRotation[0] +
-        actionPitch +
-        Math.sin(t * 0.8) * (playbackClip === "Sleep" ? 0.018 : 0.01);
+      Math.sin(t * (isSleepClip ? 1.1 : 1.8)) * breath;
+    root.position.z = baseZ;
+    root.rotation.x =
+      effectiveRotation[0] +
+      actionPitch +
+      Math.sin(t * 0.8) * (isSleepClip ? 0.018 : 0.01);
+    root.rotation.y = effectiveRotation[1] + lookYaw;
+    root.rotation.z = effectiveRotation[2];
   });
 
   useEffect(() => {

@@ -51,7 +51,7 @@ export default function JackRussellModel({
   position = [0, 0, 0],
   rotation = [0, 0, 0],
   autoCenter = false,
-  debugAnimations = false,
+  debugAnimations = true,
   animationSpeed = 1,
   onAnimationsLoaded,
 }) {
